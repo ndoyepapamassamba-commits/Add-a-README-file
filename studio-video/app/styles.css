@@ -1,0 +1,6 @@
+@import '../../workbench/web/styles.css';
+@source '../../workbench/web/components';
+@source '../../workbench/direct/views/PageHeader.tsx';
+@source '.';
+@source '../interface';
+@source '../navigateur';

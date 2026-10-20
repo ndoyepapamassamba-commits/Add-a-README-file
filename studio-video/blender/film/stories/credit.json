@@ -1,0 +1,152 @@
+{
+ "title": "Le crédit du Banquier",
+ "hook": "Elle drague le banquier",
+ "decor": "Bureau",
+ "fps": 25,
+ "size": [
+  576,
+  1024
+ ],
+ "music": true,
+ "cast": [
+  {
+   "id": "golep",
+   "name": "LA GO LÉOPARD",
+   "voice": "siwis",
+   "height": 1.7,
+   "x": -0.42,
+   "pitch": 1.06
+  },
+  {
+   "id": "banq",
+   "name": "LE BANQUIER",
+   "voice": "tom",
+   "height": 1.75,
+   "x": 0.42,
+   "pitch": 0.94
+  },
+  {
+   "id": "dieng",
+   "name": "TONTON DIENG",
+   "voice": "gilles",
+   "height": 1.73,
+   "x": 0,
+   "pitch": 1.04,
+   "enter": 8
+  }
+ ],
+ "beats": [
+  {
+   "who": "golep",
+   "pose": "rire",
+   "text": "Monsieur le banquier, vous êtes marié ? Je demande pour un crédit."
+  },
+  {
+   "who": "banq",
+   "pose": "neutre",
+   "text": "Crédit refusé. Et mariage refusé aussi.",
+   "react": {
+    "golep": "choc"
+   }
+  },
+  {
+   "who": "golep",
+   "pose": "choc",
+   "text": "Je n’ai même pas dit le montant !"
+  },
+  {
+   "who": "banq",
+   "pose": "haussement",
+   "text": "Je refuse avant. Ça gagne du temps."
+  },
+  {
+   "who": "golep",
+   "pose": "accuse",
+   "text": "Un petit crédit pour mon commerce. De sacs. Pour moi."
+  },
+  {
+   "who": "banq",
+   "pose": "neutre",
+   "text": "Garantie ? Maison, voiture, salaire ?"
+  },
+  {
+   "who": "golep",
+   "pose": "rire",
+   "text": "J’ai mon sourire. Il a déjà payé trois loyers.",
+   "react": {
+    "banq": "choc"
+   }
+  },
+  {
+   "who": "banq",
+   "pose": "choc",
+   "text": "Madame, ici c’est une banque. Pas un maquis."
+  },
+  {
+   "who": "dieng",
+   "pose": "rire",
+   "text": "Laisse-la ! Moi, j’ai deux villas à Assinie !",
+   "shot": "two"
+  },
+  {
+   "who": "golep",
+   "pose": "rire",
+   "text": "Tonton ! Vous êtes marié ? Je demande pour une villa."
+  },
+  {
+   "who": "banq",
+   "pose": "accuse",
+   "text": "Monsieur Dieng, votre compte est à moins trois mille.",
+   "react": {
+    "dieng": "choc"
+   }
+  },
+  {
+   "who": "dieng",
+   "pose": "haussement",
+   "text": "Les villas sont en construction. Dans ma tête."
+  },
+  {
+   "who": "golep",
+   "pose": "choc",
+   "text": "Dans ta tête ?! Et le terrain ?"
+  },
+  {
+   "who": "dieng",
+   "pose": "neutre",
+   "text": "Le terrain est vaste. Ma tête est grande."
+  },
+  {
+   "who": "golep",
+   "pose": "neutre",
+   "text": "Et vous, monsieur le banquier, votre compte ?",
+   "react": {
+    "banq": "choc"
+   }
+  },
+  {
+   "who": "banq",
+   "pose": "choc",
+   "text": "Euh… Madame, vous auriez un petit crédit ?"
+  },
+  {
+   "who": "golep",
+   "pose": "rire",
+   "text": "Crédit refusé. Et mariage refusé aussi.",
+   "react": {
+    "banq": "choc"
+   },
+   "shot": "cu"
+  },
+  {
+   "who": "dieng",
+   "pose": "rire",
+   "text": "Moi je prête ! Dans ma tête.",
+   "shot": "two"
+  }
+ ],
+ "punch": {
+  "beat": 16,
+  "emoji": "😂"
+ }
+}

@@ -1,0 +1,6035 @@
+{
+ "regles": [
+  {
+   "id": "hook",
+   "rule": "ACCROCHE (0–2 s) : la 1re réplique est DÉJÀ un conflit ou une énormité — une accusation, un aveu, une question piège, une demande absurde. Jamais de « bonjour », jamais de mise en place."
+  },
+  {
+   "id": "engine",
+   "rule": "UN SEUL MOTEUR COMIQUE par film : un mensonge qui grossit, un malentendu, une fierté mal placée, un secret qui fuit, un marchandage qui tourne mal. Tout le film escalade CE moteur."
+  },
+  {
+   "id": "three",
+   "rule": "ESCALADE EN 3 MARCHES (règle de trois) : chaque excuse, chaque mensonge, chaque prix est plus gros ET dit avec plus d’aplomb que le précédent ; la 3e marche est absurde."
+  },
+  {
+   "id": "density",
+   "rule": "UN RIRE TOUTES LES 5 SECONDES : chaque réplique INSTALLE, AGGRAVE ou FRAPPE. Supprime toute réplique qui ne fait aucune des trois (salutations, explications, résumés)."
+  },
+  {
+   "id": "last-word",
+   "rule": "LE MOT DRÔLE EN DERNIER : la réplique finit sur le mot qui fait rire ; rien après (pas d’explication, pas de « hein »)."
+  },
+  {
+   "id": "irony",
+   "rule": "IRONIE DRAMATIQUE : le public voit ou devine la vérité avant les personnages (la sauce sur le tee-shirt, l’argent dans la chaussure) ; le coupable nie l’évidence avec une mauvaise foi totale."
+  },
+  {
+   "id": "reversal",
+   "rule": "CONTRE-PIED : au moment où on attend A, arrive B — le témoin sauveur accuse le menteur, le riche demande un crédit, l’enfant gagne contre l’adulte, la victime se venge avec la même arme."
+  },
+  {
+   "id": "reaction",
+   "rule": "RÉACTION : après chaque punch, la réaction de l’autre (choc, regard caméra, fou rire) — note-la dans la scène ; elle fait rire autant que la réplique."
+  },
+  {
+   "id": "punch",
+   "rule": "CHUTE ≤ 8 MOTS, de préférence un RAPPEL : la phrase de l’accroche ou une phrase déjà entendue revient avec un autre sens, retournée contre celui qui l’a dite. Puis une seconde de réaction (emoji 😂)."
+  },
+  {
+   "id": "concrete",
+   "rule": "DÉTAILS CONCRETS ET LOCAUX : attiéké, garba, sauce graine, gbaka, woro-woro, coupure de courant, maquis, transfert d’argent, crédit téléphonique, dot, bulletin — jamais du générique."
+  },
+  {
+   "id": "characters",
+   "rule": "PERSONNAGES = MOTEURS : chacun garde SON défaut tout le film et le pousse plus loin à chaque scène (le menteur ment plus gros, la tantie dramatise plus fort, l’enfant dit la vérité au pire moment, le frimeur n’a jamais l’argent, le radin négocie même les cadeaux, la go calcule tout, la commerçante marchande tout)."
+  },
+  {
+   "id": "rhythm",
+   "rule": "RYTHME TIKTOK : 14 à 18 répliques pour 60 s, chacune ≤ 12 mots ; un nouveau plan toutes les 3 à 5 s ; gros plan sur celui qui ment, plan à deux sur les réactions et sur la chute."
+  },
+  {
+   "id": "measured",
+   "rule": "ÉCHANGES SERRÉS (mesuré sur 12 blagues de la chaîne) : une blague tient en 2 ou 3 répliques (≈ 7 s), chaque réplique ≈ 2,5 s ; la chute tombe 0,3 à 0,4 s après la réplique qui l’installe — pas de long silence avant la chute ; environ 1 réplique sur 6 est une réaction d’un ou deux mots (« Quoi ? », « Hein ? », « Toi ? », « Au passé ? ») ; après une chute forte, le personnage peut rire (« Ha ha ha ! », ≈ 4–5 s) ou faire un tchip (« Tchuuu ! ») ; entre deux blagues, une respiration de 3 à 5 s."
+  },
+  {
+   "id": "language",
+   "rule": "LANGUE : français ivoirien d’Abidjan, oral, compréhensible par tous (« Dêh ! », « Ehhh Dieu ! », « mon môgô », « y a pas drap », « c’est gâté », « laisse ça ») — 1 ou 2 par scène, jamais forcé."
+  },
+  {
+   "id": "punch-up",
+   "rule": "PASSE « PUNCH-UP » AVANT DE RÉPONDRE : relis chaque réplique ; si elle ne ferait pas rire un ado d’Abidjan sur TikTok, réécris-la plus courte, plus précise, plus exagérée ; vérifie que la chute surprend et qu’elle rappelle l’accroche."
+  },
+  {
+   "id": "taboo",
+   "rule": "L’humour vise la SITUATION et le défaut du personnage, jamais un groupe, une ethnie, une religion, un handicap ou une personne réelle."
+  }
+ ],
+ "mecaniques": [
+  {
+   "id": "rule-of-three",
+   "label": "Règle de trois",
+   "how": "deux éléments normaux, le troisième absurde ou qui retourne la situation"
+  },
+  {
+   "id": "quiproquo",
+   "label": "Quiproquo",
+   "how": "un personnage comprend tout de travers et agit avec une assurance totale"
+  },
+  {
+   "id": "escalation",
+   "label": "Escalade absurde",
+   "how": "chaque scène pousse la même erreur un cran plus loin, jusqu’à l’explosion"
+  },
+  {
+   "id": "status-flip",
+   "label": "Renversement de statut",
+   "how": "le patron / la belle-mère / le grand frère se fait remettre à sa place par le plus petit"
+  },
+  {
+   "id": "deadpan",
+   "label": "Pince-sans-rire",
+   "how": "une réplique énorme dite le plus calmement du monde, regard caméra"
+  },
+  {
+   "id": "running-gag",
+   "label": "Gag récurrent",
+   "how": "un détail (une phrase, un objet, un bruit) revient 3 fois, la 3e fois il paie"
+  },
+  {
+   "id": "reveal",
+   "label": "Révélation finale",
+   "how": "le dernier plan montre ce que le spectateur n’avait pas vu (le vrai coupable, le vrai patron)"
+  },
+  {
+   "id": "callback",
+   "label": "Rappel",
+   "how": "la chute reprend la toute première réplique avec un autre sens"
+  },
+  {
+   "id": "two-kinds",
+   "label": "Il y a deux genres de personnes",
+   "how": "deux réactions opposées à la même situation, montrées côte à côte, la 2e est la nôtre (énorme)"
+  },
+  {
+   "id": "caught",
+   "label": "Pris en flagrant délit",
+   "how": "un personnage est surpris en pleine bêtise (« en plein tournage comme ça ») et invente une excuse impossible"
+  },
+  {
+   "id": "caricature",
+   "label": "Caricature",
+   "how": "un trait de caractère connu de tous (le tonton qui sait tout, la maman qui compare) poussé jusqu’à l’absurde"
+  },
+  {
+   "id": "proverb-twist",
+   "label": "Proverbe détourné",
+   "how": "un proverbe ou une sagesse de vieux, appliqué de travers à une situation moderne"
+  }
+ ],
+ "situations": [
+  "le gbaka plein à craquer et l’apprenti qui crie encore « y a la place ! »",
+  "la coupure de courant pile pendant le match",
+  "la belle-mère qui débarque sans prévenir avec trois valises",
+  "le voisin qui « emprunte » le sel depuis six mois",
+  "le maquis où l’addition arrive au mauvais moment",
+  "la marchande d’attiéké qui connaît tous les secrets du quartier",
+  "le collègue qui arrive en retard avec une excuse de plus en plus énorme",
+  "le petit frère qui vend la mèche devant les parents",
+  "le prétendant qui vient demander la main de la fille et la famille qui négocie la dot",
+  "la maman qui compare son enfant au fils du voisin",
+  "le mari qui rentre tard avec une excuse de plus en plus énorme",
+  "la cousine du village qui débarque en ville et découvre tout"
+ ],
+ "interjections": [
+  {
+   "text": "Ehhh Dieu !",
+   "meaning": "Mon Dieu ! (stupeur)"
+  },
+  {
+   "text": "Dêh !",
+   "meaning": "Mais vraiment ! (insistance, étonnement)"
+  },
+  {
+   "text": "C’est comment ?",
+   "meaning": "Qu’est-ce qui se passe ? / Ça va ?"
+  },
+  {
+   "text": "On dit quoi ?",
+   "meaning": "Quoi de neuf ?"
+  },
+  {
+   "text": "Y a pas drap !",
+   "meaning": "Pas de problème !"
+  },
+  {
+   "text": "Ça va aller.",
+   "meaning": "Ça ira."
+  },
+  {
+   "text": "C’est pas mon palabre.",
+   "meaning": "Ce n’est pas mon affaire."
+  },
+  {
+   "text": "Je suis dedans !",
+   "meaning": "Je suis d’accord / j’en suis !"
+  },
+  {
+   "text": "C’est gâté !",
+   "meaning": "C’est trop fort ! (ou : c’est fichu)"
+  },
+  {
+   "text": "Ahiii !",
+   "meaning": "Aïe ! / Oh là là !"
+  },
+  {
+   "text": "Laisse ça !",
+   "meaning": "Laisse tomber !"
+  },
+  {
+   "text": "Tu vas voir l’affaire !",
+   "meaning": "Tu vas voir ce qui va se passer !"
+  },
+  {
+   "text": "Gbê est mieux que drap.",
+   "meaning": "Mieux vaut la vérité que la honte (proverbe)."
+  },
+  {
+   "text": "Mon môgô !",
+   "meaning": "Mon gars ! / Mon ami !"
+  }
+ ],
+ "reactions": [
+  "eyes popping out comically wide",
+  "jaw dropping to the floor",
+  "a big comic sweat drop on the temple",
+  "a frozen double-take, head snapping back",
+  "cheeks puffed, arms crossed, foot tapping",
+  "a slow deadpan stare straight at the camera",
+  "hands on the head in disbelief",
+  "squash and stretch jump of surprise"
+ ],
+ "histoires": [
+  {
+   "id": "poulet",
+   "hook": "Qui a mangé le poulet ?",
+   "title": "Le poulet de Tantie Awa",
+   "decor": "Salon",
+   "engine": "un mensonge qui grossit (Modou nie avec la sauce sur le tee-shirt)",
+   "cast": [
+    {
+     "id": "awa",
+     "name": "TANTIE AWA",
+     "height": 1.62,
+     "x": -0.42,
+     "voice": "siwis"
+    },
+    {
+     "id": "modou",
+     "name": "MODOU",
+     "height": 1.76,
+     "x": 0.4,
+     "voice": "tom"
+    },
+    {
+     "id": "mamadou",
+     "name": "PETIT MAMADOU",
+     "height": 1.15,
+     "x": 0.02,
+     "voice": "jessica",
+     "pitch": 1.22,
+     "enter": 9
+    }
+   ],
+   "beats": [
+    {
+     "who": "awa",
+     "pose": "accuse",
+     "text": "Modou ! Qui a mangé le poulet que j’avais laissé là ?",
+     "shot": "two",
+     "react": {
+      "modou": "choc"
+     }
+    },
+    {
+     "who": "modou",
+     "pose": "choc",
+     "text": "Moi ? Tantie, je te jure, je dormais depuis midi !"
+    },
+    {
+     "who": "awa",
+     "pose": "accuse",
+     "text": "Tu dormais… avec la sauce sur ton tee-shirt ?"
+    },
+    {
+     "who": "modou",
+     "pose": "haussement",
+     "text": "Ça ? C’est la sauce d’hier, Tantie. Elle est vieille !"
+    },
+    {
+     "who": "awa",
+     "pose": "neutre",
+     "text": "Hier on a mangé du riz blanc. Sans sauce.",
+     "react": {
+      "modou": "choc"
+     }
+    },
+    {
+     "who": "modou",
+     "pose": "haussement",
+     "text": "Voilà pourquoi j’avais faim aujourd’hui !"
+    },
+    {
+     "who": "awa",
+     "pose": "accuse",
+     "text": "Modou, regarde-moi dans les yeux. Tu as mangé mon poulet ?"
+    },
+    {
+     "who": "modou",
+     "pose": "neutre",
+     "text": "Tantie, je suis un homme honnête. Demande à tout le quartier !"
+    },
+    {
+     "who": "awa",
+     "pose": "haussement",
+     "text": "Tout le quartier dit que tu manges même les os du voisin !",
+     "react": {
+      "modou": "choc"
+     }
+    },
+    {
+     "who": "mamadou",
+     "pose": "neutre",
+     "text": "Tantie ! Moi j’ai vu qui a mangé le poulet !",
+     "shot": "two"
+    },
+    {
+     "who": "awa",
+     "pose": "neutre",
+     "text": "Parle, mon fils. C’est qui ?"
+    },
+    {
+     "who": "mamadou",
+     "pose": "haussement",
+     "text": "C’est le chat !",
+     "react": {
+      "modou": "rire"
+     }
+    },
+    {
+     "who": "modou",
+     "pose": "rire",
+     "text": "Voilà ! Le chat ! Je l’ai toujours dit, ce chat est un voleur !"
+    },
+    {
+     "who": "awa",
+     "pose": "choc",
+     "text": "Mais on n’a pas de chat dans cette maison !"
+    },
+    {
+     "who": "mamadou",
+     "pose": "accuse",
+     "text": "Ah bon ? Alors c’est Tonton Modou. Il a les doigts tout jaunes !",
+     "shot": "two",
+     "react": {
+      "modou": "choc",
+      "awa": "accuse"
+     }
+    },
+    {
+     "who": "modou",
+     "pose": "choc",
+     "text": "Petit traître !",
+     "shot": "cu"
+    },
+    {
+     "who": "awa",
+     "pose": "accuse",
+     "text": "Modou ! Viens ici tout de suite !",
+     "shot": "two",
+     "react": {
+      "modou": "choc"
+     }
+    }
+   ],
+   "punch": 15
+  },
+  {
+   "id": "transfert",
+   "hook": "Il veut l’épouser avec quel argent ?",
+   "title": "Le transfert de Koffi",
+   "decor": "Cérémonie",
+   "engine": "le faux riche qui promet un transfert d’argent qui « voyage »",
+   "cast": [
+    {
+     "id": "nounou",
+     "name": "MAMAN NOUNOU",
+     "height": 1.6,
+     "x": -0.45,
+     "voice": "siwis",
+     "pitch": 0.95
+    },
+    {
+     "id": "koffi",
+     "name": "KOFFI",
+     "height": 1.78,
+     "x": 0.42,
+     "voice": "pierre"
+    },
+    {
+     "id": "coumba",
+     "name": "COUMBA",
+     "height": 1.7,
+     "x": 0,
+     "voice": "jessica"
+    }
+   ],
+   "beats": [
+    {
+     "who": "nounou",
+     "pose": "accuse",
+     "text": "Koffi, tu veux épouser ma fille avec quel argent ?",
+     "shot": "two",
+     "react": {
+      "koffi": "choc"
+     }
+    },
+    {
+     "who": "koffi",
+     "pose": "haussement",
+     "text": "Maman, l’argent n’est pas un problème. Je suis dans les affaires."
+    },
+    {
+     "who": "nounou",
+     "pose": "accuse",
+     "text": "Quelles affaires ? Tu portes tes lunettes même la nuit."
+    },
+    {
+     "who": "koffi",
+     "pose": "neutre",
+     "text": "C’est pour protéger mes yeux… du soleil de ma réussite."
+    },
+    {
+     "who": "coumba",
+     "pose": "rire",
+     "text": "Maman, il a déjà fait le transfert pour la dot !",
+     "react": {
+      "koffi": "choc"
+     }
+    },
+    {
+     "who": "koffi",
+     "pose": "choc",
+     "text": "Euh… oui. Le transfert est en route. Il voyage."
+    },
+    {
+     "who": "nounou",
+     "pose": "haussement",
+     "text": "Il voyage à pied ou en gbaka ?"
+    },
+    {
+     "who": "koffi",
+     "pose": "haussement",
+     "text": "Le réseau est saturé. C’est la coupure de courant."
+    },
+    {
+     "who": "nounou",
+     "pose": "accuse",
+     "text": "Le courant, c’est pour la lumière, mon fils. Pas pour l’argent."
+    },
+    {
+     "who": "coumba",
+     "pose": "neutre",
+     "text": "Montre au moins le message de confirmation, chéri."
+    },
+    {
+     "who": "koffi",
+     "pose": "haussement",
+     "text": "Je l’ai supprimé. Par discrétion. Je suis un homme humble.",
+     "react": {
+      "nounou": "choc"
+     }
+    },
+    {
+     "who": "nounou",
+     "pose": "neutre",
+     "text": "Bon. Moi aussi je vais faire un transfert. Donne ta chaîne.",
+     "shot": "two"
+    },
+    {
+     "who": "koffi",
+     "pose": "choc",
+     "text": "Maman ! C’est ma chaîne en or !"
+    },
+    {
+     "who": "coumba",
+     "pose": "rire",
+     "text": "Maman, elle n’est même pas en or. Elle rouille !",
+     "react": {
+      "koffi": "choc"
+     }
+    },
+    {
+     "who": "koffi",
+     "pose": "haussement",
+     "text": "C’est de l’or… vintage."
+    },
+    {
+     "who": "nounou",
+     "pose": "rire",
+     "text": "Ta chaîne est en route. Elle voyage.",
+     "shot": "cu"
+    },
+    {
+     "who": "koffi",
+     "pose": "choc",
+     "text": "Maman, ça, c’est du vol !",
+     "shot": "two",
+     "react": {
+      "coumba": "rire"
+     }
+    }
+   ],
+   "punch": 15
+  },
+  {
+   "id": "anniversaire",
+   "hook": "Papi radin contre anniversaire",
+   "title": "Baye Ndiaye et l’anniversaire",
+   "decor": "Village",
+   "engine": "le grand-père riche et radin qui négocie même le cadeau de son petit-fils",
+   "cast": [
+    {
+     "id": "baye",
+     "name": "BAYE NDIAYE",
+     "height": 1.72,
+     "x": 0.4,
+     "voice": "gilles"
+    },
+    {
+     "id": "mamadou",
+     "name": "PETIT MAMADOU",
+     "height": 1.15,
+     "x": -0.35,
+     "voice": "jessica",
+     "pitch": 1.22
+    },
+    {
+     "id": "awa",
+     "name": "TANTIE AWA",
+     "height": 1.62,
+     "x": -0.75,
+     "voice": "siwis",
+     "enter": 9
+    }
+   ],
+   "beats": [
+    {
+     "who": "mamadou",
+     "pose": "rire",
+     "text": "Papi ! Aujourd’hui c’est mon anniversaire !",
+     "shot": "two",
+     "react": {
+      "baye": "choc"
+     }
+    },
+    {
+     "who": "baye",
+     "pose": "choc",
+     "text": "Encore ? Tu en as déjà eu un l’année dernière !"
+    },
+    {
+     "who": "mamadou",
+     "pose": "haussement",
+     "text": "Papi, tout le monde a un anniversaire chaque année."
+    },
+    {
+     "who": "baye",
+     "pose": "choc",
+     "text": "Chaque année ?! Qui a signé ce contrat ?"
+    },
+    {
+     "who": "mamadou",
+     "pose": "neutre",
+     "text": "Je veux juste un petit cadeau. Un ballon."
+    },
+    {
+     "who": "baye",
+     "pose": "haussement",
+     "text": "Un ballon ? Prends une orange. Ça roule aussi."
+    },
+    {
+     "who": "mamadou",
+     "pose": "accuse",
+     "text": "Une orange ? Papi, tu as trois voitures !"
+    },
+    {
+     "who": "baye",
+     "pose": "neutre",
+     "text": "Les voitures, c’est pour regarder. On ne les use pas."
+    },
+    {
+     "who": "mamadou",
+     "pose": "neutre",
+     "text": "Bon. Donne-moi juste deux cents francs."
+    },
+    {
+     "who": "baye",
+     "pose": "choc",
+     "text": "Deux cents ?! Tu veux me ruiner ou me tuer ?",
+     "react": {
+      "mamadou": "choc"
+     }
+    },
+    {
+     "who": "awa",
+     "pose": "accuse",
+     "text": "Baye ! L’enfant demande juste un cadeau !",
+     "shot": "two"
+    },
+    {
+     "who": "baye",
+     "pose": "rire",
+     "text": "D’accord. Je lui offre mon plus beau cadeau : mes conseils."
+    },
+    {
+     "who": "mamadou",
+     "pose": "haussement",
+     "text": "Les conseils, on peut acheter du pain avec ?"
+    },
+    {
+     "who": "baye",
+     "pose": "neutre",
+     "text": "Conseil numéro un : ne demande jamais d’argent à ton grand-père."
+    },
+    {
+     "who": "mamadou",
+     "pose": "accuse",
+     "text": "Alors je dis à Mamie où tu caches l’argent ?",
+     "react": {
+      "baye": "choc"
+     }
+    },
+    {
+     "who": "baye",
+     "pose": "choc",
+     "text": "Quel argent ?! Viens, mon fils, on va acheter le ballon.",
+     "shot": "two"
+    },
+    {
+     "who": "mamadou",
+     "pose": "rire",
+     "text": "Deux ballons, Papi. Conseil numéro deux.",
+     "shot": "cu"
+    }
+   ],
+   "punch": 16
+  },
+  {
+   "id": "tomates",
+   "hook": "Le marchandage qui coûte cher",
+   "title": "Les tomates de Maman Nounou",
+   "decor": "Marché",
+   "engine": "un marchandage où le prix monte à chaque phrase",
+   "cast": [
+    {
+     "id": "nounou",
+     "name": "MAMAN NOUNOU",
+     "height": 1.6,
+     "x": -0.4,
+     "voice": "siwis",
+     "pitch": 0.95
+    },
+    {
+     "id": "modou",
+     "name": "MODOU",
+     "height": 1.76,
+     "x": 0.42,
+     "voice": "tom"
+    }
+   ],
+   "beats": [
+    {
+     "who": "modou",
+     "pose": "neutre",
+     "text": "Maman, ton tas de tomates là, c’est combien ?",
+     "shot": "two"
+    },
+    {
+     "who": "nounou",
+     "pose": "rire",
+     "text": "Pour toi, mon fils ? Mille francs.",
+     "react": {
+      "modou": "choc"
+     }
+    },
+    {
+     "who": "modou",
+     "pose": "choc",
+     "text": "Mille ?! Hier c’était cinq cents !"
+    },
+    {
+     "who": "nounou",
+     "pose": "haussement",
+     "text": "Hier, tu n’avais pas ces sandales neuves."
+    },
+    {
+     "who": "modou",
+     "pose": "accuse",
+     "text": "Ce sont les sandales de mon grand frère !"
+    },
+    {
+     "who": "nounou",
+     "pose": "neutre",
+     "text": "Alors c’est ton grand frère qui va payer. Mille."
+    },
+    {
+     "who": "modou",
+     "pose": "neutre",
+     "text": "Je te donne trois cents. Dernier prix."
+    },
+    {
+     "who": "nounou",
+     "pose": "accuse",
+     "text": "Trois cents ? Tu veux les tomates ou la photo des tomates ?"
+    },
+    {
+     "who": "modou",
+     "pose": "rire",
+     "text": "Quatre cents, et je dis au marché que tu es belle."
+    },
+    {
+     "who": "nounou",
+     "pose": "rire",
+     "text": "Tout le monde le sait déjà. Mille deux cents.",
+     "react": {
+      "modou": "choc"
+     }
+    },
+    {
+     "who": "modou",
+     "pose": "choc",
+     "text": "Pourquoi ça monte encore ?!"
+    },
+    {
+     "who": "nounou",
+     "pose": "haussement",
+     "text": "Tu m’as fatiguée. La fatigue, ça se paye."
+    },
+    {
+     "who": "modou",
+     "pose": "accuse",
+     "text": "J’ai seulement cinq cents. Je prends, ou je pars !",
+     "shot": "two"
+    },
+    {
+     "who": "nounou",
+     "pose": "neutre",
+     "text": "Donne les cinq cents."
+    },
+    {
+     "who": "modou",
+     "pose": "neutre",
+     "text": "Voilà. Et les tomates ?"
+    },
+    {
+     "who": "nounou",
+     "pose": "haussement",
+     "text": "Moi, j’ai pris. Toi, tu pars.",
+     "shot": "cu",
+     "react": {
+      "modou": "choc"
+     }
+    },
+    {
+     "who": "modou",
+     "pose": "choc",
+     "text": "Maman, c’est du vol !",
+     "shot": "two"
+    },
+    {
+     "who": "nounou",
+     "pose": "rire",
+     "text": "Non, mon fils. C’est le marché.",
+     "shot": "cu"
+    }
+   ],
+   "punch": 15
+  },
+  {
+   "id": "garba",
+   "hook": "Qui paie le garba l’épouse",
+   "title": "Le garba de Coumba",
+   "decor": "Maquis",
+   "engine": "deux prétendants fauchés qui surenchérissent de fausses promesses",
+   "cast": [
+    {
+     "id": "coumba",
+     "name": "COUMBA",
+     "height": 1.7,
+     "x": 0,
+     "voice": "jessica"
+    },
+    {
+     "id": "koffi",
+     "name": "KOFFI",
+     "height": 1.78,
+     "x": -0.5,
+     "voice": "pierre"
+    },
+    {
+     "id": "modou",
+     "name": "MODOU",
+     "height": 1.76,
+     "x": 0.5,
+     "voice": "tom"
+    }
+   ],
+   "beats": [
+    {
+     "who": "coumba",
+     "pose": "rire",
+     "text": "Celui qui me paie le garba ce soir, je l’épouse.",
+     "shot": "two",
+     "react": {
+      "koffi": "choc",
+      "modou": "choc"
+     }
+    },
+    {
+     "who": "koffi",
+     "pose": "haussement",
+     "text": "Moi, je te paie le garba avec du thon de Dubaï."
+    },
+    {
+     "who": "modou",
+     "pose": "accuse",
+     "text": "Le thon de Dubaï ? Ton thon vient du marché d’Adjamé !"
+    },
+    {
+     "who": "koffi",
+     "pose": "neutre",
+     "text": "Il a pris l’avion. C’est un thon international."
+    },
+    {
+     "who": "modou",
+     "pose": "rire",
+     "text": "Moi, je te paie le garba ET l’attiéké."
+    },
+    {
+     "who": "coumba",
+     "pose": "neutre",
+     "text": "Avec quel argent, Modou ?"
+    },
+    {
+     "who": "modou",
+     "pose": "haussement",
+     "text": "L’attiéké est déjà dans ma poche. Il est chaud.",
+     "react": {
+      "coumba": "choc"
+     }
+    },
+    {
+     "who": "coumba",
+     "pose": "choc",
+     "text": "Dans ta poche ?! Depuis quand ?"
+    },
+    {
+     "who": "modou",
+     "pose": "neutre",
+     "text": "Depuis hier. Je suis un homme prévoyant."
+    },
+    {
+     "who": "koffi",
+     "pose": "rire",
+     "text": "Coumba, moi je paie par carte."
+    },
+    {
+     "who": "coumba",
+     "pose": "neutre",
+     "text": "Quelle carte ?"
+    },
+    {
+     "who": "koffi",
+     "pose": "haussement",
+     "text": "Ma carte… de fidélité. Neuf tampons sur dix !",
+     "react": {
+      "coumba": "choc"
+     }
+    },
+    {
+     "who": "coumba",
+     "pose": "accuse",
+     "text": "Bon. Vous allez payer moitié-moitié.",
+     "shot": "two"
+    },
+    {
+     "who": "modou",
+     "pose": "choc",
+     "text": "Moitié de quoi ? On a zéro tous les deux !"
+    },
+    {
+     "who": "koffi",
+     "pose": "haussement",
+     "text": "Zéro divisé par deux, ça fait toujours zéro, ma chérie."
+    },
+    {
+     "who": "coumba",
+     "pose": "rire",
+     "text": "Moi, j’épouse le vendeur de garba.",
+     "shot": "cu",
+     "react": {
+      "koffi": "choc",
+      "modou": "choc"
+     }
+    }
+   ],
+   "punch": 15
+  },
+  {
+   "id": "galant",
+   "hook": "Papi drague au salon",
+   "title": "Le vieux galant",
+   "decor": "Salon de coiffure",
+   "engine": "le vieux radin qui drague en offrant… sa présence",
+   "cast": [
+    {
+     "id": "prisca",
+     "name": "TATA PRISCA",
+     "height": 1.64,
+     "x": 0.35,
+     "voice": "jessica",
+     "pitch": 1.06
+    },
+    {
+     "id": "baye",
+     "name": "BAYE NDIAYE",
+     "height": 1.72,
+     "x": -0.4,
+     "voice": "gilles"
+    },
+    {
+     "id": "nounou",
+     "name": "MAMAN NOUNOU",
+     "height": 1.6,
+     "x": -0.8,
+     "voice": "siwis",
+     "pitch": 0.95,
+     "enter": 9
+    }
+   ],
+   "beats": [
+    {
+     "who": "baye",
+     "pose": "rire",
+     "text": "Prisca, tu es belle comme un billet de dix mille.",
+     "shot": "two",
+     "react": {
+      "prisca": "choc"
+     }
+    },
+    {
+     "who": "prisca",
+     "pose": "rire",
+     "text": "Tonton, tu es venu me draguer ou me compter ?"
+    },
+    {
+     "who": "baye",
+     "pose": "neutre",
+     "text": "Les deux. Je suis un homme organisé."
+    },
+    {
+     "who": "prisca",
+     "pose": "neutre",
+     "text": "Bon. Qu’est-ce que tu m’offres, alors ?"
+    },
+    {
+     "who": "baye",
+     "pose": "haussement",
+     "text": "Je t’offre ma présence. Elle coûte très cher."
+    },
+    {
+     "who": "prisca",
+     "pose": "accuse",
+     "text": "Moi je veux un téléphone. Le dernier modèle."
+    },
+    {
+     "who": "baye",
+     "pose": "neutre",
+     "text": "Prends le mien. Il est très dernier : il a dix ans."
+    },
+    {
+     "who": "prisca",
+     "pose": "choc",
+     "text": "Tonton, ton téléphone a encore une antenne !"
+    },
+    {
+     "who": "baye",
+     "pose": "rire",
+     "text": "C’est pour capter les belles filles.",
+     "react": {
+      "prisca": "rire"
+     }
+    },
+    {
+     "who": "nounou",
+     "pose": "accuse",
+     "text": "Baye Ndiaye ! Tu captes qui, là ?",
+     "shot": "two",
+     "react": {
+      "baye": "choc"
+     }
+    },
+    {
+     "who": "baye",
+     "pose": "choc",
+     "text": "Nounou ! Je… je lui demandais le chemin."
+    },
+    {
+     "who": "nounou",
+     "pose": "accuse",
+     "text": "Le chemin ? Tu habites ce quartier depuis trente ans !"
+    },
+    {
+     "who": "baye",
+     "pose": "haussement",
+     "text": "Justement. Je vérifiais s’il avait changé."
+    },
+    {
+     "who": "prisca",
+     "pose": "haussement",
+     "text": "Maman Nounou, il m’a offert sa présence. Gratuitement.",
+     "react": {
+      "nounou": "choc"
+     }
+    },
+    {
+     "who": "nounou",
+     "pose": "rire",
+     "text": "Gratuitement ? Même moi, il me la fait payer.",
+     "shot": "cu",
+     "react": {
+      "baye": "choc"
+     }
+    }
+   ],
+   "punch": 14
+  },
+  {
+   "id": "bulletin",
+   "hook": "Le bulletin a eu un accident",
+   "title": "Le bulletin de Petit Mamadou",
+   "decor": "Salon",
+   "engine": "l’excuse impossible (la chèvre a mangé le bulletin) qui finit par piéger le père",
+   "cast": [
+    {
+     "id": "awa",
+     "name": "TANTIE AWA",
+     "height": 1.62,
+     "x": -0.42,
+     "voice": "siwis"
+    },
+    {
+     "id": "mamadou",
+     "name": "PETIT MAMADOU",
+     "height": 1.15,
+     "x": 0.3,
+     "voice": "jessica",
+     "pitch": 1.22
+    },
+    {
+     "id": "modou",
+     "name": "MODOU",
+     "height": 1.76,
+     "x": 0.75,
+     "voice": "tom",
+     "enter": 6
+    }
+   ],
+   "beats": [
+    {
+     "who": "awa",
+     "pose": "accuse",
+     "text": "Mamadou ! Ton bulletin. Tout de suite !",
+     "shot": "two",
+     "react": {
+      "mamadou": "choc"
+     }
+    },
+    {
+     "who": "mamadou",
+     "pose": "haussement",
+     "text": "Tantie, le bulletin a eu un accident."
+    },
+    {
+     "who": "awa",
+     "pose": "neutre",
+     "text": "Quel accident ?"
+    },
+    {
+     "who": "mamadou",
+     "pose": "neutre",
+     "text": "Il est tombé. Et la chèvre l’a mangé."
+    },
+    {
+     "who": "awa",
+     "pose": "accuse",
+     "text": "Mais on n’a pas de chèvre !"
+    },
+    {
+     "who": "mamadou",
+     "pose": "haussement",
+     "text": "Elle est venue, elle a mangé, elle est repartie."
+    },
+    {
+     "who": "modou",
+     "pose": "rire",
+     "text": "Laisse l’enfant. Moi aussi, à son âge, j’étais faible.",
+     "shot": "two",
+     "react": {
+      "awa": "choc"
+     }
+    },
+    {
+     "who": "awa",
+     "pose": "choc",
+     "text": "Tu vois ? Il a pris ça chez toi !"
+    },
+    {
+     "who": "mamadou",
+     "pose": "neutre",
+     "text": "Tonton Modou, tu avais combien en maths ?"
+    },
+    {
+     "who": "modou",
+     "pose": "haussement",
+     "text": "Moi ? Zéro. Mais un zéro bien rond, propre."
+    },
+    {
+     "who": "awa",
+     "pose": "accuse",
+     "text": "Mamadou, sors le bulletin de ton sac. Je vois le papier."
+    },
+    {
+     "who": "mamadou",
+     "pose": "neutre",
+     "text": "D’accord. Mais lis lentement, Tantie. Ça fait mal."
+    },
+    {
+     "who": "awa",
+     "pose": "choc",
+     "text": "Trois sur vingt ?! En maths ?!",
+     "react": {
+      "mamadou": "haussement"
+     }
+    },
+    {
+     "who": "mamadou",
+     "pose": "rire",
+     "text": "C’est pas mal, Tantie. Tonton avait zéro.",
+     "react": {
+      "modou": "choc"
+     }
+    },
+    {
+     "who": "modou",
+     "pose": "choc",
+     "text": "Eh ! On avait dit qu’on était ensemble !"
+    },
+    {
+     "who": "awa",
+     "pose": "accuse",
+     "text": "Toi, va chercher ton bulletin aussi !",
+     "shot": "two"
+    },
+    {
+     "who": "modou",
+     "pose": "haussement",
+     "text": "Mon bulletin aussi… la chèvre l’a mangé.",
+     "shot": "cu",
+     "react": {
+      "mamadou": "rire"
+     }
+    }
+   ],
+   "punch": 16
+  },
+  {
+   "id": "addition",
+   "hook": "Koffi paie tout le maquis ?",
+   "title": "L’addition de Koffi",
+   "decor": "Plage",
+   "engine": "le frimeur qui invite tout le monde et fuit l’addition",
+   "cast": [
+    {
+     "id": "koffi",
+     "name": "KOFFI",
+     "height": 1.78,
+     "x": -0.4,
+     "voice": "pierre"
+    },
+    {
+     "id": "awa",
+     "name": "TANTIE AWA",
+     "height": 1.62,
+     "x": 0.42,
+     "voice": "siwis"
+    },
+    {
+     "id": "mamadou",
+     "name": "PETIT MAMADOU",
+     "height": 1.15,
+     "x": 0.05,
+     "voice": "jessica",
+     "pitch": 1.22,
+     "enter": 10
+    }
+   ],
+   "beats": [
+    {
+     "who": "koffi",
+     "pose": "rire",
+     "text": "Tantie ! Ce soir, c’est moi qui paie tout le maquis !",
+     "shot": "two",
+     "react": {
+      "awa": "choc"
+     }
+    },
+    {
+     "who": "awa",
+     "pose": "rire",
+     "text": "Ehhh Dieu ! Koffi est devenu riche ?"
+    },
+    {
+     "who": "koffi",
+     "pose": "haussement",
+     "text": "Riche ? Non. Je suis devenu très riche."
+    },
+    {
+     "who": "awa",
+     "pose": "neutre",
+     "text": "Poisson braisé, attiéké, alloco pour vingt personnes ?"
+    },
+    {
+     "who": "koffi",
+     "pose": "rire",
+     "text": "Pour trente ! Et rajoute les boissons !"
+    },
+    {
+     "who": "awa",
+     "pose": "neutre",
+     "text": "Voilà l’addition : quatre-vingt-cinq mille francs.",
+     "react": {
+      "koffi": "choc"
+     }
+    },
+    {
+     "who": "koffi",
+     "pose": "choc",
+     "text": "Quatre-vingt… Attends, mon téléphone sonne."
+    },
+    {
+     "who": "awa",
+     "pose": "accuse",
+     "text": "Ton téléphone ne sonne pas. Il est éteint."
+    },
+    {
+     "who": "koffi",
+     "pose": "haussement",
+     "text": "C’est un appel silencieux. Pour les gens importants."
+    },
+    {
+     "who": "awa",
+     "pose": "accuse",
+     "text": "Koffi, paie, ou je garde tes lunettes."
+    },
+    {
+     "who": "mamadou",
+     "pose": "rire",
+     "text": "Tantie ! J’ai tout filmé. C’est déjà sur TikTok !",
+     "shot": "two",
+     "react": {
+      "koffi": "choc"
+     }
+    },
+    {
+     "who": "koffi",
+     "pose": "choc",
+     "text": "Quoi ?! Combien de vues ?"
+    },
+    {
+     "who": "mamadou",
+     "pose": "haussement",
+     "text": "Dix mille vues. Et ta maman a commenté."
+    },
+    {
+     "who": "koffi",
+     "pose": "choc",
+     "text": "Elle a dit quoi ?!"
+    },
+    {
+     "who": "mamadou",
+     "pose": "neutre",
+     "text": "Elle a dit : paie, Koffi. Tu m’as fatiguée."
+    },
+    {
+     "who": "awa",
+     "pose": "rire",
+     "text": "Paie, ou je fais la partie deux.",
+     "shot": "cu",
+     "react": {
+      "koffi": "choc"
+     }
+    }
+   ],
+   "punch": 15
+  },
+  {
+   "id": "facture",
+   "hook": "Le docteur facture tout",
+   "title": "La facture du Docteur Sylla",
+   "decor": "Hôpital",
+   "engine": "un médecin qui facture chaque geste, jusqu’au retour de bâton",
+   "cast": [
+    {
+     "id": "bouba",
+     "name": "BOUBACAR",
+     "height": 1.74,
+     "x": -0.42,
+     "voice": "pierre",
+     "pitch": 0.93
+    },
+    {
+     "id": "sylla",
+     "name": "DOCTEUR SYLLA",
+     "height": 1.76,
+     "x": 0.4,
+     "voice": "gilles"
+    },
+    {
+     "id": "soeur",
+     "name": "SŒUR AWA",
+     "height": 1.64,
+     "x": 0.02,
+     "voice": "jessica",
+     "pitch": 1,
+     "enter": 4
+    }
+   ],
+   "beats": [
+    {
+     "who": "bouba",
+     "pose": "choc",
+     "text": "Docteur, j’ai mangé trois poulets. Mon ventre va exploser !"
+    },
+    {
+     "who": "sylla",
+     "pose": "rire",
+     "text": "Trois poulets ? Consultation : dix mille francs.",
+     "react": {
+      "bouba": "choc"
+     }
+    },
+    {
+     "who": "bouba",
+     "pose": "choc",
+     "text": "Tu ne m’as même pas encore touché !"
+    },
+    {
+     "who": "sylla",
+     "pose": "neutre",
+     "text": "Je t’ai regardé. Le regard, c’est cinq mille."
+    },
+    {
+     "who": "soeur",
+     "pose": "haussement",
+     "text": "Docteur, il faut au moins l’ausculter, non ?",
+     "shot": "two"
+    },
+    {
+     "who": "sylla",
+     "pose": "accuse",
+     "text": "Le stéthoscope est froid. Le froid, c’est deux mille.",
+     "react": {
+      "bouba": "choc"
+     }
+    },
+    {
+     "who": "bouba",
+     "pose": "accuse",
+     "text": "Tu factures même le froid de ton appareil ?!"
+    },
+    {
+     "who": "sylla",
+     "pose": "haussement",
+     "text": "Et la climatisation. Tu respires mon air depuis tantôt."
+    },
+    {
+     "who": "soeur",
+     "pose": "rire",
+     "text": "Boubacar, retiens ta respiration. Ça fera moins cher.",
+     "react": {
+      "bouba": "choc"
+     }
+    },
+    {
+     "who": "bouba",
+     "pose": "neutre",
+     "text": "Je n’ai pas d’argent. Mais j’ai ça."
+    },
+    {
+     "who": "sylla",
+     "pose": "choc",
+     "text": "Un poulet ? Dans ton boubou ?!"
+    },
+    {
+     "who": "bouba",
+     "pose": "rire",
+     "text": "Le quatrième. Pour les urgences."
+    },
+    {
+     "who": "sylla",
+     "pose": "rire",
+     "text": "Accepté ! Le poulet, c’est mon tarif préféré.",
+     "react": {
+      "soeur": "choc"
+     }
+    },
+    {
+     "who": "sylla",
+     "pose": "neutre",
+     "text": "Hmm… il est bien pimenté, ton poulet."
+    },
+    {
+     "who": "bouba",
+     "pose": "haussement",
+     "text": "Pimenté ? C’est le poulet d’avant-hier.",
+     "react": {
+      "sylla": "choc"
+     }
+    },
+    {
+     "who": "sylla",
+     "pose": "choc",
+     "text": "Sœur Awa ! Mon ventre ! Consultation, vite !",
+     "shot": "two"
+    },
+    {
+     "who": "soeur",
+     "pose": "rire",
+     "text": "Pour vous, docteur ? Dix mille francs.",
+     "shot": "cu",
+     "react": {
+      "sylla": "choc"
+     }
+    },
+    {
+     "who": "bouba",
+     "pose": "rire",
+     "text": "Et le regard, c’est cinq mille !",
+     "shot": "two"
+    }
+   ],
+   "punch": 16
+  },
+  {
+   "id": "credit",
+   "hook": "Elle drague le banquier",
+   "title": "Le crédit du Banquier",
+   "decor": "Bureau",
+   "engine": "le banquier qui refuse tout… jusqu’à ce qu’il ait besoin d’un crédit",
+   "cast": [
+    {
+     "id": "golep",
+     "name": "LA GO LÉOPARD",
+     "height": 1.7,
+     "x": -0.42,
+     "voice": "siwis",
+     "pitch": 1.06
+    },
+    {
+     "id": "banq",
+     "name": "LE BANQUIER",
+     "height": 1.75,
+     "x": 0.42,
+     "voice": "tom",
+     "pitch": 0.94
+    },
+    {
+     "id": "dieng",
+     "name": "TONTON DIENG",
+     "height": 1.73,
+     "x": 0,
+     "voice": "gilles",
+     "pitch": 1.04,
+     "enter": 8
+    }
+   ],
+   "beats": [
+    {
+     "who": "golep",
+     "pose": "rire",
+     "text": "Monsieur le banquier, vous êtes marié ? Je demande pour un crédit."
+    },
+    {
+     "who": "banq",
+     "pose": "neutre",
+     "text": "Crédit refusé. Et mariage refusé aussi.",
+     "react": {
+      "golep": "choc"
+     }
+    },
+    {
+     "who": "golep",
+     "pose": "choc",
+     "text": "Je n’ai même pas dit le montant !"
+    },
+    {
+     "who": "banq",
+     "pose": "haussement",
+     "text": "Je refuse avant. Ça gagne du temps."
+    },
+    {
+     "who": "golep",
+     "pose": "accuse",
+     "text": "Un petit crédit pour mon commerce. De sacs. Pour moi."
+    },
+    {
+     "who": "banq",
+     "pose": "neutre",
+     "text": "Garantie ? Maison, voiture, salaire ?"
+    },
+    {
+     "who": "golep",
+     "pose": "rire",
+     "text": "J’ai mon sourire. Il a déjà payé trois loyers.",
+     "react": {
+      "banq": "choc"
+     }
+    },
+    {
+     "who": "banq",
+     "pose": "choc",
+     "text": "Madame, ici c’est une banque. Pas un maquis."
+    },
+    {
+     "who": "dieng",
+     "pose": "rire",
+     "text": "Laisse-la ! Moi, j’ai deux villas à Assinie !",
+     "shot": "two"
+    },
+    {
+     "who": "golep",
+     "pose": "rire",
+     "text": "Tonton ! Vous êtes marié ? Je demande pour une villa."
+    },
+    {
+     "who": "banq",
+     "pose": "accuse",
+     "text": "Monsieur Dieng, votre compte est à moins trois mille.",
+     "react": {
+      "dieng": "choc"
+     }
+    },
+    {
+     "who": "dieng",
+     "pose": "haussement",
+     "text": "Les villas sont en construction. Dans ma tête."
+    },
+    {
+     "who": "golep",
+     "pose": "choc",
+     "text": "Dans ta tête ?! Et le terrain ?"
+    },
+    {
+     "who": "dieng",
+     "pose": "neutre",
+     "text": "Le terrain est vaste. Ma tête est grande."
+    },
+    {
+     "who": "golep",
+     "pose": "neutre",
+     "text": "Et vous, monsieur le banquier, votre compte ?",
+     "react": {
+      "banq": "choc"
+     }
+    },
+    {
+     "who": "banq",
+     "pose": "choc",
+     "text": "Euh… Madame, vous auriez un petit crédit ?"
+    },
+    {
+     "who": "golep",
+     "pose": "rire",
+     "text": "Crédit refusé. Et mariage refusé aussi.",
+     "shot": "cu",
+     "react": {
+      "banq": "choc"
+     }
+    },
+    {
+     "who": "dieng",
+     "pose": "rire",
+     "text": "Moi je prête ! Dans ma tête.",
+     "shot": "two"
+    }
+   ],
+   "punch": 16
+  }
+ ],
+ "personnages": [
+  {
+   "name": "MAMAN NOUNOU",
+   "surnom": "Mamie (pour Mamadou), Nounou",
+   "dessin": "planche",
+   "age": "la cinquantaine",
+   "taille": 1.6,
+   "voix": {
+    "piper": "siwis",
+    "pitch": 0.95
+   },
+   "apparence": "Femme ronde et solide, visage plein, grands yeux chaleureux, joues hautes, sourire qui découvre toutes les dents, créoles dorées.",
+   "tenue": "Robe pagne wax rouge et jaune à grosses fleurs de tournesol, foulard wax rouge noué haut, tablier vichy vert et blanc, banane noire en bandoulière bourrée de billets, tongs noires.",
+   "posture": "Plantée sur ses deux pieds, mains sur les hanches ou sur la banane, menton levé ; elle compte les billets sans les regarder et tape dans ses mains quand elle rit.",
+   "personnalite": "La reine du marchandage, qui gère la maison comme un étal : tout a un prix, même un service rendu à son propre fils. Chaleureuse et généreuse en apparence, impitoyable en affaires, elle gagne toujours la dernière manche.",
+   "traits": [
+    "rusée",
+    "chaleureuse",
+    "calculatrice",
+    "autoritaire",
+    "rieuse"
+   ],
+   "habitudes": [
+    "compte ses billets à voix haute",
+    "fait payer « la fatigue »",
+    "tient la tontine du marché à l’œil",
+    "surgit au pire moment pour Baye"
+   ],
+   "emotions": [
+    "assurance",
+    "malice",
+    "indignation théâtrale"
+   ],
+   "reactions": [
+    "un prix contesté : elle l’augmente",
+    "un mensonge de Baye : elle croise les bras et attend qu’il s’enfonce",
+    "un compliment : elle demande ce qu’on veut lui vendre"
+   ],
+   "interets": [
+    "le marché et les prix du jour",
+    "la tontine",
+    "marier Coumba à un homme solvable"
+   ],
+   "forces": [
+    "négociation imbattable",
+    "mémoire de chaque dette",
+    "autorité naturelle"
+   ],
+   "faiblesses": [
+    "ne résiste pas à une bonne affaire, même absurde",
+    "jalouse quand Baye sourit à une autre",
+    "avoue tout quand on la flatte sur sa cuisine"
+   ],
+   "situations": {
+    "conflit": "monte le ton d’un cran par réplique puis éclate de rire quand elle a gagné",
+    "argent": "transforme chaque échange en vente ; rend la monnaie en tomates",
+    "famille": "protège Coumba et Mamadou, mais leur facture les services",
+    "seduction": "flaire le prétendant fauché à dix mètres et lui demande son bulletin de salaire",
+    "autorite": "négocie même l’amende avec le policier",
+    "public": "harangue le marché, prend les passants à témoin",
+    "echec": "nie avoir perdu et annonce que c’était une stratégie",
+    "secret": "le découvre toujours ; le garde seulement si ça rapporte"
+   },
+   "repliques": [
+    "Pour toi, mon fils ? Mille francs.",
+    "La fatigue, ça se paye.",
+    "Moi, j’ai pris. Toi, tu pars."
+   ],
+   "moteur": "tout est à vendre, et le prix monte à chaque phrase",
+   "lieux": [
+    "Marché",
+    "Salon",
+    "Cour",
+    "Cérémonie"
+   ],
+   "activite": "compte ses billets derrière son étal, interpelle les clients"
+  },
+  {
+   "name": "BAYE NDIAYE",
+   "surnom": "Papi, Baye",
+   "dessin": "planche",
+   "age": "début de la soixantaine",
+   "taille": 1.72,
+   "voix": {
+    "piper": "gilles"
+   },
+   "apparence": "Grand-père rond, cheveux gris coupés court, barbe grise courte, visage rond aux joues pleines, petits yeux malins, air innocent de mauvaise foi.",
+   "tenue": "Grand boubou bleu roi brillant brodé d’or au plastron et aux manches, pantalon assorti, chapelet de perles brunes à la main, sandales de cuir marron.",
+   "posture": "Ventre en avant, une main égrenant le chapelet, l’autre cachée dans le boubou là où dort l’argent ; il recule d’un pas quand on parle d’argent.",
+   "personnalite": "Riche et radin, de mauvaise foi avec une parfaite sérénité. Il possède trois voitures qu’il ne conduit pas et distribue des « conseils » au lieu de billets. Dragueur à l’ancienne, il nie tout quand Nounou surgit.",
+   "traits": [
+    "avare",
+    "de mauvaise foi",
+    "dragueur",
+    "philosophe à proverbes",
+    "malin"
+   ],
+   "habitudes": [
+    "cache l’argent dans des endroits absurdes",
+    "offre des conseils au lieu de cadeaux",
+    "compare tout à un billet de dix mille",
+    "appelle tout le monde « mon fils »"
+   ],
+   "emotions": [
+    "inquiétude pour son argent",
+    "fausse sérénité",
+    "panique soudaine"
+   ],
+   "reactions": [
+    "quand on demande de l’argent : « Quel argent ?! »",
+    "quand Nounou surgit : il invente une excuse impossible",
+    "quand il est coincé : il cite un proverbe inventé"
+   ],
+   "interets": [
+    "son argent",
+    "ses voitures (à regarder)",
+    "les belles dames du quartier"
+   ],
+   "forces": [
+    "patience infinie",
+    "excuses imparables",
+    "respect que lui vaut son âge"
+   ],
+   "faiblesses": [
+    "craque quand on menace de révéler une cachette",
+    "jaloux de Tonton Dieng",
+    "oublie que Nounou est partout"
+   ],
+   "situations": {
+    "conflit": "reste calme, répond par un proverbe et laisse les autres s’épuiser",
+    "argent": "fait semblant d’être pauvre ; négocie même les cadeaux d’anniversaire",
+    "famille": "aime sa famille mais ne la finance qu’en conseils",
+    "seduction": "drague avec des comparaisons financières, nie dès qu’on le voit",
+    "autorite": "rappelle à tout le monde qu’il a connu leur père",
+    "public": "se pose en sage du quartier, chapelet à la main",
+    "echec": "paie enfin, l’air de faire une faveur immense",
+    "secret": "cache tout, surtout la boîte sous le lit"
+   },
+   "repliques": [
+    "Quel argent ?! Je suis un pauvre homme.",
+    "Je t’offre mon plus beau cadeau : mes conseils.",
+    "Les voitures, c’est pour regarder. On ne les use pas."
+   ],
+   "moteur": "l’avarice de mauvaise foi : il a tout et ne lâche rien",
+   "lieux": [
+    "Salon",
+    "Cour",
+    "Cérémonie",
+    "Village"
+   ],
+   "activite": "égrène son chapelet sur une chaise, surveille sa poche"
+  },
+  {
+   "name": "COUMBA",
+   "surnom": "Coumba la stratège",
+   "dessin": "planche",
+   "age": "environ 26 ans",
+   "taille": 1.7,
+   "voix": {
+    "piper": "jessica"
+   },
+   "apparence": "Jeune femme aux formes généreuses, longues tresses fines tombant dans le dos, grands yeux en amande, sourcil levé, moue « pas impressionnée », créoles dorées et fine chaîne en or.",
+   "tenue": "Robe longue ajustée en wax rose et violet à épaules dénudées et manches à volants, fendue sur le côté, sandales roses à talon carré.",
+   "posture": "Hanche cassée, bras croisés ou main sur la hanche ; elle regarde la caméra quand quelqu’un dit une bêtise.",
+   "personnalite": "La stratège de la famille : elle lit les hommes comme un relevé bancaire. Elle met les prétendants en concurrence, teste leurs promesses et prend le public à témoin d’un seul regard.",
+   "traits": [
+    "stratège",
+    "ironique",
+    "exigeante",
+    "lucide",
+    "coquette"
+   ],
+   "habitudes": [
+    "regard caméra après chaque mensonge",
+    "organise des « concours » entre prétendants",
+    "vérifie les promesses sur-le-champ"
+   ],
+   "emotions": [
+    "ironie",
+    "impatience",
+    "amusement"
+   ],
+   "reactions": [
+    "une promesse énorme : « Avec quel argent ? »",
+    "un cadeau minable : elle le pèse du regard",
+    "un mensonge démasqué : regard caméra, sourcil levé"
+   ],
+   "interets": [
+    "les bons partis",
+    "la mode",
+    "les réseaux sociaux"
+   ],
+   "forces": [
+    "flair infaillible",
+    "répartie",
+    "complicité avec Maman Nounou"
+   ],
+   "faiblesses": [
+    "ne résiste pas à un repas gratuit",
+    "trop sûre d’elle",
+    "ses plans finissent chez la coiffeuse"
+   ],
+   "situations": {
+    "conflit": "une seule phrase sèche, puis le silence qui tue",
+    "argent": "fait payer les autres sans jamais le demander directement",
+    "famille": "complice de sa mère, imbattable avec son père",
+    "seduction": "met les prétendants en concurrence et choisit le troisième",
+    "autorite": "charme d’abord avec un sourire de première de classe, puis négocie comme sa mère",
+    "public": "prend la caméra à témoin, pose pour le selfie",
+    "echec": "change de plan sans perdre la face : « C’était un test »",
+    "secret": "le garde… jusqu’au salon de Tata Prisca"
+   },
+   "repliques": [
+    "Avec quel argent ?",
+    "Celui qui me paie le garba, je l’épouse.",
+    "C’était un test. Tu as échoué."
+   ],
+   "moteur": "le casting impitoyable des prétendants",
+   "lieux": [
+    "Salon de coiffure",
+    "Maquis",
+    "Cérémonie",
+    "Salon"
+   ],
+   "activite": "se prend en selfie, jauge les hommes qui passent"
+  },
+  {
+   "name": "PETIT MAMADOU",
+   "surnom": "le petit malin",
+   "dessin": "planche",
+   "age": "8 ans",
+   "taille": 1.15,
+   "voix": {
+    "piper": "jessica",
+    "pitch": 1.22
+   },
+   "apparence": "Petit garçon aux cheveux courts et bouclés, grands yeux curieux, grandes oreilles, sourire en coin effronté.",
+   "tenue": "Maillot de football jaune trop grand, numéro 10, col vert ; short bleu à bandes blanches ; claquettes noir et blanc.",
+   "posture": "Mains dans le dos quand il prépare un coup, doigt pointé quand il dénonce, sautille quand il a gagné.",
+   "personnalite": "L’enfant plus malin que les adultes. Il voit tout, retient tout et dit la vérité au pire moment, ou le mensonge le plus énorme avec un aplomb d’avocat. Il négocie comme sa grand-mère.",
+   "traits": [
+    "malin",
+    "effronté",
+    "observateur",
+    "négociateur",
+    "attachant"
+   ],
+   "habitudes": [
+    "dénonce les adultes au moment parfait",
+    "invente des excuses spectaculaires",
+    "fait chanter Papi avec ses cachettes"
+   ],
+   "emotions": [
+    "malice",
+    "fausse innocence",
+    "fierté"
+   ],
+   "reactions": [
+    "accusé : il désigne un coupable plus gros",
+    "récompense refusée : il menace de révéler un secret",
+    "adulte ridiculisé : grand sourire"
+   ],
+   "interets": [
+    "le football (n° 10)",
+    "les bonbons",
+    "les secrets des adultes"
+   ],
+   "forces": [
+    "mémoire photographique des bêtises",
+    "répartie",
+    "capital sympathie"
+   ],
+   "faiblesses": [
+    "mauvais en maths",
+    "trahi par ses doigts pleins de sauce",
+    "ne sait pas garder un secret qui rapporte"
+   ],
+   "situations": {
+    "conflit": "reste calme et sort la preuve",
+    "argent": "négocie le double de ce qu’il voulait",
+    "famille": "joue Tantie contre Papi, Mamie contre tous",
+    "seduction": "trouve les histoires d’amour des adultes très utiles pour le chantage",
+    "autorite": "excuse impossible, livrée sérieusement",
+    "public": "fait son malin pour la caméra",
+    "echec": "accuse la chèvre, le chat ou le vent, avec un sérieux absolu",
+    "secret": "le garde tant qu’il rapporte, le vend au bon moment"
+   },
+   "repliques": [
+    "Alors je dis à Mamie où tu caches l’argent ?",
+    "C’est pas moi, c’est la chèvre.",
+    "Deux ballons, Papi."
+   ],
+   "moteur": "l’enfant qui retourne les adultes avec leurs propres mensonges",
+   "lieux": [
+    "Cour",
+    "École",
+    "Salon",
+    "Marché"
+   ],
+   "activite": "dribble un ballon, court entre les adultes"
+  },
+  {
+   "name": "MODOU",
+   "surnom": "Tonton Modou",
+   "dessin": "planche",
+   "age": "environ 35 ans",
+   "taille": 1.76,
+   "voix": {
+    "piper": "tom"
+   },
+   "apparence": "Homme maigre et dégingandé, cheveux ras, fine moustache et petit bouc, long cou, yeux expressifs et fatigués.",
+   "tenue": "T-shirt vert délavé et usé, pantalon cargo marron roulé aux chevilles, sandales noires.",
+   "posture": "Épaules tombantes, mains ouvertes pour se justifier, recule en haussant les épaules ; se redresse dès qu’il voit Coumba.",
+   "personnalite": "Le débrouillard malchanceux : locataire d’une chambre au fond de la cour des Ndiaye, toujours en retard de loyer, toujours une combine qui rate. Gourmand, menteur maladroit mais sincère dans son amour pour Coumba.",
+   "traits": [
+    "débrouillard",
+    "malchanceux",
+    "gourmand",
+    "menteur maladroit",
+    "romantique"
+   ],
+   "habitudes": [
+    "mange ce qui traîne",
+    "jure sur tout le quartier",
+    "promet de payer « demain »",
+    "garde de l’attiéké dans sa poche"
+   ],
+   "emotions": [
+    "panique",
+    "espoir",
+    "mauvaise foi"
+   ],
+   "reactions": [
+    "accusé : « Moi ? Je dormais ! »",
+    "pris la main dans le sac : il accuse le chat",
+    "Coumba le regarde : il promet l’impossible"
+   ],
+   "interets": [
+    "manger",
+    "Coumba",
+    "les plans de Djecky et de Tiékoro"
+   ],
+   "forces": [
+    "débrouillardise",
+    "bonne humeur",
+    "il se relève de tout"
+   ],
+   "faiblesses": [
+    "la preuve est toujours sur son tee-shirt",
+    "zéro en maths",
+    "toujours fauché"
+   ],
+   "situations": {
+    "conflit": "nie l’évidence, puis invente un complice",
+    "argent": "paie en promesses et en attiéké de la veille",
+    "famille": "complice de Mamadou jusqu’à ce que l’enfant le dénonce",
+    "seduction": "surenchère d’amour sans un franc",
+    "autorite": "se fait petit, puis négocie avec ce qu’il n’a pas",
+    "public": "jure sur tout le quartier",
+    "echec": "hausse les épaules : « La chance m’a oublié »",
+    "secret": "ne garde rien : sa bouche ou son tee-shirt le trahit"
+   },
+   "repliques": [
+    "Moi ? Je dormais depuis midi !",
+    "Je suis un homme honnête. Demande à tout le quartier !",
+    "Je paie demain. Sûr sûr."
+   ],
+   "moteur": "le mensonge maladroit trahi par une preuve visible",
+   "lieux": [
+    "Cour",
+    "Maquis",
+    "Marché",
+    "Taxi"
+   ],
+   "activite": "grignote quelque chose en cachette, cherche un plan"
+  },
+  {
+   "name": "TANTIE AWA",
+   "surnom": "Tantie",
+   "dessin": "planche",
+   "age": "début de la cinquantaine",
+   "taille": 1.62,
+   "voix": {
+    "piper": "siwis"
+   },
+   "apparence": "Femme forte, visage rond, regard perçant et jugeur, petite bouche pincée qui s’ouvre en tonnerre, créoles dorées.",
+   "tenue": "Robe pagne wax orange et jaune à grandes fleurs, manches courtes à volants, foulard orange assorti, tongs noires.",
+   "posture": "Index tendu, poing sur la hanche, elle avance d’un pas à chaque question ; elle se fige quand elle découvre la vérité.",
+   "personnalite": "La sœur cadette de Baye, veuve, qui tient la concession et élève Mamadou au quotidien. Redoutable détectrice de mensonges, dramatique, elle encaisse le loyer de Modou et soupçonne tout le monde — souvent à raison.",
+   "traits": [
+    "soupçonneuse",
+    "dramatique",
+    "juste",
+    "autoritaire",
+    "protectrice"
+   ],
+   "habitudes": [
+    "interroge comme un juge",
+    "garde le poulet compté",
+    "prend Dieu à témoin",
+    "surveille le mur de Madame Coumba"
+   ],
+   "emotions": [
+    "soupçon",
+    "colère théâtrale",
+    "tendresse cachée"
+   ],
+   "reactions": [
+    "un mensonge : elle pose la question piège",
+    "la vérité éclate : « Ehhh Dieu ! »",
+    "Mamadou innocent : elle le serre, puis le soupçonne"
+   ],
+   "interets": [
+    "l’ordre dans la maison",
+    "l’école de Mamadou",
+    "les nouvelles du quartier"
+   ],
+   "forces": [
+    "logique implacable",
+    "autorité",
+    "flair"
+   ],
+   "faiblesses": [
+    "dramatise tout",
+    "fond devant un enfant qui pleure",
+    "rivalité avec Madame Coumba"
+   ],
+   "situations": {
+    "conflit": "interrogatoire en trois questions, la troisième est le piège",
+    "argent": "compte le loyer, les poulets, les cuillères",
+    "famille": "gronde Baye comme un enfant, protège Mamadou contre tous",
+    "seduction": "se méfie des prétendants de Coumba comme d’un voleur",
+    "autorite": "parle au policier comme à son neveu",
+    "public": "prend le quartier à témoin",
+    "echec": "change de suspect sans s’excuser",
+    "secret": "le découvre par un détail (la sauce, les doigts jaunes)"
+   },
+   "repliques": [
+    "Regarde-moi dans les yeux.",
+    "Ehhh Dieu ! Dans cette maison ?!",
+    "Mais on n’a pas de chat !"
+   ],
+   "moteur": "l’enquêtrice qui démonte les mensonges par un détail",
+   "lieux": [
+    "Salon",
+    "Cour",
+    "Marché"
+   ],
+   "activite": "balaie la cour en surveillant tout le monde"
+  },
+  {
+   "name": "TONTON DIENG",
+   "surnom": "Tonton",
+   "dessin": "galerie",
+   "age": "la cinquantaine",
+   "taille": 1.73,
+   "voix": {
+    "piper": "gilles",
+    "pitch": 1.04
+   },
+   "apparence": "Homme élancé à petit ventre, barbe grise de trois jours, visage rieur aux pattes d’oie, grand sourire de conteur.",
+   "tenue": "Casquette plate beige, chemise ouverte à fleurs rouges et jaunes sur un débardeur blanc, pantalon beige, montre dorée, sandales.",
+   "posture": "Penché vers son public, index pointé vers l’horizon où se trouvent ses « villas », il rit avant la chute de sa propre histoire.",
+   "personnalite": "Le cousin de Baye, vantard mythomane : il a deux villas à Assinie (en construction dans sa tête), a connu tous les présidents et a battu tout le monde à tout. Il croit à moitié ses propres histoires.",
+   "traits": [
+    "vantard",
+    "conteur",
+    "jovial",
+    "mythomane",
+    "généreux en paroles"
+   ],
+   "habitudes": [
+    "commence par « De mon temps… »",
+    "montre sa montre en parlant",
+    "emprunte pour ses projets"
+   ],
+   "emotions": [
+    "enthousiasme",
+    "fierté",
+    "gêne fugace"
+   ],
+   "reactions": [
+    "démasqué : il agrandit l’histoire",
+    "quelqu’un raconte mieux : il le coupe",
+    "on lui demande une preuve : « Elle est à la villa »"
+   ],
+   "interets": [
+    "ses projets immobiliers imaginaires",
+    "les histoires",
+    "battre Salif le Parisien"
+   ],
+   "forces": [
+    "charisme de conteur",
+    "optimisme",
+    "réseau"
+   ],
+   "faiblesses": [
+    "compte à moins trois mille",
+    "ne finit jamais rien",
+    "se contredit"
+   ],
+   "situations": {
+    "conflit": "raconte une histoire plus grosse que l’adversaire",
+    "argent": "promet des millions, emprunte deux mille",
+    "famille": "cousin préféré des enfants, cauchemar de Baye",
+    "seduction": "impressionne avec des villas imaginaires",
+    "autorite": "« Le commissaire ? C’est mon petit frère ! »",
+    "public": "prend la parole et ne la rend plus",
+    "echec": "« C’est en construction. Dans ma tête. »",
+    "secret": "le raconte en l’enjolivant"
+   },
+   "repliques": [
+    "De mon temps, je soulevais un taxi.",
+    "Moi, j’ai deux villas à Assinie !",
+    "C’est en construction. Dans ma tête."
+   ],
+   "moteur": "la vantardise qui s’effondre devant une seule question précise",
+   "lieux": [
+    "Maquis",
+    "Taxi",
+    "Cour",
+    "Cérémonie"
+   ],
+   "activite": "raconte une histoire à un groupe, bras grands ouverts"
+  },
+  {
+   "name": "GRAND-PÈRE NDIAYE",
+   "surnom": "Grand-père",
+   "dessin": "galerie",
+   "age": "environ 75 ans",
+   "taille": 1.68,
+   "voix": {
+    "piper": "gilles",
+    "pitch": 0.92
+   },
+   "apparence": "Vieil homme sec, longue barbe blanche, visage ridé et hilare, yeux plissés, main en cornet derrière l’oreille.",
+   "tenue": "Calotte crème brodée d’or, grand boubou bleu roi brodé d’or, canne en bois, sandales.",
+   "posture": "Appuyé sur sa canne, penché vers celui qui parle, index levé pour répondre à une question qu’on n’a pas posée.",
+   "personnalite": "Le grand frère de Baye, dur d’oreille : il comprend tout de travers, surtout les secrets, et répète à voix très haute ce qu’on voulait cacher. Joyeux, têtu, persuadé d’avoir parfaitement entendu.",
+   "traits": [
+    "dur d’oreille",
+    "jovial",
+    "têtu",
+    "sans filtre",
+    "bienveillant"
+   ],
+   "habitudes": [
+    "répond « Hein ?! » puis répond à côté",
+    "répète les secrets à voix haute",
+    "raconte la guerre de son village"
+   ],
+   "emotions": [
+    "bonne humeur",
+    "confusion",
+    "indignation soudaine"
+   ],
+   "reactions": [
+    "un secret chuchoté : il le répète au quartier",
+    "un mot mal compris : il part dans une autre histoire",
+    "on crie : « Pourquoi tu cries ? »"
+   ],
+   "interets": [
+    "la sieste",
+    "les anciens temps",
+    "le thé"
+   ],
+   "forces": [
+    "désarme tout conflit sans le vouloir",
+    "respect de tous",
+    "mémoire ancienne"
+   ],
+   "faiblesses": [
+    "n’entend rien",
+    "ne baisse jamais la voix",
+    "confond les noms"
+   ],
+   "situations": {
+    "conflit": "comprend un autre sujet et calme tout le monde",
+    "argent": "entend « argent » partout et réclame sa part",
+    "famille": "patriarche honoraire que personne n’arrive à informer",
+    "seduction": "croit qu’on le demande en mariage",
+    "autorite": "traite le chef de quartier de petit garçon",
+    "public": "parle trop fort au pire moment",
+    "echec": "n’a pas entendu qu’il avait perdu",
+    "secret": "le révèle en criant, sans le savoir"
+   },
+   "repliques": [
+    "Hein ?! Parle fort !",
+    "Qui est mort ?!",
+    "Pourquoi tu cries, mon fils ?"
+   ],
+   "moteur": "la surdité qui transforme chaque secret en annonce publique",
+   "lieux": [
+    "Cour",
+    "Village",
+    "Cérémonie"
+   ],
+   "activite": "somnole sur un banc, main derrière l’oreille"
+  },
+  {
+   "name": "KOFFI",
+   "surnom": "Koffi les affaires",
+   "dessin": "planche",
+   "age": "environ 30 ans",
+   "taille": 1.78,
+   "voix": {
+    "piper": "pierre"
+   },
+   "apparence": "Homme mince et soigné, cheveux courts bien taillés, petit bouc, lunettes de soleil noires même la nuit, sourire faussement confiant.",
+   "tenue": "Chemise noire sous une veste à motifs baroques noir et or, chaînes dorées (qui rouillent), pantalon noir ajusté, mocassins noirs vernis.",
+   "posture": "Une main dans la poche (vide), l’autre qui ajuste les lunettes ; il se penche en arrière comme sur une voiture de luxe.",
+   "personnalite": "Le faux riche fauché : « dans les affaires », il parle en millions et paie en carte de fidélité. Prétendant officiel de Coumba, il bluffe jusqu’au bout et retombe toujours sur ses pieds avec une excuse.",
+   "traits": [
+    "frimeur",
+    "bluffeur",
+    "charmeur",
+    "optimiste",
+    "fauché"
+   ],
+   "habitudes": [
+    "parle de transferts « en route »",
+    "reçoit des appels silencieux « importants »",
+    "règle avec des cartes de fidélité"
+   ],
+   "emotions": [
+    "assurance de façade",
+    "panique contenue",
+    "vexation"
+   ],
+   "reactions": [
+    "l’addition arrive : son téléphone « sonne »",
+    "démasqué : « C’est un thon international »",
+    "défié : il double la mise"
+   ],
+   "interets": [
+    "l’apparence",
+    "Coumba",
+    "les combines"
+   ],
+   "forces": [
+    "aplomb",
+    "charme",
+    "imagination"
+   ],
+   "faiblesses": [
+    "poches vides",
+    "dettes partout",
+    "sa chaîne rouille"
+   ],
+   "situations": {
+    "conflit": "surenchère verbale, jamais physique",
+    "argent": "promet tout, ne sort rien",
+    "famille": "fait le gendre idéal devant Maman Nounou",
+    "seduction": "grandes promesses, petit garba",
+    "autorite": "cite des « amis haut placés »",
+    "public": "pose pour les photos avec des objets empruntés",
+    "echec": "garde les lunettes, perd la chaîne",
+    "secret": "son compte à zéro, gardé jusqu’à l’addition"
+   },
+   "repliques": [
+    "L’argent n’est pas un problème. Je suis dans les affaires.",
+    "Le transfert est en route.",
+    "Je paie par carte… de fidélité."
+   ],
+   "moteur": "le bluff de richesse démasqué par l’addition",
+   "lieux": [
+    "Maquis",
+    "Cérémonie",
+    "Bureau"
+   ],
+   "activite": "pose devant une voiture qui n’est pas à lui, téléphone à l’oreille"
+  },
+  {
+   "name": "MONSIEUR DIARRA",
+   "surnom": "le comptable",
+   "dessin": "catalogue",
+   "age": "la quarantaine",
+   "taille": 1.7,
+   "voix": {
+    "piper": "tom",
+    "pitch": 1.05
+   },
+   "apparence": "Homme mince et nerveux, fine moustache et petit bouc, petits yeux qui calculent, front plissé.",
+   "tenue": "Calotte crème, chemise beige à manches longues sous un gilet sans manches, calculatrice et dossiers sous le bras.",
+   "posture": "Penché sur sa calculatrice, il tape les chiffres à chaque phrase et lève l’index pour corriger le total.",
+   "personnalite": "Le comptable qui compte tout : les minutes, les grains de riz, les sourires. Trésorier de la tontine de Madame Konan, il ne laisse passer aucun franc et transforme chaque conversation en bilan.",
+   "traits": [
+    "méticuleux",
+    "pinailleur",
+    "honnête",
+    "anxieux",
+    "pédant"
+   ],
+   "habitudes": [
+    "sort sa calculatrice à table",
+    "rédige un reçu pour tout",
+    "recompte trois fois"
+   ],
+   "emotions": [
+    "inquiétude",
+    "satisfaction quand le compte tombe juste",
+    "indignation chiffrée"
+   ],
+   "reactions": [
+    "une erreur de calcul : il s’étouffe",
+    "un pourboire : il demande un justificatif",
+    "une fête : il calcule le coût par invité"
+   ],
+   "interets": [
+    "les chiffres",
+    "la tontine",
+    "les reçus bien tamponnés"
+   ],
+   "forces": [
+    "précision",
+    "honnêteté",
+    "mémoire des comptes"
+   ],
+   "faiblesses": [
+    "gâche toutes les fêtes",
+    "se perd dans les centimes",
+    "panique sans calculatrice"
+   ],
+   "situations": {
+    "conflit": "sort les chiffres et prouve qu’on lui doit 25 francs",
+    "argent": "compte, recompte, puis demande un reçu",
+    "famille": "tient le budget familial au franc près",
+    "seduction": "calcule le coût d’un rendez-vous avant d’inviter",
+    "autorite": "vérifie le montant de l’amende",
+    "public": "lit le bilan de la tontine à voix haute",
+    "echec": "refait le calcul jusqu’à avoir raison",
+    "secret": "le trouve dans les chiffres qui ne tombent pas juste"
+   },
+   "repliques": [
+    "Attends, je recompte.",
+    "Il manque vingt-cinq francs.",
+    "Tu as un reçu ?"
+   ],
+   "moteur": "la comptabilité appliquée aux sentiments",
+   "lieux": [
+    "Bureau",
+    "Marché",
+    "Cérémonie"
+   ],
+   "activite": "tape sur sa calculatrice en marmonnant des chiffres"
+  },
+  {
+   "name": "MAÎTRE COULIBALY",
+   "surnom": "Maître",
+   "dessin": "galerie",
+   "age": "la quarantaine",
+   "taille": 1.68,
+   "voix": {
+    "piper": "jessica",
+    "pitch": 0.94
+   },
+   "apparence": "Femme élégante au visage fin, regard sévère sous un sourcil levé, sourire professionnel, créoles dorées.",
+   "tenue": "Foulard wax bleu, jaune et rouge noué en couronne, robe d’avocate noire à jabot blanc, dossier rouge et livres sous le bras, escarpins noirs.",
+   "posture": "Index levé comme pour une objection, dossier serré contre la poitrine, elle tourne autour de son interlocuteur.",
+   "personnalite": "L’avocate qui complique tout : une simple dispute de voisins devient un procès en trois actes. Brillante, théâtrale, elle facture chaque conseil et trouve un article de loi pour chaque situation, même le partage d’un poulet.",
+   "traits": [
+    "brillante",
+    "procédurière",
+    "théâtrale",
+    "sûre d’elle",
+    "facturière"
+   ],
+   "habitudes": [
+    "dit « Objection ! » à table",
+    "cite des articles inventés",
+    "fait signer des papiers pour rien"
+   ],
+   "emotions": [
+    "assurance",
+    "indignation calculée",
+    "jubilation"
+   ],
+   "reactions": [
+    "une accusation : « Avez-vous des preuves ? »",
+    "un accord à l’amiable : elle le complique",
+    "on lui demande un conseil : elle sort sa facture"
+   ],
+   "interets": [
+    "les procès",
+    "les débats avec Professeur Samba",
+    "les beaux dossiers"
+   ],
+   "forces": [
+    "éloquence",
+    "logique",
+    "intimidation"
+   ],
+   "faiblesses": [
+    "transforme tout en procès",
+    "perd ses dossiers",
+    "ne supporte pas de perdre un débat"
+   ],
+   "situations": {
+    "conflit": "plaide pour les deux camps et facture les deux",
+    "argent": "honoraires d’abord, conseil ensuite",
+    "famille": "règle les disputes familiales par contrat",
+    "seduction": "fait signer une clause d’exclusivité",
+    "autorite": "connaît mieux la loi que le policier",
+    "public": "plaidoirie spontanée devant le marché",
+    "echec": "« Je ferai appel. » — et elle prépare déjà le dossier contre le gagnant",
+    "secret": "le protège par le secret professionnel… contre paiement"
+   },
+   "repliques": [
+    "Objection !",
+    "Article 12 : le dernier morceau revient à la plus âgée.",
+    "Ça fera vingt mille, conseil compris."
+   ],
+   "moteur": "la procédure absurde pour un problème minuscule",
+   "lieux": [
+    "Tribunal",
+    "Bureau",
+    "Cérémonie"
+   ],
+   "activite": "feuillette un dossier en marchant, téléphone coincé contre l’épaule"
+  },
+  {
+   "name": "AGENT BAKARY",
+   "surnom": "le douanier",
+   "dessin": "galerie",
+   "age": "la quarantaine",
+   "taille": 1.78,
+   "voix": {
+    "piper": "pierre",
+    "pitch": 0.95
+   },
+   "apparence": "Homme carré, barbe courte, yeux plissés de soupçon, mâchoire serrée, sourire en coin quand il trouve quelque chose.",
+   "tenue": "Casquette verte de douane, uniforme vert à épaulettes et écussons, ceinturon noir avec étui, talkie-walkie, rangers noires, passeport à la main.",
+   "posture": "Droit comme une barrière, un passeport dans une main, l’autre tendue paume ouverte ; il fouille du regard avant de fouiller la valise.",
+   "personnalite": "Le douanier qui trouve toujours quelque chose : dans une valise vide, il trouve une infraction. Rival d’Agent Doumbia, il prend son métier très au sérieux et sa « taxe » encore plus.",
+   "traits": [
+    "soupçonneux",
+    "zélé",
+    "tenace",
+    "malin",
+    "compétitif"
+   ],
+   "habitudes": [
+    "ouvre toutes les valises",
+    "goûte les aliments « pour vérifier »",
+    "confisque ce qui lui plaît"
+   ],
+   "emotions": [
+    "soupçon",
+    "triomphe",
+    "gourmandise"
+   ],
+   "reactions": [
+    "une valise fermée : il l’ouvre",
+    "un sourire suspect : « Qu’est-ce que vous cachez ? »",
+    "un plat bien emballé : il le confisque"
+   ],
+   "interets": [
+    "les valises",
+    "la nourriture confisquée",
+    "battre Agent Doumbia"
+   ],
+   "forces": [
+    "flair",
+    "patience",
+    "autorité"
+   ],
+   "faiblesses": [
+    "gourmand",
+    "se laisse amadouer par l’attiéké",
+    "jaloux de Doumbia"
+   ],
+   "situations": {
+    "conflit": "fait un inventaire jusqu’à ce que l’autre craque",
+    "argent": "« taxe spéciale » selon l’humeur",
+    "famille": "fouille même le sac de sa femme",
+    "seduction": "contrôle les papiers de la personne qui lui plaît",
+    "autorite": "il EST l’autorité : il contrôle même son propre chef « par principe »",
+    "public": "parle dans son talkie-walkie pour impressionner",
+    "echec": "confisque quand même quelque chose",
+    "secret": "le trouve au fond de la valise"
+   },
+   "repliques": [
+    "Ouvrez la valise.",
+    "Ça, c’est quoi ?",
+    "Confisqué. Pour analyse."
+   ],
+   "moteur": "le zèle douanier qui trouve une infraction partout",
+   "lieux": [
+    "Douane",
+    "Taxi"
+   ],
+   "activite": "fouille une valise et lève un objet au soleil"
+  },
+  {
+   "name": "TANTIE AWA SARR",
+   "surnom": "Tantie Sarr",
+   "dessin": "galerie",
+   "age": "la cinquantaine",
+   "taille": 1.62,
+   "voix": {
+    "piper": "siwis",
+    "pitch": 1.04
+   },
+   "apparence": "Femme ronde, joues rebondies, grand rire ouvert, yeux plissés de plaisir, créoles dorées.",
+   "tenue": "Foulard wax rouge et orange, robe pagne rouge et jaune à fleurs, grand tablier noir à poche pleine de billets, cuillère en bois levée, marmite noire à la main.",
+   "posture": "Cuillère brandie comme un sceptre, marmite sur la hanche ; elle goûte, rit, et sert avant qu’on ait commandé.",
+   "personnalite": "La restauratrice qui régale tout le quartier (on l’appelle « Tantie Sarr » pour ne pas la confondre avec Tantie Awa). Généreuse, bruyante, elle nourrit tout le monde à crédit… et note tout dans sa tête.",
+   "traits": [
+    "généreuse",
+    "bruyante",
+    "fine cuisinière",
+    "mémoire des ardoises",
+    "maternelle"
+   ],
+   "habitudes": [
+    "goûte la sauce à chaque phrase",
+    "ressert sans demander",
+    "rappelle les ardoises en chantant"
+   ],
+   "emotions": [
+    "joie",
+    "fierté de sa cuisine",
+    "colère quand on critique la sauce"
+   ],
+   "reactions": [
+    "un compliment : double portion",
+    "une critique : cuillère levée",
+    "un client sans argent : il fait la vaisselle"
+   ],
+   "interets": [
+    "la cuisine",
+    "nourrir les gens",
+    "les recettes secrètes"
+   ],
+   "forces": [
+    "cuisine légendaire",
+    "cœur immense",
+    "mémoire des dettes"
+   ],
+   "faiblesses": [
+    "ne sait pas dire non à un affamé",
+    "susceptible sur le piment",
+    "rivalité avec le maquis de Séry"
+   ],
+   "situations": {
+    "conflit": "menace de supprimer le piment",
+    "argent": "sert à crédit, encaisse avec intérêts de sauce",
+    "famille": "nourrit tout le quartier comme ses enfants",
+    "seduction": "conquiert par l’estomac",
+    "autorite": "offre une assiette au policier",
+    "public": "annonce le plat du jour comme un concert",
+    "echec": "la sauce est ratée ? « C’est une nouvelle recette »",
+    "secret": "sa recette : jamais, même sous la menace d’un client affamé"
+   },
+   "repliques": [
+    "Assieds-toi, mange d’abord !",
+    "Qui a dit que ma sauce est fade ?!",
+    "Ton ardoise a déjà un ventre."
+   ],
+   "moteur": "la générosité débordante qui finit en ardoise géante",
+   "lieux": [
+    "Maquis",
+    "Marché",
+    "Cérémonie",
+    "Cour",
+    "Village"
+   ],
+   "activite": "remue une grande marmite fumante et goûte à la cuillère"
+  },
+  {
+   "name": "PROFESSEUR SAMBA",
+   "surnom": "le Professeur",
+   "dessin": "galerie",
+   "age": "la cinquantaine",
+   "taille": 1.74,
+   "voix": {
+    "piper": "gilles",
+    "pitch": 1.06
+   },
+   "apparence": "Homme mince et anguleux, lunettes rondes, fine moustache et bouc, regard de celui qui sait, sourire satisfait.",
+   "tenue": "Calotte brodée violette, grand boubou violet brodé d’or, journal plié sous le bras, tasse de café à la main, sandales.",
+   "posture": "Journal sous le bras, tasse levée comme un argument, il parle en regardant au-dessus des lunettes.",
+   "personnalite": "L’intellectuel qui sait tout (ou presque) : il commente l’actualité au kiosque, cite des auteurs qu’il invente à moitié et se fait corriger par sa fille, la lycéenne.",
+   "traits": [
+    "érudit",
+    "pédant",
+    "bavard",
+    "fier",
+    "curieux"
+   ],
+   "habitudes": [
+    "lit le journal à voix haute",
+    "débat avec Aliou chaque matin",
+    "commence par « Comme disait le philosophe… »"
+   ],
+   "emotions": [
+    "satisfaction intellectuelle",
+    "agacement",
+    "gêne quand il se trompe"
+   ],
+   "reactions": [
+    "contredit : il cite un livre",
+    "corrigé par sa fille : « Je testais ton attention »",
+    "une question simple : réponse de vingt minutes"
+   ],
+   "interets": [
+    "l’actualité",
+    "les débats",
+    "les mots compliqués"
+   ],
+   "forces": [
+    "culture",
+    "éloquence",
+    "curiosité"
+   ],
+   "faiblesses": [
+    "n’admet jamais une erreur",
+    "bavard",
+    "perdu dans la vie pratique"
+   ],
+   "situations": {
+    "conflit": "transforme la dispute en débat philosophique",
+    "argent": "théorise l’économie, se fait arnaquer au marché",
+    "famille": "fier de sa fille… qui le corrige",
+    "seduction": "récite un poème trop long",
+    "autorite": "explique la loi au policier",
+    "public": "conférence improvisée au kiosque",
+    "echec": "« Comme disait Socrate : je sais que je ne sais rien. »",
+    "secret": "le déduit, puis l’annonce comme une thèse"
+   },
+   "repliques": [
+    "Comme disait le philosophe…",
+    "Je testais ton attention.",
+    "Les chiffres ne mentent pas. Les gens, si."
+   ],
+   "moteur": "le savoir pompeux qui se fait battre par le bon sens",
+   "lieux": [
+    "Taxi",
+    "École",
+    "Bureau",
+    "Cour"
+   ],
+   "activite": "lit le journal en sirotant son café, l’index levé"
+  },
+  {
+   "name": "MADAME COUMBA",
+   "surnom": "Madame Coumba la voisine",
+   "dessin": "catalogue",
+   "age": "la cinquantaine",
+   "taille": 1.6,
+   "voix": {
+    "piper": "siwis",
+    "pitch": 1.08
+   },
+   "apparence": "Femme ronde aux yeux mi-clos de conspiratrice, sourire en coin, doigt sur les lèvres.",
+   "tenue": "Foulard et robe wax assortis à fleurs bleues et orange, boucles d’oreilles dorées.",
+   "posture": "Penchée par-dessus le mur ou derrière un rideau, une main en écran, l’autre sur la bouche.",
+   "personnalite": "La voisine curieuse et indiscrète (à ne pas confondre avec Coumba la fille de Baye) : elle sait qui a mangé quoi, qui doit combien et qui a pleuré. Rivale de Tantie Awa par-dessus le mur.",
+   "traits": [
+    "curieuse",
+    "indiscrète",
+    "théâtrale",
+    "rancunière",
+    "serviable quand ça l’arrange"
+   ],
+   "habitudes": [
+    "écoute aux portes",
+    "compte les visiteurs des voisins",
+    "commence par « Je ne dis rien, mais… »"
+   ],
+   "emotions": [
+    "excitation",
+    "jalousie",
+    "fausse compassion"
+   ],
+   "reactions": [
+    "une dispute chez les voisins : elle approche sa chaise",
+    "surprise à écouter : « Je cherchais mon poulet »",
+    "une bonne nouvelle chez les autres : elle cherche le défaut"
+   ],
+   "interets": [
+    "la vie des autres",
+    "les mariages du quartier",
+    "battre Tantie Awa"
+   ],
+   "forces": [
+    "informée de tout",
+    "réseau",
+    "endurance d’espionne"
+   ],
+   "faiblesses": [
+    "se fait prendre la tête au-dessus du mur",
+    "déforme tout",
+    "ne garde rien"
+   ],
+   "situations": {
+    "conflit": "jette de l’huile sur le feu en faisant semblant de calmer",
+    "argent": "sait combien chacun gagne, prête avec curiosité",
+    "famille": "connaît mieux la famille des voisins que la sienne",
+    "seduction": "arrange les mariages des autres",
+    "autorite": "dénonce tout le monde au chef de quartier",
+    "public": "raconte en mimant chaque personnage, en ajoutant des détails qu’elle n’a pas vus",
+    "echec": "accuse Mamie Bintou d’avoir mal répété",
+    "secret": "le découvre en premier, le répand en second"
+   },
+   "repliques": [
+    "Je ne dis rien, mais…",
+    "Moi ? Je cherchais mon poulet.",
+    "Tout le quartier sait déjà."
+   ],
+   "moteur": "la curiosité qui se fait prendre la tête au-dessus du mur",
+   "lieux": [
+    "Cour",
+    "Salon",
+    "Marché"
+   ],
+   "activite": "épie par-dessus le mur, main en écran"
+  },
+  {
+   "name": "DJECKY",
+   "surnom": "Djecky 23",
+   "dessin": "galerie",
+   "age": "environ 22 ans",
+   "taille": 1.82,
+   "voix": {
+    "piper": "tom",
+    "pitch": 1.08
+   },
+   "apparence": "Jeune homme athlétique, petit bouc, sourire crâneur, yeux pétillants.",
+   "tenue": "Casquette noire à l’envers, maillot de basket rouge numéro 23, short rouge, baskets montantes rouge, blanc et noir, chaîne dorée, ballon de basket sous le bras.",
+   "posture": "Ballon calé contre la hanche, doigt pointé vers la caméra, il sautille sur place même à l’arrêt.",
+   "personnalite": "Le jeune du quartier toujours dans les plans : tournoi de basket, business de maillots, soirée au maquis. Sympathique et beau parleur, ses plans rapportent surtout des ennuis à Modou.",
+   "traits": [
+    "dynamique",
+    "crâneur",
+    "loyal",
+    "combinard",
+    "drôle"
+   ],
+   "habitudes": [
+    "dribble en parlant",
+    "appelle tout le monde « mon gars »",
+    "propose un plan par jour"
+   ],
+   "emotions": [
+    "enthousiasme",
+    "assurance",
+    "panique quand le plan rate"
+   ],
+   "reactions": [
+    "un défi : il accepte avant de l’écouter",
+    "un plan raté : il disparaît en dribblant",
+    "une fille passe : il tente un panier"
+   ],
+   "interets": [
+    "le basket",
+    "les soirées",
+    "les plans rapides"
+   ],
+   "forces": [
+    "énergie",
+    "réseau du quartier",
+    "humour"
+   ],
+   "faiblesses": [
+    "plans foireux",
+    "fuit les responsabilités",
+    "veut impressionner"
+   ],
+   "situations": {
+    "conflit": "propose de régler ça au basket",
+    "argent": "un plan pour doubler la mise, qui la divise",
+    "famille": "fils prodigue qui revient pour manger",
+    "seduction": "dunk raté devant la go",
+    "autorite": "s’éclipse en dribblant",
+    "public": "lance un défi filmé (panier impossible, danse) et entraîne tout le monde",
+    "echec": "« C’était l’échauffement. »",
+    "secret": "le revend comme « un plan » au premier qui paie la boisson"
+   },
+   "repliques": [
+    "Mon gars, j’ai un plan !",
+    "C’était l’échauffement.",
+    "Fais-moi confiance, c’est carré."
+   ],
+   "moteur": "le plan génial qui tourne au désastre",
+   "lieux": [
+    "Maquis",
+    "Cour",
+    "Plage",
+    "Marché"
+   ],
+   "activite": "dribble son ballon et tente un panier imaginaire"
+  },
+  {
+   "name": "PETIT IBRAHIMA",
+   "surnom": "le premier de la classe",
+   "dessin": "galerie",
+   "age": "9 ans",
+   "taille": 1.25,
+   "voix": {
+    "piper": "jessica",
+    "pitch": 1.18
+   },
+   "apparence": "Petit garçon aux cheveux courts et bouclés, grands yeux brillants, sourire fier.",
+   "tenue": "Chemise blanche d’écolier, cravate bleu marine, short bleu marine, chaussettes blanches, chaussures noires cirées, sac à dos, cahier bleu à fusée serré contre lui.",
+   "posture": "Droit comme un i, cahier contre la poitrine, il lève la main avant même la question.",
+   "personnalite": "L’enfant intelligent qui veut réussir : fils de Sœur Awa, premier de la classe, rival de Petit Mamadou. Sérieux, il corrige les adultes avec politesse — ce qui les vexe encore plus.",
+   "traits": [
+    "studieux",
+    "poli",
+    "ambitieux",
+    "naïf",
+    "droit"
+   ],
+   "habitudes": [
+    "lève la main",
+    "corrige la grammaire des adultes",
+    "récite les capitales"
+   ],
+   "emotions": [
+    "fierté",
+    "inquiétude des notes",
+    "indignation devant la triche"
+   ],
+   "reactions": [
+    "une erreur d’adulte : il la corrige poliment",
+    "une triche : il la signale",
+    "un 19/20 : il demande où est le point manquant"
+   ],
+   "interets": [
+    "les fusées",
+    "les sciences",
+    "devenir ingénieur"
+   ],
+   "forces": [
+    "intelligence",
+    "mémoire",
+    "honnêteté"
+   ],
+   "faiblesses": [
+    "naïf face aux combines de Mamadou",
+    "trop sérieux",
+    "pleure pour un 18"
+   ],
+   "situations": {
+    "conflit": "explique calmement pourquoi l’autre a tort",
+    "argent": "calcule les intérêts de la tontine de maman",
+    "famille": "fierté de Sœur Awa, il récite ses notes à table pour qu’elle les répète aux voisines",
+    "seduction": "rougit et récite une table de multiplication",
+    "autorite": "respecte la règle à la lettre",
+    "public": "récite trop bien et trop longtemps, jusqu’à ce qu’on l’applaudisse pour qu’il s’arrête",
+    "echec": "demande à refaire l’examen",
+    "secret": "ne sait pas mentir : il rougit, bégaie et finit par tout dire"
+   },
+   "repliques": [
+    "Maître, on dit « quatre-vingts », pas « huitante ».",
+    "J’ai eu 19. Où est le point ?",
+    "Ce n’est pas juste !"
+   ],
+   "moteur": "la perfection scolaire face au système D",
+   "lieux": [
+    "École",
+    "Hôpital",
+    "Cour"
+   ],
+   "activite": "lit son cahier à fusée en marchant"
+  },
+  {
+   "name": "PETITE KHADIJA",
+   "surnom": "Khadija",
+   "dessin": "galerie",
+   "age": "7 ans",
+   "taille": 1.18,
+   "voix": {
+    "piper": "siwis",
+    "pitch": 1.25
+   },
+   "apparence": "Petite fille aux deux couettes afro nouées de nœuds roses, grands yeux rêveurs, sourire timide.",
+   "tenue": "Robe rose à petites fleurs, baskets roses, nounours brun serré dans les bras.",
+   "posture": "Nounours contre la joue, tête penchée, elle tire la manche des adultes pour poser une question.",
+   "personnalite": "La rêveuse aux mille questions : fille aînée de la Future Maman, elle veut tout comprendre — d’où viennent les bébés, pourquoi le ciel est bleu, pourquoi Papa n’est jamais là. Ses questions innocentes mettent les adultes dans l’embarras.",
+   "traits": [
+    "rêveuse",
+    "curieuse",
+    "douce",
+    "tenace",
+    "imaginative"
+   ],
+   "habitudes": [
+    "demande « Pourquoi ? » cinq fois de suite",
+    "parle à son nounours",
+    "explique le monde de travers à sa petite sœur"
+   ],
+   "emotions": [
+    "émerveillement",
+    "perplexité",
+    "tristesse fugace"
+   ],
+   "reactions": [
+    "une réponse évasive : « Mais pourquoi ? »",
+    "un adulte gêné : elle répète plus fort",
+    "une histoire triste : elle prête son nounours"
+   ],
+   "interets": [
+    "les étoiles",
+    "le futur bébé",
+    "son nounours"
+   ],
+   "forces": [
+    "innocence désarmante",
+    "imagination",
+    "gentillesse"
+   ],
+   "faiblesses": [
+    "pose LA question gênante en public",
+    "tête en l’air",
+    "croit tout"
+   ],
+   "situations": {
+    "conflit": "demande pourquoi les adultes crient",
+    "argent": "croit que l’argent pousse dans le sac de Mamie Nounou",
+    "famille": "veut savoir si le bébé aura un nounours",
+    "seduction": "demande aux amoureux s’ils vont se marier",
+    "autorite": "demande au policier pourquoi il a besoin d’argent",
+    "public": "pose sa question au micro",
+    "echec": "console son nounours comme si c’était lui qui avait perdu",
+    "secret": "le révèle en posant une question"
+   },
+   "repliques": [
+    "Mais pourquoi ?",
+    "Le bébé, il sort quand ?",
+    "Mon nounours dit que tu mens."
+   ],
+   "moteur": "la question innocente qui démasque les adultes",
+   "lieux": [
+    "École",
+    "Cour",
+    "Hôpital",
+    "Salon",
+    "Village"
+   ],
+   "activite": "parle à son nounours en tournant sur elle-même"
+  },
+  {
+   "name": "AGENT GORA",
+   "surnom": "Gora le vigile",
+   "dessin": "catalogue",
+   "age": "la quarantaine",
+   "taille": 1.8,
+   "voix": {
+    "piper": "pierre",
+    "pitch": 0.9
+   },
+   "apparence": "Homme trapu et costaud, barbe courte, clin d’œil complice, pouce levé.",
+   "tenue": "Casquette bleu marine « SÉCURITÉ », chemise bleu clair de vigile, lampe torche et trousseau de clés à la ceinture.",
+   "posture": "Adossé à la porte de la banque, bras croisés, il lève un pouce ou une lampe torche selon l’humeur.",
+   "personnalite": "Le vigile débrouillard et philosophe de la vie : il garde la porte de la banque du Banquier et distribue des maximes à ceux qu’il refuse de faire entrer. Il sait tout des clients — qui retire, qui supplie.",
+   "traits": [
+    "philosophe",
+    "débrouillard",
+    "calme",
+    "observateur",
+    "complice"
+   ],
+   "habitudes": [
+    "commente chaque client",
+    "fait des rondes avec sa torche en plein jour",
+    "donne des conseils de vie"
+   ],
+   "emotions": [
+    "sérénité",
+    "amusement",
+    "compassion"
+   ],
+   "reactions": [
+    "un client fauché : « La patience aussi, c’est un capital »",
+    "une alarme : il vérifie son téléphone d’abord",
+    "un pourboire : clin d’œil"
+   ],
+   "interets": [
+    "la philosophie de la rue",
+    "les potins de la banque",
+    "le foot"
+   ],
+   "forces": [
+    "sang-froid",
+    "sagesse pratique",
+    "carrure"
+   ],
+   "faiblesses": [
+    "s’endort en garde",
+    "se laisse attendrir",
+    "bavard"
+   ],
+   "situations": {
+    "conflit": "désamorce avec une maxime",
+    "argent": "n’en a pas, mais voit passer celui des autres",
+    "famille": "philosophe aussi à la maison",
+    "seduction": "ouvre la porte avec une révérence",
+    "autorite": "obéit au Banquier, conseille tout le monde",
+    "public": "monologue pour la file d’attente",
+    "echec": "« La vie est une ronde. »",
+    "secret": "connaît le solde de tout le quartier"
+   },
+   "repliques": [
+    "La patience aussi, c’est un capital.",
+    "Ici, même l’air paie des frais.",
+    "Je ne dis rien, je surveille."
+   ],
+   "moteur": "la sagesse de comptoir à la porte d’une banque",
+   "lieux": [
+    "Bureau",
+    "Marché"
+   ],
+   "activite": "fait une ronde en balançant sa lampe torche"
+  },
+  {
+   "name": "GÉNÉRAL ZONGO",
+   "surnom": "Général",
+   "dessin": "galerie",
+   "age": "la quarantaine",
+   "taille": 1.8,
+   "voix": {
+    "piper": "tom",
+    "pitch": 0.94
+   },
+   "apparence": "Homme costaud à barbe courte, grand sourire surexcité, yeux grands ouverts.",
+   "tenue": "Casque de chantier jaune, gilet orange haute visibilité sur une chemise en jean, jean bleu, chaussures de sécurité marron, plans roulés sous le bras.",
+   "posture": "Index pointé vers le ciel comme vers un futur immeuble, plans sous le bras, il parle fort comme sur un chantier bruyant.",
+   "personnalite": "L’entrepreneur toujours en chantier : rien n’est jamais fini, tout est « presque terminé ». Mari de la Future Maman, il fuit les envies de minuit en prétextant un chantier. Il construit la villa de Tonton Dieng depuis sept ans.",
+   "traits": [
+    "enthousiaste",
+    "irresponsable",
+    "optimiste",
+    "bruyant",
+    "charmeur"
+   ],
+   "habitudes": [
+    "dit « C’est presque fini »",
+    "déroule des plans partout",
+    "appelle ses ouvriers qui ne répondent pas"
+   ],
+   "emotions": [
+    "excitation",
+    "fausse urgence",
+    "culpabilité"
+   ],
+   "reactions": [
+    "un retard reproché : nouveau plan plus grand",
+    "sa femme a une envie : « Urgence sur le chantier ! »",
+    "un client qui paie : il casse un mur de joie"
+   ],
+   "interets": [
+    "les chantiers",
+    "les grands projets",
+    "le béton"
+   ],
+   "forces": [
+    "énergie",
+    "vision",
+    "persuasion"
+   ],
+   "faiblesses": [
+    "ne finit rien",
+    "ment sur les délais",
+    "fuit les responsabilités domestiques"
+   ],
+   "situations": {
+    "conflit": "promet une extension gratuite",
+    "argent": "demande une avance pour l’avance",
+    "famille": "toujours « sur un chantier »",
+    "seduction": "promet une maison à étage",
+    "autorite": "montre un permis de construire de 2009",
+    "public": "pose la première pierre de tout",
+    "echec": "« C’est la faute du ciment. »",
+    "secret": "le chantier n’a jamais commencé"
+   },
+   "repliques": [
+    "C’est presque fini !",
+    "Urgence sur le chantier, je dois y aller !",
+    "Le ciment est en route."
+   ],
+   "moteur": "le chantier éternel qui sert d’excuse à tout",
+   "lieux": [
+    "Taxi",
+    "Bureau",
+    "Village",
+    "Cour"
+   ],
+   "activite": "déroule des plans et crie dans son téléphone"
+  },
+  {
+   "name": "TATA PRISCA",
+   "surnom": "Tata Prisca",
+   "dessin": "galerie",
+   "age": "environ 35 ans",
+   "taille": 1.64,
+   "voix": {
+    "piper": "jessica",
+    "pitch": 1.06
+   },
+   "apparence": "Femme pulpeuse à la grande coupe afro volumineuse, sourire de commère gourmande, créoles dorées.",
+   "tenue": "Bandeau rose dans l’afro, haut noir, tablier rose aux poches pleines de peignes, ciseaux et pinces, legging noir, baskets roses, sèche-cheveux et peigne à la main.",
+   "posture": "Sèche-cheveux braqué comme un micro, hanche cassée, elle se penche pour chuchoter puis éclate de rire.",
+   "personnalite": "La coiffeuse qui sait tout sur tout le monde : son salon est l’agence de presse du quartier. Confidente de Coumba, elle promet le secret et le raconte à la cliente suivante. Drôle, vive, impitoyable sur les coiffures.",
+   "traits": [
+    "bavarde",
+    "drôle",
+    "perspicace",
+    "commerçante",
+    "impitoyable sur le style"
+   ],
+   "habitudes": [
+    "raconte en coiffant",
+    "juge la coiffure de chaque passant",
+    "jure « je ne dis rien à personne »"
+   ],
+   "emotions": [
+    "gourmandise des ragots",
+    "amusement",
+    "vexation professionnelle"
+   ],
+   "reactions": [
+    "un secret : « Raconte, je ne dis rien ! »",
+    "une mauvaise coiffure : grimace",
+    "un client mauvais payeur : le côté gauche reste à faire"
+   ],
+   "interets": [
+    "les ragots",
+    "les coiffures",
+    "les mariages"
+   ],
+   "forces": [
+    "réseau d’informations",
+    "talent",
+    "humour"
+   ],
+   "faiblesses": [
+    "ne garde rien",
+    "en retard sur les rendez-vous",
+    "mauvaise foi sur les prix"
+   ],
+   "situations": {
+    "conflit": "menace de révéler un secret",
+    "argent": "tarif selon le ragot apporté",
+    "famille": "tout le quartier est sa famille… et sa clientèle",
+    "seduction": "fait les présentations pour avoir l’histoire",
+    "autorite": "coiffe gratuitement la femme du chef",
+    "public": "commente en direct, sèche-cheveux en guise de micro, chaque passant du trottoir",
+    "echec": "accuse les mèches, la chaleur et la cliente qui a bougé la tête",
+    "secret": "le reçoit en premier, le transmet en deuxième"
+   },
+   "repliques": [
+    "Raconte, je ne dis rien à personne !",
+    "Ma chérie, cette coiffure, c’est un accident.",
+    "Le côté gauche, c’est quand tu paies."
+   ],
+   "moteur": "le secret confié qui fait le tour du quartier en une coupe",
+   "lieux": [
+    "Salon de coiffure",
+    "Cérémonie",
+    "Marché"
+   ],
+   "activite": "coiffe une cliente en parlant fort, sèche-cheveux à la main"
+  },
+  {
+   "name": "AGENT DOUMBIA",
+   "surnom": "Chef Doumbia",
+   "dessin": "galerie",
+   "age": "la quarantaine",
+   "taille": 1.74,
+   "voix": {
+    "piper": "pierre",
+    "pitch": 1.04
+   },
+   "apparence": "Homme à barbe courte, regard en biais, sourire d’arrangement, front qui transpire sous la casquette.",
+   "tenue": "Casquette de police bleu marine à insigne, chemise bleu clair à écussons, pantalon bleu marine, ceinturon noir avec étui, carnet et stylo à la main.",
+   "posture": "Carnet ouvert, stylo suspendu, il attend qu’on « comprenne » ; il regarde à droite et à gauche avant de baisser la voix.",
+   "personnalite": "Le policier qui cherche toujours à « arranger » : chaque contrôle est une négociation. Il contrôle Aliou chaque matin, rivalise avec Agent Bakary et finit souvent arrangé lui-même par plus malin.",
+   "traits": [
+    "arrangeant",
+    "roublard",
+    "paresseux",
+    "bavard",
+    "peureux devant ses chefs"
+   ],
+   "habitudes": [
+    "demande « les papiers du véhicule et les papiers du papier »",
+    "baisse la voix pour négocier",
+    "écrit des contraventions qu’il ne termine pas"
+   ],
+   "emotions": [
+    "avidité",
+    "méfiance",
+    "peur des supérieurs"
+   ],
+   "reactions": [
+    "un conducteur sans papiers : « On peut s’arranger »",
+    "son chef arrive : il devient exemplaire",
+    "un plus malin que lui : il paie l’amende"
+   ],
+   "interets": [
+    "les arrangements",
+    "le foot",
+    "manger à l’œil"
+   ],
+   "forces": [
+    "flair des infractions",
+    "patience",
+    "réseau"
+   ],
+   "faiblesses": [
+    "corruptible par un plat",
+    "peur des supérieurs",
+    "se fait retourner par les enfants"
+   ],
+   "situations": {
+    "conflit": "propose de « trouver une solution »",
+    "argent": "l’amende varie selon la tête",
+    "famille": "sa femme le contrôle mieux que lui",
+    "seduction": "contrôle « de routine » répété",
+    "autorite": "tremble devant le commissaire",
+    "public": "redevient très réglementaire",
+    "echec": "déchire le carnet de contraventions et dit qu’il n’a rien vu",
+    "secret": "le monnaye au plus offrant, puis le raconte à son chef pour se couvrir"
+   },
+   "repliques": [
+    "Papiers du véhicule !",
+    "On peut s’arranger.",
+    "Ça, c’est une infraction grave… grave."
+   ],
+   "moteur": "l’« arrangement » qui se retourne contre lui",
+   "lieux": [
+    "Taxi",
+    "Marché",
+    "Douane"
+   ],
+   "activite": "note une plaque dans son carnet en sifflant"
+  },
+  {
+   "name": "MÉCANO ISSA",
+   "surnom": "Issa",
+   "dessin": "galerie",
+   "age": "environ 35 ans",
+   "taille": 1.78,
+   "voix": {
+    "piper": "tom",
+    "pitch": 0.97
+   },
+   "apparence": "Homme élancé, visage taché de cambouis, sourire sûr de lui, sourcils levés.",
+   "tenue": "Casquette bleue à l’envers, combinaison de travail bleue tachée de graisse, clé à molette à la main, chiffon dans la poche, bottes de travail.",
+   "posture": "Clé à molette sur l’épaule, il tapote le capot comme un médecin ausculte, puis claque des doigts.",
+   "personnalite": "Le mécanicien qui bricole tout, même l’impossible : avec du fil de fer et du chewing-gum, il fait rouler n’importe quoi. Père de Petit Moussa qui démonte tout ce qu’il répare.",
+   "traits": [
+    "ingénieux",
+    "sûr de lui",
+    "fanfaron",
+    "serviable",
+    "désordonné"
+   ],
+   "habitudes": [
+    "diagnostique au bruit",
+    "répare avec ce qui traîne",
+    "facture « la pièce » qu’il n’a pas changée"
+   ],
+   "emotions": [
+    "fierté",
+    "curiosité",
+    "agacement contre les pièces neuves"
+   ],
+   "reactions": [
+    "une panne : « Ça, c’est rien »",
+    "la voiture explose : « Elle respire »",
+    "un client pressé : il ralentit"
+   ],
+   "interets": [
+    "les moteurs",
+    "la récupération",
+    "le foot"
+   ],
+   "forces": [
+    "ingéniosité",
+    "débrouille",
+    "bonne humeur"
+   ],
+   "faiblesses": [
+    "délais imprévisibles",
+    "factures créatives",
+    "trop confiant"
+   ],
+   "situations": {
+    "conflit": "propose de « réparer » le problème",
+    "argent": "devis variable selon le bruit du moteur",
+    "famille": "son fils défait tout ce qu’il fait",
+    "seduction": "répare gratuitement la voiture de la dame",
+    "autorite": "répare la moto du policier contre l’amende",
+    "public": "démonstration bruyante",
+    "echec": "« Il faut la pièce d’origine. »",
+    "secret": "le taxi d’Aliou tient avec du fil de fer"
+   },
+   "repliques": [
+    "Ça, c’est rien, c’est le carburateur.",
+    "Elle respire, elle respire !",
+    "La pièce est commandée."
+   ],
+   "moteur": "la réparation impossible qui marche… presque",
+   "lieux": [
+    "Taxi",
+    "Marché",
+    "Cour"
+   ],
+   "activite": "tape sur un moteur avec sa clé et écoute"
+  },
+  {
+   "name": "SŒUR AWA",
+   "surnom": "Sœur Awa",
+   "dessin": "galerie",
+   "age": "environ 35 ans",
+   "taille": 1.64,
+   "voix": {
+    "piper": "jessica",
+    "pitch": 1
+   },
+   "apparence": "Femme au visage doux et ferme, chignon tressé, sourire bienveillant qui devient sévère en une seconde.",
+   "tenue": "Uniforme d’infirmière rose et blanc (tunique rose à col et poches blancs, pantalon rose), stéthoscope au cou, chaussures blanches, tablette bleue à la main.",
+   "posture": "Tablette contre la hanche, stylo derrière l’oreille ; elle pose une main apaisante puis pointe le règlement.",
+   "personnalite": "L’infirmière au grand cœur mais très directe : elle dit la vérité médicale sans anesthésie. Elle travaille avec Docteur Sylla, le recadre devant les patients, et élève seule Petit Ibrahima avec fierté.",
+   "traits": [
+    "directe",
+    "bienveillante",
+    "compétente",
+    "franche",
+    "sans filtre"
+   ],
+   "habitudes": [
+    "dit le diagnostic à voix haute",
+    "gronde les patients gourmands",
+    "vérifie la tension de tout le monde"
+   ],
+   "emotions": [
+    "compassion",
+    "impatience",
+    "amusement sec"
+   ],
+   "reactions": [
+    "un patient qui ment : elle lit la vérité sur la balance",
+    "Sylla qui facture trop : elle corrige le prix",
+    "une urgence : calme absolu"
+   ],
+   "interets": [
+    "la santé",
+    "son fils",
+    "les feuilletons"
+   ],
+   "forces": [
+    "compétence",
+    "franchise",
+    "sang-froid"
+   ],
+   "faiblesses": [
+    "trop directe",
+    "fatigue",
+    "ne supporte pas les excuses"
+   ],
+   "situations": {
+    "conflit": "tranche par un fait médical",
+    "argent": "défend les patients contre les factures de Sylla",
+    "famille": "mère fière et exigeante",
+    "seduction": "prend le pouls du prétendant : « Tu mens, ton cœur s’emballe »",
+    "autorite": "respecte le docteur… sauf quand il a tort",
+    "public": "annonce les diagnostics à la salle d’attente",
+    "echec": "hausse les épaules et passe au suivant",
+    "secret": "secret médical… sauf pour la balance"
+   },
+   "repliques": [
+    "La balance ne ment pas.",
+    "Ouvre la bouche. Encore du poulet ?",
+    "Docteur, ça, c’est gratuit."
+   ],
+   "moteur": "la franchise médicale sans anesthésie",
+   "lieux": [
+    "Hôpital",
+    "École",
+    "Cour"
+   ],
+   "activite": "prend la tension d’un patient en notant sur sa tablette"
+  },
+  {
+   "name": "TIÉKORO",
+   "surnom": "Tiékoro les bons plans",
+   "dessin": "galerie",
+   "age": "environ 25 ans",
+   "taille": 1.75,
+   "voix": {
+    "piper": "tom",
+    "pitch": 1.12
+   },
+   "apparence": "Jeune homme nerveux, sourire de vendeur, yeux qui roulent pour convaincre.",
+   "tenue": "Casquette rouge à l’envers, blouson rouge sur tee-shirt blanc, casque audio autour du cou, appareil photo en bandoulière, téléphone rose et perche à selfie, jean noir, baskets rouges.",
+   "posture": "Téléphone brandi d’une main, perche à selfie de l’autre, il se déhanche comme dans une publicité.",
+   "personnalite": "Le vendeur de gadgets et roi des bons plans : chargeurs qui ne chargent pas, montres « de luxe » qui rouillent. Il filme ses ventes en direct, fait crédit à Koffi et vend à Modou ce qu’il a déjà.",
+   "traits": [
+    "vendeur né",
+    "baratineur",
+    "énergique",
+    "opportuniste",
+    "sympathique"
+   ],
+   "habitudes": [
+    "démontre le produit en direct",
+    "dit « dernier stock ! »",
+    "vend à crédit en notant sur son bras"
+   ],
+   "emotions": [
+    "excitation",
+    "fausse sincérité",
+    "panique au retour client"
+   ],
+   "reactions": [
+    "un produit qui casse : « Ça, c’est la version démo »",
+    "un client hésitant : « Dernier stock ! »",
+    "un client mécontent : il change de casquette"
+   ],
+   "interets": [
+    "les gadgets",
+    "les vidéos virales",
+    "les affaires rapides"
+   ],
+   "forces": [
+    "bagou",
+    "réseau",
+    "réactivité"
+   ],
+   "faiblesses": [
+    "marchandise douteuse",
+    "ardoises impayées",
+    "trop de promesses"
+   ],
+   "situations": {
+    "conflit": "offre un gadget pour faire la paix",
+    "argent": "tout est négociable, rien n’est garanti",
+    "famille": "vend à sa propre mère un chargeur « dernier modèle » qui ne charge pas",
+    "seduction": "offre une montre qui s’arrête au premier rendez-vous",
+    "autorite": "vend un talkie-walkie au policier",
+    "public": "live de vente permanent",
+    "echec": "« C’est la version démo. »",
+    "secret": "la provenance des produits"
+   },
+   "repliques": [
+    "Dernier stock, mon frère !",
+    "C’est la version démo.",
+    "Garantie à vie… de la boutique."
+   ],
+   "moteur": "le bon plan qui casse au premier usage",
+   "lieux": [
+    "Marché",
+    "Taxi",
+    "Maquis",
+    "Plage"
+   ],
+   "activite": "fait une démonstration de gadget filmée au selfie"
+  },
+  {
+   "name": "PETIT MOUSSA",
+   "surnom": "Moussa",
+   "dessin": "galerie",
+   "age": "8 ans",
+   "taille": 1.2,
+   "voix": {
+    "piper": "siwis",
+    "pitch": 1.3
+   },
+   "apparence": "Petit garçon fluet, cheveux ras, grand sourire espiègle, yeux vifs.",
+   "tenue": "Chemise blanche d’écolier, cravate bleue, short bleu marine, chaussettes blanches, chaussures noires, sac à dos, cahier violet.",
+   "posture": "Toujours sur le point de courir, un pied en avant ; il cache quelque chose derrière son dos.",
+   "personnalite": "L’enfant malin et espiègle, meilleur ami et complice de Petit Mamadou. Fils de Mécano Issa, il démonte tout ce qui se visse. C’est toujours lui qui se fait attraper quand le plan de Mamadou rate.",
+   "traits": [
+    "espiègle",
+    "loyal",
+    "rapide",
+    "bricoleur",
+    "gaffeur"
+   ],
+   "habitudes": [
+    "démonte les objets",
+    "court partout",
+    "répète tout ce que dit Mamadou"
+   ],
+   "emotions": [
+    "excitation",
+    "peur d’être pris",
+    "fou rire"
+   ],
+   "reactions": [
+    "un adulte arrive : il cache l’objet démonté",
+    "attrapé : « C’est Mamadou ! »",
+    "une blague : fou rire incontrôlable"
+   ],
+   "interets": [
+    "les jouets à démonter",
+    "le foot (gardien)",
+    "les bonbons"
+   ],
+   "forces": [
+    "vitesse",
+    "loyauté",
+    "habileté manuelle"
+   ],
+   "faiblesses": [
+    "se fait toujours prendre",
+    "ne remonte jamais rien",
+    "trop crédule avec Mamadou"
+   ],
+   "situations": {
+    "conflit": "court se cacher derrière le premier adulte venu et le désigne comme coupable",
+    "argent": "échange ses bonbons contre des secrets",
+    "famille": "démonte la radio de son père",
+    "seduction": "dégoûté par les bisous",
+    "autorite": "dénonce Mamadou en premier",
+    "public": "fait le clown devant la caméra jusqu’à ce qu’un adulte le tire par l’oreille",
+    "echec": "pleure trois secondes puis rit",
+    "secret": "le dit à son meilleur ami… qui le vend"
+   },
+   "repliques": [
+    "C’est Mamadou qui a dit !",
+    "Je l’ai réparé… en morceaux.",
+    "On court ?"
+   ],
+   "moteur": "le complice qui paie toujours pour le cerveau",
+   "lieux": [
+    "École",
+    "Cour",
+    "Taxi",
+    "Village"
+   ],
+   "activite": "court entre les adultes avec un objet démonté"
+  },
+  {
+   "name": "PETITE AYA",
+   "surnom": "Aya",
+   "dessin": "galerie",
+   "age": "6 ans",
+   "taille": 1.08,
+   "voix": {
+    "piper": "siwis",
+    "pitch": 1.32
+   },
+   "apparence": "Toute petite fille aux deux couettes afro à nœuds roses, joues rondes, immenses yeux curieux.",
+   "tenue": "Robe rose à fleurs, baskets roses, sac à dos violet, nounours dans les bras.",
+   "posture": "Serrant son nounours, elle se dresse sur la pointe des pieds pour voir ce que font les grands.",
+   "personnalite": "L’enfant curieuse qui pose trop de questions, petite sœur de Khadija : elle croit tout ce que sa sœur lui raconte et le répète aux adultes avec un sérieux absolu.",
+   "traits": [
+    "curieuse",
+    "crédule",
+    "adorable",
+    "têtue",
+    "répète tout"
+   ],
+   "habitudes": [
+    "répète la dernière phrase entendue",
+    "demande « C’est vrai ? »",
+    "veut tout toucher"
+   ],
+   "emotions": [
+    "émerveillement",
+    "inquiétude",
+    "joie bruyante"
+   ],
+   "reactions": [
+    "une histoire de Khadija : « C’est vrai ?! »",
+    "un adulte en colère : elle cache son visage dans le nounours",
+    "un bonbon : câlin immédiat"
+   ],
+   "interets": [
+    "son nounours",
+    "les animaux",
+    "le bébé qui arrive"
+   ],
+   "forces": [
+    "adorable",
+    "mémoire des phrases",
+    "sincérité"
+   ],
+   "faiblesses": [
+    "croit tout",
+    "répète tout",
+    "fait des caprices"
+   ],
+   "situations": {
+    "conflit": "pleure pour que tout le monde arrête",
+    "argent": "croit que les billets sont des images",
+    "famille": "demande si le bébé dormira dans son lit",
+    "seduction": "veut épouser son nounours",
+    "autorite": "dit bonjour au policier en le serrant",
+    "public": "répète le secret de famille au micro",
+    "echec": "boude dans son nounours",
+    "secret": "le répète mot pour mot au pire moment"
+   },
+   "repliques": [
+    "C’est vrai ?!",
+    "Khadija a dit que…",
+    "Mon nounours a faim."
+   ],
+   "moteur": "la répétition innocente de ce qu’il ne fallait pas entendre",
+   "lieux": [
+    "École",
+    "Cour",
+    "Hôpital"
+   ],
+   "activite": "fait danser son nounours"
+  },
+  {
+   "name": "SORCIÈRE MAMA DÉDÉ",
+   "surnom": "Mama Dédé",
+   "dessin": "catalogue",
+   "age": "la soixantaine",
+   "taille": 1.6,
+   "voix": {
+    "piper": "siwis",
+    "pitch": 0.88
+   },
+   "apparence": "Vieille femme au regard mystérieux, clin d’œil complice, sourire énigmatique.",
+   "tenue": "Foulard et robe wax multicolores, nombreux colliers de perles, herbes séchées et calebasse de « potion » à la main.",
+   "posture": "Penchée sur sa calebasse, elle souffle sur les herbes et parle en chuchotant comme un secret.",
+   "personnalite": "La vendeuse de remèdes et de solutions miracles : une potion pour la richesse, une pour l’amour, une pour le bulletin. Rien ne marche, mais elle a toujours une explication (« tu n’as pas cru assez fort »). Charlatane attachante, jamais méchante.",
+   "traits": [
+    "mystérieuse",
+    "commerçante",
+    "théâtrale",
+    "rusée",
+    "inventive"
+   ],
+   "habitudes": [
+    "chuchote les prix",
+    "invente une potion par client",
+    "reporte la faute sur le client"
+   ],
+   "emotions": [
+    "malice",
+    "mystère joué",
+    "panique quand on demande un remboursement"
+   ],
+   "reactions": [
+    "un remède qui échoue : « Il fallait boire à minuit »",
+    "un client sceptique : prédiction vague",
+    "la police : elle vend des tisanes"
+   ],
+   "interets": [
+    "les « clients »",
+    "les plantes",
+    "les rumeurs"
+   ],
+   "forces": [
+    "bagou",
+    "psychologie",
+    "imagination"
+   ],
+   "faiblesses": [
+    "aucun remède ne marche",
+    "peur des remboursements",
+    "se trahit en riant"
+   ],
+   "situations": {
+    "conflit": "menace d’une malédiction… réversible contre paiement",
+    "argent": "potion de richesse à crédit",
+    "famille": "remède pour la belle-mère",
+    "seduction": "philtre d’amour au piment",
+    "autorite": "devient vendeuse de tisanes",
+    "public": "démonstration de potion qui fume",
+    "echec": "« Tu n’as pas cru assez fort. »",
+    "secret": "ses potions, c’est du bissap"
+   },
+   "repliques": [
+    "Bois ça à minuit pile.",
+    "Tu n’as pas cru assez fort.",
+    "La potion, c’est cinq mille. Le secret, c’est dix."
+   ],
+   "moteur": "le remède miracle qui ne marche jamais, avec une excuse",
+   "lieux": [
+    "Marché",
+    "Village"
+   ],
+   "activite": "agite une calebasse fumante devant un client"
+  },
+  {
+   "name": "IMAM KARIM",
+   "surnom": "l’Imam",
+   "dessin": "galerie",
+   "age": "la cinquantaine",
+   "taille": 1.76,
+   "voix": {
+    "piper": "gilles",
+    "pitch": 0.98
+   },
+   "apparence": "Homme posé, barbe courte et soignée, visage serein, sourire calme et sage.",
+   "tenue": "Calotte blanche brodée, grand boubou crème avec une étole brodée d’or, sandales.",
+   "posture": "Paumes ouvertes vers le ciel quand il explique, voix basse qui fait taire les cris.",
+   "personnalite": "Le sage du quartier qui remet tout le monde sur le droit chemin. Il n’est jamais la cible de l’humour : le rire vient de ceux qui essaient de le prendre à témoin de leurs mensonges et qu’il renvoie, avec douceur, à leur propre mauvaise foi.",
+   "traits": [
+    "sage",
+    "patient",
+    "juste",
+    "pince-sans-rire",
+    "respecté"
+   ],
+   "habitudes": [
+    "écoute tout le monde jusqu’au bout",
+    "répond par une question",
+    "réconcilie autour d’un thé"
+   ],
+   "emotions": [
+    "sérénité",
+    "compassion",
+    "amusement discret"
+   ],
+   "reactions": [
+    "pris à témoin d’un mensonge : « Dis-le encore, en me regardant »",
+    "une dispute : il sert le thé",
+    "une excuse énorme : un silence qui suffit"
+   ],
+   "interets": [
+    "la paix du quartier",
+    "les enfants",
+    "le thé"
+   ],
+   "forces": [
+    "autorité morale",
+    "calme",
+    "écoute"
+   ],
+   "faiblesses": [
+    "trop patient avec les menteurs",
+    "ne sait pas refuser une invitation",
+    "invité partout"
+   ],
+   "situations": {
+    "conflit": "pose une seule question qui oblige à dire la vérité",
+    "argent": "rappelle la valeur des choses sans sermon",
+    "famille": "médiateur des familles",
+    "seduction": "rappelle qu’un mariage se prépare avec respect… et une dot honnête",
+    "autorite": "parle d’égal à égal au chef de quartier",
+    "public": "apaise la foule d’une voix basse",
+    "echec": "sourit : la leçon est apprise",
+    "secret": "le garde absolument, et conseille à celui qui le porte de réparer sa faute"
+   },
+   "repliques": [
+    "Dis-le encore, en me regardant.",
+    "Assieds-toi, le thé va répondre.",
+    "La vérité ne court pas, mais elle arrive."
+   ],
+   "moteur": "la sagesse tranquille qui fait craquer les menteurs (jamais moqué pour sa foi)",
+   "lieux": [
+    "Cérémonie",
+    "Cour",
+    "Village"
+   ],
+   "activite": "sert le thé à deux hommes qui se disputent"
+  },
+  {
+   "name": "MAÎTRE KONÉ",
+   "surnom": "Maître Koné",
+   "dessin": "galerie",
+   "age": "la fin de la cinquantaine",
+   "taille": 1.72,
+   "voix": {
+    "piper": "gilles",
+    "pitch": 1.08
+   },
+   "apparence": "Homme mince et raide, lunettes rectangulaires, cheveux ras qui se dégarnissent, sourcils froncés de correcteur.",
+   "tenue": "Veste de costume marron, chemise blanche, cravate rouge, pantalon marron, chaussures marron, cahier sous le bras, stylo rouge levé.",
+   "posture": "Stylo rouge brandi, menton haut ; il corrige l’air autour de lui et tape sur le cahier pour chaque faute.",
+   "personnalite": "L’instituteur pédant : il corrige la grammaire de tout le monde, même au marché, même pendant une dispute. Il connaît toutes les excuses d’écolier depuis trente ans — sauf celles de Petit Mamadou.",
+   "traits": [
+    "pédant",
+    "rigoureux",
+    "vieux jeu",
+    "juste",
+    "susceptible"
+   ],
+   "habitudes": [
+    "corrige les fautes à voix haute",
+    "donne des lignes à copier aux adultes",
+    "cite la dictée de 1985"
+   ],
+   "emotions": [
+    "exaspération",
+    "fierté pédagogique",
+    "stupeur devant une excuse nouvelle"
+   ],
+   "reactions": [
+    "une faute : « Répète après moi »",
+    "une excuse : il la note sur 20",
+    "un élève brillant : il cache son émotion"
+   ],
+   "interets": [
+    "la grammaire",
+    "la discipline",
+    "les dictées"
+   ],
+   "forces": [
+    "culture",
+    "exigence",
+    "mémoire des élèves"
+   ],
+   "faiblesses": [
+    "pédant",
+    "se fait piéger par les enfants",
+    "déteste les téléphones"
+   ],
+   "situations": {
+    "conflit": "corrige la grammaire de l’insulte",
+    "argent": "demande le prix « en chiffres et en lettres »",
+    "famille": "fait réciter ses propres enfants à table",
+    "seduction": "déclare sa flamme sans une faute",
+    "autorite": "convoque le policier « au tableau »",
+    "public": "donne une leçon improvisée",
+    "echec": "se met zéro… puis remonte à 10 « pour l’effort »",
+    "secret": "le lit dans les cahiers"
+   },
+   "repliques": [
+    "Répète après moi.",
+    "On ne dit pas « il a dit que », on dit…",
+    "Cette excuse vaut trois sur vingt."
+   ],
+   "moteur": "la correction scolaire appliquée à la vraie vie",
+   "lieux": [
+    "École",
+    "Bureau",
+    "Cour"
+   ],
+   "activite": "corrige des cahiers au stylo rouge en secouant la tête"
+  },
+  {
+   "name": "DOCTEUR SYLLA",
+   "surnom": "Docteur",
+   "dessin": "galerie",
+   "age": "la quarantaine",
+   "taille": 1.76,
+   "voix": {
+    "piper": "gilles"
+   },
+   "apparence": "Homme rond de visage, lunettes, barbe courte, sourire gourmand qui s’élargit devant un portefeuille.",
+   "tenue": "Blouse blanche sur chemise bleue et cravate bleue, pantalon bleu marine, chaussures noires, stéthoscope autour du cou, facture à la main.",
+   "posture": "Main au menton, il « réfléchit » au prix ; bras croisés quand on discute la facture.",
+   "personnalite": "Le médecin qui facture tout : la consultation, le regard, le froid du stéthoscope, l’air de la clinique. Compétent mais vénal, il se fait régulièrement remettre à sa place par Sœur Awa.",
+   "traits": [
+    "vénal",
+    "compétent",
+    "gourmand",
+    "théâtral",
+    "de mauvaise foi"
+   ],
+   "habitudes": [
+    "facture chaque geste",
+    "dit « hmm » avant chaque prix",
+    "accepte le paiement en nature (poulet)"
+   ],
+   "emotions": [
+    "gourmandise",
+    "fausse inquiétude médicale",
+    "panique quand il est malade"
+   ],
+   "reactions": [
+    "un patient sans argent : diagnostic « urgent »",
+    "Sœur Awa le corrige : sourire forcé",
+    "malade lui-même : il paie double"
+   ],
+   "interets": [
+    "l’argent",
+    "le poulet bicyclette",
+    "son nouveau stéthoscope"
+   ],
+   "forces": [
+    "diagnostic rapide",
+    "aplomb",
+    "clientèle fidèle"
+   ],
+   "faiblesses": [
+    "cupide",
+    "gourmand",
+    "douillet"
+   ],
+   "situations": {
+    "conflit": "brandit la facture comme une arme et ajoute des frais de dispute",
+    "argent": "chaque mot coûte cinq mille",
+    "famille": "facture même ses neveux",
+    "seduction": "consultation gratuite… la première",
+    "autorite": "certificat de complaisance pour le policier",
+    "public": "jargon médical pour impressionner",
+    "echec": "devient le patient et découvre le prix de ses propres consultations",
+    "secret": "le dossier médical… monnayable"
+   },
+   "repliques": [
+    "Hmm… Consultation : dix mille.",
+    "Le regard, c’est cinq mille.",
+    "Le poulet, c’est mon tarif préféré."
+   ],
+   "moteur": "la facturation absurde de chaque geste",
+   "lieux": [
+    "Hôpital",
+    "Bureau"
+   ],
+   "activite": "tend une facture à un patient qui recule"
+  },
+  {
+   "name": "FATOU",
+   "surnom": "Fatou Live",
+   "dessin": "catalogue",
+   "age": "la quarantaine",
+   "taille": 1.62,
+   "voix": {
+    "piper": "siwis",
+    "pitch": 1.1
+   },
+   "apparence": "Femme ronde aux yeux brillants d’excitation, bouche ouverte de commère ravie.",
+   "tenue": "Robe et foulard wax à tournesols violet et jaune, créoles dorées, téléphone sur perche à selfie.",
+   "posture": "Perche tendue vers l’action, elle commente à voix basse puis crie « Abonnez-vous ! ».",
+   "personnalite": "La commère qui filme tout : dispute, mariage, accident de gbaka — tout passe en direct. Mère d’Aminata l’influenceuse, elle rêve d’avoir plus d’abonnés que sa fille.",
+   "traits": [
+    "indiscrète",
+    "enthousiaste",
+    "opportuniste",
+    "drôle",
+    "compétitive"
+   ],
+   "habitudes": [
+    "filme d’abord, aide ensuite",
+    "commente en direct",
+    "compare ses vues à celles de sa fille"
+   ],
+   "emotions": [
+    "excitation",
+    "jalousie",
+    "fierté numérique"
+   ],
+   "reactions": [
+    "une dispute : elle sort la perche",
+    "on lui demande d’arrêter : « C’est en direct ! »",
+    "sa vidéo fait un flop : elle refilme"
+   ],
+   "interets": [
+    "les directs",
+    "les ragots",
+    "les abonnés"
+   ],
+   "forces": [
+    "toujours au bon endroit",
+    "réactivité",
+    "réseau"
+   ],
+   "faiblesses": [
+    "aucune discrétion",
+    "se fait filmer à son tour",
+    "batterie à plat au moment clé"
+   ],
+   "situations": {
+    "conflit": "filme les deux camps et fait voter le public",
+    "argent": "demande des cadeaux en direct",
+    "famille": "filme les disputes de famille",
+    "seduction": "met les amoureux en direct sans leur dire",
+    "autorite": "filme le policier qui « arrange »",
+    "public": "elle EST le public : perche tendue, elle commente et fait voter ses abonnés",
+    "echec": "batterie à 1 % au moment exact où le scandale éclate",
+    "secret": "il est déjà en ligne, avec un titre en majuscules et trois emojis"
+   },
+   "repliques": [
+    "C’est en direct, abonnez-vous !",
+    "Répète pour mes abonnés.",
+    "Ma batterie ! Non !"
+   ],
+   "moteur": "tout devient un direct, surtout ce qui devait rester secret",
+   "lieux": [
+    "Marché",
+    "Cérémonie",
+    "Taxi",
+    "Maquis"
+   ],
+   "activite": "filme la scène avec sa perche en commentant"
+  },
+  {
+   "name": "ADJOUA",
+   "surnom": "Adjoua crédit",
+   "dessin": "galerie",
+   "age": "environ 24 ans",
+   "taille": 1.68,
+   "voix": {
+    "piper": "jessica",
+    "pitch": 1.12
+   },
+   "apparence": "Jeune femme pulpeuse aux longs cheveux lisses, moue boudeuse, regard de chiot, créoles dorées.",
+   "tenue": "Robe rose moulante fendue, sac à main rose, sandales à talons, téléphone rose levé en selfie.",
+   "posture": "Téléphone levé, hanche cassée, elle bat des cils puis tend la main paume ouverte.",
+   "personnalite": "La go qui réclame du crédit : crédit de téléphone, crédit pour le taxi, crédit pour les cheveux. Elle demande à chaque homme qu’elle croise, avec une moue irrésistible. Concurrente de la Go Léopard.",
+   "traits": [
+    "charmeuse",
+    "opportuniste",
+    "drôle",
+    "insistante",
+    "coquette"
+   ],
+   "habitudes": [
+    "« Tu me mets un peu de crédit ? »",
+    "selfie toutes les deux minutes",
+    "garde trois téléphones"
+   ],
+   "emotions": [
+    "moue",
+    "joie intéressée",
+    "vexation"
+   ],
+   "reactions": [
+    "un homme qui refuse : elle passe au suivant sans transition",
+    "un cadeau : selfie de remerciement",
+    "une rivale : compliment empoisonné"
+   ],
+   "interets": [
+    "le crédit téléphonique",
+    "les selfies",
+    "les hommes généreux"
+   ],
+   "forces": [
+    "charme",
+    "persévérance",
+    "humour"
+   ],
+   "faiblesses": [
+    "jamais de batterie",
+    "confond générosité et richesse",
+    "rivalité avec la Go Léopard"
+   ],
+   "situations": {
+    "conflit": "boude jusqu’à victoire",
+    "argent": "n’en a jamais, en reçoit toujours",
+    "famille": "demande du crédit à sa mère aussi",
+    "seduction": "séduit par paliers de 500 francs",
+    "autorite": "demande du crédit au policier",
+    "public": "pose pour la photo au milieu de la dispute, en cherchant la bonne lumière",
+    "echec": "« Ton crédit est périmé de toute façon. »",
+    "secret": "ses trois téléphones, un par prétendant, qui sonnent en même temps"
+   },
+   "repliques": [
+    "Tu me mets un peu de crédit ?",
+    "Juste cinq cents, pour l’appel de ma vie.",
+    "Toi, tu n’es pas sérieux."
+   ],
+   "moteur": "la demande de crédit qui revient à chaque réplique",
+   "lieux": [
+    "Maquis",
+    "Salon de coiffure",
+    "Plage",
+    "Taxi"
+   ],
+   "activite": "se prend en selfie en cherchant du réseau"
+  },
+  {
+   "name": "MAMIE BINTOU",
+   "surnom": "Mamie Bintou",
+   "dessin": "galerie",
+   "age": "la soixantaine",
+   "taille": 1.58,
+   "voix": {
+    "piper": "siwis",
+    "pitch": 0.9
+   },
+   "apparence": "Vieille dame ronde aux lunettes rouges, grand sourire espiègle, yeux qui pétillent derrière les verres.",
+   "tenue": "Foulard et robe wax assortis à tournesols bleus et jaunes, boucles d’oreilles dorées, sandales.",
+   "posture": "Mains jointes sur le ventre puis main en écran pour chuchoter… très fort.",
+   "personnalite": "Celle qui balance tout : amie d’enfance et voisine d’en face de Maman Nounou, elle répète tout ce qu’on lui confie, en jurant qu’elle n’a rien dit. Joyeuse, gourmande de nouvelles, sans aucune méchanceté.",
+   "traits": [
+    "bavarde",
+    "joviale",
+    "gaffeuse",
+    "affectueuse",
+    "curieuse"
+   ],
+   "habitudes": [
+    "chuchote trop fort",
+    "commence par « Je ne devrais pas le dire, mais… »",
+    "rit de ses propres gaffes"
+   ],
+   "emotions": [
+    "joie",
+    "excitation",
+    "gêne rieuse"
+   ],
+   "reactions": [
+    "un secret : elle l’annonce en chuchotant fort",
+    "prise en faute : « Moi ? J’ai rien dit ! »",
+    "une fête : elle danse la première"
+   ],
+   "interets": [
+    "les nouvelles",
+    "les mariages",
+    "le salon de Tata Prisca"
+   ],
+   "forces": [
+    "bonne humeur",
+    "mémoire",
+    "affection de tous"
+   ],
+   "faiblesses": [
+    "ne garde rien",
+    "chuchote mal",
+    "mélange les histoires"
+   ],
+   "situations": {
+    "conflit": "balance ce qu’il ne fallait pas pour « calmer »",
+    "argent": "sait qui doit quoi et le dit",
+    "famille": "grand-mère de tout le quartier",
+    "seduction": "annonce les fiançailles avant les fiancés",
+    "autorite": "raconte la jeunesse du chef",
+    "public": "chuchote au micro, si bien que toute la cérémonie entend le secret",
+    "echec": "rit et propose des beignets",
+    "secret": "le sait déjà, le dit tout de suite"
+   },
+   "repliques": [
+    "Je ne devrais pas le dire, mais…",
+    "Moi ? J’ai rien dit !",
+    "Psst… tout le monde écoute ?"
+   ],
+   "moteur": "le secret chuchoté devant tout le monde",
+   "lieux": [
+    "Salon de coiffure",
+    "Cour",
+    "Marché",
+    "Cérémonie",
+    "Village"
+   ],
+   "activite": "chuchote à l’oreille d’une voisine en riant"
+  },
+  {
+   "name": "ALIOU",
+   "surnom": "Aliou le taximan",
+   "dessin": "galerie",
+   "age": "la quarantaine",
+   "taille": 1.75,
+   "voix": {
+    "piper": "tom",
+    "pitch": 0.96
+   },
+   "apparence": "Homme jovial à petite barbe, grand rire, yeux rieurs, bras toujours en mouvement.",
+   "tenue": "Casquette « TAXI » jaune et bleue, chemise à fleurs bleues et jaunes, jean, chaussures de marche marron.",
+   "posture": "Accoudé à la portière, un doigt pointé vers la route ou vers le ciel pour une maxime.",
+   "personnalite": "Le taximan philosophe : il a tout vu depuis son volant et tire une leçon de vie de chaque embouteillage. Contrôlé chaque matin par Agent Doumbia, ami de Tonton Dieng, son taxi tient grâce à Mécano Issa.",
+   "traits": [
+    "philosophe",
+    "bavard",
+    "jovial",
+    "débrouillard",
+    "observateur"
+   ],
+   "habitudes": [
+    "commente la route en proverbes",
+    "prend des détours « plus courts »",
+    "négocie la course en philosophie"
+   ],
+   "emotions": [
+    "bonne humeur",
+    "fatalisme",
+    "indignation de la route"
+   ],
+   "reactions": [
+    "un embouteillage : « La vie, c’est comme le carrefour »",
+    "un contrôle : il connaît le policier par son prénom",
+    "une panne : il pousse en chantant"
+   ],
+   "interets": [
+    "la route",
+    "la philosophie",
+    "les débats au kiosque"
+   ],
+   "forces": [
+    "sagesse de terrain",
+    "connaît tout le monde",
+    "bonne humeur"
+   ],
+   "faiblesses": [
+    "taxi en ruine",
+    "bavard",
+    "détours interminables"
+   ],
+   "situations": {
+    "conflit": "arbitre avec un proverbe",
+    "argent": "prix de la course selon la conversation",
+    "famille": "conduit toute la famille dans un seul taxi",
+    "seduction": "fait le détour par la plage",
+    "autorite": "philosophe avec Doumbia",
+    "public": "commente le quartier par la fenêtre",
+    "echec": "« Le taxi est fatigué, comme moi. »",
+    "secret": "tout ce qui se dit dans son taxi"
+   },
+   "repliques": [
+    "La vie, c’est comme le carrefour…",
+    "Monte, on négocie en route.",
+    "Le taxi est fatigué, comme moi."
+   ],
+   "moteur": "la philosophie de la route qui arrive toujours en retard",
+   "lieux": [
+    "Taxi",
+    "Marché",
+    "Plage"
+   ],
+   "activite": "hèle des clients en tapotant le toit de son taxi"
+  },
+  {
+   "name": "CHEF TRAORÉ",
+   "surnom": "Chef",
+   "dessin": "galerie",
+   "age": "la soixantaine",
+   "taille": 1.74,
+   "voix": {
+    "piper": "pierre",
+    "pitch": 0.9
+   },
+   "apparence": "Homme rond et majestueux, grande barbe blanche, lunettes, moue pompeuse, sourire de dignitaire.",
+   "tenue": "Haute calotte brodée rouge et or, grand boubou bordeaux brodé d’or, colliers de corail et d’or, sceptre doré à la main, sandales.",
+   "posture": "Sceptre planté au sol, ventre en avant, main levée pour imposer le silence qu’il rompt lui-même.",
+   "personnalite": "Le chef de quartier pompeux : il préside chaque réunion, tranche chaque dispute — mal — et rappelle sans cesse son titre. Il aime les cérémonies, les discours et les cadeaux.",
+   "traits": [
+    "pompeux",
+    "vaniteux",
+    "bavard",
+    "protecteur",
+    "gourmand d’honneurs"
+   ],
+   "habitudes": [
+    "commence par « En tant que chef… »",
+    "tape le sol avec son sceptre",
+    "convoque des réunions pour rien"
+   ],
+   "emotions": [
+    "fierté",
+    "vexation",
+    "solennité"
+   ],
+   "reactions": [
+    "on l’ignore : il tape du sceptre",
+    "un cadeau : décision favorable",
+    "contredit : nouvelle réunion"
+   ],
+   "interets": [
+    "les cérémonies",
+    "les discours",
+    "son sceptre"
+   ],
+   "forces": [
+    "autorité",
+    "éloquence",
+    "réseau"
+   ],
+   "faiblesses": [
+    "vanité",
+    "jugements absurdes",
+    "se fait flatter"
+   ],
+   "situations": {
+    "conflit": "jugement de Salomon raté",
+    "argent": "amende pour tout le monde",
+    "famille": "préside même le dîner : on ne mange qu’après son discours",
+    "seduction": "offre un titre honorifique",
+    "autorite": "rappelle qu’il EST l’autorité",
+    "public": "discours de vingt minutes",
+    "echec": "« La séance est levée ! »",
+    "secret": "le révèle en plein discours, sans s’en rendre compte, sceptre levé"
+   },
+   "repliques": [
+    "En tant que chef de ce quartier…",
+    "La séance est levée !",
+    "Silence ! C’est le chef qui parle."
+   ],
+   "moteur": "la solennité pompeuse pour une affaire de poulet",
+   "lieux": [
+    "Cérémonie",
+    "Village",
+    "Cour"
+   ],
+   "activite": "préside un petit groupe en levant son sceptre"
+  },
+  {
+   "name": "AMINATA",
+   "surnom": "Amina",
+   "dessin": "galerie",
+   "age": "16 ans",
+   "taille": 1.62,
+   "voix": {
+    "piper": "jessica",
+    "pitch": 1.15
+   },
+   "apparence": "Adolescente fine aux très longues tresses, moue de selfie, sourcils parfaits, créoles dorées.",
+   "tenue": "Crop top noir, jean bleu clair déchiré aux genoux, baskets roses, téléphone rose, signe de paix.",
+   "posture": "Signe de paix, tête penchée, téléphone à bout de bras ; elle ne regarde personne en face, seulement l’écran.",
+   "personnalite": "L’ado influenceuse : fille de Fatou, elle transforme chaque moment en contenu et parle en tendances. Elle juge les adultes « gênants » mais leur vole leurs meilleures répliques pour ses vidéos.",
+   "traits": [
+    "branchée",
+    "blasée",
+    "créative",
+    "impatiente",
+    "drôle malgré elle"
+   ],
+   "habitudes": [
+    "danse les tendances",
+    "dit « c’est gênant »",
+    "compte ses vues"
+   ],
+   "emotions": [
+    "ennui",
+    "excitation virale",
+    "honte de ses parents"
+   ],
+   "reactions": [
+    "un adulte drôle : elle filme en cachette",
+    "sa mère en direct : « Maman, arrête ! »",
+    "une vidéo qui marche : danse de victoire"
+   ],
+   "interets": [
+    "les tendances",
+    "les abonnés",
+    "la mode"
+   ],
+   "forces": [
+    "créativité",
+    "réseau en ligne",
+    "sens du rythme"
+   ],
+   "faiblesses": [
+    "accro au téléphone",
+    "méprise ce qu’elle ne comprend pas",
+    "en compétition avec sa mère"
+   ],
+   "situations": {
+    "conflit": "répond en emojis et en tendances, sans lever les yeux du téléphone",
+    "argent": "demande des cadeaux pour ses abonnés",
+    "famille": "gênée par Fatou, la filme quand même",
+    "seduction": "like la photo puis ignore le garçon pendant trois jours",
+    "autorite": "filme le contrôle de police « pour les abonnés », sous-titres compris",
+    "public": "fait une tendance au milieu de la cérémonie",
+    "echec": "supprime la vidéo et dit qu’elle n’a jamais existé",
+    "secret": "il dort dans ses brouillons, prêt à devenir la vidéo de la semaine"
+   },
+   "repliques": [
+    "C’est gênant.",
+    "Attends, on refait, c’était pas bien.",
+    "Ça va faire un million de vues."
+   ],
+   "moteur": "chaque instant devient une vidéo, surtout les gênants",
+   "lieux": [
+    "Plage",
+    "Maquis",
+    "Cérémonie",
+    "École"
+   ],
+   "activite": "danse une tendance devant son téléphone posé"
+  },
+  {
+   "name": "BOUBACAR",
+   "surnom": "Bouba",
+   "dessin": "galerie",
+   "age": "la quarantaine",
+   "taille": 1.74,
+   "voix": {
+    "piper": "pierre",
+    "pitch": 0.93
+   },
+   "apparence": "Homme très rond au gros ventre, barbe courte, visage béat de gourmand, joues pleines.",
+   "tenue": "Calotte jaune brodée, grand boubou jaune brodé d’or avec pantalon assorti, sandales noires, une cuisse de poulet à la main.",
+   "posture": "Une main sur le ventre, l’autre qui porte le poulet à la bouche ; il rit les yeux fermés.",
+   "personnalite": "Le gourmand : il mange comme dix et parle de nourriture même en mangeant. Meilleur client de Tantie Awa Sarr et de Docteur Sylla. Jovial, généreux en rires, radin en addition.",
+   "traits": [
+    "gourmand",
+    "jovial",
+    "paresseux",
+    "malin pour manger",
+    "attachant"
+   ],
+   "habitudes": [
+    "cache du poulet dans son boubou",
+    "arrive aux fêtes avant les invités",
+    "commence chaque phrase par un plat"
+   ],
+   "emotions": [
+    "béatitude",
+    "faim",
+    "panique sans nourriture"
+   ],
+   "reactions": [
+    "une odeur de cuisine : il apparaît",
+    "un régime : « Demain »",
+    "on touche à son assiette : drame"
+   ],
+   "interets": [
+    "le poulet",
+    "les cérémonies (le buffet)",
+    "la sieste"
+   ],
+   "forces": [
+    "bonne humeur",
+    "connaît tous les plats",
+    "flair culinaire"
+   ],
+   "faiblesses": [
+    "ne résiste à rien",
+    "toujours malade du ventre",
+    "paie rarement"
+   ],
+   "situations": {
+    "conflit": "se réconcilie autour d’un plat",
+    "argent": "tout part en nourriture",
+    "famille": "oncle préféré des enfants (il partage les bonbons)",
+    "seduction": "déclare son amour… à la cuisine",
+    "autorite": "offre une cuisse au policier",
+    "public": "premier au buffet, dernier à le quitter, assiette dans chaque main",
+    "echec": "console-toi en mangeant",
+    "secret": "le poulet caché dans son boubou"
+   },
+   "repliques": [
+    "On mange d’abord, on parle après.",
+    "Le régime commence demain.",
+    "C’est le quatrième. Pour les urgences."
+   ],
+   "moteur": "la gourmandise qui l’emporte sur tout",
+   "lieux": [
+    "Maquis",
+    "Cérémonie",
+    "Marché",
+    "Hôpital"
+   ],
+   "activite": "dévore une cuisse de poulet en souriant aux anges"
+  },
+  {
+   "name": "LE FRIMEUR",
+   "surnom": "Junior le Frimeur",
+   "dessin": "galerie",
+   "age": "environ 25 ans",
+   "taille": 1.78,
+   "voix": {
+    "piper": "tom",
+    "pitch": 1.1
+   },
+   "apparence": "Jeune homme svelte aux cheveux courts torsadés, sourire crâneur, sourcil levé.",
+   "tenue": "Chemise baroque noir et or ouverte sur un tee-shirt noir, chaîne dorée, jean noir déchiré, baskets noir et or.",
+   "posture": "Index pointé vers la caméra, une main dans la poche, petit pas de danse à chaque phrase.",
+   "personnalite": "Le frimeur du quartier, « Junior » : vrai beau gosse qui dépense tout son salaire en tenues et en sorties, puis mange du pain sec la fin du mois. Contrairement à Koffi, il ne ment pas sur sa richesse : il ment sur son style.",
+   "traits": [
+    "vaniteux",
+    "danseur",
+    "charmeur",
+    "dépensier",
+    "sympathique"
+   ],
+   "habitudes": [
+    "se regarde dans chaque vitre",
+    "danse en marchant",
+    "change de tenue trois fois par jour"
+   ],
+   "emotions": [
+    "assurance",
+    "vexation",
+    "joie de la fête"
+   ],
+   "reactions": [
+    "une tache sur sa chemise : drame national",
+    "une musique : il danse",
+    "un compliment à Koffi : il rit trop fort"
+   ],
+   "interets": [
+    "la mode",
+    "la danse",
+    "les soirées"
+   ],
+   "forces": [
+    "style",
+    "charisme",
+    "sens du spectacle"
+   ],
+   "faiblesses": [
+    "fauché en fin de mois",
+    "vanité",
+    "peur de la pluie (les baskets)"
+   ],
+   "situations": {
+    "conflit": "propose un défi de danse : le perdant a tort",
+    "argent": "tout part dans les habits ; il mange du pain sec en chemise de soie",
+    "famille": "emprunte les chaussures de son père",
+    "seduction": "pas de danse, clin d’œil",
+    "autorite": "demande au policier s’il aime sa tenue",
+    "public": "il EST le spectacle : il transforme chaque passage en défilé dansé",
+    "echec": "garde la pose, même tombé dans la boue avec ses baskets",
+    "secret": "la fin du mois au pain sec"
+   },
+   "repliques": [
+    "Regarde-moi bien. C’est ça, le style.",
+    "Mes baskets ! Pas la boue !",
+    "On danse ou on parle ?"
+   ],
+   "moteur": "le style avant tout, même avant manger",
+   "lieux": [
+    "Maquis",
+    "Cérémonie",
+    "Plage",
+    "Salon de coiffure"
+   ],
+   "activite": "danse quelques pas en se regardant dans une vitre"
+  },
+  {
+   "name": "LE PATRIARCHE",
+   "surnom": "le Doyen",
+   "dessin": "galerie",
+   "age": "environ 80 ans",
+   "taille": 1.66,
+   "voix": {
+    "piper": "gilles",
+    "pitch": 0.88
+   },
+   "apparence": "Très vieil homme voûté, longue barbe blanche, visage creusé, rire édenté éclatant.",
+   "tenue": "Calotte blanche brodée de bleu, long boubou crème, canne en bois, sandales brunes.",
+   "posture": "Courbé sur sa canne, il rit avant tout le monde et tape le sol pour ponctuer ses souvenirs.",
+   "personnalite": "Le doyen du quartier : mémoire vivante, il compare tout à « de mon temps » — où tout était mieux, moins cher et plus drôle. Il rit de tout et rappelle au Chef Traoré qu’il l’a connu en culottes courtes.",
+   "traits": [
+    "rieur",
+    "nostalgique",
+    "malicieux",
+    "respecté",
+    "têtu"
+   ],
+   "habitudes": [
+    "« De mon temps… »",
+    "rit sans raison apparente",
+    "donne des surnoms d’enfance aux notables"
+   ],
+   "emotions": [
+    "hilarité",
+    "nostalgie",
+    "malice"
+   ],
+   "reactions": [
+    "un prix actuel : « De mon temps, c’était dix francs ! »",
+    "un notable pompeux : il raconte son enfance",
+    "une blague : il rit avant la chute"
+   ],
+   "interets": [
+    "les souvenirs",
+    "les jeunes",
+    "le thé"
+   ],
+   "forces": [
+    "mémoire",
+    "autorité de l’âge",
+    "humour"
+   ],
+   "faiblesses": [
+    "radote",
+    "se trompe d’époque",
+    "impatience des autres"
+   ],
+   "situations": {
+    "conflit": "rappelle une dispute de 1970 plus grave",
+    "argent": "convertit tout en prix de 1970",
+    "famille": "arrière-grand-père de la moitié du quartier",
+    "seduction": "raconte comment il a séduit sa femme avec une mangue",
+    "autorite": "le chef ? « Le petit Traoré ! »",
+    "public": "bénit tout le monde et raconte une histoire de 1970 que personne n’a demandée",
+    "echec": "rit plus fort que les gagnants, comme si c’était lui qui avait gagné",
+    "secret": "il connaît ceux d’il y a cinquante ans"
+   },
+   "repliques": [
+    "De mon temps, c’était dix francs !",
+    "Le petit Traoré ? Je l’ai connu tout nu !",
+    "Hé hé hé… continue, continue."
+   ],
+   "moteur": "la nostalgie qui démolit les prétentions des notables",
+   "lieux": [
+    "Village",
+    "Cour",
+    "Cérémonie"
+   ],
+   "activite": "rit sur un banc en tapant sa canne"
+  },
+  {
+   "name": "LA LYCÉENNE",
+   "surnom": "Mariam",
+   "dessin": "galerie",
+   "age": "15 ans",
+   "taille": 1.6,
+   "voix": {
+    "piper": "jessica",
+    "pitch": 1.12
+   },
+   "apparence": "Adolescente fine aux longues tresses en queue de cheval, sourire sûr de lui, grands yeux vifs.",
+   "tenue": "Chemise blanche d’uniforme, jupe plissée bleu marine, chaussettes blanches, chaussures noires, sac à dos, cahiers bleus serrés contre elle.",
+   "posture": "Cahiers contre la poitrine, menton levé, elle corrige en souriant et part avant la réplique.",
+   "personnalite": "La lycéenne qui sait tout : Mariam, fille du Professeur Samba, prépare son examen et corrige son père en public. Brillante, ironique, elle explique aux adultes ce qu’ils croyaient savoir.",
+   "traits": [
+    "brillante",
+    "ironique",
+    "sûre d’elle",
+    "ambitieuse",
+    "impatiente"
+   ],
+   "habitudes": [
+    "corrige les dates et les chiffres",
+    "révise en marchant",
+    "lève les yeux au ciel"
+   ],
+   "emotions": [
+    "assurance",
+    "agacement",
+    "tendresse cachée pour son père"
+   ],
+   "reactions": [
+    "une erreur d’adulte : correction immédiate",
+    "un compliment : « Je sais »",
+    "une injustice : discours argumenté"
+   ],
+   "interets": [
+    "les examens",
+    "les sciences",
+    "les débats"
+   ],
+   "forces": [
+    "intelligence",
+    "répartie",
+    "travail"
+   ],
+   "faiblesses": [
+    "arrogance",
+    "impatience",
+    "stress des examens"
+   ],
+   "situations": {
+    "conflit": "argumente en trois points",
+    "argent": "calcule l’arnaque de la tontine",
+    "famille": "corrige son père, l’aime quand même",
+    "seduction": "« Reviens après mon examen. »",
+    "autorite": "connaît le règlement mieux que le surveillant",
+    "public": "transforme la dispute en exposé improvisé, plan en trois parties",
+    "echec": "demande la correction détaillée",
+    "secret": "elle a déjà tout compris"
+   },
+   "repliques": [
+    "Papa, ce n’est pas Victor Hugo qui a dit ça.",
+    "Je sais.",
+    "Reviens après mon examen."
+   ],
+   "moteur": "la jeunesse qui corrige les adultes en public",
+   "lieux": [
+    "École",
+    "Cour",
+    "Bureau"
+   ],
+   "activite": "révise ses cahiers en marchant, lèvres qui bougent"
+  },
+  {
+   "name": "LA GO LÉOPARD",
+   "surnom": "Sandra Léopard",
+   "dessin": "galerie",
+   "age": "environ 28 ans",
+   "taille": 1.7,
+   "voix": {
+    "piper": "siwis",
+    "pitch": 1.06
+   },
+   "apparence": "Jeune femme glamour et pulpeuse, longs cheveux ondulés, sourire charmeur, regard qui évalue.",
+   "tenue": "Robe imprimé léopard fendue haut, sandales dorées à talons, sac noir à la main, bijoux dorés.",
+   "posture": "Main sur la joue, petit rire, hanche cassée ; elle jette un coup d’œil aux chaussures avant le visage.",
+   "personnalite": "La go chic qui cherche un mari riche : elle évalue chaque homme à ses chaussures et à sa voiture. Elle croit Koffi riche, flirte avec le Banquier, rivalise avec Coumba et Adjoua.",
+   "traits": [
+    "séductrice",
+    "calculatrice",
+    "élégante",
+    "drôle",
+    "déterminée"
+   ],
+   "habitudes": [
+    "regarde les chaussures",
+    "demande « Tu es marié ? » d’entrée",
+    "garde un carnet des bons partis"
+   ],
+   "emotions": [
+    "séduction",
+    "déception",
+    "triomphe"
+   ],
+   "reactions": [
+    "un homme bien chaussé : sourire immédiat",
+    "un fauché démasqué : demi-tour élégant",
+    "une rivale : compliment empoisonné"
+   ],
+   "interets": [
+    "les bons partis",
+    "la mode",
+    "les mariages des autres"
+   ],
+   "forces": [
+    "charme",
+    "franchise sur ses objectifs",
+    "style"
+   ],
+   "faiblesses": [
+    "se trompe toujours de riche",
+    "impatience",
+    "jalousie"
+   ],
+   "situations": {
+    "conflit": "élégance glaciale : elle remet son rouge à lèvres avant de répondre",
+    "argent": "elle ne paie jamais, elle investit",
+    "famille": "sa mère attend un gendre depuis 10 ans",
+    "seduction": "questionnaire patrimonial en souriant",
+    "autorite": "flirte avec le policier pour éviter l’amende",
+    "public": "défile comme sur un tapis rouge et repère le plus riche de la foule",
+    "echec": "passe au suivant sans se retourner",
+    "secret": "son carnet des bons partis"
+   },
+   "repliques": [
+    "Tu es marié ? Je demande pour un ami.",
+    "Montre-moi tes chaussures, je te dis qui tu es.",
+    "Crédit refusé. Mariage refusé aussi."
+   ],
+   "moteur": "la chasse au mari riche qui tombe toujours sur un fauché",
+   "lieux": [
+    "Maquis",
+    "Cérémonie",
+    "Bureau",
+    "Plage"
+   ],
+   "activite": "défile en regardant les chaussures des hommes"
+  },
+  {
+   "name": "LA FUTURE MAMAN",
+   "surnom": "Maman Rose",
+   "dessin": "galerie",
+   "age": "environ 30 ans",
+   "taille": 1.65,
+   "voix": {
+    "piper": "siwis",
+    "pitch": 1
+   },
+   "apparence": "Femme enceinte au ventre bien rond, visage doux et rayonnant, sourire tendre qui devient exigeant.",
+   "tenue": "Foulard wax orange et or, longue robe wax orange et jaune à fleurs, boucles et collier dorés, sandales, mains sur le ventre.",
+   "posture": "Mains posées sur le ventre, elle se cambre en soupirant puis pointe le doigt vers ce qu’elle veut.",
+   "personnalite": "La future maman aux envies impossibles : attiéké à minuit, mangue en saison sèche, glace au piment. Épouse du Général Zongo toujours « sur un chantier », mère de Khadija et Aya. Douce mais tyrannique au nom du bébé.",
+   "traits": [
+    "douce",
+    "exigeante",
+    "dramatique",
+    "rusée",
+    "maternelle"
+   ],
+   "habitudes": [
+    "« C’est le bébé qui veut »",
+    "appelle son mari à minuit",
+    "fait courir tout le quartier"
+   ],
+   "emotions": [
+    "tendresse",
+    "caprice",
+    "larmes soudaines"
+   ],
+   "reactions": [
+    "une envie refusée : larmes immédiates",
+    "l’envie satisfaite : elle n’en veut plus",
+    "son mari s’enfuit : elle appelle sa mère"
+   ],
+   "interets": [
+    "le bébé",
+    "la nourriture bizarre",
+    "les prénoms"
+   ],
+   "forces": [
+    "personne ne lui dit non",
+    "amour",
+    "organisation"
+   ],
+   "faiblesses": [
+    "envies impossibles",
+    "humeur changeante",
+    "fatiguée"
+   ],
+   "situations": {
+    "conflit": "les larmes gagnent toujours",
+    "argent": "tout pour le bébé, même la voiture du mari",
+    "famille": "commande tout le monde par le bébé",
+    "seduction": "rappelle à son mari qu’il lui doit tout",
+    "autorite": "passe devant tout le monde dans la file",
+    "public": "tout le monde lui cède la place",
+    "echec": "« Le bébé est déçu. » — et tout le monde se sent coupable",
+    "secret": "le sexe du bébé, qu’elle laisse deviner pour faire des paris"
+   },
+   "repliques": [
+    "C’est le bébé qui veut.",
+    "Maintenant. Pas demain.",
+    "Finalement, je n’en veux plus."
+   ],
+   "moteur": "l’envie impossible au nom du bébé",
+   "lieux": [
+    "Hôpital",
+    "Salon",
+    "Marché",
+    "Cour"
+   ],
+   "activite": "se masse le ventre en montrant un étal du doigt"
+  },
+  {
+   "name": "LE BANQUIER",
+   "surnom": "Monsieur le Directeur",
+   "dessin": "galerie",
+   "age": "la quarantaine",
+   "taille": 1.75,
+   "voix": {
+    "piper": "tom",
+    "pitch": 0.94
+   },
+   "apparence": "Homme chauve, lunettes rondes, fine moustache, sourire suffisant, poing serré de triomphe.",
+   "tenue": "Costume noir, chemise blanche, cravate noire, chaussures noires vernies, ordinateur portable sous le bras.",
+   "posture": "Ordinateur serré contre lui comme un coffre, il lève le poing « Refusé ! » avec joie.",
+   "personnalite": "Le banquier qui refuse tous les crédits — avant même la question. Il prend plaisir à dire non, mais son compte personnel cache une surprise. Agent Gora garde sa porte.",
+   "traits": [
+    "rigide",
+    "suffisant",
+    "méfiant",
+    "formaliste",
+    "secret"
+   ],
+   "habitudes": [
+    "dit « Refusé » avant la question",
+    "demande trois garanties",
+    "regarde l’écran pendant qu’on lui parle"
+   ],
+   "emotions": [
+    "satisfaction de refuser",
+    "méfiance",
+    "panique quand on parle de son compte"
+   ],
+   "reactions": [
+    "une demande de crédit : refus joyeux",
+    "un sourire charmeur : deux garanties de plus",
+    "on parle de son compte : il change de sujet"
+   ],
+   "interets": [
+    "les garanties",
+    "les taux",
+    "les costumes"
+   ],
+   "forces": [
+    "rigueur",
+    "calme",
+    "mémoire des dossiers"
+   ],
+   "faiblesses": [
+    "endetté lui-même",
+    "sans humour",
+    "peur d’être découvert"
+   ],
+   "situations": {
+    "conflit": "« Ce n’est pas personnel, c’est procédural. »",
+    "argent": "refuse d’abord, réfléchit jamais",
+    "famille": "fait remplir un dossier à ses enfants pour l’argent de poche",
+    "seduction": "demande une garantie sentimentale",
+    "autorite": "il est l’autorité de l’argent",
+    "public": "discours sur l’épargne",
+    "echec": "demande un petit crédit",
+    "secret": "son propre découvert, caché derrière l’écran de son ordinateur"
+   },
+   "repliques": [
+    "Refusé.",
+    "Garantie ? Maison, voiture, salaire ?",
+    "Ce n’est pas personnel, c’est procédural."
+   ],
+   "moteur": "le refus systématique… jusqu’à ce qu’il ait besoin d’un crédit",
+   "lieux": [
+    "Bureau"
+   ],
+   "activite": "tape sur son ordinateur en secouant la tête « non »"
+  },
+  {
+   "name": "LA VOISINE",
+   "surnom": "la voisine qui crie",
+   "dessin": "catalogue",
+   "age": "environ 35 ans",
+   "taille": 1.66,
+   "voix": {
+    "piper": "jessica",
+    "pitch": 0.96
+   },
+   "apparence": "Femme pulpeuse au ventre rond, vanilles naturelles, grande bouche ouverte, sourcils furieux.",
+   "tenue": "Bandeau rouge, longue robe rose sans manches, tongs.",
+   "posture": "Debout sur le seuil, mains sur les hanches puis bras tendus vers le ciel ; elle crie avant d’ouvrir la porte.",
+   "personnalite": "La voisine qui crie : épouse du Tonton aux bouteilles, elle l’attend sur le pas de la porte et fait profiter tout le quartier de chaque dispute. Fort caractère, cœur tendre caché sous le volume.",
+   "traits": [
+    "explosive",
+    "franche",
+    "théâtrale",
+    "jalouse",
+    "tendre au fond"
+   ],
+   "habitudes": [
+    "crie le prénom de son mari depuis la porte",
+    "prend le quartier à témoin",
+    "pardonne à la troisième bouteille… non"
+   ],
+   "emotions": [
+    "colère",
+    "indignation",
+    "tendresse soudaine"
+   ],
+   "reactions": [
+    "le mari rentre tard : volume maximum",
+    "une excuse : elle la répète en criant",
+    "un cadeau : elle crie de joie"
+   ],
+   "interets": [
+    "son mari (le surveiller)",
+    "les feuilletons",
+    "la tranquillité (qu’elle détruit)"
+   ],
+   "forces": [
+    "voix",
+    "franchise",
+    "détermination"
+   ],
+   "faiblesses": [
+    "volume",
+    "jalousie",
+    "tout le monde sait tout"
+   ],
+   "situations": {
+    "conflit": "crescendo jusqu’au quartier entier",
+    "argent": "« Les bouteilles, tu les paies avec quoi ?! »",
+    "famille": "crie par amour, et chacun dans la cour sait qu’elle a raison",
+    "seduction": "jalouse dès qu’une voisine sourit",
+    "autorite": "crie aussi sur le policier",
+    "public": "elle EST le spectacle du quartier",
+    "echec": "claque la porte… et la rouvre pour le dernier mot",
+    "secret": "impossible : elle crie tout"
+   },
+   "repliques": [
+    "Tu étais où ?!",
+    "Tout le quartier, venez voir !",
+    "Et ces bouteilles, elles sont à qui ?!"
+   ],
+   "moteur": "la dispute de couple en public, volume maximum",
+   "lieux": [
+    "Cour",
+    "Salon"
+   ],
+   "activite": "crie depuis le pas de sa porte, mains sur les hanches"
+  },
+  {
+   "name": "LE TONTON",
+   "surnom": "le Tonton aux bouteilles",
+   "dessin": "catalogue",
+   "age": "la quarantaine",
+   "taille": 1.84,
+   "voix": {
+    "piper": "pierre",
+    "pitch": 0.9
+   },
+   "apparence": "Homme dégingandé au ventre rond, front dégarni, long visage et menton proéminent, yeux endormis.",
+   "tenue": "Polo bleu à manches longues, pantalon bleu marine, grosses chaussures, une bouteille verte dans chaque main.",
+   "posture": "Bras ballants avec une bouteille dans chaque main, il avance d’un pas lent et recule de deux quand sa femme crie.",
+   "personnalite": "Le tonton aux bouteilles : mari de la Voisine, il rentre toujours tard avec deux bouteilles et une excuse plus lente que lui. Placide, de mauvaise foi tranquille, il ne hausse jamais le ton.",
+   "traits": [
+    "placide",
+    "de mauvaise foi",
+    "lent",
+    "têtu",
+    "bon vivant"
+   ],
+   "habitudes": [
+    "rentre tard",
+    "cache les bouteilles derrière son dos (on les voit)",
+    "répond par une question"
+   ],
+   "emotions": [
+    "flegme",
+    "gêne",
+    "contentement"
+   ],
+   "reactions": [
+    "sa femme crie : il cligne lentement",
+    "une question : « Quelles bouteilles ? »",
+    "pris : « C’est pour un ami »"
+   ],
+   "interets": [
+    "le maquis",
+    "la sieste",
+    "la paix"
+   ],
+   "forces": [
+    "calme imperturbable",
+    "endurance",
+    "humour pince-sans-rire"
+   ],
+   "faiblesses": [
+    "mauvaise foi",
+    "lenteur",
+    "toujours en retard"
+   ],
+   "situations": {
+    "conflit": "flegme total face aux cris",
+    "argent": "tout part au maquis, bouteille après bouteille, « pour un ami »",
+    "famille": "gentil avec les enfants, fuit sa femme",
+    "seduction": "offre une bouteille en signe d’amour",
+    "autorite": "si lent que le policier abandonne",
+    "public": "salue tout le monde avec les bouteilles",
+    "echec": "boit pour oublier qu’il a perdu",
+    "secret": "les bouteilles, visibles de tous"
+   },
+   "repliques": [
+    "Quelles bouteilles ?",
+    "C’est pour un ami.",
+    "Pourquoi tu cries ? Je suis là."
+   ],
+   "moteur": "le flegme de mauvaise foi face à une femme qui crie",
+   "lieux": [
+    "Cour",
+    "Maquis"
+   ],
+   "activite": "traverse lentement avec une bouteille dans chaque main"
+  },
+  {
+   "name": "MADAME KONAN",
+   "surnom": "la Présidente",
+   "dessin": "à dessiner",
+   "age": "la cinquantaine",
+   "taille": 1.66,
+   "voix": {
+    "piper": "siwis",
+    "pitch": 0.92
+   },
+   "apparence": "Femme imposante au port de reine, lunettes en demi-lune sur le nez, regard qui pèse chaque cotisation.",
+   "tenue": "Grand boubou bazin violet brodé, foulard assorti en couronne, gros cahier de comptes et caisse métallique cadenassée.",
+   "posture": "Assise bien droite derrière la caisse, une main posée dessus comme sur un trésor, l’autre qui tourne les pages du cahier.",
+   "personnalite": "La présidente de la tontine : elle garde l’argent de tout le quartier et trouve toujours un article du règlement pour retarder le tour de chacun. Intègre… à sa façon, solennelle, imbattable en procédure.",
+   "traits": [
+    "solennelle",
+    "méfiante",
+    "procédurière",
+    "intègre en apparence",
+    "rancunière"
+   ],
+   "habitudes": [
+    "lit le règlement à voix haute",
+    "convoque des assemblées extraordinaires",
+    "recompte la caisse devant tout le monde"
+   ],
+   "emotions": [
+    "gravité",
+    "soupçon",
+    "satisfaction quand tout le monde a payé"
+   ],
+   "reactions": [
+    "un retard de cotisation : pénalité immédiate",
+    "on réclame son tour : « Article 7 »",
+    "un trou dans la caisse : elle accuse le trésorier"
+   ],
+   "interets": [
+    "la tontine",
+    "le règlement",
+    "les assemblées"
+   ],
+   "forces": [
+    "organisation",
+    "autorité",
+    "mémoire des cotisations"
+   ],
+   "faiblesses": [
+    "règlement à rallonge",
+    "lenteur des paiements",
+    "susceptible"
+   ],
+   "situations": {
+    "conflit": "convoque une assemblée extraordinaire",
+    "argent": "encaisse vite, décaisse lentement",
+    "famille": "sa famille cotise aussi",
+    "seduction": "exige une cotisation d’entrée",
+    "autorite": "se considère plus importante que le chef",
+    "public": "lit le bilan en entier",
+    "echec": "« La séance est suspendue. »",
+    "secret": "le solde réel de la caisse"
+   },
+   "repliques": [
+    "Article 7 du règlement.",
+    "Ton tour, c’est le mois prochain… l’année prochaine.",
+    "Qui n’a pas cotisé ?"
+   ],
+   "moteur": "le règlement de tontine qui repousse toujours le tour des autres",
+   "lieux": [
+    "Cour",
+    "Marché",
+    "Bureau"
+   ],
+   "activite": "compte les billets de la tontine devant une file de cotisantes"
+  },
+  {
+   "name": "PATRON SÉRY",
+   "surnom": "Patron",
+   "dessin": "à dessiner",
+   "age": "la cinquantaine",
+   "taille": 1.76,
+   "voix": {
+    "piper": "pierre",
+    "pitch": 0.96
+   },
+   "apparence": "Homme corpulent au crâne rasé, grosse moustache, serviette sur l’épaule, sourire commercial.",
+   "tenue": "Chemise à carreaux ouverte sur un débardeur, pantalon de toile, sandales, ardoise et craie à la main.",
+   "posture": "Derrière son comptoir, ardoise brandie, il sert d’une main et note les dettes de l’autre.",
+   "personnalite": "Le patron du maquis « Chez Séry » : il fait crédit à tout le quartier sauf à Koffi, connaît les ardoises par cœur et revend plus cher la cuisine de Tantie Awa Sarr. Bon vivant, commerçant jusqu’au bout de la craie.",
+   "traits": [
+    "commerçant",
+    "jovial",
+    "rancunier sur les dettes",
+    "malin",
+    "accueillant"
+   ],
+   "habitudes": [
+    "note tout à la craie",
+    "monte le son quand on parle d’addition",
+    "offre la première bouteille, facture la deuxième double"
+   ],
+   "emotions": [
+    "bonhomie",
+    "méfiance",
+    "colère des ardoises"
+   ],
+   "reactions": [
+    "Koffi entre : il cache l’ardoise",
+    "un client sans argent : il lui donne un tablier",
+    "une fête : il augmente les prix"
+   ],
+   "interets": [
+    "son maquis",
+    "le foot à la télé",
+    "les ardoises"
+   ],
+   "forces": [
+    "sens du commerce",
+    "ambiance",
+    "mémoire des dettes"
+   ],
+   "faiblesses": [
+    "prix variables",
+    "rancunier",
+    "mauvais payeur chez ses fournisseurs"
+   ],
+   "situations": {
+    "conflit": "efface l’ardoise… pour en écrire une plus grosse",
+    "argent": "crédit pour tous sauf Koffi",
+    "famille": "sa famille mange gratuit, paie en vaisselle",
+    "seduction": "offre la meilleure table",
+    "autorite": "offre une brochette au policier",
+    "public": "monte le son du maquis dès qu’on parle d’addition ou de dette",
+    "echec": "« La maison ne fait plus crédit. » (pendant une heure)",
+    "secret": "il revend la cuisine de Tantie Sarr"
+   },
+   "repliques": [
+    "Pas de crédit pour toi, Koffi.",
+    "Ta bouteille, c’est à l’ardoise.",
+    "La deuxième, c’est le double."
+   ],
+   "moteur": "l’ardoise du maquis qui grossit à chaque rire",
+   "lieux": [
+    "Maquis"
+   ],
+   "activite": "note une dette à la craie derrière son comptoir"
+  },
+  {
+   "name": "MADEMOISELLE ROSINE",
+   "surnom": "Mademoiselle Rosine",
+   "dessin": "à dessiner",
+   "age": "environ 32 ans",
+   "taille": 1.66,
+   "voix": {
+    "piper": "jessica",
+    "pitch": 0.98
+   },
+   "apparence": "Jeune femme impeccable, chignon serré, lunettes à monture fine, regard blasé, ongles vernis rouges.",
+   "tenue": "Tailleur bleu marine, chemisier blanc, badge de la mairie, tampon et pile de formulaires.",
+   "posture": "Derrière son guichet, tampon levé, elle tourne lentement les pages sans lever les yeux.",
+   "personnalite": "L’agent d’état civil de la mairie : il manque toujours un papier, même au chef de quartier. Polie, lente, implacable, elle aime le pouvoir du tampon et la pause déjeuner.",
+   "traits": [
+    "bureaucrate",
+    "lente",
+    "implacable",
+    "polie",
+    "blasée"
+   ],
+   "habitudes": [
+    "« Il manque un papier »",
+    "part en pause au moment où c’est votre tour",
+    "tamponne avec cérémonie"
+   ],
+   "emotions": [
+    "ennui",
+    "satisfaction du tampon",
+    "agacement"
+   ],
+   "reactions": [
+    "un dossier complet : elle trouve un manque",
+    "on s’énerve : nouveau formulaire",
+    "on la flatte : une page de moins"
+   ],
+   "interets": [
+    "les formulaires",
+    "les feuilletons sur son téléphone",
+    "la pause"
+   ],
+   "forces": [
+    "maîtrise des règlements",
+    "patience",
+    "calme"
+   ],
+   "faiblesses": [
+    "lenteur",
+    "perd des dossiers",
+    "peur du chef de service"
+   ],
+   "situations": {
+    "conflit": "propose de « revenir lundi »",
+    "argent": "timbre fiscal obligatoire",
+    "famille": "fait remplir des formulaires à ses enfants",
+    "seduction": "demande l’acte de naissance du prétendant",
+    "autorite": "tremble devant son chef, impose à tous les autres",
+    "public": "appelle les numéros dans le désordre",
+    "echec": "tamponne quand même, au mauvais endroit",
+    "secret": "le dossier perdu est sous sa pile"
+   },
+   "repliques": [
+    "Il manque un papier.",
+    "Revenez lundi.",
+    "C’est l’heure de la pause."
+   ],
+   "moteur": "le papier qui manque toujours",
+   "lieux": [
+    "Bureau",
+    "Tribunal"
+   ],
+   "activite": "tamponne lentement une pile de formulaires"
+  },
+  {
+   "name": "YAYA L’APPRENTI",
+   "surnom": "Yaya",
+   "dessin": "à dessiner",
+   "age": "environ 19 ans",
+   "taille": 1.72,
+   "voix": {
+    "piper": "tom",
+    "pitch": 1.16
+   },
+   "apparence": "Jeune homme sec et nerveux, voix cassée à force de crier, sourire rapide, toujours essoufflé.",
+   "tenue": "Maillot de foot délavé, short, claquettes, liasse de billets froissés entre les doigts, sifflet autour du cou.",
+   "posture": "Accroché à la portière du gbaka, un bras dehors, il crie les destinations en tapant sur la carrosserie.",
+   "personnalite": "L’apprenti gbaka : il crie les destinations, fait monter quinze personnes dans douze places et n’a jamais la monnaie. Rival d’Aliou pour chaque client, cauchemar de Mécano Issa.",
+   "traits": [
+    "vif",
+    "bruyant",
+    "débrouillard",
+    "roublard",
+    "infatigable"
+   ],
+   "habitudes": [
+    "crie « Adjamé ! Adjamé ! »",
+    "n’a jamais la monnaie",
+    "tape deux fois sur la tôle pour partir"
+   ],
+   "emotions": [
+    "urgence",
+    "malice",
+    "indignation"
+   ],
+   "reactions": [
+    "un client demande la monnaie : « Demain ! »",
+    "le gbaka est plein : « Serrez-vous ! »",
+    "Aliou prend son client : duel de klaxons"
+   ],
+   "interets": [
+    "les recettes du jour",
+    "le foot",
+    "battre le taxi d’Aliou"
+   ],
+   "forces": [
+    "énergie",
+    "voix",
+    "sens du commerce"
+   ],
+   "faiblesses": [
+    "jamais de monnaie",
+    "conduite du patron dangereuse",
+    "promet des places qui n’existent pas"
+   ],
+   "situations": {
+    "conflit": "crie plus fort que tout le monde, puis tape deux fois sur la tôle pour partir",
+    "argent": "la monnaie, c’est « demain »",
+    "famille": "nourrit toute la famille avec les pièces",
+    "seduction": "garde la place devant pour la go",
+    "autorite": "le patron gère le policier",
+    "public": "il fait l’annonce des destinations comme un commentateur de foot",
+    "echec": "le gbaka est tombé en panne",
+    "secret": "il y a toujours une place de plus"
+   },
+   "repliques": [
+    "Adjamé ! Adjamé ! Deux places !",
+    "La monnaie, c’est demain.",
+    "Serrez-vous, on est en famille !"
+   ],
+   "moteur": "le gbaka toujours plein qui prend encore un passager",
+   "lieux": [
+    "Taxi",
+    "Marché"
+   ],
+   "activite": "crie les destinations en tapant sur la carrosserie"
+  },
+  {
+   "name": "SALIF LE PARISIEN",
+   "surnom": "le Parisien",
+   "dessin": "à dessiner",
+   "age": "environ 34 ans",
+   "taille": 1.8,
+   "voix": {
+    "piper": "tom",
+    "pitch": 1.02
+   },
+   "apparence": "Homme élancé à la barbe taillée au millimètre, lunettes de soleil sur le front, sourire supérieur.",
+   "tenue": "Doudoune légère malgré la chaleur, écharpe, jean slim, baskets blanches immaculées, valise à roulettes et sacoche.",
+   "posture": "Main sur la valise, il s’évente en soupirant contre la chaleur et parle avec un accent parisien forcé.",
+   "personnalite": "Celui qui revient de Paris pour les vacances : il a « oublié » le piment, se plaint de la chaleur et raconte une vie de luxe. En vérité, il est veilleur de nuit. Rival de vantardise de Tonton Dieng.",
+   "traits": [
+    "vantard",
+    "snob",
+    "nostalgique en secret",
+    "généreux en cadeaux bon marché",
+    "drôle"
+   ],
+   "habitudes": [
+    "dit « chez nous en France »",
+    "refuse le piment puis vide le plat",
+    "offre des porte-clés Tour Eiffel"
+   ],
+   "emotions": [
+    "supériorité",
+    "nostalgie",
+    "panique quand on parle de son vrai métier"
+   ],
+   "reactions": [
+    "du piment : il pleure",
+    "quelqu’un a vu ses photos de travail : il change de sujet",
+    "Tonton Dieng raconte mieux : il cite la tour Eiffel"
+   ],
+   "interets": [
+    "frimer",
+    "l’attiéké (en cachette)",
+    "les cadeaux souvenirs"
+   ],
+   "forces": [
+    "récits spectaculaires",
+    "cadeaux pour tous",
+    "élégance"
+   ],
+   "faiblesses": [
+    "ment sur son métier",
+    "plus habitué au piment",
+    "dépense tout pendant les vacances"
+   ],
+   "situations": {
+    "conflit": "cite la France comme argument",
+    "argent": "paie en euros… de porte-clés",
+    "famille": "la famille attend les cadeaux, pas lui",
+    "seduction": "promet Paris, la tour Eiffel et un visa, depuis un banc du maquis",
+    "autorite": "montre son titre de séjour comme un passeport diplomatique",
+    "public": "raconte la neige et le métro devant des enfants qui n’y croient pas",
+    "echec": "« En France, ça ne se passe pas comme ça. »",
+    "secret": "veilleur de nuit, pas directeur"
+   },
+   "repliques": [
+    "Chez nous en France…",
+    "Le piment, j’ai perdu l’habitude.",
+    "Je suis dans la… sécurité. De haut niveau."
+   ],
+   "moteur": "la frime du Parisien démasquée par le piment et les photos",
+   "lieux": [
+    "Douane",
+    "Maquis",
+    "Cérémonie",
+    "Taxi"
+   ],
+   "activite": "tire sa valise en s’éventant"
+  },
+  {
+   "name": "COACH DIABATÉ",
+   "surnom": "Coach",
+   "dessin": "à dessiner",
+   "age": "la cinquantaine",
+   "taille": 1.74,
+   "voix": {
+    "piper": "gilles",
+    "pitch": 1.1
+   },
+   "apparence": "Homme trapu aux mollets d’ancien footballeur, visage expressif qui passe du rire à la tragédie, sifflet à la bouche.",
+   "tenue": "Survêtement orange et vert, casquette, sifflet, chronomètre au cou, plaquette tactique.",
+   "posture": "Sifflet aux lèvres, bras levés au ciel, il vit chaque passe comme une finale.",
+   "personnalite": "Le coach de foot des enfants du quartier, supporter fanatique de l’équipe nationale : chaque match de quartier est une Coupe d’Afrique. Il entraîne Mamadou (n° 10) et Moussa (gardien distrait).",
+   "traits": [
+    "passionné",
+    "dramatique",
+    "bruyant",
+    "loyal",
+    "superstitieux"
+   ],
+   "habitudes": [
+    "siffle à chaque phrase",
+    "pleure aux hymnes",
+    "porte le même maillot porte-bonheur"
+   ],
+   "emotions": [
+    "passion",
+    "désespoir théâtral",
+    "joie explosive"
+   ],
+   "reactions": [
+    "un but : il court sur tout le terrain",
+    "une erreur : il s’effondre au sol",
+    "un arbitre : il conteste en tactique"
+   ],
+   "interets": [
+    "le football",
+    "l’équipe nationale",
+    "les tactiques"
+   ],
+   "forces": [
+    "énergie",
+    "motivation",
+    "amour des enfants"
+   ],
+   "faiblesses": [
+    "excès",
+    "mauvaise foi d’arbitrage",
+    "superstition"
+   ],
+   "situations": {
+    "conflit": "carton jaune verbal, puis rouge, puis sifflet jusqu’à l’essoufflement",
+    "argent": "demande une cotisation pour les maillots",
+    "famille": "sa femme est « l’arbitre »",
+    "seduction": "déclaration en tactique 4-4-2",
+    "autorite": "conteste comme une décision d’arbitre",
+    "public": "harangue comme un stade",
+    "echec": "s’effondre au sol, puis « match retour ! »",
+    "secret": "sa tactique « secrète » : passer à Mamadou"
+   },
+   "repliques": [
+    "Tactique ! Tactique !",
+    "C’est une finale, les enfants !",
+    "Match retour !"
+   ],
+   "moteur": "la passion démesurée du foot pour un match de quartier",
+   "lieux": [
+    "École",
+    "Cour",
+    "Plage"
+   ],
+   "activite": "siffle et mime une tactique avec de grands gestes"
+  },
+  {
+   "name": "DJ KÉVIN",
+   "surnom": "DJ Kévin",
+   "dessin": "à dessiner",
+   "age": "environ 27 ans",
+   "taille": 1.76,
+   "voix": {
+    "piper": "tom",
+    "pitch": 1.06
+   },
+   "apparence": "Jeune homme maigre, lunettes de soleil fluo, petite crête décolorée, sourire de showman.",
+   "tenue": "Chemise à paillettes, casque énorme autour du cou, micro sans fil, platine portable.",
+   "posture": "Un doigt sur le casque, l’autre bras levé, il crie les dédicaces dans le micro.",
+   "personnalite": "Le DJ des mariages et du maquis : il coupe la musique au mauvais moment, vend les dédicaces au plus offrant et annonce les secrets en mixant. Ami du Frimeur, employé de Patron Séry.",
+   "traits": [
+    "showman",
+    "commerçant",
+    "distrait",
+    "bruyant",
+    "blagueur"
+   ],
+   "habitudes": [
+    "dédicace payante",
+    "coupe le son pour une annonce",
+    "met toujours la même chanson"
+   ],
+   "emotions": [
+    "excitation",
+    "gêne",
+    "triomphe"
+   ],
+   "reactions": [
+    "une coupure de courant : il continue au micro",
+    "pas de billet : pas de dédicace",
+    "une dispute : il passe une chanson d’amour"
+   ],
+   "interets": [
+    "la musique",
+    "les dédicaces",
+    "les soirées"
+   ],
+   "forces": [
+    "ambiance",
+    "micro",
+    "réseau des fêtes"
+   ],
+   "faiblesses": [
+    "coupe le son au pire moment",
+    "vend les secrets en dédicace",
+    "toujours en retard"
+   ],
+   "situations": {
+    "conflit": "monte le son et passe une chanson d’amour pour couvrir la dispute",
+    "argent": "chaque dédicace a un prix",
+    "famille": "mixe au baptême de son neveu",
+    "seduction": "dédicace pour la go… payée par un autre",
+    "autorite": "baisse le son devant le chef (un peu)",
+    "public": "il tient le micro et ne le lâche plus, dédicaces payantes comprises",
+    "echec": "remet la même chanson, encore plus fort",
+    "secret": "il l’annonce en dédicace"
+   },
+   "repliques": [
+    "Dédicace à Koffi qui n’a pas payé !",
+    "On monte le son !",
+    "Un billet, une dédicace."
+   ],
+   "moteur": "la dédicace au micro qui révèle ce qu’il fallait taire",
+   "lieux": [
+    "Maquis",
+    "Cérémonie",
+    "Plage"
+   ],
+   "activite": "mixe derrière sa platine, casque sur une oreille"
+  },
+  {
+   "name": "MAMAN BRIGITTE",
+   "surnom": "Maman Brigitte l’attiéké",
+   "dessin": "à dessiner",
+   "age": "la quarantaine",
+   "taille": 1.64,
+   "voix": {
+    "piper": "jessica",
+    "pitch": 0.9
+   },
+   "apparence": "Femme robuste aux bras puissants, visage rond et volontaire, sourire commercial redoutable.",
+   "tenue": "Pagne wax vert et jaune, foulard noué serré, tablier blanc, bassine d’attiéké sur la tête ou sur l’étal.",
+   "posture": "Bassine sur la tête sans les mains, elle interpelle les clients de sa voisine d’étal.",
+   "personnalite": "La vendeuse d’attiéké du marché, voisine d’étal et rivale de Maman Nounou : guerre des prix permanente, mais alliance immédiate dès qu’un client tente de les rouler toutes les deux.",
+   "traits": [
+    "compétitive",
+    "robuste",
+    "drôle",
+    "loyale contre les clients",
+    "têtue"
+   ],
+   "habitudes": [
+    "baisse ses prix de 5 francs sous ceux de Nounou",
+    "crie « Attiéké chaud ! »",
+    "regarde l’étal voisin du coin de l’œil"
+   ],
+   "emotions": [
+    "défi",
+    "fierté",
+    "solidarité soudaine"
+   ],
+   "reactions": [
+    "Nounou baisse son prix : elle baisse encore",
+    "un client malin : alliance avec Nounou",
+    "un compliment sur son attiéké : rabais"
+   ],
+   "interets": [
+    "l’attiéké",
+    "le marché",
+    "battre Nounou"
+   ],
+   "forces": [
+    "endurance",
+    "qualité du produit",
+    "voix"
+   ],
+   "faiblesses": [
+    "vend à perte par fierté",
+    "rancunière",
+    "susceptible sur la fraîcheur"
+   ],
+   "situations": {
+    "conflit": "déclare la guerre des prix et baisse de cinq francs sous sa voisine",
+    "argent": "perd de l’argent pour gagner contre Nounou",
+    "famille": "ses enfants tiennent l’étal",
+    "seduction": "portion double pour le charmeur",
+    "autorite": "paie la taxe du marché en attiéké",
+    "public": "crie la promotion du jour plus fort que le haut-parleur du marché",
+    "echec": "s’allie avec la gagnante",
+    "secret": "son attiéké vient du même fournisseur que celui de Nounou"
+   },
+   "repliques": [
+    "Attiéké chaud ! Moins cher qu’à côté !",
+    "Nounou ? Elle vend de l’attiéké d’hier !",
+    "Toi le client, tu veux nous rouler toutes les deux ?"
+   ],
+   "moteur": "la guerre des prix entre voisines qui s’allient contre le client",
+   "lieux": [
+    "Marché"
+   ],
+   "activite": "porte une bassine d’attiéké sur la tête en criant les prix"
+  }
+ ],
+ "relations": [
+  {
+   "a": "BAYE NDIAYE",
+   "b": "MAMAN NOUNOU",
+   "lien": "époux depuis 30 ans",
+   "dynamique": "il cache son argent, elle le trouve toujours ; il drague, elle surgit"
+  },
+  {
+   "a": "BAYE NDIAYE",
+   "b": "COUMBA",
+   "lien": "père",
+   "dynamique": "elle obtient de lui ce que personne n’obtient, en le prenant à son propre jeu"
+  },
+  {
+   "a": "BAYE NDIAYE",
+   "b": "PETIT MAMADOU",
+   "lien": "grand-père (« Papi »)",
+   "dynamique": "l’enfant lui soutire de l’argent en menaçant de révéler ses cachettes"
+  },
+  {
+   "a": "BAYE NDIAYE",
+   "b": "TANTIE AWA",
+   "lien": "grand frère",
+   "dynamique": "elle lui fait honte devant tout le monde ; il lui doit toujours quelque chose"
+  },
+  {
+   "a": "BAYE NDIAYE",
+   "b": "GRAND-PÈRE NDIAYE",
+   "lien": "petit frère",
+   "dynamique": "le grand frère sourd comprend tout de travers, surtout quand Baye parle d’argent"
+  },
+  {
+   "a": "BAYE NDIAYE",
+   "b": "TONTON DIENG",
+   "lien": "cousin",
+   "dynamique": "Dieng lui emprunte pour ses « villas » ; Baye ne prête jamais, il donne des conseils"
+  },
+  {
+   "a": "BAYE NDIAYE",
+   "b": "MODOU",
+   "lien": "propriétaire de la chambre que Modou loue",
+   "dynamique": "le loyer n’arrive jamais ; Baye le réclame en proverbes"
+  },
+  {
+   "a": "MAMAN NOUNOU",
+   "b": "COUMBA",
+   "lien": "mère",
+   "dynamique": "complices pour plumer les prétendants ; rivales quand il s’agit de qui a raison"
+  },
+  {
+   "a": "MAMAN NOUNOU",
+   "b": "PETIT MAMADOU",
+   "lien": "grand-mère (« Mamie »)",
+   "dynamique": "elle le gâte en cachette et le fait travailler au marché"
+  },
+  {
+   "a": "MAMAN NOUNOU",
+   "b": "MAMAN BRIGITTE",
+   "lien": "voisine d’étal au marché",
+   "dynamique": "guerre des prix permanente, alliance immédiate contre un client"
+  },
+  {
+   "a": "MAMAN NOUNOU",
+   "b": "MAMIE BINTOU",
+   "lien": "voisine d’en face, amie d’enfance",
+   "dynamique": "elles se racontent tout, et Bintou répète tout"
+  },
+  {
+   "a": "COUMBA",
+   "b": "KOFFI",
+   "lien": "prétendant officiel",
+   "dynamique": "elle teste sa richesse, il bluffe, elle le démasque en public"
+  },
+  {
+   "a": "COUMBA",
+   "b": "MODOU",
+   "lien": "amoureux transi, locataire de la cour",
+   "dynamique": "il lui promet tout avec rien ; elle l’utilise comme coursier"
+  },
+  {
+   "a": "COUMBA",
+   "b": "TATA PRISCA",
+   "lien": "coiffeuse et confidente",
+   "dynamique": "Prisca sait tout de ses plans, et finit par les raconter"
+  },
+  {
+   "a": "COUMBA",
+   "b": "LA GO LÉOPARD",
+   "lien": "rivale chic",
+   "dynamique": "elles visent les mêmes « bons partis » et se complimentent avec des couteaux"
+  },
+  {
+   "a": "TANTIE AWA",
+   "b": "PETIT MAMADOU",
+   "lien": "grand-tante qui l’élève au quotidien",
+   "dynamique": "elle traque ses mensonges ; il trouve toujours un coupable plus gros"
+  },
+  {
+   "a": "TANTIE AWA",
+   "b": "MODOU",
+   "lien": "logeuse (elle encaisse le loyer)",
+   "dynamique": "elle le soupçonne de tout — et elle a souvent raison"
+  },
+  {
+   "a": "TANTIE AWA",
+   "b": "MADAME COUMBA",
+   "lien": "voisine",
+   "dynamique": "concours de la plus redoutable ; elles s’espionnent par-dessus le mur"
+  },
+  {
+   "a": "PETIT MAMADOU",
+   "b": "MODOU",
+   "lien": "« Tonton Modou », le locataire",
+   "dynamique": "complices de bêtises ; l’enfant le dénonce dès que ça tourne mal"
+  },
+  {
+   "a": "PETIT MAMADOU",
+   "b": "PETIT MOUSSA",
+   "lien": "meilleur ami et complice",
+   "dynamique": "Mamadou invente le plan, Moussa se fait attraper"
+  },
+  {
+   "a": "PETIT MAMADOU",
+   "b": "PETIT IBRAHIMA",
+   "lien": "rival de classe",
+   "dynamique": "Ibrahima a 20/20, Mamadou a des excuses à 20/20"
+  },
+  {
+   "a": "KOFFI",
+   "b": "MODOU",
+   "lien": "rival pour Coumba",
+   "dynamique": "deux fauchés qui surenchérissent avec de l’argent qu’ils n’ont pas"
+  },
+  {
+   "a": "KOFFI",
+   "b": "PATRON SÉRY",
+   "lien": "client endetté du maquis",
+   "dynamique": "Séry fait crédit à tout le monde sauf à lui"
+  },
+  {
+   "a": "KOFFI",
+   "b": "TIÉKORO",
+   "lien": "débiteur",
+   "dynamique": "Koffi a acheté ses lunettes « de luxe » à crédit chez Tiékoro"
+  },
+  {
+   "a": "KOFFI",
+   "b": "LE BANQUIER",
+   "lien": "demandeur de crédit éternel",
+   "dynamique": "le banquier refuse avant même la question"
+  },
+  {
+   "a": "KOFFI",
+   "b": "LA GO LÉOPARD",
+   "lien": "proie supposée riche",
+   "dynamique": "elle le croit riche ; il la croit riche ; tous deux sont fauchés"
+  },
+  {
+   "a": "MODOU",
+   "b": "DJECKY",
+   "lien": "copain de galère",
+   "dynamique": "Djecky a toujours un plan, Modou paie toujours la note"
+  },
+  {
+   "a": "MODOU",
+   "b": "TIÉKORO",
+   "lien": "client de ses bons plans",
+   "dynamique": "Tiékoro lui vend des gadgets qui ne marchent pas"
+  },
+  {
+   "a": "TONTON DIENG",
+   "b": "GÉNÉRAL ZONGO",
+   "lien": "client",
+   "dynamique": "Zongo construit sa « villa » depuis sept ans ; aucun des deux n’a vu le terrain"
+  },
+  {
+   "a": "TONTON DIENG",
+   "b": "SALIF LE PARISIEN",
+   "lien": "rival de vantardise",
+   "dynamique": "chaque histoire de l’un est battue par une histoire plus grosse de l’autre"
+  },
+  {
+   "a": "TONTON DIENG",
+   "b": "ALIOU",
+   "lien": "vieux camarade",
+   "dynamique": "Aliou le conduit gratuitement contre des histoires"
+  },
+  {
+   "a": "PROFESSEUR SAMBA",
+   "b": "LA LYCÉENNE",
+   "lien": "père",
+   "dynamique": "elle corrige ses fautes en public ; il fait semblant de l’avoir fait exprès"
+  },
+  {
+   "a": "PROFESSEUR SAMBA",
+   "b": "ALIOU",
+   "lien": "adversaire de débat au kiosque",
+   "dynamique": "le savant des livres contre le savant de la route"
+  },
+  {
+   "a": "PROFESSEUR SAMBA",
+   "b": "MAÎTRE COULIBALY",
+   "lien": "rival intellectuel",
+   "dynamique": "chacun cite un texte que l’autre ne peut pas vérifier"
+  },
+  {
+   "a": "MAÎTRE KONÉ",
+   "b": "PETIT MAMADOU",
+   "lien": "instituteur",
+   "dynamique": "Koné connaît toutes les excuses ; Mamadou en invente de nouvelles"
+  },
+  {
+   "a": "MAÎTRE KONÉ",
+   "b": "PETIT IBRAHIMA",
+   "lien": "instituteur",
+   "dynamique": "son élève modèle… qui le corrige parfois"
+  },
+  {
+   "a": "DOCTEUR SYLLA",
+   "b": "SŒUR AWA",
+   "lien": "collègue de la clinique",
+   "dynamique": "il facture, elle soigne ; elle le remet à sa place devant les patients"
+  },
+  {
+   "a": "DOCTEUR SYLLA",
+   "b": "BOUBACAR",
+   "lien": "médecin",
+   "dynamique": "son meilleur client : chaque consultation finit par un poulet"
+  },
+  {
+   "a": "SŒUR AWA",
+   "b": "PETIT IBRAHIMA",
+   "lien": "mère",
+   "dynamique": "fière de lui, intraitable sur les devoirs"
+  },
+  {
+   "a": "LA FUTURE MAMAN",
+   "b": "GÉNÉRAL ZONGO",
+   "lien": "épouse",
+   "dynamique": "elle a des envies à minuit ; il est toujours « sur un chantier »"
+  },
+  {
+   "a": "LA FUTURE MAMAN",
+   "b": "PETITE KHADIJA",
+   "lien": "mère",
+   "dynamique": "Khadija pose mille questions sur le bébé"
+  },
+  {
+   "a": "LA FUTURE MAMAN",
+   "b": "PETITE AYA",
+   "lien": "mère",
+   "dynamique": "Aya veut savoir si le bébé aura aussi un nounours"
+  },
+  {
+   "a": "PETITE KHADIJA",
+   "b": "PETITE AYA",
+   "lien": "grande sœur",
+   "dynamique": "Khadija explique le monde de travers, Aya y croit"
+  },
+  {
+   "a": "MÉCANO ISSA",
+   "b": "PETIT MOUSSA",
+   "lien": "père",
+   "dynamique": "le fils démonte tout ce que le père répare"
+  },
+  {
+   "a": "MÉCANO ISSA",
+   "b": "ALIOU",
+   "lien": "mécanicien attitré du taxi",
+   "dynamique": "le taxi ne marche que grâce à du fil de fer et des prières"
+  },
+  {
+   "a": "MÉCANO ISSA",
+   "b": "YAYA L’APPRENTI",
+   "lien": "mécanicien du gbaka",
+   "dynamique": "Yaya ramène le gbaka en morceaux chaque semaine"
+  },
+  {
+   "a": "AGENT DOUMBIA",
+   "b": "ALIOU",
+   "lien": "policier qui le contrôle chaque matin",
+   "dynamique": "le même contrôle, la même « arrangement », la même philosophie"
+  },
+  {
+   "a": "AGENT DOUMBIA",
+   "b": "AGENT BAKARY",
+   "lien": "rival en uniforme",
+   "dynamique": "qui trouve le plus d’infractions — et qui « arrange » le mieux"
+  },
+  {
+   "a": "AGENT BAKARY",
+   "b": "SALIF LE PARISIEN",
+   "lien": "douanier de l’aéroport",
+   "dynamique": "il fouille les valises du Parisien et y trouve de l’attiéké"
+  },
+  {
+   "a": "TANTIE AWA SARR",
+   "b": "BOUBACAR",
+   "lien": "restauratrice",
+   "dynamique": "il mange comme dix, paie comme un"
+  },
+  {
+   "a": "TANTIE AWA SARR",
+   "b": "PATRON SÉRY",
+   "lien": "fournisseuse du maquis",
+   "dynamique": "elle cuisine, il revend plus cher ; ils comptent tout deux fois"
+  },
+  {
+   "a": "TATA PRISCA",
+   "b": "MAMIE BINTOU",
+   "lien": "cliente du samedi",
+   "dynamique": "les ragots du quartier passent par les deux"
+  },
+  {
+   "a": "TATA PRISCA",
+   "b": "FATOU",
+   "lien": "réseau d’informations",
+   "dynamique": "Prisca entend, Fatou filme, tout le monde sait"
+  },
+  {
+   "a": "FATOU",
+   "b": "AMINATA",
+   "lien": "mère",
+   "dynamique": "la mère filme tout le monde, la fille se filme elle-même"
+  },
+  {
+   "a": "MADAME COUMBA",
+   "b": "MAMIE BINTOU",
+   "lien": "alliée de commérage",
+   "dynamique": "elles complètent les histoires l’une de l’autre — en les grossissant"
+  },
+  {
+   "a": "CHEF TRAORÉ",
+   "b": "LE PATRIARCHE",
+   "lien": "chef de quartier et doyen",
+   "dynamique": "le chef décide ; le doyen rappelle qu’en 1970 on faisait mieux"
+  },
+  {
+   "a": "CHEF TRAORÉ",
+   "b": "IMAM KARIM",
+   "lien": "notables du quartier",
+   "dynamique": "l’imam apaise ce que le chef a enflammé"
+  },
+  {
+   "a": "CHEF TRAORÉ",
+   "b": "MADEMOISELLE ROSINE",
+   "lien": "administré exigeant",
+   "dynamique": "même le chef doit apporter « le papier qui manque »"
+  },
+  {
+   "a": "LE BANQUIER",
+   "b": "AGENT GORA",
+   "lien": "patron du vigile",
+   "dynamique": "Gora philosophe à la porte de la banque et refuse l’entrée aux fauchés"
+  },
+  {
+   "a": "LE BANQUIER",
+   "b": "LA GO LÉOPARD",
+   "lien": "cible de séduction",
+   "dynamique": "elle demande un crédit avec un sourire ; il refuse avec un sourire"
+  },
+  {
+   "a": "LE BANQUIER",
+   "b": "GÉNÉRAL ZONGO",
+   "lien": "client",
+   "dynamique": "le crédit du chantier dure plus longtemps que le chantier"
+  },
+  {
+   "a": "ADJOUA",
+   "b": "DJECKY",
+   "lien": "cible de « crédit »",
+   "dynamique": "elle lui réclame du crédit téléphonique ; il a juste un ballon"
+  },
+  {
+   "a": "ADJOUA",
+   "b": "LA GO LÉOPARD",
+   "lien": "concurrente",
+   "dynamique": "deux chasseuses, un seul portefeuille dans le quartier"
+  },
+  {
+   "a": "LE FRIMEUR",
+   "b": "DJ KÉVIN",
+   "lien": "roi des soirées",
+   "dynamique": "Kévin passe la musique, le Frimeur danse pour la caméra"
+  },
+  {
+   "a": "LE FRIMEUR",
+   "b": "KOFFI",
+   "lien": "concurrent de frime",
+   "dynamique": "le vrai beau gosse fauché contre le faux riche fauché"
+  },
+  {
+   "a": "MADAME KONAN",
+   "b": "MAMAN NOUNOU",
+   "lien": "présidente de la tontine",
+   "dynamique": "Nounou réclame son tour, Konan trouve toujours un règlement"
+  },
+  {
+   "a": "MADAME KONAN",
+   "b": "MONSIEUR DIARRA",
+   "lien": "trésorier de la tontine",
+   "dynamique": "il compte, elle recompte, la caisse ne tombe jamais juste"
+  },
+  {
+   "a": "PATRON SÉRY",
+   "b": "DJ KÉVIN",
+   "lien": "DJ du maquis",
+   "dynamique": "Kévin coupe le son au moment de l’addition"
+  },
+  {
+   "a": "COACH DIABATÉ",
+   "b": "PETIT MAMADOU",
+   "lien": "coach de foot",
+   "dynamique": "le n° 10 du quartier, qui négocie sa place comme Mamie"
+  },
+  {
+   "a": "COACH DIABATÉ",
+   "b": "PETIT MOUSSA",
+   "lien": "coach de foot",
+   "dynamique": "gardien de but qui regarde ailleurs"
+  },
+  {
+   "a": "YAYA L’APPRENTI",
+   "b": "ALIOU",
+   "lien": "concurrent de la route",
+   "dynamique": "gbaka contre taxi : à qui prendra le client"
+  },
+  {
+   "a": "LA VOISINE",
+   "b": "LE TONTON",
+   "lien": "épouse",
+   "dynamique": "il rentre avec ses bouteilles, elle crie, tout le quartier écoute"
+  },
+  {
+   "a": "SORCIÈRE MAMA DÉDÉ",
+   "b": "LA FUTURE MAMAN",
+   "lien": "vendeuse de remèdes",
+   "dynamique": "une potion pour chaque envie — aucune ne marche"
+  },
+  {
+   "a": "SORCIÈRE MAMA DÉDÉ",
+   "b": "KOFFI",
+   "lien": "cliente… non, client",
+   "dynamique": "il achète des « potions de richesse » à crédit"
+  }
+ ],
+ "quartier": "la Cité Bonne-Chance, quartier (fictif) d’Abidjan"
+}

@@ -1,0 +1,3751 @@
+// The agent loop, running entirely in the browser: plan → tools → observe → verify.
+import type { EffortSetting } from '@shared/types';
+import { selectModel } from '../../server/llm/router';
+import { FAMILY_TIER, TIER_LABEL, analyzeTask, routeModel } from '../../server/llm/routing';
+import {
+  ADVERSARIAL_TASK,
+  ENGINE_DOCTRINE,
+  ShadowMonitor,
+  buildTwin,
+  compressTrajectory,
+  detectRules,
+  manualPrompt,
+  parseChallenge,
+  planStrategy,
+  regressionSuite,
+  shadowMessage,
+  similarMissions,
+  strategyPrompt,
+  taskDna,
+  unsupportedNumbers,
+  recordEntry,
+  type LedgerEntry,
+  type ShadowAlert,
+  type Strategy,
+  type TaskDna,
+} from '../../server/agent/intelligence';
+import { beginCheckpoint, endCheckpoint } from './timemachine';
+import {
+  DEFAULT_ENGINE,
+  DEFAULT_WEIGHTS,
+  cascadeNext,
+  decideRoute,
+  qaScore,
+  type RoutingDecision,
+} from '../../server/engine/decision';
+import { selectSkills, skillsPrompt, type SkillMatch } from '../../server/engine/skills';
+import { buildLoadout } from '../../server/engine/loadout';
+import { isHumanCorrection } from '../../server/engine/telemetry';
+import * as jevRt from './jev';
+import {
+  LiveController,
+  eviGate,
+  pruneToolOutputs,
+  wasteRate,
+  type LiveCheckpoint,
+  type MissionState,
+} from '../../server/jev/live';
+import { compilePrompt, compileSkill } from '../../server/jev/prompt';
+import { acct } from './acct';
+import { redact } from '../../server/jev/provider';
+import * as fabricRt from './fabric';
+import * as apprenticeRt from './apprentice';
+import * as cognitiveRt from './cognitive';
+import * as omniRt from './omni';
+import { describeImage, visionBridgeEnabled } from './visionBridge';
+import { vaultBlock, vaultRecall } from './vault';
+import { seedHits } from '../../server/jev/memory/seed';
+import { ALTERATION } from '../../server/jev/omni/mission';
+import { pilotAnchor } from '../../server/jev/omni/pilot';
+import { THEMES, buildTheme, setActiveTheme, themeOf } from '../../server/services/houseDesign';
+import { LOGO_TOOLS, THEMED_TOOLS, applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, themeAskedByUser, type DeliverableKind } from '../../server/services/premiumDesigns';
+import { isContinuation, missionOf, resumeText } from '../../server/services/missionResume';
+import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
+import { addImagePageDocx, addImageSlidePptx, addImageToHtml, addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
+import { removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
+import { strFromU8, unzipSync } from 'fflate';
+import { DESIGN_ARCHITECT, needsArchitect } from '../../server/services/designArchitect';
+import { propose } from '../../server/jev/memory/updateGate';
+import { modelById } from '../../server/services/designModels';
+import { heavy } from './heavy';
+import { swarmBlock, swarmPlan } from '../../server/jev/swarm';
+import { skinDocx, skinHtml, skinPptx, type Skin } from '../../server/services/officeSkin';
+import { knowledgeBlock, related as relatedKnowledge } from '../../server/jev/knowledge/learned';
+import { cloneData, dashFit, renderCloneSvg, type CloneData } from '../../server/services/dashRender';
+import { chatTable, previewData, rasterise } from './designClone';
+import { LOGO_VARIANTS } from '../../server/services/logoHarmony';
+import { excelChart } from '../../server/services/layoutClone';
+import { extractFacts, lessonFrom, memoryBlock, mergeFacts, recall as recallMemory } from '../../server/jev/memory/semantic';
+import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
+import type { SkillVersion } from '../../server/jev/fabric/skills';
+import { accountingOf, hashText, type CallKind, type CallRec } from '../../server/jev/science';
+import { qualityCheck } from '../../server/jev/qa';
+import { outputSpec } from '../../server/jev/style';
+import { packetPrompt, type PreResult } from '../../server/jev/packet';
+import { REQUESTABLE, TOOL_FAMILIES, toolDefTokens } from '../../server/jev/tools';
+import type { Checkpoint } from '../../server/jev/metrics';
+import type { DesignChoice, UsageEntry, VFile } from './types';
+import {
+  AI_DOCS,
+  FINAL_REVIEW_TASK,
+  MEMORY_INSTRUCTIONS,
+  MISSION_PROTOCOL,
+  aiDocPath,
+  aiDocTemplate,
+  changelogEntry,
+  formatReport,
+  memoryDigest,
+  reviewApproved,
+  testsEntry,
+  type AiDoc,
+  type MissionReport,
+} from '../../server/agent/mission';
+import { agentModelPreference } from '../../server/agent/roles';
+import { DEFAULT_AUTO_TIERS } from '../../server/services/settings';
+import { HOUSE_RULES } from '../../server/services/houseStyle';
+import { isDataFile, profileToText, DataCore } from '../../server/services/dataCore';
+import { isDocument, isImage } from '../../server/services/documentsCore';
+import { LLMError, type ChatMessage, type ContentPart, type ToolCall } from '../../server/llm/types';
+import { complete, friendlyError, getKey } from './llm';
+import { reflexAnswer } from './jevBrain';
+import { connectedTools, ensureConnected, mcpState } from './mcp';
+import { BUILTIN_PLUGINS, builtinToolNames, builtinTools } from './builtinPlugins';
+import { findAgent, allRoles, findRole } from './roles';
+import { matchSkills } from './skills';
+import { uid, useStore } from './store';
+import { HOUSE_FILES, TOOLS, llmName, mcpTool, portfolioCard, toolDefs, type DirectTool, type ToolCtx } from './tools';
+import type { AgentDef, AgentMode, Attachment, PlanStep, Session } from './types';
+import { acquireScope, writeBytes, bytesOf, chatScope, dataUrl, files, files as filesView, filesFor, getFile, readAsText, scopeGate, sessionAllow, setChatScope, tree, writeText } from './vfs';
+
+const WRITE_TOOLS = new Set(['filesystem.write', 'filesystem.edit', 'filesystem.delete']);
+/** Tools that create files: hidden in SAFE (read-only) mode. */
+const SAFE_HIDDEN = new Set([
+  ...WRITE_TOOLS,
+  'memory.doc',
+  'report.export',
+  'dossier.compose',
+  'dossier.export',
+  'data.export',
+  'artifact.create',
+  'apex.build_app',
+]);
+const MISSION_ONLY = new Set(['mission.stage', 'mission.report']);
+
+/** Creates missing .ai/ memory documents (never overwrites). */
+/** Creates the given .ai/ memory documents when missing (never overwrites). Only the documents actually written are
+ *  created: nine empty templates in every chat made the model read them (time) and misreport their content. */
+function ensureAiDocs(only: AiDoc[] = [...AI_DOCS]): void {
+  for (const d of only) if (!getFile(aiDocPath(d))) writeText(aiDocPath(d), aiDocTemplate(d, 'Espace de travail'));
+}
+function aiDigest(): string {
+  const docs: Partial<Record<AiDoc, string>> = {};
+  for (const d of AI_DOCS) {
+    const f = getFile(aiDocPath(d));
+    if (f && !f.binary) docs[d] = f.data;
+  }
+  return memoryDigest(docs);
+}
+function recordMission(goal: string, r: MissionReport, meta: { model: string; cost: number }): void {
+  ensureAiDocs(['CHANGELOG', 'TESTS']);
+  writeText(
+    aiDocPath('CHANGELOG'),
+    `${getFile(aiDocPath('CHANGELOG'))!.data.trimEnd()}\n${changelogEntry(goal, r, meta)}`,
+  );
+  writeText(aiDocPath('TESTS'), `${getFile(aiDocPath('TESTS'))!.data.trimEnd()}\n${testsEntry(r)}`);
+}
+const MAX_DEPTH = 1;
+
+const PLAN_MODE = `# PLAN MODE (active)
+Do not change anything yet. Inspect with read-only tools as needed, then call plan.propose with a short summary and concrete ordered steps. Execution starts only after the user approves the plan.`;
+
+function systemPrompt(o: {
+  agent: AgentDef;
+  mode: Session['mode'];
+  tools: DirectTool[];
+  skills: { name: string; description: string }[];
+  active: { name: string; body: string; files: string[] }[];
+  agents: AgentDef[];
+  plugins: { name: string; instructions?: string }[];
+  /** OMNIPOTENT fast lane: only identity, role, a 3-line method and permissions (no catalogues). */
+  compact?: boolean;
+}): string {
+  const has = (n: string) => o.tools.some((t) => t.name === n);
+  if (o.compact)
+    return [
+      `You are an expert AI agent inside "MASSAMBA Workbench".`,
+      `Role — ${o.agent.name}: ${o.agent.prompt}`,
+      `# How you work\n- Answer directly and concisely in the user's language (French by default), in Markdown.\n- Use a tool only if the answer truly needs it; never invent numbers, sources or file contents.\n- Permissions: ${o.mode.toUpperCase()}.`,
+      ...(o.active.length ? [`# ACTIVE SKILLS — MANDATORY\n${o.active.map((s) => `<skill name="${s.name}">\n${s.body}\n</skill>`).join('\n\n')}`] : []),
+    ].join('\n\n');
+  const parts = [
+    `You are an expert AI agent inside "MASSAMBA Workbench", a Claude-Code-like workspace that runs in the user's browser.`,
+    `Role — ${o.agent.name}: ${o.agent.prompt}`,
+    `# How you work
+- Understand the goal, then act: use tools instead of guessing. For multi-step tasks keep a checklist with plan.update.
+- The workspace is a virtual folder in the browser (uploaded and generated files). Use filesystem.list to see it.
+- Read before editing; prefer filesystem.edit for small changes; write complete files (no placeholders).
+- Verify your work (re-read, run code, check figures) before saying it is done.
+- Deliverables (reports, pages, slides, dashboards) → artifact.create or files the user can download.
+- Never invent numbers, sources or file contents. Say clearly what you could not do.
+- Answer in the user's language (French by default), concisely, in Markdown.
+- Never reveal hidden reasoning; give conclusions, steps taken and results.`,
+    `# Permissions: ${o.mode.toUpperCase()}
+${o.mode === 'safe' ? 'Read-only: you cannot modify files.' : o.mode === 'normal' ? 'Writes, deletions, code execution and plugin actions need user approval (the UI asks). If denied, adapt — do not retry the same action.' : 'Autonomous: actions run without asking. Stay careful and stay within the request.'}
+Not available here: a real OS shell (npm, git, pip), the local disk outside the workspace, desktop apps. ${has('code.run') ? 'Use code.run (sandboxed JavaScript/Python) for computations.' : ''}${has('terminal.execute') ? ' terminal.execute gives an embedded terminal over the workspace (ls, grep, pipes, redirections, node, python, curl, data).' : ''}${has('browser.open') ? ' browser.* drives an embedded browser: workspace apps are fully interactive (click, type, upload a workspace file, exports captured in downloads/); web pages open read-only. To TEST a generated app: browser.open it, browser.upload the real data file, click every tab and export, then inspect the downloaded files (data.inspect / filesystem.read).' : ''}`,
+  ];
+  if (has('knowledge.save'))
+    parts.push(
+      `# LEARNING — SAVE THE USER'S SEARCH TOKENS\n- Check <LEARNED_KNOWLEDGE> first: what it covers is never searched again (web.search also answers from it by itself).\n- After reading a regulation, a procedure, a standard or official documentation, or after solving a non-obvious code problem, call knowledge.save ONCE with the distilled rule (figures, thresholds, steps, the exact fix) and its sources: it becomes a permanent skill of the app.`,
+    );
+  if (o.tools.some((t) => /^(report|data)\.export$|^apex\./.test(t.name)))
+    parts.push(
+      `# ${HOUSE_RULES}${has('apex.build_app') ? '\n- Any request for an application, dashboard, reporting tool or "like the APEX": follow the APEX method (apex.guide first), or delegate to the apex_studio agent.' : ''}`,
+    );
+  if (o.active.length)
+    parts.push(
+      `# ACTIVE SKILLS — MANDATORY\nThe following skills apply to this request. Follow their instructions exactly (workflow, format, rules); they override your defaults.\n\n${o.active
+        .map(
+          (s) =>
+            `<skill name="${s.name}">\n${s.body}${s.files.length ? `\n\nBundled files (skill.read): ${s.files.join(', ')}` : ''}\n</skill>`,
+        )
+        .join('\n\n')}`,
+    );
+  const others = o.skills.filter((s) => !o.active.some((a) => a.name === s.name));
+  if (others.length && has('skill.use'))
+    parts.push(
+      `# Skills catalog\nIf a request matches one of these, load it with skill.use BEFORE answering and follow it:\n${others.map((s) => `- ${s.name}: ${s.description.slice(0, 300)}`).join('\n')}`,
+    );
+  if (has('agent.delegate'))
+    parts.push(
+      `# Specialist agents (agent.delegate)\n${o.agents
+        .filter((a) => a.id !== o.agent.id)
+        .map((a) => `- ${a.id}: ${a.description}`)
+        .join('\n')}`,
+    );
+  const ext = BUILTIN_PLUGINS.filter((p) => p.tools.some((t) => has(t.name)));
+  if (ext.length)
+    parts.push(
+      `# Built-in plugins — use them automatically when relevant (real data, cite the source)\n${ext.map((p) => `- ${p.name} (${p.tools.map((t) => t.name).join(', ')}): ${p.description} Source: ${p.source}.`).join('\n')}`,
+    );
+  if (o.plugins.length)
+    parts.push(
+      `# Plugins (MCP) — use them automatically when relevant (tools named mcp.<plugin>.<tool>)\n${o.plugins.map((p) => `- ${p.name}${p.instructions ? `: ${p.instructions.slice(0, 1200)}` : ''}`).join('\n')}`,
+    );
+  return parts.join('\n\n');
+}
+
+const data = new DataCore();
+
+async function userContent(
+  text: string,
+  attachments: Attachment[],
+  vision: boolean,
+  firstTurn: boolean,
+  bridge?: (f: VFile) => Promise<string | null>,
+): Promise<ContentPart[]> {
+  const parts: ContentPart[] = [];
+  const notes: string[] = [];
+  for (const a of attachments) {
+    const f = getFile(a.path);
+    if (!f) continue;
+    try {
+      if (isImage(f.path)) {
+        if (vision && f.mime !== 'image/svg+xml') {
+          parts.push({ type: 'image_url', image_url: { url: dataUrl(f) } });
+          notes.push(`Image attached: ${f.path}`);
+        } else if (f.mime === 'image/svg+xml' && !f.binary) {
+          notes.push(`SVG image attached: ${f.path}\n<file path="${f.path}">\n${f.data.slice(0, 20_000)}\n</file>`);
+        } else if (bridge) {
+          // JEV VISION BRIDGE: the chat model stays the same; a small vision model reads the image for it.
+          const b = await bridge(f).catch(() => null);
+          notes.push(b ?? `Image ${f.path} attached (this model cannot see images and no vision model is available).`);
+        } else notes.push(`Image ${f.path} attached (this model cannot see images).`);
+      } else if (isDataFile(f.path)) {
+        const ds = data.parseBytes(f.path, bytesOf(f), null);
+        // THE PORTFOLIO CARD (v62): exact column names, codes with their labels (segment 8200 = Entreprises locales),
+        // the file's own dictionary sheet, aliases learned on this file shape — the first query can be the right one.
+        let card: string;
+        try {
+          card = portfolioCard(ds);
+        } catch {
+          card = profileToText(data.profile(ds));
+        }
+        notes.push(
+          `Data file attached: ${f.path}\n${card}\n(Use data.query / data.export for exact figures: ONE query with filters + groupBy + aggregations + sort + limit answers a « top N of a segment ».)`,
+        );
+      } else if (isDocument(f.path) || !f.binary) {
+        const { text: t, kind } = await readAsText(f.path);
+        notes.push(
+          `File attached: ${f.path} (${kind})\n<file path="${f.path}">\n${t.length > 60_000 ? `${t.slice(0, 60_000)}\n…[truncated — use filesystem.read with offset]` : t}\n</file>`,
+        );
+      } else notes.push(`Binary file attached: ${f.path} (${f.mime}, ${f.size} bytes).`);
+    } catch (e) {
+      notes.push(`Attachment ${f.path} could not be read: ${(e as Error).message}`);
+    }
+  }
+  // A LOGO / colour chart attached to an analysis request dresses the deliverable — it is not what is analysed
+  // (v48: « analyse du fichier attaché » produced a pixel study of LOGO ET COULEURS ECOBANK.webp instead of
+  // Provisions.xlsx). The data files of the chat are named so the model analyses the right one.
+  const brand = attachments.filter((a) => isImage(a.path) && BRAND_IMAGE.test(a.path.split('/').pop() ?? ''));
+  if (brand.length && ANALYSIS_ASK.test(text)) {
+    const dataFiles = Object.values(files())
+      .filter((f) => isDataFile(f.path) && !f.path.startsWith('outputs/'))
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, 6)
+      .map((f) => `${f.path} (${Math.round(f.size / 1024)} Ko)`);
+    notes.push(
+      `BRANDING, NOT THE SUBJECT: ${brand.map((b) => b.path).join(', ')} is the owner's logo / colour chart — use it ONLY to dress the deliverable (logo, palette). ${
+        dataFiles.length
+          ? `The file to ANALYSE is the data file of this chat: ${dataFiles.join(', ')} (most recent first).`
+          : 'No data file is in this chat: ask the owner to attach the data to analyse — do not analyse the logo.'
+      }`,
+    );
+  }
+  const ctx = firstTurn
+    ? `<workspace>\n${tree().split('\n').slice(0, 200).join('\n')}\n</workspace>\n\n`
+    : '';
+  parts.unshift({ type: 'text', text: `${ctx}${notes.length ? `${notes.join('\n\n')}\n\n` : ''}${text}` });
+  return parts;
+}
+
+const BRAND_IMAGE = /logo|charte|couleurs?|colou?rs?|brand|marque|identit[ée]|palette|branding/i;
+const ANALYSIS_ASK = /analy|excel|xlsx|classeur|tableau|rapport|report|dashboard|synth[èe]se|provision|portefeuille|donn[ée]es/i;
+const estimate = (msgs: ChatMessage[]) => Math.ceil(JSON.stringify(msgs).length / 3.6);
+
+/**
+ * TOKEN SOBRIETY at every step, not only at the ceiling (v48: each of ~200 steps re-sent ~37 k tokens): a tool output
+ * older than the last 8 messages keeps its first 900 characters (figures and errors come first) — the full result can
+ * be asked again (data queries are cached).
+ */
+export function trimOldToolOutputs(msgs: ChatMessage[], keepLast = 8, max = 1500): ChatMessage[] {
+  const keepFrom = Math.max(1, msgs.length - keepLast);
+  return msgs.map((m, i) =>
+    i < keepFrom && m.role === 'tool' && typeof m.content === 'string' && m.content.length > max
+      ? { ...m, content: `${m.content.slice(0, 900)}\n…[ancienne sortie raccourcie — relancez l'outil si le détail est nécessaire]` }
+      : m,
+  );
+}
+/** Drops old tool outputs and images when the context gets too large. */
+function compact(msgs: ChatMessage[], budget: number, goal = ''): ChatMessage[] {
+  msgs = trimOldToolOutputs(msgs);
+  if (estimate(msgs) <= budget) return msgs;
+  // Intelligent compression: the middle of a long trajectory becomes a structured
+  // summary (facts, decisions, failures, files, current state) instead of being cut.
+  if (msgs.length > 14) {
+    const firstUser = msgs.findIndex((m, i) => i > 0 && m.role === 'user');
+    let cut = Math.max(firstUser + 1, msgs.length - 8);
+    // Never split an assistant tool call from its tool results.
+    while (cut < msgs.length && msgs[cut]!.role === 'tool') cut++;
+    const middle = msgs.slice(firstUser + 1, cut);
+    if (middle.length > 4) {
+      const summary: ChatMessage = { role: 'user', content: compressTrajectory(middle as never[], goal) };
+      const out = [...msgs.slice(0, firstUser + 1), summary, ...msgs.slice(cut)];
+      if (estimate(out) <= budget) return out;
+      msgs = out;
+    }
+  }
+  const keepFrom = Math.max(1, msgs.length - 8);
+  return msgs.map((m, i) => {
+    if (i === 0 || i >= keepFrom) return m;
+    if (m.role === 'tool' && typeof m.content === 'string' && m.content.length > 600)
+      return { ...m, content: `${m.content.slice(0, 400)}\n…[older output elided]` };
+    if (Array.isArray(m.content))
+      return {
+        ...m,
+        content: m.content.map((p) =>
+          p.type === 'image_url' ? { type: 'text' as const, text: '[image elided]' } : p,
+        ),
+      };
+    return m;
+  });
+}
+
+interface LoopInput {
+  session: Session;
+  agent: AgentDef;
+  text: string;
+  attachments: Attachment[];
+  history: ChatMessage[];
+  plan: boolean;
+  depth: number;
+  signal: AbortSignal;
+  agentLabel?: string;
+  model?: string;
+  effort?: EffortSetting;
+  mission?: boolean;
+}
+
+interface LoopResult {
+  ok: boolean;
+  text: string;
+  messages: ChatMessage[];
+  cost: number;
+  tokensIn: number;
+  tokensOut: number;
+  report?: MissionReport | null;
+  models: string[];
+  fallbacks: number;
+  dna?: TaskDna;
+  strategy?: Strategy | null;
+  tier?: string;
+  shadow?: ShadowMonitor | null;
+  steps?: number;
+  challenged?: number;
+  qa?: number;
+  escalations?: number;
+  decision?: RoutingDecision | null;
+  toolsUsed?: string[];
+  calls?: number;
+  skills?: string[];
+  mcp?: string[];
+  jev?: {
+    pre: PreResult;
+    trace: Checkpoint[];
+    jevCost: number;
+    itemId: string;
+    toolTokens: number;
+    toolTokensBaseline: number;
+    toolsOffered: number;
+    contextBefore: number;
+    contextAfter: number;
+    quality: number | null;
+    corrections: number;
+    decisionMs: number;
+    /** JEV's own paid calls of the pre-execution phase (JEV-1 / JEV-2). */
+    calls: CallRec[];
+  } | null;
+  /** Quality measured AFTER the run by the same deterministic scorer in every variant (no influence on the run). */
+  measure?: { score: number; vector: Record<string, number>; failures: number } | null;
+  /** Controlled variables of the run (paired experiments). */
+  exp?: {
+    initialModel: string;
+    toolsAvailable: number;
+    difficulty: number;
+    risk: string;
+    taskType: string;
+    temperature: number | null;
+    maxTokens: number;
+  };
+  /** Tool-call counters and last tool errors (redacted) of the run. */
+  toolCalls?: number;
+  toolErrors?: string[];
+  /** Capability ids actually offered to the model at the end of the run. */
+  offered?: string[];
+  /** JEV Apprentice: free-first record of the run (undefined when it did not take part). */
+  apprenticeInfo?: { prep: apprenticeRt.ApprenticePrep; models: string[] };
+  /** JEV Cognitive OS plan of the run (absent when the layer is off). */
+  cognitiveInfo?: cognitiveRt.CognitivePrep;
+  /** OMNIPOTENT V4.1 record of the run (HARD / POLICY enforcement, firewalls, lane). */
+  omniTag?: import('../../server/jev/omni/trace').OmniTag;
+  /** Cognitive Fabric: what it decided for this run (null when it did not take part). */
+  fabricInfo?: {
+    active: boolean;
+    why: string[];
+    skills: string[];
+    explored: boolean;
+    classification: DataClass;
+    hints: number;
+  } | null;
+  /** Why a live decision stopped the run, and the ECONOMIC_DRIFT events seen. */
+  stopReason?: string;
+  driftEvents?: string[];
+  /** Without JEV (baseline run): what was sent, for the A/B comparison. */
+  baselineTools?: { offered: number; tokens: number };
+  /** Measured waste of the run (with or without JEV). */
+  waste?: { wasted: number; rate: number | null; parts: Record<string, number> };
+  /** JEV live control summary (null when live control is off). */
+  live?: {
+    state: MissionState;
+    checkpoints: LiveCheckpoint[];
+    switches: number;
+    overhead: {
+      pct: number | null;
+      costUsd: number;
+      savedUsd: number;
+      roi: number | null;
+      downgrade: boolean;
+    };
+    promptWaste: number;
+    skillTokensSaved: number;
+  } | null;
+}
+
+/** Packet of the current top-level run, handed to sub-agents (JEV strategy for agents). */
+let currentPacket: PreResult | null = null;
+/** Per-run JEV switch (A/B benchmark: baseline runs without JEV). */
+/** Benchmark 2.0 variants: WITHOUT JEV / JEV PRE / JEV PRE + LIVE / JEV FULL (pre + live + post). */
+export type JevVariant = 'off' | 'pre' | 'live' | 'full';
+let jevOverride: JevVariant | null = null;
+/** A benchmark / lab / A-B arm is running: the OMNIPOTENT fast lane stays out so both arms are compared faithfully. */
+let experimentRun = false;
+/** Model this chat is locked to during the current run (null = switching allowed: experiments, sub-agents, lock off). */
+let modelLock: string | null = null;
+let lastPolicy = '';
+/** Cognitive Fabric options of the current run (set by runAgent; benchmarks and skill tests use them). */
+export interface FabricRunOpts {
+  /** cfbench arm: baseline / v5 (Fabric off) / fabric (Fabric on). */
+  arm?: 'baseline' | 'v5' | 'fabric';
+  /** Force the Fabric on / off for this run (default: the setting, or the arm). */
+  on?: boolean;
+  /** Skill versions injected for a Skill Lab run (WITH skill). */
+  skills?: SkillVersion[];
+  /** Experiment tag written to the JEV_LOG. */
+  tag?: FabricTag;
+  /** Keep the redacted instruction and answer in the log (benchmarks do). */
+  capture?: boolean;
+}
+let fabricRun: FabricRunOpts | null = null;
+/** JEV Apprentice benchmark arm of the current run (set by runAgent). */
+let apprenticeRun: apprenticeRt.ApprenticeRunOpts | null = null;
+/** JEV Cognitive OS per-run override (benchmark arms) of the current run. */
+let cognitiveRunOpts: cognitiveRt.CognitiveRunOpts | null = null;
+const fabricActive = () =>
+  fabricRun?.on ?? (fabricRun?.arm ? fabricRun.arm === 'fabric' : fabricRt.fabricSettings().enabled);
+/** Metadata of a paired experiment run (set by the benchmark). */
+export interface ExperimentInput {
+  experimentId: string;
+  groupId: string;
+  taskId: string;
+  category: string;
+  protocol: 'fixed-model' | 'free-routing';
+  rep: number;
+  order: number;
+}
+const jevVariant = (): JevVariant => jevOverride ?? (jevRt.jevSettings().enabled ? 'full' : 'off');
+const jevEnabled = () => jevVariant() !== 'off';
+const fmtTok = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
+
+/** Average latency per model call (ms), measured on the recent usage. */
+function latencyMap(usage: UsageEntry[]): Record<string, number> {
+  const acc: Record<string, { s: number; n: number }> = {};
+  for (const u of usage.slice(-300)) {
+    const a = (acc[u.model] ??= { s: 0, n: 0 });
+    a.s += u.durationMs;
+    a.n++;
+  }
+  return Object.fromEntries(Object.entries(acc).map(([k, v]) => [k, v.s / v.n]));
+}
+
+/** Decision kept in the log / transcript (top candidates only). */
+const slimDecision = (d: RoutingDecision): RoutingDecision => ({
+  ...d,
+  candidates: d.candidates.slice(0, 8),
+});
+
+/** USD still available for this run (per-task and daily budgets), null = unlimited. */
+function budgetLeft(spentThisTask = 0): number | null {
+  const st = useStore.getState();
+  const ws = st.settings;
+  const today = new Date().toISOString().slice(0, 10);
+  const lefts = [
+    ws.budgetPerTask > 0 ? ws.budgetPerTask - spentThisTask : null,
+    ws.budgetDaily > 0 ? ws.budgetDaily - (st.spend[today] ?? 0) : null,
+  ].filter((x): x is number => x !== null);
+  return lefts.length ? Math.max(0, Math.min(...lefts)) : null;
+}
+
+/** Messages of the top-level run in progress (resume summary if it is interrupted). */
+let liveTrace: { goal: string; messages: ChatMessage[] } | null = null;
+const currentTrace = () => liveTrace;
+/** Specialists delegated to during the current top-level run (learning). */
+const runTeam = new Set<string>();
+
+function decide(
+  mode: Session['mode'],
+  t: DirectTool,
+  granted: boolean,
+  args: Record<string, unknown> = {},
+): 'allow' | 'ask' | 'deny' {
+  const risk = t.assess ? t.assess(args) : t.risk;
+  if (risk === 'read') return 'allow';
+  // Deletions are always confirmed, even in autonomous mode.
+  if (risk === 'delete') return mode === 'safe' ? 'deny' : 'ask';
+  if (mode === 'safe' && (WRITE_TOOLS.has(t.name) || risk === 'write')) return 'deny';
+  if (mode === 'auto') return 'allow';
+  return granted ? 'allow' : 'ask';
+}
+
+async function loop(inp: LoopInput): Promise<LoopResult> {
+  // The prologue (attachments, workspace index, memory) reads files across awaits: it holds the scope lock.
+  const release = await acquireScope(inp.session.id);
+  setChatScope(inp.session.id, sessionAllow(inp.session.id));
+  try {
+    return await loopBody(inp, release);
+  } finally {
+    release();
+  }
+}
+
+async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<LoopResult> {
+  const st = useStore.getState();
+  const sid = inp.session.id;
+  const push = st.pushItem;
+  const label = inp.agentLabel;
+  const models = st.models;
+
+  // Plugins
+  stage(sid, 'Préparation : connexion des plugins…');
+  await ensureConnected(st.mcp);
+  const plugins = st.mcp.filter((d) => d.enabled && mcpState(d.name).status === 'connected');
+  const mcpTools = connectedTools(st.mcp).map((t) =>
+    mcpTool(t, st.mcp.find((d) => d.name === t.server)?.autoApprove ?? false),
+  );
+
+  // Tools allowed for this agent / mode / depth
+  const extTools = builtinTools(st.settings.disabledPlugins ?? []);
+  // Built-in plugins go to every agent that may look things up (all tools, or web.search).
+  const extOk =
+    !inp.agent.tools || inp.agent.tools.includes('web.search') || inp.agent.tools.includes('plugin.*');
+  let tools = [...TOOLS.filter((t) => t.name !== 'plan.propose'), ...mcpTools, ...extTools].filter((t) => {
+    if (builtinToolNames.has(t.name) && extOk && (!inp.agent.tools || !inp.agent.tools.includes(t.name))) {
+      if (inp.session.mode === 'safe' && t.risk !== 'read') return false;
+      return true;
+    }
+    if (
+      inp.agent.tools &&
+      !inp.agent.tools.includes(t.name) &&
+      !(
+        t.name.startsWith('mcp.') &&
+        inp.agent.tools.some((p) => p === 'mcp.*' || t.name.startsWith(p.replace(/\*$/, '')))
+      )
+    )
+      return false;
+    if (t.name === 'agent.delegate' && inp.depth >= MAX_DEPTH) return false;
+    if (inp.session.mode === 'safe' && SAFE_HIDDEN.has(t.name)) return false;
+    if (MISSION_ONLY.has(t.name)) return false;
+    return true;
+  });
+  if (inp.mission) {
+    tools = [
+      ...tools,
+      ...TOOLS.filter((t) => MISSION_ONLY.has(t.name) || (t.name === 'plan.update' && !tools.includes(t))),
+    ];
+    const d = TOOLS.find((t) => t.name === 'agent.delegate')!;
+    if (inp.depth < MAX_DEPTH && !tools.includes(d)) tools.push(d);
+  }
+  if (!st.skills.some((s) => s.enabled)) tools = tools.filter((t) => !t.name.startsWith('skill.'));
+  const planTools = [...tools.filter((t) => t.readOnly), TOOLS.find((t) => t.name === 'plan.propose')!];
+
+  // Model (AUTO router or explicit / agent preference)
+  const pref = agentModelPreference(inp.agent.model);
+  const requested = inp.model && inp.model !== 'auto' ? inp.model : (pref.id ?? 'auto');
+  const tiers = pref.tier
+    ? { ...DEFAULT_AUTO_TIERS, balanced: DEFAULT_AUTO_TIERS[pref.tier], fast: DEFAULT_AUTO_TIERS[pref.tier] }
+    : DEFAULT_AUTO_TIERS;
+  const prefTier = pref.tier ? FAMILY_TIER[pref.tier] : null;
+  const hasImages = inp.attachments.some((a) => isImage(a.path));
+  const profile = analyzeTask({
+    text: inp.text,
+    attachmentNames: inp.attachments.map((a) => a.name),
+    hasImages,
+    role: inp.agent.id,
+    historyTokens: estimate(inp.history),
+    mission: inp.mission,
+  });
+  // MASSAMBA Intelligence Engine: Task DNA → Strategy (learnt from the ledger).
+  const top = inp.depth === 0 && !label;
+  // ── OMNIPOTENT V4.1 governor, step 1: reclassify the JOB, build the mission capsule and run the HISTORY FIREWALL.
+  // The model only ever sees the turns of the current mission (or an explicit recall); the raw history stays stored.
+  const omni =
+    top && !inp.plan && !experimentRun
+      ? omniRt.beginOmni({
+          text: inp.text,
+          attachments: inp.attachments.map((a) => ({ name: a.name, image: isImage(a.path) })),
+          hasImages,
+          history: inp.history,
+          turns: inp.session.turns,
+          initialType: profile.reclass?.initial ?? profile.type,
+          initialDna: `${profile.reclass?.initial ?? profile.type}`,
+          lastDelivery: inp.session.lastDelivery,
+        })
+      : null;
+  if (omni) inp = { ...inp, history: omni.fw.history };
+  let dna = taskDna(
+    inp.text,
+    inp.attachments.map((a) => a.name),
+    profile,
+  );
+  let strategy = top ? planStrategy(dna, profile, st.ledger, { mission: Boolean(inp.mission) }) : null;
+  if (strategy && !prefTier) profile.tier = strategy.tier;
+  // ── JEV Cognitive Companion (control plane): JEV_PRE → Execution Packet ──
+  // Adaptive policy (opt-in): the JEV level comes from the measured results of this category, if any.
+  if (top && jevOverride === null && jevRt.jevSettings().adaptivePolicy) {
+    const pv = jevRt.policyVariant({
+      type: profile.type,
+      text: inp.text,
+      attachments: inp.attachments.map((a) => a.name),
+      difficulty: profile.difficulty,
+      mission: Boolean(inp.mission),
+      contextChars: estimate(inp.history) * 3,
+    });
+    if (pv) {
+      jevOverride = pv.variant;
+      lastPolicy = pv.why;
+    }
+  }
+  const jevOn = top && jevEnabled();
+  let jp: Awaited<ReturnType<typeof jevRt.pre>> | null = null;
+  const tJev = performance.now();
+  if (jevOn) {
+    const s0 = useStore.getState();
+    // Chat-scoped: JEV only ever selects context among THIS chat's files (never another chat's documents).
+    const wsFiles = Object.values(files())
+      .filter((f) => !f.binary && f.data.length < 300_000 && !f.path.startsWith('.ai/'))
+      .slice(-200)
+      .map((f) => ({ path: f.path, text: f.data }));
+    const userTexts = [
+      ...inp.history
+        .filter((m) => m.role === 'user' && typeof m.content === 'string')
+        .map((m) => m.content as string),
+      inp.text,
+    ].slice(-12);
+    try {
+      stage(sid, 'Préparation : stratégie JEV…');
+      jp = await jevRt.pre({
+        taskId: uid(),
+        text: inp.text,
+        attachments: inp.attachments.map((a) => a.name),
+        hasImages,
+        mission: Boolean(inp.mission),
+        role: inp.agent.id,
+        agentLabel: inp.agent.name,
+        models,
+        tiers,
+        health: s0.health,
+        board: s0.board,
+        bench: s0.bench,
+        external: s0.externalBench,
+        latency: latencyMap(s0.usage),
+        engine: {
+          ...DEFAULT_ENGINE,
+          ...s0.settings.engine,
+          weights: { ...DEFAULT_WEIGHTS, ...s0.settings.engine?.weights },
+        },
+        budgetLeft: budgetLeft(),
+        perTaskUsd: s0.settings.budgetPerTask,
+        maxSteps: s0.settings.maxSteps,
+        historyTokens: estimate(inp.history),
+        availableTools: [...tools.map((t) => t.name), 'tools.request'],
+        mcpConnected: plugins.map((p) => p.name),
+        mcpToolNames: mcpTools.map((t) => t.name),
+        files: wsFiles,
+        userTexts,
+        manualRules: s0.manual.map((m) => m.rule),
+        ledger: s0.ledger,
+        preferredTier: prefTier,
+        previousUserText: userTexts.at(-2),
+      });
+    } catch (e) {
+      // JEV must never block the Workbench: the existing pipeline continues.
+      push(sid, {
+        kind: 'intel',
+        id: uid(),
+        title: 'JEV indisponible → pipeline standard',
+        tone: 'warn',
+        lines: [String((e as Error).message ?? e)],
+      });
+      jp = null;
+    }
+    if (jp) {
+      Object.assign(profile, jp.pre.profile);
+      dna = jp.pre.dna;
+      strategy = jp.pre.strategy;
+      currentPacket = jp.pre;
+    }
+  }
+  const jevDecisionMs = performance.now() - tJev;
+  // ── OMNIPOTENT step 2: proportional effort (fast lane) once the difficulty is known. A budget is a CEILING, never a target.
+  if (omni)
+    omniRt.laneOmni(omni, {
+      text: inp.text,
+      attachments: inp.attachments.length,
+      difficulty: profile.difficulty,
+      critical: dna.criticality === 'critical',
+      mission: Boolean(inp.mission),
+      needsTools: profile.type !== 'chat' && profile.type !== 'writing',
+      historyTokens: estimate(inp.history),
+    });
+  const lane = omni?.settings.fastLane ? omni.lane : undefined;
+  if (omni && omni.settings.traceInChat)
+    push(sid, {
+      kind: 'intel',
+      id: uid(),
+      title: `OMNIPOTENT — voie ${lane?.lane ?? '—'} · mission ${omni.capsule.mission_id}`,
+      tone: 'info',
+      lines: omniRt.traceLines(omniRt.omniTag(omni)),
+    });
+  if (top) {
+    // Personal operating manual: explicit durable instructions are remembered.
+    const rules = detectRules(inp.text).filter((r) => !st.manual.some((m) => m.rule === r.rule));
+    if (rules.length) {
+      st.setManual([
+        ...st.manual,
+        ...rules.map((r) => ({ ...r, id: uid(), at: Date.now(), source: 'auto' as const })),
+      ]);
+      push(sid, {
+        kind: 'intel',
+        id: uid(),
+        title: 'Manuel personnel : règle mémorisée',
+        tone: 'ok',
+        lines: rules.map((r) => r.rule),
+      });
+    }
+  }
+  const sel = selectModel({
+    requested,
+    models,
+    tiers,
+    signals: { text: inp.text, hasImages, role: inp.agent.id, historyLength: inp.history.length },
+    fallbackDefault: 'openai/gpt-4o-mini',
+  });
+  let routedFallbacks: string[] = [];
+  let routed: ReturnType<typeof routeModel> = null;
+  if (sel.auto) {
+    const { health, board } = useStore.getState();
+    routed = routeModel(models, tiers, prefTier ? { ...profile, tier: prefTier } : profile, health, board);
+    if (routed) {
+      sel.model = routed.model;
+      sel.reason = routed.reason;
+      routedFallbacks = routed.fallbacks;
+    }
+  }
+  // MASSAMBA Intelligence Engine: evidence-based decision (model + agent + skills + MCP + tools), explained.
+  const eng = {
+    ...DEFAULT_ENGINE,
+    ...st.settings.engine,
+    weights: { ...DEFAULT_WEIGHTS, ...st.settings.engine?.weights },
+  };
+  let decision: RoutingDecision | null = null;
+  let engineSkills: SkillMatch[] = [];
+  if (top) {
+    const s2 = useStore.getState();
+    decision = jp
+      ? jp.pre.decision
+      : decideRoute({
+          models,
+          tiers,
+          profile: prefTier ? { ...profile, tier: prefTier } : profile,
+          dna,
+          text: inp.text,
+          health: s2.health,
+          board: s2.board,
+          bench: s2.bench,
+          external: s2.externalBench,
+          latency: latencyMap(s2.usage),
+          settings: eng,
+          budgetLeft: budgetLeft(),
+          mission: inp.mission,
+        });
+    if (sel.auto && decision.mode === 'evidence' && decision.chosen) {
+      sel.model = decision.chosen.id;
+      sel.reason = decision.why.model;
+      routedFallbacks = decision.fallbacks.map((f) => f.id);
+    }
+    const selection = jp
+      ? jp.pre.selection
+      : selectSkills(
+          inp.text,
+          inp.attachments.map((a) => a.name),
+          { model: models.find((m) => m.id === sel.model), tools: tools.map((t) => t.name) },
+        );
+    engineSkills = selection.selected;
+    const lo = jp
+      ? jp.pre.loadout
+      : buildLoadout({
+          agentId: inp.agent.id,
+          agentLabel: inp.agent.name,
+          team: strategy?.team ?? profile.team,
+          type: profile.type,
+          selection,
+          mcpConnected: plugins.map((p) => p.name),
+          tools: tools.map((t) => t.name),
+        });
+    decision = {
+      ...decision,
+      agent: lo.agent,
+      skills: lo.skills,
+      mcp: lo.mcp,
+      tools: lo.tools.slice(0, 60),
+      why: {
+        ...decision.why,
+        model: sel.auto
+          ? decision.why.model
+          : `Modèle imposé par vous ou par l’agent (${sel.model}). Recommandation du moteur : ${decision.chosen?.name ?? '—'}.`,
+        agent: lo.agentWhy,
+        skills: `${lo.skillsWhy}${lo.incompatibleSkills.length ? ` — refusés : ${lo.incompatibleSkills.map((i) => `${i.name} (${i.reason})`).join(', ')}` : ''}`,
+        mcp: lo.mcpWhy,
+        tools: `${lo.tools.length} outils autorisés pour cet agent et ce mode ; contrôle qualité : ${lo.qa}`,
+      },
+    };
+    st.logRouting(slimDecision(decision));
+    push(sid, { kind: 'routing', id: uid(), decision: slimDecision(decision) });
+  }
+  // JEV live execution trace (updated at each checkpoint).
+  const jevItemId = uid();
+  const jevTrace: Checkpoint[] = jp ? [...jp.trace] : [];
+  const traceAdd = (c: Checkpoint) => {
+    if (!jp) return;
+    jevTrace.push(c);
+    st.updateItem(sid, jevItemId, { trace: [...jevTrace] });
+  };
+  if (jp)
+    push(sid, {
+      kind: 'jev',
+      id: jevItemId,
+      packet: jp.pre.packet as unknown as Record<string, unknown>,
+      why: jevRt.explain(jp.pre),
+      trace: [...jevTrace],
+    });
+  // ── JEV COGNITIVE FABRIC (additive): security gate, then — only when active — skills, lessons from past
+  // failures, learned model preference with controlled exploration, and the minimal capability set. ──
+  let fabricPrep: fabricRt.FabricPrep | null = null;
+  const fabricOn = top && fabricActive();
+  if (top) {
+    const fs = fabricRt.fabricSettings();
+    try {
+      stage(sid, "Préparation : registre des capacités…");
+      await fabricRt.ensureRegistry();
+      fabricPrep = fabricRt.prepare({
+        text: inp.text,
+        attachments: inp.attachments.map((a) => a.name),
+        taskType: profile.type,
+        difficulty: profile.difficulty,
+        critical: dna.criticality === 'critical',
+        risk: dna.criticality === 'critical' ? 0.9 : dna.criticality === 'high' ? 0.6 : 0.2,
+        availableTools: [...tools.map((t) => t.name), 'tools.request'],
+        modelCandidates:
+          fabricOn && sel.auto && decision
+            ? [decision.chosen, ...decision.fallbacks]
+                .filter((c): c is NonNullable<typeof c> => Boolean(c))
+                .map((c) => ({ model: c.id, cost: models.find((m) => m.id === c.id)?.inputPrice ?? null }))
+            : null,
+        budgetLeft: budgetLeft(),
+        estCost: decision?.chosen?.estimate
+          ? (decision.chosen.estimate.low + decision.chosen.estimate.high) / 2
+          : 0.01,
+        injectSkills: fabricRun?.skills,
+      });
+      if (fabricOn && fabricPrep.model && fabricPrep.model.model !== sel.model) {
+        sel.model = fabricPrep.model.model;
+        sel.reason = `Cognitive Fabric : ${fabricPrep.model.reason}`;
+      }
+      // SECURITY: never send data to a provider whose policy is incompatible (unknown policy is not "safe").
+      if (fs.securityEnforce) {
+        const chk = fabricRt.providerCheck(
+          models.find((m) => m.id === sel.model),
+          sel.model,
+          fabricPrep.classification,
+        );
+        if (chk.action !== 'allow' && fabricPrep.classification.level !== 'PUBLIC') {
+          push(sid, {
+            kind: 'intel',
+            id: uid(),
+            title:
+              chk.action === 'block'
+                ? 'Sécurité : envoi bloqué'
+                : 'Sécurité : politique du fournisseur non confirmée',
+            tone: chk.action === 'block' ? 'err' : 'warn',
+            lines: [
+              `Classification ${fabricPrep.classification.level} (${fabricPrep.classification.reasons.join(' ; ')})`,
+              chk.reason,
+              'Renseignez la politique du fournisseur dans JEV → Security, ou désactivez la protection dans JEV → Security.',
+            ],
+          });
+          if (chk.action === 'block') throw new Error(`Envoi bloqué : ${chk.reason}`);
+        }
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('Envoi bloqué')) throw e;
+      // The Fabric must never block the Workbench: any other failure falls back to the V5 behaviour.
+      fabricPrep = null;
+    }
+  }
+  // ── JEV APPRENTICE (free-first): Task DNA → eligibility → free model → micro-adaptation. Off → V5 untouched. ──
+  let apprentice: apprenticeRt.ApprenticePrep | null = null;
+  const v5Chain = [sel.model, ...routedFallbacks];
+  // FREE WITHOUT A KEY (v63 — « alimenter les LLM gratuits aux ressources et outils à partir de JEV »): with no key
+  // the answer comes from a free model, so JEV ALWAYS prepares its knowledge capsule (Task DNA, validated skills,
+  // successful examples, failure patterns, output contract) — the free model is fed, not left alone.
+  const freeRoute = !getKey();
+  if (top && !inp.mission && !inp.plan && (jp || apprenticeRun?.arm || freeRoute)) {
+    try {
+      apprentice = apprenticeRt.prepareApprentice({
+        text: inp.text,
+        attachments: inp.attachments.map((a) => a.name),
+        taskType: profile.type,
+        difficulty: profile.difficulty,
+        criticality: dna.criticality,
+        tools: tools.map((t) => t.name),
+        hasImages,
+        avoid: [...(fabricPrep?.hints.avoidModels ?? []), ...apprenticeRt.toolIncapableModels()],
+        v5Model: sel.model,
+        v5Ladder: [sel.model, ...routedFallbacks],
+        userPinned: !sel.auto && !apprenticeRun?.arm,
+        run: apprenticeRun ?? undefined,
+      });
+    } catch {
+      // The Apprentice must never block the Workbench: any failure falls back to the V5 routing.
+      apprentice = null;
+    }
+    if (apprentice?.plan.use && !apprentice.forced && apprentice.plan.chosen && !freeRoute) {
+      const c = apprentice.plan.chosen;
+      sel.model = c.id;
+      sel.reason = `JEV Apprentice (free-first) : ${apprentice.plan.reason}`;
+      // The free route never ends the mission: when every free attempt fails (provider error, no tool endpoint…), V5 takes over.
+      routedFallbacks = [...new Set([...apprentice.ladder, ...v5Chain])];
+    }
+    if (apprentice && !apprentice.forced) {
+      const cap = apprentice.capsule;
+      const sp = apprentice.plan as import('../../server/jev/apprentice/ladder').SupremacyPlan;
+      const title = !apprentice.plan.use
+        ? 'JEV Apprentice — route gratuite non utilisée'
+        : sp.route === 'validated'
+          ? 'JEV Apprentice — FREE APPRENTICE SELECTED (VALIDATED)'
+          : sp.route === 'specialist'
+            ? 'JEV Apprentice — FREE SPECIALIST SELECTED'
+            : 'JEV Apprentice — FREE-FIRST actif';
+      push(sid, {
+        kind: 'intel',
+        id: uid(),
+        title,
+        tone: apprentice.plan.use ? 'ok' : 'info',
+        lines: apprentice.plan.use
+          ? [
+              `WHY THIS MODEL ? ${apprentice.plan.chosen?.id} — niveau ${sp.level ?? 3} · tâche ${apprentice.dna.task_family} · seuil qualité ${Math.round(apprentice.dna.quality_threshold * 100)} %`,
+              ...(sp.explain ?? []).slice(0, 8),
+              `Réussite prévue ${Math.round((apprentice.plan.predictedSuccess ?? 0) * 100)} % · confiance ${apprentice.plan.confidence}`,
+              ...(cap
+                ? [
+                    `ADAPTATION (inference-time, aucun poids modifié) : ${cap.adaptationMs} ms (récupération ${cap.retrievalMs} + compilation ${cap.compilationMs}) · ${cap.cacheHit ? 'CACHE HIT' : 'CACHE MISS'} · ${cap.tokensAdded} tokens ajoutés (estimés) · ${cap.skills.length} skill(s) · ${cap.experiences} expérience(s) · ${cap.toolsExposed} outil(s) exposé(s)${cap.contextReduction === null ? '' : ` · contexte −${Math.round(cap.contextReduction * 100)} %`}`,
+                  ]
+                : []),
+              `Repli automatique : ${apprentice.plan.attempts.map((a) => a.label).join(' → ')}`,
+            ]
+          : [apprentice.plan.reason],
+      });
+    }
+  }
+  // ── MODEL LOCK: a chat never changes model on its own. An explicit choice is kept; « auto » picks ONCE (first request
+  // of the chat) and that model stays for the whole conversation. No silent fallback, escalation or downgrade mid-chat.
+  const lockOn = top && !experimentRun && st.settings.pinModel !== false;
+  const pinned = inp.session.pinnedModel && models.some((m) => m.id === inp.session.pinnedModel) ? inp.session.pinnedModel : null;
+  const myLock = lockOn ? (inp.session.model && inp.session.model !== 'auto' ? inp.session.model : (pinned ?? sel.model)) : null;
+  if (top) modelLock = myLock;
+  if (myLock && sel.model !== myLock) {
+    sel.model = myLock;
+    sel.reason = `modèle verrouillé pour ce chat (${myLock})`;
+  }
+  // The fallback chain is used ONLY when the model fails for real (unavailable, no endpoint, provider error): stopping
+  // the mission would be worse. Quality-based switches (escalation, apprentice gate, live switch) stay locked.
+  const fallbackChain = [...new Set([st.settings.fallbackModel, ...routedFallbacks].filter((m) => m && m !== sel.model))];
+  const info = models.find((m) => m.id === sel.model);
+  const vision = info?.capabilities.vision ?? hasImages;
+  let effort = (inp.effort && inp.effort !== 'auto' ? inp.effort : inp.agent.effort) ?? 'auto';
+  // JEV reasoning level: ECO thinks less, MAX thinks more (only when left on auto).
+  if (jp && effort === 'auto' && info?.efforts.length) {
+    const m = jevRt.jevSettings().mode;
+    if (m === 'eco') effort = 'low';
+    else if (m === 'max') effort = 'high';
+  }
+  if (!label)
+    push(sid, {
+      kind: 'model',
+      id: uid(),
+      model: sel.model,
+      reason: sel.reason,
+      auto: sel.auto,
+      tier: routed?.tier,
+      fallbacks: fallbackChain,
+      estimate: routed?.estimate ?? null,
+    });
+
+  if (strategy && top) {
+    const simN = similarMissions(st.ledger, dna).length;
+    push(sid, {
+      kind: 'intel',
+      id: uid(),
+      title: `Stratégie — ${TIER_LABEL[strategy.tier]} · criticité ${dna.criticality}`,
+      tone: strategy.explore ? 'warn' : 'info',
+      lines: [
+        `ADN : ${dna.type}, complexité ${Math.round(dna.complexity * 100)} %${dna.risks.length ? `, risques ${dna.risks.join(', ')}` : ''}${dna.outputs.length ? `, livrables ${dna.outputs.join(', ')}` : ''}`,
+        `Palier : ${strategy.tierReason}`,
+        `Vérifications : ${[strategy.verify.qa && 'QA', strategy.verify.evidence && 'preuves des chiffres', strategy.verify.adversarial && 'red team', strategy.verify.judge && 'juge final', 'shadow'].filter(Boolean).join(' · ')}`,
+        ...(strategy.team.length ? [`Équipe : ${strategy.team.join(' → ')}`] : []),
+        `Mémoire : ${simN} mission(s) similaire(s), ${strategy.pitfalls.length} piège(s) connu(s)`,
+      ],
+    });
+  }
+
+  // Skills: pinned + agent's + auto-detected
+  const enabled = st.skills.filter((s) => s.enabled);
+  const names = new Set<string>([...(label ? [] : inp.session.pinnedSkills), ...inp.agent.skills]);
+  if (st.settings.autoSkills) for (const m of matchSkills(inp.text, enabled).slice(0, 3)) names.add(m.name);
+  const active = enabled
+    .filter((s) => names.has(s.name))
+    .map((s) => ({ name: s.name, body: s.body, files: Object.keys(s.files) }));
+  // JEV SKILL CONTEXT COMPILER: only the relevant sections of large skills.
+  let skillTokensSaved = 0;
+  if (jp)
+    for (const a of active) {
+      const c = compileSkill(a.body, inp.text, jevRt.jevSettings().mode === 'max' ? 4000 : 1800);
+      if (c.after < c.before) {
+        skillTokensSaved += c.before - c.after;
+        a.body = c.text;
+      }
+    }
+  if (active.length && !label) push(sid, { kind: 'skills', id: uid(), names: active.map((a) => a.name) });
+
+  // JEV TOOL PACK: only the selected tools are exposed; tools.request / ADD TOOL extend it.
+  const packTools: DirectTool[] = jp ? tools.filter((t) => jp!.pre.toolPack.names.includes(t.name)) : [...tools];
+  // Cognitive Fabric: the capability registry narrows the exposure to the minimum the mission needs.
+  if (jp && fabricOn && fabricPrep?.selection && fabricPrep.selection.exposed > 0) {
+    const names = new Set(fabricPrep.selection.selected.map((x) => x.cap.name));
+    const narrowed = tools.filter((t) => names.has(t.name));
+    if (narrowed.length) {
+      packTools.splice(0, packTools.length, ...narrowed);
+      traceAdd({
+        name: 'JEV_TOOLS',
+        ms: 0,
+        tokens: 0,
+        cost: 0,
+        decision: `Fabric : ${narrowed.length}/${fabricPrep.selection.examined} capacités exposées (${narrowed
+          .map((t) => t.name)
+          .slice(0, 8)
+          .join(', ')})`,
+      });
+    }
+  }
+  if (jp || omni) {
+    const requestTool: DirectTool = {
+      name: 'tools.request',
+      description: `Ask JEV for another family of tools when the selected ones are not enough. Families: ${REQUESTABLE.join(', ')}.`,
+      parameters: {
+        type: 'object',
+        properties: {
+          family: { type: 'string', enum: REQUESTABLE },
+          reason: { type: 'string', description: 'Why it is needed' },
+        },
+        required: ['family'],
+      },
+      risk: 'read',
+      readOnly: true,
+      label: (a) => `JEV : outils « ${String(a.family)} »`,
+      async run(a) {
+        const fam = TOOL_FAMILIES[String(a.family)] ?? [];
+        const added = tools.filter((t) => fam.includes(t.name) && !packTools.includes(t));
+        packTools.push(...added);
+        traceAdd({
+          name: 'JEV_EXECUTION',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: `ADD TOOL : ${added.map((t) => t.name).join(', ') || 'aucun nouvel outil'} (${String(a.family)})`,
+        });
+        return {
+          ok: true,
+          summary: `${added.length} outil(s) ajouté(s)`,
+          forModel: added.length
+            ? `Added tools: ${added.map((t) => llmName(t.name)).join(', ')}. They are available from your next step.`
+            : `No new tool in family ${String(a.family)} for this agent / mode (already available or not allowed).`,
+        };
+      },
+    };
+    packTools.push(requestTool);
+    // OMNIPOTENT TOOL FIREWALL (hard): AVAILABLE ≠ EXPOSED. What the model is not shown costs nothing on every call; it can still
+    // ask for a family with tools.request, and a call to an allowed tool outside the pack still runs (the pack grows, never blocks).
+    if (omni && omni.settings.toolFirewall && omni.lane && !inp.mission) {
+      const keep = new Set(omniRt.filterTools(omni, packTools.map((t) => t.name), inp.text, inp.attachments.length));
+      const before = packTools.length;
+      packTools.splice(0, packTools.length, ...packTools.filter((t) => keep.has(t.name) || t.name === 'tools.request'));
+      if (packTools.length < before)
+        traceAdd({ name: 'JEV_TOOLS', ms: 0, tokens: 0, cost: 0, decision: `OMNIPOTENT pare-feu d'outils : ${packTools.length}/${before} exposés (voie ${omni.lane.lane})` });
+    }
+  }
+  const toolTokens = toolDefTokens(toolDefs(packTools));
+  const toolTokensBaseline = toolDefTokens(toolDefs(tools));
+  const system = systemPrompt({
+    agent: inp.agent,
+    mode: inp.session.mode,
+    tools: packTools,
+    skills: enabled,
+    active,
+    agents: allRoles(st.agents),
+    plugins: lane?.minimalPrompt ? [] : plugins.map((p) => ({ name: p.name, instructions: mcpState(p.name).instructions })),
+    compact: Boolean(lane?.minimalPrompt),
+  });
+  // ── JEV COGNITIVE OS (off by default): diagnosis → protocol → conditioning; only ACTIVE engines touch the prompt. ──
+  const cognitive =
+    top && !inp.plan
+      ? cognitiveRt.prepareCognitive({
+          text: inp.text,
+          attachments: inp.attachments.map((a) => a.name),
+          hasImages,
+          mission: Boolean(inp.mission),
+          history: inp.history,
+          historyTokens: estimate(inp.history),
+          hasTools: tools.length > 0,
+          model: sel.model,
+          run: cognitiveRunOpts,
+          freeProven: Boolean(apprentice?.plan.use),
+        })
+      : null;
+  // ── JEV SEMANTIC MEMORY: the few facts of THIS chat and the lessons from past corrections that match the request.
+  let semMemory = '';
+  if (top && !experimentRun) {
+    const chatHits = recallMemory(inp.session.memory ?? [], inp.text, { k: 3 });
+    const lessonHits = recallMemory(useStore.getState().lessons, inp.text, { k: 3, tag: profile.type, min: 0.3 });
+    const exp = vaultRecall(inp.text);
+    // LEARNED KNOWLEDGE (past web searches, filed rules): reused instead of searching again.
+    const known = relatedKnowledge(useStore.getState().knowledge, inp.text, 4);
+    // JEV SWARM: a heavy request is split by JEV's prescription into sub-agents that run in parallel (agent.delegate).
+    const swarm = inp.depth < MAX_DEPTH && packTools.some((t) => t.name === 'agent.delegate') ? swarmPlan({ text: inp.text, attachments: inp.attachments.length, complexity: dna.complexity, outputs: dna.outputs }) : null;
+    if (swarm?.heavy) {
+      traceAdd({ name: 'JEV_CHECKPOINT', ms: 0, tokens: 0, cost: 0, decision: `tâche lourde (score ${swarm.score.toFixed(2)} : ${swarm.reasons.join(', ')}) → ${swarm.parts.length} sous-agents en parallèle` });
+      stage(sid, `JEV découpe la tâche en ${swarm.parts.length} sous-agents parallèles`);
+    }
+    semMemory = [memoryBlock(chatHits, [...lessonHits, ...seedHits(inp.text)].slice(0, 3)), exp ? vaultBlock(exp) : '', knowledgeBlock(known), swarm ? swarmBlock(swarm, allRoles(st.agents).map((a) => a.id)) : ''].filter(Boolean).join('\n');
+    if (semMemory)
+      traceAdd({ name: 'JEV_CONTEXT', ms: 0, tokens: Math.ceil(semMemory.length / 3.8), cost: 0, decision: `mémoire sémantique : ${chatHits.length} fait(s) du chat, ${lessonHits.length} leçon(s)` });
+  }
+  // A design other than the house one was chosen: memories / lessons that prescribe the house palette are dropped,
+  // otherwise the model follows its memory (« style maison navy #00415E… ») instead of the user's choice.
+  const chosen = designFor(sid);
+  if (semMemory && chosen && chosen.theme !== 'house')
+    semMemory = semMemory
+      .split('\n')
+      .filter((l) => !HOUSE_STYLE_LINE.test(l))
+      .join('\n');
+  const promptSections = [
+    { name: 'system', text: system, pinned: true },
+    { name: 'omni', text: omni?.lock ?? '', pinned: true },
+    { name: 'delivery', text: omni?.delivery ?? '', pinned: true },
+    { name: 'chat_index', text: omni?.chatIndex ?? '' },
+    { name: 'chat_memory', text: semMemory },
+    {
+      name: 'design_layout',
+      // The design chosen for THIS request counts too (not only one remembered « pour tout ce chat »).
+      text: (() => {
+        const c = designFor(sid);
+        if (c?.clone && !experimentRun) {
+          const pc = (v: number) => Math.round(v * 100);
+          const panels = c.clone.panels.map((p, i) => `${i + 1}. ${p.kind} at x ${pc(p.box.x)}% y ${pc(p.box.y)}% · ${pc(p.box.w)}×${pc(p.box.h)}% · fill ${p.fill}${p.border ? ` · border ${p.border} ${p.borderWidth}px` : ''} · colours ${p.colors.slice(0, 4).join(' ')}${p.sequential ? ' (dark→light ramp: biggest value darkest)' : ''}`).join('\n');
+          return `<DESIGN_CLONE source="${c.source ?? ''}">\nThe user chose this dashboard image and wants a PHOTO-FAITHFUL reproduction with the real data. For Excel / dashboards call data.export (with a query if needed): the app renders the exact reproduction itself (« Tableau de bord » sheet first in the workbook + HTML page), in the measured geometry and colours. For sites / apps, rebuild this exact grid (positions in % of the page, aspect ${c.clone.aspect.toFixed(2)}), page ${c.clone.page}${c.clone.frame ? `, frame ${c.clone.frame.color}` : ''}, title colour ${c.clone.title?.color ?? c.clone.palette.dark}, font ${c.clone.font}:\n${panels}\nNever copy the source's logos, photos or text.\nTOKEN RULES (the reproduction is the app's job, not yours): after EVERY file you write, the app adds it to each xlsx / docx / pptx / html of the turn, and re-adds it intact when you re-save the file. So (1) never build, imitate, read, verify or repair the « Tableau de bord », « Tableau de bord (image) » and « Données du tableau de bord » sheets — openpyxl cannot see their shapes and pictures, they LOOK empty to it, that is normal; (2) write your own analysis sheets in ONE code.run that builds the whole workbook and saves it once; (3) never reopen a delivered file to check it.\n</DESIGN_CLONE>`;
+        }
+        return c?.layout && !experimentRun
+          ? `<DESIGN_LAYOUT source="${c.source ?? ''}">\nThe user picked this ${c.layout.cssVars ? 'REAL WEBSITE (its colours, fonts, radius and CSS tokens were read from its own code — use them exactly: font-family stack, cssVars)' : 'Internet design'} to REPRODUCE: rebuild this exact layout with the real data — for HTML (sites, apps, dashboards) the whole layout (navigation, header, KPI count and style, charts in this order and span, table style, grid columns, radius, shadow, light/dark, palette, font); for Excel / Word / PowerPoint its structure (same KPI count and order at the top, same chart types, same table style, palette and font). Never copy the source's logos, photos or text.\n${JSON.stringify(c.layout)}\n</DESIGN_LAYOUT>`
+          : '';
+      })(),
+    },
+    { name: 'design_choice', text: (() => { const c = designFor(sid); return c && !experimentRun ? designPrompt(c, runFormats.get(sid)) : ''; })(), pinned: true },
+    // ARCHITECTE DESIGNER: imposed on every model for any deliverable (the app then checks it before delivery).
+    { name: 'design_architect', text: !experimentRun && needsArchitect(inp.text, Boolean(designFor(sid))) ? DESIGN_ARCHITECT : '', pinned: true },
+    { name: 'doctrine', text: lane?.minimalPrompt ? '' : ENGINE_DOCTRINE },
+    { name: 'manual', text: manualPrompt(useStore.getState().manual), pinned: true },
+    { name: 'strategy', text: strategy && !lane?.minimalPrompt ? strategyPrompt(dna, strategy) : '' },
+    {
+      name: 'fabric',
+      text: fabricPrep
+        ? fabricOn
+          ? fabricRt.promptAddition(fabricPrep)
+          : fabricRun?.skills?.length
+            ? fabricRt.skillsAddition(fabricPrep)
+            : ''
+        : '',
+    },
+    { name: 'apprentice', text: apprenticeRt.capsuleText(apprentice) },
+    { name: 'cognitive', text: cognitiveRt.cognitivePromptText(cognitive) },
+    { name: 'skills', text: skillsPrompt(engineSkills) },
+    { name: 'packet', text: jp && !lane?.minimalPrompt ? packetPrompt(jp.pre) : '' },
+    { name: 'memory', text: lane?.minimalPrompt ? '' : MEMORY_INSTRUCTIONS },
+    {
+      name: 'mission',
+      text: inp.mission
+        ? `${MISSION_PROTOCOL}\n\nTask profile: ${profile.reasons.join(', ')}.${profile.team.length ? ` Recommended specialists, in order: ${profile.team.join(' → ')}.` : ''}`
+        : '',
+    },
+  ];
+  // JEV PROMPT COMPILER 2.0: duplicates removed, contradictions reported, waste measured.
+  const compiledPrompt = jp ? compilePrompt(promptSections) : null;
+  const fullSystem =
+    compiledPrompt?.text ??
+    promptSections
+      .map((x) => x.text)
+      .filter(Boolean)
+      .join('\n\n');
+  const firstTurn = !inp.history.some((m) => m.role === 'user');
+  let bridgeSpent = 0;
+  const bridge =
+    !vision && visionBridgeEnabled()
+      ? async (f: VFile) => {
+          const b = await describeImage(f, inp.text, inp.signal);
+          if (!b) return null;
+          bridgeSpent += b.cost;
+          traceAdd({ name: 'JEV_CONTEXT', ms: 0, tokens: 0, cost: b.cost, decision: `${f.path} lu par ${b.model}${b.cached ? ' (cache, 0 $)' : ''} pour ${sel.model}` });
+          push(sid, { kind: 'intel', id: uid(), title: `JEV VISION BRIDGE — ${f.path.split('/').pop()} lue par ${b.model}`, tone: 'info', lines: [`Le modèle du chat (${sel.model}) ne voit pas les images : il reçoit la description exacte et l’OCR.`, b.cached ? 'Description en cache : 0 $.' : `Coût : ${b.cost.toFixed(5)} $`] });
+          return b.block;
+        }
+      : undefined;
+  if (inp.attachments.length) stage(sid, `Préparation : lecture de ${inp.attachments.length} pièce(s) jointe(s)…`);
+  const content = await userContent(inp.text, inp.attachments, vision, firstTurn && !lane?.minimalPrompt, bridge);
+  if (firstTurn && !label && !lane?.minimalPrompt) {
+    // OMNIPOTENT MEMORY GOVERNOR (hard): only the paragraphs of the project memory that fit the current mission are shown.
+    const digest = omni ? omniRt.filterMemory(omni, aiDigest()) : aiDigest();
+    if (digest && content[0]?.type === 'text')
+      content[0].text = `<project_memory>\n${digest}\n</project_memory>\n\n${content[0].text}`;
+  }
+  if (
+    top &&
+    inp.session.resume &&
+    /\b(contin|repren|resume|poursui|termine)/i.test(inp.text) &&
+    content[0]?.type === 'text'
+  ) {
+    content[0].text = `<resume_summary>\n${inp.session.resume}\n</resume_summary>\n\n${content[0].text}`;
+    st.patchSession(sid, { resume: undefined });
+  }
+  const user: ChatMessage = { role: 'user', content };
+  // JEV CONTEXT COMPILER: long histories keep only the relevant exchanges.
+  const ctxHist = jp
+    ? jevRt.context(inp.text, inp.history, Math.round(jp.pre.budgets.tokens * 0.4))
+    : { history: inp.history, before: estimate(inp.history), after: estimate(inp.history) };
+  if (compiledPrompt)
+    traceAdd({
+      name: 'JEV_CONTEXT',
+      ms: 0,
+      tokens: compiledPrompt.tokensAfter,
+      cost: 0,
+      decision: `prompt système ${compiledPrompt.tokensBefore} → ${compiledPrompt.tokensAfter} tokens (PROMPT WASTE ${Math.round(compiledPrompt.wasteScore * 100)} %, ${compiledPrompt.removedLines} ligne(s) dupliquée(s))${skillTokensSaved ? ` · skills −${skillTokensSaved} tokens` : ''}${compiledPrompt.contradictions.length ? ` · contradiction(s) : ${compiledPrompt.contradictions.join(' ; ')}` : ''}`,
+    });
+  if (jp)
+    traceAdd({
+      name: 'JEV_CONTEXT',
+      ms: 0,
+      tokens: ctxHist.after,
+      cost: 0,
+      decision: `historique ${ctxHist.before} → ${ctxHist.after} tokens · définitions d’outils ${toolTokensBaseline} → ${toolTokens} tokens par appel`,
+    });
+  const messages: ChatMessage[] = [{ role: 'system', content: fullSystem }, ...ctxHist.history, user];
+  const persisted: ChatMessage[] = [user];
+  // A context budget is a CEILING: 70 % of the window is the old limit, the lane lowers it (6K trivial … 50K critical).
+  const contextBudget = omniRt.omniContextCeiling(omni, Math.min(Math.floor((info?.contextLength || 128_000) * 0.7), 400_000));
+  if (top) liveTrace = { goal: inp.text, messages };
+  // Shadow monitor (deterministic, free) + evidence corpus of the run.
+  let shadow: ShadowMonitor | null = null;
+  if (top && inp.session.mode !== 'safe') {
+    const files = filesView();
+    const twin = buildTwin(
+      Object.values(files)
+        .filter((f) => !f.binary && f.data.length < 500_000)
+        .map((f) => ({ path: f.path, text: f.data })),
+    );
+    const reg = new Set(regressionSuite(st.ledger).flatMap((c) => c.files));
+    shadow = new ShadowMonitor(inp.text, {
+      writeTask: profile.type !== 'chat' && profile.type !== 'research',
+      dependents: (p) => twin.dependents[p] ?? [],
+      regressionPaths: reg,
+    });
+  }
+  const evidence: string[] = [
+    inp.text,
+    ...inp.history
+      .filter((m) => m.role === 'user' || m.role === 'tool')
+      .map((m) => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content))),
+  ];
+  let gates = 0;
+  let challenged = 0;
+  let stepsDone = 0;
+  const showAlerts = (alerts: ShadowAlert[]) => {
+    if (!alerts.length) return;
+    push(sid, {
+      kind: 'intel',
+      id: uid(),
+      title: 'Shadow agent',
+      tone: alerts.some((a) => a.severity === 'critical')
+        ? 'err'
+        : alerts.some((a) => a.severity === 'warn')
+          ? 'warn'
+          : 'info',
+      lines: alerts.map((a) => a.message),
+    });
+  };
+
+  let model = sel.model;
+  const initialModel = sel.model;
+  let stopReason = '';
+  let toolCallTotal = 0;
+  const toolErrorNotes: string[] = [];
+  let cost = bridgeSpent; // the vision bridge is part of the run's real cost
+  let tokensIn = 0;
+  let tokensOut = 0;
+  let finalText = '';
+  let phase: 'planning' | 'executing' = inp.plan ? 'planning' : 'executing';
+  let proposed: { summary: string; steps: string[] } | null = null;
+  let checklistId: string | null = null;
+  const pendingImages: ToolCtx['pendingImages'] = [];
+  const ctx: ToolCtx = {
+    sessionId: sid,
+    signal: inp.signal,
+    depth: inp.depth,
+    models,
+    vision,
+    pendingImages,
+    setPlan: (steps: PlanStep[]) => {
+      if (checklistId) st.updateItem(sid, checklistId, { steps });
+      else {
+        checklistId = uid();
+        push(sid, { kind: 'checklist', id: checklistId, steps });
+      }
+    },
+    proposePlan: (summary, steps) => (proposed = { summary, steps }),
+    delegate: inp.depth < MAX_DEPTH ? (role, task) => delegate(inp, role, task) : undefined,
+    mission: inp.mission
+      ? {
+          stage: (stage) => {
+            const cur = useStore
+              .getState()
+              .sessions.find((x) => x.id === sid)
+              ?.items.find((i) => i.kind === 'pipeline' && i.id === pipelineId);
+            if (cur && cur.kind === 'pipeline')
+              st.updateItem(sid, pipelineId, {
+                current: stage,
+                done: cur.current !== stage ? [...new Set([...cur.done, cur.current])] : cur.done,
+              });
+            else push(sid, { kind: 'pipeline', id: pipelineId, current: stage, done: [] });
+          },
+          report: (r) => (pendingReport = r),
+        }
+      : undefined,
+  };
+  const pipelineId = uid();
+  let pendingReport: MissionReport | null = null;
+  let lastReport: MissionReport | null = null;
+  let missionRound = 0;
+  let missionNudges = 0;
+  let reviews = 0;
+  const usedModels = new Set<string>();
+  let fallbackCount = 0;
+  // Cascade: cheap first → QA → escalate only when needed.
+  let escalations = 0;
+  let lastQa: number | undefined;
+  // ── JEV LIVE CONTROL LOOP (variants PRE + LIVE and FULL) ──
+  const variant = jevVariant();
+  const priceOf = (id: string) => models.find((m) => m.id === id)?.inputPrice ?? 0;
+  const live =
+    jp && (variant === 'live' || variant === 'full')
+      ? new LiveController({
+          goal: inp.text,
+          budgets: jp.pre.budgets,
+          mode: jevRt.jevSettings().mode,
+          model,
+          strategy: jp.pre.packet.agent_strategy,
+          effort,
+          ladder: [
+            ...new Map(
+              [
+                jp.pre.decision.chosen,
+                ...jp.pre.decision.fallbacks,
+                ...jp.pre.decision.ladder,
+                ...jp.pre.decision.candidates.slice(0, 12),
+              ]
+                .filter((c): c is NonNullable<typeof c> => Boolean(c))
+                .map((c) => [c.id, { id: c.id, inputPrice: priceOf(c.id), pSuccess: c.pSuccess }]),
+            ).values(),
+          ].sort((a, b) => a.inputPrice - b.inputPrice),
+          critical: jp.pre.dna.criticality === 'critical',
+          mission: Boolean(inp.mission),
+          difficulty: jp.pre.packet.difficulty,
+          offered: packTools.map((t) => t.name),
+          toolDefTokens: Object.fromEntries(packTools.map((t) => [t.name, toolDefTokens(toolDefs([t]))])),
+          hardStops: jevRt.jevSettings().budgetStop,
+          level:
+            jp.pre.packet.level >= 4 || jp.pre.dna.criticality === 'critical'
+              ? 3
+              : jp.pre.packet.level >= 2
+                ? 1
+                : 0,
+        })
+      : null;
+  const pendingNotes: string[] = [];
+  // Kind of the NEXT model call, for the separate ledgers (main / gate re-ask / continuation / JEV correction).
+  let nextKind: CallKind | null = null;
+  let prunedTokens = 0;
+  let removedToolTokens = 0;
+  let switches = 0;
+  // Waste accounting (all top-level runs, with or without JEV — measured token counts).
+  const toolSigs = new Map<string, number>();
+  let failedToolTokens = 0;
+  let repeatedToolTokens = 0;
+  let discardedTokens = 0;
+  let toolTokensSent = 0;
+  const offeredCount = new Map<DirectTool, number>();
+  const liveSync = () => {
+    if (!live || !top) return;
+    useStore
+      .getState()
+      .setJevLive(sid, { state: live.state(), checkpoints: live.checkpoints.slice(-30), at: Date.now() });
+  };
+  const applyLive = (cp: LiveCheckpoint | null, stepNo: number): 'stop' | null => {
+    if (!cp || !live) return null;
+    let stop: 'stop' | null = null;
+    for (const d of cp.decisions) {
+      traceAdd({
+        name:
+          d.action === 'SWITCH_MODEL'
+            ? 'JEV_MODEL_SWITCH'
+            : d.action === 'ESCALATE'
+              ? 'JEV_ESCALATION'
+              : 'JEV_CHECKPOINT',
+        ms: cp.ms,
+        tokens: 0,
+        cost: 0,
+        decision: `${cp.kind} · ${d.action}${d.tool ? ` ${d.tool}` : ''}${d.model ? ` → ${d.model}` : ''} : ${d.reason}`,
+      });
+      if (d.action === 'STOP') {
+        stop = 'stop';
+        stopReason = d.reason;
+      } else if (d.action === 'COMPRESS')
+        messages.splice(0, messages.length, ...compact(messages, Math.floor(contextBudget * 0.6), inp.text));
+      else if (d.action === 'REMOVE_TOOL' && d.tool) {
+        const i = packTools.findIndex((t) => t.name === d.tool);
+        if (i >= 0) {
+          removedToolTokens += toolDefTokens(toolDefs([packTools[i]!]));
+          packTools.splice(i, 1);
+        }
+      } else if (d.action === 'REPLAN')
+        pendingNotes.push(
+          `[JEV REPLAN] ${d.reason}. Re-plan briefly, then take a different approach.\n${live.handoff()}`,
+        );
+      else if (d.action === 'RETRY_TARGETED') pendingNotes.push(`[JEV] ${d.reason}.`);
+      else if (
+        (d.action === 'LOWER_REASONING' || d.action === 'RAISE_REASONING') &&
+        d.effort &&
+        info?.efforts.length
+      ) {
+        effort = d.effort;
+        live.setEffort(d.effort);
+      } else if (d.action === 'SWITCH_MODEL' && d.model && d.model !== model && !modelLock) {
+        const from = model;
+        model = d.model;
+        live.setModel(d.model);
+        switches++;
+        // Hand over the mission state, not the whole history.
+        const before = estimate(messages);
+        messages.splice(0, messages.length, ...compact(messages, Math.floor(contextBudget * 0.35), inp.text));
+        pendingNotes.push(live.handoff());
+        push(sid, {
+          kind: 'intel',
+          id: uid(),
+          title: 'JEV LIVE : changement de modèle',
+          tone: 'info',
+          lines: [
+            `${from} → ${d.model} (étape ${stepNo})`,
+            d.reason,
+            `historique ${before} → ${estimate(messages)} tokens + état de mission`,
+          ],
+        });
+      }
+    }
+    liveSync();
+    return stop;
+  };
+  let jevQuality: number | null = null;
+  let corrections = 0;
+  let modelCalls = 0;
+  const toolsUsed = new Set<string>();
+  const escalate = (qa: number, why: string): void => {
+    if (!decision) return;
+    lastQa = qa;
+    const step = cascadeNext({
+      qa,
+      threshold: eng.qaThreshold,
+      escalations,
+      maxEscalations: eng.maxEscalations,
+      rounds: missionRound,
+      maxRounds: 3,
+      current: model,
+      ladder: decision.ladder.slice(escalations),
+      budgetLeft: budgetLeft(cost),
+    });
+    push(sid, {
+      kind: 'intel',
+      id: uid(),
+      title:
+        step.action === 'escalate'
+          ? `Cascade — escalade (${why})`
+          : `Cascade — ${step.action === 'retry' ? 'correction sans escalade' : step.action === 'stop' ? 'arrêt' : 'accepté'}`,
+      tone: step.action === 'escalate' ? 'warn' : step.action === 'stop' ? 'err' : 'info',
+      lines: [step.reason, ...(step.model ? [`${model} → ${step.model}`] : [])],
+    });
+    if (step.action === 'escalate' && step.model && !modelLock) {
+      // JEV: escalate only when the marginal quality gain is worth its cost.
+      const mg = jp ? jevRt.escalateWorth(qa, eng.qaThreshold, cost, decision.ladder[escalations]) : null;
+      if (live) {
+        const nx = decision.ladder[escalations];
+        const cp = live.beforePremium({
+          model: step.model,
+          quality: qa,
+          target: eng.qaThreshold,
+          nextCost: nx?.estimate ? (nx.estimate.low + nx.estimate.high) / 2 : cost * 4,
+          nextSuccess: nx?.pSuccess ?? 0.5,
+        });
+        liveSync();
+        void cp;
+      }
+      if (mg && !mg.worth) {
+        traceAdd({
+          name: 'JEV_ESCALATION',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: `pas d’escalade : ${mg.reason}`,
+        });
+        return;
+      }
+      escalations++;
+      model = step.model;
+      traceAdd({
+        name: 'JEV_ESCALATION',
+        ms: 0,
+        tokens: 0,
+        cost: 0,
+        decision: `${why} → ${step.model}${mg ? ` (${mg.reason})` : ''}`,
+      });
+    }
+  };
+  const ws = useStore.getState().settings;
+  // The lane cap is a soft budget: JEV PILOT extends it (up to the user's limit) while the work keeps progressing.
+  let maxSteps = lane?.maxSteps ? Math.min(ws.maxSteps, lane.maxSteps) : ws.maxSteps;
+  let emptyNudged = false;
+  let lastAnchor = 0;
+  // JEV Apprentice: one gate pass per fallback attempt (FREE → correction → other FREE → V5); otherwise V5's two passes.
+  // OMNIPOTENT lane: a simple request gets at most the passes it needs (a free model keeps ONE quality gate), never a ritual.
+  const apprenticeGates = apprentice && !apprentice.forced && apprentice.plan.use ? Math.max(2, apprentice.plan.attempts.length) : 2;
+  const gateLimit = lane && lane.gates !== null ? (apprentice && !apprentice.forced && apprentice.plan.use ? Math.max(lane.gates, 1) : lane.gates) : apprenticeGates;
+  const reaskOk = (sev?: string) => !lane || lane.verification === 'standard' || lane.verification === 'strong' || lane.verification === 'adversarial' || sev === 'critical';
+  let nudged = false;
+  let continuations = 0;
+  // OMNIPOTENT OUTPUT DRIFT GUARD (hard, after the model): a fluent answer that is about another mission, or merely describes a
+  // repair it did not make, is NOT delivered. One clean retry packet (capsule + failure signature, never the transcript), max 2.
+  const WRITE_TOOLS_USED = ['filesystem.write', 'filesystem.edit', 'artifact.create', 'data.export', 'report.export', 'dossier.compose', 'dossier.export', 'apex.build_app'];
+  const tryDrift = (answer: string): boolean => {
+    if (!omni || !top || inp.mission || phase === 'planning' || !answer.trim()) return false;
+    const used = [...toolsUsed];
+    const d = omniRt.checkDrift(omni, {
+      answer,
+      toolsWrote: used.some((n) => WRITE_TOOLS_USED.includes(n)),
+      toolsVerified: used.some((n) => /^(code\.run|terminal\.execute|browser\.|regression\.run)/.test(n)),
+      toolCalls: used.length,
+    });
+    if (!d.retry) return false;
+    push(sid, { kind: 'intel', id: uid(), title: `OMNIPOTENT — DRIFT GUARD : réponse rejetée (${omni.driftRetries}/2)`, tone: 'warn', lines: d.report.reasons });
+    traceAdd({ name: 'JEV_CORRECTION', ms: 0, tokens: 0, cost: 0, decision: `drift guard : ${d.report.reasons.join(' ; ')}` });
+    const note: ChatMessage = { role: 'user', content: d.retry };
+    messages.push(note);
+    persisted.push(note);
+    nextKind = 'correction';
+    return true;
+  };
+
+  releasePrologue();
+  let stepsUsed = 0;
+  // STALL BREAKER (v48: 200 steps, 7,4 M tokens, 131 min with a weak free model looping on failing tools while the
+  // shadow agent only advised). Tool errors piling up, a long run of reads without producing anything, or a mission
+  // past 25 minutes → the agent stops and delivers what is done, with the reason; it never switches model by itself.
+  const recentErr: boolean[] = [];
+  let readRun = 0;
+  const missionStart = Date.now();
+  let stallReason = '';
+  for (let step = 0; step < maxSteps; step++) {
+    stepsUsed = step + 1;
+    // The step body up to the model call is synchronous: wait for another chat's running tool, then take the scope.
+    await scopeGate(sid, undefined, inp.signal);
+    if (inp.signal.aborted) throw new LLMError('Cancelled', 499, false, 'cancelled');
+    setChatScope(sid, sessionAllow(sid));
+    // MESSAGES SENT WHILE IT WORKS: the user's follow-ups join the conversation at this step (never ignored).
+    for (const q of takeQueued(sid)) {
+      const um: ChatMessage = { role: 'user', content: q };
+      messages.push(um);
+      persisted.push(um);
+    }
+    // ── JEV PILOT (anti-drift on long runs): every 6 tool steps the model gets a 1-paragraph anchor — the objective,
+    // what is already done, what remains — so it never wanders off after minutes of work. ~120 tokens, no extra call.
+    if (top && step - lastAnchor >= 6 && toolsUsed.size && messages.at(-1)?.role === 'tool') {
+      lastAnchor = step;
+      const anchor: ChatMessage = { role: 'user', content: pilotAnchor(inp.text, [...toolsUsed], step, maxSteps) };
+      messages.push(anchor);
+      persisted.push(anchor);
+      traceAdd({ name: 'JEV_CHECKPOINT', ms: 0, tokens: 0, cost: 0, decision: `JEV PILOT : ré-ancrage sur l'objectif (étape ${step})` });
+    }
+    const spentToday = useStore.getState().spend[new Date().toISOString().slice(0, 10)] ?? 0;
+    if (ws.budgetDaily > 0 && spentToday >= ws.budgetDaily)
+      throw new Error(
+        `Budget journalier atteint ($${spentToday.toFixed(4)} / $${ws.budgetDaily}). Modifiez-le dans Paramètres.`,
+      );
+    if (ws.budgetPerTask > 0 && cost >= ws.budgetPerTask)
+      throw new Error(
+        `Budget par tâche atteint ($${cost.toFixed(4)} / $${ws.budgetPerTask}). Modifiez-le dans Paramètres.`,
+      );
+
+    if (pendingImages.length && vision) {
+      const imgs = pendingImages.splice(0, 4);
+      messages.push({
+        role: 'user',
+        content: [
+          { type: 'text', text: imgs.map((i) => i.caption).join('; ') },
+          ...imgs.map((i) => ({ type: 'image_url' as const, image_url: { url: i.dataUrl } })),
+        ],
+      });
+    }
+    stepsDone = step + 1;
+    if (pendingNotes.length) {
+      messages.push({ role: 'user', content: pendingNotes.splice(0).join('\n\n') });
+    }
+    const compacted = compact(messages, contextBudget, inp.text);
+    messages.splice(0, messages.length, ...compacted);
+    // JEV LIVE CONTEXT PRUNING: old, large tool outputs → short stubs (REMOVE_CONTEXT).
+    if (live && step >= 2) {
+      const mode = jevRt.jevSettings().mode;
+      const cut = pruneToolOutputs(messages, mode === 'max' ? 8 : mode === 'eco' ? 2 : 4);
+      if (cut > 0) {
+        prunedTokens += cut;
+        live.checkpoints.push({
+          kind: 'budget_threshold',
+          step,
+          at: Date.now(),
+          ms: 0,
+          decisions: [
+            {
+              action: 'REMOVE_CONTEXT',
+              reason: `sorties d’outils anciennes élaguées (−${cut} tokens à chaque appel suivant)`,
+            },
+          ],
+        });
+        traceAdd({
+          name: 'JEV_CHECKPOINT',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: `REMOVE_CONTEXT : −${cut} tokens (sorties anciennes)`,
+        });
+      }
+    }
+    if (live) live.addSaved(prunedTokens + removedToolTokens);
+
+    const offered = phase === 'planning' ? planTools : packTools;
+    if (top) {
+      toolTokensSent += toolDefTokens(toolDefs(offered));
+      for (const t of offered) offeredCount.set(t, (offeredCount.get(t) ?? 0) + 1);
+    }
+    const callMessages =
+      phase === 'planning'
+        ? [{ ...messages[0]!, content: `${fullSystem}\n\n${PLAN_MODE}` }, ...messages.slice(1)]
+        : messages;
+    const itemId = uid();
+    let streamed = '';
+    let flushTimer: ReturnType<typeof setTimeout> | null = null;
+    const started = Date.now();
+    push(sid, { kind: 'assistant', id: itemId, text: '', agent: label, streaming: true });
+    useStore.setState({
+      status: { ...useStore.getState().status, [sid]: label ? `${label} réfléchit…` : 'Réflexion…' },
+    });
+    const split = {
+      system: estimate(callMessages.slice(0, 1)),
+      tools: toolDefTokens(toolDefs(offered)),
+      history: estimate(callMessages.slice(1).filter((m) => m.role !== 'tool')),
+      toolResults: estimate(callMessages.filter((m) => m.role === 'tool')),
+    };
+    // Which model is working, and on how much context: a slow first answer is explained, not silent.
+    stage(sid, `${label ? `${label} réfléchit` : 'Réflexion'} — ${model.split('/').pop()} · contexte ≈ ${Math.max(1, Math.round((split.system + split.tools + split.history + split.toolResults) / 1000))}k tokens…`);
+    const setLive = (p: Partial<import('./store').CallLive>) => {
+      const cur = useStore.getState().callLive[sid];
+      const run = useStore.getState().running[sid];
+      const same = cur && cur.run === run;
+      const done = acct.list(sid);
+      useStore.setState({
+        callLive: {
+          ...useStore.getState().callLive,
+          [sid]: {
+            model,
+            callStart: same ? cur.callStart : Date.now(),
+            runStart: same ? cur.runStart : Date.now(),
+            liveOut: 0,
+            baseTokens: done.reduce((a, c) => a + c.tokensIn + c.tokensOut, 0),
+            baseCost: done.reduce((a, c) => a + c.cost, 0),
+            run,
+            ...p,
+          },
+        },
+      });
+    };
+    const prevLive = useStore.getState().callLive[sid];
+    setLive({
+      callStart: Date.now(),
+      runStart:
+        prevLive && prevLive.run === useStore.getState().running[sid] ? prevLive.runStart : Date.now(),
+    });
+    const r = await complete(
+      {
+        model,
+        messages: callMessages,
+        tools: toolDefs(offered),
+        temperature: ws.temperature ?? undefined,
+        // A ceiling, never a target: the lane caps how much one call may write (trivial 1.5K … critical 16K).
+        maxTokens: omni?.settings.ceilings && lane ? Math.min(16_000, lane.outputCeiling) : 16_000,
+        signal: inp.signal,
+      },
+      {
+        models,
+        fallbacks: fallbackChain.filter((m) => m !== model),
+        effort,
+        onText: (d) => {
+          streamed += d;
+          // Batch UI updates (one render per ~50 ms instead of one per token).
+          flushTimer ??= setTimeout(() => {
+            flushTimer = null;
+            st.updateItem(sid, itemId, { text: streamed });
+            setLive({
+              liveOut: Math.round(streamed.length / 4),
+              callStart: useStore.getState().callLive[sid]?.callStart ?? Date.now(),
+            });
+          }, 50);
+        },
+        onReset: () => {
+          streamed = '';
+          st.updateItem(sid, itemId, { text: '' });
+        },
+        onStatus: (s) => useStore.setState({ status: { ...useStore.getState().status, [sid]: s } }),
+        onFallback: (from, to, reason) => {
+          useStore.getState().recordModel(from, false);
+          apprenticeRt.noteProviderFailure(from, reason);
+          fallbackCount++;
+          model = to;
+          // The chat now stays on the model that works (no back-and-forth).
+          if (modelLock && top) modelLock = to;
+          setLive({ callStart: Date.now() });
+          push(sid, {
+            kind: 'error',
+            id: uid(),
+            text: `${from} indisponible (${reason.slice(0, 120)}) → bascule sur ${to} (panne du modèle, pas un choix de qualité ; le chat reste sur ${to})`,
+          });
+        },
+      },
+    );
+    if (flushTimer) clearTimeout(flushTimer);
+    acct.add(sid, {
+      kind: nextKind ?? (inp.depth > 0 ? 'delegate' : 'main'),
+      step: step + 1,
+      model: r.model || model,
+      tokensIn: r.usage.promptTokens,
+      tokensOut: r.usage.completionTokens,
+      cost: r.cost,
+      costSource: r.costSource,
+      ms: Date.now() - started,
+      split,
+    });
+    nextKind = null;
+    st.updateItem(sid, itemId, { text: r.content, streaming: false });
+    useStore.getState().recordModel(r.model || model, true);
+    usedModels.add(r.model || model);
+    useStore.getState().addUsage({
+      ts: Date.now(),
+      sessionId: sid,
+      model: r.model || model,
+      agent: inp.agent.id,
+      cost: r.cost,
+      tokensIn: r.usage.promptTokens,
+      tokensOut: r.usage.completionTokens,
+      durationMs: Date.now() - started,
+      fallback: (r.model || model) !== sel.model,
+      tools: r.toolCalls.map((c) => c.function.name.replace(/__/g, '.')),
+    });
+    cost += r.cost;
+    tokensIn += r.usage.promptTokens;
+    tokensOut += r.usage.completionTokens;
+    // Live totals (Mission Control, header) — sub-agents add to the same session.
+    useStore.getState().patchSession(sid, (cur) => ({
+      cost: cur.cost + r.cost,
+      tokensIn: cur.tokensIn + r.usage.promptTokens,
+      tokensOut: cur.tokensOut + r.usage.completionTokens,
+    }));
+    useStore.getState().addSpend(r.cost);
+    if (r.content.trim()) finalText = r.content;
+    modelCalls++;
+    if (live) {
+      const cp = live.afterCall({
+        tokensIn: r.usage.promptTokens,
+        tokensOut: r.usage.completionTokens,
+        cost: r.cost,
+        content: r.content,
+        toolCalls: r.toolCalls.map((c) => ({
+          name: c.function.name.replace(/__/g, '.'),
+          args: c.function.arguments ?? '',
+        })),
+        contextTokens: estimate(messages),
+        contextLimit: contextBudget,
+        model: r.model || model,
+      });
+      const ov = live.overhead(priceOf(r.model || model) || 1, jevRt.jevSettings().minRoi);
+      if (ov.downgrade)
+        traceAdd({
+          name: 'JEV_CHECKPOINT',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: `AUTO-DOWNGRADE → JEV-${live.state().level} : JEV coûtait plus qu’il n’économisait (seuil ROI ${jevRt.jevSettings().minRoi})`,
+        });
+      // JEV-3 deep control (critical / multi-agent only): remote judgment at stagnation / drift.
+      if (cp && (cp.kind === 'stagnation' || cp.kind === 'drift') && live.state().level >= 3) {
+        // EVI gate: the call is made only when its expected benefit exceeds its cost (projected, logged).
+        const avgCall = cost / Math.max(1, modelCalls);
+        const evi = eviGate({
+          pUseful: cp.kind === 'stagnation' ? 0.3 : 0.2,
+          avoidableCostUsd: avgCall * Math.max(2, jp!.pre.budgets.steps - step),
+          callCostUsd: jevRt.liveJudgeCost(inp.text, r.content),
+        });
+        traceAdd({ name: 'JEV_CHECKPOINT', ms: 0, tokens: 0, cost: 0, decision: `JEV-3 · ${evi.reason}` });
+        const j = evi.call ? await jevRt.liveJudge(inp.text, r.content, live.state()) : null;
+        if (j) {
+          live.addJevCost(j.costUsd, j.ms);
+          acct.add(sid, {
+            kind: 'jev3',
+            step: step + 1,
+            model: 'jev-latest',
+            tokensIn: j.tokens,
+            tokensOut: 0,
+            cost: j.costUsd,
+            costSource: j.tokensReported ? 'calculated' : 'estimated',
+            ms: j.ms,
+          });
+          traceAdd({
+            name: 'JEV_CHECKPOINT',
+            ms: j.ms,
+            tokens: j.tokens,
+            cost: j.costUsd,
+            decision: `JEV-3 : objectif atteint ${Math.round(j.done * 100)} %, sur la bonne voie ${Math.round(j.onTrack * 100)} %`,
+          });
+          if (j.done >= 0.85 && r.content.trim().length > 80) {
+            cp.decisions = [
+              {
+                action: 'STOP',
+                reason: `JEV-3 : objectif atteint (${Math.round(j.done * 100)} %) — arrêt anticipé`,
+              },
+            ];
+          }
+        }
+      }
+      if (applyLive(cp, step + 1) === 'stop') {
+        push(sid, {
+          kind: 'intel',
+          id: uid(),
+          title: 'JEV LIVE : arrêt',
+          tone: 'warn',
+          lines: cp!.decisions.filter((d) => d.action === 'STOP').map((d) => d.reason),
+        });
+        if (r.content.trim()) finalText = r.content;
+        break;
+      }
+      liveSync();
+    }
+    for (const c of r.toolCalls) toolsUsed.add(c.function.name.replace(/__/g, '.'));
+
+    const calls: ToolCall[] = r.toolCalls.map((c, i) => ({ ...c, id: c.id || `call_${step}_${i}` }));
+    const assistant: ChatMessage = { role: 'assistant', content: r.content || null };
+    if (calls.length) assistant.tool_calls = calls;
+    if (r.reasoningDetails?.length) assistant.reasoning_details = r.reasoningDetails;
+    messages.push(assistant);
+    persisted.push(assistant);
+    if (!r.content.trim())
+      useStore.getState().patchSession(sid, (s) => ({ items: s.items.filter((i) => i.id !== itemId) }));
+
+    if (!calls.length) {
+      // An empty reply used to end the turn silently (« the model stops »): JEV asks once for the actual answer.
+      if (!r.content.trim() && !emptyNudged && phase !== 'planning') {
+        emptyNudged = true;
+        const c: ChatMessage = { role: 'user', content: 'Your last reply was empty. Give the final answer to the request now (or call the tool you need).' };
+        messages.push(c);
+        persisted.push(c);
+        nextKind = 'continuation';
+        continue;
+      }
+      if (r.finishReason === 'length' && continuations < 2) {
+        continuations++;
+        const c: ChatMessage = {
+          role: 'user',
+          content: 'Your previous answer was cut off. Continue exactly where you stopped.',
+        };
+        messages.push(c);
+        persisted.push(c);
+        nextKind = 'continuation';
+        continue;
+      }
+      if (phase === 'planning') {
+        if (!nudged) {
+          nudged = true;
+          messages.push({
+            role: 'user',
+            content: 'Submit your plan now by calling plan.propose (summary + steps).',
+          });
+          nextKind = 'gate';
+          continue;
+        }
+        proposed = {
+          summary: r.content || 'Plan',
+          steps: r.content
+            .split('\n')
+            .filter((l) => /^\s*(\d+[.)]|[-*])\s+/.test(l))
+            .map((l) => l.replace(/^\s*(\d+[.)]|[-*])\s+/, '')),
+        };
+      } else if (top && !inp.mission && gates < gateLimit && (shadow || strategy?.verify.evidence || jp)) {
+        // Delivery gates: unverified claims (shadow) and figures without evidence.
+        gates++;
+        shadow?.observeFinal(r.content);
+        const alerts = shadow?.take() ?? [];
+        // Figures computed on the owner's data are ALWAYS checked against the tool results (v62: the ESN « continue »
+        // turn wrote 41 629 exposures and 293 095 M of provisions that no query had returned).
+        const dataTurn = [...toolsUsed].some((t) => /^(data\.|dossier\.|report\.)/.test(t));
+        const unsupported = (strategy?.verify.evidence || dataTurn) && (dataTurn || (lane?.evidenceReask ?? true)) ? unsupportedNumbers(r.content, evidence) : [];
+        if (lane && !lane.evidenceReask) omni!.avoidedReasks++;
+        const notes: string[] = [];
+        if (alerts.length) {
+          showAlerts(alerts);
+          // Fast lane: an informational alert is shown, only a CRITICAL one costs a re-ask.
+          if (reaskOk(alerts.some((a) => a.severity === 'critical') ? 'critical' : undefined)) notes.push(shadowMessage(alerts));
+          else omni!.avoidedReasks++;
+        }
+        if (unsupported.length) {
+          push(sid, {
+            kind: 'intel',
+            id: uid(),
+            title: 'Contrôle des preuves : chiffres sans source',
+            tone: 'warn',
+            lines: [`${unsupported.join(' · ')} — n’apparaissent dans aucun résultat d’outil`],
+          });
+          notes.push(
+            `[EVIDENCE CHECK] These figures in your answer appear in no tool result or user message: ${unsupported.join(', ')}. Verify them with a tool (data.query, code.run…) and correct them, or mark them explicitly as estimates — then give the final answer again.`,
+          );
+        }
+        // JEV OUTPUT QA → targeted correction only when it pays.
+        let corrAdded = false;
+        if (jp) {
+          const tq = performance.now();
+          const q = jevRt.qa({
+            answer: r.content,
+            spec: jp.pre.spec,
+            evidence,
+            usedTools: toolsUsed.size > 0,
+            toolErrors: shadow?.toolErrors.length ?? 0,
+            toolCalls: toolsUsed.size,
+            tokens: tokensIn + tokensOut,
+            tokenBudget: jp.pre.budgets.tokens,
+            mode: jevRt.jevSettings().mode,
+            corrections,
+            budgetLeft: budgetLeft(cost),
+            estCost: r.cost,
+          });
+          jevQuality = q.result.score;
+          traceAdd({
+            name: 'JEV_QA',
+            ms: performance.now() - tq,
+            tokens: 0,
+            cost: 0,
+            decision: `QA ${q.result.levels.join('+')} : qualité ${q.result.score}/100${q.result.failures.length ? ` · ${q.result.failures.map((f) => `${f.what} [${f.locus}]`).join(' ; ')}` : ''} · ${q.why}`,
+          });
+          const retryCp = live?.beforeRetry({
+            quality: q.result.score,
+            corrections,
+            maxCorrections: jp.pre.budgets.corrections,
+            blocking: q.result.failures.filter((f) => f.blocking).length,
+          });
+          if (retryCp) liveSync();
+          live?.setQuality(q.result.score);
+          // JEV APPRENTICE QUALITY GATE: ACCEPT, or targeted correction → other free model → V5 (automatic).
+          let gated = false;
+          if (apprentice && !apprentice.forced && apprentice.plan.use) {
+            const g = apprenticeRt.applyGate(
+              apprentice,
+              q.result.score,
+              q.result.failures.filter((f) => f.blocking).length,
+            );
+            traceAdd({ name: 'JEV_QA', ms: 0, tokens: 0, cost: 0, decision: g.message });
+            if (g.verdict === 'ACCEPT' || g.final) gated = true;
+            else if (g.verdict === 'CORRECT' && !unsupported.length) {
+              gated = true;
+              corrections++;
+              corrAdded = true;
+              discardedTokens += r.usage.completionTokens;
+              // Failure learning: a signature and a NAMED targeted correction (never a blind retry).
+              const fl = apprenticeRt.recordFailure(apprentice, q.result.failures, q.result.score, model);
+              notes.push(q.correct ? `${q.correct}\n[${fl.signature} · ${fl.correction}]` : fl.message);
+              push(sid, {
+                kind: 'intel',
+                id: uid(),
+                title: `APPRENTICE FAILED — ${fl.signature}`,
+                tone: 'warn',
+                lines: [
+                  `Failure : ${fl.signature}`,
+                  `Correction : ${fl.correction}`,
+                  `Retry : ${g.next.kind === 'free_correction' ? model : (g.switchTo ?? model)} (${g.next.label})`,
+                ],
+              });
+              if (g.switchTo && !modelLock) {
+                const from = model;
+                model = g.switchTo;
+                if (g.next.kind === 'v5') {
+                  const tg = apprenticeRt.decideTeacher(
+                    apprentice,
+                    decision?.chosen?.estimate
+                      ? (decision.chosen.estimate.low + decision.chosen.estimate.high) / 2
+                      : 0.01,
+                  );
+                  if (tg)
+                    traceAdd({ name: 'JEV_ESCALATION', ms: 0, tokens: 0, cost: 0, decision: tg.reason });
+                }
+                traceAdd({
+                  name: 'JEV_MODEL_SWITCH',
+                  ms: 0,
+                  tokens: 0,
+                  cost: 0,
+                  decision: `${from} → ${model} (${g.next.label})`,
+                });
+              }
+              push(sid, {
+                kind: 'intel',
+                id: uid(),
+                title: `JEV Apprentice — ${g.next.label}`,
+                tone: 'warn',
+                lines: [g.message],
+              });
+              traceAdd({
+                name: 'JEV_CORRECTION',
+                ms: 0,
+                tokens: 0,
+                cost: 0,
+                decision: `${g.next.label} (${model})`,
+              });
+            }
+          }
+          if (!gated && q.correct && !unsupported.length && variant === 'full' && reaskOk(q.result.failures.some((f) => f.blocking) ? 'critical' : undefined)) {
+            corrections++;
+            corrAdded = true;
+            discardedTokens += r.usage.completionTokens;
+            notes.push(q.correct);
+            traceAdd({ name: 'JEV_CORRECTION', ms: 0, tokens: 0, cost: 0, decision: q.why });
+          }
+        }
+        if (!notes.length) {
+          if (tryDrift(r.content)) continue;
+          break;
+        }
+        const g: ChatMessage = { role: 'user', content: notes.join('\n\n') };
+        messages.push(g);
+        persisted.push(g);
+        nextKind = corrAdded ? 'correction' : 'gate';
+        continue;
+      } else if (inp.mission && missionNudges < 3) {
+        missionNudges++;
+        const nudge: ChatMessage = {
+          role: 'user',
+          content:
+            'The mission is not finished: continue the pipeline (test, review, correct, validate). When everything is verified, call mission.report with an honest verdict.',
+        };
+        messages.push(nudge);
+        persisted.push(nudge);
+        nextKind = 'gate';
+        continue;
+      } else {
+        if (tryDrift(r.content)) continue;
+        break;
+      }
+    }
+
+    // Tool execution. JEV PARALLELISM: independent sub-agent delegations of one turn run together.
+    const poolOf = () =>
+      phase === 'planning' ? planTools : [...packTools, ...tools.filter((t) => !packTools.includes(t))];
+    const parallel =
+      live &&
+      calls.length >= 2 &&
+      calls.length <= 4 &&
+      calls.every((c) => c.function.name.replace(/__/g, '.') === 'agent.delegate');
+    const preRun = parallel ? await Promise.all(calls.map((c) => runTool(c, poolOf(), ctx, inp))) : null;
+    if (parallel)
+      traceAdd({
+        name: 'JEV_CHECKPOINT',
+        ms: 0,
+        tokens: 0,
+        cost: 0,
+        decision: `${calls.length} délégations indépendantes exécutées en parallèle`,
+      });
+    for (const [ci, call] of calls.entries()) {
+      const pool = poolOf();
+      const res = preRun ? preRun[ci]! : await runTool(call, pool, ctx, inp);
+      if (top) {
+        toolCallTotal++;
+        const failed = /^(Error|Denied)/.test(res);
+        if (failed) toolErrorNotes.push(`${call.function.name.replace(/__/g, '.')}: ${redact(res).slice(0, 140)}`);
+        recentErr.push(failed);
+        if (recentErr.length > 20) recentErr.shift();
+        const t = tools.find((x) => llmName(x.name) === call.function.name || x.name === call.function.name);
+        readRun = t?.readOnly ? readRun + 1 : 0;
+        const errs = recentErr.filter(Boolean).length;
+        if (!stallReason && recentErr.length >= 12 && errs >= 12)
+          stallReason = `${errs} erreurs d’outils sur les ${recentErr.length} derniers appels`;
+        else if (!stallReason && readRun >= 30) stallReason = `${readRun} lectures d’affilée sans rien produire`;
+        else if (!stallReason && Date.now() - missionStart > 25 * 60_000) stallReason = `mission en cours depuis plus de 25 minutes`;
+      }
+      if (jp && phase !== 'planning') {
+        const used = tools.find(
+          (t) => llmName(t.name) === call.function.name || t.name === call.function.name,
+        );
+        if (used && !packTools.includes(used)) {
+          packTools.push(used);
+          traceAdd({
+            name: 'JEV_EXECUTION',
+            ms: 0,
+            tokens: 0,
+            cost: 0,
+            decision: `ADD TOOL : ${used.name} (appelé hors du pack)`,
+          });
+        }
+        if (live) {
+          const cp = live.afterTool({
+            name: call.function.name.replace(/__/g, '.'),
+            args: call.function.arguments ?? '',
+            ok: !/^(Error|Denied)/.test(res),
+            output: res.slice(0, 2000),
+          });
+          applyLive(cp, step + 1);
+        }
+      }
+      if (top) {
+        const sig = `${call.function.name}:${call.function.arguments ?? ''}`;
+        const tk = estimate([{ role: 'tool', content: `${call.function.arguments ?? ''}${res}` }]);
+        if (/^(Error|Denied)/.test(res)) failedToolTokens += tk;
+        else if (toolSigs.has(sig)) repeatedToolTokens += tk;
+        toolSigs.set(sig, (toolSigs.get(sig) ?? 0) + 1);
+      }
+      const m: ChatMessage = { role: 'tool', tool_call_id: call.id, content: res };
+      messages.push(m);
+      persisted.push(m);
+      evidence.push(res.slice(0, 40_000));
+      if (shadow) {
+        let args: Record<string, unknown> = {};
+        try {
+          args = JSON.parse(call.function.arguments || '{}') as Record<string, unknown>;
+        } catch {
+          /* invalid args already reported */
+        }
+        shadow.observeTool(call.function.name.replace(/__/g, '.'), args, !/^(Error|Denied)/.test(res), res);
+      }
+    }
+    // Shadow alerts go to the agent at once (high value only) and to the user.
+    if (shadow) {
+      const alerts = shadow.take();
+      showAlerts(alerts);
+      if (alerts.some((a) => a.severity !== 'info') || alerts.length >= 2) {
+        const note: ChatMessage = { role: 'user', content: shadowMessage(alerts) };
+        messages.push(note);
+      }
+    }
+
+    // Plan approval gate
+    if (phase === 'planning' && proposed) {
+      const p = proposed as { summary: string; steps: string[] };
+      proposed = null;
+      const planId = uid();
+      const decision = await new Promise<{ decision: 'approve' | 'cancel'; steps?: string[] }>((resolve) => {
+        useStore.getState().pending.plans.set(planId, resolve);
+        push(sid, { kind: 'plan', id: planId, summary: p.summary, steps: p.steps });
+      });
+      useStore.getState().pending.plans.delete(planId);
+      st.updateItem(sid, planId, { resolved: decision.decision });
+      if (decision.decision === 'cancel') {
+        finalText = finalText || 'Plan annulé.';
+        break;
+      }
+      const steps = decision.steps?.length ? decision.steps : p.steps;
+      ctx.setPlan(steps.map((t, i) => ({ title: t, status: i === 0 ? 'in_progress' : 'pending' })));
+      const go: ChatMessage = {
+        role: 'user',
+        content: `Plan approved:\n${steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\nExecute it now step by step, keep the checklist current with plan.update, and verify each step.`,
+      };
+      messages.push(go);
+      persisted.push(go);
+      phase = 'executing';
+    }
+
+    // Mission: verdict → correction rounds → independent final review.
+    if (inp.mission && pendingReport) {
+      const report: MissionReport = pendingReport;
+      pendingReport = null;
+      lastReport = report;
+      missionRound++;
+      await scopeGate(sid);
+      setChatScope(sid, sessionAllow(sid));
+      recordMission(inp.text, report, { model, cost });
+      if (report.status !== 'PARTIAL')
+        useStore.getState().recordOutcome(model, report.status === 'PASSED', profile.type);
+      if (report.status !== 'PASSED' && missionRound < 3) {
+        escalate(qaScore({ status: report.status, checks: report.checks }), `verdict ${report.status}`);
+        push(sid, { kind: 'mission', id: uid(), report, round: missionRound });
+        const fix: ChatMessage = {
+          role: 'user',
+          content: `Correction round ${missionRound + 1}: the verdict is ${report.status}. Fix the failing checks and remaining issues (${report.issues.join('; ').slice(0, 1500) || 'see your report'}), re-test everything, then call mission.report again.`,
+        };
+        messages.push(fix);
+        persisted.push(fix);
+        continue;
+      }
+      // Evidence check + red team before the final judge.
+      if (report.status === 'PASSED' && strategy && inp.depth < MAX_DEPTH && challenged < 2) {
+        const unsupported = strategy.verify.evidence
+          ? unsupportedNumbers(`${finalText}\n${report.summary}`, evidence)
+          : [];
+        if (strategy.verify.adversarial || unsupported.length) {
+          challenged++;
+          ctx.mission!.stage('review', 'red team');
+          const ch = await delegate(inp, 'adversarial', ADVERSARIAL_TASK(inp.text, report, unsupported));
+          const c = parseChallenge(ch.summary);
+          push(sid, {
+            kind: 'intel',
+            id: uid(),
+            title: `Red team — confiance ${c.confidence ?? '?'} %`,
+            tone: c.blocking.length ? 'err' : 'ok',
+            lines: [
+              ...c.blocking.map((b) => `Bloquant : ${b}`),
+              ...c.minor.slice(0, 4).map((b) => `Mineur : ${b}`),
+              ...(unsupported.length ? [`Chiffres sans preuve : ${unsupported.join(', ')}`] : []),
+            ],
+            detail: ch.summary.slice(0, 6000),
+          });
+          if (c.blocking.length && missionRound < strategy.maxRounds) {
+            escalate(
+              qaScore({
+                status: report.status,
+                checks: report.checks,
+                blocking: c.blocking.length,
+                unsupportedNumbers: unsupported.length,
+              }),
+              'red team bloquante',
+            );
+            const fix: ChatMessage = {
+              role: 'user',
+              content: `The red team found blocking problems:\n${c.blocking.map((b) => `- ${b}`).join('\n')}\n\nFix them, re-verify with tools, then call mission.report again.`,
+            };
+            messages.push(fix);
+            persisted.push(fix);
+            continue;
+          }
+        }
+      }
+      if (report.status === 'PASSED' && reviews < 2 && inp.depth < MAX_DEPTH) {
+        reviews++;
+        ctx.mission!.stage('validation');
+        const rev = await delegate(inp, 'final_reviewer', FINAL_REVIEW_TASK(inp.text, report));
+        const approved = rev.ok && reviewApproved(rev.summary);
+        push(sid, {
+          kind: 'mission',
+          id: uid(),
+          report,
+          round: missionRound,
+          review: { approved, summary: rev.summary.slice(0, 3000) },
+        });
+        if (!approved && missionRound < 3) {
+          escalate(
+            qaScore({ status: report.status, checks: report.checks, reviewerRejected: true }),
+            'refus du relecteur',
+          );
+          const fix: ChatMessage = {
+            role: 'user',
+            content: `The final reviewer requested changes:\n${rev.summary.slice(0, 4000)}\n\nFix the blocking problems, re-test, then call mission.report again.`,
+          };
+          messages.push(fix);
+          persisted.push(fix);
+          continue;
+        }
+      } else push(sid, { kind: 'mission', id: uid(), report, round: missionRound });
+      ctx.mission!.stage('delivery');
+      lastQa = qaScore({ status: report.status, checks: report.checks });
+      finalText = `${finalText ? `${finalText}\n\n` : ''}${formatReport(report)}`;
+      break;
+    }
+    if (step === maxSteps - 1 || stallReason) {
+      // JEV PILOT: a lane cap reached while tools still succeed is extended (never above the user's limit).
+      const progressing = toolErrorNotes.length < Math.max(2, toolCallTotal / 3);
+      if (!stallReason && maxSteps < ws.maxSteps && progressing) {
+        const from = maxSteps;
+        maxSteps = Math.min(ws.maxSteps, maxSteps * 2);
+        traceAdd({ name: 'JEV_CHECKPOINT', ms: 0, tokens: 0, cost: 0, decision: `JEV PILOT : le travail progresse, budget d'étapes ${from} → ${maxSteps}` });
+        continue;
+      }
+      // Hard limit: instead of failing with nothing, deliver what is done (one call, no tools).
+      const wrap: ChatMessage = {
+        role: 'user',
+        content: stallReason
+          ? `The work is STALLED (${stallReason}). Do not call any tool. Write the answer now, in French: what is done and verified (files, figures), what is not done, why it stalled (the exact recurring error), and the exact next step. The user can reply « continue ».`
+          : `Step limit reached. Do not call any tool. Write the answer now: what is done (files, results), what is not done yet, and the exact next step. The user can reply « continue ».`,
+      };
+      messages.push(wrap);
+      try {
+        const w = await complete(
+          { model, messages: compact(messages, contextBudget, inp.text), temperature: ws.temperature ?? undefined, maxTokens: 2_000, signal: inp.signal },
+          { models, fallbacks: [], effort: 'auto', maxRetries: 1 },
+        );
+        cost += w.cost;
+        tokensIn += w.usage.promptTokens;
+        tokensOut += w.usage.completionTokens;
+        finalText = stallReason
+          ? `${w.content.trim()}\n\n_(Travail arrêté pour ne pas tourner en rond : ${stallReason}, ${Math.round((Date.now() - missionStart) / 60000)} min, modèle ${model}. Répondez « continue » pour reprendre — un modèle plus solide, choisi dans le sélecteur de modèle, évite en général ce blocage.)_`
+          : `${w.content.trim()}\n\n_(Limite de ${maxSteps} étapes atteinte — répondez « continue » pour poursuivre.)_`;
+        push(sid, { kind: 'assistant', id: uid(), text: finalText });
+        const a: ChatMessage = { role: 'assistant', content: finalText };
+        persisted.push(wrap, a);
+        stopReason = 'step_limit';
+        break;
+      } catch {
+        throw new Error(`Limite de ${maxSteps} étapes atteinte. Augmentez-la dans Paramètres ou répondez « continue ».`);
+      }
+    }
+  }
+  // QUALITY MEASURED AFTER THE FACT, identically in every variant (same scorer, same fixed token reference);
+  // it never influences the run. Empty answer = not measured (null), never 0.
+  const measureQa =
+    top && finalText.trim()
+      ? qualityCheck({
+          answer: finalText,
+          spec: outputSpec(inp.text),
+          evidence,
+          usedTools: toolsUsed.size > 0,
+          toolErrors: shadow?.toolErrors.length ?? 0,
+          toolCalls: toolsUsed.size,
+          tokens: tokensIn + tokensOut,
+          tokenBudget: 60_000,
+        })
+      : null;
+  return {
+    ok: true,
+    text: finalText,
+    messages: persisted,
+    cost,
+    tokensIn,
+    tokensOut,
+    measure: measureQa
+      ? { score: measureQa.score, vector: { ...measureQa.vector }, failures: measureQa.failures.length }
+      : null,
+    exp: top
+      ? {
+          initialModel,
+          toolsAvailable: tools.length,
+          difficulty: Math.round(profile.difficulty * 100) / 100,
+          risk: dna.risks.join(', ') || dna.criticality,
+          taskType: profile.type,
+          temperature: ws.temperature ?? null,
+          maxTokens: 16_000,
+        }
+      : undefined,
+    apprenticeInfo: apprentice ? { prep: apprentice, models: [...usedModels] } : undefined,
+    cognitiveInfo: cognitive ?? undefined,
+    omniTag: omni ? omniRt.omniTag(omni, { steps: { used: stepsUsed, cap: lane?.maxSteps ?? null } }) : undefined,
+    stopReason,
+    toolCalls: toolCallTotal,
+    toolErrors: toolErrorNotes.slice(-5),
+    offered: packTools.map((t) => t.name),
+    fabricInfo: top
+      ? {
+          active: fabricOn,
+          // What the Fabric did — nothing is claimed when it was not active (it only classified the data).
+          why: fabricOn ? (fabricPrep?.why ?? []) : [],
+          skills:
+            fabricOn || fabricRun?.skills?.length
+              ? (fabricPrep?.skills.map((x) => `${x.version.name}@${x.version.version}`) ?? [])
+              : [],
+          explored: fabricOn && Boolean(fabricPrep?.model?.explored),
+          classification: fabricPrep?.classification.level ?? 'PUBLIC',
+          hints: fabricOn ? (fabricPrep?.hints.matched.length ?? 0) : 0,
+        }
+      : null,
+    driftEvents: live?.driftEvents,
+    report: lastReport,
+    models: [...usedModels],
+    fallbacks: fallbackCount,
+    dna,
+    strategy,
+    tier: routed?.tier ?? profile.tier,
+    shadow,
+    steps: stepsDone,
+    challenged,
+    qa: lastQa,
+    escalations,
+    decision,
+    toolsUsed: [...toolsUsed],
+    calls: modelCalls,
+    skills: engineSkills.map((m) => m.skill.name),
+    mcp: decision?.mcp ?? [],
+    jev: jp
+      ? {
+          pre: jp.pre,
+          trace: jevTrace,
+          jevCost: jp.jevCost,
+          itemId: jevItemId,
+          toolTokens: toolDefTokens(toolDefs(packTools)),
+          toolTokensBaseline,
+          toolsOffered: packTools.length,
+          contextBefore: ctxHist.before + toolTokensBaseline,
+          contextAfter: ctxHist.after + toolTokens,
+          quality: lastQa ?? jevQuality,
+          corrections,
+          decisionMs: jevDecisionMs,
+          calls: jp.calls,
+        }
+      : null,
+    baselineTools: top ? { offered: tools.length, tokens: toolTokensBaseline } : undefined,
+    waste: top
+      ? wasteRate({
+          toolTokensSent,
+          unusedToolTokens: [...offeredCount].reduce(
+            (acc, [t, n]) => (toolsUsed.has(t.name) ? acc : acc + toolDefTokens(toolDefs([t])) * n),
+            0,
+          ),
+          failedToolTokens,
+          repeatedToolTokens,
+          discardedTokens,
+          totalTokens: tokensIn + tokensOut,
+        })
+      : undefined,
+    live: live
+      ? {
+          state: (liveSync(), live.finish(inp.signal.aborted ? 'paused' : 'done')),
+          checkpoints: live.checkpoints,
+          switches,
+          overhead: live.overhead(priceOf(model) || 1),
+          promptWaste: compiledPrompt?.wasteScore ?? 0,
+          skillTokensSaved,
+        }
+      : null,
+  };
+}
+
+async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp: LoopInput): Promise<string> {
+  const st = useStore.getState();
+  const sid = inp.session.id;
+  let tool = offered.find((t) => llmName(t.name) === call.function.name || t.name === call.function.name);
+  let name = tool?.name ?? call.function.name.replace(/__/g, '.');
+  let args: Record<string, unknown> = {};
+  try {
+    args = call.function.arguments?.trim()
+      ? (JSON.parse(call.function.arguments) as Record<string, unknown>)
+      : {};
+  } catch {
+    return `Error: arguments are not valid JSON: ${call.function.arguments?.slice(0, 300)}`;
+  }
+  // HOUSE FORMATS (consigne du 14/10/2026) : once the request's design gallery opened, EVERY deliverable comes out in the
+  // committee formats — whatever was chosen (theme, catalogue model, design found on the Internet): its colours apply.
+  // A whole-file data.export becomes dossier.export on that file (workbook + the formats chosen in the gallery).
+  let houseNote = '';
+  // A filtered export (query) stays data.export: its committee workbook is built from the filtered rows.
+  if (sid && runHouse.has(sid) && name === 'data.export' && typeof args.path === 'string' && args.path && !args.query) {
+    const house = TOOLS.find((t) => t.name === 'dossier.export');
+    if (house) {
+      const chosen = runFormats.get(sid);
+      args = { data: args.path, sheet: args.sheet, focus: runRequest.get(sid) ?? '', name: args.name, formats: chosen?.length ? chosen.map((f) => (f === 'pdf' ? 'html' : f)) : ['xlsx', 'pptx', 'docx'] };
+      tool = house;
+      name = house.name;
+      houseNote = '\n[format] Livrable produit dans les formats comité (classeur à boutons et sélecteurs, deck, rapport) au design choisi.';
+    }
+  }
+  const itemId = uid();
+  const lbl = tool?.label(args) ?? name;
+  st.pushItem(sid, {
+    kind: 'tool',
+    id: itemId,
+    tool: name,
+    label: lbl,
+    args,
+    status: 'running',
+    agent: inp.agentLabel,
+  });
+  const fail = (status: 'error' | 'denied', summary: string, msg: string) => {
+    st.updateItem(sid, itemId, { status, summary });
+    return msg;
+  };
+  if (!tool)
+    return fail(
+      'error',
+      'outil indisponible',
+      `Error: tool "${name}" is not available${inp.plan ? ' in PLAN MODE (read-only until the plan is approved)' : ''}. Use only the provided tools.`,
+    );
+
+  if (sid && runHouse.has(sid) && tool.name === 'code.run' && deliverableFromCode(String(args.code ?? '')))
+    return fail(
+      'error',
+      'livrable → formats comité',
+      'Refused: this chat expects the committee formats chosen in the design gallery. Do not write the Office file with code: call dossier.export with data = the source file (and formats), or dossier.compose then dossier.export when the analysis must be written. Use code.run only for calculations.',
+    );
+  const grants = st.grants[sid] ?? [];
+  const decision = decide(inp.session.mode, tool, grants.includes(tool.name), args);
+  if (decision === 'deny')
+    return fail(
+      'denied',
+      `bloqué (${inp.session.mode})`,
+      `Denied: not allowed in ${inp.session.mode.toUpperCase()} mode.`,
+    );
+  if (decision === 'ask') {
+    let preview: Awaited<ReturnType<NonNullable<DirectTool['preview']>>> | undefined;
+    try {
+      preview = await tool.preview?.(args);
+    } catch (e) {
+      return fail('error', 'erreur', `Error: ${(e as Error).message}`);
+    }
+    const approvalId = uid();
+    useStore.setState({
+      status: { ...useStore.getState().status, [sid]: 'En attente de votre validation…' },
+    });
+    const d = await new Promise<{ decision: 'approve' | 'deny'; always?: boolean; note?: string }>(
+      (resolve) => {
+        st.pending.approvals.set(approvalId, resolve);
+        const onAbort = () => resolve({ decision: 'deny', note: 'annulé' });
+        inp.signal.addEventListener('abort', onAbort, { once: true });
+        st.pushItem(sid, {
+          kind: 'approval',
+          id: approvalId,
+          tool: tool.name,
+          label: lbl,
+          preview: preview?.text ?? JSON.stringify(args, null, 2).slice(0, 3000),
+          diff: preview?.diff,
+          agent: inp.agentLabel,
+        });
+      },
+    );
+    st.pending.approvals.delete(approvalId);
+    st.updateItem(sid, approvalId, { resolved: d.decision });
+    if (d.decision === 'deny')
+      return fail(
+        'denied',
+        'refusé',
+        `The user denied this action.${d.note ? ` Feedback: ${d.note}` : ''} Do not retry it as-is.`,
+      );
+    if (d.always)
+      useStore.setState({ grants: { ...useStore.getState().grants, [sid]: [...grants, tool.name] } });
+  }
+  // ── PREMIUM DESIGN GALLERY (hard): before ANY deliverable the user picks the design (and the format) on thumbnails.
+  // A theme the model passes because the user asked for it in the chat is respected; « pour tout ce chat » is remembered.
+  // Python / JS code that writes an Office file is a deliverable too (the model often builds the Excel itself).
+  const dkind = kindForTool(tool.name, args) ?? (tool.name === 'code.run' ? deliverableFromCode(String(args.code ?? '')) : null);
+  let designNote = '';
+  if (dkind && !experimentRun && useStore.getState().settings.designPicker !== false) {
+    let choice = designFor(sid);
+    // The model's theme counts only when the user's own words asked for it; otherwise the gallery choice wins.
+    const asked = typeof args.theme === 'string' && args.theme !== 'house' && themeAskedByUser(args, inp.text) ? (args.theme as string) : null;
+    if (!choice && !asked && !inp.signal.aborted) {
+      const formats =
+        tool.name === 'report.export'
+          ? ['docx', 'pptx', 'pdf', 'html', 'eml', 'md']
+          : tool.name === 'dossier.export'
+            ? ['xlsx', 'pptx', 'docx', 'pdf', 'html', 'eml']
+            : tool.name === 'data.export'
+              ? ['xlsx', 'csv', 'json']
+              : [];
+      const chosenFormats =
+        tool.name === 'report.export'
+          ? ((args.formats as string[] | undefined)?.length ? (args.formats as string[]) : ['docx'])
+          : tool.name === 'dossier.export'
+            ? ((args.formats as string[] | undefined)?.length ? (args.formats as string[]) : ['xlsx', 'pptx', 'docx', 'html'])
+            : tool.name === 'data.export'
+              ? [String(args.format || 'xlsx')]
+              : [];
+      const d = await askDesign(sid, inp.signal, tool.name, dkind, formats, chosenFormats);
+      choice = d.choice;
+      if (d.formats?.length) {
+        if (tool.name === 'report.export' || tool.name === 'dossier.export') args.formats = d.formats;
+        if (tool.name === 'data.export') args.format = d.formats[0];
+      }
+      if (tool.name === 'code.run') designNote = `\n\n${designPrompt(choice)}`;
+    }
+    if (choice && !asked) {
+      args.theme = choice.theme;
+      // Colours the model remembered never ride along with the user's theme.
+      if (choice.colors) args.colors = choice.colors;
+      else delete args.colors;
+      // A design copied from the Internet: Excel takes its chart type, and a dashboard reproducing its layout is built.
+      // In the committee formats (dossier.export), the Internet design gives its colours to every file and its dashboard
+      // is reproduced as an HTML page with the same data.
+      if (choice.clone && tool.name === 'dossier.export') {
+        args.clone = choice.clone;
+        args.layoutSource = choice.source;
+      }
+      if (choice.layout && tool.name === 'dossier.export') {
+        args.layout = choice.layout;
+        args.layoutSource = choice.source;
+      }
+      if (choice.clone && tool.name === 'data.export') {
+        args.clone = choice.clone;
+        args.layoutSource = choice.source;
+        // Excel keeps one native chart: the first chart kind of the dashboard.
+        const k = choice.clone.panels.find((p) => ['bar', 'hbar', 'line', 'area', 'pie', 'donut'].includes(p.kind))?.kind;
+        if (k && (!args.chart || args.chart === 'none')) args.chart = k === 'line' || k === 'area' ? 'line' : k === 'pie' || k === 'donut' ? 'pie' : 'bar';
+      }
+      if (choice.layout && tool.name === 'data.export') {
+        args.layout = choice.layout;
+        args.layoutSource = choice.source;
+        if (!args.chart || args.chart === 'none') args.chart = excelChart(choice.layout);
+      }
+    }
+    // The chosen LOGO goes into every deliverable even when the model passed its own theme / colours (v62: the ESN
+    // workbook and report came out with a text plate instead of the logo picked in the gallery).
+    if (choice?.logo && LOGO_TOOLS.test(tool.name) && !args.logoPath) args.logoPath = choice.logo.path;
+    // Sites and apps: the chosen design becomes a premium stylesheet injected in the page.
+    if (dkind === 'web' && tool.name === 'artifact.create' && typeof args.content === 'string') {
+      const t = themeOf(args, useStore.getState().settings.exportTheme);
+      args.content = applyWebTheme(args.content as string, t);
+      const lg = choice?.logo ? files()[choice.logo.path] : undefined;
+      if (lg) args.content = addLogoToHtml(args.content as string, `data:image/png;base64,${lg.data}`);
+      // A real website reproduced: its web font and its own colour tokens are available to the page.
+      const sl = choice?.layout;
+      if (sl?.cssVars && !/data-site-tokens/.test(args.content as string)) {
+        const vars = Object.entries(sl.cssVars).map(([k, v]) => `${k}:${v}`).join(';');
+        const font = sl.fontHref && /^https:\/\/fonts\.googleapis\.com\//.test(sl.fontHref) ? `<link rel="stylesheet" href="${sl.fontHref}">` : '';
+        const block = `${font}<style data-site-tokens>:root{${vars}}body{font-family:${(sl.fontStack ?? sl.font).replace(/[<>{};]/g, '')}}</style>`;
+        args.content = /<head[^>]*>/i.test(args.content as string) ? (args.content as string).replace(/<head[^>]*>/i, (m) => `${m}\n${block}`) : `${block}\n${args.content as string}`;
+      }
+    }
+  }
+  // CHAT SCOPE is re-asserted before every tool, under the scope lock: while this tool awaits (Python, exports…),
+  // another chat cannot switch the scope — two chats running at the same time can never write into each other.
+  // agent.delegate runs a whole sub-loop (LLM calls): its own steps and tools take the lock, not the delegation.
+  const releaseScope = sid && tool.name !== 'agent.delegate' ? await acquireScope(sid) : null;
+  if (sid) setChatScope(sid, sessionAllow(sid));
+  // EXPORT THEMES: the house charter is the default, not a cage — a theme or custom colours given by the model apply.
+  const themed = THEMED_TOOLS.test(tool.name);
+  const prevTheme = themed ? setActiveTheme(themeOf(args, useStore.getState().settings.exportTheme)) : null;
+  try {
+    const t0 = Date.now();
+    const out = await tool.run(args, ctx).finally(() => {
+      if (prevTheme) setActiveTheme(prevTheme);
+    });
+    // Office files written by the model's own code take the chosen design (colours + font), still under the lock.
+    if (out.ok && tool.name === 'code.run') {
+      const n = enforceDesign(sid, t0);
+      if (n) out.forModel += `\n[design] ${n} fichier(s) Office mis au design choisi par l'utilisateur.`;
+    }
+    // A cloned dashboard design goes into EVERY format: Word (first page), PowerPoint (first slide), PDF / HTML / mail
+    // (top of the page), Excel written by the model's own code (first sheet) — rendered with the chat's data.
+    if (out.ok && /^(code\.run|report\.export)$/.test(tool.name)) {
+      // Never turns a successful tool into an error: a failure is reported to the model.
+      const r = await applyClone(sid, t0).catch((e: unknown) => ({ n: -1, note: String((e as Error)?.message ?? e).slice(0, 200) }));
+      if (r.n > 0) {
+        out.forModel += `\n[design] DESIGN CHOISI APPLIQUÉ — le classeur s'ouvre sur l'image choisie reconstruite avec les données du chat : ${r.note}. Dites-le à l'utilisateur. Ces feuilles (« Tableau de bord », « Tableau de bord (image) », « Données du tableau de bord ») appartiennent à l'application et sont RÉAPPLIQUÉES INTACTES après chaque enregistrement du classeur : ne les lisez pas, ne les modifiez pas, ne les reconstruisez pas, ne les diagnostiquez pas (openpyxl n'en voit qu'une partie).`;
+        out.summary = `${out.summary ? `${out.summary} · ` : ''}design de l'image appliqué (${r.n} fichier(s))`;
+      } else if (r.n < 0) out.forModel += `\n[design] la reproduction de l'image choisie a échoué (${r.note}) — utilisez data.export avec le tableau détaillé pour la produire.`;
+    }
+    // The user's logo (recoloured to the palette) goes into every deliverable this tool just produced.
+    if (out.ok && /^(code\.run|data\.export|report\.export)$/.test(tool.name)) {
+      const n = applyLogo(sid, t0);
+      if (n) out.forModel += `\n[logo] logo de l'utilisateur placé dans ${n} fichier(s).`;
+    }
+    releaseScope?.();
+    out.forModel += designNote + houseNote;
+    st.updateItem(sid, itemId, {
+      status: out.ok ? 'ok' : 'error',
+      summary: out.summary,
+      output: out.output,
+      chart: out.chart,
+      artifact: out.artifact,
+    });
+    return out.ok ? out.forModel : `Error: ${out.forModel}`;
+  } catch (e) {
+    releaseScope?.();
+    if (inp.signal.aborted) throw new LLMError('Cancelled', 499, false, 'cancelled');
+    const msg = (e as Error).message ?? String(e);
+    return fail('error', msg.slice(0, 160), `Error: ${msg}`);
+  }
+}
+
+/** Visible progress of the preparation (the user must never stare at a silent run). */
+function stage(sid: string, text: string): void {
+  useStore.setState({ status: { ...useStore.getState().status, [sid]: text } });
+}
+/** Design of this chat: remembered for the chat, else chosen for the current request. */
+const runDesign = new Map<string, DesignChoice>();
+const runFormats = new Map<string, string[]>();
+/** Chats whose current request opened the design gallery: every deliverable of the run takes the committee formats. */
+const runHouse = new Set<string>();
+const runRequest = new Map<string, string>();
+function designFor(sid: string): DesignChoice | undefined {
+  return useStore.getState().sessions.find((x) => x.id === sid)?.design ?? runDesign.get(sid);
+}
+const FORMATS_OF: Record<DeliverableKind, string[]> = {
+  excel: ['xlsx', 'csv'],
+  document: ['docx', 'pdf', 'html', 'eml', 'md'],
+  slides: ['pptx', 'pdf'],
+  web: [],
+};
+/** Show the gallery and wait for the user's choice (kept for the request; for the chat when asked). */
+async function askDesign(
+  sid: string,
+  signal: AbortSignal,
+  toolName: string,
+  kind: DeliverableKind,
+  formats: string[],
+  chosenFormats: string[],
+): Promise<{ choice: DesignChoice; formats?: string[] }> {
+  const st = useStore.getState();
+  const designId = uid();
+  useStore.setState({ status: { ...useStore.getState().status, [sid]: 'Choisissez le design du livrable…' } });
+  const d = await new Promise<{ choice: DesignChoice; formats?: string[]; remember: boolean }>((resolve) => {
+    st.pending.designs.set(designId, resolve);
+    signal.addEventListener('abort', () => resolve({ choice: { theme: 'house' }, remember: false, aborted: true } as never), { once: true });
+    st.pushItem(sid, { kind: 'design', id: designId, tool: toolName, deliverable: kind, formats, chosenFormats });
+  });
+  st.pending.designs.delete(designId);
+  // Stopped before choosing: say so (it is not a choice of the house design).
+  if ((d as { aborted?: boolean }).aborted) {
+    st.updateItem(sid, designId, { resolved: 'aucun — mission arrêtée avant le choix' });
+    return d;
+  }
+  const host = (() => {
+    try {
+      return d.choice.source ? new URL(d.choice.source).hostname : '';
+    } catch {
+      return '';
+    }
+  })();
+  const catalogue = modelById(d.choice.model);
+  const lbl = catalogue
+    ? `Modèle ${catalogue.format === 'slides' ? 'PowerPoint' : catalogue.format === 'excel' ? 'Excel' : catalogue.format === 'word' ? 'Word' : catalogue.format === 'pdf' ? 'PDF' : 'Mail'} « ${catalogue.name} » — ${catalogue.tagline}`
+    : d.choice.theme === 'custom'
+      ? d.choice.clone
+        ? `Reproduction fidèle du design choisi (${d.choice.clone.panels.length} panneaux)`
+        : d.choice.layout?.cssVars
+        ? `Site reproduit — ${host} (couleurs, polices et structure)`
+        : d.choice.layout
+          ? 'Design Internet — mise en page reproduite'
+          : 'Design Internet — couleurs et police'
+      : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
+  const logoLbl = d.choice.logo ? ` · logo ${(LOGO_VARIANTS.find((v) => v.id === d.choice.logo!.variant)?.label ?? '').toLowerCase()}` : '';
+  st.updateItem(sid, designId, { resolved: `${lbl}${logoLbl}`, chosenFormats: d.formats });
+  runDesign.set(sid, d.choice);
+  if (d.remember) st.patchSession(sid, { design: d.choice });
+  return d;
+}
+const HOUSE_STYLE_LINE = /style maison|house (style|design|palette|charter)|charte maison|GOD 3D|BLUE ECOBANK|00415E|005C83|8CC63F|001B4D|003DA5|C8A951/i;
+/** Palette and font of the chosen design, for code the model writes itself (openpyxl, python-docx, pptx, HTML). */
+function designPrompt(c: DesignChoice, formats?: string[]): string {
+  const t = buildTheme(c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never));
+  const k = t.color;
+  return `<DESIGN_CHOICE name="${t.name}"${formats?.length ? ` formats="${formats.join(',')}"` : ''}>
+The user CHOSE this design for the deliverable.${c.theme === 'house' ? '' : String(c.theme).startsWith('house-') ? ' It is the HOUSE STRUCTURE (title band, thin filet, KPI cards, zebra rows, Segoe UI, Consolas figures) in another palette: keep the structure, but use these colours instead of the house blue / gold / lime remembered elsewhere.' : ' It REPLACES the house style: ignore any « style maison », Ecobank navy/blue/lime palette or Segoe UI rule found in memories, lessons, skills or agent descriptions, and never announce the house style in your answer.'} Use it everywhere (native exporters receive it automatically; in your own Python/JS code use exactly these values):
+${c.logo ? `Logo: ${c.logo.path} — the user's logo, already recoloured to this palette. The app places it AUTOMATICALLY in every Excel / Word / PowerPoint / HTML file you produce (title band, page header, each slide): do NOT insert it yourself and leave room top-right.\n` : ''}title/header band ${k.navy} · primary ${k.blue} · accent / thin rule ${k.gold} · secondary ${k.cyan} · soft fill ${k.ice} · zebra/panel ${k.panel} · borders ${k.line} · text ${k.text} · chart series ${t.chartSeries.slice(0, 5).join(', ')} · font "${t.font.ui}" (figures may use "${t.font.mono}").${formats?.length ? `\nOutput format(s) chosen: ${formats.join(', ')}.` : ''}${String(c.theme).startsWith('house') ? `\nMAISON 2.0 · GOD 3D: data.export (xlsx) ALREADY adds KPI cards + three native Excel 3D charts above the table header, an « Agrégats » sheet (live SUMIF) and a first « Synthèse 3D » sheet (6 3D charts + reading card) — prefer data.export to building the workbook in Python, and do not redraw these charts. For Word / PowerPoint / PDF, data.chart saves 3D chart PNGs (outputs/charts/*.png) to embed with ![title](path).` : ''}
+</DESIGN_CHOICE>`;
+}
+/** Put the reproduction of the cloned dashboard in the deliverables written since `since` (chat data only). */
+async function applyClone(sid: string, since: number): Promise<{ n: number; note: string }> {
+  const c = designFor(sid);
+  if (!c?.clone) return { n: 0, note: '' };
+  const pd = previewData(sid, 'Tableau de bord');
+  // Never invented figures: the chat's data file, else (workbooks) the detail table of the workbook itself.
+  const targets = Object.values(files()).filter((f) => f.updatedAt >= since && !HOUSE_FILES.has(f.path) && !f.path.startsWith('assets/') && !f.path.startsWith('uploads/') && (/\.xlsx$/i.test(f.path) || (pd.from && (/\.(docx|pptx)$/i.test(f.path) || (/\.html?$/i.test(f.path) && !f.data.includes('data-dash-clone'))))));
+  if (!targets.length) return { n: 0, note: '' };
+  const W = 1400;
+  const H = Math.round(W / c.clone.aspect);
+  const img = await rasterise(renderCloneSvg(c.clone, pd.data, W), W, H);
+  const pic = { png: img.png, width: W, height: H };
+  let n = 0;
+  const notes: string[] = [];
+  for (const f of targets) {
+    if (f.binary) {
+      let b = bytesOf(f);
+      let out: Uint8Array | null;
+      if (/\.xlsx$/i.test(f.path)) {
+        // Re-saved by the model (openpyxl drops shapes and pictures)? Our sheets are removed and applied again, intact.
+        // « Tableau de bord » is removed only with OUR data sheet beside it (a user's own sheet of that name is never touched).
+        const wbx = strFromU8(unzipSync(b, { filter: (e) => e.name === 'xl/workbook.xml' })['xl/workbook.xml'] ?? new Uint8Array());
+        const ours = REPRO_SHEETS.filter((x) => wbx.includes(`name="${x}"`) && (x === REPRO_SHEETS[0] || x === REPRO_SHEETS[3] ? wbx.includes(`name="${REPRO_SHEETS[2]}"`) : true));
+        const b0 = ours.length ? removeSheets(b, ours) : null;
+        if (b0) b = b0;
+        // Excel: ALWAYS a LIVE first sheet on the image's design (shapes, formulas, filters, native charts). Rows: the
+        // chat's data file, else the detail table of this very workbook (code-written files). NEVER a pasted picture.
+        // ONLY when the rows deserve one (dashFit): a palette of 5 colours, a 3-line summary never get a sales-like
+        // dashboard pushed in front of the real analysis (v48).
+        let unfit = '';
+        const fitOr = (d: CloneData) => {
+          const ft = dashFit(d);
+          if (!ft.ok) unfit ||= ft.why;
+          return ft.ok;
+        };
+        let live = pd.from && fitOr(pd.data) ? await heavy('addLiveDashboard', b, c.clone, pd.data) : null;
+        let from = pd.from;
+        if (!live) {
+          const t = chatTable(f.path, b);
+          const cd = t?.rows.length ? cloneData('Tableau de bord', t.columns, t.rows) : null;
+          if (t && cd && fitOr(cd)) {
+            live = await heavy('addLiveDashboard', b, c.clone, cd);
+            from = t.sheet ? `${f.path} · feuille ${t.sheet}` : f.path;
+          }
+        }
+        out = live?.bytes ?? (ours.length ? b : null);
+        if (!live && unfit) notes.push(`${f.path} : pas de tableau de bord vivant ajouté — ${unfit} ; les feuilles d'analyse restent en tête`);
+        else if (!live) notes.push(`${f.path} : tableau de bord vivant non construit (aucune table de données lisible dans le classeur) — aucune image collée à la place`);
+        else if (from && from !== pd.from) notes.push(`chiffres du tableau de bord tirés de ${from}`);
+        if (live) notes.push(`${f.path} : 1re feuille « Tableau de bord » VIVANTE au design de l'image (${live.kpis} indicateurs en formules, ${live.charts} graphiques Excel, filtres ${live.filters.map((x) => `« ${x} »`).join(', ') || '—'}, ${live.links} bouton(s) de navigation) — aucune image fixe`);
+        // Every other sheet (the model's own, the data sheet) in Maison 2.0 with the image's colours and font.
+        const rs = out ? await heavy('restyleWorkbook', out, { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, font: c.clone.font }, new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Sommaire'])) : null;
+        if (rs) {
+          out = rs.bytes;
+          notes.push(`feuilles ${rs.sheets.map((x) => `« ${x} »`).join(', ')} mises au format Maison 2.0 aux couleurs de l'image`);
+        }
+      } else out = /\.docx$/i.test(f.path) ? addImagePageDocx(b, pic) : addImageSlidePptx(b, pic);
+      if (out) {
+        writeBytes(f.path, out, f.mime);
+        n++;
+      }
+    } else {
+      const html = addImageToHtml(f.data, img.dataUrl);
+      if (html !== f.data) {
+        writeText(f.path, html);
+        n++;
+      }
+    }
+  }
+  return { n, note: `${notes.join(' ; ')}${notes.length ? ' ; ' : ''}chiffres tirés de ${pd.from}` };
+}
+/** Place the chosen logo in the Office / HTML deliverables written since `since` (idempotent). */
+function applyLogo(sid: string, since: number): number {
+  const c = designFor(sid);
+  const lf = c?.logo ? files()[c.logo.path] : undefined;
+  if (!c?.logo || !lf || !lf.binary) return 0;
+  const logo = { png: bytesOf(lf), width: c.logo.width, height: c.logo.height };
+  const url = `data:image/png;base64,${lf.data}`;
+  let n = 0;
+  for (const f of Object.values(files())) {
+    if (f.updatedAt < since || HOUSE_FILES.has(f.path) || f.path.startsWith('assets/') || f.path.startsWith('uploads/')) continue;
+    if (f.binary && isOffice(f.path)) {
+      const out = addLogoToOffice(f.path, bytesOf(f), logo);
+      if (out) {
+        writeBytes(f.path, out, f.mime);
+        n++;
+      }
+    } else if (!f.binary && /\.html?$/i.test(f.path)) {
+      const html = addLogoToHtml(f.data, url);
+      if (html !== f.data) {
+        writeText(f.path, html);
+        n++;
+      }
+    }
+  }
+  return n;
+}
+/** Maison 2.0 band on the workbooks written during the turn; returns one line per file changed. */
+async function finishWorkbooks(sid: string, since: number): Promise<string[]> {
+  const c = designFor(sid);
+  const design = c?.clone
+    ? buildTheme({ primary: c.clone.palette.primary, accent: c.clone.palette.accent, dark: c.clone.palette.dark, font: c.clone.font })
+    : buildTheme(c ? (c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never)) : null);
+  const skip = new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Données du tableau de bord', 'Synthèse 3D', 'Agrégats', 'Sommaire']);
+  const lines: string[] = [];
+  // THE IMAGE'S DESIGN ON EVERY PAGE of the other exports (Word, PowerPoint, HTML and the PDF printed from it).
+  // A catalogue model: its palette and its page layout (Word / HTML / PowerPoint) on every page.
+  const model = modelById(c?.model);
+  const mp = model?.palette;
+  const skin: Skin | null = mp
+    ? { dark: mp.dark, primary: mp.primary, accent: mp.accent, page: model!.format === 'slides' || !mp.night ? mp.page : '#FFFFFF', font: mp.font, layout: model!.layout }
+    : c?.clone
+      ? { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, page: c.clone.page, font: c.clone.font }
+      : c && c.theme === 'custom' && c.colors?.primary
+        ? { dark: c.colors.dark ?? c.colors.primary, primary: c.colors.primary, accent: c.colors.accent ?? c.colors.primary, font: c.colors.font ?? 'Segoe UI' }
+        : null;
+  const skinDesign = skin ? buildTheme({ primary: skin.primary, accent: skin.accent, dark: skin.dark, font: skin.font }) : null;
+  if (skin && skinDesign)
+    for (const f of Object.values(files())) {
+      if (f.updatedAt < since || HOUSE_FILES.has(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
+      // House colours written by the exporters (navy / blue / gold) become the image's first.
+      const base = f.binary && /\.(docx|pptx)$/i.test(f.path) ? (recolorOffice(bytesOf(f), skinDesign)?.bytes ?? bytesOf(f)) : null;
+      if (f.binary && /\.docx$/i.test(f.path)) {
+        const out = skinDocx(base!, skin);
+        if (out) {
+          writeBytes(f.path, out, f.mime);
+          lines.push(`${f.path} : chaque page au design de l'image (bandeau d'en-tête, titres, tableaux, police).`);
+        }
+      } else if (f.binary && /\.pptx$/i.test(f.path)) {
+        const out = skinPptx(base!, skin);
+        if (out) {
+          writeBytes(f.path, out, f.mime);
+          lines.push(`${f.path} : chaque diapositive au design de l'image (fond, bandeaux, titres, police).`);
+        }
+      } else if (!f.binary && /\.html?$/i.test(f.path)) {
+        const out = skinHtml(f.data, skin);
+        if (out !== f.data) {
+          writeText(f.path, out);
+          lines.push(`${f.path} : page (et PDF imprimé) au design de l'image.`);
+        }
+      }
+    }
+  for (const f of Object.values(files())) {
+    if (!f.binary || f.updatedAt < since || HOUSE_FILES.has(f.path) || !/\.xlsx$/i.test(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
+    const r = await heavy('maisonBand', bytesOf(f), design, skip);
+    if (!r) {
+      // Already banded (data.export): the Sommaire sheet is still rebuilt so it lists every sheet of the final workbook.
+      const s = await heavy('refreshSommaire', bytesOf(f), design);
+      if (s) writeBytes(f.path, s, f.mime);
+      continue;
+    }
+    writeBytes(f.path, r.bytes, f.mime);
+    lines.push(`${f.path} : indicateurs et graphiques placés au-dessus de l'en-tête sur ${r.banded.map((x) => `« ${x} »`).join(', ')} (${r.moved} graphique(s) déplacé(s), ${r.created} créé(s))${r.sparklines ? `, ${r.sparklines} sparkline(s)` : ''}${r.sommaire ? ', feuille « Sommaire » en tête' : ''}.`);
+  }
+  // CONTRÔLE DESIGN AVANT LIVRAISON — last: contrast, columns, page framing, overflowing text, on every deliverable.
+  for (const f of Object.values(files())) {
+    if (f.updatedAt < since || HOUSE_FILES.has(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/') || !/\.(xlsx|docx|pptx|html?)$/i.test(f.path)) continue;
+    try {
+      const r = await heavy('designQA', f.path, f.binary ? bytesOf(f) : f.data);
+      if (!r) continue;
+      if (r.fixes.length) {
+        if (typeof r.data === 'string') writeText(f.path, r.data);
+        else writeBytes(f.path, r.data, f.mime);
+      }
+      lines.push(`${f.path} — contrôle design : ${[...r.fixes, ...r.warnings.map((w) => `⚠ ${w}`)].join(' ; ')}.`);
+    } catch {
+      /* a file the checker cannot read is delivered as is */
+    }
+  }
+  return lines;
+}
+/** Re-skin the Office files this chat's code just wrote with the chosen design. Returns how many changed. */
+function enforceDesign(sid: string, since: number): number {
+  const c = designFor(sid);
+  if (!c || c.theme === 'house') return 0;
+  const design = buildTheme(c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never));
+  let n = 0;
+  for (const f of Object.values(files())) {
+    if (!f.binary || f.updatedAt < since || HOUSE_FILES.has(f.path) || !isOffice(f.path)) continue;
+    const r = recolorOffice(bytesOf(f), design);
+    if (!r) continue;
+    writeBytes(f.path, r.bytes, f.mime);
+    n++;
+  }
+  return n;
+}
+
+async function delegate(
+  parent: LoopInput,
+  role: string,
+  task: string,
+): Promise<{ ok: boolean; summary: string }> {
+  const st = useStore.getState();
+  const agent = findRole(role, st.agents);
+  if (!agent)
+    return {
+      ok: false,
+      summary: `Unknown agent "${role}". Available: ${allRoles(st.agents)
+        .map((a) => a.id)
+        .join(', ')}`,
+    };
+  const itemId = uid();
+  if (parent.depth === 0) runTeam.add(agent.id);
+  st.pushItem(parent.session.id, { kind: 'subagent', id: itemId, role: agent.name, task, status: 'running' });
+  // JEV strategy for the agent: budget, success criteria and the relevant context of the mission.
+  const pk = currentPacket?.packet;
+  const jevTask = pk
+    ? `${task}\n\n<jev_subpacket agent="${agent.id}">\nbudget: ≤ ${Math.max(4, Math.round(pk.max_steps / 2))} steps; stop when done.\nsuccess: ${pk.success_criteria.join('; ')}\n${pk.context_required.length ? `relevant files: ${pk.context_required.slice(0, 8).join(', ')}\n` : ''}${currentPacket!.contract ? `${currentPacket!.contract}\n` : ''}</jev_subpacket>`
+    : task;
+  try {
+    const r = await loop({
+      ...parent,
+      agent,
+      text: jevTask,
+      attachments: [],
+      history: [],
+      plan: false,
+      mission: false,
+      depth: parent.depth + 1,
+      agentLabel: agent.name,
+      // The model the owner chose runs EVERY agent of the mission (only its tokens are spent); a specialist's own
+      // model is used only when the chat is in automatic routing.
+      model: st.settings.defaultModel && st.settings.defaultModel !== 'auto' ? parent.model : agent.model?.includes('/') ? agent.model : parent.model,
+    });
+    st.updateItem(parent.session.id, itemId, { status: 'done', summary: r.text.slice(0, 4000) });
+    sub.cost += r.cost;
+    sub.tokensIn += r.tokensIn;
+    sub.tokensOut += r.tokensOut;
+    return { ok: true, summary: r.text || '(no answer)' };
+  } catch (e) {
+    if (parent.signal.aborted) throw e;
+    st.updateItem(parent.session.id, itemId, { status: 'error', summary: friendlyError(e) });
+    return { ok: false, summary: `Sub-agent failed: ${friendlyError(e)}` };
+  }
+}
+const sub = { cost: 0, tokensIn: 0, tokensOut: 0 };
+
+/** Starts a run in a session (UI entry point). */
+export async function runAgent(
+  sessionId: string,
+  text: string,
+  attachments: Attachment[],
+  opts: {
+    /** The user message is already displayed (a follow-up typed while the chat worked). */
+    shown?: boolean;
+    mode?: AgentMode;
+    jev?: boolean | JevVariant;
+    bench?: string;
+    rep?: number;
+    experiment?: ExperimentInput;
+    fabric?: FabricRunOpts;
+    apprentice?: apprenticeRt.ApprenticeRunOpts;
+    cognitive?: cognitiveRt.CognitiveRunOpts;
+  } = {},
+): Promise<void> {
+  const st = useStore.getState();
+  const benchTag = opts.bench ?? null;
+  lastPolicy = '';
+  modelLock = null;
+  experimentRun = Boolean(opts.bench || opts.fabric || opts.apprentice || opts.cognitive || opts.experiment || opts.jev !== undefined);
+  fabricRun = opts.fabric ?? null;
+  apprenticeRun = opts.apprentice ?? null;
+  cognitiveRunOpts = opts.cognitive ?? null;
+  jevOverride =
+    opts.jev === undefined ? null : opts.jev === true ? 'full' : opts.jev === false ? 'off' : opts.jev;
+  const session = st.sessions.find((s) => s.id === sessionId);
+  if (!session || st.running[sessionId]) return;
+  const ac = new AbortController();
+  useStore.setState({ running: { ...st.running, [sessionId]: ac } });
+  // A queued follow-up is already on screen (queueMessage).
+  if (!opts.shown) st.pushItem(sessionId, { kind: 'user', id: uid(), text, attachments, ts: Date.now() });
+  // « continue » carries on THE SAME mission (v62 — ESN chat: « continue » became an empty request, the context compiler
+  // dropped « top 20 du segment code 8200 » and a provisions study started instead). The model, the tool pack, the
+  // context compiler and the design gallery all read the resumed mission; the chat shows what the user typed.
+  const resumed = !attachments.length && isContinuation(text) ? missionOf(session?.turns) : null;
+  let missionTurn = text;
+  if (resumed) {
+    const since = [...(session?.turns ?? [])].reverse().find((t) => t.text.trim() === resumed)?.at ?? 0;
+    const produced = Object.values(files())
+      .filter((f) => f.path.startsWith('outputs/') && f.updatedAt >= since)
+      .sort((x, y) => y.updatedAt - x.updatedAt)
+      .map((f) => f.path);
+    text = resumeText(text, resumed, produced);
+    missionTurn = resumed;
+  }
+  // JEV USER FEEDBACK LOOP: « parfait » / « c'est mauvais » judge the previous answer.
+  const fb = jevRt.feedbackOf(text);
+  if (fb) jevRt.feedback(sessionId, fb);
+  // Telemetry: a correction of the previous answer counts against that mission's model.
+  if (fb === 'bad' || isHumanCorrection(text)) {
+    const prev = [...st.ledger.entries].reverse().find((e) => e.session === sessionId);
+    if (prev && !prev.humanCorrection) {
+      st.setLedger({
+        entries: st.ledger.entries.map((e) => (e.id === prev.id ? { ...e, humanCorrection: true } : e)),
+      });
+      if (!fb) st.recordOutcome(prev.model, false, prev.dna.type);
+    }
+  }
+  if (session.title === 'Nouvelle session')
+    st.patchSession(sessionId, { title: text.split('\n')[0]!.slice(0, 70) || 'Session' });
+  const started = Date.now();
+  // JEV L0: requests answered without any model (pure arithmetic, date / time).
+  // JEV REFLEXES (v63): ECB rates, CFA conversions, entity cards, definitions — and computations JEV codes, EXECUTES in
+  // the sandbox and interprets — answered without the chat model (0 token for the reflexes, a free coder for the code).
+  const reflexOk = jevEnabled() && !attachments.length && (opts.mode ?? st.agentMode) !== 'plan' && !experimentRun;
+  const direct =
+    (reflexOk ? jevRt.directAnswer(text) : null) ??
+    (reflexOk ? await reflexAnswer(text, ac.signal).catch(() => null) : null);
+  if (direct) {
+    const t0 = performance.now();
+    st.pushItem(sessionId, { kind: 'assistant', id: uid(), text: direct });
+    st.pushItem(sessionId, {
+      kind: 'usage',
+      id: uid(),
+      cost: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      model: 'JEV-0',
+      durationMs: Date.now() - started,
+    });
+    st.patchSession(sessionId, (cur) => ({
+      history: [...cur.history, { role: 'user', content: text }, { role: 'assistant', content: direct }],
+    }));
+    jevRt.learn({
+      id: uid(),
+      at: started,
+      session: sessionId,
+      mission: text.slice(0, 200),
+      task: 'chat',
+      mode: jevRt.jevSettings().mode,
+      jev: true,
+      level: 0,
+      decisionBy: 'direct',
+      model: 'JEV-0',
+      reason: 'réponse déterministe sans LLM',
+      tokensIn: 0,
+      tokensOut: 0,
+      cost: 0,
+      jevCost: 0,
+      latencyMs: Date.now() - started,
+      decisionMs: performance.now() - t0,
+      calls: 0,
+      quality: 100,
+      success: true,
+      retries: 0,
+      escalations: 0,
+      corrections: 0,
+      cacheHits: 0,
+      toolsOffered: 0,
+      toolsBaseline: 0,
+      toolTokens: 0,
+      toolTokensBaseline: 0,
+      contextBefore: 0,
+      contextAfter: 0,
+      checkpoints: [
+        {
+          name: 'JEV_PRE',
+          ms: performance.now() - t0,
+          tokens: 0,
+          cost: 0,
+          decision: 'L0 : réponse calculée, aucun appel LLM',
+        },
+      ],
+    });
+    if (useStore.getState().running[sessionId] === ac) {
+      const { [sessionId]: _r, ...running } = useStore.getState().running;
+      useStore.setState({ running });
+    }
+    return;
+  }
+  // Cognitive Fabric — MODEL COUNCIL (opt-in): single-turn tasks only; JEV decides how many models are worth it.
+  if (
+    fabricActive() &&
+    fabricRt.fabricSettings().council &&
+    !opts.fabric?.tag &&
+    (opts.mode ?? st.agentMode) !== 'plan' &&
+    (opts.mode ?? st.agentMode) !== 'mission' &&
+    fabricRt.councilEligible(
+      text,
+      attachments.map((a) => a.name),
+    )
+  ) {
+    try {
+      const pv = fabricRt.previewCouncil(text);
+      if (pv.plan.size >= 2) {
+        const run = await fabricRt.runCouncil(text, { preview: pv, signal: ac.signal });
+        st.pushItem(sessionId, {
+          kind: 'intel',
+          id: uid(),
+          title: `Conseil de modèles : ${run.plan.size} modèle(s)`,
+          tone: 'info',
+          lines: [
+            run.plan.reason,
+            ...run.plan.decisions.map((d) => d.reason),
+            `Gagnant : ${run.winner?.model ?? 'aucun'} — ${run.why}`,
+            `Coût total du conseil : ${run.totalCost.toFixed(5)} $`,
+          ],
+        });
+        if (run.winner) {
+          st.pushItem(sessionId, { kind: 'assistant', id: uid(), text: run.winner.answer });
+          st.patchSession(sessionId, (cur) => ({
+            history: [
+              ...cur.history,
+              { role: 'user', content: text },
+              { role: 'assistant', content: run.winner!.answer },
+            ],
+          }));
+        }
+        st.pushItem(sessionId, {
+          kind: 'usage',
+          id: uid(),
+          cost: run.totalCost,
+          promptTokens: 0,
+          completionTokens: 0,
+          model: run.winner?.model ?? 'conseil',
+          durationMs: Date.now() - started,
+        });
+        const { [sessionId]: _c, ...runningAfter } = useStore.getState().running;
+        useStore.setState({ running: runningAfter });
+        return;
+      }
+    } catch {
+      // The council must never block a mission: continue with the normal single-agent path.
+    }
+  }
+  sub.cost = sub.tokensIn = sub.tokensOut = 0;
+  acct.reset(sessionId);
+  // PREMIUM DESIGN FIRST: a request that asks for a deliverable (Excel, Word, PPT, PDF, mail, site, app) opens the
+  // gallery BEFORE any work — whatever tool the model uses afterwards (native exporter or its own Python code).
+  const wanted = deliverableFromText(text, attachments.map((a) => a.name));
+  // A new deliverable request picks its design again; « continue » keeps the design chosen for the mission it resumes.
+  if (wanted && !resumed) runDesign.delete(sessionId);
+  runHouse.delete(sessionId);
+  if (wanted) {
+    runHouse.add(sessionId);
+    runRequest.set(sessionId, text.slice(0, 300));
+  }
+  if (wanted && !experimentRun && st.settings.designPicker !== false && !designFor(sessionId) && !ac.signal.aborted) {
+    const d = await askDesign(sessionId, ac.signal, 'request', wanted, FORMATS_OF[wanted], FORMATS_OF[wanted].slice(0, 1));
+    if (d.formats?.length) runFormats.set(sessionId, d.formats);
+  }
+  // CHAT-SCOPED MEMORY: from here on, every file read / write / list of the agent is confined to this chat.
+  await scopeGate(sessionId);
+  setChatScope(sessionId, sessionAllow(sessionId));
+  // Starting state of the workspace (paired runs must start from the same context; `.ai/` memory excluded).
+  const ctxHash0 = hashText(
+    Object.values(files())
+      .filter((f) => !f.path.startsWith('.ai/') && !f.path.startsWith('downloads/'))
+      .map((f) => `${f.path}:${f.data.length}`)
+      .sort()
+      .join('|'),
+  );
+  runTeam.clear();
+  liveTrace = null;
+  currentPacket = null;
+  beginCheckpoint(sessionId, text);
+  // Mission boundary: the history firewall reads these marks (the raw history is never deleted).
+  st.patchSession(sessionId, (cur) => ({ turns: [...(cur.turns ?? []), { start: cur.history.length, text: missionTurn.slice(0, 400), at: Date.now() }].slice(-200) }));
+  let result: LoopResult | null = null;
+  let errored = false;
+  let failureNote = '';
+  const mode = opts.mode ?? st.agentMode;
+  try {
+    if (!st.models.length) {
+      const { loadCatalog } = await import('./llm');
+      useStore.setState({ models: await loadCatalog() });
+    }
+    result = await loop({
+      session,
+      agent: findAgent(session.agent, st.agents),
+      text,
+      attachments,
+      history: session.history,
+      plan: mode === 'plan',
+      mission: mode === 'mission',
+      depth: 0,
+      signal: ac.signal,
+      model: session.model,
+      effort: session.effort,
+    });
+  } catch (e) {
+    const cancelled = ac.signal.aborted || (e instanceof LLMError && e.code === 'cancelled');
+    errored = !cancelled;
+    if (errored) failureNote = redact(friendlyError(e)).slice(0, 200);
+    st.pushItem(sessionId, { kind: 'error', id: uid(), text: cancelled ? 'Interrompu.' : friendlyError(e) });
+    // Resume summary: an interrupted run can be continued with « continue ».
+    const trace = currentTrace();
+    if (trace && trace.messages.length > 3) {
+      const resume = compressTrajectory(trace.messages as never[], trace.goal);
+      st.patchSession(sessionId, { resume });
+      st.pushItem(sessionId, {
+        kind: 'intel',
+        id: uid(),
+        title: 'Résumé de reprise enregistré',
+        tone: 'info',
+        lines: ['Écrivez « continue » pour reprendre là où la mission s’est arrêtée.'],
+        detail: resume,
+      });
+    }
+  } finally {
+    void endCheckpoint();
+    // MAISON 2.0 at the END of the turn (after the model's last write, so it never re-works it): KPI cards + charts
+    // above each table of every Excel deliverable, in the chosen design's colours.
+    if (chatScope() === sessionId) {
+      try {
+        const n = await finishWorkbooks(sessionId, started);
+        if (n.length)
+          useStore.getState().pushItem(sessionId, { kind: 'intel', id: uid(), title: 'Design appliqué à tous les livrables', tone: 'info', lines: n });
+      } catch {
+        /* never blocks the end of the turn */
+      }
+    }
+    // LAST DELIVERY of this chat: what this run created or changed (chat-relative paths), before the scope is released.
+    const delivered = Object.values(filesFor(sessionId, sessionAllow(sessionId)))
+      .filter((f) => f.updatedAt >= started && !f.path.startsWith('.ai/') && !f.path.startsWith('downloads/'))
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .map((f) => f.path)
+      .slice(0, 12);
+    // Release the scope only if it is still ours (another chat may be running now).
+    if (chatScope() === sessionId) setChatScope(null);
+    const s = useStore.getState();
+    // Only OUR run is cleared (after a Stop the user may already have started a new one in this chat).
+    if (s.running[sessionId] === ac || !s.running[sessionId]) {
+      const { [sessionId]: _done, ...running } = s.running;
+      const { [sessionId]: _st, ...status } = s.status;
+      useStore.setState({ running, status });
+    }
+    const cost = (result?.cost ?? 0) + sub.cost;
+    const tin = (result?.tokensIn ?? 0) + sub.tokensIn;
+    const tout = (result?.tokensOut ?? 0) + sub.tokensOut;
+    s.patchSession(sessionId, (cur) => ({
+      // Keep images out of the stored history (they were sent once).
+      history: result
+        ? [
+            ...cur.history,
+            ...result.messages.map((m) =>
+              Array.isArray(m.content)
+                ? {
+                    ...m,
+                    content: m.content.map((p) =>
+                      p.type === 'image_url' ? { type: 'text' as const, text: '[image envoyée]' } : p,
+                    ),
+                  }
+                : m,
+            ),
+          ]
+        : cur.history,
+      items: [
+        ...cur.items,
+        {
+          kind: 'usage',
+          id: uid(),
+          cost,
+          promptTokens: tin,
+          completionTokens: tout,
+          model: result?.models.join(', ') ?? '',
+          models: result?.models,
+          fallbacks: result?.fallbacks,
+          verdict: result?.report?.status,
+          durationMs: Date.now() - started,
+        },
+      ],
+      verdict: result?.report?.status ?? (errored ? 'ERROR' : (cur.verdict ?? null)),
+      lastMode: mode,
+      // JEV SEMANTIC MEMORY of this chat: decisions / preferences said, and what was delivered.
+      memory: errored ? cur.memory : mergeFacts(cur.memory ?? [], extractFacts({ request: text, delivered }), 200),
+      // « auto »: the model picked by the first request stays the model of this chat.
+      pinnedModel:
+        cur.model === 'auto' && result?.models.length && !errored
+          ? (result.fallbacks ? result.models.at(-1) : (cur.pinnedModel ?? result.models[0]))
+          : cur.pinnedModel,
+      lastDelivery:
+        delivered.length && !errored
+          ? {
+              start: cur.history.length,
+              // An alteration keeps pointing at the files it modifies plus the rest of the same delivery.
+              paths: [...new Set([...delivered, ...(ALTERATION.test(text) ? (cur.lastDelivery?.paths ?? []) : [])])].slice(0, 12),
+              request: ALTERATION.test(text) && cur.lastDelivery ? cur.lastDelivery.request : text.slice(0, 300),
+              at: Date.now(),
+            }
+          : cur.lastDelivery,
+    }));
+    // LEARNING FROM ALTERATIONS: what the user had to ask after a delivery becomes a lesson for that task family.
+    const prevDelivery = session.lastDelivery;
+    if (!errored && prevDelivery && ALTERATION.test(text) && !opts.bench && !opts.fabric) {
+      const lesson = lessonFrom({ alteration: text, originalRequest: prevDelivery.request, tag: analyzeTask({ text: prevDelivery.request }).type });
+      if (lesson) {
+        // CONTROLLED SELF-LEARNING: the lesson is a PROPOSAL (security, stability, compatibility, design protection
+        // checked) — it changes nothing until the user validates it.
+        const s2 = useStore.getState();
+        const p = propose(lesson, text, s2.lessons);
+        if (!s2.updates.some((u) => u.fact.text === lesson.text) && !s2.lessons.some((l) => l.text === lesson.text)) s2.setUpdates([...s2.updates, p].slice(-50));
+        s2.pushItem(sessionId, { kind: 'intel', id: uid(), title: 'JEV — mise à jour proposée (en attente de votre validation)', tone: p.status === 'blocked' ? 'warn' : 'info', lines: [lesson.text, ...p.checks.map((c) => `${c.ok ? '✓' : '✗'} ${c.label} : ${c.note}`), 'Validez ou refusez dans JEV Cognitive OS → Vue d’ensemble → Mises à jour proposées. Rien n’est appliqué sans vous.'] });
+      }
+    }
+    // LEARNING: every run feeds the mission ledger (strategy evolution, failure memory,
+    // knowledge graph, regression suite).
+    if (result?.dna || errored) {
+      const sh = result?.shadow;
+      const verdict: LedgerEntry['verdict'] = result?.report?.status
+        ? result.report.status
+        : errored
+          ? 'ERROR'
+          : sh && !sh.didVerify && sh.didWrite
+            ? 'PARTIAL'
+            : 'PASSED';
+      const dnaE =
+        result?.dna ??
+        taskDna(
+          text,
+          attachments.map((a) => a.name),
+          analyzeTask({ text, attachmentNames: attachments.map((a) => a.name) }),
+        );
+      const entry: LedgerEntry = {
+        id: uid(),
+        at: started,
+        goal: text.slice(0, 400),
+        dna: dnaE,
+        tier: (result?.tier as LedgerEntry['tier']) ?? 'balanced',
+        model: result?.models[0] ?? session.model,
+        team: [...runTeam],
+        verdict,
+        challenged: result?.challenged,
+        cost,
+        durationMs: Date.now() - started,
+        steps: result?.steps ?? 0,
+        toolErrors: sh?.toolErrors.slice(-10) ?? [],
+        rounds: result?.report
+          ? (s.sessions.find((x) => x.id === sessionId)?.items.filter((i) => i.kind === 'mission').length ??
+            0)
+          : 0,
+        files: {
+          read: [...new Set(sh?.read ?? [])].slice(0, 40),
+          written: [...new Set(sh?.written ?? [])].slice(0, 40),
+        },
+        checks: result?.report?.checks ?? [],
+        session: sessionId,
+        agent: session.agent,
+        skills: result?.skills ?? [],
+        mcp: result?.mcp ?? [],
+        tools: result?.toolsUsed ?? [],
+        tokensIn: tin,
+        tokensOut: tout,
+        calls: result?.calls,
+        retries: result?.fallbacks ?? 0,
+        qa: result?.qa,
+        escalations: result?.escalations ?? 0,
+        decision: result?.decision
+          ? {
+              chosen: result.decision.chosen?.id ?? null,
+              tier: result.decision.tier,
+              confidence: result.decision.confidence,
+              mode: result.decision.mode,
+            }
+          : undefined,
+        lessons: [
+          ...(result?.report?.issues ?? []).slice(0, 3),
+          ...(sh?.toolErrors.slice(-2).map((t) => `${t.tool}: ${t.error.slice(0, 100)}`) ?? []),
+        ],
+      };
+      useStore.getState().setLedger(recordEntry(useStore.getState().ledger, entry));
+    }
+    // JEV_POST + JEV_LEARNING: measured telemetry of the run (JEV on, or baseline when off).
+    if (result || errored) {
+      const j = result?.jev ?? null;
+      const success = result?.report?.status
+        ? result.report.status === 'PASSED'
+        : errored
+          ? false
+          : j?.quality != null
+            ? j.quality >= 75
+            : null;
+      const trace: Checkpoint[] = j ? [...j.trace] : [];
+      if (j) {
+        trace.push({
+          name: 'JEV_EXECUTION',
+          ms: Date.now() - started,
+          tokens: tin + tout,
+          cost,
+          decision: `${result?.calls ?? 0} appel(s) LLM · ${result?.models.join(', ') || '—'}`,
+        });
+        trace.push({
+          name: 'JEV_POST',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: `qualité ${j.quality ?? '—'} · ${success === null ? 'non jugé' : success ? 'réussi' : 'échec'}`,
+        });
+        trace.push({
+          name: 'JEV_LEARNING',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: 'profils modèles, ledger et JEV_LOG mis à jour',
+        });
+        s.updateItem(sessionId, j.itemId, {
+          trace,
+          done: true,
+          live: result?.live
+            ? { state: result.live.state, checkpoints: result.live.checkpoints.slice(-40), at: Date.now() }
+            : undefined,
+          summary: `${fmtTok(tin + tout)} tokens · $${(cost + j.jevCost).toFixed(4)} · qualité ${j.quality ?? '—'}`,
+        });
+      }
+      const pk = j?.pre.packet;
+      // Separate ledgers: every paid call of the run (model, correction, tools, JEV), whatever the outcome.
+      const A = accountingOf([...acct.list(sessionId), ...(j?.calls ?? [])]);
+      acct.clear(sessionId);
+      const verdictQ = result?.measure ?? null;
+      const modelCalls = A.calls.filter((c) => !['tool', 'jev1', 'jev2', 'jev3'].includes(c.kind));
+      const modelIn = modelCalls.reduce((a, c) => a + c.tokensIn, 0);
+      const modelOut = modelCalls.reduce((a, c) => a + c.tokensOut, 0);
+      const exp = result?.exp;
+      const experiment =
+        opts.experiment && exp
+          ? {
+              ...opts.experiment,
+              variant: jevVariant(),
+              timestamp: started,
+              model: exp.initialModel,
+              modelVersion: useStore.getState().models.find((m) => m.id === exp.initialModel)?.slug ?? null,
+              modelsUsed: result?.models ?? [],
+              promptHash: hashText(text),
+              taskType: exp.taskType,
+              difficulty: exp.difficulty,
+              risk: exp.risk,
+              toolsAvailable: exp.toolsAvailable,
+              contextHash: ctxHash0,
+              temperature: exp.temperature,
+              maxTokens: exp.maxTokens,
+              jevMode: jevVariant() === 'off' ? 'off' : jevRt.jevSettings().mode,
+            }
+          : undefined;
+      jevRt.learn({
+        id: uid(),
+        at: started,
+        session: sessionId,
+        mission: text.slice(0, 200),
+        task: pk?.task_type ?? result?.dna?.type ?? 'chat',
+        mode: jevRt.jevSettings().mode,
+        jev: Boolean(j),
+        level: pk?.level ?? 0,
+        decisionBy: pk?.decided_by ?? 'JEV-0',
+        model: result?.models[0] ?? session.model,
+        reason: j?.pre.decision.why.model ?? '',
+        // An aborted / failed run has no result: its paid calls are still in the ledger.
+        tokensIn: result ? tin : modelIn,
+        tokensOut: result ? tout : modelOut,
+        cost: result ? cost : A.llmCost + A.correctionCost,
+        jevCost: A.jevCost,
+        latencyMs: Date.now() - started,
+        decisionMs: j?.decisionMs ?? 0,
+        calls: result?.calls ?? 0,
+        quality: j?.quality ?? result?.qa ?? null,
+        success,
+        retries: result?.fallbacks ?? 0,
+        escalations: result?.escalations ?? 0,
+        corrections: j?.corrections ?? 0,
+        cacheHits: j?.pre.cacheHits ?? 0,
+        toolsOffered: j?.toolsOffered ?? result?.baselineTools?.offered ?? 0,
+        toolsBaseline: result?.baselineTools?.offered ?? 0,
+        toolTokens: j?.toolTokens ?? result?.baselineTools?.tokens ?? 0,
+        toolTokensBaseline: result?.baselineTools?.tokens ?? 0,
+        contextBefore: j?.contextBefore ?? 0,
+        contextAfter: j?.contextAfter ?? 0,
+        checkpoints: trace,
+        bench: benchTag ?? undefined,
+        variant: jevVariant(),
+        rep: opts.rep,
+        wasted: result?.waste?.wasted,
+        wasteRate: result?.waste?.rate ?? null,
+        liveDecisions:
+          result?.live?.checkpoints.reduce(
+            (n, c) => n + c.decisions.filter((d) => d.action !== 'CONTINUE').length,
+            0,
+          ) ?? 0,
+        modelSwitches: result?.live?.switches ?? 0,
+        liveSavedTokens: result?.live?.state.savedTokens ?? 0,
+        overheadPct: result?.live?.overhead.pct ?? null,
+        promptWaste: result?.live?.promptWaste ?? 0,
+        acct: A,
+        experiment,
+        qualityMeasured: verdictQ ? verdictQ.score : null,
+        qualityVector: verdictQ?.vector,
+        qualitySource: verdictQ ? 'local-qa' : undefined,
+        driftEvents: result?.driftEvents,
+        stopReason: result?.stopReason || undefined,
+        policy: lastPolicy || undefined,
+        // ── Cognitive Fabric fields (additive) ──
+        toolsUsed: result?.toolsUsed,
+        toolCallCount: result?.toolCalls,
+        toolErrorCount: result?.toolErrors?.length,
+        toolErrors: result?.toolErrors?.length ? result.toolErrors : undefined,
+        skillsUsed: result?.fabricInfo?.skills.length
+          ? result.fabricInfo.skills.map((x) => x.split('@')[0]!)
+          : undefined,
+        classification: result?.fabricInfo?.classification,
+        failureNote: failureNote || undefined,
+        instruction:
+          fabricRt.fabricSettings().captureExamples || opts.fabric?.capture
+            ? redact(text).slice(0, 4000)
+            : undefined,
+        answer:
+          (fabricRt.fabricSettings().captureExamples || opts.fabric?.capture) && result?.text
+            ? redact(result.text).slice(0, 4000)
+            : undefined,
+        fabric: opts.fabric?.tag,
+        cognitive: result?.cognitiveInfo ? cognitiveRt.cognitiveTag(result.cognitiveInfo) : undefined,
+        omni: result?.omniTag,
+        apprentice: result?.apprenticeInfo
+          ? apprenticeRt.buildTag(result.apprenticeInfo.prep, {
+              models: result.apprenticeInfo.models,
+              quality: verdictQ ? verdictQ.score : (j?.quality ?? null),
+              success,
+              corrections: j?.corrections ?? 0,
+              teacherCost: A.calls
+                .filter(
+                  (c) =>
+                    c.model !== (result?.apprenticeInfo?.models[0] ?? '') &&
+                    !/:free$/.test(c.model) &&
+                    c.model !== 'jev',
+                )
+                .reduce((a, c) => a + c.cost, 0),
+              failureNote: failureNote || undefined,
+            })
+          : undefined,
+        config: {
+          model: result?.models[0] ?? session.model,
+          skills: result?.fabricInfo?.skills.map((x) => x.split('@')[0]!) ?? [],
+          capabilities: result?.offered ?? [],
+          tools: result?.toolsUsed ?? [],
+          memory: [],
+          evaluator: 'local-qa',
+          councilSize: 1,
+          strategy: pk?.agent_strategy ?? 'single-agent',
+          jev: jevVariant(),
+          fabric: Boolean(result?.fabricInfo?.active),
+          explored: Boolean(result?.fabricInfo?.explored),
+          why: result?.fabricInfo?.why.slice(0, 8) ?? [],
+        },
+      });
+      fabricRt.afterRun();
+      apprenticeRt.afterApprenticeRun(useStore.getState().jevLog.at(-1));
+    }
+    // Follow-ups typed while it worked and not taken by a step (a one-call answer): answered right away, in order.
+    const rest = takeQueued(sessionId);
+    if (rest.length && !ac.signal.aborted) setTimeout(() => void runAgent(sessionId, rest.join('\n\n'), [], { shown: true }), 0);
+  }
+}
+
+export function stopAgent(sessionId: string): void {
+  const st = useStore.getState();
+  st.running[sessionId]?.abort(new Error('Arrêté par l’utilisateur'));
+  // The chat is usable AT ONCE: a sub-step still finishing in the background (a judge, a tool) no longer holds it.
+  const { [sessionId]: _r, ...running } = st.running;
+  const { [sessionId]: _s, ...status } = st.status;
+  useStore.setState({ running, status });
+  queued.delete(sessionId);
+}
+
+// ── messages typed while the chat works (queued, never lost) ─────────────────────────────────────────────────────
+const queued = new Map<string, string[]>();
+/** Takes the queued follow-ups of a chat (they are sent to the model now). */
+function takeQueued(sid: string): string[] {
+  const q = queued.get(sid) ?? [];
+  queued.delete(sid);
+  return q;
+}
+/** The user writes while the chat is thinking / working: shown at once, given to the model at its next step, or
+ *  answered right after the current answer when no step remains. */
+export function queueMessage(sessionId: string, text: string): void {
+  const t = text.trim();
+  if (!t) return;
+  queued.set(sessionId, [...(queued.get(sessionId) ?? []), t]);
+  useStore.getState().pushItem(sessionId, { kind: 'user', id: uid(), text: t, attachments: [], ts: Date.now() });
+}
+
+export function resolveApproval(
+  id: string,
+  decision: 'approve' | 'deny',
+  opts: { always?: boolean; note?: string } = {},
+): void {
+  useStore.getState().pending.approvals.get(id)?.({ decision, ...opts });
+}
+
+/**
+ * The user validated a design card. Normally a running mission waits for it. A card left behind by a mission that was
+ * stopped (or by a page reload) has nobody waiting: the choice is then kept for the chat and the request is relaunched
+ * with it — a click on « Générer » never does nothing.
+ */
+export function resolveDesign(id: string, d: { choice: DesignChoice; formats?: string[]; remember: boolean }): 'resumed' | 'relaunched' | 'none' {
+  const st = useStore.getState();
+  const waiting = st.pending.designs.get(id);
+  if (waiting) {
+    waiting(d);
+    return 'resumed';
+  }
+  const sess = st.sessions.find((x) => x.items.some((i) => i.id === id));
+  if (!sess) return 'none';
+  const idx = sess.items.findIndex((i) => i.id === id);
+  const ask = [...sess.items.slice(0, idx)].reverse().find((i) => i.kind === 'user') as Extract<import('./types').Item, { kind: 'user' }> | undefined;
+  const lbl = modelById(d.choice.model) ? `Modèle « ${modelById(d.choice.model)!.name} »` : d.choice.clone ? 'Reproduction fidèle du design choisi' : d.choice.theme === 'custom' ? 'Design Internet' : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
+  st.updateItem(sess.id, id, { resolved: `${lbl} — relancé`, chosenFormats: d.formats });
+  // The design is kept for the chat (the relaunched request must not ask again), then the request runs again.
+  st.patchSession(sess.id, { design: d.choice });
+  if (!ask || st.running[sess.id]) return 'none';
+  const text = d.formats?.length ? `${ask.text}\n\n(Format choisi : ${d.formats.join(', ')}.)` : ask.text;
+  void runAgent(sess.id, text, ask.attachments ?? []);
+  return 'relaunched';
+}
+
+export function resolvePlan(id: string, decision: 'approve' | 'cancel', steps?: string[]): void {
+  useStore.getState().pending.plans.get(id)?.({ decision, steps });
+}

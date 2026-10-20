@@ -1,0 +1,34 @@
+{
+  "name": "massamba-studio-video",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MASSAMBA Studio Vidéo — Film Autopilot, vidéo IA, bac à sable « Réalisation », Studio 3D, moteur de la troupe, carnets Colab/Kaggle, juge JEV, fluidité, montage. Application séparée de MASSAMBA Workbench (16/10/2026).",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "preparer": "node outils/preparer.mjs",
+    "dev": "vite",
+    "build": "node outils/preparer.mjs --verifier && MASSAMBA_TROUPE_PACKS=1 vite build && node outils/livraison.mjs",
+    "build:simple": "vite build",
+    "livraison:envoyee": "node outils/livraison.mjs --envoyee",
+    "livraison:complet": "node outils/livraison.mjs --complet",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:moteur": "python3 outils/verif_moteur.py",
+    "video:scene": "tsx outils/video-scene-page.ts"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "^4.1.1",
+    "@gltf-transform/extensions": "^4.1.1",
+    "@pixiv/three-vrm": "^3.5.5",
+    "@types/three": "^0.186.0",
+    "cannon-es": "^0.20.0",
+    "mediabunny": "1.61.3",
+    "mp4-muxer": "^5.2.2",
+    "mp4box": "^2.4.1",
+    "three": "^0.186.1"
+  }
+}

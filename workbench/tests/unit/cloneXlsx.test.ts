@@ -1,0 +1,162 @@
+import { strFromU8, unzipSync } from 'fflate';
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { addNativeClone, removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
+import { addImageSheet, addLogoToOffice } from '../../server/services/officeLogo';
+import { maisonBand } from '../../server/services/maisonBand';
+import { DESIGN } from '../../server/services/houseDesign';
+import { cloneData } from '../../server/services/dashRender';
+import { houseXlsx } from '../../server/services/houseStyle';
+import { isTotalRow, pickTable, withoutTotals } from '../../server/services/tablePick';
+import { SPEC } from '../fixtures/dashSpec';
+
+const rows = Array.from({ length: 40 }, (_, i) => ({ Client: ['ALPHA SA', 'BETA SARL', 'GAMMA', 'DELTA'][i % 4]!, Segment: ['CORPORATE', 'CONSUMER'][i % 2]!, Date: new Date(Date.UTC(2025, i % 6, 5)), Montant: 1_000_000 * (i + 1) }));
+
+describe('the attached workbook: the DETAIL table, never the summary sheet nor TOTAL rows', () => {
+  it('TOTAL / sous-total rows are recognised (a client named « TOTAL SENEGAL » is not)', () => {
+    expect(isTotalRow({ a: 'TOTAL', b: 5 })).toBe(true);
+    expect(isTotalRow({ a: null, b: 'Sous-total top 10', c: 9 })).toBe(true);
+    expect(isTotalRow({ a: 'Total général' })).toBe(true);
+    expect(isTotalRow({ a: 'TOTAL SENEGAL SA', b: 3, c: 'L0001' })).toBe(false);
+    expect(isTotalRow({ a: 'TOTAL SENEGAL SA', b: 3, c: '100364529001' })).toBe(false);
+    expect(isTotalRow({ a: 'Total (610 lignes)', b: 9 })).toBe(true);
+    expect(isTotalRow({ a: 'TOTAL / MOYENNE', b: null, c: 4529967553 })).toBe(true); // the user's Provisions sheet
+    expect(withoutTotals([{ a: 'x' }, { a: 'TOTAL' }])).toHaveLength(1);
+  });
+  it('a summary « Dashboard » with blocks side by side loses to the detail sheet', () => {
+    const dash = { sheet: 'Dashboard', columns: ['col_1', 'Tranche', 'Douteux', 'col_5', 'Bande', 'Douteux_2'], rows: Array.from({ length: 21 }, (_, i) => ({ col_1: null, Tranche: `T${i}`, Douteux: i, col_5: null, Bande: 'b', Douteux_2: i })) };
+    const det = { sheet: 'Provisions', columns: ['Client', 'Total douteux', 'Provisions'], rows: [...Array.from({ length: 15 }, (_, i) => ({ Client: `C${i}`, 'Total douteux': i, Provisions: i })), { Client: 'TOTAL', 'Total douteux': 99, Provisions: 9 }] };
+    const p = pickTable([dash, det])!;
+    expect(p.sheet).toBe('Provisions');
+    expect(p.rows).toHaveLength(15);
+  });
+});
+
+describe('NATIVE reproduction of the chosen image in Excel', () => {
+  const base = houseXlsx(['Client', 'Segment', 'Date', 'Montant'], rows, { title: 'X', chart: 'none' });
+  const d = cloneData('Provisions — tableau de bord', ['Client', 'Segment', 'Date', 'Montant'], rows);
+  const r = addNativeClone(base, SPEC, d, { png: new Uint8Array([137, 80, 78, 71]), width: 1400, height: 788 })!;
+  const z = unzipSync(r.bytes);
+  const wb = strFromU8(z['xl/workbook.xml']!);
+  const dr = strFromU8(z['xl/drawings/drawing-dash.xml']!);
+  it('first sheet « Tableau de bord » (selected, opens on it), data sheet last, original sheets kept', () => {
+    expect(wb).toMatch(/<sheets><sheet name="Tableau de bord"/);
+    expect(wb).toMatch(/<sheet name="Données du tableau de bord"[^>]*\/><\/sheets>/);
+    expect(wb).toContain('name="Données"');
+    expect(strFromU8(z['xl/worksheets/sheet-dash.xml']!)).toContain('tabSelected="1"');
+    expect(strFromU8(z['xl/worksheets/sheet1.xml']!)).not.toContain('tabSelected="1"');
+  });
+  it('every chart panel is a NATIVE chart of its kind, in the panel colours, fed by the data sheet', () => {
+    expect(r.charts).toBe(4);
+    const kinds = [1, 2, 3, 4].map((k) => strFromU8(z[`xl/charts/chart-dash-${k}.xml`]!));
+    expect(kinds[0]).toContain('<c:barDir val="col"/>');
+    expect(kinds[1]).toContain('<c:doughnutChart>');
+    expect(kinds[2]).toContain('<c:lineChart>');
+    expect(kinds[3]).toContain('<c:barDir val="bar"/>');
+    expect(kinds[1]).toContain('7C3AED');
+    expect(kinds[0]).toContain("'Données du tableau de bord'!$A$2");
+    expect(kinds.every((k) => k.includes('Poppins'))).toBe(true);
+    const data = strFromU8(z['xl/worksheets/sheet-dash-data.xml']!);
+    expect(data).toContain('ALPHA SA');
+  });
+  it('frame, page, cards and the 4 KPI tiles (their own fills) are shapes; the table panel is the crop of the picture', () => {
+    expect(dr).toContain('name="Cadre"');
+    expect(dr).toContain('name="Page"');
+    expect((dr.match(/name="Indicateur 1\.\d"/g) ?? []).length).toBe(4);
+    for (const c of ['7C3AED', '22D3EE', 'F59E0B', '10B981']) expect(dr).toContain(`val="${c}"`);
+    expect(dr).toContain('<a:srcRect');
+    expect(r.crops).toBe(2); // table + text panels
+    expect(dr).toContain('Provisions — tableau de bord');
+  });
+  it('idempotent: a workbook that already has the reproduction is left alone', () => {
+    expect(addNativeClone(r.bytes, SPEC, d)).toBeNull();
+  });
+});
+
+describe('the model re-saved the workbook with openpyxl (shapes and pictures lost): the reproduction comes back intact', () => {
+  // Built by the app, then opened and saved by openpyxl with a sheet « Scénarios » added — as the model does.
+  const resaved = new Uint8Array(readFileSync(new URL('../fixtures/resaved-by-openpyxl.xlsx', import.meta.url)));
+  const names = (b: Uint8Array) => [...strFromU8(unzipSync(b)['xl/workbook.xml']!).matchAll(/<sheet\b[^>]*name="([^"]*)"/g)].map((m) => m[1]);
+  it('the degraded copy has lost the dashboard drawing (what the user saw: « vide, 1×1 + graphiques flottants »)', () => {
+    expect(unzipSync(resaved)['xl/drawings/drawing-dash.xml']).toBeUndefined();
+  });
+  const stripped = removeSheets(resaved, REPRO_SHEETS)!;
+  it('the app’s three sheets are removed with their drawings, charts and pictures; the model’s sheets stay', () => {
+    expect(names(stripped)).toEqual(['Données', 'Scénarios']);
+    const z = unzipSync(stripped);
+    const parts = Object.keys(z);
+    expect(parts.filter((p) => /^xl\/(drawings|charts|media)\//.test(p))).toEqual([]);
+    const ct = strFromU8(z['[Content_Types].xml']!);
+    for (const m of ct.matchAll(/PartName="\/([^"]+)"/g)) expect(parts).toContain(m[1]);
+    const rels = strFromU8(z['xl/_rels/workbook.xml.rels']!);
+    expect(rels).not.toMatch(/sheet[0-9]+\.xml"[^>]*\/>[\s\S]*sheet[0-9]+\.xml"[^>]*\/>[\s\S]*sheet[0-9]+\.xml"[^>]*\/>[\s\S]*sheet[0-9]+\.xml"/); // 2 sheets left
+  });
+  it('applied again: dashboard first and intact, the model’s « Scénarios » kept, data sheet last', () => {
+    const rows = Array.from({ length: 12 }, (_, i) => ({ Client: `C${i % 3}`, Montant: 10 * (i + 1) }));
+    const pic = { png: new Uint8Array([137, 80, 78, 71]), width: 1400, height: 788 };
+    const again = addNativeClone(addImageSheet(stripped, pic, 'Tableau de bord (image)')!, SPEC, cloneData('T', ['Client', 'Montant'], rows), pic)!;
+    expect(names(again.bytes)).toEqual(['Tableau de bord', 'Tableau de bord (image)', 'Données', 'Scénarios', 'Données du tableau de bord']);
+    expect(unzipSync(again.bytes)['xl/drawings/drawing-dash.xml']).toBeTruthy();
+    expect(removeSheets(houseXlsx(['a'], [{ a: 1 }], { title: 'x', chart: 'none' }), REPRO_SHEETS)).toBeNull(); // nothing of ours: untouched
+  });
+});
+
+describe('Excel opens the reproduction without « nous avons trouvé un problème dans le contenu »', () => {
+  // Excel rejects the WHOLE drawing when a data label carries a position its chart type does not support.
+  const ALLOWED: Record<string, string[]> = { barChart: ['outEnd', 'inEnd', 'inBase', 'ctr'], lineChart: ['t', 'b', 'l', 'r', 'ctr'], areaChart: [], doughnutChart: [], pieChart: ['bestFit', 'ctr', 'inEnd', 'outEnd'] };
+  const kinds = ['bar', 'hbar', 'line', 'area', 'pie', 'donut'] as const;
+  const spec = { ...SPEC, panels: kinds.map((k, i) => ({ ...SPEC.panels[1]!, kind: k, sequential: true, valueLabels: true, box: { x: (i % 3) * 0.33, y: 0.1 + Math.floor(i / 3) * 0.45, w: 0.3, h: 0.4 } })) };
+  const rows = Array.from({ length: 30 }, (_, i) => ({ Client: `C${i % 6}`, Date: new Date(Date.UTC(2025, i % 12, 3)), Montant: 1_000_000 * (i + 1) }));
+  const r = addNativeClone(houseXlsx(['Client', 'Date', 'Montant'], rows, { title: 'X', chart: 'none' }), spec, cloneData('T', ['Client', 'Date', 'Montant'], rows))!;
+  const z = unzipSync(r.bytes);
+  const charts = Object.keys(z).filter((p) => p.startsWith('xl/charts/')).map((p) => strFromU8(z[p]!));
+  it('every chart kind is produced', () => {
+    expect(charts.length).toBe(6);
+  });
+  it('label positions only where the chart type accepts them (none on area, doughnut)', () => {
+    for (const c of charts) {
+      const type = /<c:(\w+Chart)>/.exec(c)![1]!;
+      for (const m of c.matchAll(/<c:dLblPos val="(\w+)"\/>/g)) expect(ALLOWED[type], `${type} ${m[1]}`).toContain(m[1]);
+    }
+  });
+  it('an area or a line is one shape: no per-point colours', () => {
+    for (const c of charts.filter((x) => /<c:(area|line)Chart>/.test(x))) expect(c).not.toContain('<c:dPt>');
+  });
+});
+
+describe('MAISON 2.0 on the model’s own sheets: KPI cards and charts ABOVE the header, everything still pointing right', () => {
+  const src = new Uint8Array(readFileSync(new URL('../fixtures/model-sheets.xlsx', import.meta.url)));
+  const r = maisonBand(src, DESIGN)!;
+  const z = unzipSync(r.bytes);
+  const sheet = strFromU8(z['xl/worksheets/sheet1.xml']!);
+  it('the data sheet gets the band; a list of checks does not (summing it would mean nothing)', () => {
+    expect(r.banded).toEqual(['Ancienneté']);
+    expect(r.moved).toBe(1);
+  });
+  it('cards are live SUBTOTAL formulas on the shifted table, TOTAL row and rates left out', () => {
+    expect(sheet).toContain('SUBTOTAL(9,C27:C29)');
+    expect(sheet).toContain('SUBTOTAL(9,D27:D29)');
+    expect(sheet).not.toContain('SUBTOTAL(9,E27');
+    expect(sheet).toContain('<f>C27-D27</f>');
+    expect(sheet).not.toContain('<pane');
+  });
+  it('references from other sheets and the chart follow the rows', () => {
+    expect(strFromU8(z['xl/worksheets/sheet2.xml']!)).toContain("SUM('Ancienneté'!C27:C29)");
+    const chart = Object.keys(z).filter((p) => p.startsWith('xl/charts/')).map((p) => strFromU8(z[p]!)).join('');
+    expect(chart).toContain("'Ancienneté'!$C$27:$C$29");
+    const drawing = Object.keys(z).filter((p) => /drawings\/[^/]+\.xml$/.test(p)).map((p) => strFromU8(z[p]!)).join('');
+    const fromRow = +/<(?:xdr:)?from><(?:xdr:)?col>\d+<\/(?:xdr:)?col><(?:xdr:)?colOff>\d+<\/(?:xdr:)?colOff><(?:xdr:)?row>(\d+)</.exec(drawing)![1]!;
+    expect(fromRow).toBeLessThan(25); // the chart now sits ABOVE the header (row 26)
+  });
+  it('applied twice: nothing more (the sheet already has its band)', () => {
+    expect(maisonBand(r.bytes, DESIGN)).toBeNull();
+  });
+  it('the logo goes on EVERY sheet, once', () => {
+    const logo = { png: new Uint8Array([137, 80, 78, 71, 1, 2, 3]), width: 100, height: 50 };
+    const once = addLogoToOffice('x.xlsx', r.bytes, logo)!;
+    const zz = unzipSync(once);
+    const drawings = Object.keys(zz).filter((p) => /drawings\/[^/]+\.xml$/.test(p)).map((p) => strFromU8(zz[p]!));
+    expect(drawings.filter((d) => d.includes('name="Logo"')).length).toBe(3); // the two sheets + the Sommaire sheet
+    expect(addLogoToOffice('x.xlsx', once, logo)).toBeNull();
+  });
+});

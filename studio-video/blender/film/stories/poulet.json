@@ -1,0 +1,151 @@
+{
+ "title": "Le poulet de Tantie Awa",
+ "hook": "Qui a mangé le poulet ?",
+ "decor": "Salon",
+ "fps": 25,
+ "size": [
+  576,
+  1024
+ ],
+ "music": true,
+ "cast": [
+  {
+   "id": "awa",
+   "name": "TANTIE AWA",
+   "voice": "siwis",
+   "height": 1.62,
+   "x": -0.42
+  },
+  {
+   "id": "modou",
+   "name": "MODOU",
+   "voice": "tom",
+   "height": 1.76,
+   "x": 0.4
+  },
+  {
+   "id": "mamadou",
+   "name": "PETIT MAMADOU",
+   "voice": "jessica",
+   "height": 1.15,
+   "x": 0.02,
+   "pitch": 1.22,
+   "enter": 9
+  }
+ ],
+ "beats": [
+  {
+   "who": "awa",
+   "pose": "accuse",
+   "text": "Modou ! Qui a mangé le poulet que j’avais laissé là ?",
+   "react": {
+    "modou": "choc"
+   },
+   "shot": "two"
+  },
+  {
+   "who": "modou",
+   "pose": "choc",
+   "text": "Moi ? Tantie, je te jure, je dormais depuis midi !"
+  },
+  {
+   "who": "awa",
+   "pose": "accuse",
+   "text": "Tu dormais… avec la sauce sur ton tee-shirt ?"
+  },
+  {
+   "who": "modou",
+   "pose": "haussement",
+   "text": "Ça ? C’est la sauce d’hier, Tantie. Elle est vieille !"
+  },
+  {
+   "who": "awa",
+   "pose": "neutre",
+   "text": "Hier on a mangé du riz blanc. Sans sauce.",
+   "react": {
+    "modou": "choc"
+   }
+  },
+  {
+   "who": "modou",
+   "pose": "haussement",
+   "text": "Voilà pourquoi j’avais faim aujourd’hui !"
+  },
+  {
+   "who": "awa",
+   "pose": "accuse",
+   "text": "Modou, regarde-moi dans les yeux. Tu as mangé mon poulet ?"
+  },
+  {
+   "who": "modou",
+   "pose": "neutre",
+   "text": "Tantie, je suis un homme honnête. Demande à tout le quartier !"
+  },
+  {
+   "who": "awa",
+   "pose": "haussement",
+   "text": "Tout le quartier dit que tu manges même les os du voisin !",
+   "react": {
+    "modou": "choc"
+   }
+  },
+  {
+   "who": "mamadou",
+   "pose": "neutre",
+   "text": "Tantie ! Moi j’ai vu qui a mangé le poulet !",
+   "shot": "two"
+  },
+  {
+   "who": "awa",
+   "pose": "neutre",
+   "text": "Parle, mon fils. C’est qui ?"
+  },
+  {
+   "who": "mamadou",
+   "pose": "haussement",
+   "text": "C’est le chat !",
+   "react": {
+    "modou": "rire"
+   }
+  },
+  {
+   "who": "modou",
+   "pose": "rire",
+   "text": "Voilà ! Le chat ! Je l’ai toujours dit, ce chat est un voleur !"
+  },
+  {
+   "who": "awa",
+   "pose": "choc",
+   "text": "Mais on n’a pas de chat dans cette maison !"
+  },
+  {
+   "who": "mamadou",
+   "pose": "accuse",
+   "text": "Ah bon ? Alors c’est Tonton Modou. Il a les doigts tout jaunes !",
+   "react": {
+    "modou": "choc",
+    "awa": "accuse"
+   },
+   "shot": "two"
+  },
+  {
+   "who": "modou",
+   "pose": "choc",
+   "text": "Petit traître !",
+   "shot": "cu"
+  },
+  {
+   "who": "awa",
+   "pose": "accuse",
+   "text": "Modou ! Viens ici tout de suite !",
+   "react": {
+    "modou": "choc"
+   },
+   "shot": "two"
+  }
+ ],
+ "punch": {
+  "beat": 15,
+  "emoji": "😂"
+ }
+}

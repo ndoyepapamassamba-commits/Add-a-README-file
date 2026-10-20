@@ -1,0 +1,347 @@
+{
+ "generated": "2026-10-16",
+ "rule": "code et modèles exécutés chez nous : MIT, Apache-2.0 ou BSD (règle maison)",
+ "tools": [
+  {
+   "id": "ffmpeg",
+   "version": "6.1.1-3ubuntu5",
+   "license": "GPL-2.0-or-later",
+   "upstream": "https://ffmpeg.org/legal.html",
+   "mode": "local",
+   "capabilities": [
+    "encodage H.264/AAC",
+    "muxage",
+    "sous-titres incrustés (drawtext)",
+    "ffprobe : contrôle des pistes"
+   ],
+   "path": "/usr/bin/ffmpeg",
+   "health": {
+    "ok": true,
+    "detail": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers"
+   },
+   "state": "partial",
+   "policy": "hors règle maison — à remplacer ou à isoler",
+   "note": "paquet Ubuntu compilé avec --enable-gpl (libx264) : lancé comme processus séparé ; voie BSD possible = WebCodecs VP9/AV1 + mp4-muxer (MIT)"
+  },
+  {
+   "id": "ffprobe",
+   "version": "6.1.1-3ubuntu5",
+   "license": "GPL-2.0-or-later",
+   "upstream": "https://ffmpeg.org/",
+   "mode": "local",
+   "capabilities": [
+    "inspection durée / codec / i/s / audio"
+   ],
+   "path": "/usr/bin/ffprobe",
+   "health": {
+    "ok": true,
+    "detail": "ffprobe version 6.1.1-3ubuntu5 Copyright (c) 2007-2023 the FFmpeg developers"
+   },
+   "state": "partial",
+   "policy": "hors règle maison — à remplacer ou à isoler",
+   "note": ""
+  },
+  {
+   "id": "chromium-headless",
+   "version": "141.0.7390.37",
+   "license": "BSD-3-Clause",
+   "upstream": "https://www.chromium.org/",
+   "mode": "browser",
+   "capabilities": [
+    "WebGL (SwiftShader, CPU)",
+    "WebCodecs VP9/AV1/Opus (pas de H.264/AAC dans ce build)"
+   ],
+   "path": "playwright",
+   "health": {
+    "ok": true,
+    "detail": "141.0.7390.37"
+   },
+   "state": "ready",
+   "policy": "conforme (MIT/Apache/BSD)",
+   "note": ""
+  },
+  {
+   "id": "playwright",
+   "version": "1.56.1",
+   "license": "Apache-2.0",
+   "upstream": "https://github.com/microsoft/playwright",
+   "mode": "local",
+   "capabilities": [
+    "pilotage du navigateur sans écran",
+    "rendu image par image (window.__frame)"
+   ],
+   "path": "node_modules/playwright",
+   "health": {
+    "ok": true,
+    "detail": "npm"
+   },
+   "state": "ready",
+   "policy": "conforme (MIT/Apache/BSD)",
+   "note": ""
+  },
+  {
+   "id": "three",
+   "version": "0.186.1",
+   "license": "MIT",
+   "upstream": "https://github.com/mrdoob/three.js",
+   "mode": "browser",
+   "capabilities": [
+    "décor en relief",
+    "personnages maillés",
+    "étalonnage"
+   ],
+   "path": "node_modules/three",
+   "health": {
+    "ok": true,
+    "detail": "npm"
+   },
+   "state": "ready",
+   "policy": "conforme (MIT/Apache/BSD)",
+   "note": ""
+  },
+  {
+   "id": "mp4-muxer",
+   "version": "5.2.2",
+   "license": "MIT",
+   "upstream": "https://github.com/Vanilagy/mp4-muxer",
+   "mode": "browser",
+   "capabilities": [
+    "MP4 depuis WebCodecs dans la page"
+   ],
+   "path": "node_modules/mp4-muxer",
+   "health": {
+    "ok": true,
+    "detail": "npm"
+   },
+   "state": "ready",
+   "policy": "conforme (MIT/Apache/BSD)",
+   "note": ""
+  },
+  {
+   "id": "mediabunny",
+   "version": "1.61.3",
+   "license": "MPL-2.0",
+   "upstream": "https://github.com/Vanilagy/mediabunny",
+   "mode": "browser",
+   "capabilities": [
+    "muxage MP4/WebM dans l’app"
+   ],
+   "path": "node_modules/mediabunny",
+   "health": {
+    "ok": true,
+    "detail": "npm"
+   },
+   "state": "partial",
+   "policy": "hors règle maison — à remplacer ou à isoler",
+   "note": "copyleft faible au niveau fichier (MPL-2.0)"
+  },
+  {
+   "id": "mediapipe",
+   "version": "1.1.0",
+   "license": "Apache-2.0",
+   "upstream": "https://github.com/google-ai-edge/mediapipe",
+   "mode": "local",
+   "capabilities": [
+    "squelette BlazePose mesuré sur chaque dessin (poignées ARAP)"
+   ],
+   "path": "python",
+   "health": {
+    "ok": true,
+    "detail": ""
+   },
+   "state": "ready",
+   "policy": "conforme (MIT/Apache/BSD)",
+   "note": "modèle pose_landmarker_heavy.task : fiche de modèle à relire (licence du modèle distincte du code)"
+  },
+  {
+   "id": "opencv",
+   "version": "5.0.0.93",
+   "license": "Apache-2.0",
+   "upstream": "https://opencv.org/license/",
+   "mode": "local",
+   "capabilities": [
+    "retouche de couture (inpaint Telea)",
+    "mesures QA"
+   ],
+   "path": "python",
+   "health": {
+    "ok": true,
+    "detail": ""
+   },
+   "state": "ready",
+   "policy": "conforme (MIT/Apache/BSD)",
+   "note": ""
+  },
+  {
+   "id": "onnxruntime",
+   "version": "1.31.0",
+   "license": "MIT",
+   "upstream": "https://github.com/microsoft/onnxruntime",
+   "mode": "local",
+   "capabilities": [
+    "inférence CPU (profondeur, inpainting)"
+   ],
+   "path": "python",
+   "health": {
+    "ok": true,
+    "detail": ""
+   },
+   "state": "ready",
+   "policy": "conforme (MIT/Apache/BSD)",
+   "note": ""
+  },
+  {
+   "id": "numpy",
+   "version": "2.4.6",
+   "license": "BSD-3-Clause",
+   "upstream": "https://numpy.org/",
+   "mode": "local",
+   "capabilities": [
+    "quilting du sol",
+    "contrôles"
+   ],
+   "path": "python",
+   "health": {
+    "ok": true,
+    "detail": ""
+   },
+   "state": "ready",
+   "policy": "conforme (MIT/Apache/BSD)",
+   "note": ""
+  },
+  {
+   "id": "piper-tts",
+   "version": "1.8.0",
+   "license": "GPL-3.0-or-later",
+   "upstream": "https://github.com/OHF-voice/piper1-gpl",
+   "mode": "local",
+   "capabilities": [
+    "synthèse vocale FR",
+    "durées de phonèmes (include_alignments)"
+   ],
+   "path": "python",
+   "health": {
+    "ok": true,
+    "detail": ""
+   },
+   "state": "partial",
+   "policy": "hors règle maison — à remplacer ou à isoler",
+   "note": "piper1-gpl : licence GPL-3.0 (l’ancien rhasspy/piper était MIT) — à remplacer (Kokoro-82M Apache-2.0, Pocket TTS MIT) ou à isoler en processus séparé"
+  },
+  {
+   "id": "voix-fr_FR-siwis-medium",
+   "version": "medium",
+   "license": "CC-BY-4.0",
+   "upstream": "https://huggingface.co/rhasspy/piper-voices",
+   "mode": "local",
+   "capabilities": [
+    "voix de Maman Nounou"
+   ],
+   "path": "scratchpad/piper",
+   "health": {
+    "ok": true,
+    "detail": "fichier ONNX présent pendant le tournage"
+   },
+   "state": "ready",
+   "policy": "conforme (MIT/Apache/BSD)",
+   "note": "attribution obligatoire (crédit incrusté en fin de film)"
+  },
+  {
+   "id": "voix-fr_FR-tom-medium",
+   "version": "medium",
+   "license": "AGPL-3.0-only",
+   "upstream": "https://huggingface.co/rhasspy/piper-voices",
+   "mode": "local",
+   "capabilities": [
+    "voix de Modou"
+   ],
+   "path": "scratchpad/piper",
+   "health": {
+    "ok": true,
+    "detail": "fichier ONNX présent pendant le tournage"
+   },
+   "state": "partial",
+   "policy": "hors règle maison — à remplacer ou à isoler",
+   "note": "fiche du modèle : entraîné sur des données sous AGPLv3 — à remplacer avant diffusion"
+  },
+  {
+   "id": "rhubarb-lip-sync",
+   "version": "1.14.0",
+   "license": "MIT",
+   "upstream": "https://github.com/DanielSWolf/rhubarb-lip-sync",
+   "mode": "local",
+   "capabilities": [
+    "contrôle indépendant des fermetures de bouche (mode phonétique)"
+   ],
+   "path": "/root/.cache/massamba-models/rhubarb/Rhubarb-Lip-Sync-1.14.0-Linux/rhubarb",
+   "health": {
+    "ok": true,
+    "detail": "Rhubarb Lip Sync version 1.14.0"
+   },
+   "state": "ready",
+   "policy": "conforme (MIT/Apache/BSD)",
+   "note": ""
+  },
+  {
+   "id": "synfig",
+   "version": "1.5.1",
+   "license": "GPL-3.0-or-later",
+   "upstream": "https://github.com/synfig/synfig",
+   "mode": "local",
+   "capabilities": [
+    "rendu cut-out PNG en ligne de commande (évalué)"
+   ],
+   "path": "/usr/bin/synfig",
+   "health": {
+    "ok": false,
+    "detail": "synfig 1.5.1"
+   },
+   "state": "blocked",
+   "policy": "hors règle maison — à remplacer ou à isoler",
+   "note": "évalué par la veille, non utilisé dans le film"
+  },
+  {
+   "id": "melt",
+   "version": "7.22.0",
+   "license": "LGPL-2.1-or-later",
+   "upstream": "https://github.com/mltframework/mlt",
+   "mode": "local",
+   "capabilities": [
+    "rendu de timeline sans écran (évalué)"
+   ],
+   "path": "/usr/bin/melt",
+   "health": {
+    "ok": true,
+    "detail": "melt 7.22.0"
+   },
+   "state": "partial",
+   "policy": "hors règle maison — à remplacer ou à isoler",
+   "note": "évalué par la veille, non utilisé dans le film"
+  }
+ ],
+ "summary": {
+  "ready": [
+   "chromium-headless",
+   "playwright",
+   "three",
+   "mp4-muxer",
+   "mediapipe",
+   "opencv",
+   "onnxruntime",
+   "numpy",
+   "voix-fr_FR-siwis-medium",
+   "rhubarb-lip-sync"
+  ],
+  "partial": [
+   "ffmpeg",
+   "ffprobe",
+   "mediabunny",
+   "piper-tts",
+   "voix-fr_FR-tom-medium",
+   "melt"
+  ],
+  "blocked": [
+   "synfig"
+  ]
+ }
+}

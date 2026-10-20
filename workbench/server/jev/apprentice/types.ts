@@ -1,0 +1,295 @@
+// JEV APPRENTICE — shared types. "JEV-ADAPTED" means INFERENCE-TIME ADAPTATION (Task DNA, skill capsule,
+// validated examples, failure rules, minimal tools, output contract). It never means modified weights.
+import type { DataClass } from '../fabric/types';
+
+export type Risk = 'low' | 'normal' | 'high' | 'critical';
+export type Confidence = 'LOW' | 'MEDIUM' | 'HIGH';
+/** FREE: seen only without adaptation · ADAPTED: runs with adaptation · SPECIALIST: proven on a task family · VALIDATED: profile version benchmarked. */
+export type JevStatus = 'FREE' | 'ADAPTED' | 'SPECIALIST' | 'VALIDATED' | 'DEGRADED';
+
+export interface TaskDNA {
+  task_type: string;
+  task_family: string;
+  difficulty: number;
+  risk: Risk;
+  ambiguity: number;
+  language: 'fr' | 'en' | 'other';
+  domain: string;
+  expected_output: string;
+  success_criteria: string[];
+  tool_requirements: string[];
+  context_size: number;
+  reasoning_requirement: boolean;
+  structured_output_requirement: boolean;
+  /** Output contract of the task (structured_json / table / code / list / number / narrative). */
+  output_contract: string;
+  /** The answer depends on fresh external facts (news, live prices…): a model without web tools cannot guarantee it. */
+  freshness_requirement: boolean;
+  latency_requirement: 'low' | 'normal' | 'relaxed';
+  cost_constraint: 'zero' | 'low' | 'normal';
+  /** 0–1: the quality gate this task must clear. */
+  quality_threshold: number;
+}
+
+export interface FreeCaps {
+  id: string;
+  provider: string;
+  tools: boolean;
+  vision: boolean;
+  structuredOutputs: boolean;
+  reasoning: boolean;
+  contextLength: number;
+}
+
+export interface Eligibility {
+  eligible: boolean;
+  /** 0–1 share of the requirements the model meets. */
+  score: number;
+  reasons: string[];
+  blockedBy?: 'security' | 'capability' | 'critical' | 'context';
+}
+
+/** What the runtime records on a JEV_LOG entry for an apprentice-routed mission. */
+export interface ApprenticeTag {
+  /** Free-first was active for this mission. */
+  active: boolean;
+  /** Inference-time adaptation applied (capsule injected). */
+  adapted: boolean;
+  family: string;
+  /** Models tried in order (apprentice first, then fallbacks actually used). */
+  path: string[];
+  threshold: number;
+  /** Final gate score 0–1 (null = not measured). */
+  gateScore: number | null;
+  accepted: boolean;
+  adaptationMs: number;
+  tokensAdded: number;
+  skills: string[];
+  experiences: number;
+  toolsExposed: number;
+  /** 0–1: share of the uncompressed capsule removed. */
+  contextReduction: number | null;
+  predictedSuccess: number | null;
+  confidence: Confidence;
+  profileVersion?: string;
+  teacher?: string;
+  teacherCost?: number;
+  fallbackFrom?: string;
+  rateLimited?: boolean;
+  classification?: DataClass;
+  /** Demo / benchmark arm. */
+  arm?: ApprenticeArm;
+  why: string[];
+  // ── Supremacy engine ──
+  /** Routing level (0 local · 1 validated apprentice · 2 free specialist · 3 free + micro-adaptation · 4 correction · 5 premium specialist · 6 council · 7 frontier). */
+  level?: number;
+  /** Served by the VALIDATED champion of the family. */
+  champion?: boolean;
+  /** Failure learning: what failed, how it was corrected, who succeeded. */
+  failure?: FailureLearning;
+  cache?: {
+    hit: boolean;
+    retrievalMs: number;
+    compilationMs: number;
+    contextBefore: number;
+    contextAfter: number;
+  };
+  supremacy?: number | null;
+  // ── Champion Science (strata of the mission, for matched comparisons) ──
+  risk?: Risk;
+  contract?: string;
+  difficulty?: number;
+  toolProfile?: string;
+  contextBucket?: string;
+  lang?: string;
+  /** Wall time of the whole routing decision (ms, measured). */
+  decisionMs?: number;
+  /** Controlled-experiment role of this run. */
+  experiment?: { role: 'champion' | 'challenger' | 'premium'; champion: string; challenger: string | null };
+}
+export interface FailureLearning {
+  signature: string;
+  correction: string;
+  retryModel: string | null;
+  fallbackModel: string | null;
+  teacher: string | null;
+  outcome: 'recovered' | 'escalated' | 'unresolved';
+}
+
+export type ApprenticeArm =
+  'free' | 'free_jev' | 'free_skill' | 'free_skill_exp' | 'validated' | 'challenger' | 'paid';
+export const APPRENTICE_ARMS: ApprenticeArm[] = [
+  'free',
+  'free_jev',
+  'free_skill',
+  'free_skill_exp',
+  'validated',
+  'challenger',
+  'paid',
+];
+export const ARM_NAME: Record<ApprenticeArm, string> = {
+  free: 'A · Free model baseline',
+  free_jev: 'B · Free + JEV',
+  free_skill: 'B2 · Free + JEV Skill (ablation)',
+  free_skill_exp: 'C · Free specialist (JEV + Skill + Experience)',
+  validated: 'D · Validated Apprentice (champion)',
+  challenger: 'E · Challenger',
+  paid: 'F · Premium reference (measured)',
+};
+
+export interface ApprenticeSettings {
+  /** Master switch. Off → the V5 router decides exactly as before. */
+  enabled: boolean;
+  /** Quality gate (0–1) by risk class. */
+  gates: Record<Risk, number>;
+  /** ApprenticeScore weights (sum normalised at use). */
+  weights: ApprenticeWeights;
+  /** Capsule budget in tokens. */
+  capsuleBudget: number;
+  /** Minimum predicted success to use a free model on a CRITICAL task (else premium directly). */
+  criticalConfidence: number;
+  /** Provider for free models are never trusted with data above this class unless the user declared a policy. */
+  maxFreeAttempts: number;
+  /** After the capped attempts, try every other eligible free model before falling back to V5. */
+  tryAllFree: boolean;
+  /** Highest tolerated failure risk (1 − predicted success) to try a free model, by task risk. */
+  maxFailureRisk: Record<Risk, number>;
+  /** Validation thresholds and supremacy weights (configurable). */
+  validation: ValidationRules;
+  lab: LabSettings;
+  supremacy: SupremacyWeights;
+  /** Horizon (days) used to project the reuse value of a Teacher call — a PROJECTION, labelled as such. */
+  horizonDays: number;
+  /** Teacher activation: allow proactive teacher sessions (learning), always gated by the governor. */
+  teacher: boolean;
+  /** $ value of one quality point (policy parameter, not a measurement). */
+  valuePerPoint: number;
+}
+/** Conditions to become VALIDATED (all must hold; insufficient data ⇒ INSUFFICIENT SAMPLE, never validated). */
+export interface ValidationRules {
+  minMissions: number;
+  minFormulations: number;
+  minSuccess: number;
+  minQuality: number;
+  maxCriticalErrors: number;
+  minRecentSuccess: number;
+  minConfidence: Confidence;
+  /** Stricter bars for HIGH / CRITICAL families. */
+  high: { success: number; quality: number };
+  critical: { success: number; quality: number };
+  /** Half-life of an observation, in days (recency weighting). */
+  halfLifeDays: number;
+}
+export const DEFAULT_VALIDATION: ValidationRules = {
+  minMissions: 10,
+  minFormulations: 3,
+  minSuccess: 0.9,
+  minQuality: 90,
+  maxCriticalErrors: 0,
+  minRecentSuccess: 0.85,
+  minConfidence: 'MEDIUM',
+  high: { success: 0.95, quality: 93 },
+  critical: { success: 0.98, quality: 97 },
+  halfLifeDays: 30,
+};
+/** Champion / Challenger lab thresholds (editable in Policy Engine). */
+export interface LabSettings {
+  /** Non-inferiority margin on quality, in points (0–100). */
+  margin: number;
+  /** Non-inferiority margin on success rate (0–1). */
+  successMargin: number;
+  /** Confidence level of the intervals. */
+  confidence: number;
+  /** Minimum n per arm to conclude, by risk (HIGH / CRITICAL need more). */
+  minN: Record<Risk, number>;
+  /** Rolling window (missions) for degradation detection. */
+  window: number;
+  /** Quality drop (points) of the rolling window below the historical lower bound that means DEGRADED. */
+  degradeDrop: number;
+  /** New missions required between two champion changes (a single mission never promotes). */
+  cooldown: number;
+  /** Share (0–1) of LOW / NORMAL missions routed to a challenger as a controlled shadow test. 0 = off. */
+  exploration: number;
+  /** Update the lab after every real mission (needs Apprentice enabled). */
+  continuous: boolean;
+  /** A challenger may cost at most this ratio of the champion's total mission cost, and be this much slower. */
+  costTolerance: number;
+  latencyTolerance: number;
+  /** Only the most recent controlled pairs count (a challenger that improved is judged on its recent behaviour). */
+  pairWindow: number;
+}
+export const DEFAULT_LAB: LabSettings = {
+  margin: 2,
+  successMargin: 0.05,
+  confidence: 0.95,
+  minN: { low: 10, normal: 20, high: 30, critical: 50 },
+  window: 10,
+  degradeDrop: 8,
+  cooldown: 5,
+  exploration: 0,
+  continuous: true,
+  costTolerance: 2,
+  latencyTolerance: 2,
+  pairWindow: 40,
+};
+
+/** ApprenticeSupremacyScore weights (normalised at use). */
+export interface SupremacyWeights {
+  task: number;
+  quality: number;
+  success: number;
+  confidence: number;
+  reliability: number;
+  tool: number;
+  structured: number;
+  latency: number;
+  economic: number;
+}
+export const DEFAULT_SUPREMACY: SupremacyWeights = {
+  task: 0.25,
+  quality: 0.2,
+  success: 0.15,
+  confidence: 0.1,
+  reliability: 0.1,
+  tool: 0.05,
+  structured: 0.05,
+  latency: 0.05,
+  economic: 0.05,
+};
+
+export interface ApprenticeWeights {
+  success: number;
+  quality: number;
+  expertise: number;
+  tool: number;
+  structured: number;
+  reliability: number;
+  latency: number;
+  cost: number;
+}
+export const DEFAULT_WEIGHTS: ApprenticeWeights = {
+  success: 0.3,
+  quality: 0.2,
+  expertise: 0.15,
+  tool: 0.1,
+  structured: 0.1,
+  reliability: 0.05,
+  latency: 0.05,
+  cost: 0.05,
+};
+export const DEFAULT_APPRENTICE: ApprenticeSettings = {
+  enabled: false,
+  gates: { low: 0.85, normal: 0.9, high: 0.93, critical: 0.97 },
+  weights: DEFAULT_WEIGHTS,
+  validation: DEFAULT_VALIDATION,
+  lab: DEFAULT_LAB,
+  supremacy: DEFAULT_SUPREMACY,
+  horizonDays: 30,
+  capsuleBudget: 700,
+  criticalConfidence: 0.85,
+  maxFailureRisk: { low: 0.6, normal: 0.55, high: 0.4, critical: 0.15 },
+  maxFreeAttempts: 3,
+  tryAllFree: true,
+  teacher: true,
+  valuePerPoint: 0.002,
+};

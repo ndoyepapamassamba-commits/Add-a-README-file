@@ -1,0 +1,123 @@
+[
+ {
+  "titre": "Koffi le faux riche",
+  "lieu": "Maquis",
+  "repliques": [
+   {
+    "qui": "COUMBA",
+    "texte": "Koffi, pourquoi tu portes tes lunettes noires la nuit ?"
+   },
+   {
+    "qui": "KOFFI",
+    "texte": "Ma chérie, c'est la classe. Les gens riches brillent trop, dêh."
+   },
+   {
+    "qui": "COUMBA",
+    "texte": "Ah bon ? Alors c'est toi qui paies le poisson braisé."
+   },
+   {
+    "qui": "KOFFI",
+    "texte": "Doucement, parle pas fort, hein."
+   },
+   {
+    "qui": "COUMBA",
+    "texte": "Pourquoi ? Monsieur le riche a peur de qui ?"
+   },
+   {
+    "qui": "KOFFI",
+    "texte": "Du patron du maquis. Je lui dois dix poissons."
+   },
+   {
+    "qui": "COUMBA",
+    "texte": "Et tes lunettes noires, ça change quoi ?"
+   },
+   {
+    "qui": "KOFFI",
+    "texte": "Lunettes noires, patron me voit pas !",
+    "chute": true
+   }
+  ]
+ },
+ {
+  "titre": "Papi était premier",
+  "lieu": "Cour",
+  "repliques": [
+   {
+    "qui": "MAMAN NOUNOU",
+    "texte": "Mamadou ! Ton bulletin là, tu l'as caché où ?"
+   },
+   {
+    "qui": "PETIT MAMADOU",
+    "texte": "Mamie, la maîtresse a dit : c'est confidentiel."
+   },
+   {
+    "qui": "BAYE NDIAYE",
+    "texte": "Laisse l'enfant, hein ! Moi, à son âge, j'étais premier !"
+   },
+   {
+    "qui": "MAMAN NOUNOU",
+    "texte": "Premier ? Premier de quoi ?"
+   },
+   {
+    "qui": "BAYE NDIAYE",
+    "texte": "De tout Abidjan ! Le maître copiait sur moi !"
+   },
+   {
+    "qui": "MAMAN NOUNOU",
+    "texte": "Ah bon ? Où est ton bulletin à toi, alors ?"
+   },
+   {
+    "qui": "BAYE NDIAYE",
+    "texte": "Dêh ! Les termites ont tout mangé depuis."
+   },
+   {
+    "qui": "MAMAN NOUNOU",
+    "texte": "Mamadou, dernière fois : il est où ?"
+   },
+   {
+    "qui": "PETIT MAMADOU",
+    "texte": "Caché chez tes termites, Papi !",
+    "chute": true
+   }
+  ]
+ },
+ {
+  "titre": "Le loyer qui marche à pied",
+  "lieu": "Chambre",
+  "repliques": [
+   {
+    "qui": "TANTIE AWA",
+    "texte": "Modou ! Tout le quartier a payé le loyer, sauf toi !"
+   },
+   {
+    "qui": "MODOU",
+    "texte": "Tantie, ça va aller. L'argent est en route."
+   },
+   {
+    "qui": "TANTIE AWA",
+    "texte": "En route depuis trois mois ? Il vient à pied ?"
+   },
+   {
+    "qui": "MODOU",
+    "texte": "Il est coincé dans les embouteillages de Yopougon."
+   },
+   {
+    "qui": "TANTIE AWA",
+    "texte": "Trois mois d'embouteillage ?"
+   },
+   {
+    "qui": "MODOU",
+    "texte": "Et la banque est gâtée aussi, Tantie."
+   },
+   {
+    "qui": "TANTIE AWA",
+    "texte": "Mais hier, tu as payé garba à tout le quartier !"
+   },
+   {
+    "qui": "MODOU",
+    "texte": "Le quartier te dit merci, Tantie !",
+    "chute": true
+   }
+  ]
+ }
+]

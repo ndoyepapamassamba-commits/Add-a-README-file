@@ -1,0 +1,391 @@
+// Virtual workspace stored in the browser (IndexedDB): uploaded and generated files.
+import { zipSync } from 'fflate';
+import { isDocument, isImage, mimeFor, extractDocumentBytes } from '../../server/services/documentsCore';
+import { extOf } from '../../server/services/dataCore';
+import { useStore } from './store';
+import type { VFile } from './types';
+
+const TEXT_EXT = new Set([
+  '.txt',
+  '.md',
+  '.markdown',
+  '.csv',
+  '.tsv',
+  '.json',
+  '.jsonl',
+  '.ndjson',
+  '.xml',
+  '.yaml',
+  '.yml',
+  '.html',
+  '.htm',
+  '.css',
+  '.js',
+  '.mjs',
+  '.cjs',
+  '.ts',
+  '.tsx',
+  '.jsx',
+  '.py',
+  '.java',
+  '.kt',
+  '.swift',
+  '.go',
+  '.rs',
+  '.rb',
+  '.php',
+  '.sql',
+  '.sh',
+  '.bat',
+  '.ps1',
+  '.ini',
+  '.toml',
+  '.env.example',
+  '.svg',
+  '.c',
+  '.h',
+  '.cpp',
+  '.cs',
+  '.dart',
+  '.vue',
+  '.svelte',
+  '.r',
+  '.tex',
+  '.log',
+  '.rtf',
+]);
+
+export function normPath(p: string): string {
+  const parts: string[] = [];
+  for (const seg of p.replace(/\\/g, '/').split('/')) {
+    if (!seg || seg === '.') continue;
+    if (seg === '..') throw new Error(`Chemin invalide : ${p}`);
+    parts.push(seg);
+  }
+  if (!parts.length) throw new Error('Chemin vide');
+  return parts.join('/');
+}
+
+export function isTextPath(p: string): boolean {
+  const ext = extOf(p);
+  return TEXT_EXT.has(ext) || ext === '';
+}
+
+// ── CHAT-SCOPED MEMORY (hard isolation) ─────────────────────────────────────────────────────────────────────────
+// Every chat owns its own workspace: files written during a chat (outputs, edits, `.ai/` memory) are stored under
+// `@chat/<sessionId>/<path>` and the agent of that chat sees them at `<path>`. Another chat's files are NEVER listed,
+// searched, read or written. A file of the shared workspace (Files view, legacy) is visible to a chat only when the chat
+// attached it or the user named it in that chat; the shared `.ai/` memory is never visible inside a chat.
+export const CHAT_PREFIX = '@chat/';
+interface ChatScope {
+  sid: string;
+  /** Shared-workspace paths this chat may see (attachments, paths named by the user). */
+  allow: Set<string>;
+}
+let scope: ChatScope | null = null;
+export function setChatScope(sid: string | null, allow: Iterable<string> = []): void {
+  scope = sid ? { sid, allow: new Set(allow) } : null;
+}
+export const chatScope = (): string | null => scope?.sid ?? null;
+// ── SCOPE LOCK: the scope is one global, and the browser has no async context. Two chats running at the same time
+// used to swap it while a tool was awaiting (Python, exports) — the outputs and attachments of one chat landed in the
+// other. Now a chat holds the lock while its tools run (and while its context is built): another chat waits for it.
+// Same-chat parallel / nested calls are re-entrant.
+let holder: string | null = null;
+let depth = 0;
+let waiters: Array<() => void> = [];
+const free = (sid: string) => !holder || holder === sid;
+/** Wait until no OTHER chat holds the scope lock. */
+export async function scopeGate(sid: string, maxWaitMs = 20_000, signal?: AbortSignal): Promise<void> {
+  const until = Date.now() + maxWaitMs;
+  while (!free(sid)) {
+    // STOP never waits for another chat's tool.
+    if (signal?.aborted) return;
+    const left = until - Date.now();
+    // Safety valve: a tool of another chat that never returns must never freeze this chat.
+    if (left <= 0) {
+      holder = null;
+      depth = 0;
+      break;
+    }
+    await new Promise<void>((r) => {
+      const t = setTimeout(r, left);
+      const wake = () => {
+        clearTimeout(t);
+        r();
+      };
+      waiters.push(wake);
+      signal?.addEventListener('abort', wake, { once: true });
+    });
+  }
+}
+/** Hold the scope lock for this chat; returns an idempotent release. */
+export async function acquireScope(sid: string): Promise<() => void> {
+  await scopeGate(sid);
+  holder = sid;
+  depth++;
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    if (--depth > 0) return;
+    holder = null;
+    const w = waiters;
+    waiters = [];
+    for (const f of w) f();
+  };
+}
+export const scopeHolder = (): string | null => holder;
+export const chatKey = (sid: string, p: string) => `${CHAT_PREFIX}${sid}/${p}`;
+/** Session that owns a stored key (null for the shared workspace). */
+export const ownerOf = (key: string): string | null =>
+  key.startsWith(CHAT_PREFIX) ? key.slice(CHAT_PREFIX.length).split('/')[0]! : null;
+/** Path as the owning chat sees it. */
+export const chatPath = (key: string): string =>
+  key.startsWith(CHAT_PREFIX) ? key.slice(CHAT_PREFIX.length).split('/').slice(1).join('/') : key;
+
+const memo = new WeakMap<Record<string, VFile>, Map<string, Record<string, VFile>>>();
+/** The workspace as one chat sees it (pure; null = the whole shared store, for the Files view). */
+export function filesFor(sid: string | null, allow?: Set<string>): Record<string, VFile> {
+  const all = useStore.getState().files;
+  if (!sid) return all;
+  const allowKey = allow ? [...allow].sort().join('|') : '';
+  const mk = `${sid}#${allowKey}`;
+  let m = memo.get(all);
+  const hit = m?.get(mk);
+  if (hit) return hit;
+  const pre = `${CHAT_PREFIX}${sid}/`;
+  const out: Record<string, VFile> = {};
+  for (const [k, f] of Object.entries(all))
+    if (!k.startsWith(CHAT_PREFIX) && !k.startsWith('.ai/') && allow?.has(k)) out[k] = f;
+  // The chat's own files win over a shared file with the same path (copy-on-write).
+  for (const [k, f] of Object.entries(all)) if (k.startsWith(pre)) out[k.slice(pre.length)] = { ...f, path: k.slice(pre.length) };
+  if (!m) memo.set(all, (m = new Map()));
+  m.set(mk, out);
+  return out;
+}
+export const files = (): Record<string, VFile> => filesFor(scope?.sid ?? null, scope?.allow);
+export const getFile = (p: string): VFile | undefined => {
+  const n = normPath(p);
+  const f = files()[n];
+  if (f || scope) return f;
+  // Outside a run (UI: embedded browser, downloads), a chat-relative path resolves in the chat on screen.
+  const st = useStore.getState();
+  return st.currentId ? st.files[chatKey(st.currentId, n)] : undefined;
+};
+/** Storage key of a path written by the current chat. */
+const storeKey = (p: string) => (scope ? chatKey(scope.sid, p) : p);
+/** Delete a file or folder as the current chat sees it (own copy first; a shared file only if visible to the chat). */
+export function removeFile(path: string): number {
+  const p = normPath(path);
+  const st = useStore.getState();
+  const visible = Object.keys(files()).filter((k) => k === p || k.startsWith(`${p}/`));
+  for (const k of visible) {
+    const own = scope ? chatKey(scope.sid, k) : k;
+    if (st.files[own]) useStore.getState().deleteFile(own);
+    else if (st.files[k]) useStore.getState().deleteFile(k);
+  }
+  return visible.length;
+}
+
+export function bytesOf(f: VFile): Uint8Array {
+  if (!f.binary) return new TextEncoder().encode(f.data);
+  const bin = atob(f.data);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+export function toBase64(bytes: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+export function writeText(path: string, content: string): VFile {
+  const p = normPath(path);
+  useStore.getState().writeFile({ path: storeKey(p), data: content, binary: false, mime: mimeFor(p) });
+  return files()[p]!;
+}
+
+export function writeBytes(path: string, bytes: Uint8Array, mime?: string): VFile {
+  const p = normPath(path);
+  if (isTextPath(p) && !isImage(p)) {
+    const text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+    if (!text.includes('\u0000')) return writeText(p, text);
+  }
+  useStore.getState().writeFile({
+    path: storeKey(p),
+    data: toBase64(bytes),
+    binary: true,
+    mime: mime || mimeFor(p),
+    size: bytes.length,
+  });
+  return files()[p]!;
+}
+
+/** Unique path for an upload (keeps existing files). */
+export function uniquePath(path: string): string {
+  const p = normPath(path);
+  if (!files()[p]) return p;
+  const ext = extOf(p);
+  const base = ext ? p.slice(0, -ext.length) : p;
+  for (let i = 2; ; i++) if (!files()[`${base}-${i}${ext}`]) return `${base}-${i}${ext}`;
+}
+
+/**
+ * Import a browser file. `sid` names the chat that receives it (a chat attachment goes into THAT chat, whatever chat
+ * is running at the moment); `null` = the shared workspace (Files view); omitted = the current scope.
+ */
+export async function importBrowserFile(file: File, dir = 'uploads', sid?: string | null): Promise<VFile> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  // Synchronous from here: the scope is switched and restored without any await in between.
+  const prev = scope;
+  if (sid !== undefined) scope = sid ? { sid, allow: new Set() } : null;
+  try {
+    return writeBytes(uniquePath(`${dir}/${file.name}`), bytes, file.type);
+  } finally {
+    scope = prev;
+  }
+}
+
+/** Write bytes into a given chat (synchronous scope switch, whatever chat is running). */
+export function writeChatBytes(sid: string, path: string, bytes: Uint8Array, mime?: string): VFile {
+  const prev = scope;
+  scope = { sid, allow: new Set() };
+  try {
+    return writeBytes(path, bytes, mime);
+  } finally {
+    scope = prev;
+  }
+}
+/** A chat's file (its own copy first, then the shared file if attached). */
+export function chatFile(sid: string, path: string): VFile | undefined {
+  return filesFor(sid, sessionAllow(sid))[normPath(path)];
+}
+
+/** Readable text of any workspace file (documents are extracted). */
+export async function readAsText(path: string): Promise<{ text: string; kind: string }> {
+  const f = getFile(path);
+  if (!f) throw new Error(`Fichier introuvable : ${path}. Utilisez filesystem.list.`);
+  if (!f.binary) return { text: f.data, kind: 'text' };
+  if (isDocument(f.path)) {
+    const doc = await extractDocumentBytes(f.path, bytesOf(f));
+    return { text: doc.text, kind: doc.kind };
+  }
+  throw new Error(`${f.path} est un fichier binaire (${f.mime}). Pour un tableur, utilisez data.inspect.`);
+}
+
+export function dataUrl(f: VFile): string {
+  return `data:${f.mime};base64,${f.binary ? f.data : toBase64(new TextEncoder().encode(f.data))}`;
+}
+
+export function download(name: string, data: Uint8Array | string, mime = 'application/octet-stream'): void {
+  const blob = new Blob([typeof data === 'string' ? data : (data.slice().buffer as ArrayBuffer)], {
+    type: mime,
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30_000);
+}
+
+export function downloadFile(f: VFile, sid?: string | null): void {
+  download(deliveryName(f, sid), bytesOf(f), f.mime);
+}
+
+const WEB_REF = /^(https?:|mailto:|tel:|#|data:|blob:)/i;
+/** True for a link that points at a local file (Windows path, file://, sandbox:, relative…), not the web. */
+export const isLocalRef = (ref: string): boolean => Boolean(ref) && !WEB_REF.test(ref.trim());
+
+/** Resolve a link / path written by the model to a file of the workspace (exact path, then unique-ish basename). */
+export function findFileByRef(ref: string, sid?: string | null): VFile | undefined {
+  const view = sid === undefined ? files() : filesFor(sid, sid ? sessionAllow(sid) : undefined);
+  let r = ref.trim();
+  try {
+    r = decodeURIComponent(r);
+  } catch {
+    /* keep raw */
+  }
+  r = r
+    .replace(/^(file:\/*|sandbox:\/*|computer:\/*)/i, '')
+    .replace(/^[A-Za-z]:[\\/]/, '')
+    .replace(/\\/g, '/');
+  const all = Object.values(view);
+  try {
+    const exact = view[normPath(r)];
+    if (exact) return exact;
+  } catch {
+    /* not a clean path */
+  }
+  const base = r.split('/').pop()!.toLowerCase();
+  if (!base) return undefined;
+  const hits = all.filter((f) => f.path.split('/').pop()!.toLowerCase() === base);
+  return hits.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
+}
+
+const DELIVERABLE_EXT = /\.(xlsx?|docx?|pptx?|pdf|csv|zip|html?|json|md|txt|png|jpe?g|svg|eml|msg)$/i;
+/** Workspace files an assistant message talks about (by name or path), to offer them as downloads. */
+export function deliverablesIn(text: string, sid?: string | null): VFile[] {
+  const low = text.toLowerCase();
+  const view = sid === undefined ? files() : filesFor(sid, sid ? sessionAllow(sid) : undefined);
+  return Object.values(view)
+    .filter((f) => !f.path.startsWith('.ai/') && DELIVERABLE_EXT.test(f.path))
+    .filter((f) => low.includes(f.path.split('/').pop()!.toLowerCase()))
+    .slice(0, 12);
+}
+
+const sameName = (a: string) => a.toLowerCase().replace(/\.[^.]+$/, '').replace(/[\s_\-—–.]+/g, '');
+/** True for a file the user uploaded (their source), never a deliverable. */
+export const isSource = (f: VFile): boolean => f.path.startsWith('uploads/');
+/**
+ * Name a deliverable downloads under: its own, unless it is the same name as one of the user's source files (case and
+ * separators aside) — then « <name> - livrable.<ext> » (ASCII hyphen: Chromium drops a download name holding an em dash), so the two can never be confused once downloaded. The file
+ * keeps its path in the workspace (the model's code goes on using it).
+ */
+export function deliveryName(f: VFile, sid?: string | null): string {
+  const base = f.path.split('/').pop()!;
+  if (isSource(f)) return base;
+  // The chat's own view (its uploads/), not whatever chat scope happens to be active.
+  const view = sid === undefined ? files() : filesFor(sid, sid ? sessionAllow(sid) : undefined);
+  const clash = Object.values(view).some((u) => isSource(u) && sameName(u.path.split('/').pop()!) === sameName(base));
+  if (!clash) return base;
+  const ext = /\.[^.]+$/.exec(base)?.[0] ?? '';
+  return `${base.slice(0, base.length - ext.length)} - livrable${ext}`;
+}
+
+export function downloadZip(prefix = ''): void {
+  const entries: Record<string, Uint8Array> = {};
+  for (const f of Object.values(files()))
+    if (!prefix || f.path.startsWith(prefix)) entries[f.path] = bytesOf(f);
+  download(
+    `${prefix.replace(/\/$/, '') || 'workspace'}.zip`,
+    zipSync(entries, { level: 6 }),
+    'application/zip',
+  );
+}
+
+export function tree(): string {
+  const all = Object.values(files()).sort((a, b) => a.path.localeCompare(b.path));
+  if (!all.length) return '(espace de travail vide)';
+  return all.map((f) => `${f.path}  (${f.size} o)`).join('\n');
+}
+
+/** Shared-workspace paths a chat may see: what it attached and what the user named in it (exact path). */
+export function sessionAllow(sid: string): Set<string> {
+  const st = useStore.getState();
+  const sess = st.sessions.find((x) => x.id === sid);
+  const allow = new Set<string>();
+  if (!sess) return allow;
+  const shared = Object.keys(st.files).filter((k) => !k.startsWith(CHAT_PREFIX) && !k.startsWith('.ai/'));
+  for (const it of sess.items) {
+    if (it.kind !== 'user') continue;
+    for (const a of it.attachments ?? []) allow.add(normPath(a.path));
+    const low = (it.text ?? '').toLowerCase();
+    for (const k of shared) if (k.length > 3 && low.includes(k.toLowerCase())) allow.add(k);
+  }
+  return allow;
+}
