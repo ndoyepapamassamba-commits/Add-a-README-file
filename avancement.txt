@@ -10,3 +10,4 @@
 [1214 s] === A-marche   |=====================================>            | 6/8 - 184.00s/it[K · mémoire libre 4404 Mo
 [1336 s] === A-marche   |===========================================>      | 7/8 - 184.19s/it[K · mémoire libre 4400 Mo
 [1457 s] === A-marche   |===========================================>      | 7/8 - 184.19s/it[K · mémoire libre 4400 Mo
+[1578 s] === A2-marche-planches [I] get_learned_condition completed, taking 17.48s --- image.cpp:529 · mémoire libre 6945 Mo
