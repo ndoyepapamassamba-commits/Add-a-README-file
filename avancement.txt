@@ -10,3 +10,4 @@
 [973 s] 1 images · === decor-cyber-cafe-large-jour   |=========================>                        | 2/4 - 131.12s/it[K · mémoire libre 7008 Mo
 [1094 s] 1 images · === decor-cyber-cafe-large-jour   |=====================================>            | 3/4 - 131.15s/it[K · mémoire libre 6993 Mo
 [1216 s] 2 images · === maison-mecano-issa-cour-large-jour   |==================================================| 4/4 - 131.82s/it[K · mémoire libre 11598 Mo
+[1338 s] 2 images · === maison-mecano-issa-cour-large-jour   |==================================================| 4/4 - 131.82s/it[K · mémoire libre 7036 Mo
