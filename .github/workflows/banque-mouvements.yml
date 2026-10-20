@@ -10,7 +10,7 @@ name: Banque de mouvements (Wan 2.2)
 on:
   push:
     branches: [claude/relaxed-noether-svkgiu]
-    paths: ['studio-video/banque/demandes/**']
+    paths: ['studio-video/banque/demandes/**', 'studio-video/banque/*.py', '.github/workflows/banque-mouvements.yml']
   workflow_dispatch:
 permissions: { contents: write }
 concurrency: { group: banque, cancel-in-progress: true }
