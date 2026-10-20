@@ -1,0 +1,34 @@
+{
+ "part": 11,
+ "clips": [
+  {
+   "clip": "coumba--choc",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 358,
+   "memoire_max_go": 11.03
+  },
+  {
+   "clip": "maman-nounou--ecouter",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 357,
+   "memoire_max_go": 11.28
+  },
+  {
+   "clip": "petit-mamadou--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 356,
+   "memoire_max_go": 11.28
+  },
+  {
+   "clip": "modou--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 357,
+   "memoire_max_go": 11.28
+  }
+ ],
+ "run": "39510605985"
+}
