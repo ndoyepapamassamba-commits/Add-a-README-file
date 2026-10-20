@@ -1,1 +1,2 @@
 [123 s] === koffi--hausser (at_runtime)   |============>                                     | 1/4 - 70.23s/it[K · mémoire libre 13770 Mo
+[244 s] === koffi--hausser (at_runtime)   |=====================================>            | 3/4 - 67.29s/it[K · mémoire libre 13774 Mo
