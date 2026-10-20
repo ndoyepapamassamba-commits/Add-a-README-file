@@ -6,3 +6,4 @@
 [730 s] 1 images · === decor-cuisine-large-jour   |==================================================| 4/4 - 157.27s/it[K · mémoire libre 11553 Mo
 [853 s] 1 images · === decor-cuisine-large-jour   |==================================================| 4/4 - 157.27s/it[K · mémoire libre 7023 Mo
 [974 s] 1 images · === decor-cuisine-large-jour   |============>                                     | 1/4 - 161.24s/it[K · mémoire libre 7023 Mo
+[1096 s] 1 images · === decor-cuisine-large-jour   |=========================>                        | 2/4 - 156.73s/it[K · mémoire libre 7018 Mo
