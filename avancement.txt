@@ -1,1 +1,2 @@
 [123 s] 0 images · === decor-eglise-large-jour  · mémoire libre 7007 Mo
+[245 s] 0 images · === decor-eglise-large-jour   |============>                                     | 1/4 - 136.02s/it[K · mémoire libre 7011 Mo
