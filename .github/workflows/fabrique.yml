@@ -49,7 +49,10 @@ jobs:
         id: etat
         env: { GH_TOKEN: '${{ github.token }}', PHRASE: '${{ secrets.FABRIQUE_CLE }}', INPUT_VIDEOS: '${{ inputs.videos }}' }
         run: |
-          if git fetch -q origin fabrique-donnees 2>/dev/null; then git worktree add -q ../site FETCH_HEAD; else mkdir ../site; fi
+          # données de l'application : branche fabrique-donnees ; à la toute première marche elle n'existe pas encore → dossier de
+          # travail git vidé (et non un simple dossier : « fatal: not a git repository » à la publication des clés, 20/10/2026)
+          if git fetch -q origin fabrique-donnees 2>/dev/null; then git worktree add -q ../site FETCH_HEAD
+          else git worktree add -q --detach ../site HEAD && (cd ../site && git rm -rq . && git clean -fdq); fi
           if [ ! -f ../site/cle.priv.json ]; then
             if [ -z "$PHRASE" ]; then echo "faire=attendre-phrase" >> $GITHUB_OUTPUT; echo "Secret FABRIQUE_CLE absent : rien à faire."; exit 0; fi
             echo "faire=cles" >> $GITHUB_OUTPUT; exit 0
