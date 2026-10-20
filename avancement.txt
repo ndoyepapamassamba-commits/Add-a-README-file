@@ -2,3 +2,4 @@
 [244 s] === koffi--parler (at_runtime)   |============>                                     | 1/4 - 135.14s/it[K · mémoire libre 13786 Mo
 [365 s] === koffi--parler (at_runtime)   |=========================>                        | 2/4 - 133.08s/it[K · mémoire libre 13779 Mo
 [486 s] === koffi--parler (at_runtime)   |=====================================>            | 3/4 - 133.09s/it[K · mémoire libre 13785 Mo
+[608 s] === coumba--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14576 Mo
