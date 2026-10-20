@@ -438,6 +438,17 @@ try:
 except Exception as e:
     echecs.append(f'fabrique : {e}')
 
+# humour au maximum (20/10/2026) : choc final exigé et jugé, plancher V17, juge comique gratuit quand JEV est coupé
+try:
+    _src8 = open(os.path.join(ICI, 'moteur-troupe', 'histoires.py'), encoding='utf-8').read()
+    _v8 = json.load(open(os.path.join(ICI, 'moteur-troupe', 'plancher_v17.json'), encoding='utf-8'))
+    if len(_v8) != 3 or any(sum(1 for r in v['repliques'] if r.get('chute')) != 1 for v in _v8): echecs.append('humour : plancher V17 incomplet')
+    for _m8 in ("'choc': {'type': 'score'", 'def plancher_v17(', 'def _juge_llm(', 'if not jev_api.autorise(): return _juge_llm', 'LE CHOC FINAL', '_EN_VOL'):
+        if _m8 not in _src8: echecs.append(f'humour : « {_m8} » absent de histoires.py')
+    print('humour : choc final jugé, plancher V17 (3 sketchs), juge comique gratuit : OK')
+except Exception as e:
+    echecs.append(f'humour : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

@@ -29,9 +29,10 @@ CADENCE = int(os.environ.get('FABRIQUE_CADENCE') or 0) or None     # vidéos par
 RESERVE_JOURS = float(os.environ.get('FABRIQUE_RESERVE_JOURS', '1'))  # jours de vidéos prêtes gardés d'avance
 CIBLE_MO = float(os.environ.get('FABRIQUE_CIBLE_MO', '14'))        # consigne « max 15 Mo » ; 14 visé (marge du débit variable)
 PLAFOND_MO = 15.0
-# « même qualité pour toutes les vidéos » (20/10/2026) : plancher de fidélité de la version téléphone à l'original du moteur ;
-# V17 publiée : SSIM 0,989 à 13,97 Mo (mesuré le 20/10/2026). En dessous : second essai au plus près des 15 Mo, sinon « à corriger ».
-SSIM_MIN = float(os.environ.get('FABRIQUE_SSIM_MIN', '0.98'))
+# « même qualité pour toutes les vidéos », « pas moins que V17 » (20/10/2026) : plancher de fidélité de la version téléphone à
+# l'original du moteur = celle de la V17 publiée (SSIM 0,989 à 13,97 Mo, mesuré le 20/10/2026). En dessous : second essai au
+# plus près des 15 Mo, sinon « à corriger » avec le motif (jamais supprimée).
+SSIM_MIN = float(os.environ.get('FABRIQUE_SSIM_MIN', '0.989'))
 CASTING_PAR_JOUR = int(os.environ.get('FABRIQUE_CASTING', '2'))    # bibliothèques de visages faites d'avance chaque jour
 LIV = os.path.join(CT.BIBLIO, 'livraison')
 

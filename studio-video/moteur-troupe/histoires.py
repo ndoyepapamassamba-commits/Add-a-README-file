@@ -71,8 +71,36 @@ def fiche(nom):
     return nom
 
 
+# PLANCHER V17 (20/10/2026, « pas moins que V17 ») : les trois sketchs de l'épisode publié sur TikTok. Toute histoire nouvelle
+# doit faire AU MOINS autant rire qu'eux (duel du juge, dans les deux ordres) ; leurs chutes sont interdites (pas de copie).
+V17 = json.load(open(os.path.join(ICI, 'plancher_v17.json'), encoding='utf-8'))
+SEUIL_V17 = 0.5
+
 FORMATS = {'blague': {'n': (2, 4), 'duree': '5 à 9 secondes', 'rappel': False},
            'sketch': {'n': (6, 10), 'duree': '15 à 25 secondes', 'rappel': True}}
+
+
+# LE CHOC FINAL (20/10/2026, consignes du producteur : « augmente l'humour au max » ; « le choc final de chaque sketch doit être
+# vraiment choquant de rire » ; « trouve des jeux de dialogue qui vont capter l'attention et le choc sera terrible de rires »).
+# Méthode des scènes d'humour (fausse piste puis révélation, escalade en trois marches, rappel retourné) écrite en consignes ;
+# le juge note à part la force du choc (question « choc ») et la note pèse dans le classement des brouillons.
+CHOC = """
+LE CHOC FINAL (le plus important : tu es le plus grand comédien du monde) :
+- La chute est une RÉVÉLATION qui RETOURNE toute la situation en une phrase : le menteur se trahit par sa propre excuse, la
+  victime était le coupable, l'objet de la dispute était ailleurs depuis le début, le sage est le pire de tous… Le public ne
+  doit PAS la voir venir, mais tout s'explique en une seconde : il sursaute, puis il éclate de rire et rejoue la vidéo.
+- Prépare-la par une FAUSSE PISTE : l'accroche et les marches font croire à une autre fin.
+- La chute est dite par le personnage le plus inattendu (l'enfant, le timide, la victime) ou par le menteur qui se trahit seul.
+- Le mot qui fait exploser le rire est le DERNIER mot de la chute.
+- Ajoute un BOUTON : la réaction choquée de l'autre (3 à 6 mots, jeu « choc »), par ex. « Ehhh Dieu ! Mon propre fils ! ».
+JEUX DE DIALOGUE QUI ACCROCHENT DÈS LA PREMIÈRE SECONDE (en combiner un ou deux) :
+- accroche = un reproche, un secret ou une accusation directe, jamais une salutation ;
+- escalade en trois marches : chaque excuse est plus énorme que la précédente ;
+- répétition à trois temps : le même mot revient, la troisième fois il change de sens ;
+- ping-pong rapide : répliques de 3 à 6 mots qui se renvoient le même mot ;
+- quiproquo : chacun parle d'autre chose sans le savoir, la chute le révèle ;
+- double sens d'un mot du parler ivoirien.
+"""
 
 
 def consignes(lieu, champion, deja, faiblesses, recap, fmt='sketch'):
@@ -109,6 +137,9 @@ FORMAT : de {F['n'][0]} à {F['n'][1]} répliques, chacune de 14 mots au plus ; 
 un bouton final de 3 à 6 mots est permis (réaction).
 Jeu de chaque réplique parmi : {', '.join(JEUX)}.
 """
+    if fmt == 'sketch': txt += CHOC
+    txt += ("\nNIVEAU MINIMUM À DÉPASSER (épisode publié, NE PAS le recopier, ses chutes sont interdites) :\n"
+            + '\n'.join(f"« {v['titre']} » : " + ' / '.join(f"{r['qui']} : {r['texte']}" for r in v['repliques'][-3:]) for v in V17) + '\n')
     if ex_txt: txt += f"\nEXEMPLE DE TON (déjà tourné, NE PAS le recopier) :\n{ex_txt}\n"
     if fmt == 'blague':   # leçon de l'échelle du 17/10 (25 blagues, duels JEV dans les deux ordres)
         txt += ("\nCE QUI GAGNE LES DUELS (mesuré) : le RAPPEL RETOURNÉ — la chute reprend les MOTS de l'accroche et les retourne "
@@ -139,6 +170,9 @@ def _json(texte):
 
 import threading
 _VERROU_LOCAL = threading.Lock()
+# service gratuit sans clé : au plus 2 appels en vol (20/10/2026, mesuré : 6 appels simultanés — 3 brouillons jugés, 2 questions
+# chacun — laissaient une réponse sans retour au bout de 240 s, alors qu'un appel seul du juge répond en 9 s)
+_EN_VOL = threading.BoundedSemaphore(int(os.environ.get('HISTOIRES_EN_VOL', '2')))
 
 
 def llm(prompt, temp=1.0):
@@ -153,7 +187,7 @@ def llm(prompt, temp=1.0):
     for essai in range(3):
         try:
             req = urllib.request.Request(url, data=json.dumps(corps).encode(), headers=tete)
-            m = json.loads(urllib.request.urlopen(req, timeout=240).read())['choices'][0]['message']
+            with _EN_VOL: m = json.loads(urllib.request.urlopen(req, timeout=240).read())['choices'][0]['message']
             if m.get('content'): return m['content']
             err = 'réponse vide (raisonnement seul)'
         except Exception as e:
@@ -204,7 +238,39 @@ def _norm(t): return ' '.join(mots(t))
 
 
 # ── juge JEV ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+def _juge_llm(state, questions):
+    """JUGE COMIQUE GRATUIT (20/10/2026) : JEV est coupé (consigne du 18/10) et le juge local n'a aucune voie pour noter un texte
+    (« drole » : « sans voie locale ») — sans lui, aucun brouillon n'était jamais classé et l'écriture de la série échouait.
+    Même contrat que JEV (score, noul, choice avec probabilités), rendu par le modèle texte gratuit à température basse ; la
+    position est neutralisée par les duels joués dans les deux ordres (duel()) et contrôlée par une question à réponse connue
+    (verif_moteur : la V17 contre sa version sans chute)."""
+    lignes = []
+    for k, q in questions.items():
+        if q['type'] == 'score':
+            lignes.append(f'"{k}" : un nombre de 0 à {len(q["criteria"]) - 1} (décimales permises) — {q["instructions"]} Niveaux : '
+                          + ' | '.join(f'{i} = {c}' for i, c in enumerate(q['criteria'])))
+        elif q['type'] == 'noul': lignes.append(f'"{k}" : probabilité (0 à 1) que la réponse soit OUI — {q["instructions"]}')
+        else:
+            lignes.append(f'"{k}" : un objet {{' + ', '.join(f'"{c}": probabilité' for c in q['criteria']) + '}} dont la somme vaut 1 — '
+                          + q['instructions'] + ' ' + ' | '.join(f'{c} = {d}' for c, d in q['criteria'].items()))
+    prompt = ("Tu es le jury le plus exigeant d'un festival d'humour d'Abidjan : tu connais par cœur les meilleurs sketchs "
+              "d'Afrikatoon, de Ladjagaï et de « la blague du jour », et tu ne ris jamais par politesse. Note honnêtement.\n\n"
+              + '\n\n'.join(f'`{k}` :\n{v}' for k, v in state.items())
+              + "\n\nRéponds UNIQUEMENT par un objet JSON avec ces clés :\n" + '\n'.join(lignes))
+    J = _json(llm(prompt, temp=0.2)) or {}
+    out = {}
+    for k, q in questions.items():
+        v = J[k]
+        if q['type'] == 'score': out[k] = {'score': max(0.0, min(float(len(q['criteria']) - 1), float(v)))}
+        elif q['type'] == 'noul': out[k] = {'noul': max(0.0, min(1.0, float(v)))}
+        else:
+            pr = {c: max(0.0, float(v.get(c, 0))) for c in q['criteria']}; t = sum(pr.values()) or 1.0
+            pr = {c: x / t for c, x in pr.items()}; out[k] = {'choice': max(pr, key=pr.get), 'probabilities': pr}
+    return out
+
+
 def _jev(state, questions):
+    if not jev_api.autorise(): return _juge_llm(state, questions)
     body = {'model': 'jev-1.14.0', 'state': state, 'questions': questions}
     req = urllib.request.Request(JEV_API, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json'})
     for essai in range(3):
@@ -226,6 +292,10 @@ def juge(h):
                    'criteria': ['not funny at all, flat or confusing', 'mildly amusing, a small smile', 'funny, a real laugh',
                                 'very funny, people would share it', 'hilarious, people would laugh out loud and replay it']},
          'chute': {'type': 'noul', 'instructions': 'Does the last real line of `sketch` deliver a punchline: a surprising twist that still makes sense given the setup?'},
+         'choc': {'type': 'score', 'instructions': 'How hard does the FINAL punchline of `sketch` hit: a sudden reveal or reversal that flips the whole situation, so viewers gasp and then burst out laughing?',
+                  'criteria': ['no final shock: the ending fizzles or was predictable', 'a small twist, mildly surprising',
+                               'a real twist that gets a laugh', 'a strong shocking reveal, people laugh out loud',
+                               'a devastating reversal: a gasp then uncontrollable laughter, viewers replay and share it']},
          'clair': {'type': 'noul', 'instructions': 'Can a viewer understand the situation and the joke of `sketch` without any extra context?'},
          'mechant': {'type': 'noul', 'instructions': '`sketch` mocks an ethnic group, a religion, a disability or someone’s body, or contains vulgar or sexual content.'}}
     # la langue est jugée à part, sur les répliques SEULES : les noms de la troupe (fixés par l'utilisateur, d'origines
@@ -235,8 +305,9 @@ def juge(h):
         fa = p.submit(_jev, {'sketch': script(h)}, Q)
         fl = p.submit(_jev, {'repliques': '\n'.join('— ' + r['texte'] for r in h['repliques'])}, QL)
         a = dict(fa.result(), **fl.result())
-    n = {'drole': round(a['drole']['score'], 3), **{k: round(a[k]['noul'], 3) for k in ('chute', 'ivoirien', 'clair', 'mechant')}}
-    n['note'] = round(n['drole'] / 4 * 0.55 + n['chute'] * 0.2 + n['ivoirien'] * 0.15 + n['clair'] * 0.1 - 0.5 * max(0.0, n['mechant'] - 0.3), 3)
+    n = {'drole': round(a['drole']['score'], 3), 'choc': round(a['choc']['score'], 3), **{k: round(a[k]['noul'], 3) for k in ('chute', 'ivoirien', 'clair', 'mechant')}}
+    n['note'] = round(n['drole'] / 4 * 0.4 + n['choc'] / 4 * 0.25 + n['chute'] * 0.1 + n['ivoirien'] * 0.15 + n['clair'] * 0.1
+                      - 0.5 * max(0.0, n['mechant'] - 0.3), 3)
     return n
 
 
@@ -249,6 +320,14 @@ def duel(nouveau, champion):
     with ThreadPoolExecutor(2) as p:
         p1, p2 = p.map(lambda ab: un(*ab), [(nouveau, champion), (champion, nouveau)])
     return round((p1['A'] + p2['B']) / 2, 3)
+
+
+def plancher_v17(h):
+    """probabilité moyenne que `h` fasse plus rire que les trois sketchs de la V17 (chaque duel dans les deux ordres)."""
+    with ThreadPoolExecutor(2) as p:
+        r = list(p.map(lambda v: _essai(lambda: duel(h, v)), V17))
+    r = [x for x in r if x is not None]
+    return round(sum(r) / len(r), 3) if r else 0.0
 
 
 # ── échelle ───────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -267,7 +346,7 @@ def charge(dossier, i):
 
 def une(dossier, lieu, recap='', K=3, tours_max=4, seuil=0.6, journal=print, fmt='sketch'):
     """écrit des brouillons jusqu'à battre le champion du registre (ou à défaut le meilleur de 4 tours) ; → id ou None."""
-    R = registre(dossier); deja = [a['chute'] for a in R['acceptees']]
+    R = registre(dossier); deja = [a['chute'] for a in R['acceptees']] + [r['texte'] for v in V17 for r in v['repliques'] if r.get('chute')]
     champ = charge(dossier, R['acceptees'][-1]['id']) if R['acceptees'] else None
     faiblesses = ''
     for tour in range(tours_max):
@@ -289,7 +368,14 @@ def une(dossier, lieu, recap='', K=3, tours_max=4, seuil=0.6, journal=print, fmt
         if not cands: faiblesses = 'jugé méchant ou vulgaire'; continue
         note, h, n = cands[0]
         p_ = duel(h, champ) if champ else 1.0
-        journal(f"  tour {tour + 1} : meilleur brouillon « {h.get('titre')} » note {note} (drôle {n['drole']}/4), duel contre le champion {p_}")
+        journal(f"  tour {tour + 1} : meilleur brouillon « {h.get('titre')} » note {note} (drôle {n['drole']}/4, choc {n['choc']}/4), duel contre le champion {p_}")
+        pv = plancher_v17(h) if p_ >= seuil and fmt == 'sketch' else None
+        if pv is not None:
+            journal(f"  plancher V17 : {pv} (au moins {SEUIL_V17} exigé)")
+            if pv < SEUIL_V17:
+                R['refus'] += 1; ecrit_registre(dossier, R)
+                faiblesses = (f"moins drôle que l'épisode publié V17 ({pv}) ; drôle {n['drole']}/4, choc final {n['choc']}/4 : "
+                              "rends la chute plus inattendue et plus forte, prépare-la par une fausse piste"); continue
         if p_ >= seuil:
             i = f"h{len(R['acceptees']) + 1:03d}-{uuid.uuid4().hex[:6]}"
             ch = next(r['texte'] for r in h['repliques'] if r.get('role') == 'chute' or r.get('chute'))
