@@ -1,3 +1,4 @@
 [123 s] 0 images · === decor-gare-routiere-large-jour  · mémoire libre 6948 Mo
 [244 s] 0 images · === decor-gare-routiere-large-jour   |============>                                     | 1/4 - 178.21s/it[K · mémoire libre 6934 Mo
 [366 s] 0 images · === decor-gare-routiere-large-jour   |============>                                     | 1/4 - 178.21s/it[K · mémoire libre 6959 Mo
+[487 s] 0 images · === decor-gare-routiere-large-jour   |=========================>                        | 2/4 - 178.65s/it[K · mémoire libre 6980 Mo
