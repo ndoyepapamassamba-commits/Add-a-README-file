@@ -418,6 +418,7 @@ try:
                   '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', '-shortest', _v7], check=True)
         _r7 = _ap.version_tel(_v7, _o7, cible_mo=1.0)
         if _r7['taille_mo'] > 1.0 or (_r7['ssim'] or 0) < 0.9: echecs.append(f'autopilote : version téléchargeable hors cible {_r7}')
+        if not 0.95 <= _ap.SSIM_MIN < 1: echecs.append(f'autopilote : plancher de qualité SSIM_MIN hors bornes ({_ap.SSIM_MIN})')
         os.makedirs(_ap.LIV, exist_ok=True); json.dump([1, 2], open(os.path.join(_ap.LIV, 'x.emp.json'), 'w'))
         if _ap.fiches() != []: echecs.append('autopilote : empreintes lues comme fiches')
     # fabrique indépendante (GitHub) : coffre scellé ouvrable avec la phrase, refusé sans elle ; créneaux de constance

@@ -41,8 +41,8 @@ def construit(biblio, site, cles):
                     os.replace(os.path.join(site, dst), os.path.join(arch, nom))
                     archives.setdefault(i, {})['video' if dst == v else 'affiche'] = nom
         cat.append({k_: x.get(k_) for k_ in ('id', 'titre', 'legende', 'statut', 'creneau', 'doublon_de', 'ressemblance', 'duree_s',
-                                              'portes', 'a_publier', 'livree', 'publiee', 'sketchs')}
-                   | {'taille_mo': (x.get('version_tel') or {}).get('taille_mo'), 'ordre': k + 1,
+                                              'portes', 'a_publier', 'livree', 'publiee', 'sketchs', 'motifs')}
+                   | {'taille_mo': (x.get('version_tel') or {}).get('taille_mo'), 'ssim': (x.get('version_tel') or {}).get('ssim'), 'ordre': k + 1,
                       'video': v if i in en_ligne else None, 'affiche': a if i in en_ligne else None, 'archive': archives.get(i)})
     corps = json.dumps({'maj': coffre_maj(), 'config': {k_: C[k_] for k_ in ('cadence', 'creneaux', 'fuseau', 'fenetre_videos')}, 'videos': cat},
                        ensure_ascii=False).encode()

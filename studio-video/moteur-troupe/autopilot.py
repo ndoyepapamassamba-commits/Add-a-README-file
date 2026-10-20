@@ -29,6 +29,9 @@ CADENCE = int(os.environ.get('FABRIQUE_CADENCE') or 0) or None     # vidéos par
 RESERVE_JOURS = float(os.environ.get('FABRIQUE_RESERVE_JOURS', '1'))  # jours de vidéos prêtes gardés d'avance
 CIBLE_MO = float(os.environ.get('FABRIQUE_CIBLE_MO', '14'))        # consigne « max 15 Mo » ; 14 visé (marge du débit variable)
 PLAFOND_MO = 15.0
+# « même qualité pour toutes les vidéos » (20/10/2026) : plancher de fidélité de la version téléphone à l'original du moteur ;
+# V17 publiée : SSIM 0,989 à 13,97 Mo (mesuré le 20/10/2026). En dessous : second essai au plus près des 15 Mo, sinon « à corriger ».
+SSIM_MIN = float(os.environ.get('FABRIQUE_SSIM_MIN', '0.98'))
 CASTING_PAR_JOUR = int(os.environ.get('FABRIQUE_CASTING', '2'))    # bibliothèques de visages faites d'avance chaque jour
 LIV = os.path.join(CT.BIBLIO, 'livraison')
 
@@ -97,6 +100,10 @@ def livre(i, D=None, journal=print):
     if mesure['taille_mo'] > PLAFOND_MO:   # débit variable au-dessus de la cible : second essai, 12 % plus bas
         mesure = version_tel(src, tel, CIBLE_MO * 0.88)
     if mesure['taille_mo'] > PLAFOND_MO: raise RuntimeError(f"{i} : version téléphone {mesure['taille_mo']} Mo > {PLAFOND_MO} Mo")
+    if (mesure['ssim'] or 0) < SSIM_MIN:   # sous le plancher de qualité : second essai au plus près du plafond, gardé s'il est meilleur
+        essai = tel + '.essai.mp4'; m2 = version_tel(src, essai, PLAFOND_MO * 0.97)
+        if m2['taille_mo'] <= PLAFOND_MO and (m2['ssim'] or 0) > (mesure['ssim'] or 0): os.replace(essai, tel); mesure = m2
+        elif os.path.isfile(essai): os.remove(essai)
     emp = doublons.empreinte(tel); json.dump(emp, open(os.path.join(LIV, f'{i}.emp.json'), 'w'))
     autres = {f['id']: json.load(open(os.path.join(LIV, f"{f['id']}.emp.json"))) for f in fiches()
               if f['id'] != i and os.path.isfile(os.path.join(LIV, f"{f['id']}.emp.json"))}
@@ -109,7 +116,9 @@ def livre(i, D=None, journal=print):
          'duree_s': round(float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', tel])), 1),
          'version_tel': mesure, 'livree': _maintenant(), 'envoyee': None, 'publiee': None,
          'doublon_de': proche if r >= doublons.SEUIL_PROCHE else None, 'ressemblance': r}
-    F['statut'] = 'doublon' if r >= doublons.SEUIL_DOUBLON else ('pret' if F['a_publier'] else 'a_corriger')
+    F['motifs'] = ([] if F['a_publier'] else [f"juge : {', '.join(map(str, rap.get('echecs') or [])) or 'porte échouée'}"]) \
+        + ([] if (mesure['ssim'] or 0) >= SSIM_MIN else [f"qualité téléphone : SSIM {mesure['ssim']} < {SSIM_MIN}"])
+    F['statut'] = 'doublon' if r >= doublons.SEUIL_DOUBLON else ('a_corriger' if F['motifs'] else 'pret')
     if F['statut'] == 'pret': F['creneau'] = prochain_creneau({f.get('creneau') for f in fiches() if f.get('creneau')})
     json.dump(F, open(os.path.join(LIV, f'{i}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     journal(f"{i} : version téléphone {mesure['taille_mo']} Mo, SSIM {mesure['ssim']} ({mesure['secondes']} s) — {F['statut']}"
