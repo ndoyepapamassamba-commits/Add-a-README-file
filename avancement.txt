@@ -16,3 +16,4 @@
 [1942 s] === modou--hausser (at_runtime)   |============>                                     | 1/4 - 133.97s/it[K · mémoire libre 13618 Mo
 [2064 s] === modou--hausser (at_runtime)   |=========================>                        | 2/4 - 133.50s/it[K · mémoire libre 13617 Mo
 [2185 s] === modou--hausser (at_runtime)   |=====================================>            | 3/4 - 133.31s/it[K · mémoire libre 13617 Mo
+[2307 s] === modou--hausser (at_runtime)   |=====================================>            | 3/4 - 133.31s/it[K · mémoire libre 13620 Mo
