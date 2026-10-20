@@ -16,3 +16,4 @@
 [1943 s] === tantie-awa--montrer (at_runtime)   |============>                                     | 1/4 - 133.37s/it[K · mémoire libre 13750 Mo
 [2064 s] === tantie-awa--montrer (at_runtime)   |=========================>                        | 2/4 - 132.86s/it[K · mémoire libre 13756 Mo
 [2186 s] === tantie-awa--montrer (at_runtime)   |=====================================>            | 3/4 - 132.90s/it[K · mémoire libre 13754 Mo
+[2307 s] === tantie-awa--montrer (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13864 Mo
