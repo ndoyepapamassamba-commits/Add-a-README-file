@@ -5,3 +5,4 @@
 [608 s] 1 images · === decor-chantier-large-jour   |============>                                     | 1/4 - 95.40s/it[K · mémoire libre 7016 Mo
 [124 s] 1 images · === decor-chantier-large-jour  · mémoire libre 6961 Mo
 [246 s] 1 images · === decor-chantier-large-jour   |============>                                     | 1/4 - 133.93s/it[K · mémoire libre 6956 Mo
+[367 s] 1 images · === decor-chantier-large-jour   |=========================>                        | 2/4 - 133.01s/it[K · mémoire libre 6961 Mo
