@@ -122,6 +122,36 @@ def tourne(d, v):
     return finit(d, v)
 
 
+# ── MARIONNETTES (20/10/2026, « tout reprendre … nouveaux personnages faciles à manipuler, une multitude de scènes adaptées,
+# en gardant le moteur » ; « un seul juge pour tout pour aller vite ») : mêmes voix, bouches (visèmes), rires, ambiance,
+# jeu (jeu.pistes) et montage que `tourne` ; seul le tournage change (tourne_marionnettes.py : personnages vectoriels lus
+# dans la bible, bouches DESSINÉES, décor choisi d'après le texte, même lumière pour tous) et les portes deviennent un
+# seul juge (juge_unique.py, quelques secondes, aucun appel réseau). Mode « peint » (20/10/2026, « comme la version précédente
+# mais plus propre et animables ») : tourne_peint.py, les planches peintes de la troupe sans aucune déformation.
+def marionnettes(d, v, moteur='tourne_marionnettes.py'):
+    d = os.path.abspath(d); D = os.path.join(d, v); log = f'{d}/{v}-usine.log'; T = {}; t0 = time.time()
+    if not os.path.isfile(f'{d}/montage.json'): episode(d)
+    env = {'PIPER_VOICES': os.environ.get('PIPER_VOICES', os.path.join(os.path.dirname(BIBLIO), 'piper') + '/')}
+    etape = lambda nom, *a, e=None: T.__setitem__(nom, _py(*a, env=dict(env, **(e or {})), log=log, cwd=d)[0])
+    etape('voix', f'{ICI}/voix.py')
+    etape('bouches', f'{ICI}/levres.py', 'timeline.json')
+    etape('rires', f'{ICI}/musique.py', 'timeline.json', 'voix/mix.wav', 'voix/mix-musique.wav')
+    etape('ambiance', f'{ICI}/ambiance.py', 'timeline.json', 'voix/mix-musique.wav', 'voix/mix-ambiance.wav')
+    etape('tournage', f'{ICI}/{moteur}', D, e={'TOURNE_PROCS': str(os.cpu_count() or 4)})
+    etape('montage', f'{ICI}/compose.py', D, f'{D}/film.mp4')
+    etape('planche', f'{ICI}/planche_repliques.py', f'{D}/film.mp4', 'timeline.json', f'{D}/planche.jpg')
+    t1 = time.time(); exporte(f'{D}/film.mp4', f'{D}/tiktok-1080x1920.mp4'); T['export'] = round(time.time() - t1, 1)
+    if os.path.isfile(f'{D}/legende.txt'): shutil.copy(f'{D}/legende.txt', f'{d}/{v}-legende.txt')
+    t1 = time.time(); r = subprocess.run([sys.executable, f'{ICI}/juge_unique.py', D], cwd=d, capture_output=True, text=True)
+    T['juge'] = round(time.time() - t1, 1)
+    J = json.load(open(f'{D}/juge-unique.json')) if os.path.isfile(f'{D}/juge-unique.json') else {'verdict': 'juge en échec', 'erreur': r.stderr[-800:]}
+    T['total'] = round(time.time() - t0, 1)
+    json.dump({'durees_s': T, 't0': t0}, open(f'{D}/usine-etapes.json', 'w'))
+    if J.get('verdict') != 'à publier': a_corriger(d, v, {'a_publier': False, 'echecs': J.get('raisons', []), 'mode': 'marionnettes'})
+    return {'episode': os.path.basename(d), 'version': v, 'durees_s': T, 'verdict': J.get('verdict'), 'raisons': J.get('raisons'),
+            'film': f'{D}/tiktok-1080x1920.mp4'}
+
+
 # ── ESSAI ÉCLAIR (19/10/2026, « tu dois chercher un moyen de produire un film entier en 1 minute pour accélérer les tests ») ──
 # Même chaîne que `tourne`, sans les images : voix (mémo par réplique), bouches (repères Rhubarb en cache), rires, ambiance,
 # puis tourne.py en TOURNE_SANS_RENDU=1 (pistes, jeu, regards, mesures image par image sur la grille des 30 i/s, sans
@@ -350,6 +380,8 @@ if __name__ == '__main__':
     elif c == 'episode': print(json.dumps(episode(sys.argv[2]), ensure_ascii=False))
     elif c == 'tourne': print(json.dumps(tourne(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
     elif c == 'exporte': print(exporte(sys.argv[2], sys.argv[3]))
+    elif c == 'marionnettes': print(json.dumps(marionnettes(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
+    elif c == 'peint': print(json.dumps(marionnettes(sys.argv[2], sys.argv[3], 'tourne_peint.py'), ensure_ascii=False, indent=1))   # marionnettes peintes (planches de la troupe)
     elif c == 'eclair': print(json.dumps(eclair(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
     elif c == 'finit': print(json.dumps(finit(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
     elif c == 'a_corriger':
