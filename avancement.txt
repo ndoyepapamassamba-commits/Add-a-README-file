@@ -2,3 +2,4 @@
 [243 s] === baye-ndiaye--mentir (at_runtime)   |============>                                     | 1/4 - 39.30s/it[K · mémoire libre 13827 Mo
 [365 s] === petit-mamadou--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14526 Mo
 [487 s] === petit-mamadou--rire (at_runtime)   |=====================================>            | 3/4 - 38.70s/it[K · mémoire libre 13761 Mo
+[609 s] === modou--choc (at_runtime)   |============>                                     | 1/4 - 39.60s/it[K · mémoire libre 13760 Mo
