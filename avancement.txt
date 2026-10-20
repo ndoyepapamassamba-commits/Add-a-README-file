@@ -1,3 +1,4 @@
 [121 s] === coumba--parler (at_runtime)   |============>                                     | 1/4 - 60.01s/it[K · mémoire libre 13752 Mo
 [243 s] === coumba--parler (at_runtime)   |=====================================>            | 3/4 - 58.98s/it[K · mémoire libre 13764 Mo
 [364 s] === baye-ndiaye--colere (at_runtime)   |============>                                     | 1/4 - 62.32s/it[K · mémoire libre 13776 Mo
+[485 s] === baye-ndiaye--colere (at_runtime)   |=====================================>            | 3/4 - 59.86s/it[K · mémoire libre 13777 Mo
