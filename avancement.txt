@@ -7,3 +7,4 @@
 [852 s] 1 images · === decor-lagune-large-jour   |==================================================| 4/4 - 156.37s/it[K · mémoire libre 6979 Mo
 [973 s] 1 images · === decor-lagune-large-jour   |============>                                     | 1/4 - 165.50s/it[K · mémoire libre 6993 Mo
 [1095 s] 1 images · === decor-lagune-large-jour   |=========================>                        | 2/4 - 155.70s/it[K · mémoire libre 6993 Mo
+[1216 s] 1 images · === decor-lagune-large-jour   |=====================================>            | 3/4 - 155.64s/it[K · mémoire libre 7000 Mo
