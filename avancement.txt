@@ -19,3 +19,4 @@
 [2306 s] === A2-marche-planches   |=========================>                        | 2/4 - 308.23s/it[K · mémoire libre 6377 Mo
 [2428 s] === A2-marche-planches   |=====================================>            | 3/4 - 308.22s/it[K · mémoire libre 6362 Mo
 [2549 s] === A2-marche-planches   |=====================================>            | 3/4 - 308.22s/it[K · mémoire libre 6362 Mo
+[2670 s] === A2-marche-planches [I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 6617 Mo
