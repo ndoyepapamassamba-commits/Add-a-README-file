@@ -11,3 +11,4 @@
 [1335 s] === petit-mamadou--montrer (at_runtime)   |============>                                     | 1/4 - 134.49s/it[K · mémoire libre 13792 Mo
 [1456 s] === petit-mamadou--montrer (at_runtime)   |============>                                     | 1/4 - 134.49s/it[K · mémoire libre 13793 Mo
 [1577 s] === petit-mamadou--montrer (at_runtime)   |=========================>                        | 2/4 - 134.11s/it[K · mémoire libre 13776 Mo
+[1698 s] === petit-mamadou--montrer (at_runtime)   |=====================================>            | 3/4 - 133.83s/it[K · mémoire libre 13769 Mo
