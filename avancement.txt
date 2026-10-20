@@ -6,3 +6,4 @@
 [730 s] 0 images · === decor-gare-routiere-large-jour   |=====================================>            | 3/4 - 178.66s/it[K · mémoire libre 6974 Mo
 [851 s] 1 images · === maison-general-zongo-cour-large-jour   |==================================================| 4/4 - 177.69s/it[K · mémoire libre 11523 Mo
 [973 s] 1 images · === maison-general-zongo-cour-large-jour   |==================================================| 4/4 - 177.69s/it[K · mémoire libre 7004 Mo
+[1095 s] 1 images · === maison-general-zongo-cour-large-jour   |============>                                     | 1/4 - 188.88s/it[K · mémoire libre 6996 Mo
