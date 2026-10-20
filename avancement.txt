@@ -3,3 +3,4 @@
 [365 s] 0 images · === decor-terrain-de-foot-large-jour   |=====================================>            | 3/4 - 85.46s/it[K · mémoire libre 7001 Mo
 [487 s] 1 images · === maison-professeur-samba-cour-large-jour   |==================================================| 4/4 - 86.03s/it[K · mémoire libre 7000 Mo
 [122 s] 1 images · === maison-professeur-samba-cour-large-jour  · mémoire libre 7004 Mo
+[243 s] 1 images · === maison-professeur-samba-cour-large-jour   |============>                                     | 1/4 - 157.95s/it[K · mémoire libre 7004 Mo
