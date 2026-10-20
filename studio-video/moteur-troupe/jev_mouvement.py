@@ -37,6 +37,7 @@ Q = {'saccade': (False, SUITE + ' Between consecutive frames, does anything jump
      'bras': (True, INTRO + ' Between `a` and `d`, do a character\'s arms or hands visibly change position?'),
      'buste': (True, INTRO + ' Between `a` and `d`, does a character\'s torso visibly lean, twist or shift its weight?'),
      'tete': (True, INTRO + ' Between `a` and `d`, does a character\'s head visibly turn, tilt or nod?')}
+SEGMENT_MIN = 0.6   # s : en dessous, la fenêtre est prolongée dans le même plan (durée de calibration ≈ 0,87 s)
 DIAGNOSTIC = ('bras', 'buste', 'tete')   # mesurés et rapportés, mais la décision de la seconde se fait sur « ensemble »
 
 
@@ -50,7 +51,16 @@ def segment(sec, SH, cartes, N):
             if c0 < b <= c1: b = c0
         if b - a >= 0.3 and (best is None or b - a > best[1] - best[0]): best = (a, b, s)
     if best is None: return None
-    a, b, s = best; ts = np.linspace(a, b, 4)
+    a, b, s = best
+    # FENÊTRE À LA DURÉE DE CALIBRATION (20/10/2026) : les questions ont été calibrées sur quatre images à ≈ 0,3 s d'écart
+    # (fenêtre ≈ 0,87 s) ; quand une coupe tombe au milieu de la seconde, le plus long morceau ne faisait plus que 0,36 à
+    # 0,53 s (images à 0,12 s d'écart), hors du domaine calibré — même un humain filmé y « bouge » sous le seuil. Le morceau
+    # est alors prolongé DANS LE MÊME PLAN (jamais à travers une coupe ni une carte de titre) jusqu'à la durée calibrée
+    if b - a < SEGMENT_MIN:
+        L_ = min(1 - 4 / FPS, (s[1] - s[0]) - 4 / FPS)
+        a2 = max(s[0] + 2 / FPS, min(a, b - L_)); b2 = min(s[1] - 2 / FPS, a2 + L_); a2 = max(s[0] + 2 / FPS, b2 - L_)
+        if b2 - a2 > b - a and not any(c0 < b2 and a2 < c1 for c0, c1 in cartes): a, b = a2, b2
+    ts = np.linspace(a, b, 4)
     return [min(N - 1, int(round(t * FPS))) for t in ts], float(ts[1] - ts[0]), s, (int(round(a * FPS)), int(round(b * FPS)))
 
 

@@ -146,6 +146,43 @@ def ampleur_humaine(x, parle, fps, c, lim, RG=None, scene=None):
     return y
 
 
+PLANCHER = {'tete': 3.0 + 0.5, 'buste': 2.0 + 0.4, 'bras': 6.0}   # seuils visibles de la porte L (juge_local) + marge ; vérifié à seuil + 0,2–0,3
+
+
+def scene_actif(L_sk, nf, fps):
+    """images où le personnage est en scène dans ce sketch (de 0,8 s avant la première réplique à 2,5 s après la dernière)."""
+    m = np.zeros(nf, bool)
+    m[max(0, int((min(x['t0'] for x in L_sk) - 0.8) * fps)):min(nf, int((max(x['t0'] + x['dur'] for x in L_sk) + 2.5) * fps))] = True
+    return m
+
+
+def plancher_ensemble(R, fps, env, amax, actif, tours=3):
+    """deux parties du corps (tête, buste, bras) au-dessus du seuil visible sur toute fenêtre de 0,9 s active (voir pistes)."""
+    # fenêtres de 0,8 s tous les 2 images : toute fenêtre jugée (0,8 à 0,87 s, n'importe où) en contient une
+    n1 = int(round(0.8 * fps)); pas = 2; nf = len(R['buste']); cl = np.hanning(int(round(0.7 * fps)))
+    tete_ = ('tete_lacet', 'tete_tangage', 'tete'); buste_ = ('buste', 'buste_lacet')
+    for _ in range(tours):
+        ajouts = 0
+        for j in range(0, max(1, nf - n1), pas):
+            if actif[j:j + n1].mean() < 0.999: continue
+            ptp = lambda c: float(np.ptp(R[c][j:j + n1]))
+            t_ = max(ptp(c) for c in tete_); b_ = max(ptp(c) for c in buste_)
+            a_ = max([float(np.ptp(R[f'geste_{k}'][j:j + n1])) * am for k, am in enumerate(amax) if f'geste_{k}' in R] or [0.0])
+            ok = (t_ >= PLANCHER['tete'] - 0.3) + (b_ >= PLANCHER['buste'] - 0.2) + (a_ >= PLANCHER['bras'])
+            if ok >= 2: continue
+            manque = sorted([(PLANCHER['tete'] - t_, 'tete_tangage', t_ < PLANCHER['tete'] - 0.3), (PLANCHER['buste'] - b_, 'buste_lacet', b_ < PLANCHER['buste'] - 0.2)])
+            for d_, c_, faut in [m_ for m_ in manque if m_[2]][:2 - ok]:
+                x_ = R[c_]; sg = float(np.sign(x_[min(nf - 1, j + n1 - 1)] - x_[j])) or (1.0 if x_[j] <= 0 else -1.0)
+                i0 = j + (n1 - len(cl)) // 2; i1 = min(nf, i0 + len(cl)); bosse = np.zeros(nf); bosse[i0:i1] = cl[:i1 - i0]
+                # cloche tenue jusqu'à la fin de la fenêtre puis relâchée lentement : le geste prolonge le mouvement, sans aller-retour sec
+                pic = i0 + len(cl) // 2; bosse[pic:i1] = 1.0; fin = min(nf, i1 + int(0.6 * fps)); bosse[i1:fin] = np.linspace(1, 0, fin - i1)
+                R[c_] = (x_ + sg * d_ * bosse).astype(np.float32); ajouts += 1
+        for c_ in ('tete_tangage', 'buste_lacet'):   # écrêté à l'enveloppe (la borne douce, déjà passée, comprimerait tout le jeu)
+            R[c_] = lisse_acc(np.clip(R[c_], -env.get(c_, LIM[c_]), env.get(c_, LIM[c_])), fps)
+        if not ajouts: break
+    return R
+
+
 ACC_FLUIDE = 2.2   # à-coup maximal d'une piste de pose (2e différence, degrés par image²) ; la porte I du film admet 2,5
 
 
@@ -376,6 +413,9 @@ VISAGE_PART = float(os.environ.get('VISAGE_PART', 0.5))   # part de la rotation 
 LACET_VISAGE = 18.0   # 18/10/2026 : champ de rotation lissé (expressions_lp._lisse_flux) ; A/B JEV du plan de Baye (47 images) : 18° → 24 fautives, 0 déformée, rendu moyen 0,46 ; 14° → 25 et 0 (regard trop faible, porte D : Maman → Baye 0,36) ; 22° brut → 40 et 3
 PENCHE_FRAC = 0.6   # part de l'enveloppe du buste prise par le penché d'engagement de l'orateur (19/10/2026)
 PENCHE_JEU = {'accuse': 1.0, 'marchande': 0.9, 'soupcon': 0.85, 'panique': 0.6, 'innocent': 0.5, 'choc': -0.7, 'rire': -0.5, 'frime': -0.6}   # < 0 : se redresse, recule
+PENCHE_TETE = 0.35   # part de l'enveloppe du tangage de tête jouée avec le penché (la tête accompagne le buste, 20/10/2026)
+ECOUTE_BUSTE = 0.35  # part de l'enveloppe du buste : l'auditeur se tourne de corps vers celui qui parle (20/10/2026)
+TORSE_LACET = 0.45   # part de l'enveloppe du lacet du buste : torse tourné vers l'interlocuteur, orateur et auditeur (20/10/2026)
 ECOUTE_CENTRE = 4.0     # degrés : position lente de l'auditeur vers l'orateur après les normes humaines (oscillations ±2° par-dessus)
 LACET_ECOUTE_MIN = 3.5   # degrés : plancher d'écoute après toutes les couches (porte D : > 2° dans 75 % des images)
 NEGATIFS = ('tristesse', 'mecontent', 'colere', 'frustration', 'peur', 'soupcon', 'degout')
@@ -666,7 +706,7 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         #    se faire comprendre) : l'orateur se penche vers son interlocuteur 0,25 s avant sa réplique (anticipation), tient en
         #    battant légèrement sur ses syllabes fortes, se redresse 0,6 s après ; PENCHE_FRAC de l'enveloppe, signe selon le jeu
         if RG.get('penche', 1) and env.get('buste', 0) > 0:
-            pen = np.zeros(nf)
+            pen = np.zeros(nf); tw = np.zeros(nf)
             for x_ in [x for x in L_sk if x['qui'] == nom]:
                 sd_ = cote(a_qui[id(x_)])
                 if not sd_ or x_.get('jeu') == 'camera': continue
@@ -674,8 +714,27 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
                 k_ = at_ * at_ * (3 - 2 * at_) * (1 - re_ * re_ * (3 - 2 * re_))
                 bat_ = sum(np.where((u_ - a_ >= 0) & (u_ - a_ <= 0.34), np.sin(np.pi * (u_ - a_) / 0.34) ** 2, 0.0) for a_ in MOI.get(id(x_), [])) if MOI.get(id(x_)) else 0.0
                 s_ = PENCHE_JEU.get(x_.get('jeu', ''), 0.7)
-                pen += sd_ * s_ * k_ * (1.0 + 0.25 * np.clip(bat_, 0, 1.5))
+                pen += sd_ * s_ * k_ * (1.0 + 0.25 * np.clip(bat_, 0, 1.5)); tw += sd_ * k_
             R['buste'] = (R['buste'] + PENCHE_FRAC * env['buste'] * pen).astype(np.float32)
+            # ── LE CORPS JOUE ENSEMBLE (20/10/2026, porte L de l'épisode « cour-n1 ») : aux secondes 3, 9 et 14, chacun bougeait
+            #    la tête OU le buste (Sœur Awa : tête 3,7°, buste 1,3° ; Maître Koné : tête 1,8°, buste 7,7°), jamais les deux
+            #    dans la même seconde — et Sœur Awa ne peut pas compenser par les bras (sa tablette tenue à deux mains : un seul
+            #    avant-bras détouré, 0 à 4°). Comme l'humain qui se penche pour se faire comprendre, la tête accompagne le penché
+            #    d'un léger hochement vers l'avant (PENCHE_TETE de l'enveloppe du tangage, mêmes rampes que le buste)
+            R['tete_tangage'] = (R['tete_tangage'] + PENCHE_TETE * env.get('tete_tangage', 9.0) * np.clip(np.abs(pen), 0, 1.2)).astype(np.float32)
+            # … et l'auditeur se tourne aussi de CORPS vers celui qui parle (pas seulement de la tête) : 0,3 s après le début de
+            # la réplique, en 0,5 s, retour 0,6 s après la fin ; jamais sur une chute (le témoin se fige, TON.md)
+            ec_ = np.zeros(nf)
+            for x_ in [x for x in L_sk if x['qui'] != nom and not x.get('chute')]:
+                sd_ = cote(x_['qui'])
+                if not sd_: continue
+                u_ = T - x_['t0']; at_ = np.clip((u_ - 0.3) / 0.5, 0, 1); re_ = np.clip((u_ - x_['dur']) / 0.6, 0, 1)
+                ec_ += sd_ * at_ * at_ * (3 - 2 * at_) * (1 - re_ * re_ * (3 - 2 * re_))
+            R['buste'] = (R['buste'] + ECOUTE_BUSTE * env['buste'] * np.clip(ec_, -1, 1)).astype(np.float32)
+            # ORIENTATION DU TORSE (formation en F de Kendon : on parle et on écoute le torse tourné vers l'autre) : le penché seul
+            # ne dépasse pas 1,8° chez Sœur Awa (enveloppe du buste 3°), sous le seuil visible de 2° ; la rotation du torse
+            # (enveloppe 6°) vers l'interlocuteur, sur les mêmes rampes, rend le changement de tour de parole visible au corps
+            R['buste_lacet'] = (R['buste_lacet'] + TORSE_LACET * env.get('buste_lacet', 6.0) * np.clip(tw + ec_, -1, 1)).astype(np.float32)
         # ── ÉCOUTE GARANTIE (v34) : v33, porte D — Coumba écoutait Koffi la tête tournée du bon côté mais de 0,4° à 2° seulement
         # (34,9–35,5 s et 39,9–41,1 s, 0,676 au lieu de 0,75) : la capture de mouvement et les regards détournés, ajoutés APRÈS la
         # cible d'écoute, la rognaient. Plancher doux appliqué après toutes les couches : vers celui qui parle, au moins
@@ -731,6 +790,16 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         #    doux avec la place restante jusqu'à la butée (aucun coin) ; garde de fluidité en dernier
         if RG.get('ecoute_finale', 1) and RG.get('yeux', 1):
             R['tete_lacet'] = remontee_ecoute(R['tete_lacet'], ecoute_, fps, RG.get('ecoute_centre', ECOUTE_CENTRE), env.get('tete_lacet', 20.0))
+        # ── PLANCHER D'ENSEMBLE APRÈS LES NORMES (20/10/2026, porte L de l'épisode « cour-n1 »). Les normes humaines visent la
+        #    MÉDIANE par seconde (BEAT2 : tête ≥ 3° sur 85 % des secondes de parole, buste ≥ 2° sur 74 %) : la queue basse restait
+        #    sous les seuils visibles, et la porte demande que deux parties du corps changent ensemble à CHAQUE seconde (secondes
+        #    3, 18, 19, 38, 51, 62 de l'essai e4). Sur toute fenêtre de 0,9 s où le personnage est en scène, hors prise de choc
+        #    (le témoin figé reste figé), le moteur compte tête, buste et bras (angle réel de chaque bras, bras_amax) ; s'il en
+        #    manque, il PROLONGE le mouvement en cours de la partie la plus proche du seuil (hochement, torse tourné) d'une
+        #    cloche de 0,8 s, dans l'enveloppe, puis la garde de fluidité passe
+        if RG.get('plancher_ensemble', 1) and L_sk:
+            am_ = (RG.get('bras_amax') or {}).get(nom, [])
+            R = plancher_ensemble(R, fps, env, am_, scene_actif(L_sk, nf, fps) & (prise < 0.05))
         for e in EMOS: R['emo_' + e] = ressort(np.clip(E[e], 0, 1), fps, 10.0)
         if cl is not None: R['cligne'] = cl * (1 - 0.7 * np.clip(prise, 0, 1))   # yeux écarquillés : on cligne peu pendant la prise
         # bouche bée de la prise (commande de mâchoire 0..1, prise au maximum avec celle de la parole) ; fermée dès que le

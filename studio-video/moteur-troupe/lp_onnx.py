@@ -55,11 +55,14 @@ class Source:
         # ouverture des yeux du dessin (hauteur / largeur de la fente, repères MediaPipe), entrée du module de reciblage des yeux
         V = np.asarray(v3)[:, :2]; r_ = lambda h, b_, g, d: float(np.linalg.norm(V[h] - V[b_]) / (np.linalg.norm(V[g] - V[d]) + 1e-6))
         self.oeil = (r_(159, 145, 33, 133), r_(386, 374, 362, 263))
+        # ouverture des lèvres du dessin (lèvres intérieures 13-14 / coins 61-291), entrée du module de reciblage des lèvres
+        # (les auteurs : repères 90-102 / 48-66 de leur détecteur à 203 points, retargeting_utils.calc_lip_close_ratio)
+        self.levre = r_(13, 14, 61, 291)
 
     def _x(self, exp, R):
         x = self.scale * (self.kp @ R + exp); x[:, :2] += self.t[:2]; return x
 
-    def rendu(self, edits=None, dpose=(0.0, 0.0, 0.0), couture=True, yeux=None):
+    def rendu(self, edits=None, dpose=(0.0, 0.0, 0.0), couture=True, yeux=None, levres=None):
         """image 512 × 512 du carré du visage avec l'expression demandée (edits : delta d'expression 21 × 3), la tête
         tournée de dpose (tangage, lacet, roulis en degrés ; tangage > 0 : la tête baisse) et les yeux ouverts à yeux
         (rapport hauteur / largeur de la fente ; 0 = fermés ; None = ceux du dessin).
@@ -73,6 +76,14 @@ class Source:
         if yeux is not None:
             f = np.concatenate([self.xs.reshape(-1), [self.oeil[0], self.oeil[1], float(yeux)]])[None].astype(np.float32)
             xd = xd + _sess('stitching_eye').run(None, {'input': f})[0].reshape(21, 3)
+        # LÈVRES JOINTES (20/10/2026) : un dessin qui sourit dents visibles (galerie : Sœur Awa, Maître Koné) garde la bouche
+        # entrouverte avec la seule commande « lèvres 3 » (écart 0,088–0,099 du visage à −25 ; fermé ≤ 0,035). Les auteurs
+        # ferment la bouche avant d'animer (flag_normalize_lip : live_portrait_wrapper.retarget_lip, [x_s, ouverture source,
+        # ouverture voulue] → delta des 21 points, ajouté avant la couture), présent dans nos poids (stitching_lip.onnx).
+        # levres : ouverture voulue (0 = jointes) ; None = celle du dessin.
+        if levres is not None:
+            f = np.concatenate([self.xs.reshape(-1), [self.levre, float(levres)]])[None].astype(np.float32)
+            xd = xd + _sess('stitching_lip').run(None, {'input': f})[0].reshape(21, 3)
         if couture:   # recousu au reste de la tête (module « stitching » des auteurs)
             d = _sess('stitching').run(None, {'input': np.concatenate([self.xs.reshape(-1), xd.reshape(-1)])[None].astype(np.float32)})[0][0]
             xd = xd + d[:63].reshape(21, 3); xd[:, :2] += d[63:65]

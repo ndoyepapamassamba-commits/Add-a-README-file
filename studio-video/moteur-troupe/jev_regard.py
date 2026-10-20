@@ -97,7 +97,7 @@ if __name__ == '__main__':
         except Exception: acteurs[sid] = []
     taches = []
     for k, L in enumerate(L_all):
-        noms = [n for n in acteurs.get(L.get('sketch'), []) if n in QUI]
+        noms = list(acteurs.get(L.get('sketch'), []))   # toute la troupe : QUI décrit aussi les personnages de la bible (mise_en_scene._Qui)
         if L['qui'] not in noms: continue
         dest = jeu.interlocuteur(L, L_all, noms)
         paires = [(n, L['qui'], 'écoute') for n in noms if n != L['qui']]

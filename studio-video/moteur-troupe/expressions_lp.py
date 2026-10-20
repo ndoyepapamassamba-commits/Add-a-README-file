@@ -87,6 +87,23 @@ def _commande(c, m):
     c = dict(c); c['levre3'] = m if m < 0 else c.get('levre3', 0) + m; return LP.edits(**c)
 
 
+# LÈVRES JOINTES CALIBRÉES PAR VISAGE (20/10/2026, porte B de l'épisode « cour-n1 » : Sœur Awa garde la bouche entrouverte
+# sur m, b, p, écart 0,10–0,11 dans le film) : la bouche fermée (rang < 0) est MESURÉE sur le neutre (visage_mesure,
+# FaceLandmarker) ; au-dessus de JOINTES_CIBLE, le module de reciblage des lèvres des auteurs la ferme (lp_onnx.rendu,
+# levres=0). Mesuré à −25 : Sœur Awa 0,099 → 0,013, Maître Koné 0,093 → 0,022 ; un visage déjà fermé n'est pas touché.
+JOINTES_CIBLE = 0.025   # écart des lèvres / hauteur du visage visé (juge local de la porte B : fermée ≤ 0,035)
+
+
+def jointes(src, m):
+    """{'levres': None | 0.0, 'avant', 'apres'} : ouverture des lèvres voulue pour la bouche fermée m (< 0) de ce visage."""
+    import visage_mesure as VM
+    g = lambda lv: (VM.mesure(cv2.cvtColor(src.rendu(_commande({}, m), levres=lv), cv2.COLOR_RGB2BGR)) or {}).get('levres')
+    g0 = g(None)
+    if g0 is None or g0 <= JOINTES_CIBLE: return {'levres': None, 'avant': g0}
+    g1 = g(0.0)
+    return {'levres': 0.0 if g1 is not None and g1 < g0 else None, 'avant': g0, 'apres': g1}
+
+
 def variantes(e):
     """recettes candidates d'une émotion, dans l'ordre d'essai."""
     R = EMO[e]; V = [R]
@@ -294,7 +311,9 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
     if alpha is not None:
         Mg = np.float32([[taille / s, 0, -x * taille / s], [0, taille / s, -y * taille / s]])
         an = cv2.warpAffine(np.asarray(alpha, np.float32), Mg, (taille, taille), flags=cv2.INTER_LINEAR, borderValue=0); pres = zone_visage(v3, (x, y, s), taille)
-    rend = lambda c, m: cv2.resize(src.rendu(_commande(c, m)), (taille, taille), interpolation=cv2.INTER_AREA)
+    mf = min(BOUCHE) if min(BOUCHE) < 0 else None; J = jointes(src, mf) if mf is not None else {'levres': None}
+    meta['jointes'] = dict(J); journal(f"  lèvres jointes : {J}")
+    rend = lambda c, m: cv2.resize(src.rendu(_commande(c, m), levres=J['levres'] if m < 0 else None), (taille, taille), interpolation=cv2.INTER_AREA)
     ecrit = lambda f, o: cv2.imwrite(f, cv2.cvtColor(o, cv2.COLOR_RGB2BGR))
     lire = lambda f: cv2.cvtColor(cv2.imread(f), cv2.COLOR_BGR2RGB)
     base = (v_jev.get('neutre') or {}).get('abime') if (repris or retaille) else None
@@ -346,11 +365,29 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
                         except Exception as ex: journal(f'  {e} : juge indisponible pour la garde ({str(ex)[:60]})')
                     journal(f"  {e} : garde des lunettes, écart {r0} → {r_} px, sourcils {g_['sourcils_avant']} → {({k_: c[k_] for k_ in SOURCILS if k_ in c})} {g_.get('jev', '')}")
         neuf = not meme or garde or (retaille and e not in repris) or (meme and c != v_rec.get(e))   # recette changée par le juge : toutes les bouches
+        J0 = (P if e in repris else ancien).get('jointes') or {}
+        jn = J0.get('levres') != J['levres']   # lèvres recalibrées : rangs fermés redessinés
+        faits = set()
         for i, m in enumerate(BOUCHE):
             f = f'{dossier}/{e}_{i}.png'
             if m == 0 and fait0 is not None: ecrit(f, fait0); continue   # la recette est jugée à la bouche peinte (0)
             ab = ancien.get('bouche') or []   # bouches changées : seuls les rangs dont la valeur change sont redessinés
-            if neuf or (neuf_bouche and e not in repris and (i >= len(ab) or ab[i] != m)) or not os.path.isfile(f): ecrit(f, rend(c, m))
+            if neuf or (m < 0 and jn) or (neuf_bouche and e not in repris and (i >= len(ab) or ab[i] != m)) or not os.path.isfile(f): ecrit(f, rend(c, m)); faits.add(i)
+        if mf is not None:   # contrôle : la bouche fermée de CHAQUE émotion, mesurée sur l'image rangée
+            import visage_mesure as VM
+            iz = BOUCHE.index(mf); fz = f'{dossier}/{e}_{iz}.png'; g_ = (VM.mesure(cv2.imread(fz)) or {}).get('levres')
+            if iz not in faits and e in J0.get('renfort', {}): meta['jointes'].setdefault('renfort', {})[e] = J0['renfort'][e]
+            # RENFORT (20/10/2026) : le sourire d'une émotion rouvre les lèvres (Sœur Awa, lèvres jointes : joie 0,044, rire
+            # 0,053) ; la bouche fermée de CETTE émotion est refermée plus fort (−20 puis −40 sous le rang fermé, lèvres
+            # reciblées à 0) et la mieux fermée est gardée (mesuré : joie 0,009, rire 0,024 à −65, visage intact sur planche)
+            if g_ is not None and g_ > JOINTES_CIBLE:
+                for m2 in (mf - 20, mf - 40):
+                    o = cv2.resize(src.rendu(_commande(c, m2), levres=0.0), (taille, taille), interpolation=cv2.INTER_AREA)
+                    g2 = (VM.mesure(cv2.cvtColor(o, cv2.COLOR_RGB2BGR)) or {}).get('levres')
+                    if g2 is not None and g2 < g_: ecrit(fz, o); g_ = g2; meta['jointes'].setdefault('renfort', {})[e] = m2
+                    if g_ <= JOINTES_CIBLE: break
+            meta['jointes'].setdefault('emotions', {})[e] = g_
+            if g_ is not None and g_ > VM.FERMEE_MAX: journal(f'  {e} : bouche fermée encore ouverte ({g_} > {VM.FERMEE_MAX})')
         meta['emotions'].append(e); meta['commandes'][e] = EMO[e]; meta['recettes'][e] = c
         meta['intensite'][e] = meta['jev'].get(e, {}).get('intensite', 1.0)
         json.dump(meta, open(fp, 'w'))

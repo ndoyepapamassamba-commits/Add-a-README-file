@@ -29,7 +29,9 @@ if __name__ == '__main__':
         c = ch[-1]; tp = jeu.prise_t(c)
         # le gros plan de réaction (tourne.py) : premier plan « gros » qui commence après la chute
         g = next((s for s in TO['decoupage'] if s[2] == sk['id'] and s[3] == 'gros' and s[0] >= c['t0']), None)
-        if not g or not g[4] or g[4] not in QUI: continue
+        # toute la troupe (20/10/2026) : « in QUI » ne voyait que les 7 premiers personnages — épisode « cour-n1 » : 0 image
+        # jugée pour Sœur Awa et Maître Koné ; QUI décrit les autres depuis la bible (mise_en_scene._Qui)
+        if not g or not g[4]: continue
         for d in INSTANTS:
             if tp + d < g[1]: taches.append((sk['id'], g[4], round(tp + d, 2), g[0]))
     cap = cv2.VideoCapture(MP4)

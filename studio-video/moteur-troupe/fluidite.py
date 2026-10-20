@@ -168,10 +168,19 @@ def souplesse(dossier, seuils=SEUILS):
         for l in open(f):
             e = json.loads(l)
             if 'pose' in e: par.setdefault(e['qui'], []).append(e)
+    # JAMAIS À TRAVERS UN CHANGEMENT DE SKETCH (20/10/2026) : chaque sketch part de sa propre pose ; à l'écran, la carte de
+    # titre puis le premier plan du sketch suivant font une COUPE. Épisode « cour-n1 » à trois sketchs : la tête de Maître
+    # Koné passe de −0,23° à 3,93° en 0,2 s sous la carte (22,6 → 22,8 s), et les fenêtres de 4 s qui l'enjambaient comptaient
+    # ce raccord comme un mouvement raide (p10 −5,21 contre −5,15 chez l'humain) ; un épisode à un seul sketch n'en a pas
+    TO = os.path.join(dossier, 'tournage.json'); coupes = []
+    if os.path.isfile(TO):
+        dec = json.load(open(TO)).get('decoupage') or []
+        coupes = [b[0] for a, b in zip(dec, dec[1:]) if len(a) > 2 and len(b) > 2 and a[2] != b[2]]
     mot = {c: [] for c in ARTICULATIONS}
     for L in par.values():
         L.sort(key=lambda e: e['t']); t = np.array([e['t'] for e in L])
-        for seg in np.split(np.arange(len(L)), np.flatnonzero(np.diff(t) > 0.1) + 1):
+        rupt = set(np.flatnonzero(np.diff(t) > 0.1) + 1) | {int(np.searchsorted(t, c_)) for c_ in coupes if t[0] < c_ < t[-1]}
+        for seg in np.split(np.arange(len(L)), sorted(rupt)):
             if len(seg) <= FEN: continue
             for c in ARTICULATIONS: mot[c] += _fenetres(np.array([L[k]['pose'].get(c, 0.0) for k in seg], float))
     R = {}

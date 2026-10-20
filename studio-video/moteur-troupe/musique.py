@@ -61,6 +61,8 @@ PASSE_BAS_RIRE = 5000.0
 RIRES_CACHE = os.path.expanduser(os.environ.get('RIRES_CACHE', '~/.cache/massamba-models/rires'))
 RIRE_VS_VOIX_DB = -2.0          # TikTok : rires au niveau des voix (écart médian −0,7 dB) ; −2 depuis le 18/10 (« aigu par moments »)
 RIRE_APRES_PRISE = 0.2          # s : le public rit 0,2 s après la prise de choc (le visage a « encaissé »)
+RIRE_FENETRES_MIN = 3           # fenêtres YAMNet « rire » exigées à la pose, par-dessus les voix : à 2 (mixkit-427), le rire
+                                # disparaissait sous la musique et l'ambiance de la bande livrée (0 fenêtre, épisode « cour-n1 »)
 
 
 def _rire(i):
@@ -91,6 +93,31 @@ def _meilleur_passage(i, r, dur):
 def _rms_db(x): return float(20 * np.log10(np.sqrt(np.mean(np.square(x))) + 1e-9)) if len(x) else -120.0
 
 
+def _salve(ri, dur, ref_db):
+    """salve de rire de `dur` s tirée du son mixkit `ri` (passage le plus rieur, passe-bas, fondus) et son gain au niveau des voix."""
+    r = _rire(ri); i0 = _meilleur_passage(ri, r, dur)
+    seg = r[i0:i0 + int(dur * SR)].copy(); m = len(seg)
+    if m < int(0.5 * SR): return None, 0.0
+    import scipy.signal as ss_; seg = ss_.sosfiltfilt(ss_.butter(4, PASSE_BAS_RIRE, 'low', fs=SR, output='sos'), seg).astype(np.float32)
+    f_in = np.minimum(1.0, np.arange(m) / (0.06 * SR)); f_out = np.clip((m - np.arange(m)) / (0.7 * SR), 0, 1)
+    seg *= f_in * f_out ** 1.5
+    actif = seg[np.abs(seg) > 0.02 * np.abs(seg).max()] if np.abs(seg).max() > 0 else seg
+    return seg, 10 ** ((ref_db + RIRE_VS_VOIX_DB - _rms_db(actif)) / 20)
+
+
+def _rire_entendu(y, i, j, ajout):
+    """fenêtres YAMNet (0,48 s) où un rire est dans les 3 classes les plus fortes, sur [i − 0,3 s, j] de la bande + `ajout`
+    (même règle que jev_son)."""
+    try:
+        import oreille as ecoute, scipy.signal as ss_
+        a = max(0, i - int(0.3 * SR)); x = y[a:j].copy(); x[i - a:i - a + len(ajout)] += ajout
+        x16 = ss_.resample_poly(x, 16000, SR).astype(np.float32) if SR != 16000 else x
+        _, _, top = ecoute.classe(x16)
+        return sum(any(n in ('Laughter', 'Giggle', 'Snicker', 'Chuckle, chortle', 'Belly laugh') for n, _ in t[:3]) for t in top)
+    except Exception:
+        return 0
+
+
 def rires(T, y):
     """pose une salve de rires de public après la prise de choc de chaque sketch ; → liste des rires posés (pour jev_son)."""
     voix = [_rms_db(y[int(L['t0'] * SR):int((L['t0'] + L['dur']) * SR)]) for L in T['lines']]
@@ -102,17 +129,22 @@ def rires(T, y):
         c = ch[-1]; t0 = jeu_prise_t(c) + RIRE_APRES_PRISE
         suivante = min([L['t0'] for L in T['lines'] if L['t0'] > c['t0']] + [x + 0.6 for x in cartes if x > t0] + [T.get('total', len(y) / SR)])
         dur = float(np.clip(suivante - t0, 1.0, 2.6))   # TikTok : 0,5 à 1,5 s le plus souvent, jusqu'à 3,4 s ; jamais sur la réplique suivante
-        r = _rire(RIRES[k % len(RIRES)]); i0 = _meilleur_passage(RIRES[k % len(RIRES)], r, dur)
-        seg = r[i0:i0 + int(dur * SR)].copy(); m = len(seg)
-        import scipy.signal as ss_; seg = ss_.sosfiltfilt(ss_.butter(4, PASSE_BAS_RIRE, 'low', fs=SR, output='sos'), seg).astype(np.float32)
-        if m < int(0.5 * SR): continue
-        f_in = np.minimum(1.0, np.arange(m) / (0.06 * SR)); f_out = np.clip((m - np.arange(m)) / (0.7 * SR), 0, 1)
-        seg *= f_in * f_out ** 1.5
-        actif = seg[np.abs(seg) > 0.02 * np.abs(seg).max()] if np.abs(seg).max() > 0 else seg
-        g = 10 ** ((ref_db + RIRE_VS_VOIX_DB - _rms_db(actif)) / 20)
+        # RIRE ENTENDU, VÉRIFIÉ À LA POSE (20/10/2026) : épisode « cour-n1 », le rire mixkit-427 posé après « LA FAUTE » n'était
+        # reconnu par YAMNet dans aucune fenêtre de la bande (les deux autres : 1 et 2 sur 3) et la porte N tombait. Chaque
+        # échantillon est essayé (rotation par sketch pour varier) et écouté par la même oreille que la porte, par-dessus les
+        # voix ; le mieux entendu est gardé
+        essais = []
+        for n_ in range(len(RIRES)):
+            ri = RIRES[(k + n_) % len(RIRES)]; seg, g = _salve(ri, dur, ref_db)
+            if seg is None: continue
+            i = int(t0 * SR); j = min(len(y), i + len(seg)); h = _rire_entendu(y, i, j, g * seg[:j - i])
+            essais.append((h, -n_, ri, seg, g))
+            if h >= RIRE_FENETRES_MIN: break
+        if not essais: continue
+        h, _, ri, seg, g = max(essais, key=lambda e_: (e_[0], e_[1])); m = len(seg)
         i = int(t0 * SR); j = min(len(y), i + m); y[i:j] += g * seg[:j - i]
-        poses.append({'sketch': sk['id'], 'debut': round(t0, 2), 'fin': round(t0 + m / SR, 2), 'son': f'mixkit-{RIRES[k % len(RIRES)]}',
-                      'prise_de_choc': round(jeu_prise_t(c), 2), 'niveau_vs_voix_db': RIRE_VS_VOIX_DB})
+        poses.append({'sketch': sk['id'], 'debut': round(t0, 2), 'fin': round(t0 + m / SR, 2), 'son': f'mixkit-{ri}',
+                      'prise_de_choc': round(jeu_prise_t(c), 2), 'niveau_vs_voix_db': RIRE_VS_VOIX_DB, 'fenetres_rire_yamnet': h})
     return poses
 
 

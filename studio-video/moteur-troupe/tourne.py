@@ -388,7 +388,8 @@ if REG['rig']:   # pistes de jeu et ressenti de chaque personnage, image par ima
                                {n: A.get('env', {}) for n, A in A2.items()}, NF30, 30, {n: len(A['rig']['bras']) if A.get('rig') else 0 for n, A in A2.items()},
                                echelles={n: float(A['rig']['M']['sw']) / 0.38 for n, A in A2.items() if A.get('rig')},   # largeur d'épaules humaine ≈ 0,38 m
                                cotes_bras={n: [b['cote'] for b in A['rig']['bras']] for n, A in A2.items() if A.get('rig')},
-                               reglages=RJ, journal=J_, visee=visee_(A2), peints={n: regard.peint(A.get('yeux')) for n, A in A2.items()}), J_
+                               reglages=dict(RJ, bras_amax={n: [float(b.get('amax', 0.0)) for b in A['rig']['bras']] for n, A in A2.items() if A.get('rig')}),   # plancher d'ensemble : angle réel des bras
+                               journal=J_, visee=visee_(A2), peints={n: regard.peint(A.get('yeux')) for n, A in A2.items()}), J_
     for sid, S_ in SC.items():
         A2 = S_['acts']
         print(f"{sid}: regard peint", {n: [round(v, 2) for v in regard.peint(A.get('yeux'))] for n, A in A2.items()}, "; visée", {n: {m: [round(x, 2) for x in v] for m, v in d.items()} for n, d in visee_(A2).items()}, flush=True)
