@@ -1,1 +1,2 @@
 [122 s] === koffi--choc (at_runtime)  · mémoire libre 13830 Mo
+[243 s] === koffi--choc (at_runtime)   |============>                                     | 1/4 - 137.78s/it[K · mémoire libre 13822 Mo
