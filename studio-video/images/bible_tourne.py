@@ -5,7 +5,8 @@
 # demandée (src/pipeline/image.cpp l. 283-296), elle double donc les jetons du transformeur ; l'option prévue par l'auteur
 # « --ref-image-args vae_input_max_pixels=N » (src/pipeline/diffusion_engine.cpp l. 3288) la plafonne. Référence au quart de la
 # surface : le style passe, le calcul de la référence est divisé par quatre.
-# Reprenable : la machine part de ce qui est déjà sur bible-sortie-<part> (jamais refait) et chaque image scellée y est poussée
+# Reprenable : la machine part de ce qui est déjà sur bible-sortie-<part> (jamais refait, sauf si la tâche a pris une version
+# plus haute : image corrigée) et chaque image scellée y est poussée
 # dès qu'elle est prête (boucle du workflow), si bien qu'une machine arrêtée ne perd que l'image en cours.
 #   python3 bible_tourne.py TACHES.json PART NB POIDS SORTIE BINAIRE CLE_FABRIQUE.priv.json CLE_CLAUDE.pub.pem [MINUTES]
 # SORTIE est la copie de travail de la branche : rien n'y est écrit en clair (images claires dans SORTIE-clair).
@@ -31,7 +32,11 @@ def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude, minute
     clair = sortie.rstrip('/') + '-clair'; os.makedirs(clair, exist_ok=True)
     journal = os.path.join(clair, 'journal.txt'); mesure = os.path.join(sortie, 'mesure.json')
     res = json.load(open(mesure, encoding='utf-8'))['taches'] if os.path.isfile(mesure) else []
-    faits = {f[:-4] for f in os.listdir(sortie) if f.endswith('.msb')}
+    presents = {f[:-4] for f in os.listdir(sortie) if f.endswith('.msb')}
+    versions = {}   # version faite de chaque image (1 si non notée) : une tâche dont la version a monté est refaite
+    for e in res:
+        if e.get('ok'): versions[e['tache']] = e.get('version', 1)
+    faits = {i for i in presents if versions.get(i, 1) == next((t.get('version', 1) for t in T if t['id'] == i), 1)}
     priv = coffre._priv(priv_fabrique, coffre._phrase()); pub = coffre._pub(pub_claude); refs = {}
     duree = {}   # type de tâche → plus longue durée vue, pour ne pas commencer une image qui dépasserait le temps de la machine
     print(json.dumps({'part': int(part), 'taches': len(T), 'deja_faites': len(faits & {t['id'] for t in T})}), flush=True)
@@ -59,7 +64,7 @@ def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude, minute
             os.replace(os.path.join(sortie, t['id'] + '.msb.part'), os.path.join(sortie, t['id'] + '.msb')); os.remove(out); faits.add(t['id'])
         s = round(time.time() - t0); duree[t['type']] = max(duree.get(t['type'], 0), s)
         rss = re.search(r'Maximum resident set size \(kbytes\): (\d+)', open(tps).read()) if os.path.isfile(tps) else None
-        res.append({'tache': t['id'], 'type': t['type'], 'ok': ok, 'code': rc, 'secondes': s, 'w': t['w'], 'h': t['h'],
+        res.append({'tache': t['id'], 'version': t.get('version', 1), 'type': t['type'], 'ok': ok, 'code': rc, 'secondes': s, 'w': t['w'], 'h': t['h'],
                     'memoire_max_go': round(int(rss.group(1)) / 1e6, 2) if rss else None, 'run': os.environ.get('GITHUB_RUN_ID')})
         print(json.dumps(res[-1], ensure_ascii=False), flush=True)
         json.dump({'part': int(part), 'modele': 'FLUX.2 klein 4B (Apache-2.0)', 'sd_cpp': os.environ.get('SD_CPP'), 'taches': res},

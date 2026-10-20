@@ -118,7 +118,8 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, a waiting room with benches, a reception desk, health posters, wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, an empty waiting room with benches, an unattended reception desk, health posters, wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people.",
+  "version": 2
  },
  {
   "id": "decor-salon-de-coiffure-large-jour",
@@ -140,7 +141,8 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in West Africa, a barrier, a small office booth, parked trucks, a flag, wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in Ivory Coast, a barrier, a small office booth, parked trucks, the Ivorian flag (vertical orange, white and green stripes), wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people.",
+  "version": 2
  },
  {
   "id": "decor-tribunal-large-jour",
@@ -151,7 +153,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, a judge desk, wooden benches, a ceiling fan, a national flag, wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, an empty judge desk, wooden benches, a ceiling fan, the Ivorian flag (vertical orange, white and green stripes), wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-gare-routiere-large-jour",
@@ -206,7 +208,8 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, spectators benches, wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, empty wooden benches, wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people.",
+  "version": 2
  },
  {
   "id": "decor-banque-large-jour",
@@ -341,28 +344,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-baye-ndiaye-salon-large-jour",
-  "type": "decor",
-  "foyer": "BAYE NDIAYE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-baye-ndiaye-chambre-large-jour",
-  "type": "decor",
-  "foyer": "BAYE NDIAYE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-baye-ndiaye-cuisine-large-jour",
   "type": "decor",
   "foyer": "BAYE NDIAYE",
@@ -372,6 +353,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-baye-ndiaye-salon-large-jour",
+  "type": "decor",
+  "foyer": "BAYE NDIAYE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky, furnished like this family's home: a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-baye-ndiaye-chambre-large-jour",
+  "type": "decor",
+  "foyer": "BAYE NDIAYE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky, furnished like this family's home: a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-general-zongo-cour-large-jour",
@@ -385,28 +390,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-general-zongo-salon-large-jour",
-  "type": "decor",
-  "foyer": "GÉNÉRAL ZONGO",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-general-zongo-chambre-large-jour",
-  "type": "decor",
-  "foyer": "GÉNÉRAL ZONGO",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-general-zongo-cuisine-large-jour",
   "type": "decor",
   "foyer": "GÉNÉRAL ZONGO",
@@ -416,6 +399,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-general-zongo-salon-large-jour",
+  "type": "decor",
+  "foyer": "GÉNÉRAL ZONGO",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky, furnished like this family's home: gold-framed portraits, leather sofas; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-general-zongo-chambre-large-jour",
+  "type": "decor",
+  "foyer": "GÉNÉRAL ZONGO",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky, furnished like this family's home: gold-framed portraits, leather sofas; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-professeur-samba-cour-large-jour",
@@ -429,28 +436,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-professeur-samba-salon-large-jour",
-  "type": "decor",
-  "foyer": "PROFESSEUR SAMBA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-professeur-samba-chambre-large-jour",
-  "type": "decor",
-  "foyer": "PROFESSEUR SAMBA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-professeur-samba-cuisine-large-jour",
   "type": "decor",
   "foyer": "PROFESSEUR SAMBA",
@@ -460,6 +445,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-professeur-samba-salon-large-jour",
+  "type": "decor",
+  "foyer": "PROFESSEUR SAMBA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky, furnished like this family's home: a tidy small house full of books and newspapers; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-professeur-samba-chambre-large-jour",
+  "type": "decor",
+  "foyer": "PROFESSEUR SAMBA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky, furnished like this family's home: a tidy small house full of books and newspapers; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-sur-awa-cour-large-jour",
@@ -473,28 +482,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-sur-awa-salon-large-jour",
-  "type": "decor",
-  "foyer": "SŒUR AWA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-sur-awa-chambre-large-jour",
-  "type": "decor",
-  "foyer": "SŒUR AWA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-sur-awa-cuisine-large-jour",
   "type": "decor",
   "foyer": "SŒUR AWA",
@@ -504,6 +491,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-sur-awa-salon-large-jour",
+  "type": "decor",
+  "foyer": "SŒUR AWA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-sur-awa-chambre-large-jour",
+  "type": "decor",
+  "foyer": "SŒUR AWA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-mecano-issa-cour-large-jour",
@@ -517,28 +528,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-mecano-issa-salon-large-jour",
-  "type": "decor",
-  "foyer": "MÉCANO ISSA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-mecano-issa-chambre-large-jour",
-  "type": "decor",
-  "foyer": "MÉCANO ISSA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-mecano-issa-cuisine-large-jour",
   "type": "decor",
   "foyer": "MÉCANO ISSA",
@@ -548,6 +537,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-mecano-issa-salon-large-jour",
+  "type": "decor",
+  "foyer": "MÉCANO ISSA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-mecano-issa-chambre-large-jour",
+  "type": "decor",
+  "foyer": "MÉCANO ISSA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-fatou-cour-large-jour",
@@ -561,28 +574,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-fatou-salon-large-jour",
-  "type": "decor",
-  "foyer": "FATOU",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-fatou-chambre-large-jour",
-  "type": "decor",
-  "foyer": "FATOU",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-fatou-cuisine-large-jour",
   "type": "decor",
   "foyer": "FATOU",
@@ -592,6 +583,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-fatou-salon-large-jour",
+  "type": "decor",
+  "foyer": "FATOU",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-fatou-chambre-large-jour",
+  "type": "decor",
+  "foyer": "FATOU",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-la-voisine-cour-large-jour",
@@ -605,28 +620,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — the house next door to the Ndiaye family, separated by a low wall everyone talks over; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-la-voisine-salon-large-jour",
-  "type": "decor",
-  "foyer": "LA VOISINE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — the house next door to the Ndiaye family, separated by a low wall everyone talks over; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-la-voisine-chambre-large-jour",
-  "type": "decor",
-  "foyer": "LA VOISINE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — the house next door to the Ndiaye family, separated by a low wall everyone talks over; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-la-voisine-cuisine-large-jour",
   "type": "decor",
   "foyer": "LA VOISINE",
@@ -636,6 +629,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — the house next door to the Ndiaye family, separated by a low wall everyone talks over; wide establishing shot, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-la-voisine-salon-large-jour",
+  "type": "decor",
+  "foyer": "LA VOISINE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-la-voisine-chambre-large-jour",
+  "type": "decor",
+  "foyer": "LA VOISINE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; wide shot of the room, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "perso-tonton-dieng",
@@ -1493,7 +1510,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, a waiting room with benches, a reception desk, health posters, medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, an empty waiting room with benches, an unattended reception desk, health posters, medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-hopital-contrechamp-jour",
@@ -1504,7 +1521,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, a waiting room with benches, a reception desk, health posters, reverse angle, opposite side of the place, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, an empty waiting room with benches, an unattended reception desk, health posters, reverse angle, opposite side of the place, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-hopital-coin-jour",
@@ -1515,7 +1532,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, a waiting room with benches, a reception desk, health posters, medium shot of a corner with props, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, an empty waiting room with benches, an unattended reception desk, health posters, medium shot of a corner with props, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-salon-de-coiffure-champ-jour",
@@ -1559,7 +1576,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in West Africa, a barrier, a small office booth, parked trucks, a flag, medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in Ivory Coast, a barrier, a small office booth, parked trucks, the Ivorian flag (vertical orange, white and green stripes), medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-douane-contrechamp-jour",
@@ -1570,7 +1587,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in West Africa, a barrier, a small office booth, parked trucks, a flag, reverse angle, opposite side of the place, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in Ivory Coast, a barrier, a small office booth, parked trucks, the Ivorian flag (vertical orange, white and green stripes), reverse angle, opposite side of the place, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-douane-coin-jour",
@@ -1581,7 +1598,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in West Africa, a barrier, a small office booth, parked trucks, a flag, medium shot of a corner with props, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in Ivory Coast, a barrier, a small office booth, parked trucks, the Ivorian flag (vertical orange, white and green stripes), medium shot of a corner with props, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-tribunal-champ-jour",
@@ -1592,7 +1609,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, a judge desk, wooden benches, a ceiling fan, a national flag, medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, an empty judge desk, wooden benches, a ceiling fan, the Ivorian flag (vertical orange, white and green stripes), medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-tribunal-contrechamp-jour",
@@ -1603,7 +1620,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, a judge desk, wooden benches, a ceiling fan, a national flag, reverse angle, opposite side of the place, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, an empty judge desk, wooden benches, a ceiling fan, the Ivorian flag (vertical orange, white and green stripes), reverse angle, opposite side of the place, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-tribunal-coin-jour",
@@ -1614,7 +1631,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, a judge desk, wooden benches, a ceiling fan, a national flag, medium shot of a corner with props, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, an empty judge desk, wooden benches, a ceiling fan, the Ivorian flag (vertical orange, white and green stripes), medium shot of a corner with props, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-gare-routiere-champ-jour",
@@ -1757,7 +1774,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, spectators benches, medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, empty wooden benches, medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-terrain-de-foot-contrechamp-jour",
@@ -1768,7 +1785,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, spectators benches, reverse angle, opposite side of the place, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, empty wooden benches, reverse angle, opposite side of the place, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-terrain-de-foot-coin-jour",
@@ -1779,7 +1796,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, spectators benches, medium shot of a corner with props, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, empty wooden benches, medium shot of a corner with props, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-banque-champ-jour",
@@ -2156,28 +2173,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-baye-ndiaye-salon-champ-jour",
-  "type": "decor",
-  "foyer": "BAYE NDIAYE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-baye-ndiaye-chambre-champ-jour",
-  "type": "decor",
-  "foyer": "BAYE NDIAYE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-baye-ndiaye-cuisine-champ-jour",
   "type": "decor",
   "foyer": "BAYE NDIAYE",
@@ -2187,6 +2182,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-baye-ndiaye-salon-champ-jour",
+  "type": "decor",
+  "foyer": "BAYE NDIAYE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky, furnished like this family's home: a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-baye-ndiaye-chambre-champ-jour",
+  "type": "decor",
+  "foyer": "BAYE NDIAYE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky, furnished like this family's home: a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-general-zongo-cour-champ-jour",
@@ -2200,28 +2219,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-general-zongo-salon-champ-jour",
-  "type": "decor",
-  "foyer": "GÉNÉRAL ZONGO",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-general-zongo-chambre-champ-jour",
-  "type": "decor",
-  "foyer": "GÉNÉRAL ZONGO",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-general-zongo-cuisine-champ-jour",
   "type": "decor",
   "foyer": "GÉNÉRAL ZONGO",
@@ -2231,6 +2228,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-general-zongo-salon-champ-jour",
+  "type": "decor",
+  "foyer": "GÉNÉRAL ZONGO",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky, furnished like this family's home: gold-framed portraits, leather sofas; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-general-zongo-chambre-champ-jour",
+  "type": "decor",
+  "foyer": "GÉNÉRAL ZONGO",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky, furnished like this family's home: gold-framed portraits, leather sofas; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-professeur-samba-cour-champ-jour",
@@ -2244,28 +2265,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-professeur-samba-salon-champ-jour",
-  "type": "decor",
-  "foyer": "PROFESSEUR SAMBA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-professeur-samba-chambre-champ-jour",
-  "type": "decor",
-  "foyer": "PROFESSEUR SAMBA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-professeur-samba-cuisine-champ-jour",
   "type": "decor",
   "foyer": "PROFESSEUR SAMBA",
@@ -2275,6 +2274,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-professeur-samba-salon-champ-jour",
+  "type": "decor",
+  "foyer": "PROFESSEUR SAMBA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky, furnished like this family's home: a tidy small house full of books and newspapers; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-professeur-samba-chambre-champ-jour",
+  "type": "decor",
+  "foyer": "PROFESSEUR SAMBA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky, furnished like this family's home: a tidy small house full of books and newspapers; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-sur-awa-cour-champ-jour",
@@ -2288,28 +2311,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-sur-awa-salon-champ-jour",
-  "type": "decor",
-  "foyer": "SŒUR AWA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-sur-awa-chambre-champ-jour",
-  "type": "decor",
-  "foyer": "SŒUR AWA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-sur-awa-cuisine-champ-jour",
   "type": "decor",
   "foyer": "SŒUR AWA",
@@ -2319,6 +2320,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-sur-awa-salon-champ-jour",
+  "type": "decor",
+  "foyer": "SŒUR AWA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-sur-awa-chambre-champ-jour",
+  "type": "decor",
+  "foyer": "SŒUR AWA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-mecano-issa-cour-champ-jour",
@@ -2332,28 +2357,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-mecano-issa-salon-champ-jour",
-  "type": "decor",
-  "foyer": "MÉCANO ISSA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-mecano-issa-chambre-champ-jour",
-  "type": "decor",
-  "foyer": "MÉCANO ISSA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-mecano-issa-cuisine-champ-jour",
   "type": "decor",
   "foyer": "MÉCANO ISSA",
@@ -2363,6 +2366,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-mecano-issa-salon-champ-jour",
+  "type": "decor",
+  "foyer": "MÉCANO ISSA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-mecano-issa-chambre-champ-jour",
+  "type": "decor",
+  "foyer": "MÉCANO ISSA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-fatou-cour-champ-jour",
@@ -2376,28 +2403,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-fatou-salon-champ-jour",
-  "type": "decor",
-  "foyer": "FATOU",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-fatou-chambre-champ-jour",
-  "type": "decor",
-  "foyer": "FATOU",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-fatou-cuisine-champ-jour",
   "type": "decor",
   "foyer": "FATOU",
@@ -2407,6 +2412,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-fatou-salon-champ-jour",
+  "type": "decor",
+  "foyer": "FATOU",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-fatou-chambre-champ-jour",
+  "type": "decor",
+  "foyer": "FATOU",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-la-voisine-cour-champ-jour",
@@ -2420,28 +2449,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — the house next door to the Ndiaye family, separated by a low wall everyone talks over; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-la-voisine-salon-champ-jour",
-  "type": "decor",
-  "foyer": "LA VOISINE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — the house next door to the Ndiaye family, separated by a low wall everyone talks over; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-la-voisine-chambre-champ-jour",
-  "type": "decor",
-  "foyer": "LA VOISINE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — the house next door to the Ndiaye family, separated by a low wall everyone talks over; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-la-voisine-cuisine-champ-jour",
   "type": "decor",
   "foyer": "LA VOISINE",
@@ -2451,6 +2458,30 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — the house next door to the Ndiaye family, separated by a low wall everyone talks over; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-la-voisine-salon-champ-jour",
+  "type": "decor",
+  "foyer": "LA VOISINE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-la-voisine-chambre-champ-jour",
+  "type": "decor",
+  "foyer": "LA VOISINE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, daytime, warm sunlight, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-cour-large-nuit",
@@ -2901,7 +2932,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, a waiting room with benches, a reception desk, health posters, wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, an empty waiting room with benches, an unattended reception desk, health posters, wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-hopital-champ-nuit",
@@ -2912,7 +2943,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, a waiting room with benches, a reception desk, health posters, medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, an empty waiting room with benches, an unattended reception desk, health posters, medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-hopital-contrechamp-nuit",
@@ -2923,7 +2954,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, a waiting room with benches, a reception desk, health posters, reverse angle, opposite side of the place, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, an empty waiting room with benches, an unattended reception desk, health posters, reverse angle, opposite side of the place, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-hopital-coin-nuit",
@@ -2934,7 +2965,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, a waiting room with benches, a reception desk, health posters, medium shot of a corner with props, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, an empty waiting room with benches, an unattended reception desk, health posters, medium shot of a corner with props, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-salon-de-coiffure-large-nuit",
@@ -2989,7 +3020,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in West Africa, a barrier, a small office booth, parked trucks, a flag, wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in Ivory Coast, a barrier, a small office booth, parked trucks, the Ivorian flag (vertical orange, white and green stripes), wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-douane-champ-nuit",
@@ -3000,7 +3031,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in West Africa, a barrier, a small office booth, parked trucks, a flag, medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in Ivory Coast, a barrier, a small office booth, parked trucks, the Ivorian flag (vertical orange, white and green stripes), medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-douane-contrechamp-nuit",
@@ -3011,7 +3042,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in West Africa, a barrier, a small office booth, parked trucks, a flag, reverse angle, opposite side of the place, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in Ivory Coast, a barrier, a small office booth, parked trucks, the Ivorian flag (vertical orange, white and green stripes), reverse angle, opposite side of the place, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-douane-coin-nuit",
@@ -3022,7 +3053,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in West Africa, a barrier, a small office booth, parked trucks, a flag, medium shot of a corner with props, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in Ivory Coast, a barrier, a small office booth, parked trucks, the Ivorian flag (vertical orange, white and green stripes), medium shot of a corner with props, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-tribunal-large-nuit",
@@ -3033,7 +3064,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, a judge desk, wooden benches, a ceiling fan, a national flag, wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, an empty judge desk, wooden benches, a ceiling fan, the Ivorian flag (vertical orange, white and green stripes), wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-tribunal-champ-nuit",
@@ -3044,7 +3075,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, a judge desk, wooden benches, a ceiling fan, a national flag, medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, an empty judge desk, wooden benches, a ceiling fan, the Ivorian flag (vertical orange, white and green stripes), medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-tribunal-contrechamp-nuit",
@@ -3055,7 +3086,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, a judge desk, wooden benches, a ceiling fan, a national flag, reverse angle, opposite side of the place, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, an empty judge desk, wooden benches, a ceiling fan, the Ivorian flag (vertical orange, white and green stripes), reverse angle, opposite side of the place, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-tribunal-coin-nuit",
@@ -3066,7 +3097,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, a judge desk, wooden benches, a ceiling fan, a national flag, medium shot of a corner with props, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, an empty judge desk, wooden benches, a ceiling fan, the Ivorian flag (vertical orange, white and green stripes), medium shot of a corner with props, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-gare-routiere-large-nuit",
@@ -3253,7 +3284,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, spectators benches, wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, empty wooden benches, wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-terrain-de-foot-champ-nuit",
@@ -3264,7 +3295,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, spectators benches, medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, empty wooden benches, medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-terrain-de-foot-contrechamp-nuit",
@@ -3275,7 +3306,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, spectators benches, reverse angle, opposite side of the place, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, empty wooden benches, reverse angle, opposite side of the place, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-terrain-de-foot-coin-nuit",
@@ -3286,7 +3317,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, spectators benches, medium shot of a corner with props, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, empty wooden benches, medium shot of a corner with props, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-banque-large-nuit",
@@ -3795,50 +3826,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-baye-ndiaye-salon-large-nuit",
-  "type": "decor",
-  "foyer": "BAYE NDIAYE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-baye-ndiaye-salon-champ-nuit",
-  "type": "decor",
-  "foyer": "BAYE NDIAYE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-baye-ndiaye-chambre-large-nuit",
-  "type": "decor",
-  "foyer": "BAYE NDIAYE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-baye-ndiaye-chambre-champ-nuit",
-  "type": "decor",
-  "foyer": "BAYE NDIAYE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-baye-ndiaye-cuisine-large-nuit",
   "type": "decor",
   "foyer": "BAYE NDIAYE",
@@ -3859,6 +3846,54 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a modest West African family compound: a sandy courtyard with a mango tree, laundry lines, plastic chairs, a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-baye-ndiaye-salon-large-nuit",
+  "type": "decor",
+  "foyer": "BAYE NDIAYE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky, furnished like this family's home: a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-baye-ndiaye-salon-champ-nuit",
+  "type": "decor",
+  "foyer": "BAYE NDIAYE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky, furnished like this family's home: a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-baye-ndiaye-chambre-large-nuit",
+  "type": "decor",
+  "foyer": "BAYE NDIAYE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky, furnished like this family's home: a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-baye-ndiaye-chambre-champ-nuit",
+  "type": "decor",
+  "foyer": "BAYE NDIAYE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky, furnished like this family's home: a rented room with a blue door at the back, a living room with lace-covered sofas and a big old television; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-general-zongo-cour-large-nuit",
@@ -3883,50 +3918,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-general-zongo-salon-large-nuit",
-  "type": "decor",
-  "foyer": "GÉNÉRAL ZONGO",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-general-zongo-salon-champ-nuit",
-  "type": "decor",
-  "foyer": "GÉNÉRAL ZONGO",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-general-zongo-chambre-large-nuit",
-  "type": "decor",
-  "foyer": "GÉNÉRAL ZONGO",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-general-zongo-chambre-champ-nuit",
-  "type": "decor",
-  "foyer": "GÉNÉRAL ZONGO",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-general-zongo-cuisine-large-nuit",
   "type": "decor",
   "foyer": "GÉNÉRAL ZONGO",
@@ -3947,6 +3938,54 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a flashy two-storey villa with a tiled courtyard, a gate with a guard booth, gold-framed portraits, leather sofas; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-general-zongo-salon-large-nuit",
+  "type": "decor",
+  "foyer": "GÉNÉRAL ZONGO",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky, furnished like this family's home: gold-framed portraits, leather sofas; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-general-zongo-salon-champ-nuit",
+  "type": "decor",
+  "foyer": "GÉNÉRAL ZONGO",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky, furnished like this family's home: gold-framed portraits, leather sofas; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-general-zongo-chambre-large-nuit",
+  "type": "decor",
+  "foyer": "GÉNÉRAL ZONGO",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky, furnished like this family's home: gold-framed portraits, leather sofas; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-general-zongo-chambre-champ-nuit",
+  "type": "decor",
+  "foyer": "GÉNÉRAL ZONGO",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky, furnished like this family's home: gold-framed portraits, leather sofas; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-professeur-samba-cour-large-nuit",
@@ -3971,50 +4010,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-professeur-samba-salon-large-nuit",
-  "type": "decor",
-  "foyer": "PROFESSEUR SAMBA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-professeur-samba-salon-champ-nuit",
-  "type": "decor",
-  "foyer": "PROFESSEUR SAMBA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-professeur-samba-chambre-large-nuit",
-  "type": "decor",
-  "foyer": "PROFESSEUR SAMBA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-professeur-samba-chambre-champ-nuit",
-  "type": "decor",
-  "foyer": "PROFESSEUR SAMBA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-professeur-samba-cuisine-large-nuit",
   "type": "decor",
   "foyer": "PROFESSEUR SAMBA",
@@ -4035,6 +4030,54 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a tidy small house full of books and newspapers, a desk with an old computer, a reading chair on the porch; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-professeur-samba-salon-large-nuit",
+  "type": "decor",
+  "foyer": "PROFESSEUR SAMBA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky, furnished like this family's home: a tidy small house full of books and newspapers; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-professeur-samba-salon-champ-nuit",
+  "type": "decor",
+  "foyer": "PROFESSEUR SAMBA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky, furnished like this family's home: a tidy small house full of books and newspapers; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-professeur-samba-chambre-large-nuit",
+  "type": "decor",
+  "foyer": "PROFESSEUR SAMBA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky, furnished like this family's home: a tidy small house full of books and newspapers; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-professeur-samba-chambre-champ-nuit",
+  "type": "decor",
+  "foyer": "PROFESSEUR SAMBA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky, furnished like this family's home: a tidy small house full of books and newspapers; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-sur-awa-cour-large-nuit",
@@ -4059,50 +4102,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-sur-awa-salon-large-nuit",
-  "type": "decor",
-  "foyer": "SŒUR AWA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-sur-awa-salon-champ-nuit",
-  "type": "decor",
-  "foyer": "SŒUR AWA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-sur-awa-chambre-large-nuit",
-  "type": "decor",
-  "foyer": "SŒUR AWA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-sur-awa-chambre-champ-nuit",
-  "type": "decor",
-  "foyer": "SŒUR AWA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-sur-awa-cuisine-large-nuit",
   "type": "decor",
   "foyer": "SŒUR AWA",
@@ -4123,6 +4122,54 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a small clean apartment near the clinic, a nurse uniform drying, a calendar with shifts, a child's school bag; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-sur-awa-salon-large-nuit",
+  "type": "decor",
+  "foyer": "SŒUR AWA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-sur-awa-salon-champ-nuit",
+  "type": "decor",
+  "foyer": "SŒUR AWA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-sur-awa-chambre-large-nuit",
+  "type": "decor",
+  "foyer": "SŒUR AWA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-sur-awa-chambre-champ-nuit",
+  "type": "decor",
+  "foyer": "SŒUR AWA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-mecano-issa-cour-large-nuit",
@@ -4147,50 +4194,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-mecano-issa-salon-large-nuit",
-  "type": "decor",
-  "foyer": "MÉCANO ISSA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-mecano-issa-salon-champ-nuit",
-  "type": "decor",
-  "foyer": "MÉCANO ISSA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-mecano-issa-chambre-large-nuit",
-  "type": "decor",
-  "foyer": "MÉCANO ISSA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-mecano-issa-chambre-champ-nuit",
-  "type": "decor",
-  "foyer": "MÉCANO ISSA",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-mecano-issa-cuisine-large-nuit",
   "type": "decor",
   "foyer": "MÉCANO ISSA",
@@ -4211,6 +4214,54 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a house next to his garage, tires and tools in the courtyard, a football net made of a fishing net; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-mecano-issa-salon-large-nuit",
+  "type": "decor",
+  "foyer": "MÉCANO ISSA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-mecano-issa-salon-champ-nuit",
+  "type": "decor",
+  "foyer": "MÉCANO ISSA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-mecano-issa-chambre-large-nuit",
+  "type": "decor",
+  "foyer": "MÉCANO ISSA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-mecano-issa-chambre-champ-nuit",
+  "type": "decor",
+  "foyer": "MÉCANO ISSA",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-fatou-cour-large-nuit",
@@ -4235,50 +4286,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-fatou-salon-large-nuit",
-  "type": "decor",
-  "foyer": "FATOU",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-fatou-salon-champ-nuit",
-  "type": "decor",
-  "foyer": "FATOU",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-fatou-chambre-large-nuit",
-  "type": "decor",
-  "foyer": "FATOU",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-fatou-chambre-champ-nuit",
-  "type": "decor",
-  "foyer": "FATOU",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-fatou-cuisine-large-nuit",
   "type": "decor",
   "foyer": "FATOU",
@@ -4299,6 +4306,54 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — a lively apartment that is also a gossip headquarters, a balcony overlooking the street, a phone always charging; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-fatou-salon-large-nuit",
+  "type": "decor",
+  "foyer": "FATOU",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-fatou-salon-champ-nuit",
+  "type": "decor",
+  "foyer": "FATOU",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-fatou-chambre-large-nuit",
+  "type": "decor",
+  "foyer": "FATOU",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-fatou-chambre-champ-nuit",
+  "type": "decor",
+  "foyer": "FATOU",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "maison-la-voisine-cour-large-nuit",
@@ -4323,50 +4378,6 @@
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its courtyard — the house next door to the Ndiaye family, separated by a low wall everyone talks over; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
-  "id": "maison-la-voisine-salon-large-nuit",
-  "type": "decor",
-  "foyer": "LA VOISINE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — the house next door to the Ndiaye family, separated by a low wall everyone talks over; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-la-voisine-salon-champ-nuit",
-  "type": "decor",
-  "foyer": "LA VOISINE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its living room — the house next door to the Ndiaye family, separated by a low wall everyone talks over; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-la-voisine-chambre-large-nuit",
-  "type": "decor",
-  "foyer": "LA VOISINE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — the house next door to the Ndiaye family, separated by a low wall everyone talks over; wide establishing shot, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
-  "id": "maison-la-voisine-chambre-champ-nuit",
-  "type": "decor",
-  "foyer": "LA VOISINE",
-  "w": 768,
-  "h": 448,
-  "refs": [
-   "v1-maquis.msb"
-  ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a bedroom of the house — the house next door to the Ndiaye family, separated by a low wall everyone talks over; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
- },
- {
   "id": "maison-la-voisine-cuisine-large-nuit",
   "type": "decor",
   "foyer": "LA VOISINE",
@@ -4387,6 +4398,54 @@
    "v1-maquis.msb"
   ],
   "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: its outdoor kitchen — the house next door to the Ndiaye family, separated by a low wall everyone talks over; medium shot facing the main wall, night, warm artificial light, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-la-voisine-salon-large-nuit",
+  "type": "decor",
+  "foyer": "LA VOISINE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-la-voisine-salon-champ-nuit",
+  "type": "decor",
+  "foyer": "LA VOISINE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-la-voisine-chambre-large-nuit",
+  "type": "decor",
+  "foyer": "LA VOISINE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; wide shot of the room, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
+ },
+ {
+  "id": "maison-la-voisine-chambre-champ-nuit",
+  "type": "decor",
+  "foyer": "LA VOISINE",
+  "w": 768,
+  "h": 448,
+  "version": 2,
+  "refs": [
+   "v1-maquis.msb"
+  ],
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky; medium shot facing the main wall, night, warm artificial light, eye-level camera, open empty floor in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-cour-large-pluie",
@@ -4595,7 +4654,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, a waiting room with benches, a reception desk, health posters, wide establishing shot, during a tropical rain, wet ground, reflections, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, an empty waiting room with benches, an unattended reception desk, health posters, wide establishing shot, during a tropical rain, wet ground, reflections, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-hopital-large-fete",
@@ -4606,7 +4665,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, a waiting room with benches, a reception desk, health posters, wide establishing shot, decorated for a celebration, garlands, balloons, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small neighborhood clinic in Abidjan, an empty waiting room with benches, an unattended reception desk, health posters, wide establishing shot, decorated for a celebration, garlands, balloons, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-salon-de-coiffure-large-pluie",
@@ -4639,7 +4698,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in West Africa, a barrier, a small office booth, parked trucks, a flag, wide establishing shot, during a tropical rain, wet ground, reflections, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in Ivory Coast, a barrier, a small office booth, parked trucks, the Ivorian flag (vertical orange, white and green stripes), wide establishing shot, during a tropical rain, wet ground, reflections, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-douane-large-fete",
@@ -4650,7 +4709,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in West Africa, a barrier, a small office booth, parked trucks, a flag, wide establishing shot, decorated for a celebration, garlands, balloons, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a border customs post in Ivory Coast, a barrier, a small office booth, parked trucks, the Ivorian flag (vertical orange, white and green stripes), wide establishing shot, decorated for a celebration, garlands, balloons, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-tribunal-large-pluie",
@@ -4661,7 +4720,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, a judge desk, wooden benches, a ceiling fan, a national flag, wide establishing shot, during a tropical rain, wet ground, reflections, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, an empty judge desk, wooden benches, a ceiling fan, the Ivorian flag (vertical orange, white and green stripes), wide establishing shot, during a tropical rain, wet ground, reflections, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-tribunal-large-fete",
@@ -4672,7 +4731,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, a judge desk, wooden benches, a ceiling fan, a national flag, wide establishing shot, decorated for a celebration, garlands, balloons, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a small courtroom in Ivory Coast, an empty judge desk, wooden benches, a ceiling fan, the Ivorian flag (vertical orange, white and green stripes), wide establishing shot, decorated for a celebration, garlands, balloons, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-gare-routiere-large-pluie",
@@ -4727,7 +4786,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, spectators benches, wide establishing shot, during a tropical rain, wet ground, reflections, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, empty wooden benches, wide establishing shot, during a tropical rain, wet ground, reflections, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-terrain-de-foot-large-fete",
@@ -4738,7 +4797,7 @@
   "refs": [
    "v1-maquis.msb"
   ],
-  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, spectators benches, wide establishing shot, decorated for a celebration, garlands, balloons, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
+  "prompt": "Pixar-style 3D animated film background in exactly the same rendering style as image 1: a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, empty wooden benches, wide establishing shot, decorated for a celebration, garlands, balloons, eye-level camera, wide open empty ground in the middle foreground, completely empty, no people."
  },
  {
   "id": "decor-banque-large-pluie",

@@ -31,15 +31,15 @@ LIEUX = {   # lieu → décor décrit pour le générateur (vide de personnages 
     'École': 'a primary school classroom in Ivory Coast, wooden benches, a blackboard with chalk writing, open windows',
     'Salon': 'the living room of an Abidjan family house, sofas with lace covers, a big television, family photos on the wall',
     'Plage': 'a beach near Abidjan with palm trees, wooden fishing pirogues, waves, a small beach bar',
-    'Hôpital': 'a small neighborhood clinic in Abidjan, a waiting room with benches, a reception desk, health posters',
+    'Hôpital': 'a small neighborhood clinic in Abidjan, an empty waiting room with benches, an unattended reception desk, health posters',
     'Salon de coiffure': 'an Abidjan hair salon, mirrors, hair dryers, posters of hairstyles, shelves of hair products',
-    'Douane': 'a border customs post in West Africa, a barrier, a small office booth, parked trucks, a flag',
-    'Tribunal': 'a small courtroom in Ivory Coast, a judge desk, wooden benches, a ceiling fan, a national flag',
+    'Douane': 'a border customs post in Ivory Coast, a barrier, a small office booth, parked trucks, the Ivorian flag (vertical orange, white and green stripes)',
+    'Tribunal': 'a small courtroom in Ivory Coast, an empty judge desk, wooden benches, a ceiling fan, the Ivorian flag (vertical orange, white and green stripes)',
     'Gare routière': 'a busy bus station in Abidjan, colorful minibuses (gbaka), ticket booths, luggage on the roofs',
     'Pharmacie': 'a neighborhood pharmacy in Abidjan, a green cross sign, glass counter, shelves of medicine boxes',
     'Église': 'the inside of a neighborhood church in Ivory Coast, wooden pews, an altar, colorful windows',
     'Mosquée': 'the courtyard of a neighborhood mosque in West Africa, prayer mats, a minaret, sandals at the entrance',
-    'Terrain de foot': 'a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, spectators benches',
+    'Terrain de foot': 'a dusty neighborhood football pitch in Abidjan, improvised goals, a wall with graffiti, empty wooden benches',
     'Banque': 'a small bank agency in Abidjan, a counter with glass windows, a queue barrier, an air conditioner',
     'Commissariat': 'a neighborhood police station in Abidjan, a front desk, an old typewriter, a bench, wanted posters',
     'Boutique': 'a small neighborhood shop (tablier) in Abidjan, shelves of sugar, rice, soap and phone credit cards',
@@ -67,7 +67,15 @@ def slug(t):
     return re.sub(r'[^a-z0-9]+', '-', unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode().lower()).strip('-')
 
 
-PIECES = {'cour': 'its courtyard', 'salon': 'its living room', 'chambre': 'a bedroom of the house', 'cuisine': 'its outdoor kitchen'}
+PIECES = {'cour': 'its courtyard', 'cuisine': 'its outdoor kitchen',
+          # 20/10 23:50 — lu sur les 30 premières images : « chambre » et « salon » dessinés DEHORS (la description de la maison
+          # l'emportait) ; la pièce est désormais nommée comme un intérieur, murs et plafond, avant la maison
+          'salon': 'INTERIOR VIEW inside its living room, indoor, walls and ceiling visible, no sky',
+          'chambre': 'INTERIOR VIEW inside a bedroom of the house, indoor, walls and ceiling visible, no sky'}
+# Version de chaque image : une image refaite (prompt corrigé, défaut vu) prend la version suivante ; bible_tourne.py ne refait
+# que les images dont la version a changé. 20/10 23:50 : personne à l'accueil (hôpital), spectateurs (terrain de foot),
+# drapeau étranger (douane) ; chambres et salons des maisons (dehors).
+REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2, 'decor-douane-large-jour': 2}
 
 
 GENRES = json.load(open(os.path.join(ICI, '..', 'blender', 'film', 'characters.json'), encoding='utf-8'))
@@ -86,6 +94,18 @@ def ref_style(p):
     if a < 13: return 'petit-mamadou-planche'
     if femme: return 'maman-nounou-planche' if a >= 45 else 'coumba-planche'
     return 'baye-ndiaye-planche' if a >= 50 else 'koffi-planche'
+
+
+INTERIEURS = ('salon', 'chambre')
+MOTS_INTERIEUR = ('room', 'sofa', 'television', 'bed', 'kitchen', 'wardrobe', 'carpet', 'curtain', 'furniture', 'portrait', 'shelf',
+                  'book', 'armchair', 'table', 'photo', 'fan', 'lamp', 'medal', 'trophy', 'poster', 'mat')
+
+
+def interieur(maison):
+    """Seuls les éléments d'intérieur de la description de la maison (meubles, télévision, portraits…) : la cour, l'arbre et le
+    linge entraînaient le dessin dehors (vu sur les 30 premières images, 20/10 23:50)."""
+    morceaux = [m.strip() for m in re.split(r'[,;:]', maison) if any(k in m.lower() for k in MOTS_INTERIEUR)]
+    return (', furnished like this family\'s home: ' + ', '.join(morceaux)) if morceaux else ''
 
 
 def taches():
@@ -114,8 +134,14 @@ def taches():
             for v in ('large', 'champ'):
                 for m, md in MOMENTS.items():
                     T.append({'id': f"maison-{slug(f['foyer'])}-{piece}-{v}-{m}", 'type': 'decor', 'foyer': f['foyer'], 'w': 768, 'h': 448,
+                              **({'version': 2} if piece in ('salon', 'chambre') else {}),
                               'refs': ['v1-maquis.msb'],
-                              'prompt': f"{STYLE}: {pd} — {f['maison']}; {VUES[v]}, {md}, {SOL_LIBRE}, completely empty, no people."})
+                              'prompt': (f"{STYLE}: {pd} — {f['maison']}; {VUES[v]}, {md}, {SOL_LIBRE}, completely empty, no people."
+                                         if piece not in INTERIEURS else
+                                         f"{STYLE}: {pd}{interieur(f['maison'])}; {VUES[v].replace('establishing shot', 'shot of the room')}, {md}, eye-level camera, "
+                                         f"open empty floor in the middle foreground, completely empty, no people.")})
+    for t in T:
+        if t['id'] in REFAIRE: t['version'] = REFAIRE[t['id']]
     return sorted(T, key=rang)
 
 
