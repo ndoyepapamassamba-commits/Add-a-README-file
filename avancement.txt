@@ -12,3 +12,4 @@
 [1457 s] === maman-nounou--hausser (at_runtime)   |============>                                     | 1/4 - 133.69s/it[K · mémoire libre 13779 Mo
 [1578 s] === maman-nounou--hausser (at_runtime)   |=========================>                        | 2/4 - 133.16s/it[K · mémoire libre 13775 Mo
 [1700 s] === maman-nounou--hausser (at_runtime)   |=====================================>            | 3/4 - 133.14s/it[K · mémoire libre 13774 Mo
+[1821 s] === tantie-awa--montrer (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13761 Mo
