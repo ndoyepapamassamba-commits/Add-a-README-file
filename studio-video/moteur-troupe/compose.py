@@ -15,7 +15,11 @@ SAFE = dict(left=60 / 1080 * W, right=W - 120 / 1080 * W, bottom=H - 320 / 1920 
 FONT = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/fonts/Montserrat.ttf'
 GREEN, RED, WHITE = (52, 232, 52), (255, 64, 64), (255, 255, 255)
 T = json.load(open('timeline.json')); Hs = json.load(open('histoire.json'))
-PUNCH = {unicodedata.normalize('NFC', w) for w in Hs['mots_chute']}
+# mots de la chute mis en valeur : écrits par histoires.py ; pour une histoire écrite à la main (troupe élargie, 20/10/2026),
+# la même règle (répliques de chute, mots de plus de 3 lettres, les 8 derniers)
+_mots = lambda t: re.findall(r"[a-zàâäçéèêëîïôöùûüÿœæñ'\-]+", unicodedata.normalize('NFC', t.lower()).replace('’', "'"))
+PUNCH = {unicodedata.normalize('NFC', w) for w in (Hs.get('mots_chute') or [w.upper() for s_ in Hs['sketchs'] for r_ in s_['repliques']
+                                                                         if r_.get('chute') for w in _mots(r_['texte']) if len(w) > 3][-8:])}
 def font(sz, style=b'Black'):
     f = ImageFont.truetype(FONT, sz)
     try: f.set_variation_by_name(style)
