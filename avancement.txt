@@ -2,3 +2,4 @@
 [243 s] === coumba--choc (at_runtime)   |=========================>                        | 2/4 - 79.58s/it[K · mémoire libre 13784 Mo
 [365 s] === maman-nounou--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14552 Mo
 [486 s] === maman-nounou--ecouter (at_runtime)   |============>                                     | 1/4 - 80.88s/it[K · mémoire libre 13790 Mo
+[607 s] === maman-nounou--ecouter (at_runtime)   |=========================>                        | 2/4 - 79.75s/it[K · mémoire libre 13776 Mo
