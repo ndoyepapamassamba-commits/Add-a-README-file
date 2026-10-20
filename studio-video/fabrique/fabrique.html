@@ -106,6 +106,11 @@ input[type="search"]{font-family:var(--f-texte)}
     </section>
 
     <aside style="display:grid;gap:22px;align-content:start;min-width:0">
+      <section class="boite" aria-labelledby="t-prod">
+        <h2 id="t-prod">Production en cours</h2>
+        <div id="prod" class="releve">Aucune production en cours.</div>
+      </section>
+
       <section class="boite" aria-labelledby="t-pilote">
         <h2 id="t-pilote">Pilote automatique</h2>
         <div class="releve" id="pilote-info">Chaque jour, sans vous : distribution, écriture, tournage, juge sur 9 contrôles, contrôle des doublons, livraison ici.</div>
@@ -255,6 +260,27 @@ function rendreTaux() {
   t.innerHTML = `<span>Relevé du ${jour(r.quand)} · <b>${fmt(r.vues)}</b> vues</span><span>Commentaires/vues <b>${pc(r.commentaires)}</b></span><span>Partages/vues <b>${pc(r.partages)}</b></span><span>J'aime/vues <b>${pc(r.jaime)}</b></span>${r.vu_en_entier_pct != null ? `<span>Vue en entier <b>${String(r.vu_en_entier_pct).replace(".", ",")} %</b></span>` : ""}`;
 }
 
+// PRODUCTION EN COURS (20/10/2026, « l'app n'affiche pas la production en cours ») : document fabrique/production écrit par la
+// fabrique à chaque étape (distribution, écriture, tournage, juge, livraison) ; heures affichées dans le fuseau de l'appareil.
+const ETAPES_PROD = [["ecrit", "Écriture"], ["tourne", "Tournage"], ["juge", "Juge (9 contrôles)"], ["livre", "Version téléphone"], ["fini", "Livrée"]];
+function rendreProd() {
+  const P = S.prod, z = $("prod"); z.replaceChildren();
+  if (!P || !P.en_cours) { z.textContent = P && P.message ? P.message : "Aucune production en cours."; $("b-produire").title = ""; return; }
+  const h = (iso) => iso ? new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "—";
+  const tete = document.createElement("div"); tete.style.cssText = "display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px";
+  const pa = document.createElement("span"); pa.className = "pastille ok"; pa.textContent = "en cours"; const t = document.createElement("b"); t.textContent = P.titre || "Vidéo";
+  tete.append(pa, t); z.append(tete);
+  const i = Math.max(0, ETAPES_PROD.findIndex((e) => e[0] === P.etape));
+  const bar = document.createElement("div"); bar.className = "barre"; const b = document.createElement("i"); b.style.width = Math.round((100 * (i + 0.5)) / ETAPES_PROD.length) + "%"; bar.append(b); z.append(bar);
+  const ol = document.createElement("div"); ol.style.cssText = "display:grid;gap:3px;margin-top:8px";
+  ETAPES_PROD.forEach(([k, lib], j) => { const l = document.createElement("span"); l.textContent = (j < i ? "✓ " : j === i ? "▶ " : "· ") + lib; if (j === i) l.style.fontWeight = "700"; ol.append(l); });
+  z.append(ol);
+  const inf = document.createElement("div"); inf.style.marginTop = "8px"; inf.textContent = `Début ${h(P.debut)} · fin estimée ${h(P.fin_estimee)}`; z.append(inf);
+  if (P.sketchs && P.sketchs.length) { const sk = document.createElement("div"); sk.style.marginTop = "6px"; sk.textContent = "Sketchs : " + P.sketchs.join(" · "); z.append(sk); }
+  if (P.message) { const m = document.createElement("div"); m.style.marginTop = "6px"; m.textContent = P.message; z.append(m); }
+  $("b-produire").title = "Une production est déjà en cours : inutile d'en lancer une autre.";
+}
+
 function rendrePilote() {
   const T = S.trigger, E = S.etat || {};
   $("j-pilote").innerHTML = T ? (T.enabled ? `<span class="pastille ok">actif</span>` : `<span class="pastille att">en pause</span>`) : E.trigger_id ? `<span class="pastille ok">programmé</span>` : `<span class="pastille att">en préparation</span>`;
@@ -317,7 +343,9 @@ async function lireDeclencheur() {
   catch (er) { if (["server_not_connected", "needs_reauth"].includes(er.code)) $("m-pilote").textContent = "Pour piloter d'ici, autorisez « Claude Code Remote » quand claude.ai le demande."; }
   rendrePilote();
 }
-$("b-produire").addEventListener("click", () => { $("confirme").hidden = false; });
+$("b-produire").addEventListener("click", () => {
+  if (S.prod && S.prod.en_cours) { $("m-pilote").textContent = "Une production est déjà en cours (" + (S.prod.titre || "vidéo") + ") : les vidéos arrivent ici dès qu'elles passent le juge."; return; }
+  $("confirme").hidden = false; });
 $("b-non").addEventListener("click", () => { $("confirme").hidden = true; });
 $("b-oui").addEventListener("click", async () => {
   $("confirme").hidden = true; const m = $("m-pilote"); m.textContent = "Lancement…";
@@ -340,6 +368,7 @@ rendreReglages(); rendreBandeau();
   db.collection("videos").where("statut", "==", "publiee").orderBy("publiee", "desc").limit(120).onSnapshot((s) => { S.publiees = s.docs.map((d) => ({ id: d.id, ...d.data() })); rendreBandeau(); });
   db.collection("releves").orderBy("quand", "desc").limit(500).onSnapshot((s) => { S.releves = s.docs.map((d) => d.data()); rendreTaux(); });
   db.doc("fabrique/etat").onSnapshot((s) => { const prem = !S.etat; S.etat = s.exists ? s.data() : null; rendreBandeau(); if (prem) lireDeclencheur(); });
+  db.doc("fabrique/production").onSnapshot((s) => { S.prod = s.exists ? s.data() : null; rendreProd(); });
   db.doc("fabrique/reglages").onSnapshot((s) => { if (s.exists) { S.reglages = { ...S.reglages, ...s.data() }; $("cadence").value = String(S.reglages.cadence); rendreReglages(); rendreBandeau(); rendreVideos(); } });
 })();
 </script>

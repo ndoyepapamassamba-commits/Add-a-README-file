@@ -115,6 +115,10 @@ input,select{font:inherit;font-size:15px;padding:8px 10px;border-radius:8px;bord
         <div class="ligne"><button id="b-plus" hidden>Voir plus</button></div>
       </section>
       <aside style="display:grid;gap:22px;align-content:start;min-width:0">
+        <section class="boite" aria-labelledby="t-prod">
+          <h2 id="t-prod">Production en cours</h2>
+          <div class="releve" id="prod">Aucune production en cours.</div>
+        </section>
         <section class="boite" aria-labelledby="t-pilote">
           <h2 id="t-pilote">Production</h2>
           <div class="releve" id="pilote-info">Chaque jour à 4 h 52 (heure d'Abidjan), sur les machines gratuites de GitHub, dans votre compte : écriture, tournage, juge, doublons, livraison ici.</div>
@@ -246,6 +250,24 @@ function rendreTaux() {
   t.innerHTML = `<span>${jour(r.quand)} · <b>${fmt(r.vues)}</b> vues</span><span>Commentaires/vues <b>${pc(r.commentaires)}</b></span><span>Partages/vues <b>${pc(r.partages)}</b></span><span>J'aime/vues <b>${pc(r.jaime)}</b></span>`;
 }
 
+// PRODUCTION EN COURS (20/10/2026, « l'app n'affiche pas la production en cours ») : production.json, public et sans contenu
+// privé (étape, heures, machine), écrit par la fabrique à chaque étape ; relu chaque minute.
+const ETAPES_PROD = [["ecrit", "Écriture"], ["tourne", "Tournage"], ["juge", "Juge (9 contrôles)"], ["livre", "Version téléphone"], ["fini", "Livrée"]];
+async function lireProd() {
+  let P = null; try { const r = await fetch(BASE + "production.json", { cache: "no-store" }); if (r.ok) P = await r.json(); } catch {}
+  const z = $("prod"); z.replaceChildren();
+  if (!P || !P.en_cours) { z.textContent = (P && P.message) || "Aucune production en cours."; return; }
+  const h = (iso) => iso ? new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "—";
+  const t = document.createElement("div"); t.style.marginBottom = "8px"; const pa = document.createElement("span"); pa.className = "pastille ok"; pa.textContent = "en cours";
+  const b = document.createElement("b"); b.textContent = " Vidéo " + (P.numero || ""); t.append(pa, b); z.append(t);
+  const i = Math.max(0, ETAPES_PROD.findIndex((e) => e[0] === P.etape));
+  const ol = document.createElement("div"); ol.style.cssText = "display:grid;gap:3px";
+  ETAPES_PROD.forEach(([k, lib], j) => { const l = document.createElement("span"); l.textContent = (j < i ? "✓ " : j === i ? "▶ " : "· ") + lib; if (j === i) l.style.fontWeight = "700"; ol.append(l); });
+  z.append(ol);
+  const inf = document.createElement("div"); inf.style.marginTop = "8px"; inf.textContent = `Début ${h(P.debut)} · fin estimée ${h(P.fin_estimee)}` + (P.machine ? ` · ${P.machine}` : ""); z.append(inf);
+  if (P.message) { const m = document.createElement("div"); m.style.marginTop = "6px"; m.textContent = P.message; z.append(m); }
+}
+
 async function demarre(phrase) {
   S.priv = await clePrivee(phrase);
   const r = await fetch(BASE + "catalogue.msb", { cache: "no-store" }); if (!r.ok) throw new Error(r.status === 404 ? "La fabrique GitHub démarre : la première livraison n'est pas encore arrivée." : "catalogue illisible (" + r.status + ")");
@@ -253,7 +275,7 @@ async function demarre(phrase) {
   $("porte").hidden = true; $("app").hidden = false;
   $("l-produire").href = `${depot.gh}/actions/workflows/fabrique.yml`; $("l-reglages").href = `${depot.gh}/blob/HEAD/studio-video/fabrique/config.json`; $("l-archives").href = `${depot.gh}/releases/tag/fabrique-archives`;
   $("pilote-info").innerHTML = `<span>Cadence <b>${S.cat.config.cadence}</b> par jour</span><span>Créneaux <b>${S.cat.config.creneaux.join(" · ")}</b></span><span>En ligne <b>${S.cat.config.fenetre_videos}</b> vidéos</span>`;
-  rendre();
+  rendre(); lireProd(); setInterval(lireProd, 60000);
 }
 
 $("porte").addEventListener("submit", async (e) => {
