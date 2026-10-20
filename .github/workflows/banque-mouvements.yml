@@ -1,0 +1,82 @@
+# BANQUE DE MOUVEMENTS DE LA TROUPE SUR LES MACHINES GRATUITES DE GITHUB (20/10/2026)
+# « trouve une solution pour les animateurs vidéo […] En quelques secondes, on a une vidéo prête » (GitHub seulement).
+# Les machines animent UNE FOIS chaque geste de chaque personnage (studio-video/banque/banque.py) ; les vidéos s'assemblent
+# ensuite à partir de cette banque, sans rien réanimer. Toutes les machines tournent en même temps, chacune sa part des clips.
+# Accélérations, sans carte graphique : LoRA FastWan fusionnée au chargement (la même LoRA appliquée à la volée doublait le temps
+# par étape, mesuré le 20/10), clips de 33 images (≈ 1,4 s, bouclables) au lieu de 49, 4 étapes sans CFG, moteur compilé gardé
+# en cache par modèle de processeur, décodage VAE par tranches de temps.
+# Lancement : dépôt de studio-video/banque/demandes/demande.json (liste des clips et nombre de machines).
+name: Banque de mouvements (Wan 2.2)
+on:
+  push:
+    branches: [claude/relaxed-noether-svkgiu]
+    paths: ['studio-video/banque/demandes/**']
+  workflow_dispatch:
+permissions: { contents: write }
+concurrency: { group: banque, cancel-in-progress: true }
+defaults:
+  run: { shell: bash }
+env:
+  SD_CPP: 0518b34374761cb82aeda5ad3c2f0686fdad2cec
+  HF: https://huggingface.co
+  PARTS: 14
+jobs:
+  part:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Processeur de la machine
+        id: cpu
+        run: |
+          echo "cle=sdcpp-${SD_CPP:0:12}-$(lscpu | sed -n 's/^Model name: *//p' | tr -c 'A-Za-z0-9' '-')" >> $GITHUB_OUTPUT
+          lscpu | sed -n 's/^Model name: *//p'
+      - uses: actions/cache@v4
+        with: { path: ~/sdbin, key: '${{ steps.cpu.outputs.cle }}' }
+      - name: Moteur et poids (en même temps)
+        run: |
+          M=$RUNNER_TEMP/m; mkdir -p $M/lora; echo "M=$M" >> $GITHUB_ENV; t0=$(date +%s)
+          dl() { curl -sfL --retry 5 --retry-delay 5 -o "$M/$1" "$HF/$2" && echo "poids : $1 $(du -h $M/$1 | cut -f1)"; }
+          dl base.gguf QuantStack/Wan2.2-TI2V-5B-GGUF/resolve/main/Wan2.2-TI2V-5B-Q4_K_M.gguf &
+          dl umt5.gguf city96/umt5-xxl-encoder-gguf/resolve/main/umt5-xxl-encoder-Q5_K_M.gguf &
+          dl vae.safetensors Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan2.2_vae.safetensors &
+          dl lora/fastwan.safetensors hum-ma/Wan2.2-TI2V-5B-Turbo-GGUF/resolve/main/Wan2_2_5B_FastWanFullAttn_lora_rank_128_bf16.safetensors &
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg time > /dev/null
+          pip install -q cryptography opencv-python-headless numpy
+          if [ ! -x ~/sdbin/sd-cli ]; then
+            git init -q $RUNNER_TEMP/sd && cd $RUNNER_TEMP/sd && git remote add origin https://github.com/leejet/stable-diffusion.cpp
+            git fetch -q --depth 1 origin $SD_CPP && git checkout -q FETCH_HEAD && git submodule update -q --init --recursive --depth 1
+            cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON > $RUNNER_TEMP/build.log 2>&1 && cmake --build build -j 4 --config Release >> $RUNNER_TEMP/build.log 2>&1 || { tail -60 $RUNNER_TEMP/build.log; exit 1; }
+            mkdir -p ~/sdbin && cp build/bin/* ~/sdbin/ && echo "compilé en $(( $(date +%s) - t0 )) s"
+          else echo "moteur repris du cache"; fi
+          wait; ls -la $M $M/lora
+          for f in $M/base.gguf $M/umt5.gguf $M/vae.safetensors $M/lora/fastwan.safetensors; do [ -s $f ] || { echo "poids manquant : $f"; exit 1; }; done
+          echo "préparation : $(( $(date +%s) - t0 )) s"
+      - name: Clips de la part ${{ matrix.part }}
+        env: { FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
+        run: |
+          O=$RUNNER_TEMP/sortie; mkdir -p $O; t1=$(date +%s)
+          git fetch -q origin fabrique-donnees && git show FETCH_HEAD:cle.priv.json > $RUNNER_TEMP/cle.priv.json
+          git worktree add -q --detach ../progres HEAD && (cd ../progres && git checkout -q --orphan p && git rm -rqf . && git clean -fdq)
+          ( while sleep 120; do
+              L=$O/journal.txt; [ -f $L ] || continue
+              l="[$(( $(date +%s) - t1 )) s] $(grep '^===' $L | tail -1) $(tr '\r' '\n' < $L | grep -E 's/it|decode|taken' | tail -1 | cut -c1-120) · mémoire libre $(free -m | awk '/Mem:/{print $7}') Mo"
+              echo "$l" >> ../progres/avancement.txt
+              (cd ../progres && git add -A && git -c user.name=banque -c user.email=banque@users.noreply.github.com commit -qm "part ${{ matrix.part }}" && git push -qf origin HEAD:banque-progres-${{ matrix.part }}) > /dev/null 2>&1 || true
+            done ) & P=$!
+          python3 studio-video/banque/tourne_banque.py studio-video/banque/demandes/demande.json ${{ matrix.part }} $PARTS $M $O \
+            ~/sdbin/sd-cli $RUNNER_TEMP/cle.priv.json studio-video/animer/cle-claude.pub.pem || true
+          kill $P 2>/dev/null || true; rm -f $RUNNER_TEMP/cle.priv.json; ls -la $O
+      - name: Sceller et rendre (branche banque-sortie-${{ matrix.part }})
+        if: always()
+        run: |
+          O=$RUNNER_TEMP/sortie; R=$RUNNER_TEMP/rendu; mkdir -p $R
+          cp $O/*.msb $O/mesure.json $R/ 2>/dev/null || true
+          tr '\r' '\n' < $O/journal.txt 2>/dev/null | grep -i -E "^===|lora|error|warn|taken|completed" | awk '!seen[$0]++' | tail -120 > $R/journal.txt || true
+          git worktree add -q --detach ../rendu HEAD && cd ../rendu && git checkout -q --orphan publie && git rm -rqf . && git clean -fdq
+          cp $R/* . && git add -A && git -c user.name=banque -c user.email=banque@users.noreply.github.com commit -qm "Banque : part ${{ matrix.part }} (run ${{ github.run_id }})"
+          git push -q -f origin publie:banque-sortie-${{ matrix.part }}
