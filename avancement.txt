@@ -11,3 +11,4 @@
 [1335 s] === maman-nounou--hausser (at_runtime)   |============>                                     | 1/4 - 133.69s/it[K · mémoire libre 13784 Mo
 [1457 s] === maman-nounou--hausser (at_runtime)   |============>                                     | 1/4 - 133.69s/it[K · mémoire libre 13779 Mo
 [1578 s] === maman-nounou--hausser (at_runtime)   |=========================>                        | 2/4 - 133.16s/it[K · mémoire libre 13775 Mo
+[1700 s] === maman-nounou--hausser (at_runtime)   |=====================================>            | 3/4 - 133.14s/it[K · mémoire libre 13774 Mo
