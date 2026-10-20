@@ -6,3 +6,4 @@
 [728 s] === coumba--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13808 Mo
 [850 s] === coumba--mentir (at_runtime)   |============>                                     | 1/4 - 136.14s/it[K · mémoire libre 13804 Mo
 [971 s] === coumba--mentir (at_runtime)   |=========================>                        | 2/4 - 135.27s/it[K · mémoire libre 13775 Mo
+[1092 s] === coumba--mentir (at_runtime)   |=====================================>            | 3/4 - 135.44s/it[K · mémoire libre 13776 Mo
