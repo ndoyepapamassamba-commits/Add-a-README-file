@@ -3,3 +3,4 @@
 [365 s] 0 images · === decor-hopital-large-jour   |=========================>                        | 2/4 - 156.86s/it[K · mémoire libre 6880 Mo
 [487 s] 0 images · === decor-hopital-large-jour   |=========================>                        | 2/4 - 156.86s/it[K · mémoire libre 6872 Mo
 [122 s] 0 images · === decor-hopital-large-jour   |============>                                     | 1/4 - 92.55s/it[K · mémoire libre 6931 Mo
+[244 s] 0 images · === decor-hopital-large-jour   |=========================>                        | 2/4 - 89.43s/it[K · mémoire libre 6918 Mo
