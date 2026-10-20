@@ -1,0 +1,44 @@
+=== A-marche
+[I] loading tensors completed, taking 3.81s (read: 3.66s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 12122 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 12.12s --- image.cpp:529
+[I] loading tensors completed, taking 14.82s (read: 14.76s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 1486.21s --- image.cpp:899
+[I] generating 1 latent images completed, taking 1486.21s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.11s, memcpy: 0.00s, convert: 0.05s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 47.64s --- vae.hpp:384
+[I] decode_first_stage completed, taking 47.65s --- image.cpp:624
+[I] generate_image completed in 1545.98s --- image.cpp:1050
+=== A2-marche-planches
+[I] loading tensors completed, taking 9.78s (read: 9.73s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 17483 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 17.48s --- image.cpp:529
+[I] loading tensors completed, taking 14.81s (read: 14.73s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 1485.02s --- image.cpp:899
+[I] generating 1 latent images completed, taking 1485.02s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.10s, memcpy: 0.00s, convert: 0.05s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 47.46s --- vae.hpp:384
+[I] decode_first_stage completed, taking 47.46s --- image.cpp:624
+[I] generate_image completed in 1549.97s --- image.cpp:1050
+=== B-mamie
+[I] loading tensors completed, taking 9.81s (read: 9.74s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 15698 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 15.70s --- image.cpp:529
+[I] loading tensors completed, taking 14.22s (read: 14.21s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 1453.99s --- image.cpp:899
+[I] generating 1 latent images completed, taking 1453.99s --- image.cpp:911
+[I] loading tensors completed, taking 0.22s (read: 0.11s, memcpy: 0.00s, convert: 0.06s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 47.57s --- vae.hpp:384
+[I] decode_first_stage completed, taking 47.57s --- image.cpp:624
+[I] generate_image completed in 1517.27s --- image.cpp:1050
+=== C-maquis-vide
+[I] loading tensors completed, taking 9.81s (read: 9.73s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 14233 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 14.23s --- image.cpp:529
+[I] loading tensors completed, taking 14.03s (read: 14.02s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 1417.14s --- image.cpp:899
+[I] generating 1 latent images completed, taking 1417.14s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.12s, memcpy: 0.00s, convert: 0.05s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 47.41s --- vae.hpp:384
+[I] decode_first_stage completed, taking 47.41s --- image.cpp:624
+[I] generate_image completed in 1478.79s --- image.cpp:1050

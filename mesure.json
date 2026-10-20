@@ -1,0 +1,40 @@
+{
+ "modele": "zimage",
+ "licence": "Apache-2.0 : Z-Image-Turbo, Qwen3-4B-Instruct-2507, VAE FLUX.1",
+ "sd_cpp": "0518b34374761cb82aeda5ad3c2f0686fdad2cec",
+ "run": "39502718862",
+ "taches": [
+  {
+   "tache": "A-marche",
+   "ok": true,
+   "code": 0,
+   "secondes": 1548,
+   "memoire_max_go": 12.99,
+   "references": false
+  },
+  {
+   "tache": "A2-marche-planches",
+   "ok": true,
+   "code": 0,
+   "secondes": 1552,
+   "memoire_max_go": 13.0,
+   "references": false
+  },
+  {
+   "tache": "B-mamie",
+   "ok": true,
+   "code": 0,
+   "secondes": 1519,
+   "memoire_max_go": 13.0,
+   "references": false
+  },
+  {
+   "tache": "C-maquis-vide",
+   "ok": true,
+   "code": 0,
+   "secondes": 1480,
+   "memoire_max_go": 12.99,
+   "references": false
+  }
+ ]
+}
