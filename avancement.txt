@@ -1,1 +1,2 @@
 [123 s] === koffi--rire (at_runtime)  · mémoire libre 13805 Mo
+[244 s] === koffi--rire (at_runtime)   |============>                                     | 1/4 - 136.09s/it[K · mémoire libre 13789 Mo
