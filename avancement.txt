@@ -16,3 +16,4 @@
 [1941 s] === modou--parler (at_runtime)   |============>                                     | 1/4 - 134.23s/it[K · mémoire libre 13762 Mo
 [2062 s] === modou--parler (at_runtime)   |=========================>                        | 2/4 - 133.72s/it[K · mémoire libre 13762 Mo
 [2183 s] === modou--parler (at_runtime)   |=====================================>            | 3/4 - 133.83s/it[K · mémoire libre 13764 Mo
+[2305 s] === modou--parler (at_runtime)   |=====================================>            | 3/4 - 133.83s/it[K · mémoire libre 13762 Mo
