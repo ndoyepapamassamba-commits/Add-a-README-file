@@ -1,1 +1,2 @@
 [123 s] 0 images · === decor-bureau-large-jour  · mémoire libre 6992 Mo
+[244 s] 0 images · === decor-bureau-large-jour   |============>                                     | 1/4 - 160.77s/it[K · mémoire libre 6991 Mo
