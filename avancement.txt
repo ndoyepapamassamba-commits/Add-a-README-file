@@ -5,3 +5,4 @@
 [608 s] === coumba--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14576 Mo
 [729 s] === coumba--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13817 Mo
 [850 s] === coumba--colere (at_runtime)   |============>                                     | 1/4 - 134.48s/it[K · mémoire libre 13810 Mo
+[971 s] === coumba--colere (at_runtime)   |=========================>                        | 2/4 - 133.81s/it[K · mémoire libre 13782 Mo
