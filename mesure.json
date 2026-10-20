@@ -13,6 +13,17 @@
    "h": 448,
    "memoire_max_go": 9.47,
    "run": "39514755738"
+  },
+  {
+   "tache": "decor-atelier-de-couture-large-jour",
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 620,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.47,
+   "run": "39514755738"
   }
  ]
 }
