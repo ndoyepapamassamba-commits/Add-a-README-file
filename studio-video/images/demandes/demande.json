@@ -1,0 +1,32 @@
+{
+ "date": "2026-10-20",
+ "but": "Concours de générateurs d'images (processeur, machines GitHub gratuites) : garder les personnages de la V1 et leur style dans de nouvelles scènes, pour fournir les images de départ de Wan 2.2.",
+ "references": {
+  "koffi.msb": "Koffi découpé dans l'image de la V1 publiée (maquis), agrandi ×2",
+  "coumba.msb": "Coumba découpée dans l'image de la V1 publiée (maquis), agrandie ×2",
+  "v1-maquis.msb": "image de la V1 publiée (maquis, Koffi et Coumba), 576×344"
+ },
+ "taches": [
+  {
+   "id": "A-marche",
+   "refs": ["koffi.msb", "coumba.msb"],
+   "w": 768, "h": 448,
+   "prompt": "Pixar-style 3D animated film still. The man from image 1 (sunglasses, black shirt with gold baroque patterns, gold chains) and the woman from image 2 (pink off-shoulder dress, curly black hair, gold earrings) argue face to face in a busy outdoor market in Abidjan, Ivory Coast, at sunset. Market stalls with tomatoes, onions and colorful wax fabrics behind them. Keep exactly the same faces, outfits, skin tones and proportions as in the reference images. Wide shot, both characters visible from the knees up, warm cinematic light.",
+   "prompt_sans_ref": "Pixar-style 3D animated film still. A slim young Ivorian man with sunglasses, a black shirt with gold baroque patterns and gold chains, and a young Ivorian woman with curly black hair and gold earrings in a pink off-shoulder dress, argue face to face in a busy outdoor market in Abidjan at sunset. Market stalls with tomatoes, onions and colorful wax fabrics. Wide shot, both visible from the knees up, warm cinematic light."
+  },
+  {
+   "id": "B-mamie",
+   "refs": ["v1-maquis.msb"],
+   "w": 768, "h": 448,
+   "prompt": "Same 3D animated style, same rendering, lighting quality and character design language as image 1. A new character: a plump elderly Ivorian grandmother in a yellow and green wax print dress with a matching head wrap, hands on her hips, laughing loudly, standing in the sunny courtyard of a West African family house with laundry drying on a line and a mango tree. Wide shot, full figure.",
+   "prompt_sans_ref": "Pixar-style 3D animated film still. A plump elderly Ivorian grandmother in a yellow and green wax print dress with a matching head wrap, hands on her hips, laughing loudly, standing in the sunny courtyard of a West African family house with laundry drying on a line and a mango tree. Wide shot, full figure, warm light."
+  },
+  {
+   "id": "C-maquis-vide",
+   "refs": ["v1-maquis.msb"],
+   "w": 768, "h": 448,
+   "prompt": "The same street restaurant as image 1, same camera angle, same 3D animated style, same string lights, grill and colorful table, but completely empty: no people at all, two empty plastic chairs. Night, warm light.",
+   "prompt_sans_ref": "Pixar-style 3D animated film still. An empty Ivorian street restaurant (maquis) at night: string lights, a smoking barbecue grill, a table with a colorful wax tablecloth, two empty plastic chairs, no people. Warm light."
+  }
+ ]
+}

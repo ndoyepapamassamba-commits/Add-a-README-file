@@ -1,0 +1,88 @@
+# CONCOURS D'IMAGES DE LA TROUPE SUR LES MACHINES GRATUITES DE GITHUB (20/10/2026)
+# « cherche des générateurs d'images capables de te générer les personnages et les scènes pour les 10 000 vidéos avec le même
+# style de personnages ». Même cadre virtuel que Wan 2.2 (animer-wan22.yml) : une demande déposée dans
+# studio-video/images/demandes/ lance une machine par générateur, en parallèle ; chaque image revient scellée avec la clé de
+# Claude sur images-sortie-<générateur>, avec ses mesures ; l'avancement est poussé toutes les 2 min sur images-progres-<générateur>.
+# Programme : studio-video/images/concours.py (générateurs, licences, réglages).
+name: Images de la troupe (concours)
+on:
+  push:
+    branches: [claude/relaxed-noether-svkgiu]
+    paths: ['studio-video/images/demandes/**', 'studio-video/images/concours.py', '.github/workflows/images-troupe.yml']
+  workflow_dispatch:
+permissions: { contents: write }
+concurrency: { group: images, cancel-in-progress: true }
+defaults:
+  run: { shell: bash }
+env:
+  SD_CPP: 0518b34374761cb82aeda5ad3c2f0686fdad2cec
+  HF: https://huggingface.co
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        nom: [klein4b, qwen2511, zimage]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Processeur de la machine (le moteur compilé lui est propre)
+        id: cpu
+        run: echo "cle=sdcpp-${SD_CPP:0:12}-$(lscpu | sed -n 's/^Model name: *//p' | tr -c 'A-Za-z0-9' '-')" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        id: cache
+        with: { path: ~/sdbin, key: '${{ steps.cpu.outputs.cle }}' }
+      - name: Moteur et poids (en même temps)
+        run: |
+          M=$RUNNER_TEMP/m; mkdir -p $M/lora; echo "M=$M" >> $GITHUB_ENV; t0=$(date +%s)
+          dl() { curl -sfL --retry 5 --retry-delay 5 -o "$M/$1" "$HF/$2" && echo "poids : $1 $(du -h $M/$1 | cut -f1)"; }
+          case ${{ matrix.nom }} in
+            klein4b)  dl klein.gguf leejet/FLUX.2-klein-4B-GGUF/resolve/main/flux-2-klein-4b-Q8_0.gguf &
+                      dl llm.gguf unsloth/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q8_0.gguf &
+                      dl vae.safetensors black-forest-labs/FLUX.2-small-decoder/resolve/main/full_encoder_small_decoder.safetensors & ;;
+            qwen2511) dl qwen.gguf unsloth/Qwen-Image-Edit-2511-GGUF/resolve/main/qwen-image-edit-2511-Q3_K_M.gguf &
+                      dl llm.gguf mradermacher/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct.Q4_K_M.gguf &
+                      dl mmproj.gguf mradermacher/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct.mmproj-Q8_0.gguf &
+                      dl vae.safetensors Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors &
+                      dl lora/lightning.safetensors lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/main/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors & ;;
+            zimage)   dl zimage.gguf leejet/Z-Image-Turbo-GGUF/resolve/main/z_image_turbo-Q8_0.gguf &
+                      dl llm.gguf unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/main/Qwen3-4B-Instruct-2507-Q8_0.gguf &
+                      dl vae.safetensors Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors & ;;
+          esac
+          sudo apt-get install -y -qq time > /dev/null 2>&1 || (sudo apt-get update -qq && sudo apt-get install -y -qq time > /dev/null)
+          pip install -q cryptography
+          if [ ! -x ~/sdbin/sd-cli ]; then
+            git init -q $RUNNER_TEMP/sd && cd $RUNNER_TEMP/sd && git remote add origin https://github.com/leejet/stable-diffusion.cpp
+            git fetch -q --depth 1 origin $SD_CPP && git checkout -q FETCH_HEAD && git submodule update -q --init --recursive --depth 1
+            cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON > $RUNNER_TEMP/build.log 2>&1 && cmake --build build -j 4 --config Release >> $RUNNER_TEMP/build.log 2>&1 || { tail -60 $RUNNER_TEMP/build.log; exit 1; }
+            mkdir -p ~/sdbin && cp build/bin/* ~/sdbin/ && echo "compilé en $(( $(date +%s) - t0 )) s"
+          else echo "moteur repris du cache (${{ steps.cpu.outputs.cle }})"; fi
+          ldd ~/sdbin/sd-cli | grep -c "not found" && exit 1 || true
+          wait; ls -la $M $M/lora; echo "préparation : $(( $(date +%s) - t0 )) s"
+      - name: Images (${{ matrix.nom }})
+        env: { FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
+        run: |
+          O=$RUNNER_TEMP/sortie; mkdir -p $O; L=$O/journal.txt; : > $L; t1=$(date +%s)
+          git fetch -q origin fabrique-donnees && git show FETCH_HEAD:cle.priv.json > $RUNNER_TEMP/cle.priv.json
+          git worktree add -q --detach ../progres HEAD && (cd ../progres && git checkout -q --orphan p && git rm -rq . && git clean -fdq)
+          ( while sleep 120; do
+              l="[$(( $(date +%s) - t1 )) s] $(grep '^===' $L | tail -1) $(tr '\r' '\n' < $L | grep -E 's/it|it/s|taken|completed' | tail -1 | cut -c1-140) · mémoire libre $(free -m | awk '/Mem:/{print $7}') Mo"
+              echo "$l"; echo "$l" >> ../progres/avancement.txt
+              (cd ../progres && git add -A && git -c user.name=images -c user.email=images@users.noreply.github.com commit -qm "${{ matrix.nom }}" && git push -qf origin HEAD:images-progres-${{ matrix.nom }}) > /dev/null 2>&1 || true
+            done ) & P=$!
+          python3 studio-video/images/concours.py ${{ matrix.nom }} studio-video/images/demandes $M $O \
+            studio-video/animer/cle-claude.pub.pem $RUNNER_TEMP/cle.priv.json ~/sdbin/sd-cli $L || true
+          kill $P 2>/dev/null || true; rm -f $RUNNER_TEMP/cle.priv.json
+          tr '\r' '\n' < $L | grep -i -E "^===|lora|error|warn|taken|completed|ref" | awk '!seen[$0]++' | tail -80 || true
+          ls -la $O
+      - name: Sceller et rendre (branche images-sortie-${{ matrix.nom }})
+        if: always()
+        run: |
+          O=$RUNNER_TEMP/sortie; R=$RUNNER_TEMP/rendu; mkdir -p $R
+          cp $O/*.msb $O/mesure.json $R/ 2>/dev/null || true
+          tr '\r' '\n' < $O/journal.txt 2>/dev/null | grep -i -E "^===|lora|error|warn|taken|completed" | awk '!seen[$0]++' | tail -120 > $R/journal.txt || true
+          ls -la $R
+          git worktree add -q --detach ../rendu HEAD && cd ../rendu && git checkout -q --orphan publie && git rm -rq . && git clean -fdq
+          cp $R/* . && git add -A && git -c user.name=images -c user.email=images@users.noreply.github.com commit -qm "Images : ${{ matrix.nom }} (run ${{ github.run_id }})"
+          git push -q -f origin publie:images-sortie-${{ matrix.nom }}
