@@ -417,6 +417,8 @@ if REG['rig']:   # pistes de jeu et ressenti de chaque personnage, image par ima
 LIPS, EYES = (0.0, 0.25, 0.5, 0.75, 1.0), (0.0, 0.5, 1.0)
 SEATED = {'BAYE NDIAYE': True, 'KOFFI': True, 'COUMBA': True}
 lines = T['lines']
+import synchro   # avance des lèvres mesurée sur la voix de chaque réplique (20/10/2026)
+AVANCE_LEVRES, MESURE_LEVRES = (float(os.environ['AVANCE_LEVRES']), None) if os.environ.get('AVANCE_LEVRES') else synchro.avance_levres(lines)
 def line_at(t, qui=None):
     for L in lines:
         if L['t0'] - 0.02 <= t <= L['t0'] + L['dur'] + 0.02 and (qui is None or L['qui'] == qui): return L
@@ -437,14 +439,14 @@ def montre(L, x):
     return None
 def jaw(L, t):
     # ouverture visée par le phonème montré, adoucie sur ±50 ms, modulée par l'énergie réelle de la voix
-    x = t - L['t0']; p = montre(L, x)
+    x = t - L['t0']; xa = x + AVANCE_LEVRES; p = montre(L, xa)   # phonèmes avancés (mesure), énergie de la voix à l'instant réel
     # LÈVRES JOINTES SUR M, B, P (forme A de Rhubarb) ET AUX SILENCES (X) — avis de JEV sur la v25 (17/10) puis la v29
     # (18/10) : bouche vue fermée 16 fois sur 17 quand la commande vaut ≤ 0,05, 8 fois sur 31 au-delà. Règle des
     # animateurs : la bouche se ferme sur chaque bilabiale ; le lissage ne joue qu'aux transitions, pas au cœur de la consonne.
     if p is None or p['ph'] in ('A', 'X'): return 0.0
     acc = 0.0
     for dx, w in ((-0.05, 0.25), (0.0, 0.5), (0.05, 0.25)):
-        q = montre(L, x + dx); acc += w * (q['open'] / 4 if q else 0.0)
+        q = montre(L, xa + dx); acc += w * (q['open'] / 4 if q else 0.0)
     e = L['env'][min(len(L['env']) - 1, max(0, int(x * 100)))]
     # amplitude exagérée (les visages font 40 à 80 px dans les plans moyens : une bouche à mi-ouverture y est invisible,
     # mesuré le 16/10) ; la puissance < 1 relève les ouvertures moyennes, les consonnes fermées restent fermées
@@ -462,7 +464,7 @@ def machoire(name, t):
         tt = t + dt / 30.0; Lx = line_at(tt, name); jj += w_ * (jaw(Lx, tt) if Lx else 0.0); wsum += w_
     jj /= wsum
     if Lc:
-        x = t - Lc['t0']; p = montre(Lc, x)
+        x = t - Lc['t0'] + AVANCE_LEVRES; p = montre(Lc, x)
         if p and p['open'] >= 2.2 and abs(x - (p['t0'] + p['t1']) / 2) <= 1 / FPS: jj = max(jj, VOYELLE_OUVERTE, jaw(Lc, t))
     return jj
 def blink(name, t):
@@ -669,12 +671,23 @@ def hors_champ(A, vue):
     réduction) : ses pixels ne peuvent pas atteindre l'écran, on ne le déforme pas."""
     x0, y0, x1, y1 = A['bbox']; m = 0.25 * max(x1 - x0, y1 - y0) + 40 + A.get('marge_bras', 0)
     return x1 + m < vue[0] or x0 - m > vue[2] or y1 + m < vue[1] or y0 - m > vue[3]
+def _fumee_vue(V, forme, vue, zone, off, zoom):
+    """FUMÉE HORS CHAMP NON CALCULÉE (20/10/2026, profil py-spy de la v16 : fumée = 13 % du tournage, même quand le grill
+    est hors du cadre) : le panache n'est dessiné que si son rectangle touche la zone lue par la caméra, élargie de tout ce
+    qui peut y ramener un pixel de la plaque — marge de rendu 16 px, décor vivant (≤ 21 px de jour, ×6), parallaxe (≤ décalage
+    caméra) et travelling (≤ taille × |zoom − 1|). En plan large ou sans zone : toujours dessiné, comme avant."""
+    if not (zone and vue is not None and os.environ.get('RENDU_ZONE_VUE', '1') == '1'): return True
+    r = decor_vivant.rect_fumee(V, forme)
+    if r is None: return False
+    m = 16 + 64 + (abs(off[0]) + abs(off[1]) if off is not None else 0) + (max(forme[:2]) * abs(zoom[0] - 1) if zoom is not None else 0)
+    return not (r[2] < vue[0] - m or r[0] > vue[2] + m or r[3] < vue[1] - m or r[1] > vue[3] + m)
 def frame_scene(S, t, off=None, zoom=None, vis=None, t0=None, vue=None, zone=False):
     """zone=True (avec vue) : SEULE LA PARTIE VUE PAR LA CAMÉRA est calculée (19/10/2026, principe des moteurs de jeu et de
     Live2D : on ne dessine que le cadre, plus une marge de 16 px qui couvre le flou de réduction et l'interpolation) ; renvoie
     alors (image de la zone, (x0, y0) de la zone dans la plaque). Mêmes valeurs, au pixel près, que la plaque entière recadrée."""
     plate = S['plate']; V = S.get('vie')
-    if V is not None and decor_vivant.panache(V, plate) is not None: plate = decor_vivant.fumee(V, plate, t)   # la fumée du grill MONTE (panache physique), avant la parallaxe
+    if V is not None and decor_vivant.panache(V, plate) is not None and _fumee_vue(V, plate.shape, vue, zone, off, zoom):
+        plate = decor_vivant.fumee(V, plate, t)   # la fumée du grill MONTE (panache physique), avant la parallaxe
     if S.get('linge') is not None: plate = linge.compose(S['linge'], plate, t)   # linge épinglé qui flotte au vent (v34), sous la couche « tissu »
     VF = S.get('vf')
     if VF is not None and S.setdefault('jour', (lambda s_: s_ is not None and s_[1] > 110)(decor_vivant.soleil(S['plate']))):
@@ -724,7 +737,12 @@ def frame_scene(S, t, off=None, zoom=None, vis=None, t0=None, vue=None, zone=Fal
         R_ = warp_actor(S, A, t, name)
         if A.get('dessins'): R_ = geste_dessine(S, A, t, name, R_)
         (X0, Y0, X1, Y1), rgb, al = R_
-        sub = can[Y0:Y1, X0:X1]; al3 = al[..., None]; sub[:] = sub * (1 - al3) + rgb.astype(np.float32) * al3
+        # COLLAGE LIMITÉ À LA ZONE VUE (20/10/2026, profil py-spy de la v16 : cette ligne = 9 % du tournage) : hors de la zone,
+        # le canevas n'est jamais lu ; et sub + (rgb − sub)·α en place au lieu de cinq tableaux temporaires
+        ix0, iy0, ix1, iy1 = max(X0, rx0), max(Y0, ry0), min(X1, rx1), min(Y1, ry1)
+        if ix1 <= ix0 or iy1 <= iy0: continue
+        sub = can[iy0:iy1, ix0:ix1]; r_ = rgb[iy0 - Y0:iy1 - Y0, ix0 - X0:ix1 - X0].astype(np.float32)
+        r_ -= sub; r_ *= al[iy0 - Y0:iy1 - Y0, ix0 - X0:ix1 - X0, None]; sub += r_
     if poses: entites.dessine(can, poses, lambda p: p['y'] > pieds and vu_(p), S.get('lum'), S.get('style_ent'), em)
     if em: MESURES.extend(dict(qui='entite', sketch=S['sk']['id'], t=round(t, 3), **m_) for m_ in em)
     if REG.get('nuages', 0) > 0 and S.setdefault('jour', (lambda s_: s_ is not None and s_[1] > 110)(decor_vivant.soleil(S['plate']))):
@@ -812,6 +830,16 @@ def head_box(A):
     fx0, fy0, fx1, fy1 = v['box']; mx = 0.35 * (fx1 - fx0)
     # cheveux : le haut du masque peut s'arrêter avant le sommet d'une coiffure (afro de Modou, foulard) → +35 % de la hauteur du visage
     top = min(fy0 - 0.35 * (fy1 - fy0), A['bbox'][1]); return [fx0 - mx, top, fx1 + mx, fy1 + 0.1 * (fy1 - fy0)]
+AIR_COTE = float(os.environ.get('AIR_COTE', 0.035))
+def tetes_dans(S, c, keep=None):
+    """toutes les têtes entières ou absentes du cadre c, celle de `keep` entière."""
+    cx_, cy_, w_, h_ = c; l_, r_, t_, b_ = cx_ - w_ / 2, cx_ + w_ / 2, cy_ - h_ / 2, cy_ + h_ / 2
+    for n_, A_ in S['acts'].items():
+        hb_ = head_box(A_)
+        if not hb_: continue
+        ix_ = max(0, min(r_, hb_[2]) - max(l_, hb_[0])) / (hb_[2] - hb_[0]); iy_ = max(0, min(b_, hb_[3]) - max(t_, hb_[1])) / (hb_[3] - hb_[1])
+        if (n_ == keep and (ix_ < 0.98 or iy_ < 0.98)) or (ix_ * iy_ > 0.02 and (ix_ < 0.98 or iy_ < 0.98)): return False
+    return True
 def faces_ok(S, c, keep=None):
     """RÈGLE « tête entière ou absente », sur les quatre bords : une tête à moitié dans le cadre est poussée dehors ;
     la tête du personnage visé est toujours entière, avec de l'air au-dessus (8 % de la hauteur du cadre)."""
@@ -835,10 +863,15 @@ def faces_ok(S, c, keep=None):
                 cx += (vw - 0.2 * w + 2) * (1 if (bx0 + bx1) / 2 < cx else -1); moved = True; continue
             cols = np.nonzero(A['mask'][max(0, int(t)):max(1, int(btm))].max(0) > 0.5)[0]   # colonnes où la personne existe DANS la hauteur du cadre (masque, pas la boîte)
             ins = cols[(cols >= l) & (cols <= r)]; mid = (bx0 + bx1) / 2
+            # CORPS SANS TÊTE (20/10/2026, v15, cour : la tête de Baye juste hors du cadre et 31 % de son boubou dedans, au bord
+            # gauche du plan Maman-Mamadou) : une personne dont la tête est absente du cadre n'y laisse AUCUN morceau, quelle
+            # que soit sa largeur ; marge de 2 % du cadre pour le jeu des bras et du buste. Vaut pour tous les personnages.
+            sans_tete = ix * iy <= 0.02 and len(ins) > 0
             # un bout de personne collé au bord (masque OU boîte : une main restée dans le décor hors masque compte aussi) : sorti du cadre
-            if (0 < len(ins) < 0.1 * w or 0 < vw < 0.1 * w) and not (l <= mid <= r):
-                if mid < cx: edge = max(bx1, ins.max() if len(ins) else bx1); cx += edge - l + 2
-                else: edge = min(bx0, ins.min() if len(ins) else bx0); cx -= r - edge + 2
+            if (0 < len(ins) < 0.1 * w or 0 < vw < 0.1 * w or sans_tete) and not (l <= mid <= r):
+                mg_ = max(2.0, 0.02 * w)
+                if mid < cx: edge = max(bx1, ins.max() if len(ins) else bx1); cx += edge - l + mg_
+                else: edge = min(bx0, ins.min() if len(ins) else bx0); cx -= r - edge + mg_
                 moved = True; continue
             if ix * iy > 0.02 and (ix < 0.98 or iy < 0.98):
                 if x0 < l < x1: cx += (x1 - l) + 2
@@ -847,6 +880,18 @@ def faces_ok(S, c, keep=None):
                 moved = True
         cx, cy, w, h = clamp_crop(S, (cx, cy, w, h))
         if not moved: break
+    # AIR SUR LES CÔTÉS (20/10/2026, v15 : la tête de Maman Nounou à 2,5 px du bord droit du plan à deux, coupée dès qu'elle
+    # tourne ou que le bassin se balance) : toute tête entière dans le cadre garde AIR_COTE de la largeur entre elle et le
+    # bord ; le cadre glisse si les autres têtes restent entières ou absentes, sinon il ne bouge pas. Tous les personnages.
+    for n, A in S['acts'].items():
+        hb = head_box(A)
+        if not hb: continue
+        l, r, t, btm = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2; air = AIR_COTE * w
+        if not (hb[0] >= l - 1 and hb[2] <= r + 1 and hb[1] >= t - 1 and hb[3] <= btm + 1): continue
+        dx = (hb[2] - (r - air)) if hb[2] > r - air else (hb[0] - (l + air)) if hb[0] < l + air else 0.0
+        if dx:
+            cand = clamp_crop(S, (cx + dx, cy, w, h))
+            if tetes_dans(S, cand, keep): cx, cy, w, h = cand
     # secours : si une tête reste coupée (le cadre ne peut plus glisser), on élargit pour la prendre entière
     for _ in range(10):
         cut = None
@@ -874,9 +919,11 @@ def faces_ok(S, c, keep=None):
         l, r, t, btm = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2
         cols = np.nonzero(A['mask'][max(0, int(t)):max(1, int(btm))].max(0) > 0.5)[0]; ins = cols[(cols >= l) & (cols <= r)]
         mid = (A['bbox'][0] + A['bbox'][2]) / 2
+        if os.environ.get('TOURNE_DEBUG_BOUT'): print('bout?', keep, n, len(ins), (int(ins.min()), int(ins.max())) if len(ins) else None, round(0.1 * w), round(mid), round(l), round(r), [round(v) for v in (head_box(S['acts'][keep]) if keep in S['acts'] else None) or []], flush=True)
         if 0 < len(ins) < 0.1 * w and not (l <= mid <= r):
             nl, nr = (ins.max() + 2, r) if mid < cx else (l, ins.min() - 2)
             nw = nr - nl; nh = nw * CH / CW; cand = ((nl + nr) / 2, cy, nw, nh)
+            if os.environ.get('TOURNE_DEBUG_BOUT'): print('  resserre', [round(v) for v in cand], nw > 0.8 * w, tetes_ok(cand), flush=True)
             if nw > 0.8 * w and tetes_ok(cand): cx, cy, w, h = cand
     # secours : corps sans tête encore trop présent → le cadre monte et s'élargit pour prendre la tête entière
     for n, A in S['acts'].items():
@@ -1073,6 +1120,17 @@ def chemin_ok(S, a, b, keep, n=12):
         u = ease(k / n); c = [a_ + (b_ - a_) * u for a_, b_ in zip(a, b)]
         if tete_coupee(S, c, keep): return False
     return True
+def voisin_coupe(S, c, keep):
+    """le personnage (autre que keep) dont un MORCEAU reste dans le cadre c sans sa tête entière — même mesure que la porte C
+    du juge unique : plus de 1 % du cadre couvert par sa découpe, tête pas entièrement dedans ; None s'il n'y en a pas."""
+    cx, cy, w, h = c; l, r, t, b = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2
+    for n, A in S['acts'].items():
+        if n == keep: continue
+        hb = head_box(A)
+        if hb and hb[0] >= l - 1 and hb[2] <= r + 1 and hb[1] >= t - 1 and hb[3] <= b + 1: continue
+        m = A['mask'][max(0, int(t)):max(0, int(b)), max(0, int(l)):max(0, int(r))]
+        if m.size and float((m > 0.5).sum()) / (w * h) > 0.01: return n
+    return None
 def cadres_du_plan(S, s, keep):
     """CADRAGE SOUS-PIXEL CONTINU : les cadres sont validés UNE fois par plan (début, fin du mouvement, punch de la chute)
     puis interpolés en flottant ; l'image est prise par transformation affine (filtre anti-crénelage), jamais par découpe
@@ -1080,6 +1138,16 @@ def cadres_du_plan(S, s, keep):
     key = tuple(s[:5])
     if key not in CADRES:
         c0 = C0_JEV.get(key) or cadre_lisible(S, s, keep)   # cadre choisi par JEV réalisateur, sinon la règle du moteur
+        # VOISIN COLLÉ (20/10/2026, juge unique de la v16 : 1,6 s de robe de Maman Nounou SANS SA TÊTE au bord du plan serré de
+        # Petit Mamadou, 40,3 s — elle se tient contre lui, sa découpe passe derrière lui : aucun cadre seul ne l'évite, et le
+        # cadre butait déjà sur le bord du décor). Un plan d'un seul personnage qui garde un morceau de voisin devient le plan à
+        # deux (voisin entier, tête comprise) si le visage visé y reste lisible ; tous les personnages, tous les lieux.
+        n_v = voisin_coupe(S, c0, keep) if isinstance(s[4], str) else None
+        if n_v:
+            c2 = faces_ok(S, clamp_crop(S, crop_for(S, 'duo', (keep, n_v))), keep)
+            if not voisin_coupe(S, c2, keep) and taille_visage(S, keep, c2) >= VISAGE_MIN:
+                print(f"plan {s[0]:.2f} {s[3]} {s[4]} : {n_v} collé au personnage → plan à deux (visage {taille_visage(S, keep, c2):.0f} px)", flush=True); c0 = c2
+        propre_ = voisin_coupe(S, c0, keep) is None   # cadre de départ sans morceau de voisin : le mouvement n'en ramène pas
         if os.environ.get('TOURNE_DEBUG_CADRE'):   # diagnostic : cadre voulu → borné → après la règle des têtes
             print('cadre', s[2], s[3], s[4], [round(v) for v in crop_for(S, s[3], s[4])], [round(v) for v in clamp_crop(S, crop_for(S, s[3], s[4]))], [round(v) for v in c0], flush=True)
         # CAMÉRA VIVANTE : glissement latéral (cam_px pixels d'écran par image) vers le côté qui a de la place, petite
@@ -1103,6 +1171,7 @@ def cadres_du_plan(S, s, keep):
             c1 = faces_ok(S, clamp_crop(S, (c0[0] + ux, c0[1] + uy, c0[2] / pz, c0[3] / pz)), keep)
             cp = faces_ok(S, clamp_crop(S, (c1[0], c1[1], c1[2] / 1.15, c1[3] / 1.15)), keep)
             if not (chemin_ok(S, c0, c1, keep) and (s[5] is None or chemin_ok(S, c1, cp, keep))): continue
+            if propre_ and (voisin_coupe(S, c1, keep) or (s[5] is not None and voisin_coupe(S, cp, keep))): continue
             vie_ = math.hypot(c1[0] - c0[0], c1[1] - c0[1]) * sc0_ + 0.5 * abs(1 - c0[2] / c1[2]) * CW
             essais.append((min(vie_, cible), -abs(vie_ - cible), g_ == 1.0 and dr == dirn, c1, cp, (g_, dr == dirn, vv, pz)))
             if g_ == 1.0 and dr == dirn and pz == REG['pousse']: break   # le mouvement voulu passe : inutile d'en chercher un autre
@@ -1110,6 +1179,7 @@ def cadres_du_plan(S, s, keep):
             _, _, _, c1, cp, choix_ = max(essais, key=lambda e: (e[0], e[2], e[1]))
         else:
             c1, cp, choix_ = c0, faces_ok(S, clamp_crop(S, (c0[0], c0[1], c0[2] / 1.15, c0[3] / 1.15)), keep), (0.0, True, 0.0, 1.0)
+            if propre_ and voisin_coupe(S, cp, keep): cp = c0   # le coup de zoom ramènerait un morceau de voisin : pas de zoom
         if choix_ != (1.0, True, 1.0, REG['pousse']):
             print(f"plan {s[0]:.2f} {s[3]} {s[4]} : mouvement {'glissement ' + str(round(choix_[0] * 100)) + '%' + ('' if choix_[1] else ' (autre côté)') if choix_[0] else ('grue' if choix_[2] else 'travelling')}, poussée {choix_[3]:.2f} (trajet sans tête coupée)", flush=True)
         cs = faces_ok(S, clamp_crop(S, crop_for(S, 'large')), None) if s[3].startswith('ouvre-') else None
@@ -1490,6 +1560,53 @@ else:
 # RENDU PARALLÈLE : les images sont indépendantes ; chaque processeur tourne des blocs de 24 images (TOURNE_PROCS)
 NPROC = int(os.environ.get('TOURNE_PROCS', os.cpu_count() or 1)); blocs = [list(RANGE_T[i:i + 24]) for i in range(0, len(RANGE_T), 24)]
 # REPRISE (18/10/2026 : le conteneur a redémarré au milieu du tournage de l'épisode 1, à 2 764 images sur 4 047) :
+# BOÎTES PAR IMAGE POUR LE JUGE UNIQUE (20/10/2026, « un seul juge pour tout pour aller vite », appliqué au moteur v14/v15) :
+# pour chaque image, la tête, la bouche et la part d'image de chaque personnage, dans le repère du clip (CW × CH), calculées
+# par le même cadre de caméra que le rendu (cadre_t) — juge_unique.py y lit têtes coupées, bouts de corps, bouche lisible.
+def _boites():
+    integ = {}
+    for sid_, S_ in SC.items():
+        for n_, A_ in S_['acts'].items():
+            m_ = (A_['mask'] > 0.5).astype(np.float64); integ[(sid_, n_)] = np.pad(m_.cumsum(0).cumsum(1), ((1, 0), (1, 0)))
+    def somme(I, x0, y0, x1, y1):
+        H_, W_ = I.shape[0] - 1, I.shape[1] - 1; x0, x1 = int(np.clip(x0, 0, W_)), int(np.clip(x1, 0, W_)); y0, y1 = int(np.clip(y0, 0, H_)), int(np.clip(y1, 0, H_))
+        return float(I[y1, x1] - I[y0, x1] - I[y1, x0] + I[y0, x0])
+    BX = {}
+    for f_ in RANGE:
+        t_ = f_ / FPS
+        if in_card(t_) and not REG['carte_sur_scene']: continue
+        s_ = shot_at(t_)
+        if s_[2] not in SC: continue
+        S_ = SC[s_[2]]; keep_ = s_[4][0] if isinstance(s_[4], tuple) else s_[4]
+        cx_, cy_, w_, h_, _, _ = cadre_t(s_, cadres_du_plan(S_, s_, keep_), t_); sc_ = CW / w_; ox, oy = cx_ - w_ / 2, cy_ - h_ / 2
+        P_ = lambda x, y: [round((x - ox) * sc_, 1), round((y - oy) * sc_, 1)]
+        e_ = {}
+        for n_, A_ in S_['acts'].items():
+            hb_ = head_box(A_); v_ = A_['a'].get('visage')
+            if not hb_ or not v_: continue
+            mw = float(v_.get('mouthWidth') or 0.4 * (v_['box'][2] - v_['box'][0])); sx, sy = v_['seam']
+            e_[n_] = {'tete': P_(hb_[0], hb_[1]) + P_(hb_[2], hb_[3]), 'bouche': P_(sx - mw / 2, sy - 0.3 * mw) + P_(sx + mw / 2, sy + 0.3 * mw),
+                      'aire': round(somme(integ[(s_[2], n_)], ox, oy, ox + w_, oy + h_) / (w_ * h_), 4)}
+            # OUVERTURE RÉELLEMENT RENDUE (20/10/2026) : la porte A du juge unique comparait la voix aux visèmes écrits dans la
+            # timeline, que ce moteur n'utilise pas (il suit les phonèmes et l'énergie de la voix, machoire) — même commande
+            # que warp_rig, prise de choc comprise
+            Pk_ = S_.get('pistes', {}).get(n_); fk_ = min(NF - 1, max(0, int(round(t_ * FPS)))); jj_ = machoire(n_, t_)
+            if Pk_ is not None and 'bouche_bee' in Pk_: jj_ = max(jj_, float(Pk_['bouche_bee'][fk_]))
+            e_[n_]['ouv'] = round(float(jj_), 3)
+        BX[str(f_)] = e_
+    json.dump(BX, open(f'{OUT}/boites.json', 'w'))
+    return len(BX)
+def decoupage_exact():
+    """BORNES EXACTES DES PLANS (20/10/2026, juge unique de la v17 : 2 « têtes coupées » à 20,70 et 70,53 s qui n'existaient pas
+    à l'image — le découpage était écrit arrondi au centième, la coupe réelle tombait 3 ms plus tard, et l'image de la coupe
+    était jugée avec le mauvais plan). Les instants sont écrits tels que le moteur les compare (shot_at), au bit près."""
+    return [[(list(v) if isinstance(v, tuple) else v) for v in s] for s in SH]
+if os.environ.get('TOURNE_BOITES_SEULES') == '1':   # boîtes d'un film déjà tourné, sans rien rendre (quelques secondes)
+    print(f'boîtes du juge unique : {_boites()} images', flush=True)
+    if os.path.isfile(f'{OUT}/tournage.json'):   # le découpage exact accompagne les boîtes (même instant de coupe que le rendu)
+        _tg = json.load(open(f'{OUT}/tournage.json')); _tg['decoupage'] = decoupage_exact()
+        json.dump(_tg, open(f'{OUT}/tournage.json', 'w'), ensure_ascii=False, indent=1)
+    sys.exit(0)
 # TOURNE_REPRISE=1 garde les blocs déjà tournés EN ENTIER (toutes leurs images présentes ; leurs mesures sont écrites à la fin
 # du bloc, morceau) ; un bloc commencé est retourné en entier
 if os.environ.get('TOURNE_REPRISE') == '1':
@@ -1507,6 +1624,8 @@ if NPROC > 1:
             if fait % 240 < 24: print(f'{fait}/{len(RANGE_T)}', flush=True)
 else:
     for b in blocs: morceau(b)
+try: print(f'boîtes du juge unique : {_boites()} images', flush=True)
+except Exception as ex: print('boîtes du juge unique non écrites :', ex, flush=True)
 if CLES:   # les plans tournés rejoignent le cache (images, image source, mesures du plan)
     import glob as _glob
     MES_ = [json.loads(l) for f_ in _glob.glob(f'{OUT}/mesures-*.jsonl') if not f_.endswith('mesures-cache.jsonl') for l in open(f_) if l.strip()]
@@ -1533,8 +1652,9 @@ if CLES:   # les plans tournés rejoignent le cache (images, image source, mesur
     for _, sz, p_ in sorted(tailles):
         if tot <= lim: break
         shutil.rmtree(p_, ignore_errors=True); tot -= sz
-json.dump({'images': NF, 'fps': FPS, 'plans': cut_count, 'plans_par_minute': round(cut_count / (total / 60), 1), 'reglages': REG, 'decoupage': [list(map(lambda v: round(v, 2) if isinstance(v, float) else (list(v) if isinstance(v, tuple) else v), s)) for s in SH],
+json.dump({'images': NF, 'fps': FPS, 'plans': cut_count, 'plans_par_minute': round(cut_count / (total / 60), 1), 'reglages': REG, 'decoupage': decoupage_exact(),
            'cadres': {f'{k[0]:.2f}': [None if c is None else [round(v, 1) for v in c] for c in v_] for k, v_ in CADRES.items()},
-           'empreintes': {f'{SH[i][0]:.2f}': c_[0] for i, c_ in CLES.items()}, 'repris_du_cache': [round(SH[i][0], 2) for i in REPRIS], 'realisateur_jev': REALISATION, 'jeu_humain': JOURNAL_JEU},
+           'empreintes': {f'{SH[i][0]:.2f}': c_[0] for i, c_ in CLES.items()}, 'repris_du_cache': [round(SH[i][0], 2) for i in REPRIS], 'realisateur_jev': REALISATION, 'jeu_humain': JOURNAL_JEU,
+           'avance_levres_s': round(AVANCE_LEVRES, 3), 'mesure_levres': MESURE_LEVRES},
           open(f'{OUT}/tournage.json', 'w'), ensure_ascii=False, indent=1)
 print('ok', len(RANGE), 'images,', cut_count, 'plans,', round(time.time() - T0), 's', f'({len(RANGE_T)} tournées, {len(RANGE) - len(RANGE_T)} reprises du cache)')

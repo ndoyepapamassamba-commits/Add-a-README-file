@@ -320,6 +320,10 @@ if __name__ == '__main__':
     try:
         with open('/proc/self/autogroup', 'w') as f: f.write('19')
     except OSError: pass
+    # 20/10/2026 : noyau sans autogroupe (mesuré : veille à nice 0, charge 10 sur 4 cœurs pendant le tournage) — la veille et
+    # ses REA héritent aussi du nice 19 du processus : le tournage passe toujours avant
+    try: os.nice(19 - os.nice(0))
+    except OSError: pass
     etat = lire_etat(); renoter(etat); en_cours = []
     with ThreadPoolExecutor(VOIES) as pool:
         while True:

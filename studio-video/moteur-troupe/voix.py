@@ -53,7 +53,7 @@ def _fiche(nom):
     return f
 
 
-def cast_de(nom):
+def _naturelle(nom):
     f = _fiche(nom)
     if not f.get('genre'): raise KeyError(f'{nom} : ni dans le tableau des voix, ni dans les fiches de la troupe')
     g, age = f['genre'], int(f.get('age') or 35); enfant = g in ('fille', 'garcon', 'enfant') and age < 13
@@ -61,6 +61,46 @@ def cast_de(nom):
     f0 = f.get('f0') or ((275 if enfant else 205 if age < 55 else 192) if femme else (128 if age < 30 else 120 if age < 55 else 112)) * min(1.1, max(0.92, f.get('pitch', 1.0)))
     return ('fr_FR-siwis-medium' if femme else 'fr_FR-gilles-low', None, round(float(f0)), 1.30 if enfant else 1.35 if femme else 1.50, 0.85,
             1.16 if enfant else 1.0)
+
+
+# VOIX DISTINCTES (20/10/2026, toute la troupe dans le moteur) : calculées seulement depuis le genre et l'âge, les 54 voix
+# tombaient les unes sur les autres — mesuré : 154 paires presque identiques (même voix source, hauteur à moins de 8 Hz, même
+# timbre et même étendue ; 5 hommes à 141 Hz). Chaque personnage reçoit la voix la plus proche de sa voix naturelle qui reste à
+# distance ≥ 1 de toutes les voix déjà attribuées sur la même source, dans l'ordre : les 7 calibrés (inchangés), puis la bible.
+# Distance : écart de hauteur en unités de 6 % (≈ 1 demi-ton), de timbre (formants WORLD) en unités de 0,04, d'étendue en 0,2.
+# Bornes de jeu : hauteur ×0,88 à ×1,14 de la naturelle, timbre 0,90 à 1,10 (enfants 1,10 à 1,22).
+D_HAUTEUR, D_TIMBRE, D_ETENDUE = 0.06, 0.04, 0.2
+
+
+def _distance(a, b):
+    return ((np.log(a[2] / b[2]) / D_HAUTEUR) ** 2 + ((a[5] - b[5]) / D_TIMBRE) ** 2 + ((a[3] - b[3]) / D_ETENDUE) ** 2) ** 0.5
+
+
+_DISTINCTES = {}
+
+
+def _toutes_distinctes():
+    if _DISTINCTES: return _DISTINCTES
+    try: noms = list(json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'blender', 'film', 'characters.json'), encoding='utf-8')))
+    except Exception: noms = []
+    pris = [v for v in CAST_CALIBRE.values()]
+    for nom in noms:
+        if nom in CAST_CALIBRE: continue
+        try: n = _naturelle(nom)
+        except KeyError: continue
+        enfant = n[5] > 1.05; t0, t1 = (1.10, 1.22) if enfant else (0.90, 1.10)
+        cands = sorted(((m, round(t, 2)) for m in np.arange(0.88, 1.1401, 0.02) for t in np.arange(t0, t1 + 1e-6, 0.02)),
+                       key=lambda c: abs(np.log(c[0])) / D_HAUTEUR + abs(c[1] - n[5]) / D_TIMBRE)
+        choix = n
+        for m, t in cands:
+            v = (n[0], None, int(round(n[2] * m)), n[3], n[4], float(t))
+            if all(_distance(v, p) >= 1.0 for p in pris if p[0] == v[0]): choix = v; break
+        _DISTINCTES[nom] = choix; pris.append(choix)
+    return _DISTINCTES
+
+
+def cast_de(nom):
+    return _toutes_distinctes().get(nom) or _naturelle(nom)
 
 
 class _Table(dict):
@@ -73,8 +113,9 @@ class _Table(dict):
         except KeyError: return False
 
 
+CAST_CALIBRE = dict(CAST)   # les 7 voix mesurées et réglées à la main (v27–v36)
 CAST = _Table(CAST, cast_de)
-DEBIT = _Table(DEBIT, lambda nom: 5.6 if cast_de(nom)[5] > 1.0 else 5.4 if cast_de(nom)[0].startswith('fr_FR-siwis') else 6.1)
+DEBIT = _Table(DEBIT, lambda nom: 5.6 if _naturelle(nom)[5] > 1.0 else 5.4 if _naturelle(nom)[0].startswith('fr_FR-siwis') else 6.1)
 SYL = re.compile(r'[aeiouyéèêëàâîïôûœ]+', re.I)
 MOTEUR = os.environ.get('VOIX_MOTEUR', 'piper')
 REFS_DIR = os.path.expanduser(os.environ.get('VOIX_REFS', '~/.cache/massamba-models/voix-refs'))

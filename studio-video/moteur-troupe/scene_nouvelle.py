@@ -40,14 +40,24 @@ def prepare(biblio, nom, plaque_p, ppm, sol_y, acteurs, L=None, ref=None, copie_
     garde = f'{B}/prep/.{nom}-expressions'; shutil.rmtree(garde, ignore_errors=True)
     if ancien is not None and os.path.isdir(f'{d}/expressions'): shutil.move(f'{d}/expressions', garde)
     shutil.rmtree(d, ignore_errors=True)
+    # découpes exactes passées à prepare_scene (20/10/2026) : chaque acteur y est analysé seul, le décor peuplé ne lui vole plus
+    # son squelette ni son visage (ecole-n1 : visages de Koné et d'Awa pris sur des élèves peints)
+    ft = []
+    for k, al in enumerate(alphas):
+        ft.append(f'{B}/scenes/.{nom}-alpha-{k}.png'); cv2.imwrite(ft[-1], np.clip(al * 65535, 0, 65535).astype(np.uint16))
     r = subprocess.run([sys.executable, f'{ICI}/prepare_scene.py', f'scenes/{nom}.png', f'prep/{nom}', ','.join(a[0] for a in acteurs)],
-                       cwd=B, capture_output=True, text=True)
+                       cwd=B, capture_output=True, text=True, env=dict(os.environ, PREPARE_ALPHAS=','.join(ft)))
+    for f_ in ft: os.remove(f_)
     if r.returncode: raise RuntimeError('prepare_scene : ' + (r.stderr or r.stdout)[-800:])
     S = json.load(open(f'{d}/scene.json')); H, W = img.shape[:2]
     if [a['nom'] for a in S['acteurs']] != [a[0] for a in acteurs]:
         raise RuntimeError(f"ordre des acteurs différent : {[a['nom'] for a in S['acteurs']]}")
     exacte = {'plaque': 'plaque-pleine.png', 'alphas': {}}; union = np.zeros((H, W), np.uint8)
     for a, al in zip(S['acteurs'], alphas):
+        # CONTRÔLE (20/10/2026, défaut vu sur ecole-n1) : le visage repéré doit être DANS la silhouette de son acteur
+        vb = (a.get('visage') or {}).get('box')
+        if not vb or al[min(H - 1, int((vb[1] + vb[3]) / 2)), min(W - 1, int((vb[0] + vb[2]) / 2))] < 0.5:
+            raise RuntimeError(f"{a['nom']} : visage {'introuvable' if not vb else 'repéré hors de sa silhouette'} ({vb})")
         f = f"exacte-{a['slug']}.png"; cv2.imwrite(f'{d}/{f}', np.clip(al * 65535, 0, 65535).astype(np.uint16)); exacte['alphas'][a['slug']] = f
         m = (al > 0.5).astype(np.uint8); cv2.imwrite(f"{d}/{a['slug']}-masque.png", m * 255)
         ys, xs = np.nonzero(m); a['bbox'] = [int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1]
@@ -81,6 +91,11 @@ def prepare(biblio, nom, plaque_p, ppm, sol_y, acteurs, L=None, ref=None, copie_
     if copie_de:
         for f in COPIES:
             if os.path.isfile(f'{copie_de}/{f}'): shutil.copy(f'{copie_de}/{f}', f'{d}/{f}')
+    # CASTING (20/10/2026, « toute la troupe […] pour mes 10 000 vidéos ») : les acteurs encore sans visages reçoivent la
+    # bibliothèque du casting, replacée sur leur figure posée (casting_troupe.transfere) — secondes au lieu d'une heure
+    if os.environ.get('SCENE_CASTING', '1') == '1':
+        import casting_troupe
+        casting_troupe.transfere(d, B, journal)
     journal(f'{nom} : composée et préparée en {time.time() - t0:.0f} s — {", ".join(a[0] for a in acteurs)}')
     import prepare_rig
     t1 = time.time(); prepare_rig.prepare(d, jev=os.environ.get('JEV_AUTORISE') == '1'); journal(f'{nom} : squelettes en {time.time() - t1:.0f} s')

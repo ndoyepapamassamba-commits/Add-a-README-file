@@ -181,6 +181,14 @@ def _texture_volutes(n=128, graine=21):
 _TEX = None
 
 
+def rect_fumee(V, forme):
+    """rectangle (x0, y0, x1, y1) où le panache peut se dessiner sur une plaque de cette forme ; None sans fumée peinte."""
+    P = panache(V)
+    if P is None: return None
+    H, W = forme[:2]; z0 = P['z0']; zmax = P['hauteur']; bmax = 0.12 * (zmax + z0)
+    return (int(max(0, P['x'] - 2.2 * bmax)), int(max(0, P['y'] - zmax - bmax)), int(min(W, P['x'] + 2.2 * bmax)), int(min(H, P['y'] + 0.2 * P['b0'])))
+
+
 def fumee(V, plaque, t, taux=12.0, vie=3.5, alpha0=0.55):
     """dessine le panache à l'instant t sur la plaque (RGB float32 ou uint8) → plaque float32."""
     global _TEX
@@ -189,8 +197,7 @@ def fumee(V, plaque, t, taux=12.0, vie=3.5, alpha0=0.55):
     if _TEX is None: _TEX = _texture_volutes()
     can = plaque.astype(np.float32); H, W = can.shape[:2]; z0 = P['z0']; zmax = P['hauteur']
     C = ((zmax + z0) ** (4 / 3) - z0 ** (4 / 3)) * 0.75 / vie          # (z + z0)^(4/3) = z0^(4/3) + (4/3)·C·âge
-    bmax = 0.12 * (zmax + z0); x0, x1 = int(max(0, P['x'] - 2.2 * bmax)), int(min(W, P['x'] + 2.2 * bmax))
-    y0, y1 = int(max(0, P['y'] - zmax - bmax)), int(min(H, P['y'] + 0.2 * P['b0']))
+    x0, y0, x1, y1 = rect_fumee(V, can.shape); bmax = 0.12 * (zmax + z0)
     if x1 - x0 < 4 or y1 - y0 < 4: return can
     q = 2   # la fumée est floue : calculée sur une grille deux fois plus lâche puis agrandie (×4 plus rapide, mesuré)
     yy, xx = np.mgrid[y0:y1:q, x0:x1:q].astype(np.float32); A = np.zeros(xx.shape, np.float32)

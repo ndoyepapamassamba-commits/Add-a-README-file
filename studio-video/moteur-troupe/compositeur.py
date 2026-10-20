@@ -97,6 +97,8 @@ def compose(plaque, acteurs, ppm, sol_y, ref=None, L=None):
     Deux passes : toutes les ombres sur le décor d'abord (physique.ombre, la loi du moteur), puis les personnages."""
     H, W = plaque.shape[:2]; out = plaque.astype(np.float32); places, poses, alphas_pleins = [], [], []
     for i, (nom, rgba, taille, xf) in enumerate(acteurs):
+        import casting_troupe
+        sig = casting_troupe.empreinte(rgba)   # 20/10/2026 : le casting reconnaît le dessin posé (visages repris, casting_troupe)
         a = rgba[..., 3].astype(np.float32) / 255.0; ys, xs = np.nonzero(a > 0.05)
         rgba = rgba[ys.min():ys.max() + 1, xs.min():xs.max() + 1]; a = a[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
         autres = [z[3] for j, z in enumerate(acteurs) if j != i]; lp = miroir = None
@@ -126,7 +128,8 @@ def compose(plaque, acteurs, ppm, sol_y, ref=None, L=None):
             cv2.ellipse(sh, (cx, int(sol_y) - 2), (int(tw * 0.45), max(3, int(tw * 0.08))), 0, 0, 360, 1, -1)
             sh = cv2.GaussianBlur(sh, (0, 0), max(2.0, tw * 0.05)); out *= (1 - 0.42 * sh)[..., None]
         places.append({'nom': nom, 'bbox': [X0, Y0, X1, Y1], 'pieds_y': int(sol_y), 'x': cx, 'hauteur_px': th, 'taille_m': taille,
-                       'lacet_peint': lp, 'miroir': bool(miroir)})
+                       'lacet_peint': lp, 'miroir': bool(miroir),
+                       'largeur_px': tw, 'figure': sig})
     fond = np.clip(out, 0, 255).astype(np.uint8)   # le décor avec les ombres, sans les personnages : la plaque exacte du moteur
     for k, (rgb, a, x0, y0, X0, Y0, X1, Y1) in enumerate(poses):
         aa = a[Y0 - y0:Y1 - y0, X0 - x0:X1 - x0, None]

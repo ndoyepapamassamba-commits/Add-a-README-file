@@ -333,6 +333,76 @@ try:
 except Exception as e:
     echecs.append(f'son / génératif : {e}')
 
+# TOUTE LA TROUPE (20/10/2026) : visages du casting replacés sur une figure posée ailleurs (échelle, place, miroir) ; voix
+# distinctes pour les 54 ; repli curl d'AI Horde (Cloudflare 1010) ; série reprenable (diskcache) dans l'ordre des étapes
+try:
+    import tempfile, json as _js, numpy as _n5, cv2 as _cv5
+    _ct = _il.import_module('casting_troupe')
+    with tempfile.TemporaryDirectory() as _tmp:
+        _fig = _n5.zeros((400, 120, 4), _n5.uint8); _fig[20:390, 10:110] = 255                    # figure de 100 × 370 px utiles
+        _os_ = os; _os_.makedirs(f'{_tmp}/casting/x/visages'); _cv5.imwrite(f'{_tmp}/casting/x/figure.png', _fig)
+        _cv5.imwrite(f'{_tmp}/casting/x/visages/neutre_0.png', _n5.dstack([_n5.tile(_n5.arange(64, dtype=_n5.uint8), (64, 1))] * 3))
+        _js.dump({'u0': 0.1, 'v0': 0.05, 'su': 0.5, 'sv': 0.5 * 100 / 370, 'miroir': False, 'taille': 64, 'empreinte': 'e'}, open(f'{_tmp}/casting/x/visages/casting.json', 'w'))
+        _js.dump({'box': [0, 0, 1], 'taille': 64, 'emotions': ['neutre'], 'bouche': [0]}, open(f'{_tmp}/casting/x/visages/meta.json', 'w'))
+        _sl = _ct.slug_de; _ct.slug_de = lambda n: 'x'
+        try:
+            for _mir, _att in ((False, 200 + 0.1 * 200), (True, 200 + (1 - 0.1 - 0.5) * 200)):
+                _d = f'{_tmp}/prep/s{int(_mir)}'; _os_.makedirs(_d)
+                _js.dump({'acteurs': [{'nom': 'X', 'slug': 'x'}], 'compose': {'acteurs': [{'nom': 'X', 'x': 300, 'pieds_y': 900, 'hauteur_px': 740, 'miroir': _mir}]}}, open(f'{_d}/scene.json', 'w'))
+                _ct.transfere(_d, _tmp, journal=lambda *a: None)
+                _M = _js.load(open(f'{_d}/expressions/x/meta.json')); _bx = _M['box']; _im = _cv5.imread(f'{_d}/expressions/x/neutre_0.png')
+                if abs(_bx[0] - _att) > 1.5 or abs(_bx[2] - 100) > 1.5 or abs(_bx[1] - (160 + 0.05 * 740)) > 1.5:
+                    echecs.append(f'casting : cadre replacé faux (miroir={_mir}) {[round(v, 1) for v in _bx]}')
+                if bool(_im[0, 0, 0] > _im[0, -1, 0]) != _mir: echecs.append(f'casting : images non retournées en miroir ({_mir})')
+        finally: _ct.slug_de = _sl
+    import itertools as _it5
+    _vx = _il.import_module('voix'); _noms = list(_js.load(open(os.path.join(ICI, 'blender', 'film', 'characters.json'), encoding='utf-8')))
+    _T = {n: _vx.CAST[n] for n in _noms}
+    _conf = [(a, b) for a, b in _it5.combinations(_T, 2) if _T[a][0] == _T[b][0] and _vx._distance(_T[a], _T[b]) < 1]
+    if _conf: echecs.append(f'voix : {len(_conf)} paires confondables parmi les {len(_T)} personnages, ex. {_conf[:2]}')
+    if any(_vx.CAST[n] != v for n, v in _vx.CAST_CALIBRE.items()): echecs.append('voix : une voix calibrée de la troupe a changé')
+    if "'curl'" not in open(os.path.join(ICI, 'moteur-troupe', 'horde.py'), encoding='utf-8').read(): echecs.append('horde : repli curl absent (Cloudflare 1010)')
+    _se = _il.import_module('serie')
+    if _se.ETAPES != ('distribue', 'scenes', 'ecrit', 'tourne', 'fini') or set(_se.FAIRE) != {'scenes', 'ecrit', 'tourne', 'fini'}: echecs.append('série : étapes')
+    print(f'casting (cadre replacé et miroir), voix distinctes ({len(_T)} personnages, 0 confondable), Horde (curl), série : OK')
+except Exception as e:
+    echecs.append(f'casting / voix / série : {e}')
+
+# ÉPISODE PUBLIABLE ET RAPIDE (20/10/2026) : avance des lèvres mesurée, voisin collé → plan à deux, sortie de champ en
+# mouvement, vote en commentaire, viralité mesurée, fumée hors champ, film + TikTok d'une passe, essai des visages en cache
+try:
+    import importlib as _il6, json as _js6, tempfile as _tf6, random as _rd6, numpy as _n6
+    _sy = _il6.import_module('synchro'); _rd6.seed(1); _L6 = []
+    for _r in range(8):
+        _ph, _t = [], 0.0
+        while _t < 2.0:
+            _d = _rd6.uniform(0.06, 0.15); _ph.append({'t0': _t, 't1': _t + _d, 'open': _rd6.choice([0, 1, 2, 3, 4])}); _t += _d
+        _o = _n6.zeros(220)
+        for _p in _ph: _o[int(_p['t0'] * 100):int(_n6.ceil(_p['t1'] * 100))] = _p['open'] / 4
+        _e = _n6.roll(_o, -5); _e[-5:] = 0; _L6.append({'phonemes': _ph, 'env': _e.tolist()})   # voix 50 ms avant les phonèmes
+    _av, _m6 = _sy.avance_levres(_L6)
+    if abs(_av - 0.07) > 0.011: echecs.append(f'synchro : avance des lèvres {_av} s au lieu de 0,07 (retard mesuré {_m6})')
+    _mq = _il6.import_module('marque')
+    if (_mq.nom_court('PETIT MAMADOU'), _mq.nom_court('BAYE NDIAYE'), _mq.nom_court('TANTIE AWA'), _mq.nom_court('KOFFI')) != ('MAMADOU', 'BAYE', 'TANTIE AWA', 'KOFFI'):
+        echecs.append('marque : noms courts du vote')
+    _PT = _il6.import_module('publie_tiktok'); _vi = _il6.import_module('viralite'); _pr = _PT.PRIVE
+    with _tf6.TemporaryDirectory() as _tmp6:
+        _PT.PRIVE = _tmp6
+        try:
+            _vi.note('a', vues=1000, jaime=80, commentaires=12, partages=5, publiee='2026-10-20T00:00:00+00:00'); _vi.note('b', vues=500, jaime=10, commentaires=1, partages=0)
+            _R6 = _vi.rapport(); _v0 = _R6['videos'][0]
+            if _R6['mesurees'] != 2 or _v0['video'] != 'a' or _v0['taux_commentaire_pct'] != 1.2 or _v0['engagement_pct'] != 9.7: echecs.append(f'viralité : rapport faux {_v0}')
+        finally: _PT.PRIVE = _pr
+    _src = {f: open(os.path.join(ICI, 'moteur-troupe', f), encoding='utf-8').read() for f in ('tourne.py', 'juge_unique.py', 'compose.py', 'usine.py', 'fume_visages.py', 'decor_vivant.py')}
+    for _f, _mot in (('tourne.py', 'def voisin_coupe'), ('tourne.py', 'synchro.avance_levres'), ('tourne.py', "e_[n_]['ouv']"), ('tourne.py', 'def _fumee_vue'),
+                     ('juge_unique.py', 'sorties_de_champ_en_mouvement'), ('compose.py', 'COMPOSE_TIKTOK'), ('compose.py', 'HAB.vote('),
+                     ('usine.py', "'COMPOSE_TIKTOK': tk"), ('fume_visages.py', '.fume-ok'), ('decor_vivant.py', 'def rect_fumee')):
+        if _mot not in _src[_f]: echecs.append(f'{_f} : « {_mot} » absent')
+    if 'os.nice(' not in open(os.path.join(ICI, 'outils', 'veille_rea.py'), encoding='utf-8').read(): echecs.append('veille_rea : priorité basse absente')
+    print(f'synchro labiale (avance {_av:.2f} s pour 50 ms de retard), vote, viralité, cadrage, vitesse : OK')
+except Exception as e:
+    echecs.append(f'synchro / vote / viralité : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

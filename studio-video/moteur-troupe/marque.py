@@ -64,6 +64,14 @@ def _texte_double(dr, xy, txt, f, couleur=(255, 255, 255), dec=2, ancre='la'):
     dr.text((x, y), txt, font=f, fill=couleur + (255,), anchor=ancre)
 
 
+TITRES = {'PETIT', 'PETITE', 'GRAND', 'GRAND-PÈRE', 'GRAND-MÈRE', 'MONSIEUR', 'MADAME', 'MAÎTRE', 'SŒUR', 'AGENT', 'DOCTEUR', 'LE', 'LA'}
+def nom_court(n):
+    """nom lisible d'un coup d'œil : « PETIT MAMADOU » → « MAMADOU », « BAYE NDIAYE » → « BAYE », « TANTIE AWA » reste entier."""
+    m = n.upper().split()
+    if len(n) <= 10 or len(m) == 1: return n.upper()
+    return m[1] if m[0] in TITRES and len(m) > 1 else m[0]
+
+
 def _lignes(txt, f, largeur):
     mots, L, cur = txt.split(), [], ''
     for w in mots:
@@ -75,8 +83,9 @@ def _lignes(txt, f, largeur):
 
 
 class Habillage:
-    def __init__(self, W, H, clip_y, ch, sketchs, total, safe_gauche=32, safe_droite=None, fps=30, chutes=()):
+    def __init__(self, W, H, clip_y, ch, sketchs, total, safe_gauche=32, safe_droite=None, fps=30, chutes=(), vote=None, t_vote=None):
         self.W, self.H, self.y0, self.y1, self.total, self.fps = W, H, clip_y, clip_y + ch, total, fps
+        self.vote_noms = [nom_court(n) for n in (vote or [])]; self.t_vote = t_vote if t_vote is not None else total - FIN_S - 1.0
         self.sg, self.sd = safe_gauche, (safe_droite if safe_droite is not None else W - 64)
         self.sk = [(s['t0'], s['t1'], (s.get('titre') or '').upper()) for s in sketchs]
         self.chutes = sorted(chutes)   # instants des prises de choc (jeu.prise_t) : un émoji animé jaillit sur chaque chute
@@ -223,6 +232,29 @@ class Habillage:
         if e is not None: im.alpha_composite(e, (int(x0), int(150 - e.height / 2)))
         _texte_double(dr, (x0 + (e.width if e is not None else 0) + 14, 150), mot, f, couleur=JAUNE if choc else (255, 255, 255), dec=3, ancre='lm')
         return im
+
+    def vote(self, t):
+        """VOTE EN COMMENTAIRE (20/10/2026, « des échanges avec chute qui obligent les gens à aimer et commenter ») : en fin de film,
+        dans la bande du bas (vide après la dernière réplique), la question qui fait commenter — choisir le plus malin des
+        personnages qui ont porté une chute, par un chiffre (répondre coûte une touche). C'est le signal fort que TikTok
+        décrit (commentaire), tiré de l'épisode lui-même, jamais une promesse que la vidéo ne tient pas. → (calque, (x, y)) ou None."""
+        if len(self.vote_noms) < 2 or t < self.t_vote: return None
+        a = min(1.0, (t - self.t_vote) / 0.3); k = ('vote', round(a, 2))
+        if k not in self._cache:
+            h = self.H - self.y1; im = Image.new('RGBA', (self.W, h), (0, 0, 0, 0)); dr = ImageDraw.Draw(im)
+            cx = (self.sg + self.sd) / 2; larg = self.sd - self.sg
+            _texte_double(dr, (cx, 44), 'QUI EST LE PLUS MALIN ?', police(34), couleur=JAUNE, dec=2, ancre='mm')
+            choix = '   '.join(f'{i + 1} {n}' for i, n in enumerate(self.vote_noms))
+            for sz in (30, 27, 24, 21, 18):
+                f = police(sz, b'Bold')
+                if f.getlength(choix) <= larg: break
+            dr.text((cx, 96), choix, font=f, fill=(255, 255, 255, 255), anchor='mm', stroke_width=3, stroke_fill=(0, 0, 0, 255))
+            dr.text((cx, 142), f"RÉPONDS {' OU '.join(str(i + 1) for i in range(len(self.vote_noms)))} EN COMMENTAIRE",
+                    font=police(20, b'Bold'), fill=CYAN + (255,), anchor='mm', stroke_width=2, stroke_fill=(0, 0, 0, 255))
+            if a < 1:
+                al = np.array(im); al[..., 3] = (al[..., 3] * a).astype(np.uint8); im = Image.fromarray(al)
+            self._cache[k] = im
+        return self._cache[k], (0, self.y1)
 
     def autocollant(self, t):
         """émoji animé qui jaillit sur la chute (coin haut droit du clip) → (image RGBA, (x, y)) ou None."""

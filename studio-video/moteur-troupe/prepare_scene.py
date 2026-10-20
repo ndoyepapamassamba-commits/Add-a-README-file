@@ -21,7 +21,21 @@ def detect(img, x0=0):
     r = PL.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(img)))
     h, w = img.shape[:2]
     return [np.array([[p.x * w + x0, p.y * h, p.visibility] for p in lm]) for lm in r.pose_landmarks]
-P = detect(rgb)
+# SCÈNE COMPOSÉE (20/10/2026, toute la troupe) : le compositeur connaît la découpe EXACTE de chaque acteur (PREPARE_ALPHAS,
+# de gauche à droite). Dans un décor peuplé (l'École : élèves et un second professeur peints), le squelette et le visage
+# d'un acteur étaient pris sur une personne du décor (visages de Koné et d'Awa trouvés hors de leur silhouette, mesuré sur
+# ecole-n1). Chaque acteur est donc analysé SEUL : sa découpe posée sur un fond gris neutre, le décor invisible.
+ALPHAS = [cv2.imread(a_, cv2.IMREAD_UNCHANGED).astype(np.float32) / 65535 for a_ in os.environ['PREPARE_ALPHAS'].split(',')] if os.environ.get('PREPARE_ALPHAS') else None
+if ALPHAS:
+    def isole(k):
+        a_ = cv2.dilate((ALPHAS[k] > 0.02).astype(np.uint8), np.ones((5, 5), np.uint8)).astype(np.float32)[..., None]
+        return (rgb * a_ + 128.0 * (1 - a_)).astype(np.uint8)
+    P, ISO = [], [isole(k) for k in range(N)]
+    for k in range(N):
+        c = detect(ISO[k]); ys_, xs_ = np.nonzero(ALPHAS[k] > 0.5); cx_ = float(xs_.mean())
+        P.append(min(c, key=lambda p: abs(p[0, 0] - cx_)) if c else np.array([[cx_, float(ys_.min()), 0.0]] * 33))
+    rgb_analyse = rgb
+P = detect(rgb) if not ALPHAS else P
 if len(P) < N:
     P = []
     for k in range(N):
@@ -74,9 +88,9 @@ for k in range(N):
             put(25, c[0] + 0.8 * fw, c[1] + 3.6 * fh); put(26, c[0] - 0.8 * fw, c[1] + 3.6 * fh)
             put(15, c[0] + 1.3 * fw, c[1] + 3.2 * fh); put(16, c[0] - 1.3 * fw, c[1] + 3.2 * fh)
             P[k] = q; FACEL[k] = L; print('squelette reconstruit depuis le visage :', names[k])
-def face5(box):
+def face5(box, src=None):
     x0, y0, x1, y1 = [int(v) for v in box]
-    crop = np.ascontiguousarray(rgb[y0:y1, x0:x1]); r = FL.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=crop))
+    crop = np.ascontiguousarray((rgb if src is None else src)[y0:y1, x0:x1]); r = FL.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=crop))
     if not r.face_landmarks: return None
     h, w = crop.shape[:2]; L = np.array([[p.x * w + x0, p.y * h + y0] for p in r.face_landmarks[0]])
     return {'eyes': [{'c': L[[33, 133, 159, 145]].mean(0).tolist()}, {'c': L[[362, 263, 386, 374]].mean(0).tolist()}], 'nose': L[1].tolist(),
@@ -89,7 +103,7 @@ def face_from(L):
             'box': [float(L[:, 0].min()), float(L[:, 1].min()), float(L[:, 0].max()), float(L[:, 1].max())]}
 for kk, (name, p) in enumerate(zip(names, P)):
     idx = [i for i in (0, 11, 12, 13, 14, 23, 24, 25, 26) if p[i, 2] > 0.4 and 0 <= p[i, 0] < W and 0 <= p[i, 1] < H]
-    m = magic_touch_mask(rgb, [(p[i, 0] / W, p[i, 1] / H) for i in idx])
+    m = (ALPHAS[kk] > 0.5).astype(np.float32) if ALPHAS else magic_touch_mask(rgb, [(p[i, 0] / W, p[i, 1] / H) for i in idx])
     m = (m > 0.5).astype(np.uint8)
     # enveloppe du squelette : rien ne bouge hors de la tête, du buste et des bras (la porte, la fumée restent au décor)
     s0 = float(np.linalg.norm(p[11, :2] - p[12, :2])); env = np.zeros((H, W), np.uint8); I = lambda i: tuple(int(v) for v in p[i, :2])
@@ -103,9 +117,10 @@ for kk, (name, p) in enumerate(zip(names, P)):
     n, lab = cv2.connectedComponents(m)
     sh = p[[11, 12], :2].mean(0).astype(int); l = lab[min(H - 1, sh[1]), min(W - 1, sh[0])]
     if l > 0: m = (lab == l).astype(np.uint8)
+    if ALPHAS: m = (ALPHAS[kk] > 0.5).astype(np.uint8)   # découpe exacte du compositeur, sans l'enveloppe du squelette
     masks.append(m)
     s = float(np.linalg.norm(p[11, :2] - p[12, :2])); hx, hy = p[0, :2]
-    fc = face_from(FACEL[kk]) if kk in FACEL else face5([max(0, hx - 1.5 * s), max(0, hy - 1.8 * s), min(W, hx + 1.5 * s), min(H, hy + 1.2 * s)])
+    fc = face_from(FACEL[kk]) if kk in FACEL else face5([max(0, hx - 1.5 * s), max(0, hy - 1.8 * s), min(W, hx + 1.5 * s), min(H, hy + 1.2 * s)], ISO[kk] if ALPHAS else None)
     hip_y = float(p[[23, 24], 1].mean()) if p[[23, 24], 2].min() > 0.3 else float(p[[11, 12], 1].mean() + 2.0 * s)
     info['acteurs'].append({'nom': name, 'slug': slug_de(name), 'pts': p.round(1).tolist(), 'visage': fc, 'epaules': round(s, 1),
                             'bassin_y': round(min(H - 2, hip_y), 1), 'tete': [round(hx, 1), round(hy, 1)]})
@@ -121,6 +136,7 @@ for a, m in zip(info['acteurs'], masks):
     ys, xs = np.nonzero(m); a['bbox'] = [int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1]
 # texte parasite écrit par le générateur (enseignes, étiquettes) : EasyOCR (Apache-2.0) le repère, LaMa l'efface
 try:
+    if ALPHAS: raise RuntimeError('scène composée : le décor de la bibliothèque est gardé tel quel')
     import easyocr
     rd = easyocr.Reader(['fr', 'en'], gpu=False, model_storage_directory=M + 'easyocr', download_enabled=False, verbose=False)
     txt = np.zeros((H, W), np.uint8); found = []

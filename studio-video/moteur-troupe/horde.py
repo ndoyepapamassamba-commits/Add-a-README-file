@@ -5,7 +5,17 @@ API = 'https://aihorde.net/api/v2'
 H = {'apikey': '0000000000', 'Content-Type': 'application/json', 'Client-Agent': 'massamba-troupe:1.0:anonymous', 'User-Agent': 'massamba-troupe/1.0 (+anonymous)'}
 def call(method, path, body=None):
     req = urllib.request.Request(API + path, data=json.dumps(body).encode() if body else None, headers=H, method=method)
-    with urllib.request.urlopen(req, timeout=60) as r: return json.loads(r.read())
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r: return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        # REPLI CURL (20/10/2026) : le pare-feu Cloudflare d'AI Horde refuse le client Python (« error code: 1010 », signature
+        # du navigateur bannie : 403 sur chaque envoi, mesuré sur 15 personnages) alors que curl passe (202, même en-têtes)
+        if e.code != 403: raise
+        import subprocess
+        a = ['curl', '-s', '-m', '60', '-X', method, API + path] + [x for k, v in H.items() for x in ('-H', f'{k}: {v}')]
+        if body: a += ['--data-binary', '@-']
+        r = subprocess.run(a, input=json.dumps(body).encode() if body else None, capture_output=True, timeout=90)
+        return json.loads(r.stdout)
 REQ = {'DreamShaper XL': dict(steps=30, cfg=6.0, karras=True), 'AlbedoBase XL (SDXL)': dict(steps=30, cfg=6.0, karras=True), 'Z-Image-Turbo': dict(steps=9, cfg=1.0, karras=False), 'Qwen-Image_fp8': dict(steps=20, cfg=2.5, karras=False), 'Flux.1-Schnell fp8 (Compact)': dict(steps=6, cfg=1.0, karras=True)}
 # Aiguillage (18/10/2026) : Z-Image-Turbo est tombé à 0 serveur sur Horde (ETA 10 000 s) et nos 10 travaux attendaient un
 # modèle que personne ne servait. Chaque envoi choisit donc le modèle de la liste qui a des serveurs et la plus courte
@@ -29,7 +39,9 @@ def generate(prompt, out, w=832, h=1216, model='Z-Image-Turbo', seed=None, steps
     if strength is not None: params['denoising_strength'] = strength
     body = {'prompt': prompt + (f' ### {neg}' if neg else ''), 'params': params, 'models': [model], 'nsfw': False, 'censor_nsfw': True, 'r2': True, 'shared': False, 'replacement_filter': True}
     if src: body['source_image'] = base64.b64encode(open(src, 'rb').read()).decode(); body['source_processing'] = 'img2img'
-    t0 = time.time(); j = call('POST', '/generate/async', body); jid = j['id']
+    t0 = time.time(); j = call('POST', '/generate/async', body)
+    if 'id' not in j: raise SystemExit(f"refus Horde : {j.get('rc')} — {str(j.get('message'))[:160]}")   # ex. KudosUpfront au-delà de 576 × 576
+    jid = j['id']
     print('job', jid, 'kudos', j.get('kudos'), flush=True)
     while True:
         time.sleep(4)
@@ -40,7 +52,10 @@ def generate(prompt, out, w=832, h=1216, model='Z-Image-Turbo', seed=None, steps
         print(f"  queue {s.get('queue_position')} wait {s.get('wait_time')} proc {s.get('processing')}", flush=True)
     r = call('GET', f'/generate/status/{jid}')
     g = r['generations'][0]
-    data = urllib.request.urlopen(g['img'], timeout=120).read() if g['img'].startswith('http') else base64.b64decode(g['img'])
+    if g['img'].startswith('http'):
+        import subprocess
+        data = subprocess.run(['curl', '-s', '-m', '120', g['img']], capture_output=True, timeout=150).stdout
+    else: data = base64.b64decode(g['img'])
     open(out, 'wb').write(data)
     print('ok', out, g.get('model'), 'seed', g.get('seed'), 'worker', g.get('worker_name'), f'{time.time()-t0:.0f}s', flush=True)
     return g

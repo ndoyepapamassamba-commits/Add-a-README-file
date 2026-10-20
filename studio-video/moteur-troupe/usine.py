@@ -109,9 +109,11 @@ def tourne(d, v):
     if os.environ.get('USINE_FLOU', '1') == '1':
         etape('flou', '-c', f"import sys; sys.path.insert(0, {ICI!r}); import fluidite as F; "
                             f"print(F.flou_bouge({D + '/clip'!r}, coupes=F.coupes_du_moteur({D + '/tournage.json'!r})))")
-    etape('montage', f'{ICI}/compose.py', D, f'{D}/film.mp4')
+    tk = f'{D}/tiktok-1080x1920.mp4'
+    etape('montage', f'{ICI}/compose.py', D, f'{D}/film.mp4', e={'COMPOSE_TIKTOK': tk})   # film + fichier TikTok d'une seule passe
     etape('planche', f'{ICI}/planche_repliques.py', f'{D}/film.mp4', 'timeline.json', f'{D}/planche.jpg')
-    exporte(f'{D}/film.mp4', f'{D}/tiktok-1080x1920.mp4'); shutil.copy(f'{D}/legende.txt', f'{d}/{v}-legende.txt')
+    if not os.path.isfile(tk) or os.path.getmtime(tk) < os.path.getmtime(f'{D}/film.mp4') - 5: exporte(f'{D}/film.mp4', tk)
+    shutil.copy(f'{D}/legende.txt', f'{d}/{v}-legende.txt')
     json.dump({'durees_s': T, 't0': t0}, open(f'{D}/usine-etapes.json', 'w'))
     # CONTRÔLES EN TEMPS MASQUÉ (18/10/2026, « réduire le temps de production ») : les 17 portes (≈ 5 min, surtout des appels
     # JEV réseau) partent en arrière-plan pendant que l'épisode suivant se tourne ; le rapport s'écrit à leur fin.
@@ -203,6 +205,22 @@ def finit(d, v):
     d = os.path.abspath(d); D = os.path.join(d, v); log = f'{d}/{v}-usine.log'
     E = json.load(open(f'{D}/usine-etapes.json')) if os.path.isfile(f'{D}/usine-etapes.json') else {'durees_s': {}, 't0': time.time()}
     T, t0 = E['durees_s'], E['t0']
+    # UN SEUL JUGE (20/10/2026, « je veux un seul juge pour tout pour aller vite » ; « 3 bonnes vidéos par jour ») : le juge
+    # unique (juge_unique.py, quelques secondes, aucun appel réseau) décide aussi pour le moteur v14/v15 dès que le tournage a
+    # écrit ses boîtes par image ; les 18 portes (qualite.py, ≈ 16 min) restent disponibles avec USINE_JUGE=portes. Ce chemin
+    # ne publie rien : le verdict et le fichier TikTok sont rangés, la publication reste une décision de l'utilisateur.
+    if os.environ.get('USINE_JUGE', 'unique') == 'unique' and os.path.isfile(f'{D}/boites.json'):
+        try: T['juge'] = _py(f'{ICI}/juge_unique.py', D, log=log, cwd=d)[0]
+        except RuntimeError as ex: T['juge'] = 'erreur : ' + str(ex)[:200]
+        V = json.load(open(f'{D}/juge-unique.json')) if os.path.isfile(f'{D}/juge-unique.json') else {'verdict': 'à corriger', 'raisons': ['juge'], 'portes': {}}
+        rap = {'episode': os.path.basename(d), 'version': v, 'durees_s': T, 'total_s': round(time.time() - t0, 1), 'juge': 'unique',
+               'portes': f"{len(V['portes']) - len(V['raisons'])}/{len(V['portes'])}", 'a_publier': V['verdict'] == 'à publier',
+               'echecs': V['raisons'], 'detail': {k: V['portes'][k] for k in V['raisons'] if k in V['portes']},
+               'fichiers': {'tiktok': f'{D}/tiktok-1080x1920.mp4', 'legende': f'{D}/legende.txt', 'planche': f'{D}/planche.jpg'}}
+        json.dump(rap, open(f'{D}/rapport.json', 'w'), ensure_ascii=False, indent=1)
+        a_corriger(d, v, rap)
+        shutil.rmtree(f'{D}/compose', ignore_errors=True)
+        return rap
     try: T['portes'] = _py(f'{ICI}/qualite.py', D, f'{D}/film.mp4', 'montage.json', log=log, cwd=d)[0]
     except RuntimeError as ex: T['portes'] = 'erreur : ' + str(ex)[:200]
     q = json.load(open(f'{D}/qualite.json')) if os.path.isfile(f'{D}/qualite.json') else {}
@@ -344,9 +362,10 @@ def exporte(src, dst):
     """fichier de publication : 1080 × 1920 (agrandissement Lanczos + netteté légère), H.264 High CRF 17, AAC 192 k 48 kHz ; le
     son est déjà masterisé (−14 LUFS, crête ≤ −2,3 dBTP) par compose.py. Préréglage « faster » (19/10/2026, « une production
     qui prend plusieurs minutes c'est trop ») : 11,2 s au lieu de 17,3 s pour 10 s de film, PSNR 48,3 dB et SSIM 0,994 contre
-    « medium » (identiques à l'œil), fichier 4 % plus léger."""
+    « medium » (identiques à l'œil), fichier 4 % plus léger. « veryfast » (20/10/2026, « 13 minutes, diminue encore ») : 17,5 s au
+    lieu de 30,9 s pour 10 s de film (mesuré sur la v15, processeur partagé), SSIM 0,993 contre « faster », fichier 15 % plus léger."""
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', src, '-vf', 'scale=1080:1920:flags=lanczos,unsharp=5:5:0.45:5:5:0.0,format=yuv420p',
-                    '-c:v', 'libx264', '-profile:v', 'high', '-preset', os.environ.get('EXPORT_PRESET', 'faster'), '-crf', '17', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000',
+                    '-c:v', 'libx264', '-profile:v', 'high', '-preset', os.environ.get('EXPORT_PRESET', 'veryfast'), '-crf', '17', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000',
                     '-movflags', '+faststart', dst], check=True)
     return dst
 

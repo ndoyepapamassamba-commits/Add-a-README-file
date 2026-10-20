@@ -73,7 +73,7 @@ def juge(D):
                                   decalage_ms=round(dec_ms, 1), correlation=round(cc[kb], 3), correlation_a_0=round(cc[0], 3),
                                   regle='UIT-R BT.1359 : son en avance ≤ 45 ms, en retard ≤ 125 ms')
     # B. parleur lisible / C. têtes entières
-    vus, lisibles, n_par = 0, 0, 0; coupees = []; petites = []; bouts = []
+    vus, lisibles, n_par = 0, 0, 0; coupees = []; petites = []; bouts = []; bouts_n = {}
     decoup = TG['decoupage']
     for f in range(nf):
         b = BX.get(str(f), {}); t = f / fps
@@ -88,12 +88,29 @@ def juge(D):
             if n in b and (b[n]['tete'][1] < 0 or b[n]['tete'][0] < 0 or b[n]['tete'][2] > CW): coupees.append(round(t, 2))
         for n, v in b.items():   # BOUT d'un voisin au bord (ep01 p5 : bras de Maman à 41 s, moitié du visage de Modou à 66,5 s)
             if n not in sujets and v.get('aire', 0) > 0.01 and not (v['tete'][0] >= 0 and v['tete'][2] <= CW and v['tete'][1] >= 0 and v['tete'][3] <= CH):
-                bouts.append(round(t, 2))
+                bouts.append(round(t, 2)); bouts_n.setdefault(n, []).append(f)
+    # SORTIE DE CHAMP PENDANT UN MOUVEMENT DE CAMÉRA (20/10/2026, v16 à 20,63 s : travelling avant d'ouverture, la tête de Baye
+    # traverse le bord en 7 images) : au cinéma, un personnage qui quitte le cadre pendant que la caméra bouge n'est pas un
+    # défaut de cadrage. Une suite d'images d'un même personnage au bord est une SORTIE si elle dure au plus 0,4 s et que sa
+    # tête défile à l'écran d'au moins 4 px par image (médiane) ; tout le reste (bout immobile au bord) reste un défaut.
+    sorties = []
+    for n, fs in bouts_n.items():
+        suites, cur = [], [fs[0]]
+        for f in fs[1:]:
+            if f == cur[-1] + 1: cur.append(f)
+            else: suites.append(cur); cur = [f]
+        suites.append(cur)
+        for su in suites:
+            xs = [BX[str(f)][n]['tete'] for f in su]
+            v_ = float(np.median([max(abs(a[0] - b_[0]), abs(a[1] - b_[1])) for a, b_ in zip(xs, xs[1:])])) if len(xs) > 1 else 0.0
+            if len(su) <= int(0.4 * fps) and v_ >= 4.0:
+                sorties.append((round(su[0] / fps, 2), n, len(su)))
+                for f in su: bouts.remove(round(f / fps, 2))
     R['B_parleur_lisible'] = dict(ok=bool(n_par and vus / n_par >= 0.98 and lisibles / n_par >= 0.85), dans_l_image=round(vus / max(1, n_par), 3),
                                   bouche_lisible=round(lisibles / max(1, n_par), 3), seuil_px=BOUCHE_MIN_PX,
                                   trop_petite_s=[petites[0], petites[-1]] if petites else [])
     R['C_tetes_entieres'] = dict(ok=not coupees and not bouts, images_coupees=len(coupees), premiers_s=coupees[:5],
-                                 bouts_de_personnage=len(bouts), bouts_premiers_s=bouts[:5])
+                                 bouts_de_personnage=len(bouts), bouts_premiers_s=bouts[:5], sorties_de_champ_en_mouvement=sorties)
     # D. vie : plus longue suite d'images identiques dans le clip
     prev, run, pire, t_pire = None, 0, 0, 0.0
     for f in range(0, nf):

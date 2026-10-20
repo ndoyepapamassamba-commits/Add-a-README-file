@@ -203,11 +203,17 @@ _anim = ('Animation : InfiniteTalk, MeiGen-AI (Apache-2.0) sur Wan2.1 (Apache-2.
 credit = 'Voix : ' + ', '.join(_v) + f' · Images : Z-Image-Turbo (Apache-2.0) · {_anim} · Émojis animés : Noto Emoji, Google (CC BY 4.0)'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import marque
 import jeu as _jeu
+_chuteurs = [L['qui'] for L in sorted(T['lines'], key=lambda L: L['t0']) if L.get('chute')]   # qui porte chaque chute, dans l'ordre
+_fin_paroles = max((L['t0'] + L['dur'] for L in T['lines']), default=0.0)
 HAB = marque.Habillage(W, H, CLIP_Y, CH_, T['sketchs'], T['total'], SAFE['left'], SAFE['right'], fps=FPS,
-                       chutes=[_jeu.prise_t(L) for L in T['lines'] if L.get('chute')])
+                       chutes=[_jeu.prise_t(L) for L in T['lines'] if L.get('chute')],
+                       vote=_chuteurs if os.environ.get('COMPOSE_VOTE', '1') == '1' else None,
+                       t_vote=max(_fin_paroles + 0.3, T['total'] - marque.FIN_S - 1.0))
 # légende de publication : accroche, mots-clés de la chaîne, crédit CC-BY des voix (attribution exigée par la licence)
 _tit = ' · '.join(s_['titre'].capitalize() for s_ in T['sketchs'] if s_.get('titre'))
-open(f'{D}/legende.txt', 'w', encoding='utf-8').write(f"{_tit} 😂🤣\nTu es team qui ? Dis-le en commentaire 👇\n"
+_q = ('Le plus malin : ' + ', '.join(f'{i + 1} {marque.nom_court(n).capitalize()}' for i, n in enumerate(_chuteurs)) + ' ? Réponds en commentaire 👇'
+      if len(_chuteurs) >= 2 else 'Tu es team qui ? Dis-le en commentaire 👇')
+open(f'{D}/legende.txt', 'w', encoding='utf-8').write(f"{_tit} 😂🤣\n{_q}\nEnvoie-la à celui qui fait pareil 😂\n"
     f"#drole #comedy #funny #humour #afrique #pourtoi #fyp\n\nCrédits — {credit}\n")
 # bande son : dialogue sec + jingles des cartes (musique.py) s'ils ont été posés
 BANDE = 'voix/mix-musique.wav' if os.path.isfile('voix/mix-musique.wav') and os.path.getmtime('voix/mix-musique.wav') >= os.path.getmtime('voix/mix.wav') else 'voix/mix.wav'
@@ -220,6 +226,8 @@ def image_composee(k):
     img = Image.fromarray(cv2.cvtColor(bg, cv2.COLOR_BGR2RGB)).convert('RGBA'); ov = Image.new('RGBA', img.size, (0, 0, 0, 0))
     draw_caption(ov, t)
     ov.alpha_composite(HAB.calque(t), (0, 0))   # signature + titre du sketch ; carte de signature en fin de film
+    v_ = HAB.vote(t)                              # vote en commentaire, bande du bas, fin de film
+    if v_ is not None: ov.alpha_composite(v_[0], v_[1])
     a_ = HAB.autocollant(t)                       # émoji animé qui jaillit sur chaque chute
     if a_ is not None: ov.alpha_composite(a_[0], a_[1])
     return Image.alpha_composite(img, ov).convert('RGB')
@@ -252,6 +260,17 @@ sonie.ecrit(f'{D}/bande.wav', sonie.bande_livree(BANDE, total))
 json.dump(sonie.DERNIER, open(f'{D}/son.json', 'w'), indent=1)   # travail du limiteur, lu par le juge unique (porte H)
 # encodage « veryfast » CRF 18 (18/10/2026, « réduire drastiquement le temps de production ») : 31 s au lieu de 56,5 s pour les
 # 4 047 images de l'épisode 1, PSNR 44,3 dB entre les deux encodages (identiques à l'œil)
-subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-framerate', str(FPS), '-i', f'{D}/compose/c%05d.jpg', '-i', f'{D}/bande.wav', '-vf', 'format=yuv420p',
-                '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-t', f'{len(frames) / FPS:.3f}', '-movflags', '+faststart', OUTMP4], check=True)
+# FICHIER TIKTOK DANS LA MÊME PASSE (20/10/2026, « 13 minutes, diminue encore ») : l'export relisait film.mp4 pour le
+# réencoder en 1080 × 1920 (2 min 14 s sur la v15) ; avec COMPOSE_TIKTOK, ffmpeg écrit les deux fichiers depuis les mêmes
+# images composées (agrandissement Lanczos + netteté légère comme usine.exporte, une génération de compression en moins)
+_t = ['-t', f'{len(frames) / FPS:.3f}']; TK = os.environ.get('COMPOSE_TIKTOK')
+if TK:
+    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-framerate', str(FPS), '-i', f'{D}/compose/c%05d.jpg', '-i', f'{D}/bande.wav',
+                    '-filter_complex', '[0:v]format=yuv420p,split=2[a][b];[b]scale=1080:1920:flags=lanczos,unsharp=5:5:0.45:5:5:0.0,format=yuv420p[c]',
+                    '-map', '[a]', '-map', '1:a', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', *_t, '-movflags', '+faststart', OUTMP4,
+                    '-map', '[c]', '-map', '1:a', '-c:v', 'libx264', '-profile:v', 'high', '-preset', 'veryfast', '-crf', '17', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', *_t,
+                    '-movflags', '+faststart', TK], check=True)
+else:
+    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-framerate', str(FPS), '-i', f'{D}/compose/c%05d.jpg', '-i', f'{D}/bande.wav', '-vf', 'format=yuv420p',
+                    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', *_t, '-movflags', '+faststart', OUTMP4], check=True)
 print(f'{len(caps)} groupes de sous-titres, tous dans la zone sûre ; {len(frames)} images ; {OUTMP4}')
