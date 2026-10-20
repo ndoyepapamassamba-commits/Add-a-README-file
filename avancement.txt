@@ -6,3 +6,4 @@
 [730 s] 1 images · === decor-garage-large-jour   |==================================================| 4/4 - 133.80s/it[K · mémoire libre 7006 Mo
 [851 s] 1 images · === decor-garage-large-jour   |============>                                     | 1/4 - 138.76s/it[K · mémoire libre 7001 Mo
 [972 s] 1 images · === decor-garage-large-jour   |=========================>                        | 2/4 - 134.30s/it[K · mémoire libre 6998 Mo
+[1094 s] 1 images · === decor-garage-large-jour   |=====================================>            | 3/4 - 133.98s/it[K · mémoire libre 6998 Mo
