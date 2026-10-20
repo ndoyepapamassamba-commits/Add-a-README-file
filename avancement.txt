@@ -32,3 +32,4 @@
 [3884 s] === C-maquis-vide   |============>                                     | 1/4 - 199.79s/it[K · mémoire libre 6769 Mo
 [4005 s] === C-maquis-vide   |============>                                     | 1/4 - 199.79s/it[K · mémoire libre 6753 Mo
 [4127 s] === C-maquis-vide   |=========================>                        | 2/4 - 198.55s/it[K · mémoire libre 6766 Mo
+[4248 s] === C-maquis-vide   |=====================================>            | 3/4 - 198.24s/it[K · mémoire libre 6766 Mo
