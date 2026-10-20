@@ -1,1 +1,2 @@
 [123 s] 0 images · === decor-taxi-large-jour  · mémoire libre 7024 Mo
+[245 s] 0 images · === decor-taxi-large-jour   |============>                                     | 1/4 - 158.60s/it[K · mémoire libre 6995 Mo
