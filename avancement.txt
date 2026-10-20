@@ -11,3 +11,4 @@
 [1335 s] === petit-mamadou--colere (at_runtime)   |============>                                     | 1/4 - 133.95s/it[K · mémoire libre 13748 Mo
 [1456 s] === petit-mamadou--colere (at_runtime)   |============>                                     | 1/4 - 133.95s/it[K · mémoire libre 13738 Mo
 [1578 s] === petit-mamadou--colere (at_runtime)   |=========================>                        | 2/4 - 133.63s/it[K · mémoire libre 13734 Mo
+[1699 s] === petit-mamadou--colere (at_runtime)   |=====================================>            | 3/4 - 133.59s/it[K · mémoire libre 13729 Mo
