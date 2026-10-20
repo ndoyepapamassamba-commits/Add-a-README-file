@@ -1,3 +1,4 @@
 [123 s] 0 images · === decor-salon-de-coiffure-large-jour  · mémoire libre 6893 Mo
 [244 s] 0 images · === decor-salon-de-coiffure-large-jour   |============>                                     | 1/4 - 155.31s/it[K · mémoire libre 6876 Mo
 [365 s] 0 images · === decor-salon-de-coiffure-large-jour   |=========================>                        | 2/4 - 153.77s/it[K · mémoire libre 6908 Mo
+[487 s] 0 images · === decor-salon-de-coiffure-large-jour   |=========================>                        | 2/4 - 153.77s/it[K · mémoire libre 6922 Mo
