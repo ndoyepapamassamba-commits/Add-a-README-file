@@ -57,6 +57,9 @@ VUES = {'large': 'wide establishing shot', 'champ': 'medium shot facing the main
 MOMENTS = {'jour': 'daytime, warm sunlight', 'nuit': 'night, warm artificial light'}
 AMBIANCES = {'pluie': 'during a tropical rain, wet ground, reflections', 'fete': 'decorated for a celebration, garlands, balloons'}
 STYLE = "Pixar-style 3D animated film background in exactly the same rendering style as image 1"
+# 20/10/2026 23:20 — premier montage depuis la banque : sur le maquis vide, aucun sol libre (tables et chaises au premier plan), les
+# acteurs debout semblaient posés sur les chaises. Chaque décor garde désormais un sol dégagé au premier plan, caméra à hauteur d'homme.
+SOL_LIBRE = 'eye-level camera, wide open empty ground in the middle foreground'   # sans nommer de personnage (sinon le modèle en dessine)
 POSES = 'five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing'
 
 
@@ -101,18 +104,18 @@ def taches():
         for v, vd in VUES.items():
             for m, md in MOMENTS.items():
                 T.append({'id': f'decor-{slug(lieu)}-{v}-{m}', 'type': 'decor', 'lieu': lieu, 'w': 768, 'h': 448, 'refs': ['v1-maquis.msb'],
-                          'prompt': f"{STYLE}: {desc}, {vd}, {md}, completely empty, no people."})
+                          'prompt': f"{STYLE}: {desc}, {vd}, {md}, {SOL_LIBRE}, completely empty, no people."})
         if lieu in lieux_joues:
             for a, ad in AMBIANCES.items():
                 T.append({'id': f'decor-{slug(lieu)}-large-{a}', 'type': 'decor', 'lieu': lieu, 'w': 768, 'h': 448, 'refs': ['v1-maquis.msb'],
-                          'prompt': f"{STYLE}: {desc}, wide establishing shot, {ad}, completely empty, no people."})
+                          'prompt': f"{STYLE}: {desc}, wide establishing shot, {ad}, {SOL_LIBRE}, completely empty, no people."})
     for f in M['foyers']:   # la maison de chaque famille : toujours la même, pièce par pièce
         for piece, pd in PIECES.items():
             for v in ('large', 'champ'):
                 for m, md in MOMENTS.items():
                     T.append({'id': f"maison-{slug(f['foyer'])}-{piece}-{v}-{m}", 'type': 'decor', 'foyer': f['foyer'], 'w': 768, 'h': 448,
                               'refs': ['v1-maquis.msb'],
-                              'prompt': f"{STYLE}: {pd} — {f['maison']}; {VUES[v]}, {md}, completely empty, no people."})
+                              'prompt': f"{STYLE}: {pd} — {f['maison']}; {VUES[v]}, {md}, {SOL_LIBRE}, completely empty, no people."})
     return sorted(T, key=rang)
 
 
