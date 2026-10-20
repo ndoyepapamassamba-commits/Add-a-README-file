@@ -15,3 +15,4 @@
 [1820 s] === modou--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13621 Mo
 [1942 s] === modou--hausser (at_runtime)   |============>                                     | 1/4 - 133.97s/it[K · mémoire libre 13618 Mo
 [2064 s] === modou--hausser (at_runtime)   |=========================>                        | 2/4 - 133.50s/it[K · mémoire libre 13617 Mo
+[2185 s] === modou--hausser (at_runtime)   |=====================================>            | 3/4 - 133.31s/it[K · mémoire libre 13617 Mo
