@@ -3,3 +3,4 @@
 [123 s] 0 images · === decor-village-large-jour  · mémoire libre 6972 Mo
 [244 s] 0 images · === decor-village-large-jour   |============>                                     | 1/4 - 134.03s/it[K · mémoire libre 6944 Mo
 [366 s] 0 images · === decor-village-large-jour   |=========================>                        | 2/4 - 133.38s/it[K · mémoire libre 6949 Mo
+[487 s] 0 images · === decor-village-large-jour   |=====================================>            | 3/4 - 133.43s/it[K · mémoire libre 6993 Mo
