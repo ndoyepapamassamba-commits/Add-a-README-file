@@ -15,3 +15,4 @@
 [1459 s] 2 images · === maison-fatou-chambre-large-jour   |============>                                     | 1/4 - 140.43s/it[K · mémoire libre 7040 Mo
 [123 s] 2 images · === decor-douane-large-jour  · mémoire libre 7011 Mo
 [245 s] 2 images · === decor-douane-large-jour   |============>                                     | 1/4 - 148.06s/it[K · mémoire libre 6995 Mo
+[366 s] 2 images · === decor-douane-large-jour   |=========================>                        | 2/4 - 147.11s/it[K · mémoire libre 6996 Mo
