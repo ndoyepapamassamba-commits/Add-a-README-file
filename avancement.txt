@@ -1,2 +1,3 @@
 [120 s] [I] generate_video 640x384x49 --- video.cpp:1612 · mémoire libre 6207 Mo
 [241 s] [I] generate_video 640x384x49 --- video.cpp:1612 · mémoire libre 6205 Mo
+[362 s]   |============>                                     | 1/4 - 211.93s/it[K · mémoire libre 6201 Mo
