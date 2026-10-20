@@ -1,1 +1,2 @@
 [122 s] === koffi--colere (at_runtime)  · mémoire libre 13821 Mo
+[243 s] === koffi--colere (at_runtime)   |============>                                     | 1/4 - 136.04s/it[K · mémoire libre 13814 Mo
