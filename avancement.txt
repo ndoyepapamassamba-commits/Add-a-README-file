@@ -4,3 +4,4 @@
 [486 s] === koffi--choc (at_runtime)   |=====================================>            | 3/4 - 135.60s/it[K · mémoire libre 13802 Mo
 [608 s] === baye-ndiaye--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14567 Mo
 [729 s] === baye-ndiaye--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13835 Mo
+[850 s] === baye-ndiaye--ecouter (at_runtime)   |============>                                     | 1/4 - 136.20s/it[K · mémoire libre 13821 Mo
