@@ -2,17 +2,21 @@
 # que l'ensemble de la production des 10 000 vidéos soit cohérent. »
 # Méthode des studios d'animation : une « model sheet » (planche de personnage) et un fond de référence par lieu, dessinés UNE
 # fois, validés, puis repris tels quels par chaque plan ; jamais un personnage ou un lieu réinventé à chaque vidéo.
-#   personnages : les 54 de blender/film/characters.json. Les 7 de la V1 gardent leurs planches (images/troupe/, chiffrées).
-#                 Les 47 autres reçoivent une planche au même format (5 poses sur fond vert), dessinée par le générateur
-#                 vainqueur du concours (concours.py), avec une planche de la V1 comme référence de style ;
-#   décors      : 30 lieux (les 14 de la bible + 16 lieux du quotidien ivoirien) × 4 vues × 2 moments = 240 fonds vides, plus
-#                 les variantes d'ambiance des lieux les plus joués, avec l'image de la V1 comme référence de style.
+#   personnages : les 54 de la bible comique (moteur-troupe/bible_comique.json : apparence, tenue, posture). Les 7 de la V1
+#                 gardent leurs planches (images/troupe/, chiffrées). Les 47 autres — dont l'ancien dessin (caricature) ne
+#                 ressemble pas à la V1 (remarque de l'utilisateur, 20/10/2026) — sont REDESSINÉS au style V1 : planche au même
+#                 format (5 poses, fond vert), avec comme références la planche V1 la plus proche (âge, genre) ;
+#   décors      : 30 lieux du quartier (les 14 de la bible + 16 du quotidien ivoirien) × 4 vues × 2 moments, les ambiances
+#                 des lieux joués, et la MAISON de chaque foyer (monde.py) : cour, salon, chambre, cuisine, de jour et de nuit ;
+#                 avec l'image de la V1 comme référence de style ; contrôle « style V1 » (style_v1.py) avant d'entrer.
 # Chaque tâche reçoit un identifiant stable : la bible se complète sans jamais refaire ce qui est validé.
 #   python3 bible.py taches [SORTIE.json]   → liste des tâches (personnages, décors) et leurs nombres
 import json, os, re, sys, unicodedata
 
 ICI = os.path.dirname(os.path.abspath(__file__))
-PERSONNAGES = os.path.join(ICI, '..', 'blender', 'film', 'characters.json')
+PERSONNAGES = os.path.join(ICI, '..', 'moteur-troupe', 'bible_comique.json')
+sys.path.insert(0, ICI)
+import monde
 V1 = {'KOFFI', 'COUMBA', 'BAYE NDIAYE', 'MAMAN NOUNOU', 'PETIT MAMADOU', 'TANTIE AWA', 'MODOU'}
 LIEUX = {   # lieu → décor décrit pour le générateur (vide de personnages : les acteurs sont posés ensuite)
     'Cour': 'the sunny courtyard of a West African family house, laundry drying on a line, a mango tree, plastic chairs',
@@ -58,33 +62,62 @@ def slug(t):
     return re.sub(r'[^a-z0-9]+', '-', unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode().lower()).strip('-')
 
 
+PIECES = {'cour': 'its courtyard', 'salon': 'its living room', 'chambre': 'a bedroom of the house', 'cuisine': 'its outdoor kitchen'}
+
+
+GENRES = json.load(open(os.path.join(ICI, '..', 'blender', 'film', 'characters.json'), encoding='utf-8'))
+DECENNIES = {'vingtaine': 25, 'trentaine': 35, 'quarantaine': 45, 'cinquantaine': 55, 'soixantaine': 65, 'septantaine': 75}
+
+
+def age_de(p):
+    t = p.get('age', ''); m = re.search(r'(\d+)\s*ans', t)
+    return int(m.group(1)) if m else next((v for k, v in DECENNIES.items() if k in t), 35)
+
+
+def ref_style(p):
+    """Planche V1 la plus proche du personnage (âge, genre) : la référence de style qu'il reçoit."""
+    a = age_de(p); g = (GENRES.get(p['name']) or {}).get('genre', '')
+    femme = g in ('femme', 'fille') or (not g and any(k in p.get('apparence', '').lower() for k in ('femme', 'fille ')))
+    if a < 13: return 'petit-mamadou-planche'
+    if femme: return 'maman-nounou-planche' if a >= 45 else 'coumba-planche'
+    return 'baye-ndiaye-planche' if a >= 50 else 'koffi-planche'
+
+
 def taches():
-    P = json.load(open(PERSONNAGES, encoding='utf-8')); T = []
-    for nom, f in P.items():
+    B = json.load(open(PERSONNAGES, encoding='utf-8')); M = monde.construit(); T = []
+    for p in B['personnages']:
+        nom = p['name']
         if nom in V1: continue
-        genre = {'femme': 'woman', 'homme': 'man', 'garçon': 'boy', 'fille': 'girl'}.get(f.get('genre', ''), f.get('genre', ''))
-        T.append({'id': 'perso-' + slug(nom), 'type': 'personnage', 'nom': nom, 'w': 1536, 'h': 1024, 'refs': ['style-planche'],
-                  'prompt': (f"Character model sheet in exactly the same 3D animated style, proportions and rendering as image 1 "
-                             f"(a character sheet from the same Ivorian comedy series). A new character: {nom.title()}, an "
-                             f"Ivorian {genre} aged {f.get('age', '?')}, about {f.get('height', '?')} m tall, who "
-                             f"{f.get('activite', '')}. The same character drawn {POSES}. Same face and outfit in every pose.")})
-    lieux_joues = {l for f in P.values() for l in (eval(f['lieux']) if isinstance(f.get('lieux'), str) else f.get('lieux') or [])}
+        T.append({'id': 'perso-' + slug(nom), 'type': 'personnage', 'nom': nom, 'w': 1536, 'h': 1024,
+                  'refs': [ref_style(p) + '.msb'],
+                  'prompt': (f"Character model sheet in exactly the same 3D animated style, realistic proportions, face design and "
+                             f"rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, {nom.title()}: "
+                             f"{p.get('apparence', '')} Outfit: {p.get('tenue', '')} Attitude: {p.get('posture', '')} "
+                             f"Drawn {POSES}. Same face and outfit in every pose, no text.")})
+    lieux_joues = {r['lieu'] for r in M['figures_du_quartier']} | {l for j in M['journee'] for l in j['lieux']}
     for lieu, desc in LIEUX.items():
         for v, vd in VUES.items():
             for m, md in MOMENTS.items():
-                T.append({'id': f'decor-{slug(lieu)}-{v}-{m}', 'type': 'decor', 'lieu': lieu, 'w': 768, 'h': 448, 'refs': ['style-v1'],
+                T.append({'id': f'decor-{slug(lieu)}-{v}-{m}', 'type': 'decor', 'lieu': lieu, 'w': 768, 'h': 448, 'refs': ['v1-maquis.msb'],
                           'prompt': f"{STYLE}: {desc}, {vd}, {md}, completely empty, no people."})
         if lieu in lieux_joues:
             for a, ad in AMBIANCES.items():
-                T.append({'id': f'decor-{slug(lieu)}-large-{a}', 'type': 'decor', 'lieu': lieu, 'w': 768, 'h': 448, 'refs': ['style-v1'],
+                T.append({'id': f'decor-{slug(lieu)}-large-{a}', 'type': 'decor', 'lieu': lieu, 'w': 768, 'h': 448, 'refs': ['v1-maquis.msb'],
                           'prompt': f"{STYLE}: {desc}, wide establishing shot, {ad}, completely empty, no people."})
+    for f in M['foyers']:   # la maison de chaque famille : toujours la même, pièce par pièce
+        for piece, pd in PIECES.items():
+            for v in ('large', 'champ'):
+                for m, md in MOMENTS.items():
+                    T.append({'id': f"maison-{slug(f['foyer'])}-{piece}-{v}-{m}", 'type': 'decor', 'foyer': f['foyer'], 'w': 768, 'h': 448,
+                              'refs': ['v1-maquis.msb'],
+                              'prompt': f"{STYLE}: {pd} — {f['maison']}; {VUES[v]}, {md}, completely empty, no people."})
     return T
 
 
 if __name__ == '__main__':
     a = sys.argv[1:]
     if a and a[0] == 'taches':
-        T = taches(); n = {k: sum(t['type'] == k for t in T) for k in ('personnage', 'decor')}
+        T = taches(); n = {k: sum(t['type'] == k for t in T) for k in ('personnage', 'decor')}; n['maisons'] = sum(t['id'].startswith('maison-') for t in T)
         if len(a) > 1: json.dump(T, open(a[1], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
         print(json.dumps({'taches': len(T), **n, 'personnages_v1_gardes': len(V1)}, ensure_ascii=False))
     else: print(open(__file__, encoding='utf-8').read().split('import json')[0])
