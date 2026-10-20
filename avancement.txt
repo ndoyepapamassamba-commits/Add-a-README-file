@@ -43,3 +43,4 @@
 [5220 s] === B-mamie   |============>                                     | 1/4 - 302.89s/it[K · mémoire libre 13368 Mo
 [5341 s] === B-mamie   |============>                                     | 1/4 - 302.89s/it[K · mémoire libre 13417 Mo
 [5462 s] === B-mamie   |============>                                     | 1/4 - 302.89s/it[K · mémoire libre 13403 Mo
+[5584 s] === B-mamie   |=========================>                        | 2/4 - 295.29s/it[K · mémoire libre 13370 Mo
