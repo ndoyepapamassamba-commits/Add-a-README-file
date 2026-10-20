@@ -7,3 +7,4 @@
 [244 s] 0 images · === decor-ceremonie-large-jour   |============>                                     | 1/4 - 136.11s/it[K · mémoire libre 7006 Mo
 [366 s] 0 images · === decor-ceremonie-large-jour   |=========================>                        | 2/4 - 135.25s/it[K · mémoire libre 7005 Mo
 [487 s] 0 images · === decor-ceremonie-large-jour   |=====================================>            | 3/4 - 134.75s/it[K · mémoire libre 7002 Mo
+[609 s] 0 images · === decor-ceremonie-large-jour   |==================================================| 4/4 - 134.69s/it[K · mémoire libre 5804 Mo
