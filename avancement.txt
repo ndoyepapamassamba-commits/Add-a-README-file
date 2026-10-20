@@ -9,3 +9,4 @@
 [607 s] 1 images · === maison-professeur-samba-cour-large-jour   |=====================================>            | 3/4 - 156.53s/it[K · mémoire libre 6969 Mo
 [728 s] 2 images · === perso-tonton-dieng   |==================================================| 4/4 - 157.31s/it[K · mémoire libre 11536 Mo
 [850 s] 2 images · === perso-tonton-dieng   |==================================================| 4/4 - 157.31s/it[K · mémoire libre 6276 Mo
+[972 s] 2 images · === perso-tonton-dieng   |==================================================| 4/4 - 157.31s/it[K · mémoire libre 6261 Mo
