@@ -9,3 +9,4 @@
 [1094 s] === baye-ndiaye--choc (at_runtime)   |=====================================>            | 3/4 - 135.88s/it[K · mémoire libre 13693 Mo
 [1215 s] === petit-mamadou--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13783 Mo
 [1337 s] === petit-mamadou--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13778 Mo
+[1458 s] === petit-mamadou--ecouter (at_runtime)   |============>                                     | 1/4 - 135.50s/it[K · mémoire libre 13785 Mo
