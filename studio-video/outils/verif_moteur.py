@@ -420,6 +420,17 @@ try:
         if _r7['taille_mo'] > 1.0 or (_r7['ssim'] or 0) < 0.9: echecs.append(f'autopilote : version téléchargeable hors cible {_r7}')
         os.makedirs(_ap.LIV, exist_ok=True); json.dump([1, 2], open(os.path.join(_ap.LIV, 'x.emp.json'), 'w'))
         if _ap.fiches() != []: echecs.append('autopilote : empreintes lues comme fiches')
+    # fabrique indépendante (GitHub) : coffre scellé ouvrable avec la phrase, refusé sans elle ; créneaux de constance
+    sys.path.insert(0, os.path.join(ICI, 'fabrique')); _cf = _il7.import_module('coffre')
+    with _tf7.TemporaryDirectory() as _t8:
+        _cf.cles(_t8, 'phrase de controle jetable')
+        _m8 = _cf.scelle_octets(b'troupe' * 1000, _cf._pub(os.path.join(_t8, 'cle.pub.pem')))
+        if _cf.ouvre_octets(_m8, _cf._priv(os.path.join(_t8, 'cle.priv.json'), 'phrase de controle jetable')) != b'troupe' * 1000: echecs.append('coffre : ouverture fausse')
+        try: _cf._priv(os.path.join(_t8, 'cle.priv.json'), 'mauvaise phrase de test'); echecs.append('coffre : mauvaise phrase acceptée')
+        except Exception: pass
+    import datetime as _dt8
+    _c8 = _ap.prochain_creneau(set(), _dt8.datetime(2026, 10, 20, 23, 0, tzinfo=_dt8.timezone.utc))
+    if not _c8.startswith('2026-10-21T'): echecs.append(f'autopilote : créneau suivant faux ({_c8})')
     _s7 = open(os.path.join(ICI, 'moteur-troupe', 'serie.py'), encoding='utf-8').read()
     if 'def impose(' not in _s7 or 'reprises' not in _s7: echecs.append('série : distribution imposée ou duos récurrents absents')
     print(f"fabrique : doublons (seuil {_db7.SEUIL_DOUBLON}), version téléchargeable {_r7['taille_mo']} Mo SSIM {_r7['ssim']}, file : OK")

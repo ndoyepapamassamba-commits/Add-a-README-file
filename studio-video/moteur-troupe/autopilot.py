@@ -25,7 +25,7 @@ import datetime, json, os, re, subprocess, sys, time
 ICI = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, ICI)
 import casting_troupe as CT, serie, doublons
 
-CADENCE = int(os.environ.get('FABRIQUE_CADENCE', '3'))            # vidéos publiées par jour
+CADENCE = int(os.environ.get('FABRIQUE_CADENCE', '3'))            # vidéos publiées par jour (config.json la remplace si présent)
 RESERVE_JOURS = float(os.environ.get('FABRIQUE_RESERVE_JOURS', '1'))  # jours de vidéos prêtes gardés d'avance
 CIBLE_MO = float(os.environ.get('FABRIQUE_CIBLE_MO', '14'))        # consigne « max 15 Mo » ; 14 visé (marge du débit variable)
 PLAFOND_MO = 15.0
@@ -41,10 +41,34 @@ def fiches():
     return [json.load(open(os.path.join(LIV, f), encoding='utf-8')) for f in sorted(os.listdir(LIV)) if f.endswith('.json') and not f.endswith('.emp.json')]
 
 
+# CRÉNEAUX (fabrique indépendante, 20/10/2026) : chaque vidéo « à publier » reçoit à la livraison le prochain créneau libre
+# (cadence et heures de config.json) ; la réserve = vidéos dont le créneau n'est pas encore passé. Ainsi la fabrique tient sa
+# cadence sans savoir ce que l'utilisateur coche sur son téléphone (l'application GitHub garde ses coches chez lui).
+CONFIG = os.path.join(ICI, '..', 'fabrique', 'config.json')
+
+
+def config():
+    C = {'cadence': CADENCE, 'creneaux': ['12:30', '18:30', '21:30'], 'fuseau': 'Africa/Abidjan'}
+    if os.path.isfile(CONFIG): C.update(json.load(open(CONFIG, encoding='utf-8')))
+    return C
+
+
+def prochain_creneau(pris, maintenant=None):
+    """premier créneau (date + heure de config) postérieur à maintenant et non pris ; heures en UTC (Abidjan = UTC)."""
+    C = config(); h = sorted(C['creneaux'])[:max(1, int(C['cadence']))]
+    t = maintenant or datetime.datetime.now(datetime.timezone.utc); j = t.date()
+    for _ in range(4000):
+        for x in h:
+            c = datetime.datetime.combine(j, datetime.time(*map(int, x.split(':'))), datetime.timezone.utc)
+            if c > t and c.isoformat(timespec='minutes') not in pris: return c.isoformat(timespec='minutes')
+        j += datetime.timedelta(days=1)
+
+
 def reserve():
-    """vidéos livrées « à publier » que l'utilisateur n'a pas encore marquées publiées (la page écrit « publiee » dans sa base ;
-    la tâche planifiée la reporte ici par marque_publiee)."""
-    return [f for f in fiches() if f.get('statut', 'pret' if f.get('a_publier') else 'a_corriger') == 'pret' and not f.get('publiee')]
+    """vidéos « à publier » encore à venir : pas marquées publiées, et (fabrique GitHub) créneau pas encore passé."""
+    t = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='minutes')
+    return [f for f in fiches() if f.get('statut', 'pret' if f.get('a_publier') else 'a_corriger') == 'pret' and not f.get('publiee')
+            and (not f.get('creneau') or f['creneau'] > t)]
 
 
 def version_tel(src, dst, cible_mo=CIBLE_MO):
@@ -85,6 +109,7 @@ def livre(i, D=None, journal=print):
          'version_tel': mesure, 'livree': _maintenant(), 'envoyee': None, 'publiee': None,
          'doublon_de': proche if r >= doublons.SEUIL_PROCHE else None, 'ressemblance': r}
     F['statut'] = 'doublon' if r >= doublons.SEUIL_DOUBLON else ('pret' if F['a_publier'] else 'a_corriger')
+    if F['statut'] == 'pret': F['creneau'] = prochain_creneau({f.get('creneau') for f in fiches() if f.get('creneau')})
     json.dump(F, open(os.path.join(LIV, f'{i}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     journal(f"{i} : version téléphone {mesure['taille_mo']} Mo, SSIM {mesure['ssim']} ({mesure['secondes']} s) — {F['statut']}"
             + (f" (ressemble à {proche} : {r:.2f})" if F['doublon_de'] else ''))

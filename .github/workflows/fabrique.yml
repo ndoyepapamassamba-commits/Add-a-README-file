@@ -1,39 +1,102 @@
 # FABRIQUE MASSAMBA SUR GITHUB (20/10/2026) — « Je veux qu'elle soit indépendante de la machine Claude ».
-# La production quotidienne tourne sur les machines gratuites de GitHub Actions (dépôt public : minutes illimitées,
-# 4 processeurs, 16 Go de mémoire), dans le compte de l'utilisateur, sans Claude.
-# Étape 1 (ce fichier) : diagnostic de la machine GitHub (processeurs, mémoire, disque, Python, ffmpeg, paquets du moteur).
-# Étape 2 : coffre chiffré (bibliothèque privée de la troupe), production `autopilot.py jour`, livraison chiffrée.
+# La production tourne sur les machines gratuites de GitHub Actions (dépôt public : minutes illimitées ; mesuré le 20/10/2026 :
+# 4 processeurs, 15 Go de mémoire, 86 Go de disque libre, paquets du moteur installés en 50 s), dans le compte de l'utilisateur.
+# Rien de privé n'est posé en clair : bibliothèque, modèles dérivés, vidéos et fiches sont scellés (studio-video/fabrique/coffre.py)
+# avec la phrase FABRIQUE_CLE que l'utilisateur range lui-même dans les secrets du dépôt.
+#   · cles       : crée la paire de clés à partir de la phrase et publie la clé publique (une fois) ;
+#   · amorce     : verse dans la release « fabrique-coffre » les parts scellées de la bibliothèque poussées sur fabrique-amorce ;
+#   · production : chaque jour (ou « Run workflow ») — ouvre le coffre, `autopilot.py jour`, scelle les livraisons, publie
+#                  l'application et ses données sur gh-pages (GitHub Pages), range les vidéos sorties de la fenêtre en archives.
 name: Fabrique MASSAMBA
 on:
-  workflow_dispatch:
-  push:
-    branches: [claude/relaxed-noether-svkgiu]
-    paths: [.github/workflows/fabrique.yml, studio-video/fabrique/**]
   schedule:
-    - cron: '52 4 * * *'   # 4 h 52 heure d'Abidjan (UTC) ; ne tourne que depuis la branche par défaut
+    - cron: '52 4 * * *'   # 4 h 52 heure d'Abidjan (UTC) ; GitHub ne lance les tâches planifiées que depuis la branche par défaut
+  workflow_dispatch:
+    inputs:
+      etape: { description: 'production | cles', default: 'production' }
+      videos: { description: 'Vidéos par jour (vide = config.json)', default: '' }
+  push:
+    branches: [fabrique-amorce]
+permissions: { contents: write }
 concurrency: { group: fabrique, cancel-in-progress: false }
+env:
+  BIBLIO: ${{ github.workspace }}/../bibliotheque
+  MASSAMBA_MODELS: ${{ github.workspace }}/../modeles
 jobs:
-  diagnostic:
+  cles:
+    if: github.event_name == 'workflow_dispatch' && inputs.etape == 'cles'
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 1 }
-      - name: Machine
-        run: |
-          echo "processeurs: $(nproc)"; free -g | head -2; df -h / /mnt 2>/dev/null
-          python3 --version; (ffmpeg -version 2>/dev/null | head -1) || echo "ffmpeg absent"
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
-      - name: Paquets du moteur (temps mesuré)
+      - run: pip install -q cryptography
+      - name: Paire de clés (la phrase reste dans les secrets)
+        env: { FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
+        run: python3 studio-video/fabrique/coffre.py cles ../cles
+      - name: Publier la clé publique et la clé privée chiffrée (gh-pages)
         run: |
-          t0=$(date +%s)
-          pip install -q numpy scipy opencv-python-headless mediapipe onnxruntime diskcache imagehash librosa soundfile pyworld piper-tts pillow
-          echo "installation: $(( $(date +%s) - t0 )) s"
-          python3 -c "import cv2, mediapipe, onnxruntime, piper, diskcache, imagehash; print('imports OK', cv2.__version__, mediapipe.__version__, onnxruntime.__version__)"
-      - name: Essai de la fabrique (doublons, version téléchargeable)
+          git fetch origin gh-pages && git worktree add ../site origin/gh-pages || { git worktree add --detach ../site && cd ../site && git checkout --orphan gh-pages-neuf && git rm -rfq . ; cd -; }
+          cp ../cles/cle.pub.pem ../cles/cle.priv.json ../site/ && cp studio-video/fabrique/index.html ../site/ && touch ../site/.nojekyll
+          cd ../site && git add -A && git -c user.name=fabrique -c user.email=fabrique@users.noreply.github.com commit -qm "Fabrique : clés" && git push -f origin HEAD:gh-pages
+
+  amorce:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: fabrique-amorce }
+      - name: Parts scellées → release fabrique-coffre
+        env: { GH_TOKEN: '${{ github.token }}' }
         run: |
-          sudo apt-get install -y -qq ffmpeg > /dev/null
+          gh release view fabrique-coffre >/dev/null 2>&1 || gh release create fabrique-coffre --title "Coffre de la fabrique (chiffré)" --notes "Bibliothèque et modèles de la troupe, scellés. Illisibles sans la phrase de la fabrique."
+          gh release upload fabrique-coffre amorce/* --clobber
+          gh release view fabrique-coffre --json assets --jq '.assets | length'
+
+  production:
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.etape != 'cles')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Logiciels du moteur
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+          pip install -q -r studio-video/fabrique/requirements.txt
+      - name: Site et clés (gh-pages)
+        run: git fetch origin gh-pages && git worktree add ../site origin/gh-pages
+      - name: Ouvrir le coffre (bibliothèque, modèles, état)
+        env: { GH_TOKEN: '${{ github.token }}', FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
+        run: |
+          mkdir -p ../coffre && gh release download fabrique-coffre -D ../coffre --skip-existing
+          for nom in $(cd ../coffre && ls *.json | sed 's/\.json$//'); do
+            dest=$BIBLIO; [ "$nom" = modeles ] && dest=$MASSAMBA_MODELS
+            python3 studio-video/fabrique/coffre.py ouvre-dossier ../coffre "$nom" "$dest" ../site/cle.priv.json
+            rm -f ../coffre/$nom.*.msb
+          done
+          [ -f ../site/etat/etat.json ] && python3 studio-video/fabrique/coffre.py ouvre-dossier ../site/etat etat "$BIBLIO" ../site/cle.priv.json || echo "premier état"
+          du -sh "$BIBLIO" "$MASSAMBA_MODELS"
+      - name: Journée de production
+        env:
+          MASSAMBA_BIBLIO: ${{ env.BIBLIO }}
+          MASSAMBA_TROUPE: ${{ env.BIBLIO }}/troupe
+          PIPER_VOICES: ${{ env.MASSAMBA_MODELS }}/piper/
+          FABRIQUE_CADENCE: ${{ inputs.videos }}
+        run: |
           cd studio-video/moteur-troupe
-          python3 -c "
-          import doublons; print('doublons', doublons.ressemblance([1,2,3],[1,2,3]))"
+          python3 autopilot.py jour ${{ inputs.videos }} 2>&1 | grep -vE "onnxruntime|W0000|I0000|XNNPACK" | tail -200
+      - name: Sceller et publier (application, catalogue, vidéos, état)
+        if: always()
+        env: { GH_TOKEN: '${{ github.token }}', FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
+        run: |
+          python3 studio-video/fabrique/vitrine.py construit "$BIBLIO" ../site ../site
+          python3 studio-video/fabrique/coffre.py scelle-dossier "$BIBLIO" ../site/etat etat ../site/cle.pub.pem \
+            --exclure troupe --exclure prep --exclure decors-casting --exclure scenes --exclure "A PUBLIER" \
+            --exclure '*.mp4' --exclure '*.wav' --exclure '*.mp3' > /dev/null
+          if [ -d ../archiver ] && [ -n "$(ls ../archiver)" ]; then
+            gh release view fabrique-archives >/dev/null 2>&1 || gh release create fabrique-archives --title "Archives de la fabrique (chiffrées)" --notes "Vidéos sorties de l'application ; à ouvrir dans l'application (« Ouvrir un fichier .msb »)."
+            gh release upload fabrique-archives ../archiver/* --clobber
+          fi
+          cd ../site && git checkout --orphan publie && git add -A && git -c user.name=fabrique -c user.email=fabrique@users.noreply.github.com commit -qm "Fabrique : production du $(date -u +%F)" && git push -f origin publie:gh-pages
