@@ -3,6 +3,8 @@
 # (Apache-2.0) par stable-diffusion.cpp sur processeur, mp4, scellé avec la clé de Claude, mesuré (secondes, mémoire).
 # La LoRA est d'abord fusionnée au chargement (« immediately » : mesuré le 20/10, l'appliquer à la volée doublait le temps
 # par étape, 110 s contre 55 s) ; si la fusion échoue, le clip est refait avec l'application à la volée.
+# Mémoire (20/10 22:06, machine Turbo : 610 Mo libres seulement pendant le décodage VAE par tranches de temps) : poids lus en
+# mémoire projetée (--mmap, pages rendues au système quand le décodage en a besoin) et décodage aussi par tuiles (--vae-tiling).
 #   python3 tourne_banque.py TACHES.json PART NB POIDS SORTIE BINAIRE CLE_FABRIQUE.priv.json CLE_CLAUDE.pub.pem
 import json, os, re, subprocess, sys, time
 
@@ -31,7 +33,7 @@ def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude):
                    '--lora-model-dir', f'{M}/lora', '--lora-apply-mode', mode, '-i', poses[p][t['pose']],
                    '-p', t['prompt'] + '<lora:fastwan:1>', '-n', NEGATIF, '--cfg-scale', '1', '--sampling-method', 'euler',
                    '--steps', '4', '-W', '384', '-H', '640', '--video-frames', '33', '--flow-shift', '5.0', '--seed', '42',
-                   '-t', '4', '--temporal-tiling', '-o', avi, '-v']
+                   '-t', '4', '--temporal-tiling', '--vae-tiling', '--mmap', '-o', avi, '-v']
             with open(journal, 'a') as j:
                 j.write(f"=== {t['id']} ({mode})\n"); j.flush()
                 rc = subprocess.run(cmd, stdout=j, stderr=subprocess.STDOUT).returncode
