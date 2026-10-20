@@ -2,3 +2,4 @@
 [244 s] 0 images · === decor-douane-large-jour   |=========================>                        | 2/4 - 90.59s/it[K · mémoire libre 6920 Mo
 [365 s] 0 images · === decor-douane-large-jour   |=====================================>            | 3/4 - 90.05s/it[K · mémoire libre 6920 Mo
 [123 s] 0 images · === decor-douane-large-jour  · mémoire libre 7001 Mo
+[245 s] 0 images · === decor-douane-large-jour   |============>                                     | 1/4 - 135.86s/it[K · mémoire libre 6976 Mo
