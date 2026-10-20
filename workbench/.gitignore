@@ -1,0 +1,27 @@
+# dependencies & builds
+node_modules/
+dist/
+build/
+coverage/
+# runtime data
+data/
+logs/
+*.log
+screenshots/
+workspace/
+.workbench-token
+test-results/
+playwright-report/
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+
+# the owner's own art (character sheets, sets): embedded in the HTML at build time, never committed (public repo)
+.private/
+
+# film bench work files (frames, masks, measures of local films)
+.filmbench/

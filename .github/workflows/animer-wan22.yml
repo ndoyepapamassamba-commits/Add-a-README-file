@@ -1,0 +1,112 @@
+# ANIMER UNE IMAGE PAR PROMPT — WAN 2.2 SUR LES MACHINES GRATUITES DE GITHUB (20/10/2026)
+# « Mon objectif était de démonter un moteur performant, l'améliorer et animer des images à partir de prompt » ;
+# « tu peux créer un cadre virtuel pour WAN 2.2 » ; « je ne peux pas disposer de carte graphique » ; « rien de payant ».
+# Cadre virtuel : chaque demande déposée dans studio-video/animer/demandes/ lance des machines GitHub gratuites (dépôt public :
+# minutes illimitées ; 4 processeurs, 16 Go de mémoire, sans carte graphique), qui compilent le moteur et animent l'image.
+#   moteur : stable-diffusion.cpp (MIT) — Wan 2.2 en mode vidéo (`-M vid_gen`, image de départ `-i`, docs/wan.md) sur processeur ;
+#   poids  : Wan2.2-TI2V-5B (Apache-2.0, GGUF QuantStack), encodeur umT5-XXL (Apache-2.0, GGUF city96), VAE Wan 2.2 (Apache-2.0) ;
+#            FastWan (FastVideo, Apache-2.0, LoRA extraite par Kijai) : quelques étapes sans CFG, voie publiable ;
+#            Wan2.2-TI2V-5B-Turbo (quanhaol, licence non déclarée en amont) : BANC D'ESSAI seulement, jamais dans la chaîne publiée.
+# Plusieurs réglages tournent EN PARALLÈLE (une machine chacun) ; chaque clip revient scellé avec la clé de Claude
+# (studio-video/animer/cle-claude.pub.pem) sur la branche animer-sortie-<réglage>, avec ses mesures (mesure.json, publiques).
+# 20/10 21:32, mesuré : 55 s par étape (640×384, 49 images, Turbo) → 4 étapes en 3,7 min ; machine arrêtée au décodage VAE
+# (mémoire) → décodage par tranches de temps (--temporal-tiling) ; avancement poussé toutes les 2 min.
+# L'image de départ arrive scellée avec la clé de la fabrique : ouverte par le secret FABRIQUE_CLE, jamais posée en clair.
+name: Animer une image (Wan 2.2)
+on:
+  push:
+    branches: [claude/relaxed-noether-svkgiu]
+    paths: ['studio-video/animer/demandes/**', '.github/workflows/animer-wan22.yml']
+  workflow_dispatch:
+permissions: { contents: write }
+concurrency: { group: animer-v2, cancel-in-progress: true }
+defaults:
+  run: { shell: bash }
+env:
+  SD_CPP: 0518b34374761cb82aeda5ad3c2f0686fdad2cec        # stable-diffusion.cpp, tête du 20/10/2026
+  HF: https://huggingface.co
+jobs:
+  animer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { nom: fastwan, modele: base,  lora: fastwan, steps: 4,  cfg: 1, w: 640, h: 384, frames: 49 }
+          - { nom: turbo,   modele: turbo, lora: '',      steps: 4,  cfg: 1, w: 640, h: 384, frames: 49 }
+          - { nom: base,    modele: base,  lora: '',      steps: 20, cfg: 5, w: 480, h: 288, frames: 33 }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Moteur (compilé pour ce processeur) et poids (téléchargés en même temps)
+        run: |
+          M=$RUNNER_TEMP/m; mkdir -p $M/lora; echo "M=$M" >> $GITHUB_ENV
+          t0=$(date +%s); echo "T0=$t0" >> $GITHUB_ENV
+          dl() { curl -sfL --retry 5 --retry-delay 5 -o "$1" "$2" && echo "poids : $(basename $1) $(du -h $1 | cut -f1)"; }
+          ( if [ "${{ matrix.modele }}" = turbo ]; then dl $M/turbo.gguf $HF/hum-ma/Wan2.2-TI2V-5B-Turbo-GGUF/resolve/main/Wan2_2-TI2V-5B-Turbo-Q4_K_M.gguf
+            else dl $M/base.gguf $HF/QuantStack/Wan2.2-TI2V-5B-GGUF/resolve/main/Wan2.2-TI2V-5B-Q4_K_M.gguf; fi ) > $RUNNER_TEMP/dl1.log 2>&1 &
+          ( dl $M/umt5.gguf $HF/city96/umt5-xxl-encoder-gguf/resolve/main/umt5-xxl-encoder-Q5_K_M.gguf ) > $RUNNER_TEMP/dl2.log 2>&1 &
+          ( dl $M/vae.safetensors $HF/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan2.2_vae.safetensors
+            if [ "${{ matrix.lora }}" = fastwan ]; then dl $M/lora/fastwan.safetensors $HF/hum-ma/Wan2.2-TI2V-5B-Turbo-GGUF/resolve/main/Wan2_2_5B_FastWanFullAttn_lora_rank_128_bf16.safetensors; fi ) > $RUNNER_TEMP/dl3.log 2>&1 &
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg time > /dev/null
+          lscpu | grep -E "Model name|^CPU\(s\)"; free -g
+          git init -q $RUNNER_TEMP/sd && cd $RUNNER_TEMP/sd && git remote add origin https://github.com/leejet/stable-diffusion.cpp
+          git fetch -q --depth 1 origin $SD_CPP && git checkout -q FETCH_HEAD && git submodule update -q --init --recursive --depth 1
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON > $RUNNER_TEMP/build.log 2>&1 && cmake --build build -j 4 --config Release >> $RUNNER_TEMP/build.log 2>&1 || { tail -60 $RUNNER_TEMP/build.log; exit 1; }
+          ls build/bin; echo "compilation : $(( $(date +%s) - t0 )) s"
+          wait; cat $RUNNER_TEMP/dl*.log; ls -la $M $M/lora
+          for f in $M/umt5.gguf $M/vae.safetensors $M/${{ matrix.modele }}.gguf ${{ matrix.lora && format('$M/lora/{0}.safetensors', matrix.lora) || '' }}; do [ -s $f ] || { echo "poids manquant : $f"; exit 1; }; done
+          echo "préparation totale : $(( $(date +%s) - t0 )) s"
+      - name: Image de départ (scellée → ouverte en mémoire de la machine)
+        env: { FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
+        run: |
+          pip install -q cryptography
+          git fetch -q origin fabrique-donnees && git show FETCH_HEAD:cle.priv.json > $RUNNER_TEMP/cle.priv.json
+          python3 studio-video/fabrique/coffre.py ouvre studio-video/animer/demandes/image.msb $RUNNER_TEMP/entree.png $RUNNER_TEMP/cle.priv.json
+          rm -f $RUNNER_TEMP/cle.priv.json; ffprobe -v error -show_entries stream=width,height -of csv=p=0 $RUNNER_TEMP/entree.png
+      - name: Animer (Wan 2.2 TI2V-5B, ${{ matrix.nom }})
+        run: |
+          D=studio-video/animer/demandes/demande.json; O=$RUNNER_TEMP/sortie; mkdir -p $O
+          PROMPT=$(python3 -c "import json;print(json.load(open('$D'))['prompt'])"); NEG=$(python3 -c "import json;print(json.load(open('$D'))['negatif'])")
+          [ -n "${{ matrix.lora }}" ] && PROMPT="$PROMPT<lora:${{ matrix.lora }}:1>"
+          BIN=$RUNNER_TEMP/sd/build/bin/sd-cli; [ -x $BIN ] || BIN=$RUNNER_TEMP/sd/build/bin/sd
+          t1=$(date +%s); L=$O/journal.txt; : > $L
+          # avancement lisible PENDANT le calcul (GitHub ne rend le journal qu'à la fin) : branche animer-progres-<réglage>
+          git worktree add -q --detach ../progres HEAD && (cd ../progres && git checkout -q --orphan p && git rm -rq . && git clean -fdq)
+          ( while sleep 120; do
+              l="[$(( $(date +%s) - t1 )) s] $(tr '\r' '\n' < $L | grep -E 's/it|it/s|decod|Decod|generat|taken' | tail -1 | cut -c1-160) · mémoire libre $(free -m | awk '/Mem:/{print $7}') Mo"
+              echo "$l"; echo "$l" >> ../progres/avancement.txt
+              (cd ../progres && git add -A && git -c user.name=animer -c user.email=animer@users.noreply.github.com commit -qm "${{ matrix.nom }}" && git push -qf origin HEAD:animer-progres-${{ matrix.nom }}) > /dev/null 2>&1 || true
+            done ) & P=$!
+          rc=0
+          /usr/bin/time -v -o $O/time.txt $BIN -M vid_gen --diffusion-model $M/${{ matrix.modele }}.gguf --vae $M/vae.safetensors \
+            --t5xxl $M/umt5.gguf --lora-model-dir $M/lora -i $RUNNER_TEMP/entree.png -p "$PROMPT" -n "$NEG" \
+            --cfg-scale ${{ matrix.cfg }} --sampling-method euler --steps ${{ matrix.steps }} -W ${{ matrix.w }} -H ${{ matrix.h }} \
+            --video-frames ${{ matrix.frames }} --flow-shift 5.0 --seed 42 -t 4 --temporal-tiling \
+            -o $O/clip.avi -v > $L 2>&1 || rc=$?
+          kill $P 2>/dev/null || true
+          tr '\r' '\n' < $L | grep -v -E "^\s*$" | grep -i -E "lora|sampling|completed|error|warn|loaded|memory|decode|generat|taken|frame|s/it|it/s" | awk '!seen[$0]++' | tail -150 || true
+          [ $rc = 0 ] || { echo "moteur : code $rc"; tail -40 $L; exit $rc; }
+          t2=$(date +%s); echo "T_ANIM=$(( t2 - t1 ))" >> $GITHUB_ENV
+          grep -E "Maximum resident|Elapsed" $O/time.txt
+          ffmpeg -v error -y -i $O/clip.avi -c:v libx264 -pix_fmt yuv420p -crf 16 -movflags +faststart $O/clip.mp4
+          ffprobe -v error -show_entries stream=width,height,nb_frames,r_frame_rate -of csv=p=0 $O/clip.mp4
+      - name: Sceller et rendre le clip (branche animer-sortie-${{ matrix.nom }})
+        if: always()
+        run: |
+          O=$RUNNER_TEMP/sortie; mkdir -p $O; R=$RUNNER_TEMP/rendu; mkdir -p $R
+          [ -s $O/clip.mp4 ] && python3 studio-video/fabrique/coffre.py scelle $O/clip.mp4 $R/clip.msb studio-video/animer/cle-claude.pub.pem
+          python3 - <<EOF > $R/mesure.json
+          import json, os, re
+          t = open('$O/time.txt').read() if os.path.isfile('$O/time.txt') else ''
+          rss = re.search(r'Maximum resident set size \(kbytes\): (\d+)', t)
+          print(json.dumps({'reglage': '${{ matrix.nom }}', 'modele': '${{ matrix.modele }}', 'lora': '${{ matrix.lora }}',
+                            'etapes': ${{ matrix.steps }}, 'cfg': ${{ matrix.cfg }}, 'taille': '${{ matrix.w }}x${{ matrix.h }}',
+                            'images': ${{ matrix.frames }}, 'sd_cpp': '$SD_CPP', 'animation_s': int('${T_ANIM:-0}' or 0),
+                            'total_s': $(date +%s) - int('${T0:-0}'), 'memoire_max_go': round(int(rss.group(1)) / 1e6, 2) if rss else None,
+                            'clip': os.path.isfile('$R/clip.msb'), 'run': '${{ github.run_id }}'}, indent=1))
+          EOF
+          cat $R/mesure.json
+          git worktree add -q --detach ../rendu HEAD && cd ../rendu && git checkout -q --orphan publie && git rm -rq . && git clean -fdq
+          cp $R/* . && git add -A && git -c user.name=animer -c user.email=animer@users.noreply.github.com commit -qm "Animer : ${{ matrix.nom }} (run ${{ github.run_id }})"
+          git push -q -f origin publie:animer-sortie-${{ matrix.nom }}

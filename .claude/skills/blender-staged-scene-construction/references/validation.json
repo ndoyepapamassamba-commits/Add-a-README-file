@@ -1,0 +1,40 @@
+{
+  "blender_version": "5.2.0 LTS",
+  "version": "Cinematic development pass 2",
+  "objects_in_scene": 295,
+  "render_mesh_instances": 210,
+  "unique_render_meshes": 63,
+  "render_polygons_including_instances": 6234639,
+  "unique_render_polygons": 406383,
+  "render_triangles_including_instances": 7017206,
+  "interactive_shading": "MATERIAL",
+  "saved_render_engine": "CYCLES",
+  "camera": "CAMERA • Cinematic portrait",
+  "camera_resolution": [1440, 1800],
+  "saved_render": "film-final.png",
+  "render_configuration": {
+    "engine": "CYCLES",
+    "samples": 128,
+    "denoising": true,
+    "adaptive_threshold": 0.035,
+    "cpu_threads": 6
+  },
+  "packed_textures": {
+    "cliff-color.png": true,
+    "masonry-weathered.png": true,
+    "storm-sky.png": true
+  },
+  "verification": [
+    "Visible viewport inspection after geometry and material passes",
+    "Three iterative Cycles review images inspected",
+    "Bounded 22-second live viewport orbit with separate draw-cadence JSON",
+    "1440 x 1800 final Cycles render visually inspected after completion"
+  ],
+  "known_limits": [
+    "Exterior interpretation, not a surveyed replica",
+    "No modeled interior rooms or gameplay",
+    "Some architectural repetition and geological forms remain visibly constructed",
+    "Imagegen textures are authored LDR appearance assets, not calibrated scanned PBR sets",
+    "Draw callback cadence is not GPU-present timing or a certified 60-fps measurement"
+  ]
+}

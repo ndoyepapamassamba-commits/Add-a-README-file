@@ -1,0 +1,15 @@
+{
+ "reglage": "turbo",
+ "modele": "turbo",
+ "lora": "",
+ "etapes": 4,
+ "cfg": 1,
+ "taille": "640x384",
+ "images": 49,
+ "sd_cpp": "0518b34374761cb82aeda5ad3c2f0686fdad2cec",
+ "animation_s": 0,
+ "total_s": 325,
+ "memoire_max_go": null,
+ "clip": false,
+ "run": "39501522841"
+}

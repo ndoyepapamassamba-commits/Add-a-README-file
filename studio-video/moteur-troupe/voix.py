@@ -1,0 +1,517 @@
+# VOIX DE LA TROUPE AU TON DE LA CHAÎNE (16/10/2026)
+#  1. Piper (MIT) lit chaque réplique et donne la durée de chaque phonème (synchro labiale exacte) ;
+#  2. WORLD (Morise et al. 2016, BSD modifiée ; liaison pyworld, MIT) décompose la voix (hauteur, enveloppe, apériodicité)
+#     et la recompose avec la hauteur moyenne et l'ÉTENDUE mesurées sur les vidéos de l'utilisateur
+#     (tone_reference.json : hommes 229 Hz, femmes 307 Hz, étendue relative ≈ 0,5 — Piper : 0,29 à 0,45), une montée
+#     finale sur les questions, un appui sur les exclamations ; l'enveloppe est dilatée pour la voix d'enfant ;
+#  3. sonie de chaque réplique ramenée à −16 LUFS (pyloudnorm, MIT) ; placement au rythme de la chaîne
+#     (0,26 s entre deux répliques, 0,31 s de silence avant la chute) ; contrôle d'intelligibilité par Whisper (MIT).
+#  4. (17/10) VOIX D'AFRIQUE DE L'OUEST — VOIX_MOTEUR=qwen3 : chaque personnage qui a une référence dans VOIX_REFS/refs.json
+#     (extraits du corpus OpenSLR 57, Apache-2.0) est dit par Qwen3-TTS (Apache-2.0) qui clone cette voix et son accent
+#     (voix_qwen.py, lancé une fois pour toutes les répliques) ; la hauteur n'est poussée qu'à mi-chemin du registre
+#     dessin animé (moyenne géométrique), pour garder l'accent ; les formes de bouche viennent ensuite de levres.py.
+import json, os, re, sys, wave, hashlib, subprocess
+import numpy as np, pyworld as pw, pyloudnorm as pyln
+from piper import PiperVoice, SynthesisConfig
+P = os.environ.get('PIPER_VOICES', os.path.expanduser('~/.cache/massamba-models/piper/'))  # dossier des voix Piper (.onnx + .json)
+SR = 22050
+# personnage : (modèle, locuteur, hauteur visée Hz, facteur d'étendue, vitesse (length_scale), dilatation des formants)
+CAST = {  # deux voix sources propres et libres : siwis (CC-BY 4.0) et gilles (CC0) ; chaque personnage = hauteur + étendue + timbre (WORLD)
+  # (MLS écartée : charabia mesuré par Whisper même sans transformation ; tom : données AGPL ; upmc : CC-BY-SA)
+  # HAUTEURS NATURELLES (17/10/2026) — « le son est encore très aigu » : mesuré dans la v27 (Coumba 343 Hz, Tantie 311,
+  # Maman 296, Petit Mamadou 309, Modou 189, Koffi 163, Baye 161) ; conseil de JEV (moteur-iv/conseil_voix_v28.json) :
+  # cause « cibles trop hautes » 0,91, remède « hauteurs naturelles, voix posée entièrement sur sa cible » 0,91.
+  'MAMAN NOUNOU':  ('fr_FR-siwis-medium', None, 195, 1.35, 0.85, 1.00),
+  'TANTIE AWA':    ('fr_FR-siwis-medium', None, 200, 1.45, 0.85, 0.93),
+  'COUMBA':        ('fr_FR-siwis-medium', None, 215, 1.25, 0.85, 1.05),
+  'PETIT MAMADOU': ('fr_FR-siwis-medium', None, 275, 1.30, 0.85, 1.16),
+  'BAYE NDIAYE':   ('fr_FR-gilles-low', None, 115, 1.60, 0.85, 0.95),
+  'MODOU':         ('fr_FR-gilles-low', None, 125, 1.60, 0.85, 1.00),
+  'KOFFI':         ('fr_FR-gilles-low', None, 120, 1.40, 0.85, 1.04),
+}
+# débit visé (syllabes par seconde de parole) : chaîne 5,92 (hommes) / 4,71 (femmes), Ladjagaï 6,3–6,7 → un cran au-dessus de la chaîne
+DEBIT = {'MAMAN NOUNOU': 5.4, 'TANTIE AWA': 5.4, 'COUMBA': 5.4, 'PETIT MAMADOU': 5.6, 'BAYE NDIAYE': 6.0, 'MODOU': 6.2, 'KOFFI': 6.2}
+
+
+# TOUTE LA TROUPE A UNE VOIX (19/10/2026, « une solution globale ») : un personnage absent du tableau reçoit la sienne,
+# calculée une fois depuis sa fiche — hauteur naturelle de la fabrique (fabrique/univers.py, 28 personnages), sinon genre,
+# âge et facteur de hauteur de la bible du casting (blender/film/characters.json, 54 personnages) — avec les mêmes deux voix
+# sources libres que la troupe (siwis CC-BY 4.0 pour les femmes et les enfants, gilles CC0 pour les hommes) et les mêmes
+# réglages que les 7 personnages calibrés (étendue, vitesse, timbre d'enfant).
+def _fiche(nom):
+    ici = os.path.dirname(os.path.abspath(__file__)); f = {}
+    try:
+        sys.path.insert(0, os.path.join(ici, 'fabrique')); import univers as _u
+        for v in _u.P.values():
+            if v.get('nom') == nom: f.update(genre={'woman': 'femme', 'girl': 'fille', 'boy': 'garcon', 'man': 'homme', 'children': 'enfant'}.get(v['genre'], v['genre']), age=v['age'], f0=v['f0'])
+    except Exception: pass
+    try:
+        c = json.load(open(os.path.join(ici, '..', 'blender', 'film', 'characters.json'), encoding='utf-8')).get(nom)
+        if c:
+            f.setdefault('genre', c.get('genre')); f.setdefault('age', c.get('age')); f['pitch'] = float(c.get('pitch') or 1.0)
+    except Exception: pass
+    return f
+
+
+def _naturelle(nom):
+    f = _fiche(nom)
+    if not f.get('genre'): raise KeyError(f'{nom} : ni dans le tableau des voix, ni dans les fiches de la troupe')
+    g, age = f['genre'], int(f.get('age') or 35); enfant = g in ('fille', 'garcon', 'enfant') and age < 13
+    femme = g in ('femme', 'fille') or enfant
+    f0 = f.get('f0') or ((275 if enfant else 205 if age < 55 else 192) if femme else (128 if age < 30 else 120 if age < 55 else 112)) * min(1.1, max(0.92, f.get('pitch', 1.0)))
+    return ('fr_FR-siwis-medium' if femme else 'fr_FR-gilles-low', None, round(float(f0)), 1.30 if enfant else 1.35 if femme else 1.50, 0.85,
+            1.16 if enfant else 1.0)
+
+
+# VOIX DISTINCTES (20/10/2026, toute la troupe dans le moteur) : calculées seulement depuis le genre et l'âge, les 54 voix
+# tombaient les unes sur les autres — mesuré : 154 paires presque identiques (même voix source, hauteur à moins de 8 Hz, même
+# timbre et même étendue ; 5 hommes à 141 Hz). Chaque personnage reçoit la voix la plus proche de sa voix naturelle qui reste à
+# distance ≥ 1 de toutes les voix déjà attribuées sur la même source, dans l'ordre : les 7 calibrés (inchangés), puis la bible.
+# Distance : écart de hauteur en unités de 6 % (≈ 1 demi-ton), de timbre (formants WORLD) en unités de 0,04, d'étendue en 0,2.
+# Bornes de jeu : hauteur ×0,88 à ×1,14 de la naturelle, timbre 0,90 à 1,10 (enfants 1,10 à 1,22).
+D_HAUTEUR, D_TIMBRE, D_ETENDUE = 0.06, 0.04, 0.2
+
+
+def _distance(a, b):
+    return ((np.log(a[2] / b[2]) / D_HAUTEUR) ** 2 + ((a[5] - b[5]) / D_TIMBRE) ** 2 + ((a[3] - b[3]) / D_ETENDUE) ** 2) ** 0.5
+
+
+_DISTINCTES = {}
+
+
+def _toutes_distinctes():
+    if _DISTINCTES: return _DISTINCTES
+    try: noms = list(json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'blender', 'film', 'characters.json'), encoding='utf-8')))
+    except Exception: noms = []
+    pris = [v for v in CAST_CALIBRE.values()]
+    for nom in noms:
+        if nom in CAST_CALIBRE: continue
+        try: n = _naturelle(nom)
+        except KeyError: continue
+        enfant = n[5] > 1.05; t0, t1 = (1.10, 1.22) if enfant else (0.90, 1.10)
+        cands = sorted(((m, round(t, 2)) for m in np.arange(0.88, 1.1401, 0.02) for t in np.arange(t0, t1 + 1e-6, 0.02)),
+                       key=lambda c: abs(np.log(c[0])) / D_HAUTEUR + abs(c[1] - n[5]) / D_TIMBRE)
+        choix = n
+        for m, t in cands:
+            v = (n[0], None, int(round(n[2] * m)), n[3], n[4], float(t))
+            if all(_distance(v, p) >= 1.0 for p in pris if p[0] == v[0]): choix = v; break
+        _DISTINCTES[nom] = choix; pris.append(choix)
+    return _DISTINCTES
+
+
+def cast_de(nom):
+    return _toutes_distinctes().get(nom) or _naturelle(nom)
+
+
+class _Table(dict):
+    def __init__(self, base, calcul): super().__init__(base); self._calcul = calcul
+    def __missing__(self, k):
+        v = self._calcul(k); self[k] = v; return v
+    def __contains__(self, k):
+        if dict.__contains__(self, k): return True
+        try: self[k]; return True
+        except KeyError: return False
+
+
+CAST_CALIBRE = dict(CAST)   # les 7 voix mesurées et réglées à la main (v27–v36)
+CAST = _Table(CAST, cast_de)
+DEBIT = _Table(DEBIT, lambda nom: 5.6 if _naturelle(nom)[5] > 1.0 else 5.4 if _naturelle(nom)[0].startswith('fr_FR-siwis') else 6.1)
+SYL = re.compile(r'[aeiouyéèêëàâîïôûœ]+', re.I)
+MOTEUR = os.environ.get('VOIX_MOTEUR', 'piper')
+REFS_DIR = os.path.expanduser(os.environ.get('VOIX_REFS', '~/.cache/massamba-models/voix-refs'))
+REFS = json.load(open(f'{REFS_DIR}/refs.json', encoding='utf-8')) if MOTEUR == 'qwen3' and os.path.isfile(f'{REFS_DIR}/refs.json') else {}
+QWEN_PY = os.environ.get('QWEN_PY', sys.executable)
+
+def compress_silences(y, ph, sr, keep=0.07, minsil=0.12):
+    # raccourcit chaque silence interne > minsil à keep (les voix MLS lisent comme un livre audio) ; phonèmes recalés
+    hop = int(0.01 * sr); e = np.array([np.sqrt(np.mean((y[k:k + hop].astype(np.float32) / 32768) ** 2)) for k in range(0, len(y), hop)])
+    thr = max(0.012, 0.06 * e.max()); quiet = e < thr
+    cuts = []; k = 0
+    while k < len(quiet):
+        if quiet[k]:
+            j = k
+            while j < len(quiet) and quiet[j]: j += 1
+            if k > 0 and j < len(quiet) and (j - k) * 0.01 > minsil: cuts.append((k * hop + int(keep / 2 * sr), j * hop - int(keep / 2 * sr)))
+            k = j
+        else: k += 1
+    if not cuts: return y, ph
+    parts, last, removed = [], 0, []
+    for a, b in cuts: parts.append(y[last:a]); removed.append((a / sr, (b - a) / sr)); last = b
+    parts.append(y[last:])
+    def mapt(t):
+        d = 0.0
+        for a, r in removed:
+            if t > a + r: d += r
+            elif t > a: d += t - a
+        return t - d
+    return np.concatenate(parts), [dict(p, t0=mapt(p['t0']), t1=mapt(p['t1'])) for p in ph]
+
+OPEN = {}
+for ph in 'mbp': OPEN[ph] = 0
+for ph in ['f', 'v', 's', 'z', 'ʃ', 'ʒ', 't', 'd', 'n', 'ɲ', 'i', 'j', 'u', 'y', 'w', 'ɥ']: OPEN[ph] = 1
+for ph in ['l', 'ʁ', 'r', 'k', 'ɡ', 'g', 'ɔ', 'o', 'ø', 'ə']: OPEN[ph] = 2
+for ph in ['ɛ', 'œ', 'e']: OPEN[ph] = 3
+for ph in ['a', 'ɑ']: OPEN[ph] = 4
+_voices = {}
+def voice(m):
+    # include_alignments (Piper ≥ 1.8, REA 19/10/2026 : piper/voice.py l. 165-185) : le modèle est patché EN MÉMOIRE pour
+    # sortir la durée de chaque phonème (tenseur w_ceil) ; le son reste identique à l'échantillon près (vérifié : Koffi,
+    # Coumba). Ces durées donnent l'instant réel de chaque mot aux sous-titres (compose.words_of).
+    if m not in _voices: _voices[m] = PiperVoice.load(P + m + '.onnx', include_alignments=True)
+    return _voices[m]
+def _alignements(v, c):
+    """(phonème, échantillons) d'un morceau Piper. L'aligneur de Piper abandonne tout le morceau dès qu'un phonème manque
+    à la table du modèle (« ̃ » nasal de gilles-low : Koffi, Baye, Modou perdaient leur 2e phrase) ; ici ce phonème est
+    sauté (il ne produit aucun identifiant) et le reste est aligné ; au moindre désaccord, rien n'est inventé ([])."""
+    if c.phoneme_alignments: return [(a.phoneme, int(a.num_samples)) for a in c.phoneme_alignments]
+    if c.phoneme_id_samples is None or not c.phonemes: return []
+    idm = v.config.phoneme_id_map; pad = list(idm.get('_', [])); ids = list(c.phoneme_ids); smp = c.phoneme_id_samples
+    i, out = 0, []
+    for p in ['^'] + list(c.phonemes) + ['$']:
+        exp = idm.get(p)
+        if not exp: continue
+        j = i
+        for q in list(exp) + (pad if p != '$' else []):
+            if j >= len(ids) or ids[j] != q: return []
+            j += 1
+        out.append((p, int(sum(smp[i:j])))); i = j
+    return out if i == len(ids) else []
+def bornes_mots(ph):
+    """[[t0, t1], …] de chaque mot prononcé (groupes de phonèmes entre espaces et ponctuations), en secondes depuis le
+    début de la réplique ; [] si le moteur n'a pas donné d'alignement (Qwen3, Piper ancien)."""
+    G, cur = [], None
+    for p in ph:
+        if p['ph'] == '-': continue   # mot-outil soudé au suivant par espeak (« le-z ɑbutɛjaʒ » : liaison) : le mot ne se coupe pas là
+        if p['ph'] in SEPARATEURS_MOTS: cur = None; continue
+        if cur is None: cur = [round(p['t0'], 3), round(p['t1'], 3)]; G.append(cur)
+        else: cur[1] = round(p['t1'], 3)
+    return G
+SEPARATEURS_MOTS = set(' ^$_,.!?;:—…')
+
+MONTEE_QUESTION = 1.15   # 19/10/2026 : 1,22 → 1,15 (une question monte d'environ 2,4 demi-tons, sans percer)
+PENTE_AU_DELA = 0.15     # 19/10/2026 : 0,25 → 0,15 (au-delà du plafond, il ne reste que 15 % de l'excès)
+PLAFOND_F0 = float(os.environ.get('PLAFOND_F0', 1.25))   # v4 → v5 : 1,35 et 35 % laissaient Coumba à 1,62 × (question), Tantie Awa à 1,49 ×
+def shape(x, sr, f0_target, spread, formant, question, exclam, tempo=1.0, phrases=None):
+    x = x.astype(np.float64) / 32768
+    f0, t = pw.harvest(x, sr, f0_floor=60, f0_ceil=600, frame_period=5.0)
+    sp = pw.cheaptrick(x, f0, t, sr); ap = pw.d4c(x, f0, t, sr)
+    v = f0 > 0
+    if v.sum() < 5: return (x * 32767).astype(np.int16)
+    lf = np.log(f0[v]); mu = np.median(lf)
+    lf2 = np.log(f0_target) + (lf - mu) * spread
+    n = len(f0); idx = np.nonzero(v)[0]
+    # INTONATION PHRASE PAR PHRASE (19/10/2026, « Koffi aussi quand il dit que c'est pour fuir le patron, c'est aigu ») : la
+    # montée de question était posée à la fin de la RÉPLIQUE dès qu'elle contenait un « ? » — « Mes lunettes ? C'est pour fuir
+    # le patron. » montait sur « le patron » (167 Hz pour 120 visés). Chaque phrase garde désormais sa propre mélodie : montée
+    # sur la fin d'une question, appui sur une exclamation, légère descente en fin d'affirmation (déclinaison naturelle).
+    segs = []
+    if phrases:
+        tv = t[idx]
+        for ph_ in phrases:
+            k_ = np.nonzero((tv >= ph_['t0'] - 1e-3) & (tv < ph_['t1'] + 1e-3))[0]
+            if len(k_): segs.append((k_, ph_.get('fin', '.')))
+    if not segs: segs = [(np.arange(len(idx)), '?' if question else ('!' if exclam else '.'))]
+    for k_, fin_ in segs:
+        pos = (k_ - k_[0]) / max(1, k_[-1] - k_[0])
+        if fin_ == '?': lf2[k_] += np.where(pos > 0.72, (pos - 0.72) / 0.28 * np.log(MONTEE_QUESTION), 0)
+        elif fin_ == '!': lf2[k_] += np.log(1.05) * np.exp(-((pos - 0.25) / 0.2) ** 2) + np.log(1.07) * np.exp(-((pos - 0.85) / 0.12) ** 2)
+        else: lf2[k_] -= np.where(pos > 0.75, (pos - 0.75) / 0.25 * np.log(1.08), 0)
+    # PLAFOND DOUX DE LA HAUTEUR (18/10/2026, « le son est aigu par moments, pas tout le temps ») : mesuré sur la v3, les
+    # pointes partaient très au-dessus de la voix de chaque personnage — Petit Mamadou 538 Hz pour 275 visés (« Papi ! »),
+    # accusations de Maman, Tantie Awa, Coumba à 350 Hz pour 195-215. Au-delà de PLAFOND_F0 × la hauteur visée, l'excès est
+    # réduit à 35 % (genou doux) : l'exclamation monte encore, sans percer.
+    plaf = np.log(f0_target * PLAFOND_F0); lf2 = np.where(lf2 > plaf, plaf + (lf2 - plaf) * PENTE_AU_DELA, lf2)
+    f0n = f0.copy(); f0n[v] = np.exp(lf2)
+    if formant != 1.0:  # dilate l'enveloppe spectrale (formants plus hauts = timbre d'enfant)
+        fb = sp.shape[1]; src = np.clip(np.arange(fb) / formant, 0, fb - 1)
+        sp = np.array([np.interp(src, np.arange(fb), row) for row in sp])
+    y = pw.synthesize(f0n, sp, ap, sr, frame_period=5.0 / tempo)   # tempo > 1 : même voix, même hauteur, dite plus vite
+    return (np.clip(y, -1, 1) * 32767).astype(np.int16)
+
+def hauteur(y, sr):
+    """hauteur ROBUSTE (Hz) des trames voisées fortes où Harvest et DIO s'accordent à 15 % près — la même mesure que le
+    contrôle (sonie.aigus) : (médiane, p95, max) ou None si trop peu de trames."""
+    x = np.asarray(y, np.float64); x = x / 32768 if np.abs(x).max() > 2 else x
+    f0, t = pw.harvest(x, sr, f0_floor=60, f0_ceil=900, frame_period=10)
+    fd, td = pw.dio(x, sr, f0_floor=60, f0_ceil=900, frame_period=10); fd = pw.stonemask(x, fd, td, sr)
+    m = min(len(f0), len(fd)); f0, fd = f0[:m], fd[:m]
+    hp = int(0.01 * sr); e = np.array([np.sqrt(np.mean(x[max(0, int(tt * sr) - hp):int(tt * sr) + hp] ** 2)) for tt in t[:m]])
+    # MÊME MESURE QUE LE CONTRÔLE (19/10/2026) : trames > 30 % du pic, comme sonie.aigus — à 10 %, le souffle de choc de Maman
+    # mesurait 196 Hz ici et 233 Hz au contrôle (sa partie forte, la seule entendue, était aiguë)
+    v = f0[(f0 > 0) & (fd > 0) & (np.abs(np.log(np.maximum(fd, 1) / np.maximum(f0, 1))) < 0.15) & (e > 0.3 * (e.max() + 1e-12))]
+    return (float(np.median(v)), float(np.percentile(v, 95)), float(v.max())) if len(v) >= 10 else None
+
+
+# NORME DE HAUTEUR DE CHAQUE RÉPLIQUE (19/10/2026, « la voix est encore aiguë par moments ») : mesurée APRÈS la synthèse avec
+# la mesure du contrôle, la réplique est refaite (cible recentrée, étendue resserrée) jusqu'à respecter la norme
+NORME_HAUTEUR = {'mediane': 0.06, 'p95': 1.25, 'max': 1.35}
+# la boucle vise plus serré que le contrôle (19/10/2026 : Tantie « Modou ! Mon loyer là… » sortait de la boucle à p95 1,227
+# et se mesurait 1,26 dans le fichier final, au débit de sa réplique) : marge de garde de 0,03
+NORME_SYNTHESE = {'mediane': 0.04, 'p95': 1.22, 'max': 1.32}
+
+
+def forme_mesuree(x, sr, f0t, spread, fm, question, exclam, tempo=1.0, phrases=None, tours=6):
+    cible, et = float(f0t), float(spread); y = shape(x, sr, cible, et, fm, question, exclam, tempo, phrases)
+    for _ in range(tours):
+        h = hauteur(y, sr)
+        if not h: break
+        med, p95, mx = h[0] / f0t, h[1] / f0t, h[2] / f0t
+        N_ = NORME_SYNTHESE
+        if abs(med - 1) <= N_['mediane'] and p95 <= N_['p95'] and mx <= N_['max']: break
+        cible /= med if abs(med - 1) > N_['mediane'] * 0.5 else 1.0
+        if p95 > N_['p95'] or mx > N_['max']: et *= 0.8
+        y = shape(x, sr, cible, et, fm, question, exclam, tempo, phrases)
+    return y
+
+
+def synth(qui, texte, ls=None):
+    m, spk, f0t, spread, ls0, fm = CAST[qui]
+    ls = ls or ls0
+    cfg = SynthesisConfig(length_scale=ls, speaker_id=spk) if spk is not None else SynthesisConfig(length_scale=ls)
+    v = voice(m)
+    chunks = list(v.synthesize(texte.replace('…', ','), syn_config=cfg, include_alignments=True))
+    sr = chunks[0].sample_rate
+    a = np.frombuffer(b''.join(c.audio_int16_bytes for c in chunks), np.int16)
+    ph, tt = [], 0.0
+    phrases, tp = [], 0.0
+    for c in chunks:
+        d_ = len(c.audio_int16_bytes) / 2 / sr
+        phrases.append({'ph': '|', 't0': tp, 't1': tp + d_, 'open': 0, 'fin': next((q for q in reversed(c.phonemes or []) if q in '.?!'), '.')}); tp += d_
+    for c in chunks:
+        for s, n_ in _alignements(v, c):
+            d = n_ / sr
+            if s in ('ˈ', 'ˌ', 'ː', '̃') and ph: ph[-1]['t1'] += d
+            else: ph.append({'ph': s, 't0': tt, 't1': tt + d, 'open': OPEN.get(s, 0 if s in ' ^$_,.!?' else 1)})
+            tt += d
+    a, ph = compress_silences(a, ph + phrases, sr)
+    phrases = [p for p in ph if p.get('ph') == '|' and 'fin' in p]; ph = [p for p in ph if not (p.get('ph') == '|' and 'fin' in p)]
+    y = forme_mesuree(a, sr, f0t, spread, fm, '?' in texte, '!' in texte, phrases=phrases)
+    if sr != SR:
+        import scipy.signal as ss; y = ss.resample_poly(y.astype(np.float64), SR, sr).astype(np.int16); ph = [dict(p) for p in ph]
+    meter = pyln.Meter(SR); yf = y.astype(np.float64) / 32768
+    probe = np.tile(yf, int(np.ceil(0.8 * SR / max(1, len(yf)))) + 1) if len(yf) < 0.8 * SR else yf  # réplique très courte : mesurée répétée
+    lo = meter.integrated_loudness(probe); yf = yf * (10 ** ((-16.0 - lo) / 20))
+    y = (np.clip(yf, -1, 1) * 32767).astype(np.int16)
+    # silences de tête et de queue retirés (le rythme est posé par le montage)
+    e = np.abs(y.astype(np.float32)); thr = 0.02 * 32767
+    i0 = max(0, int(np.argmax(e > thr)) - int(0.03 * SR)); i1 = min(len(y), len(y) - int(np.argmax(e[::-1] > thr)) + int(0.06 * SR))
+    off = i0 / SR; y = y[i0:i1]
+    ph = [dict(p, t0=max(0, p['t0'] - off), t1=max(0, p['t1'] - off)) for p in ph if p['t1'] - off > 0]
+    return y, ph
+
+def synth_m(qui, texte, ls=None):
+    """synth() mémorisée sur disque par réplique (19/10/2026, « un film entier en 1 minute ») : clé = personnage, texte,
+    vitesse + source de ce module ; une réplique inchangée n'est plus refaite (22 répliques : 158 s → quelques secondes)."""
+    # CLÉ RESTREINTE À LA SYNTHÈSE (19/10/2026, « le temps de production est encore long ») : la v14 a refait ses 22 répliques
+    # (335 s) parce qu'une ligne de main() avait changé ; la clé ne prend plus que la partie du module qui fabrique le son (tout
+    # ce qui précède synth_m : voix, alignements, hauteur, forme, synth) — un changement là refait tout, ailleurs rien
+    try:
+        import memo
+        return memo.memo(synth, qui, texte, ls, _cle=(qui, texte, ls, _empreinte_synthese()), _fonction_seule=True)
+    except ImportError:
+        return synth(qui, texte, ls)
+_EMPREINTE = []
+def _empreinte_synthese():
+    if not _EMPREINTE:
+        import hashlib
+        src = open(os.path.abspath(__file__), encoding='utf-8').read()
+        _EMPREINTE.append(hashlib.sha1(src[:src.index('\ndef synth_m(')].encode()).hexdigest())
+    return _EMPREINTE[0]
+def vitesse_reprise(L, y):
+    """length_scale de la reprise quand le débit mesuré s'écarte de plus de 8 % de celui de la chaîne (None sinon) ; une chute
+    n'est jamais accélérée (dite calmement, et comprise : Whisper)."""
+    nsyl = len(SYL.findall(L['texte'])); rate = nsyl / (len(y) / SR)
+    if abs(rate / DEBIT[L['qui']] - 1) > 0.08 and not (L.get('chute') and rate > DEBIT[L['qui']]):
+        return max(0.55, min(1.3, CAST[L['qui']][4] * rate / DEBIT[L['qui']]))
+    return None
+def _une(qui, texte, ls):
+    return synth_m(qui, texte, ls)[0]
+def prechauffe(H):
+    """VOIX EN PARALLÈLE (19/10/2026) : les répliques Piper sont synthétisées sur tous les cœurs AVANT la boucle du minutage
+    (qui reste séquentielle : chaque réplique y retrouve sa voix dans la mémoire) — 1er passage, puis les reprises de vitesse."""
+    reps = [L for S in H['sketchs'] for L in S['repliques'] if L['qui'] not in REFS]
+    n = min(len(reps), os.cpu_count() or 1)
+    if n < 2 or os.environ.get('MEMO') == '0': return
+    import multiprocessing as mp_
+    with mp_.get_context('fork').Pool(n) as pool:
+        ys = pool.starmap(_une, [(L['qui'], L['texte'], None) for L in reps])
+        sec = [(L['qui'], L['texte'], v) for L, y in zip(reps, ys) for v in [vitesse_reprise(L, y)] if v is not None]
+        if sec: pool.starmap(_une, sec)
+
+
+def _finit(y, sr_in):
+    """rééchantillonnage, sonie −16 LUFS, silences de tête et de queue retirés → (int16 à SR, décalage s)."""
+    if sr_in != SR:
+        import scipy.signal as ss; y = ss.resample_poly(y.astype(np.float64), SR, sr_in).astype(np.int16)
+    meter = pyln.Meter(SR); yf = y.astype(np.float64) / 32768
+    probe = np.tile(yf, int(np.ceil(0.8 * SR / max(1, len(yf)))) + 1) if len(yf) < 0.8 * SR else yf
+    lo = meter.integrated_loudness(probe); yf = yf * (10 ** ((-16.0 - lo) / 20))
+    y = (np.clip(yf, -1, 1) * 32767).astype(np.int16)
+    e = np.abs(y.astype(np.float32)); thr = 0.02 * 32767
+    i0 = max(0, int(np.argmax(e > thr)) - int(0.03 * SR)); i1 = min(len(y), len(y) - int(np.argmax(e[::-1] > thr)) + int(0.06 * SR))
+    return y[i0:i1], i0 / SR
+
+
+def texte_tts(t):
+    """texte dit par le modèle : interjections étirées ramenées à leur forme courte (« Ehhh » se faisait épeler),
+    ponctuation doublée simplifiée ; le sous-titre garde le texte écrit."""
+    t = re.sub(r'([A-Za-zÀ-ÿ])\1{2,}', r'\1', t.replace('…', ','))
+    return re.sub(r'([?!])[?!]+', r'\1', t)
+
+
+def qwen_fichier(qui, texte, graine=7):
+    r = REFS[qui]; h = hashlib.sha1((f"{r['wav']}|{r.get('texte')}|{texte}" + (f'|{graine}' if graine != 7 else '')).encode()).hexdigest()[:12]
+    return f'voix/qwen/{h}.wav'
+
+
+def _lance_qwen(J):
+    os.makedirs('voix/qwen', exist_ok=True); json.dump(J, open('voix/qwen/travaux.json', 'w'), ensure_ascii=False)
+    subprocess.run([QWEN_PY, '-I', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'voix_qwen.py'), 'voix/qwen/travaux.json'], check=True)
+
+
+_ASR = None
+def _wer(f, texte):
+    """erreur de mots de Whisper small (MIT) sur une prise (chiffres en lettres, parler ivoirien exclu : mots.py)."""
+    global _ASR
+    if _ASR is None:
+        from faster_whisper import WhisperModel
+        _ASR = WhisperModel('small', device='cpu', compute_type='int8', download_root=os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/whisper')
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import mots
+    seg, _ = _ASR.transcribe(f, language='fr', beam_size=5)
+    return mots.erreur_mots(texte, ' '.join(x.text for x in seg))
+
+
+PRISES = {}   # (qui, texte) → fichier de la meilleure prise
+def qwen_lot(H, graines=(7, 8, 9), seuil=0.34):
+    """toutes les répliques des personnages qui ont une voix de référence, en un seul passage du modèle ; chaque prise est
+    réécoutée par Whisper, et une réplique mal comprise est refaite avec une autre graine (la meilleure prise est gardée)."""
+    reste = [(L['qui'], L['texte'], f"{S['id']}-{li}") for S in H['sketchs'] for li, L in enumerate(S['repliques']) if L['qui'] in REFS]
+    best = {}
+    for g in graines:
+        if not reste: break
+        _lance_qwen([{'id': i, 'texte': texte_tts(t), 'ref': f"{REFS_DIR}/{REFS[q]['wav']}", 'ref_texte': REFS[q].get('texte'),
+                      'graine': g, 'sortie': qwen_fichier(q, t, g)} for q, t, i in reste])
+        suivant = []
+        for q, t, i in reste:
+            f = qwen_fichier(q, t, g); e = _wer(f, t)
+            if (q, t) not in best or e < best[(q, t)][1]: best[(q, t)] = (f, e)
+            if e > seuil: suivant.append((q, t, i))
+            print(f'  voix clonée {i} (graine {g}) : erreur de mots {e:.2f}', flush=True)
+        reste = suivant
+    PRISES.update({k: v[0] for k, v in best.items()})
+    json.dump({f'{q} | {t}': {'fichier': f, 'erreur_mots': round(e, 3)} for (q, t), (f, e) in best.items()},
+              open('voix/qwen/prises.json', 'w'), ensure_ascii=False, indent=1)
+
+
+def synth_qwen(qui, texte, chute=False):
+    with wave.open(PRISES.get((qui, texte)) or qwen_fichier(qui, texte)) as w: sr = w.getframerate(); a = np.frombuffer(w.readframes(w.getnframes()), np.int16)
+    _, _, f0t, spread, _, fm = CAST[qui]
+    f0, _ = pw.harvest(a.astype(np.float64) / 32768, sr, f0_floor=60, f0_ceil=600, frame_period=10.0); v = f0[f0 > 0]
+    cible = f0t   # remède désigné par JEV (17/10) : la voix est posée ENTIÈREMENT sur sa hauteur naturelle (plus de mi-chemin)
+    # débit de la chaîne (DEBIT) : la voix clonée garde le débit de sa référence ; on l'accélère jusqu'à ×1,3 au plus, jamais
+    # sur une chute (dite calmement, et comprise)
+    debit = len(SYL.findall(texte)) / max(0.3, len(a) / sr * 0.82)   # ≈ part parlée de la prise (silences de bord retirés ensuite)
+    tempo = 1.0 if chute else float(np.clip(DEBIT[qui] / max(1e-3, debit), 1.0, 1.3))
+    y = forme_mesuree(a, sr, cible, 1.0, 1.0, '?' in texte, '!' in texte, tempo)   # étendue 1,0 : l'intonation propre de la voix est gardée (JEV)
+    y, _ = _finit(y, sr)
+    return y, []   # formes de bouche : levres.py (Rhubarb) lit l'audio ensuite
+
+
+def main():
+    H = json.load(open('histoire.json'))
+    os.makedirs('voix', exist_ok=True)
+    if REFS: qwen_lot(H)
+    prechauffe(H)
+    TURN, PRE_CHUTE, CARD, LEAD, TAIL = 0.26, 0.31, 1.0, 0.3, 1.4
+    PRE = float(os.environ.get('VOIX_PRE', 0.8))   # avant le 1er mot d'un sketch : la caméra finit de pousser du large vers celui qui
+                                                  # parle (tourne.py, ouverture 1,2 s) ; sinon la 1re réplique est dite visage minuscule (v24)
+    REACTION, REACTION_TAG = float(os.environ.get('VOIX_REACTION', 2.0)), 0.9   # tenue après une chute finale / après la réplique qui suit la chute (compilation de blagues : 0,8 s)
+    t = LEAD; lines = []; cards = []; sons = []   # sons : interjections d'intonation (intonations.py, 18/10/2026)
+    import intonations as IT
+    for si, S in enumerate(H['sketchs']):
+        if si > 0: cards.append({'t0': t, 't1': t + CARD, 'apres': S['id']}); t += CARD + 0.25
+        S['t0'] = t; grogne_fait = set()
+        for li, L in enumerate(S['repliques']):
+            clone = L['qui'] in REFS
+            y, ph = synth_qwen(L['qui'], L['texte'], bool(L.get('chute'))) if clone else synth_m(L['qui'], L['texte'])
+            nsyl = len(SYL.findall(L['texte'])); rate = nsyl / (len(y) / SR)
+            ls = None if clone else vitesse_reprise(L, y)   # la vitesse suit le débit de la chaîne
+            if ls is not None: y, ph = synth_m(L['qui'], L['texte'], ls); rate = nsyl / (len(y) / SR)
+            L = dict(L, debit=round(rate, 2), moteur='qwen3' if clone else 'piper')
+            f = f'voix/{S["id"]}-{li}.wav'
+            with wave.open(f, 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(y.tobytes())
+            if L.get('chute'): t += PRE_CHUTE
+            if li == 0: t += PRE
+            # enveloppe d'énergie à 100 Hz (bouche)
+            hop = SR // 100; env = [float(np.sqrt(np.mean((y[k:k + hop].astype(np.float32) / 32768) ** 2))) for k in range(0, len(y), hop)]
+            mx = max(env) or 1; env = [round(min(1, e / mx), 3) for e in env]
+            lines.append(dict(L, sketch=S['id'], wav=f, t0=round(t, 3), dur=round(len(y) / SR, 3), phonemes=ph, mots=bornes_mots(ph), env=env,
+                              phonemes_piper=[[p_['ph'], round(p_['t0'], 3), round(p_['t1'], 3)] for p_ in ph]))   # levres.py remplace « phonemes » par les visèmes Rhubarb ; ceux du texte restent pour le juge de la bouche (porte B)
+            t += len(y) / SR + TURN
+            # GROGNEMENT D'ÉCOUTE : celui à qui l'on fait une réplique de frime ou d'excuse fait « hmm… » avant de répondre
+            # (inséré dans le minutage : rien n'est couvert) — au plus un par sketch (TikTok : ≈ 5 sons vocaux par minute)
+            g = IT.grognement(L, S['repliques'][li + 1] if li + 1 < len(S['repliques']) else None, grogne_fait) if not grogne_fait else None
+            if g and os.environ.get('VOIX_INTONATIONS', '1') == '1':
+                yg = IT.son(g, 'grogne', len(sons)); fg = f'voix/{S["id"]}-{li}-grogne.wav'
+                with wave.open(fg, 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(yg.tobytes())
+                t0g = t - TURN + 0.12; sons.append({'sketch': S['id'], 'qui': g, 'sorte': 'grogne', 't0': round(t0g, 3), 'dur': round(len(yg) / SR, 3), 'wav': fg})
+                t = t0g + len(yg) / SR + 0.12; grogne_fait.add(g)
+        # RÉACTION TENUE après la chute (Afrikatoon : gros plan immobile 2,2–3,4 s ; récapitulatif comique, règle 5) : le plan
+        # de réaction existe vraiment (sinon il fait moins de 0,5 s et le montage le fond dans le plan précédent)
+        # la durée vient du sketch quand il la déclare (ton.py : témoin figé 2,2 à 4,5 s), sinon la valeur par défaut
+        t += float((S.get('reaction') or {}).get('duree_s', REACTION)) if S['repliques'][-1].get('chute') else REACTION_TAG
+        S['t1'] = t
+        # SOUFFLE DE CHOC sur la prise de fin de sketch (jeu.prise_t), dit par celui que montre le gros plan de réaction
+        # (tourne.py : le premier autre acteur de la scène)
+        ch = [x for x in lines if x['sketch'] == S['id'] and x.get('chute')]
+        if ch and os.environ.get('VOIX_INTONATIONS', '1') == '1':
+            c = ch[-1]; v_ = [n for n in S['acteurs'] if n != c['qui']]
+            if v_:
+                import jeu
+                yc = IT.son(v_[0], 'choc', si); fc = f'voix/{S["id"]}-choc.wav'
+                with wave.open(fc, 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(yc.tobytes())
+                sons.append({'sketch': S['id'], 'qui': v_[0], 'sorte': 'choc', 't0': round(jeu.prise_t(c), 3), 'dur': round(len(yc) / SR, 3), 'wav': fc})
+    # TIMBRE (18/10/2026, « la sortie son trop aiguë ») : chaque personnage égalisé sur la courbe spectrale des voix des TikTok
+    # de son registre (timbre.py ; 12 à 15 dB de souffle en trop vers 8–10 kHz), puis l'enveloppe de la bouche recalculée
+    if os.environ.get('VOIX_TIMBRE', '1') == '1':
+        import timbre
+        par = {}
+        for k, L in enumerate(lines): par.setdefault(L['qui'], []).append(k)
+        for q, ks in par.items():
+            ys = [timbre.lire(lines[k]['wav'])[0] for k in ks]
+            zs, _ = timbre.applique(ys, timbre.registre(CAST[q][2]), SR)
+            for k, z in zip(ks, zs):
+                timbre.ecrire(lines[k]['wav'], z, SR); y = (np.clip(z, -1, 1) * 32767).astype(np.int16)
+                hop = SR // 100; env = [float(np.sqrt(np.mean((y[j:j + hop].astype(np.float32) / 32768) ** 2))) for j in range(0, len(y), hop)]
+                mx = max(env) or 1; lines[k]['env'] = [round(min(1, e / mx), 3) for e in env]
+    # DURÉE MINIMALE (18/10/2026, épisodes 2 et 3 à 59,6 et 59,2 s : la rémunération TikTok exige PLUS d'une minute ;
+    # contrôle technique et normes de publication les refusaient) : il manque du temps → la réaction tenue après chaque
+    # chute s'allonge à parts égales (au plus +1,5 s par sketch, un temps comique de plus, jamais de vide en fin de film) ;
+    # tout ce qui suit est décalé d'autant (répliques, sons, cartes, bornes des sketchs)
+    cible = float(H.get('duree_cible_s') or 0) + 0.5
+    manque = cible - (t + TAIL)
+    if manque > 0 and H['sketchs']:
+        d_ = min(1.5, manque / len(H['sketchs'])); dec = 0.0
+        for S in H['sketchs']:
+            t1 = S['t1']; S['t0'] += dec
+            for L in lines + sons:
+                if L['sketch'] == S['id']: L['t0'] = round(L['t0'] + dec, 3)
+            for c in cards:
+                if c['apres'] == S['id']: c['t0'] += dec; c['t1'] += dec
+            dec += d_; S['t1'] = t1 + dec
+        t += dec
+        print(f'durée : +{dec:.2f} s de réaction tenue ({len(H["sketchs"])} sketchs) pour atteindre {cible:.1f} s', flush=True)
+    total = t + TAIL
+    mix = np.zeros(int(total * SR) + 1, np.float32)
+    for L in lines + sons:
+        with wave.open(L['wav']) as w: y = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
+        i = int(L['t0'] * SR); mix[i:i + len(y)] += y[:len(mix) - i]
+    mix = np.clip(mix, -1, 1)
+    with wave.open('voix/mix.wav', 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((mix * 32767).astype(np.int16).tobytes())
+    json.dump({'total': round(total, 3), 'sketchs': [{k: S[k] for k in ('id', 'titre', 'lieu', 'image', 'acteurs', 't0', 't1')} for S in H['sketchs']], 'cartes': cards, 'lines': lines, 'intonations': sons},
+              open('timeline.json', 'w'), ensure_ascii=False)
+    resume = ', '.join(f"{x['qui'].split()[0]} {x['sorte']} {x['t0']:.1f}" for x in sons)
+    print(f'{len(lines)} répliques, {len(sons)} sons d\'intonation ({resume}), durée {total:.1f} s')
+
+if __name__ == '__main__':
+    main()

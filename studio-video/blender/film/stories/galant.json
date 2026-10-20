@@ -1,0 +1,136 @@
+{
+ "title": "Le vieux galant",
+ "hook": "Papi drague au salon",
+ "decor": "Salon de coiffure",
+ "fps": 25,
+ "size": [
+  576,
+  1024
+ ],
+ "music": true,
+ "cast": [
+  {
+   "id": "prisca",
+   "name": "TATA PRISCA",
+   "voice": "jessica",
+   "height": 1.64,
+   "x": 0.35,
+   "pitch": 1.06
+  },
+  {
+   "id": "baye",
+   "name": "BAYE NDIAYE",
+   "voice": "gilles",
+   "height": 1.72,
+   "x": -0.4
+  },
+  {
+   "id": "nounou",
+   "name": "MAMAN NOUNOU",
+   "voice": "siwis",
+   "height": 1.6,
+   "x": -0.8,
+   "pitch": 0.95,
+   "enter": 9
+  }
+ ],
+ "beats": [
+  {
+   "who": "baye",
+   "pose": "rire",
+   "text": "Prisca, tu es belle comme un billet de dix mille.",
+   "react": {
+    "prisca": "choc"
+   },
+   "shot": "two"
+  },
+  {
+   "who": "prisca",
+   "pose": "rire",
+   "text": "Tonton, tu es venu me draguer ou me compter ?"
+  },
+  {
+   "who": "baye",
+   "pose": "neutre",
+   "text": "Les deux. Je suis un homme organisé."
+  },
+  {
+   "who": "prisca",
+   "pose": "neutre",
+   "text": "Bon. Qu’est-ce que tu m’offres, alors ?"
+  },
+  {
+   "who": "baye",
+   "pose": "haussement",
+   "text": "Je t’offre ma présence. Elle coûte très cher."
+  },
+  {
+   "who": "prisca",
+   "pose": "accuse",
+   "text": "Moi je veux un téléphone. Le dernier modèle."
+  },
+  {
+   "who": "baye",
+   "pose": "neutre",
+   "text": "Prends le mien. Il est très dernier : il a dix ans."
+  },
+  {
+   "who": "prisca",
+   "pose": "choc",
+   "text": "Tonton, ton téléphone a encore une antenne !"
+  },
+  {
+   "who": "baye",
+   "pose": "rire",
+   "text": "C’est pour capter les belles filles.",
+   "react": {
+    "prisca": "rire"
+   }
+  },
+  {
+   "who": "nounou",
+   "pose": "accuse",
+   "text": "Baye Ndiaye ! Tu captes qui, là ?",
+   "react": {
+    "baye": "choc"
+   },
+   "shot": "two"
+  },
+  {
+   "who": "baye",
+   "pose": "choc",
+   "text": "Nounou ! Je… je lui demandais le chemin."
+  },
+  {
+   "who": "nounou",
+   "pose": "accuse",
+   "text": "Le chemin ? Tu habites ce quartier depuis trente ans !"
+  },
+  {
+   "who": "baye",
+   "pose": "haussement",
+   "text": "Justement. Je vérifiais s’il avait changé."
+  },
+  {
+   "who": "prisca",
+   "pose": "haussement",
+   "text": "Maman Nounou, il m’a offert sa présence. Gratuitement.",
+   "react": {
+    "nounou": "choc"
+   }
+  },
+  {
+   "who": "nounou",
+   "pose": "rire",
+   "text": "Gratuitement ? Même moi, il me la fait payer.",
+   "react": {
+    "baye": "choc"
+   },
+   "shot": "cu"
+  }
+ ],
+ "punch": {
+  "beat": 14,
+  "emoji": "😂"
+ }
+}

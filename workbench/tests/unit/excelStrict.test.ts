@@ -1,0 +1,202 @@
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { describe, expect, it } from 'vitest';
+import { excelStrict, validMerges } from '../../server/services/excelStrict';
+import { designQA } from '../../server/services/designQA';
+import { houseXlsx } from '../../server/services/houseStyle';
+import { addLiveDashboard } from '../../server/services/liveDash';
+import { cloneData } from '../../server/services/dashRender';
+import { generatedModels, modelSpec, modelsFor } from '../../server/services/designModels';
+
+// A synthetic book of provisions (no real data): long English column names, codes, currencies, a date per row.
+const COLS = [
+  'Ftotal In Local Currency',
+  'Relationship',
+  'Group Name',
+  'PDO Amount In Local Currency',
+  'CProvisions Per Local Regulatory In Local Currency',
+  'Status (P/NP)',
+  'Security Currency',
+  'Date',
+];
+const ROWS = Array.from({ length: 400 }, (_, i) => ({
+  'Ftotal In Local Currency': ((i * 7919) % 9973) * 1000 + 500,
+  Relationship: `CLIENT ${String.fromCharCode(65 + (i % 26))}${i % 37}`,
+  'Group Name': ['GROUPE NORD', 'GROUPE SUD', 'GROUPE EST', 'GROUPE OUEST', 'AUTRES'][i % 5],
+  'PDO Amount In Local Currency': i % 4 ? 0 : ((i * 31) % 97) * 1000,
+  'CProvisions Per Local Regulatory In Local Currency': ((i * 13) % 50) * 2000,
+  'Status (P/NP)': i % 3 ? 'P' : 'NP',
+  'Security Currency': ['XOF', 'EUR', 'USD'][i % 3],
+  Date: `${2019 + (i % 8)}-${String((i % 12) + 1).padStart(2, '0')}-15`,
+}));
+
+describe('RÈGLES STRICTES D’EXCEL (ce que le validateur Open XML ne voit pas)', () => {
+  it('keeps only merges Excel accepts', () => {
+    expect(validMerges(['A1:B2', 'AT11:AS12', 'C3:C3', 'B2:D4', 'E1:E2', 'bad'])).toEqual(['A1:B2', 'E1:E2']);
+  });
+  const broken = () => {
+    const z = unzipSync(houseXlsx(['A', 'B'], [{ A: 'x', B: 1 }], { title: 'T', chart: 'none' }));
+    const sheet = Object.keys(z).find((k) => /^xl\/worksheets\/[^/]+\.xml$/.test(k))!;
+    let x = strFromU8(z[sheet]!);
+    x = /<mergeCells/.test(x)
+      ? x.replace(/<mergeCells\b[^>]*>/, '<mergeCells count="99"><mergeCell ref="D10:C11"/>')
+      : x.replace(
+          '</sheetData>',
+          '</sheetData><mergeCells count="1"><mergeCell ref="D10:C11"/></mergeCells>',
+        );
+    x = x.replace(/<c r="A1"([^>]*?)(\/?)>/, '<c r="A1" s="9999"$2>');
+    z[sheet] = strToU8(x);
+    z['xl/drawings/d.xml'] = strToU8(
+      '<xdr:wsDr xmlns:xdr="x"><xdr:twoCellAnchor><xdr:from><xdr:col>5</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>9</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>2</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>3</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to></xdr:twoCellAnchor></xdr:wsDr>',
+    );
+    return { z, sheet };
+  };
+  it('repairs a workbook Excel would refuse (reversed merge, unknown style, inverted drawing anchor)', () => {
+    const { z, sheet } = broken();
+    const r = excelStrict(z);
+    expect(r.fixes.join(' ')).toMatch(/fusion/);
+    expect(r.fixes.join(' ')).toMatch(/style inexistant/);
+    expect(r.fixes.join(' ')).toMatch(/ancrage/);
+    expect(strFromU8(z[sheet]!)).not.toContain('D10:C11');
+    expect(strFromU8(z['xl/drawings/d.xml']!)).toContain(
+      '<xdr:from><xdr:col>2</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>3</xdr:row>',
+    );
+    // The delivery check runs these rules on every workbook.
+    const qa = designQA('t.xlsx', zipSync(broken().z))!;
+    expect(qa.fixes.join(' ')).toMatch(/fusion/);
+    expect(excelStrict(unzipSync(qa.data as Uint8Array)).fixes).toEqual([]);
+    expect(qa.fixes.length + qa.warnings.length).toBeGreaterThan(0);
+  });
+  it('reports duplicate sheet names (case-insensitive, as Excel compares them)', () => {
+    const z = unzipSync(houseXlsx(['A'], [{ A: 1 }], { title: 'T', chart: 'none' }));
+    z['xl/workbook.xml'] = strToU8(
+      strFromU8(z['xl/workbook.xml']!).replace(
+        '</sheets>',
+        '<sheet name="DONNÉES" sheetId="9" r:id="rId99"/></sheets>',
+      ),
+    );
+    expect(excelStrict(z).warnings.join(' ')).toMatch(/même nom/);
+  });
+  it('every Excel catalogue model gives a live dashboard Excel opens without repair', () => {
+    const models = [
+      ...modelsFor('excel'),
+      ...generatedModels('excel', 0),
+      ...generatedModels('excel', 1),
+      ...generatedModels('excel', 2),
+    ];
+    expect(models.length).toBeGreaterThanOrEqual(60);
+    const base = houseXlsx(COLS, ROWS, { title: 'Provisions', chart: 'none' });
+    const failures: string[] = [];
+    for (const m of models) {
+      const r = addLiveDashboard(
+        base,
+        modelSpec(m.palette, m.layout),
+        cloneData('Tableau de bord', COLS, ROWS),
+      );
+      if (!r) continue;
+      const res = excelStrict(unzipSync(r.bytes));
+      if (res.fixes.length || res.warnings.length)
+        failures.push(`${m.id} (${m.layout}): ${[...res.fixes, ...res.warnings].join(' ; ')}`);
+    }
+    expect(failures).toEqual([]);
+  });
+  it('a sheet already called « TABLEAU DE BORD » is not duplicated', () => {
+    const z0 = unzipSync(houseXlsx(COLS, ROWS, { title: 'X', chart: 'none' }));
+    z0['xl/workbook.xml'] = strToU8(
+      strFromU8(z0['xl/workbook.xml']!).replace(/<sheet name="[^"]*"/, '<sheet name="TABLEAU DE BORD"'),
+    );
+    const r = addLiveDashboard(
+      zipSync(z0),
+      modelSpec(modelsFor('excel')[0]!.palette, modelsFor('excel')[0]!.layout),
+      cloneData('Tableau de bord', COLS, ROWS),
+    )!;
+    const wb = strFromU8(unzipSync(r.bytes)['xl/workbook.xml']!);
+    expect(wb).toContain('name="Tableau de bord vivant"');
+    expect(excelStrict(unzipSync(r.bytes)).warnings).toEqual([]);
+  });
+  it('a workbook written by openpyxl (empty <definedNames />) gets ONE block of names with the slicers', () => {
+    const z0 = unzipSync(houseXlsx(COLS, ROWS, { title: 'X', chart: 'none' }));
+    z0['xl/workbook.xml'] = strToU8(
+      strFromU8(z0['xl/workbook.xml']!)
+        .replace(/<definedNames>[\s\S]*?<\/definedNames>/, '')
+        .replace('</sheets>', '</sheets><definedNames />'),
+    );
+    const r = addLiveDashboard(
+      zipSync(z0),
+      modelSpec(modelsFor('excel')[0]!.palette, modelsFor('excel')[0]!.layout),
+      cloneData('Tableau de bord', COLS, ROWS),
+    )!;
+    const wb = strFromU8(unzipSync(r.bytes)['xl/workbook.xml']!);
+    expect(wb.match(/<definedNames\b/g)).toHaveLength(1);
+    expect(wb).toContain('Slicer_');
+  });
+  it('repairs a workbook that already has two blocks of names', () => {
+    const z = unzipSync(houseXlsx(['A'], [{ A: 1 }], { title: 'T', chart: 'none' }));
+    z['xl/workbook.xml'] = strToU8(
+      strFromU8(z['xl/workbook.xml']!)
+        .replace(/<definedNames>[\s\S]*?<\/definedNames>/, '')
+        .replace(
+          '</sheets>',
+          '</sheets><definedNames><definedName name="Slicer_A">#N/A</definedName></definedNames><definedNames />',
+        ),
+    );
+    const r = excelStrict(z);
+    expect(r.fixes.join(' ')).toMatch(/noms définis/);
+    const wb = strFromU8(z['xl/workbook.xml']!);
+    expect(wb.match(/<definedNames\b/g)).toHaveLength(1);
+    expect(wb).toContain('Slicer_A');
+  });
+});
+
+describe('segments orphelins (feuille du tableau de bord retirée, slicers restés) : Excel réparait le fichier', () => {
+  it('the strict pass removes the orphan slicers with their caches, names and workbook list', async () => {
+    const { addLiveDashboard } = await import('../../server/services/liveDash');
+    const { removeSheets } = await import('../../server/services/cloneXlsx');
+    const { cloneData } = await import('../../server/services/dashRender');
+    const { houseXlsx } = await import('../../server/services/houseStyle');
+    const { SPEC } = await import('../fixtures/dashSpec');
+    const rows = Array.from({ length: 40 }, (_, i) => ({ Client: `C${i % 5}`, Segment: ['A', 'B', 'C'][i % 3]!, Montant: 1000 * (i + 1) }));
+    const cols = ['Client', 'Segment', 'Montant'];
+    const live = addLiveDashboard(houseXlsx(cols, rows, { title: 'X', chart: 'none' }), SPEC, cloneData('V', cols, rows))!;
+    const half = removeSheets(live.bytes, ['Tableau de bord', 'Données du tableau de bord'])!;
+    const z = unzipSync(half);
+    expect(z['xl/slicers/slicer-live.xml']).toBeTruthy();
+    const { fixes } = excelStrict(z);
+    expect(fixes.some((f) => /orphelin/.test(f))).toBe(true);
+    expect(Object.keys(z).some((k) => /^xl\/slicers\//.test(k) || /^xl\/slicerCaches\//.test(k))).toBe(false);
+    const wb = strFromU8(z['xl/workbook.xml']!);
+    expect(wb).not.toMatch(/Slicer_|x14:slicerCache|46BE6895/);
+    expect(strFromU8(z['[Content_Types].xml']!)).not.toMatch(/slicer/);
+    expect(strFromU8(z['xl/_rels/workbook.xml.rels']!)).not.toMatch(/slicerCache/);
+    // the table sheet left by v50 stays a valid sheet (its table part is still related to it)
+    expect(wb).toContain('Données filtrables');
+  });
+});
+
+describe('texte écrit comme formule (« = Total Douteux (100 %) ») : Excel réparait le fichier', () => {
+  it('turns the unreadable formula back into a text cell and leaves real formulas alone', () => {
+    const z = unzipSync(houseXlsx(['A', 'B'], [{ A: 'x', B: 1 }, { A: 'y', B: 2 }], { title: 'T', chart: 'none' }));
+    const sheet = Object.keys(z).find((k) => /^xl\/worksheets\/[^/]+\.xml$/.test(k))!;
+    let x = strFromU8(z[sheet]!);
+    x = x.replace(
+      /<\/sheetData>/,
+      '<row r="40"><c r="A40" s="0"><f> Total Douteux (100 %)</f><v /></c><c r="B40" s="0"><f>SUBTOTAL(9,B2:B3)</f><v>3</v></c><c r="C40" t="str"><f>SOMME(B2;B3)</f><v>3</v></c><c r="D40"><f>UNIQUE(A2:A3)</f><v></v></c><c r="E40" s="0"><f>B40/\'Feuille 1\'!B:B</f><v>133.4</v></c><c r="F40" s="0"><f>E40/B40</f><v>0.5</v></c></row></sheetData>',
+    );
+    z[sheet] = strToU8(x);
+    const { fixes } = excelStrict(z);
+    const out = strFromU8(z[sheet]!);
+    expect(fixes.some((f) => /texte\(s\) écrit\(s\) comme formule/.test(f))).toBe(true);
+    expect(fixes.some((f) => /traduite\(s\)/.test(f))).toBe(true);
+    // A share of a column written as a division by the whole column: divided by the column's total, recalculated on load.
+    expect(fixes.some((f) => /division\(s\) par une colonne entière/.test(f))).toBe(true);
+    expect(out).toContain('<c r="E40" s="0"><f>B40/SUM(\'Feuille 1\'!B:B)</f></c>');
+    expect(out).toContain('<c r="F40" s="0"><f>E40/B40</f><v>0.5</v></c>');
+    expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<calcPr\b[^>]*fullCalcOnLoad="1"/);
+    expect(out).toContain('<c r="A40" s="0" t="inlineStr"><is><t xml:space="preserve">= Total Douteux (100 %)</t></is></c>');
+    expect(out).not.toContain('<f> Total Douteux');
+    expect(out).toContain('<c r="B40" s="0"><f>SUBTOTAL(9,B2:B3)</f><v>3</v></c>');
+    expect(out).toContain('<f>SUM(B2,B3)</f>');
+    expect(out).toContain('<f>_xlfn.UNIQUE(A2:A3)</f></c>');
+    // idempotent
+    expect(excelStrict(z).fixes).toEqual([]);
+  });
+});

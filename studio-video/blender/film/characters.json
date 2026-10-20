@@ -1,0 +1,763 @@
+{
+ "MAMAN NOUNOU": {
+  "height": 1.6,
+  "voice": "siwis",
+  "pitch": 0.95,
+  "dessin": "planche",
+  "lieux": [
+   "Marché",
+   "Salon",
+   "Cour",
+   "Cérémonie"
+  ],
+  "activite": "compte ses billets derrière son étal, interpelle les clients",
+  "genre": "femme",
+  "age": 50
+ },
+ "BAYE NDIAYE": {
+  "height": 1.72,
+  "voice": "gilles",
+  "dessin": "planche",
+  "lieux": [
+   "Salon",
+   "Cour",
+   "Cérémonie",
+   "Village"
+  ],
+  "activite": "égrène son chapelet sur une chaise, surveille sa poche",
+  "genre": "homme",
+  "age": 62
+ },
+ "COUMBA": {
+  "height": 1.7,
+  "voice": "jessica",
+  "dessin": "planche",
+  "lieux": [
+   "Salon de coiffure",
+   "Maquis",
+   "Cérémonie",
+   "Salon"
+  ],
+  "activite": "se prend en selfie, jauge les hommes qui passent",
+  "genre": "femme",
+  "age": 26
+ },
+ "PETIT MAMADOU": {
+  "height": 1.15,
+  "voice": "jessica",
+  "pitch": 1.22,
+  "dessin": "planche",
+  "lieux": [
+   "Cour",
+   "École",
+   "Salon",
+   "Marché"
+  ],
+  "activite": "dribble un ballon, court entre les adultes",
+  "genre": "garçon",
+  "age": 8
+ },
+ "MODOU": {
+  "height": 1.76,
+  "voice": "tom",
+  "dessin": "planche",
+  "lieux": [
+   "Cour",
+   "Maquis",
+   "Marché",
+   "Taxi"
+  ],
+  "activite": "grignote quelque chose en cachette, cherche un plan",
+  "genre": "homme",
+  "age": 35
+ },
+ "TANTIE AWA": {
+  "height": 1.62,
+  "voice": "siwis",
+  "dessin": "planche",
+  "lieux": [
+   "Salon",
+   "Cour",
+   "Marché"
+  ],
+  "activite": "balaie la cour en surveillant tout le monde",
+  "genre": "femme",
+  "age": 52
+ },
+ "TONTON DIENG": {
+  "height": 1.73,
+  "voice": "gilles",
+  "pitch": 1.04,
+  "dessin": "galerie",
+  "lieux": [
+   "Maquis",
+   "Taxi",
+   "Cour",
+   "Cérémonie"
+  ],
+  "activite": "raconte une histoire à un groupe, bras grands ouverts",
+  "genre": "homme",
+  "age": 50
+ },
+ "GRAND-PÈRE NDIAYE": {
+  "height": 1.68,
+  "voice": "gilles",
+  "pitch": 0.92,
+  "dessin": "galerie",
+  "lieux": [
+   "Cour",
+   "Village",
+   "Cérémonie"
+  ],
+  "activite": "somnole sur un banc, main derrière l’oreille",
+  "genre": "homme",
+  "age": 75
+ },
+ "KOFFI": {
+  "height": 1.78,
+  "voice": "pierre",
+  "dessin": "planche",
+  "lieux": [
+   "Maquis",
+   "Cérémonie",
+   "Bureau"
+  ],
+  "activite": "pose devant une voiture qui n’est pas à lui, téléphone à l’oreille",
+  "genre": "homme",
+  "age": 30
+ },
+ "MONSIEUR DIARRA": {
+  "height": 1.7,
+  "voice": "tom",
+  "pitch": 1.05,
+  "dessin": "catalogue",
+  "lieux": [
+   "Bureau",
+   "Marché",
+   "Cérémonie"
+  ],
+  "activite": "tape sur sa calculatrice en marmonnant des chiffres",
+  "genre": "homme",
+  "age": 45
+ },
+ "MAÎTRE COULIBALY": {
+  "height": 1.68,
+  "voice": "jessica",
+  "pitch": 0.94,
+  "dessin": "galerie",
+  "lieux": [
+   "Tribunal",
+   "Bureau",
+   "Cérémonie"
+  ],
+  "activite": "feuillette un dossier en marchant, téléphone coincé contre l’épaule",
+  "genre": "femme",
+  "age": 40
+ },
+ "AGENT BAKARY": {
+  "height": 1.78,
+  "voice": "pierre",
+  "pitch": 0.95,
+  "dessin": "galerie",
+  "lieux": [
+   "Douane",
+   "Taxi"
+  ],
+  "activite": "fouille une valise et lève un objet au soleil",
+  "genre": "homme",
+  "age": 40
+ },
+ "TANTIE AWA SARR": {
+  "height": 1.62,
+  "voice": "siwis",
+  "pitch": 1.04,
+  "dessin": "galerie",
+  "lieux": [
+   "Maquis",
+   "Marché",
+   "Cérémonie",
+   "Cour",
+   "Village"
+  ],
+  "activite": "remue une grande marmite fumante et goûte à la cuillère",
+  "genre": "femme",
+  "age": 50
+ },
+ "PROFESSEUR SAMBA": {
+  "height": 1.74,
+  "voice": "gilles",
+  "pitch": 1.06,
+  "dessin": "galerie",
+  "lieux": [
+   "Taxi",
+   "École",
+   "Bureau",
+   "Cour"
+  ],
+  "activite": "lit le journal en sirotant son café, l’index levé",
+  "genre": "homme",
+  "age": 55
+ },
+ "MADAME COUMBA": {
+  "height": 1.6,
+  "voice": "siwis",
+  "pitch": 1.08,
+  "dessin": "catalogue",
+  "lieux": [
+   "Cour",
+   "Salon",
+   "Marché"
+  ],
+  "activite": "épie par-dessus le mur, main en écran",
+  "genre": "femme",
+  "age": 50
+ },
+ "DJECKY": {
+  "height": 1.82,
+  "voice": "tom",
+  "pitch": 1.08,
+  "dessin": "galerie",
+  "lieux": [
+   "Maquis",
+   "Cour",
+   "Plage",
+   "Marché"
+  ],
+  "activite": "dribble son ballon et tente un panier imaginaire",
+  "genre": "homme",
+  "age": 22
+ },
+ "PETIT IBRAHIMA": {
+  "height": 1.25,
+  "voice": "jessica",
+  "pitch": 1.18,
+  "dessin": "galerie",
+  "lieux": [
+   "École",
+   "Hôpital",
+   "Cour"
+  ],
+  "activite": "lit son cahier à fusée en marchant",
+  "genre": "garçon",
+  "age": 9
+ },
+ "PETITE KHADIJA": {
+  "height": 1.18,
+  "voice": "siwis",
+  "pitch": 1.25,
+  "dessin": "galerie",
+  "lieux": [
+   "École",
+   "Cour",
+   "Hôpital",
+   "Salon",
+   "Village"
+  ],
+  "activite": "parle à son nounours en tournant sur elle-même",
+  "genre": "fille",
+  "age": 7
+ },
+ "AGENT GORA": {
+  "height": 1.8,
+  "voice": "pierre",
+  "pitch": 0.9,
+  "dessin": "catalogue",
+  "lieux": [
+   "Bureau",
+   "Marché"
+  ],
+  "activite": "fait une ronde en balançant sa lampe torche",
+  "genre": "homme",
+  "age": 45
+ },
+ "GÉNÉRAL ZONGO": {
+  "height": 1.8,
+  "voice": "tom",
+  "pitch": 0.94,
+  "dessin": "galerie",
+  "lieux": [
+   "Taxi",
+   "Bureau",
+   "Village",
+   "Cour"
+  ],
+  "activite": "déroule des plans et crie dans son téléphone",
+  "genre": "homme",
+  "age": 45
+ },
+ "TATA PRISCA": {
+  "height": 1.64,
+  "voice": "jessica",
+  "pitch": 1.06,
+  "dessin": "galerie",
+  "lieux": [
+   "Salon de coiffure",
+   "Cérémonie",
+   "Marché"
+  ],
+  "activite": "coiffe une cliente en parlant fort, sèche-cheveux à la main",
+  "genre": "femme",
+  "age": 35
+ },
+ "AGENT DOUMBIA": {
+  "height": 1.74,
+  "voice": "pierre",
+  "pitch": 1.04,
+  "dessin": "galerie",
+  "lieux": [
+   "Taxi",
+   "Marché",
+   "Douane"
+  ],
+  "activite": "note une plaque dans son carnet en sifflant",
+  "genre": "homme",
+  "age": 45
+ },
+ "MÉCANO ISSA": {
+  "height": 1.78,
+  "voice": "tom",
+  "pitch": 0.97,
+  "dessin": "galerie",
+  "lieux": [
+   "Taxi",
+   "Marché",
+   "Cour"
+  ],
+  "activite": "tape sur un moteur avec sa clé et écoute",
+  "genre": "homme",
+  "age": 35
+ },
+ "SŒUR AWA": {
+  "height": 1.64,
+  "voice": "jessica",
+  "pitch": 1,
+  "dessin": "galerie",
+  "lieux": [
+   "Hôpital",
+   "École",
+   "Cour"
+  ],
+  "activite": "prend la tension d’un patient en notant sur sa tablette",
+  "genre": "femme",
+  "age": 35
+ },
+ "TIÉKORO": {
+  "height": 1.75,
+  "voice": "tom",
+  "pitch": 1.12,
+  "dessin": "galerie",
+  "lieux": [
+   "Marché",
+   "Taxi",
+   "Maquis",
+   "Plage"
+  ],
+  "activite": "fait une démonstration de gadget filmée au selfie",
+  "genre": "homme",
+  "age": 25
+ },
+ "PETIT MOUSSA": {
+  "height": 1.2,
+  "voice": "siwis",
+  "pitch": 1.3,
+  "dessin": "galerie",
+  "lieux": [
+   "École",
+   "Cour",
+   "Taxi",
+   "Village"
+  ],
+  "activite": "court entre les adultes avec un objet démonté",
+  "genre": "garçon",
+  "age": 8
+ },
+ "PETITE AYA": {
+  "height": 1.08,
+  "voice": "siwis",
+  "pitch": 1.32,
+  "dessin": "galerie",
+  "lieux": [
+   "École",
+   "Cour",
+   "Hôpital"
+  ],
+  "activite": "fait danser son nounours",
+  "genre": "fille",
+  "age": 6
+ },
+ "SORCIÈRE MAMA DÉDÉ": {
+  "height": 1.6,
+  "voice": "siwis",
+  "pitch": 0.88,
+  "dessin": "catalogue",
+  "lieux": [
+   "Marché",
+   "Village"
+  ],
+  "activite": "agite une calebasse fumante devant un client",
+  "genre": "femme",
+  "age": 60
+ },
+ "IMAM KARIM": {
+  "height": 1.76,
+  "voice": "gilles",
+  "pitch": 0.98,
+  "dessin": "galerie",
+  "lieux": [
+   "Cérémonie",
+   "Cour",
+   "Village"
+  ],
+  "activite": "sert le thé à deux hommes qui se disputent",
+  "genre": "homme",
+  "age": 50
+ },
+ "MAÎTRE KONÉ": {
+  "height": 1.72,
+  "voice": "gilles",
+  "pitch": 1.08,
+  "dessin": "galerie",
+  "lieux": [
+   "École",
+   "Bureau",
+   "Cour"
+  ],
+  "activite": "corrige des cahiers au stylo rouge en secouant la tête",
+  "genre": "homme",
+  "age": 58
+ },
+ "DOCTEUR SYLLA": {
+  "height": 1.76,
+  "voice": "gilles",
+  "dessin": "galerie",
+  "lieux": [
+   "Hôpital",
+   "Bureau"
+  ],
+  "activite": "tend une facture à un patient qui recule",
+  "genre": "homme",
+  "age": 45
+ },
+ "FATOU": {
+  "height": 1.62,
+  "voice": "siwis",
+  "pitch": 1.1,
+  "dessin": "catalogue",
+  "lieux": [
+   "Marché",
+   "Cérémonie",
+   "Taxi",
+   "Maquis"
+  ],
+  "activite": "filme la scène avec sa perche en commentant",
+  "genre": "femme",
+  "age": 40
+ },
+ "ADJOUA": {
+  "height": 1.68,
+  "voice": "jessica",
+  "pitch": 1.12,
+  "dessin": "galerie",
+  "lieux": [
+   "Maquis",
+   "Salon de coiffure",
+   "Plage",
+   "Taxi"
+  ],
+  "activite": "se prend en selfie en cherchant du réseau",
+  "genre": "femme",
+  "age": 24
+ },
+ "MAMIE BINTOU": {
+  "height": 1.58,
+  "voice": "siwis",
+  "pitch": 0.9,
+  "dessin": "galerie",
+  "lieux": [
+   "Salon de coiffure",
+   "Cour",
+   "Marché",
+   "Cérémonie",
+   "Village"
+  ],
+  "activite": "chuchote à l’oreille d’une voisine en riant",
+  "genre": "femme",
+  "age": 65
+ },
+ "ALIOU": {
+  "height": 1.75,
+  "voice": "tom",
+  "pitch": 0.96,
+  "dessin": "galerie",
+  "lieux": [
+   "Taxi",
+   "Marché",
+   "Plage"
+  ],
+  "activite": "hèle des clients en tapotant le toit de son taxi",
+  "genre": "homme",
+  "age": 40
+ },
+ "CHEF TRAORÉ": {
+  "height": 1.74,
+  "voice": "pierre",
+  "pitch": 0.9,
+  "dessin": "galerie",
+  "lieux": [
+   "Cérémonie",
+   "Village",
+   "Cour"
+  ],
+  "activite": "préside un petit groupe en levant son sceptre",
+  "genre": "homme",
+  "age": 60
+ },
+ "AMINATA": {
+  "height": 1.62,
+  "voice": "jessica",
+  "pitch": 1.15,
+  "dessin": "galerie",
+  "lieux": [
+   "Plage",
+   "Maquis",
+   "Cérémonie",
+   "École"
+  ],
+  "activite": "danse une tendance devant son téléphone posé",
+  "genre": "fille",
+  "age": 16
+ },
+ "BOUBACAR": {
+  "height": 1.74,
+  "voice": "pierre",
+  "pitch": 0.93,
+  "dessin": "galerie",
+  "lieux": [
+   "Maquis",
+   "Cérémonie",
+   "Marché",
+   "Hôpital"
+  ],
+  "activite": "dévore une cuisse de poulet en souriant aux anges",
+  "genre": "homme",
+  "age": 40
+ },
+ "LE FRIMEUR": {
+  "height": 1.78,
+  "voice": "tom",
+  "pitch": 1.1,
+  "dessin": "galerie",
+  "lieux": [
+   "Maquis",
+   "Cérémonie",
+   "Plage",
+   "Salon de coiffure"
+  ],
+  "activite": "danse quelques pas en se regardant dans une vitre",
+  "genre": "homme",
+  "age": 25
+ },
+ "LE PATRIARCHE": {
+  "height": 1.66,
+  "voice": "gilles",
+  "pitch": 0.88,
+  "dessin": "galerie",
+  "lieux": [
+   "Village",
+   "Cour",
+   "Cérémonie"
+  ],
+  "activite": "rit sur un banc en tapant sa canne",
+  "genre": "homme",
+  "age": 80
+ },
+ "LA LYCÉENNE": {
+  "height": 1.6,
+  "voice": "jessica",
+  "pitch": 1.12,
+  "dessin": "galerie",
+  "lieux": [
+   "École",
+   "Cour",
+   "Bureau"
+  ],
+  "activite": "révise ses cahiers en marchant, lèvres qui bougent",
+  "genre": "fille",
+  "age": 15
+ },
+ "LA GO LÉOPARD": {
+  "height": 1.7,
+  "voice": "siwis",
+  "pitch": 1.06,
+  "dessin": "galerie",
+  "lieux": [
+   "Maquis",
+   "Cérémonie",
+   "Bureau",
+   "Plage"
+  ],
+  "activite": "défile en regardant les chaussures des hommes",
+  "genre": "femme",
+  "age": 28
+ },
+ "LA FUTURE MAMAN": {
+  "height": 1.65,
+  "voice": "siwis",
+  "pitch": 1,
+  "dessin": "galerie",
+  "lieux": [
+   "Hôpital",
+   "Salon",
+   "Marché",
+   "Cour"
+  ],
+  "activite": "se masse le ventre en montrant un étal du doigt",
+  "genre": "femme",
+  "age": 30
+ },
+ "LE BANQUIER": {
+  "height": 1.75,
+  "voice": "tom",
+  "pitch": 0.94,
+  "dessin": "galerie",
+  "lieux": [
+   "Bureau"
+  ],
+  "activite": "tape sur son ordinateur en secouant la tête « non »",
+  "genre": "homme",
+  "age": 45
+ },
+ "LA VOISINE": {
+  "height": 1.66,
+  "voice": "jessica",
+  "pitch": 0.96,
+  "dessin": "catalogue",
+  "lieux": [
+   "Cour",
+   "Salon"
+  ],
+  "activite": "crie depuis le pas de sa porte, mains sur les hanches",
+  "genre": "femme",
+  "age": 35
+ },
+ "LE TONTON": {
+  "height": 1.84,
+  "voice": "pierre",
+  "pitch": 0.9,
+  "dessin": "catalogue",
+  "lieux": [
+   "Cour",
+   "Maquis"
+  ],
+  "activite": "traverse lentement avec une bouteille dans chaque main",
+  "genre": "homme",
+  "age": 45
+ },
+ "MADAME KONAN": {
+  "height": 1.66,
+  "voice": "siwis",
+  "pitch": 0.92,
+  "dessin": "à dessiner",
+  "lieux": [
+   "Cour",
+   "Marché",
+   "Bureau"
+  ],
+  "activite": "compte les billets de la tontine devant une file de cotisantes",
+  "genre": "femme",
+  "age": 55
+ },
+ "PATRON SÉRY": {
+  "height": 1.76,
+  "voice": "pierre",
+  "pitch": 0.96,
+  "dessin": "à dessiner",
+  "lieux": [
+   "Maquis"
+  ],
+  "activite": "note une dette à la craie derrière son comptoir",
+  "genre": "homme",
+  "age": 50
+ },
+ "MADEMOISELLE ROSINE": {
+  "height": 1.66,
+  "voice": "jessica",
+  "pitch": 0.98,
+  "dessin": "à dessiner",
+  "lieux": [
+   "Bureau",
+   "Tribunal"
+  ],
+  "activite": "tamponne lentement une pile de formulaires",
+  "genre": "femme",
+  "age": 32
+ },
+ "YAYA L’APPRENTI": {
+  "height": 1.72,
+  "voice": "tom",
+  "pitch": 1.16,
+  "dessin": "à dessiner",
+  "lieux": [
+   "Taxi",
+   "Marché"
+  ],
+  "activite": "crie les destinations en tapant sur la carrosserie",
+  "genre": "homme",
+  "age": 19
+ },
+ "SALIF LE PARISIEN": {
+  "height": 1.8,
+  "voice": "tom",
+  "pitch": 1.02,
+  "dessin": "à dessiner",
+  "lieux": [
+   "Douane",
+   "Maquis",
+   "Cérémonie",
+   "Taxi"
+  ],
+  "activite": "tire sa valise en s’éventant",
+  "genre": "homme",
+  "age": 34
+ },
+ "COACH DIABATÉ": {
+  "height": 1.74,
+  "voice": "gilles",
+  "pitch": 1.1,
+  "dessin": "à dessiner",
+  "lieux": [
+   "École",
+   "Cour",
+   "Plage"
+  ],
+  "activite": "siffle et mime une tactique avec de grands gestes",
+  "genre": "homme",
+  "age": 50
+ },
+ "DJ KÉVIN": {
+  "height": 1.76,
+  "voice": "tom",
+  "pitch": 1.06,
+  "dessin": "à dessiner",
+  "lieux": [
+   "Maquis",
+   "Cérémonie",
+   "Plage"
+  ],
+  "activite": "mixe derrière sa platine, casque sur une oreille",
+  "genre": "homme",
+  "age": 27
+ },
+ "MAMAN BRIGITTE": {
+  "height": 1.64,
+  "voice": "jessica",
+  "pitch": 0.9,
+  "dessin": "à dessiner",
+  "lieux": [
+   "Marché"
+  ],
+  "activite": "porte une bassine d’attiéké sur la tête en criant les prix",
+  "genre": "femme",
+  "age": 45
+ }
+}

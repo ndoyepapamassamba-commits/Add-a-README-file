@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fabrique MASSAMBA</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..150,600..900&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Fabrique MASSAMBA, version indépendante (GitHub Pages) : mêmes repères que la page claude.ai — bandeau d'état, vidéothèque en
+   cartes 9:16, réglages et chiffres à côté. Tout le contenu privé est déchiffré DANS le téléphone avec la phrase de l'utilisateur. */
+:root{
+  --fond:#f3f1ec; --carte:#fffdf8; --encre:#1c1f2b; --doux:#5d6170; --trait:#dcd7cb;
+  --safran:#c98a07; --safran-fond:#fbefd0; --indigo:#2b3a8c; --menthe:#167a55; --menthe-fond:#dcf1e7; --brique:#b2412b; --brique-fond:#f8e1da;
+  --f-titre:"Anybody","Arial Narrow",sans-serif; --f-texte:"Atkinson Hyperlegible",system-ui,sans-serif; --f-chiffre:"JetBrains Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --fond:#14161f; --carte:#1d2030; --encre:#eceae4; --doux:#a3a6b5; --trait:#33374a;
+  --safran:#f0b429; --safran-fond:#3a2f12; --indigo:#9aa8ff; --menthe:#4cd39b; --menthe-fond:#123326; --brique:#ff8a70; --brique-fond:#3d1d16; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+.app{display:grid;gap:22px}
+html,body{margin:0}
+body{background:var(--fond);color:var(--encre);font-family:var(--f-texte);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(48px + env(safe-area-inset-bottom,0px))}
+.page{max-width:1120px;margin:0 auto;display:grid;gap:22px}
+h1,h2{font-family:var(--f-titre);text-wrap:balance;margin:0;line-height:1.05}
+h1{font-size:clamp(30px,7vw,46px);font-weight:900;font-stretch:125%}
+h1 span{color:var(--safran)}
+h2{font-size:20px;font-weight:800;font-stretch:110%}
+.sur{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--doux);font-weight:700}
+.chiffre{font-family:var(--f-chiffre);font-variant-numeric:tabular-nums}
+.bandeau{display:flex;flex-wrap:wrap;gap:10px}
+.jauge{background:var(--carte);border:1px solid var(--trait);border-radius:10px;padding:10px 14px;min-width:0;flex:1 1 150px}
+.jauge b{display:block;font-family:var(--f-chiffre);font-size:24px;font-weight:500}
+.jauge small{color:var(--doux);font-size:12.5px;font-family:var(--f-texte)}
+.pastille{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.pastille::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.ok{color:var(--menthe);background:var(--menthe-fond)} .att{color:var(--safran);background:var(--safran-fond)} .ko{color:var(--brique);background:var(--brique-fond)}
+.colonnes{display:grid;gap:22px;grid-template-columns:1fr}
+@media (min-width:920px){.colonnes{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}}
+section{display:grid;gap:12px;min-width:0}
+.onglets{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.onglets button{white-space:nowrap;padding:7px 12px;font-size:13.5px}
+.onglets button[aria-pressed="true"]{background:var(--encre);color:var(--fond);border-color:var(--encre)}
+.onglets .n{font-family:var(--f-chiffre);font-weight:500;margin-left:5px;opacity:.75}
+.videos{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.video{background:var(--carte);border:1px solid var(--trait);border-radius:14px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;min-width:0}
+.video.doublon{border-color:var(--brique)}
+.cadre{position:relative;aspect-ratio:9/16;max-width:100%;background:#000;display:grid;place-items:center}
+.cadre video,.cadre img{width:100%;height:100%;object-fit:cover;display:block}
+.cadre .lire{position:absolute;inset:auto auto 12px 12px}
+.creneau{position:absolute;top:10px;left:10px;font-family:var(--f-chiffre);font-size:13px;background:rgba(10,12,20,.78);color:#fff;padding:3px 9px;border-radius:6px}
+.corps{padding:12px 14px 14px;display:grid;gap:9px;align-content:start;min-width:0}
+.titre{font-weight:700;font-size:15px;line-height:1.3}
+.ligne{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,.bouton{font:inherit;font-weight:700;font-size:14px;border-radius:9px;padding:9px 13px;cursor:pointer;border:1px solid var(--trait);background:var(--carte);color:var(--encre);text-decoration:none;display:inline-block}
+button.fort,.bouton.fort{background:var(--encre);color:var(--fond);border-color:var(--encre)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--indigo);outline-offset:2px}
+.coche{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;cursor:pointer}
+.coche input{width:20px;height:20px;accent-color:var(--menthe);margin:0}
+.alerte{font-size:13px;border-radius:8px;padding:7px 10px}
+.legende{font-size:13px;color:var(--doux);white-space:pre-line;max-height:4.6em;overflow:hidden}
+.boite{background:var(--carte);border:1px solid var(--trait);border-radius:14px;padding:16px;display:grid;gap:12px}
+.vide{border:1px dashed var(--trait);border-radius:14px;padding:22px;color:var(--doux)}
+.message{font-size:13px;color:var(--doux);min-height:1.2em}
+label{font-size:13px;color:var(--doux);display:grid;gap:4px}
+input,select{font:inherit;font-size:15px;padding:8px 10px;border-radius:8px;border:1px solid var(--trait);background:var(--fond);color:var(--encre);min-width:0;width:100%}
+.grille{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
+.releve{font-size:13px;display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--doux)}
+.releve b{color:var(--encre);font-family:var(--f-chiffre);font-weight:500}
+.porte{max-width:440px;margin:8vh auto 0;display:grid;gap:14px}
+.barre{height:10px;border-radius:6px;background:var(--trait);overflow:hidden}
+.barre i{display:block;height:100%;background:var(--safran)}
+</style>
+</head>
+<body>
+<div class="page">
+  <header style="display:grid;gap:12px">
+    <div class="sur">Troupe MASSAMBA · fabrique indépendante</div>
+    <h1>Fabrique <span>MASSAMBA</span></h1>
+  </header>
+
+  <form class="boite porte" id="porte" autocomplete="off">
+    <h2>Ouvrir la fabrique</h2>
+    <div class="releve">Les vidéos et les fiches sont chiffrées sur GitHub. Tapez la phrase secrète que vous avez rangée dans les secrets du dépôt (FABRIQUE_CLE) : tout est déchiffré dans ce téléphone, rien ne part ailleurs.</div>
+    <label for="phrase">Phrase secrète<input id="phrase" type="password" autocomplete="current-password" required minlength="12"></label>
+    <label class="coche"><input type="checkbox" id="retenir"> Se souvenir sur cet appareil</label>
+    <div class="ligne"><button class="fort" type="submit">Ouvrir</button><span class="message" id="m-porte"></span></div>
+  </form>
+
+  <div id="app" class="app" hidden>
+    <div class="bandeau">
+      <div class="jauge"><small>Dernière production</small><b id="j-maj">—</b></div>
+      <div class="jauge"><small>Réserve à venir</small><b id="j-reserve">—</b></div>
+      <div class="jauge"><small>Publiées (cochées ici)</small><b id="j-pub">—</b></div>
+      <div class="jauge"><small>Vers 10 000 vidéos</small><b id="j-total">—</b></div>
+    </div>
+    <div class="colonnes">
+      <section aria-labelledby="t-videos">
+        <h2 id="t-videos">Vidéothèque</h2>
+        <div class="onglets" role="group" aria-label="Filtrer les vidéos">
+          <button data-f="pret" aria-pressed="true">À publier<span class="n" id="n-pret"></span></button>
+          <button data-f="publiee" aria-pressed="false">Publiées<span class="n" id="n-publiee"></span></button>
+          <button data-f="doublon" aria-pressed="false">Doublons<span class="n" id="n-doublon"></span></button>
+          <button data-f="a_corriger" aria-pressed="false">À corriger<span class="n" id="n-a_corriger"></span></button>
+          <button data-f="" aria-pressed="false">Toutes<span class="n" id="n-tout"></span></button>
+        </div>
+        <label for="cherche">Chercher un titre, un personnage ou un lieu<input type="search" id="cherche" placeholder="Koffi, marché, loyer…"></label>
+        <div class="videos" id="videos"></div>
+        <div class="ligne"><button id="b-plus" hidden>Voir plus</button></div>
+      </section>
+      <aside style="display:grid;gap:22px;align-content:start;min-width:0">
+        <section class="boite" aria-labelledby="t-prod">
+          <h2 id="t-prod">Production en cours</h2>
+          <div class="releve" id="prod">Aucune production en cours.</div>
+        </section>
+        <section class="boite" aria-labelledby="t-pilote">
+          <h2 id="t-pilote">Production</h2>
+          <div class="releve" id="pilote-info">Chaque jour à 4 h 52 (heure d'Abidjan), sur les machines gratuites de GitHub, dans votre compte : écriture, tournage, juge, doublons, livraison ici.</div>
+          <div class="ligne"><a class="bouton fort" id="l-produire" target="_blank" rel="noopener">Produire maintenant</a><a class="bouton" id="l-reglages" target="_blank" rel="noopener">Cadence et créneaux</a></div>
+          <div class="releve">« Produire maintenant » ouvre GitHub : touchez « Run workflow ». Les réglages se changent dans le fichier config.json (crayon « Edit »).</div>
+        </section>
+        <section class="boite" aria-labelledby="t-chiffres">
+          <h2 id="t-chiffres">Chiffres TikTok</h2>
+          <label for="c-video">Vidéo publiée<select id="c-video"></select></label>
+          <div class="grille">
+            <label for="c-vues">Vues<input id="c-vues" inputmode="numeric"></label>
+            <label for="c-jaime">J'aime<input id="c-jaime" inputmode="numeric"></label>
+            <label for="c-comm">Commentaires<input id="c-comm" inputmode="numeric"></label>
+            <label for="c-part">Partages<input id="c-part" inputmode="numeric"></label>
+            <label for="c-entier">Vue en entier %<input id="c-entier" inputmode="decimal"></label>
+          </div>
+          <div class="ligne"><button class="fort" id="b-chiffres">Enregistrer</button><span class="message" id="m-chiffres"></span></div>
+          <div class="releve" id="taux"></div>
+        </section>
+        <section class="boite" aria-labelledby="t-archives">
+          <h2 id="t-archives">Archives et sauvegarde</h2>
+          <div class="releve">Les vidéos les plus anciennes quittent le site (1 Go au plus) et restent dans les archives GitHub. Téléchargez le fichier .msb, puis ouvrez-le ici.</div>
+          <div class="ligne"><a class="bouton" id="l-archives" target="_blank" rel="noopener">Archives GitHub</a>
+            <label class="bouton" for="f-msb" style="display:inline-block">Ouvrir un fichier .msb<input id="f-msb" type="file" accept=".msb" hidden></label></div>
+          <div class="ligne"><button id="b-export">Sauvegarder mes coches et chiffres</button>
+            <label class="bouton" for="f-import">Restaurer<input id="f-import" type="file" accept=".json" hidden></label></div>
+          <div class="message" id="m-archives"></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const sub = crypto.subtle;
+const S = { priv: null, cat: null, filtre: "pret", n: 24, local: lireLocal(), url: {} };
+const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const fmt = (n) => (n == null || isNaN(n)) ? "—" : Number(n).toLocaleString("fr-FR");
+const jour = (iso) => iso ? new Date(iso).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }) : "";
+const heure = (iso) => iso ? new Date(iso).toLocaleString("fr-FR", { weekday: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+const sans = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const nombre = (v) => { const x = parseFloat(String(v).replace(/\s/g, "").replace(",", ".")); return isNaN(x) ? null : x; };
+const depot = (() => { const o = location.hostname.split(".")[0]; const r = location.pathname.split("/").filter(Boolean)[0] || ""; return { o, r, gh: `https://github.com/${o}/${r}` }; })();
+// données chiffrées : branche « fabrique-donnees » du dépôt, servie par raw.githubusercontent.com (CORS ouvert) ; en essai local, à côté de la page
+const BASE = location.hostname.endsWith("github.io") ? `https://raw.githubusercontent.com/${depot.o}/${depot.r}/fabrique-donnees/` : "./";
+
+function lireLocal() { try { return JSON.parse(localStorage.getItem("fabrique-etat")) || { publiee: {}, statut: {}, releves: [] }; } catch { return { publiee: {}, statut: {}, releves: [] }; } }
+function garderLocal() { try { localStorage.setItem("fabrique-etat", JSON.stringify(S.local)); } catch {} }
+
+async function clePrivee(phrase) {
+  const rc = await fetch(BASE + "cle.priv.json", { cache: "no-store" }); if (!rc.ok) throw new Error("La fabrique GitHub n'est pas encore mise en route (clé absente)."); const J = await rc.json();
+  const base = await sub.importKey("raw", new TextEncoder().encode(phrase), "PBKDF2", false, ["deriveKey"]);
+  const k = await sub.deriveKey({ name: "PBKDF2", salt: b64(J.sel), iterations: J.tours, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  const der = await sub.decrypt({ name: "AES-GCM", iv: b64(J.nonce) }, k, b64(J.chiffre));
+  return sub.importKey("pkcs8", der, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["decrypt"]);
+}
+async function ouvre(buf) {
+  const u = new Uint8Array(buf); if (new TextDecoder().decode(u.slice(0, 4)) !== "MSB1") throw new Error("fichier non scellé par la fabrique");
+  const n = (u[4] << 8) | u[5];
+  const kb = await sub.decrypt({ name: "RSA-OAEP" }, S.priv, u.slice(6, 6 + n));
+  const k = await sub.importKey("raw", kb, "AES-GCM", false, ["decrypt"]);
+  return new Uint8Array(await sub.decrypt({ name: "AES-GCM", iv: u.slice(6 + n, 18 + n) }, k, u.slice(18 + n)));
+}
+async function blobDe(chemin, type) {
+  if (S.url[chemin]) return S.url[chemin];
+  const r = await fetch(BASE + chemin); if (!r.ok) throw new Error("introuvable (" + r.status + ")");
+  const u = URL.createObjectURL(new Blob([await ouvre(await r.arrayBuffer())], { type })); S.url[chemin] = u; return u;
+}
+
+const statut = (v) => S.local.publiee[v.id] ? "publiee" : (S.local.statut[v.id] || v.statut || (v.a_publier === false ? "a_corriger" : "pret"));
+
+function carte(v) {
+  const s = statut(v), d = document.createElement("article"); d.className = "video" + (s === "doublon" ? " doublon" : "");
+  d.innerHTML = `<div class="cadre"><img alt="">${s === "pret" && v.creneau ? `<span class="creneau">${heure(v.creneau)}</span>` : ""}${v.video ? `<button class="lire" data-a="lire">▶ Regarder</button>` : ""}</div>
+    <div class="corps"><div class="titre"></div><div class="ligne etat"></div><div class="info"></div><div class="legende"></div>
+      <label class="coche"><input type="checkbox" data-a="publiee"> Déjà publiée</label>
+      <div class="ligne">${v.video ? `<button class="fort" data-a="garde">Télécharger${v.taille_mo ? ` (${String(v.taille_mo).replace(".", ",")} Mo)` : ""}</button>` : `<a class="bouton" href="${depot.gh}/releases/tag/fabrique-archives" target="_blank" rel="noopener">Dans les archives</a>`}<button data-a="copie">Copier la légende</button></div>
+      <div class="ligne act">${s === "doublon" ? `<button data-a="garder">Garder quand même</button>` : s === "pret" ? `<button data-a="doublon">Signaler un doublon</button>` : ""}</div>
+      <div class="message"></div></div>`;
+  d.querySelector(".titre").textContent = v.titre || v.id;
+  const q = v.ssim ? ` · netteté ${(v.ssim * 100).toFixed(1).replace(".", ",")} %` : "";
+  const lib = { pret: ["att", `Juge ${v.portes || "9/9"}${q} · prête`], publiee: ["ok", `Publiée ${jour(S.local.publiee[v.id] || v.publiee)}`], doublon: ["ko", "Doublon"], a_corriger: ["ko", "À corriger"] }[s] || ["att", s];
+  const p = document.createElement("span"); p.className = "pastille " + lib[0]; p.textContent = lib[1]; d.querySelector(".etat").append(p);
+  if (v.duree_s) { const t = document.createElement("span"); t.className = "chiffre"; t.style.fontSize = "13px"; t.textContent = `${Math.round(v.duree_s)} s`; d.querySelector(".etat").append(t); }
+  if (v.doublon_de && v.ressemblance != null) { const a = document.createElement("div"); a.className = "alerte " + (s === "doublon" ? "ko" : "att"); a.textContent = `${s === "doublon" ? "Doublon de" : "Proche de"} « ${v.doublon_de} » : ${Math.round(v.ressemblance * 100)} % d'images jumelles.`; d.querySelector(".info").append(a); }
+  if (s === "a_corriger" && v.motifs && v.motifs.length) { const a = document.createElement("div"); a.className = "alerte ko"; a.textContent = "À corriger : " + v.motifs.join(" ; "); d.querySelector(".info").append(a); }
+  d.querySelector(".legende").textContent = v.legende || "";
+  const box = d.querySelector('input[data-a="publiee"]'); box.checked = s === "publiee";
+  const msg = d.querySelector(".message"), img = d.querySelector("img");
+  if (v.affiche) blobDe(v.affiche, "image/jpeg").then((u) => (img.src = u)).catch(() => { img.alt = "affiche indisponible"; });   // 24 cartes par page : ≈ 70 Ko chacune
+  box.addEventListener("change", () => { if (box.checked) S.local.publiee[v.id] = new Date().toISOString(); else delete S.local.publiee[v.id]; garderLocal(); msg.textContent = box.checked ? "Notée comme publiée." : "Remise dans « À publier »."; rendre(); });
+  d.addEventListener("click", async (e) => {
+    const a = e.target.closest("button")?.dataset.a; if (!a) return;
+    try {
+      if (a === "lire") { msg.textContent = "Déchiffrement…"; const u = await blobDe(v.video, "video/mp4"); const vd = document.createElement("video"); vd.src = u; vd.controls = true; vd.playsInline = true; vd.autoplay = true; d.querySelector(".cadre").replaceChildren(vd); msg.textContent = ""; }
+      if (a === "garde") { msg.textContent = "Déchiffrement…"; const u = await blobDe(v.video, "video/mp4"); const l = document.createElement("a"); l.href = u; l.download = `${v.id}.mp4`; document.body.append(l); l.click(); l.remove(); msg.textContent = "Vidéo enregistrée. Ouvrez TikTok pour la publier."; }
+      if (a === "copie") { try { await navigator.clipboard.writeText(v.legende || ""); msg.textContent = "Légende copiée."; } catch { const r = document.createRange(); r.selectNodeContents(d.querySelector(".legende")); getSelection().removeAllRanges(); getSelection().addRange(r); msg.textContent = "Légende sélectionnée : copiez-la."; } }
+      if (a === "garder") { S.local.statut[v.id] = "pret"; garderLocal(); rendre(); }
+      if (a === "doublon") { S.local.statut[v.id] = "doublon"; garderLocal(); rendre(); }
+    } catch (er) { msg.textContent = "Impossible : " + er.message; }
+  });
+  return d;
+}
+
+function rendre() {
+  const V = S.cat.videos, q = sans($("cherche").value.trim());
+  const cpt = { pret: 0, publiee: 0, doublon: 0, a_corriger: 0 }; V.forEach((v) => { cpt[statut(v)] = (cpt[statut(v)] || 0) + 1; });
+  for (const k in cpt) $("n-" + k).textContent = cpt[k]; $("n-tout").textContent = V.length;
+  let L = V.filter((v) => !S.filtre || statut(v) === S.filtre).filter((v) => !q || sans([v.titre, v.legende, v.id, ...(v.sketchs || []).flatMap((s) => [s.lieu, ...(s.acteurs || [])])].join(" ")).includes(q));
+  L.sort((a, b) => S.filtre === "pret" ? String(a.creneau || "").localeCompare(String(b.creneau || "")) : (b.ordre || 0) - (a.ordre || 0));
+  const z = $("videos"); z.replaceChildren();
+  if (!L.length) { const e = document.createElement("div"); e.className = "vide"; e.textContent = q ? "Aucune vidéo ne correspond." : "Rien ici pour l'instant : la prochaine production remplit la vidéothèque."; z.append(e); }
+  L.slice(0, S.n).forEach((v) => z.append(carte(v))); $("b-plus").hidden = L.length <= S.n;
+  const maintenant = new Date().toISOString(), aVenir = V.filter((v) => statut(v) === "pret" && (!v.creneau || v.creneau > maintenant)).length;
+  $("j-maj").innerHTML = `<span class="chiffre" style="font-size:18px">${heure(S.cat.maj)}</span>`;
+  $("j-reserve").innerHTML = `<span class="chiffre">${aVenir}</span> <small>· ${(aVenir / Math.max(1, S.cat.config.cadence)).toFixed(1).replace(".", ",")} j</small>`;
+  $("j-pub").innerHTML = `<span class="chiffre">${cpt.publiee}</span>`;
+  $("j-total").innerHTML = `<span class="chiffre">${fmt(V.length)}</span> <small>/ 10 000</small><div class="barre" style="margin-top:6px"><i style="width:${Math.min(100, V.length / 100)}%"></i></div>`;
+  const sel = $("c-video"), g = sel.value; sel.replaceChildren(); const pub = V.filter((v) => statut(v) === "publiee");
+  if (!pub.length) sel.append(new Option("Cochez d'abord une vidéo « Déjà publiée »", ""));
+  pub.forEach((v) => sel.append(new Option(v.titre || v.id, v.id))); if ([...sel.options].some((o) => o.value === g)) sel.value = g;
+  rendreTaux();
+}
+function rendreTaux() {
+  const id = $("c-video").value, r = S.local.releves.filter((x) => x.video === id).sort((a, b) => b.quand.localeCompare(a.quand))[0], t = $("taux");
+  if (!r) { t.textContent = id ? "Pas encore de chiffres pour cette vidéo." : ""; return; }
+  const v = Math.max(1, r.vues || 0), pc = (x) => ((100 * (x || 0)) / v).toFixed(2).replace(".", ",") + " %";
+  t.innerHTML = `<span>${jour(r.quand)} · <b>${fmt(r.vues)}</b> vues</span><span>Commentaires/vues <b>${pc(r.commentaires)}</b></span><span>Partages/vues <b>${pc(r.partages)}</b></span><span>J'aime/vues <b>${pc(r.jaime)}</b></span>`;
+}
+
+// PRODUCTION EN COURS (20/10/2026, « l'app n'affiche pas la production en cours ») : production.json, public et sans contenu
+// privé (étape, heures, machine), écrit par la fabrique à chaque étape ; relu chaque minute.
+const ETAPES_PROD = [["ecrit", "Écriture"], ["tourne", "Tournage"], ["juge", "Juge (9 contrôles)"], ["livre", "Version téléphone"], ["fini", "Livrée"]];
+async function lireProd() {
+  let P = null; try { const r = await fetch(BASE + "production.json", { cache: "no-store" }); if (r.ok) P = await r.json(); } catch {}
+  const z = $("prod"); z.replaceChildren();
+  if (!P || !P.en_cours) { z.textContent = (P && P.message) || "Aucune production en cours."; return; }
+  const h = (iso) => iso ? new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "—";
+  const t = document.createElement("div"); t.style.marginBottom = "8px"; const pa = document.createElement("span"); pa.className = "pastille ok"; pa.textContent = "en cours";
+  const b = document.createElement("b"); b.textContent = " Vidéo " + (P.numero || ""); t.append(pa, b); z.append(t);
+  const i = Math.max(0, ETAPES_PROD.findIndex((e) => e[0] === P.etape));
+  const ol = document.createElement("div"); ol.style.cssText = "display:grid;gap:3px";
+  ETAPES_PROD.forEach(([k, lib], j) => { const l = document.createElement("span"); l.textContent = (j < i ? "✓ " : j === i ? "▶ " : "· ") + lib; if (j === i) l.style.fontWeight = "700"; ol.append(l); });
+  z.append(ol);
+  const inf = document.createElement("div"); inf.style.marginTop = "8px"; inf.textContent = `Début ${h(P.debut)} · fin estimée ${h(P.fin_estimee)}` + (P.machine ? ` · ${P.machine}` : ""); z.append(inf);
+  if (P.message) { const m = document.createElement("div"); m.style.marginTop = "6px"; m.textContent = P.message; z.append(m); }
+}
+
+async function demarre(phrase) {
+  S.priv = await clePrivee(phrase);
+  const r = await fetch(BASE + "catalogue.msb", { cache: "no-store" }); if (!r.ok) throw new Error(r.status === 404 ? "La fabrique GitHub démarre : la première livraison n'est pas encore arrivée." : "catalogue illisible (" + r.status + ")");
+  S.cat = JSON.parse(new TextDecoder().decode(await ouvre(await r.arrayBuffer())));
+  $("porte").hidden = true; $("app").hidden = false;
+  $("l-produire").href = `${depot.gh}/actions/workflows/fabrique.yml`; $("l-reglages").href = `${depot.gh}/blob/HEAD/studio-video/fabrique/config.json`; $("l-archives").href = `${depot.gh}/releases/tag/fabrique-archives`;
+  $("pilote-info").innerHTML = `<span>Cadence <b>${S.cat.config.cadence}</b> par jour</span><span>Créneaux <b>${S.cat.config.creneaux.join(" · ")}</b></span><span>En ligne <b>${S.cat.config.fenetre_videos}</b> vidéos</span>`;
+  rendre(); lireProd(); setInterval(lireProd, 60000);
+}
+
+$("porte").addEventListener("submit", async (e) => {
+  e.preventDefault(); const m = $("m-porte"); m.textContent = "Ouverture…"; const ph = $("phrase").value;
+  try { await demarre(ph); if ($("retenir").checked) try { localStorage.setItem("fabrique-phrase", ph); } catch {} }
+  catch (er) { m.textContent = er.name === "OperationError" ? "Phrase incorrecte." : er.message; }
+});
+document.querySelector(".onglets").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; document.querySelectorAll(".onglets button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); S.filtre = b.dataset.f; S.n = 24; rendre(); });
+$("b-plus").addEventListener("click", () => { S.n += 24; rendre(); });
+$("cherche").addEventListener("input", rendre);
+$("c-video").addEventListener("change", rendreTaux);
+$("b-chiffres").addEventListener("click", () => {
+  const id = $("c-video").value, m = $("m-chiffres"); if (!id) { m.textContent = "Choisissez une vidéo publiée."; return; }
+  const r = { video: id, quand: new Date().toISOString(), vues: nombre($("c-vues").value), jaime: nombre($("c-jaime").value), commentaires: nombre($("c-comm").value), partages: nombre($("c-part").value), vu_en_entier_pct: nombre($("c-entier").value) };
+  if (r.vues == null) { m.textContent = "Le nombre de vues est nécessaire."; return; }
+  S.local.releves.push(r); garderLocal(); m.textContent = "Chiffres enregistrés dans ce téléphone."; rendreTaux();
+});
+$("b-export").addEventListener("click", () => { const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob([JSON.stringify(S.local, null, 1)], { type: "application/json" })); l.download = "fabrique-sauvegarde.json"; l.click(); });
+$("f-import").addEventListener("change", async (e) => { try { S.local = JSON.parse(await e.target.files[0].text()); garderLocal(); rendre(); $("m-archives").textContent = "Coches et chiffres restaurés."; } catch { $("m-archives").textContent = "Fichier de sauvegarde illisible."; } });
+$("f-msb").addEventListener("change", async (e) => {
+  const f = e.target.files[0], m = $("m-archives"); if (!f) return; m.textContent = "Déchiffrement…";
+  try { const d = await ouvre(await f.arrayBuffer()); const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob([d], { type: f.name.includes("affiche") ? "image/jpeg" : "video/mp4" })); l.download = f.name.replace(/\.msb$/, f.name.includes("affiche") ? ".jpg" : ".mp4"); l.click(); m.textContent = "Fichier déchiffré et enregistré."; }
+  catch (er) { m.textContent = "Impossible : " + er.message; }
+});
+(async () => { let p = null; try { p = localStorage.getItem("fabrique-phrase"); } catch {} if (p) { try { await demarre(p); } catch { $("m-porte").textContent = "Phrase enregistrée refusée : tapez-la à nouveau."; } } })();
+</script>
+</body>
+</html>

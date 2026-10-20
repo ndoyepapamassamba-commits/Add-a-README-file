@@ -1,0 +1,46 @@
+{
+  "name": "OpenRouter AI Workbench",
+  "image": "mcr.microsoft.com/playwright:v1.56.1-noble",
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb"
+  },
+  "secrets": {
+    "OPENROUTER_API_KEY": {
+      "description": "Votre clé OpenRouter (https://openrouter.ai/keys). Elle reste côté serveur."
+    },
+    "TYPESAFE_API_KEY": {
+      "description": "Optionnel : active Jev (TypeSafe) pour le routage et la détection des skills."
+    }
+  },
+  "containerEnv": {
+    "HOST": "0.0.0.0",
+    "INCLUDE_CLAUDE_SKILLS": "false"
+  },
+  "forwardPorts": [
+    8787,
+    8788
+  ],
+  "portsAttributes": {
+    "8787": {
+      "label": "Workbench",
+      "onAutoForward": "notify"
+    },
+    "8788": {
+      "label": "Aperçu",
+      "onAutoForward": "silent"
+    }
+  },
+  "postCreateCommand": "cd workbench && npm ci && npm run build",
+  "postAttachCommand": "bash workbench/scripts/codespace-start.sh",
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "workbench/README.md"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  }
+}
