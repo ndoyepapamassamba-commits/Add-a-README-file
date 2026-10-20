@@ -6,3 +6,4 @@
 [487 s] 0 images · === decor-village-large-jour   |=====================================>            | 3/4 - 133.43s/it[K · mémoire libre 6993 Mo
 [608 s] 1 images · === decor-cyber-cafe-large-jour   |==================================================| 4/4 - 133.15s/it[K · mémoire libre 14524 Mo
 [730 s] 1 images · === decor-cyber-cafe-large-jour   |==================================================| 4/4 - 133.15s/it[K · mémoire libre 6991 Mo
+[852 s] 1 images · === decor-cyber-cafe-large-jour   |============>                                     | 1/4 - 137.60s/it[K · mémoire libre 7012 Mo
