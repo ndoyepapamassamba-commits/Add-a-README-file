@@ -71,6 +71,14 @@ def variantes(H, ep=None, m=None):
         'suspense': f"{tete}\nLe dernier sketch est le pire… tu as tenu jusqu'au bout ? 😭👇",
         'reconnaissance': f"{tete} 😂\nOn a tous un {_nom(a)} dans la famille… c'est qui chez toi ? 👇",
     }
+    # VOTE DE LA FIN DU FILM REPRIS DANS LA LÉGENDE (20/10/2026, « obliger les gens à aimer et commenter ») : la question vue
+    # à l'écran (marque.Habillage.vote, personnages qui portent les chutes) est la même que celle de la légende ; le style
+    # « camp » devient ce vote, les autres le gardent en deuxième ligne
+    ch = [r['qui'] for s in H.get('sketchs', []) for r in s.get('repliques', [])[-1:] if r.get('chute')]
+    if len(ch) >= 2:
+        import marque as _mq
+        vote = 'Le plus malin : ' + ', '.join(f'{i + 1} {_mq.nom_court(n).capitalize()}' for i, n in enumerate(ch)) + ' ? Réponds en commentaire 👇'
+        V = {k: (f"{tete} 😂\n{vote}" if k == 'camp' else f'{v}\n{vote}') for k, v in V.items()}
     return {k: f'{v}\n{pied}' for k, v in V.items()}
 
 
