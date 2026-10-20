@@ -11,3 +11,4 @@
 [1335 s] === tantie-awa--ecouter (at_runtime)   |============>                                     | 1/4 - 133.68s/it[K · mémoire libre 13767 Mo
 [1456 s] === tantie-awa--ecouter (at_runtime)   |============>                                     | 1/4 - 133.68s/it[K · mémoire libre 13762 Mo
 [1578 s] === tantie-awa--ecouter (at_runtime)   |=========================>                        | 2/4 - 133.31s/it[K · mémoire libre 13755 Mo
+[1699 s] === tantie-awa--ecouter (at_runtime)   |=====================================>            | 3/4 - 133.27s/it[K · mémoire libre 13750 Mo
