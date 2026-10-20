@@ -6,6 +6,8 @@
 # par étape, mesuré le 20/10), clips de 33 images (≈ 1,4 s, bouclables) au lieu de 49, 4 étapes sans CFG, moteur compilé gardé
 # en cache par modèle de processeur ; décodage par TAEHV (MIT) : le VAE complet par tuiles prenait ≈ 1 h par clip (mesuré 20/10).
 # Lancement : dépôt de studio-video/banque/demandes/demande.json (liste des clips et nombre de machines).
+# 20/10 23:30 : reprenable — chaque machine part de ce qui est déjà sur banque-sortie-<part> et y pousse chaque clip dès qu'il est
+# prêt (avec avancement.txt et mesure.json) : rien n'est perdu si une machine s'arrête, rien n'est refait. 20 machines.
 name: Banque de mouvements (Wan 2.2)
 on:
   push:
@@ -19,7 +21,7 @@ defaults:
 env:
   SD_CPP: 0518b34374761cb82aeda5ad3c2f0686fdad2cec
   HF: https://huggingface.co
-  PARTS: 14
+  PARTS: 20
 jobs:
   part:
     runs-on: ubuntu-24.04
@@ -27,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
     steps:
       - uses: actions/checkout@v4
       - name: Processeur de la machine
@@ -60,24 +62,19 @@ jobs:
       - name: Clips de la part ${{ matrix.part }}
         env: { FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
         run: |
-          O=$RUNNER_TEMP/sortie; mkdir -p $O; t1=$(date +%s)
+          O=$RUNNER_TEMP/sortie; B=banque-sortie-${{ matrix.part }}; t1=$(date +%s)
           git fetch -q origin fabrique-donnees && git show FETCH_HEAD:cle.priv.json > $RUNNER_TEMP/cle.priv.json
-          git worktree add -q --detach ../progres HEAD && (cd ../progres && git checkout -q --orphan p && git rm -rqf . && git clean -fdq)
+          if git fetch -q origin $B 2>/dev/null; then git worktree add -q --detach $O FETCH_HEAD; echo "reprise : $(ls $O/*.msb 2>/dev/null | wc -l) clips déjà sur la branche"
+          else git worktree add -q --detach $O HEAD && (cd $O && git checkout -q --orphan p && git rm -rqf . && git clean -fdq); fi
+          echo '*.part' > $O/.gitignore
+          pousse() { (cd $O && git add -A && git -c user.name=banque -c user.email=banque@users.noreply.github.com commit -qm "Banque : part ${{ matrix.part }} (run ${{ github.run_id }})" && git push -q origin HEAD:refs/heads/$B) > /dev/null 2>&1 || true; }
           ( while sleep 120; do
-              L=$O/journal.txt; [ -f $L ] || continue
-              l="[$(( $(date +%s) - t1 )) s] $(grep '^===' $L | tail -1) $(tr '\r' '\n' < $L | grep -E 's/it|decode|taken' | tail -1 | cut -c1-120) · mémoire libre $(free -m | awk '/Mem:/{print $7}') Mo"
-              echo "$l" >> ../progres/avancement.txt
-              (cd ../progres && git add -A && git -c user.name=banque -c user.email=banque@users.noreply.github.com commit -qm "part ${{ matrix.part }}" && git push -qf origin HEAD:banque-progres-${{ matrix.part }}) > /dev/null 2>&1 || true
+              L=$RUNNER_TEMP/sortie-clair/journal.txt; [ -f $L ] || continue
+              echo "[$(( $(date +%s) - t1 )) s] $(ls $O/*.msb 2>/dev/null | wc -l) clips · $(grep '^===' $L | tail -1) $(tr '\r' '\n' < $L | grep -E 's/it|decode|taken' | tail -1 | cut -c1-110) · mémoire libre $(free -m | awk '/Mem:/{print $7}') Mo" >> $O/avancement.txt
+              pousse
             done ) & P=$!
           python3 studio-video/banque/tourne_banque.py studio-video/banque/demandes/demande.json ${{ matrix.part }} $PARTS $M $O \
             ~/sdbin/sd-cli $RUNNER_TEMP/cle.priv.json studio-video/animer/cle-claude.pub.pem || true
-          kill $P 2>/dev/null || true; rm -f $RUNNER_TEMP/cle.priv.json; ls -la $O
-      - name: Sceller et rendre (branche banque-sortie-${{ matrix.part }})
-        if: always()
-        run: |
-          O=$RUNNER_TEMP/sortie; R=$RUNNER_TEMP/rendu; mkdir -p $R
-          cp $O/*.msb $O/mesure.json $R/ 2>/dev/null || true
-          tr '\r' '\n' < $O/journal.txt 2>/dev/null | grep -i -E "^===|lora|error|warn|taken|completed" | awk '!seen[$0]++' | tail -120 > $R/journal.txt || true
-          git worktree add -q --detach ../rendu HEAD && cd ../rendu && git checkout -q --orphan publie && git rm -rqf . && git clean -fdq
-          cp $R/* . && git add -A && git -c user.name=banque -c user.email=banque@users.noreply.github.com commit -qm "Banque : part ${{ matrix.part }} (run ${{ github.run_id }})"
-          git push -q -f origin publie:banque-sortie-${{ matrix.part }}
+          kill $P 2>/dev/null || true; rm -f $RUNNER_TEMP/cle.priv.json; sleep 5
+          tr '\r' '\n' < $RUNNER_TEMP/sortie-clair/journal.txt 2>/dev/null | grep -i -E "^===|lora|error|warn|taken|completed" | awk '!seen[$0]++' | tail -120 > $O/journal-${{ github.run_id }}.txt || true
+          pousse; ls -la $O

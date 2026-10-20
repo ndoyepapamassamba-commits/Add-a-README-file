@@ -9,6 +9,8 @@
 # tuiles prenait 5 à 9 min PAR TUILE (≈ 1 h par clip). → décodage par TAEHV (madebyollin, MIT ; « taew2_2 » pour Wan 2.2 TI2V-5B,
 # pris en charge par stable-diffusion.cpp, docs/taesd.md) : quelques secondes, très peu de mémoire, finesse un peu moindre ;
 # les clips les plus vus pourront être redécodés plus tard avec le VAE complet.
+# 20/10 23:30 : reprenable comme la bible — SORTIE est la copie de travail de banque-sortie-<part> (clips scellés seulement), le clair
+# et le journal vont dans SORTIE-clair ; un clip déjà présent n'est pas refait, chaque clip est poussé dès qu'il est prêt.
 #   python3 tourne_banque.py TACHES.json PART NB POIDS SORTIE BINAIRE CLE_FABRIQUE.priv.json CLE_CLAUDE.pub.pem
 import json, os, re, subprocess, sys, time
 
@@ -21,10 +23,13 @@ NEGATIF = ('色调艳丽，过曝，静态，细节模糊不清，字幕，风�
 
 def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude):
     T = [t for i, t in enumerate(json.load(open(taches, encoding='utf-8'))) if i % int(nb) == int(part)]
-    clair = os.path.join(sortie, 'clair'); os.makedirs(clair, exist_ok=True)
+    clair = sortie.rstrip('/') + '-clair'; os.makedirs(clair, exist_ok=True)   # hors de la copie poussée
     priv = coffre._priv(priv_fabrique, coffre._phrase()); pub = coffre._pub(pub_claude); poses = {}; res = []
-    journal = os.path.join(sortie, 'journal.txt')
+    journal = os.path.join(clair, 'journal.txt')
+    faits = {f[:-4] for f in os.listdir(sortie) if f.endswith('.msb')}   # reprise : un clip déjà rendu n'est jamais refait
+    if os.path.isfile(os.path.join(sortie, 'mesure.json')): res = json.load(open(os.path.join(sortie, 'mesure.json')))['clips']
     for t in T:
+        if t['id'] in faits: continue
         p = t['personnage']
         if p not in poses:   # planche ouverte en mémoire de la machine, poses découpées une fois par personnage
             pl = os.path.join(clair, p + '.jpg')
@@ -32,7 +37,7 @@ def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude):
             poses[p] = banque.poses(pl, os.path.join(clair, p))
         avi = os.path.join(clair, t['id'] + '.avi'); mp4 = os.path.join(clair, t['id'] + '.mp4'); t0 = time.time(); mode = None
         for mode in ('at_runtime',):   # 20/10 22:46 : « immediately » échoue au chargement sur les poids GGUF (repli constaté sur les 14 machines)
-            cmd = ['/usr/bin/time', '-v', '-o', os.path.join(sortie, 'time.txt'), binaire, '-M', 'vid_gen',
+            cmd = ['/usr/bin/time', '-v', '-o', os.path.join(clair, 'time.txt'), binaire, '-M', 'vid_gen',
                    '--diffusion-model', f'{M}/base.gguf', '--vae', f'{M}/vae.safetensors', '--t5xxl', f'{M}/umt5.gguf',
                    '--lora-model-dir', f'{M}/lora', '--lora-apply-mode', mode, '-i', poses[p][t['pose']],
                    '-p', t['prompt'] + '<lora:fastwan:1>', '-n', NEGATIF, '--cfg-scale', '1', '--sampling-method', 'euler',
@@ -46,13 +51,16 @@ def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude):
         if ok:
             subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', avi, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '16', mp4])
             ok = os.path.isfile(mp4)
-            if ok: open(os.path.join(sortie, t['id'] + '.msb'), 'wb').write(coffre.scelle_octets(open(mp4, 'rb').read(), pub))
-        tps = open(os.path.join(sortie, 'time.txt')).read() if os.path.isfile(os.path.join(sortie, 'time.txt')) else ''
+            if ok:   # écrit sous un autre nom puis renommé : la boucle de poussée ne voit jamais un clip à moitié écrit
+                open(os.path.join(sortie, t['id'] + '.msb.part'), 'wb').write(coffre.scelle_octets(open(mp4, 'rb').read(), pub))
+                os.replace(os.path.join(sortie, t['id'] + '.msb.part'), os.path.join(sortie, t['id'] + '.msb'))
+        tps = open(os.path.join(clair, 'time.txt')).read() if os.path.isfile(os.path.join(clair, 'time.txt')) else ''
         rss = re.search(r'Maximum resident set size \(kbytes\): (\d+)', tps)
         res.append({'clip': t['id'], 'ok': ok, 'lora': mode, 'secondes': round(time.time() - t0),
                     'memoire_max_go': round(int(rss.group(1)) / 1e6, 2) if rss else None})
         print(json.dumps(res[-1], ensure_ascii=False), flush=True)
-        json.dump({'part': int(part), 'clips': res, 'run': os.environ.get('GITHUB_RUN_ID')}, open(os.path.join(sortie, 'mesure.json'), 'w'), indent=1)
+        json.dump({'part': int(part), 'clips': res, 'run': os.environ.get('GITHUB_RUN_ID')}, open(os.path.join(sortie, 'mesure.json.part'), 'w'), indent=1)
+        os.replace(os.path.join(sortie, 'mesure.json.part'), os.path.join(sortie, 'mesure.json'))
 
 
 if __name__ == '__main__':

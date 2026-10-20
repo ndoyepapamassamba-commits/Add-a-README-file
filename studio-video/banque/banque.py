@@ -13,6 +13,14 @@ import json, os, sys
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 V1 = ['koffi', 'coumba', 'baye-ndiaye', 'maman-nounou', 'petit-mamadou', 'tantie-awa', 'modou']
+# 20/10/2026 — « on doit tourner 10 000 [vidéos], pas 7 personnages » : les planches des 47 autres personnages viennent de la bible
+# V1 (images/bible_tourne.py) ; relais.py les vérifie (5 poses séparées sur le vert), les scelle pour les machines et les inscrit
+# dans troupe.json — la banque tourne alors leurs gestes, sans refaire ceux déjà tournés.
+TROUPE = os.path.join(ICI, 'troupe.json')
+
+
+def personnages():
+    return json.load(open(TROUPE, encoding='utf-8'))['personnages'] if os.path.isfile(TROUPE) else V1
 GESTES = {   # geste → (pose de départ sur la planche, consigne de mouvement)
     'parler':   (0, 'talks animatedly with natural lip movement and small hand gestures, slight head nods'),
     'ecouter':  (0, 'listens attentively, blinks, nods slowly, small breathing movement, mouth closed'),
@@ -27,9 +35,9 @@ CONSIGNE = ("3D animated cartoon character, Pixar style, the same character exac
             "static camera, smooth natural motion: the character {geste}.")
 
 
-def taches():
+def taches(qui=None):
     return [{'id': f'{p}--{g}', 'personnage': p, 'geste': g, 'pose': po, 'prompt': CONSIGNE.format(geste=c)}
-            for p in V1 for g, (po, c) in GESTES.items()]
+            for p in (qui or personnages()) for g, (po, c) in GESTES.items()]
 
 
 def poses(planche, dossier):
@@ -71,7 +79,7 @@ if __name__ == '__main__':
     if a and a[0] == 'taches':
         T = taches()
         if len(a) > 1: json.dump(T, open(a[1], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-        print(json.dumps({'clips': len(T), 'personnages': len(V1), 'gestes': len(GESTES)}))
+        print(json.dumps({'clips': len(T), 'personnages': len(personnages()), 'gestes': len(GESTES)}))
     elif a and a[0] == 'poses': print(json.dumps(poses(a[1], a[2])))
     elif a and a[0] == 'lot':
         T = json.load(open(a[1], encoding='utf-8')); k, n = int(a[2]), int(a[3])
