@@ -5,3 +5,4 @@
 [487 s] 0 images · === decor-pharmacie-large-jour   |=====================================>            | 3/4 - 135.94s/it[K · mémoire libre 6968 Mo
 [608 s] 0 images · === decor-pharmacie-large-jour   |==================================================| 4/4 - 135.54s/it[K · mémoire libre 5853 Mo
 [730 s] 1 images · === maison-general-zongo-salon-large-jour   |==================================================| 4/4 - 135.54s/it[K · mémoire libre 6994 Mo
+[851 s] 1 images · === maison-general-zongo-salon-large-jour   |============>                                     | 1/4 - 143.45s/it[K · mémoire libre 6980 Mo
