@@ -11,3 +11,4 @@
 [851 s] 2 images · === maison-fatou-cour-large-jour   |==================================================| 4/4 - 89.37s/it[K · mémoire libre 7220 Mo
 [973 s] 2 images · === maison-fatou-cour-large-jour   |============>                                     | 1/4 - 93.61s/it[K · mémoire libre 7048 Mo
 [1094 s] 2 images · === maison-fatou-cour-large-jour   |=========================>                        | 2/4 - 87.20s/it[K · mémoire libre 7089 Mo
+[1215 s] 3 images · === perso-general-zongo   |==================================================| 4/4 - 86.79s/it[K · mémoire libre 11615 Mo

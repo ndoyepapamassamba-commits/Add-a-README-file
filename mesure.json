@@ -24,6 +24,17 @@
    "h": 448,
    "memoire_max_go": 9.48,
    "run": "39514755738"
+  },
+  {
+   "tache": "maison-fatou-cour-large-jour",
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 395,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.48,
+   "run": "39514755738"
   }
  ]
 }
