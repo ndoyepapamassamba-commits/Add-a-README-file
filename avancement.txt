@@ -9,3 +9,4 @@
 [1093 s] === maman-nounou--choc (at_runtime)   |=====================================>            | 3/4 - 133.35s/it[K · mémoire libre 13771 Mo
 [1214 s] === tantie-awa--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13768 Mo
 [1335 s] === tantie-awa--ecouter (at_runtime)   |============>                                     | 1/4 - 133.68s/it[K · mémoire libre 13767 Mo
+[1456 s] === tantie-awa--ecouter (at_runtime)   |============>                                     | 1/4 - 133.68s/it[K · mémoire libre 13762 Mo
