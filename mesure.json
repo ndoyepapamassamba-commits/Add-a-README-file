@@ -1,0 +1,15 @@
+{
+ "reglage": "base",
+ "modele": "base",
+ "lora": "",
+ "etapes": 20,
+ "cfg": 5,
+ "taille": "480x288",
+ "images": 33,
+ "sd_cpp": "0518b34374761cb82aeda5ad3c2f0686fdad2cec",
+ "animation_s": 0,
+ "total_s": 324,
+ "memoire_max_go": null,
+ "clip": false,
+ "run": "39501522841"
+}

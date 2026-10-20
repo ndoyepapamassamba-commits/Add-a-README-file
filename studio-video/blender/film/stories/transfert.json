@@ -1,0 +1,145 @@
+{
+ "title": "Le transfert de Koffi",
+ "hook": "Il veut l’épouser avec quel argent ?",
+ "decor": "Cérémonie",
+ "fps": 25,
+ "size": [
+  576,
+  1024
+ ],
+ "music": true,
+ "cast": [
+  {
+   "id": "nounou",
+   "name": "MAMAN NOUNOU",
+   "voice": "siwis",
+   "height": 1.6,
+   "x": -0.45,
+   "pitch": 0.95
+  },
+  {
+   "id": "koffi",
+   "name": "KOFFI",
+   "voice": "pierre",
+   "height": 1.78,
+   "x": 0.42
+  },
+  {
+   "id": "coumba",
+   "name": "COUMBA",
+   "voice": "jessica",
+   "height": 1.7,
+   "x": 0
+  }
+ ],
+ "beats": [
+  {
+   "who": "nounou",
+   "pose": "accuse",
+   "text": "Koffi, tu veux épouser ma fille avec quel argent ?",
+   "react": {
+    "koffi": "choc"
+   },
+   "shot": "two"
+  },
+  {
+   "who": "koffi",
+   "pose": "haussement",
+   "text": "Maman, l’argent n’est pas un problème. Je suis dans les affaires."
+  },
+  {
+   "who": "nounou",
+   "pose": "accuse",
+   "text": "Quelles affaires ? Tu portes tes lunettes même la nuit."
+  },
+  {
+   "who": "koffi",
+   "pose": "neutre",
+   "text": "C’est pour protéger mes yeux… du soleil de ma réussite."
+  },
+  {
+   "who": "coumba",
+   "pose": "rire",
+   "text": "Maman, il a déjà fait le transfert pour la dot !",
+   "react": {
+    "koffi": "choc"
+   }
+  },
+  {
+   "who": "koffi",
+   "pose": "choc",
+   "text": "Euh… oui. Le transfert est en route. Il voyage."
+  },
+  {
+   "who": "nounou",
+   "pose": "haussement",
+   "text": "Il voyage à pied ou en gbaka ?"
+  },
+  {
+   "who": "koffi",
+   "pose": "haussement",
+   "text": "Le réseau est saturé. C’est la coupure de courant."
+  },
+  {
+   "who": "nounou",
+   "pose": "accuse",
+   "text": "Le courant, c’est pour la lumière, mon fils. Pas pour l’argent."
+  },
+  {
+   "who": "coumba",
+   "pose": "neutre",
+   "text": "Montre au moins le message de confirmation, chéri."
+  },
+  {
+   "who": "koffi",
+   "pose": "haussement",
+   "text": "Je l’ai supprimé. Par discrétion. Je suis un homme humble.",
+   "react": {
+    "nounou": "choc"
+   }
+  },
+  {
+   "who": "nounou",
+   "pose": "neutre",
+   "text": "Bon. Moi aussi je vais faire un transfert. Donne ta chaîne.",
+   "shot": "two"
+  },
+  {
+   "who": "koffi",
+   "pose": "choc",
+   "text": "Maman ! C’est ma chaîne en or !"
+  },
+  {
+   "who": "coumba",
+   "pose": "rire",
+   "text": "Maman, elle n’est même pas en or. Elle rouille !",
+   "react": {
+    "koffi": "choc"
+   }
+  },
+  {
+   "who": "koffi",
+   "pose": "haussement",
+   "text": "C’est de l’or… vintage."
+  },
+  {
+   "who": "nounou",
+   "pose": "rire",
+   "text": "Ta chaîne est en route. Elle voyage.",
+   "shot": "cu"
+  },
+  {
+   "who": "koffi",
+   "pose": "choc",
+   "text": "Maman, ça, c’est du vol !",
+   "react": {
+    "coumba": "rire"
+   },
+   "shot": "two"
+  }
+ ],
+ "punch": {
+  "beat": 15,
+  "emoji": "😂"
+ }
+}

@@ -1,0 +1,90 @@
+/**
+ * CONTINUITÉ D'UN SKETCH COURT — mesurée sur « Le chef invisible » (v44, circuit Grok) :
+ *  - une scène dessinée dehors alors que tout le sketch se passe au bureau → un film ≤ 60 s garde UN décor (le décor
+ *    dominant), sauf si l'histoire en impose plusieurs à part égale ;
+ *  - des bras qui s'étirent / se déchirent dans les clips image → vidéo → le prompt d'animation verrouille l'identité
+ *    de la première image et demande un jeu cartoon VIVANT (bouche, gestes amples, réactions) — v45 : « la scène manque
+ *    d'animations » — sans jamais déformer l'anatomie.
+ */
+import type { CharacterSheet, Scene } from './types';
+import { CRAFT, beatsSentence, characterAnchor, has, shapeVideoPrompt, shotLabel, type CraftSet } from './craftSkills';
+
+export const settingKey = (s: string) =>
+  (s ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/\b(le|la|les|l|du|de|des|d|un|une|au|aux|dans|interieur|int|ext)\b/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+/** Short sketch → one set: every scene takes the dominant location (most frequent; tie → the first scene's). */
+export function lockShortSetting(scenes: Scene[], durationS: number, maxS = 60): { scenes: Scene[]; location: string | null; changed: string[] } {
+  if (durationS > maxS || scenes.length < 2) return { scenes, location: null, changed: [] };
+  const count = new Map<string, { n: number; first: number; name: string }>();
+  scenes.forEach((sc, i) => {
+    const k = settingKey(sc.location);
+    if (!k) return;
+    const c = count.get(k) ?? { n: 0, first: i, name: sc.location };
+    c.n++;
+    count.set(k, c);
+  });
+  if (count.size < 2) return { scenes, location: null, changed: [] };
+  const ranked = [...count.values()].sort((a, b) => b.n - a.n || a.first - b.first);
+  // Two sets used equally often (a real « here then there » story): left as written.
+  if (ranked[0]!.n === ranked[1]!.n && ranked[0]!.n > 1) return { scenes, location: null, changed: [] };
+  const name = ranked[0]!.name;
+  const key = settingKey(name);
+  const changed = scenes.filter((sc) => settingKey(sc.location) !== key).map((sc) => sc.scene_id);
+  return { scenes: scenes.map((sc) => (settingKey(sc.location) === key ? sc : { ...sc, location: name })), location: name, changed };
+}
+
+/**
+ * Who speaks, in order, and who listens with the mouth CLOSED (v48: characters talking without sound, the wrong
+ * mouth moving): the video model has no voice track, so the order of the lines is written into the prompt.
+ */
+export function speakingOrder(sc: Pick<Scene, 'dialogue' | 'characters'>): string {
+  const turns: string[] = [];
+  for (const d of sc.dialogue ?? []) {
+    const who = d.speaker.toUpperCase();
+    if (turns[turns.length - 1] !== who) turns.push(who);
+  }
+  if (!turns.length) return 'Nobody speaks in this shot: mouths stay closed, the acting is in faces and gestures.';
+  const all = [...new Set([...(sc.characters ?? []).map((c) => c.toUpperCase()), ...turns])];
+  const steps = turns.map((who, i) => {
+    const others = all.filter((x) => x !== who);
+    return `${i === 0 ? 'First' : 'then'} ${who} talks (mouth clearly opening and closing)${others.length ? ` while ${others.join(' and ')} listen${others.length > 1 ? '' : 's'} with the mouth closed and react` : ''}`;
+  });
+  return `${steps.join(', ')}. Only one person talks at a time.`;
+}
+const look = (c: Partial<CharacterSheet>) => [c.age, c.clothing, c.accessories].filter(Boolean).join(', ').slice(0, 90);
+/** Image → video prompt: the motion of the beat, the first frame locked, deformation named as what to avoid. */
+export function lockedVideoPrompt(
+  sc: Pick<Scene, 'video_prompt' | 'action' | 'characters' | 'location'> & Partial<Pick<Scene, 'dialogue' | 'craft' | 'duration'>>,
+  cast: (Pick<CharacterSheet, 'name'> & Partial<CharacterSheet>)[] = [],
+  o: { craft?: CraftSet; style?: string } = {},
+): string {
+  // video-director: the timed beats of the plan become the motion sentence; video-storyboard: the first shot frames it.
+  const planned = has(o.craft, CRAFT.director) && sc.craft?.beats?.length ? beatsSentence(sc.craft.beats) : '';
+  const framing = has(o.craft, CRAFT.storyboard) && sc.craft?.shots?.[0] ? ` ${shotLabel(sc.craft.shots[0])}.` : '';
+  let motion = `${(planned || sc.video_prompt || sc.action || '').trim().replace(/\s+/g, ' ')}${framing}`.slice(0, 600);
+  // video-prompting: cinematography vocabulary, one camera move, no model / duration / format in the text.
+  if (has(o.craft, CRAFT.prompt)) motion = shapeVideoPrompt(motion, { seconds: sc.duration }).text;
+  const inShot = sc.characters.length ? sc.characters : cast.map((c) => c.name);
+  const anchor = has(o.craft, CRAFT.character);
+  const names = inShot
+    .map((n) => {
+      const c = cast.find((x) => x.name.toUpperCase() === n.toUpperCase());
+      if (anchor && c) return characterAnchor(c, o.style);
+      const l = c ? look(c) : '';
+      return l ? `${n} (${l})` : n;
+    })
+    .join(anchor ? ' | ' : ', ');
+  return [
+    motion,
+    speakingOrder({ dialogue: sc.dialogue ?? [], characters: sc.characters }),
+    `Keep the first frame exactly: same characters${names ? ` (${names})` : ''} with the same face, skin tone, hair, glasses, clothes and body proportions; same place (${sc.location || 'same set'}), same props, same framing.`,
+    'Lively, exaggerated cartoon acting from the first to the last frame: the speaker talks with the mouth clearly opening and closing, big hand and arm gestures, head turns, eyebrows and eyes react, the listener reacts visibly (shock, laugh, eye-roll); bodies keep moving, never a frozen pose; steady camera with a gentle push-in.',
+    'Avoid: morphing, melting or stretching arms, extra arms or hands, torn or flickering body parts, objects passing through bodies, new characters, a change of place, camera cuts, any text.',
+  ].join(' ');
+}

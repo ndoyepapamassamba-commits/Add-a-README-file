@@ -1,0 +1,137 @@
+{
+ "title": "L’addition de Koffi",
+ "hook": "Koffi paie tout le maquis ?",
+ "decor": "Plage",
+ "fps": 25,
+ "size": [
+  576,
+  1024
+ ],
+ "music": true,
+ "cast": [
+  {
+   "id": "koffi",
+   "name": "KOFFI",
+   "voice": "pierre",
+   "height": 1.78,
+   "x": -0.4
+  },
+  {
+   "id": "awa",
+   "name": "TANTIE AWA",
+   "voice": "siwis",
+   "height": 1.62,
+   "x": 0.42
+  },
+  {
+   "id": "mamadou",
+   "name": "PETIT MAMADOU",
+   "voice": "jessica",
+   "height": 1.15,
+   "x": 0.05,
+   "pitch": 1.22,
+   "enter": 10
+  }
+ ],
+ "beats": [
+  {
+   "who": "koffi",
+   "pose": "rire",
+   "text": "Tantie ! Ce soir, c’est moi qui paie tout le maquis !",
+   "react": {
+    "awa": "choc"
+   },
+   "shot": "two"
+  },
+  {
+   "who": "awa",
+   "pose": "rire",
+   "text": "Ehhh Dieu ! Koffi est devenu riche ?"
+  },
+  {
+   "who": "koffi",
+   "pose": "haussement",
+   "text": "Riche ? Non. Je suis devenu très riche."
+  },
+  {
+   "who": "awa",
+   "pose": "neutre",
+   "text": "Poisson braisé, attiéké, alloco pour vingt personnes ?"
+  },
+  {
+   "who": "koffi",
+   "pose": "rire",
+   "text": "Pour trente ! Et rajoute les boissons !"
+  },
+  {
+   "who": "awa",
+   "pose": "neutre",
+   "text": "Voilà l’addition : quatre-vingt-cinq mille francs.",
+   "react": {
+    "koffi": "choc"
+   }
+  },
+  {
+   "who": "koffi",
+   "pose": "choc",
+   "text": "Quatre-vingt… Attends, mon téléphone sonne."
+  },
+  {
+   "who": "awa",
+   "pose": "accuse",
+   "text": "Ton téléphone ne sonne pas. Il est éteint."
+  },
+  {
+   "who": "koffi",
+   "pose": "haussement",
+   "text": "C’est un appel silencieux. Pour les gens importants."
+  },
+  {
+   "who": "awa",
+   "pose": "accuse",
+   "text": "Koffi, paie, ou je garde tes lunettes."
+  },
+  {
+   "who": "mamadou",
+   "pose": "rire",
+   "text": "Tantie ! J’ai tout filmé. C’est déjà sur TikTok !",
+   "react": {
+    "koffi": "choc"
+   },
+   "shot": "two"
+  },
+  {
+   "who": "koffi",
+   "pose": "choc",
+   "text": "Quoi ?! Combien de vues ?"
+  },
+  {
+   "who": "mamadou",
+   "pose": "haussement",
+   "text": "Dix mille vues. Et ta maman a commenté."
+  },
+  {
+   "who": "koffi",
+   "pose": "choc",
+   "text": "Elle a dit quoi ?!"
+  },
+  {
+   "who": "mamadou",
+   "pose": "neutre",
+   "text": "Elle a dit : paie, Koffi. Tu m’as fatiguée."
+  },
+  {
+   "who": "awa",
+   "pose": "rire",
+   "text": "Paie, ou je fais la partie deux.",
+   "react": {
+    "koffi": "choc"
+   },
+   "shot": "cu"
+  }
+ ],
+ "punch": {
+  "beat": 15,
+  "emoji": "😂"
+ }
+}

@@ -1,0 +1,300 @@
+{
+ "data": [
+  {
+   "id": "tencent/hy-image-v3.5-preview",
+   "name": "Tencent: Hy Image 3.5 Preview",
+   "description": "Hy Image 3.5 Preview is a unified image generation and editing model from Tencent. It handles text-to-image, image-to-image, and multi-turn editing through one ",
+   "created": 1791232017,
+   "architecture": {
+    "input_modalities": [
+     "text",
+     "image"
+    ],
+    "output_modalities": [
+     "image"
+    ]
+   },
+   "supported_parameters": {
+    "resolution": {
+     "type": "enum",
+     "values": [
+      "1K",
+      "1.5K",
+      "2K",
+      "4K"
+     ]
+    },
+    "aspect_ratio": {
+     "type": "enum",
+     "values": [
+      "1:1",
+      "1:2",
+      "1:4",
+      "2:1",
+      "2:3",
+      "3:2",
+      "3:4",
+      "4:1",
+      "4:3",
+      "4:5",
+      "5:4",
+      "9:16",
+      "16:9"
+     ]
+    },
+    "n": {
+     "type": "range",
+     "min": 1,
+     "max": 1
+    },
+    "input_references": {
+     "type": "range",
+     "min": 0,
+     "max": 20
+    },
+    "seed": {
+     "type": "boolean"
+    },
+    "size": {
+     "type": "boolean"
+    }
+   },
+   "supports_streaming": false,
+   "endpoints": "/api/v1/images/models/tencent/hy-image-v3.5-preview/endpoints"
+  },
+  {
+   "id": "bytedance-seed/seedream-5-0-flash",
+   "name": "ByteDance Seed: Seedream 5.0 Flash",
+   "description": "Seedream 5.0 Flash is an image generation and editing model from ByteDance Seed. It is the fast, cost-efficient tier of the Seedream 5.0 family, suited for high",
+   "created": 1790889880,
+   "architecture": {
+    "input_modalities": [
+     "text",
+     "image"
+    ],
+    "output_modalities": [
+     "image"
+    ]
+   },
+   "supported_parameters": {
+    "resolution": {
+     "type": "enum",
+     "values": [
+      "1K",
+      "2K"
+     ]
+    },
+    "aspect_ratio": {
+     "type": "enum",
+     "values": [
+      "1:1",
+      "1:2",
+      "2:1",
+      "2:3",
+      "3:2",
+      "3:4",
+      "4:3",
+      "4:5",
+      "5:4",
+      "9:16",
+      "16:9",
+      "9:19.5",
+      "19.5:9",
+      "9:20",
+      "20:9",
+      "9:21",
+      "21:9",
+      "auto"
+     ]
+    },
+    "n": {
+     "type": "range",
+     "min": 1,
+     "max": 1
+    },
+    "input_references": {
+     "type": "range",
+     "min": 0,
+     "max": 14
+    },
+    "seed": {
+     "type": "boolean"
+    }
+   },
+   "supports_streaming": false,
+   "endpoints": "/api/v1/images/models/bytedance-seed/seedream-5-0-flash/endpoints"
+  },
+  {
+   "id": "black-forest-labs/flux-3-image",
+   "name": "Black Forest Labs: FLUX.3 Image",
+   "description": "FLUX.3 Image is Black Forest Labs' flagship image generation and editing model. It handles text-to-image and multi-reference editing with up to 10 input images,",
+   "created": 1790885807,
+   "architecture": {
+    "input_modalities": [
+     "text",
+     "image"
+    ],
+    "output_modalities": [
+     "image"
+    ]
+   },
+   "supported_parameters": {
+    "resolution": {
+     "type": "enum",
+     "values": [
+      "768",
+      "1K",
+      "1.5K",
+      "2K",
+      "4K"
+     ]
+    },
+    "aspect_ratio": {
+     "type": "enum",
+     "values": [
+      "21:9",
+      "2:1",
+      "16:9",
+      "3:2",
+      "7:5",
+      "4:3",
+      "5:4",
+      "1:1",
+      "4:5",
+      "3:4",
+      "5:7",
+      "2:3",
+      "9:16",
+      "1:2",
+      "9:21",
+      "auto"
+     ]
+    },
+    "n": {
+     "type": "range",
+     "min": 1,
+     "max": 1
+    },
+    "input_references": {
+     "type": "range",
+     "min": 0,
+     "max": 10
+    }
+   },
+   "supports_streaming": false,
+   "endpoints": "/api/v1/images/models/black-forest-labs/flux-3-image/endpoints"
+  },
+  {
+   "id": "inclusionai/ming-image-0.1-design-layer",
+   "name": "inclusionAI: Ming Image 0.1 Design Layer",
+   "description": "Ming Image 0.1 Design Layer is an image-to-image model from inclusionAI that decomposes a flattened design image into separate RGBA layers, such as a background",
+   "created": 1790201839,
+   "architecture": {
+    "input_modalities": [
+     "text",
+     "image"
+    ],
+    "output_modalities": [
+     "image"
+    ]
+   },
+   "supported_parameters": {
+    "output_format": {
+     "type": "enum",
+     "values": [
+      "png",
+      "webp"
+     ]
+    },
+    "n": {
+     "type": "range",
+     "min": 1,
+     "max": 1
+    },
+    "input_references": {
+     "type": "range",
+     "min": 1,
+     "max": 1
+    },
+    "size": {
+     "type": "boolean"
+    }
+   },
+   "supports_streaming": false,
+   "endpoints": "/api/v1/images/models/inclusionai/ming-image-0.1-design-layer/endpoints"
+  },
+  {
+   "id": "recraft/recraft-v4.1-flash",
+   "name": "Recraft: Recraft V4.1 Flash",
+   "description": "Recraft V4.1 Flash is a text-to-image model from Recraft, the speed and cost tier of the V4.1 family. It generates ~1K raster images in about 1.5 seconds end to",
+   "created": 1790177946,
+   "architecture": {
+    "input_modalities": [
+     "text"
+    ],
+    "output_modalities": [
+     "image"
+    ]
+   },
+   "supported_parameters": {
+    "aspect_ratio": {
+     "type": "enum",
+     "values": [
+      "1:1",
+      "4:3",
+      "3:4",
+      "16:9",
+      "9:16",
+      "auto"
+     ]
+    },
+    "n": {
+     "type": "range",
+     "min": 1,
+     "max": 6
+    }
+   },
+   "supports_streaming": false,
+   "endpoints": "/api/v1/images/models/recraft/recraft-v4.1-flash/endpoints"
+  },
+  {
+   "id": "inclusionai/ming-image-0.1-design",
+   "name": "inclusionAI: Ming Image 0.1 Design",
+   "description": "Ming Image 0.1 Design is a text-to-image model from inclusionAI aimed at graphic-design output, with an emphasis on legible text rendering inside the generated ",
+   "created": 1790095711,
+   "architecture": {
+    "input_modalities": [
+     "text"
+    ],
+    "output_modalities": [
+     "image"
+    ]
+   },
+   "supported_parameters": {
+    "output_format": {
+     "type": "enum",
+     "values": [
+      "png",
+      "jpeg",
+      "webp"
+     ]
+    },
+    "n": {
+     "type": "range",
+     "min": 1,
+     "max": 1
+    },
+    "input_references": {
+     "type": "range",
+     "min": 0,
+     "max": 0
+    },
+    "size": {
+     "type": "boolean"
+    }
+   },
+   "supports_streaming": false,
+   "endpoints": "/api/v1/images/models/inclusionai/ming-image-0.1-design/endpoints"
+  }
+ ]
+}

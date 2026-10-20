@@ -1,0 +1,137 @@
+{
+ "title": "Le garba de Coumba",
+ "hook": "Qui paie le garba l’épouse",
+ "decor": "Maquis",
+ "fps": 25,
+ "size": [
+  576,
+  1024
+ ],
+ "music": true,
+ "cast": [
+  {
+   "id": "coumba",
+   "name": "COUMBA",
+   "voice": "jessica",
+   "height": 1.7,
+   "x": 0
+  },
+  {
+   "id": "koffi",
+   "name": "KOFFI",
+   "voice": "pierre",
+   "height": 1.78,
+   "x": -0.5
+  },
+  {
+   "id": "modou",
+   "name": "MODOU",
+   "voice": "tom",
+   "height": 1.76,
+   "x": 0.5
+  }
+ ],
+ "beats": [
+  {
+   "who": "coumba",
+   "pose": "rire",
+   "text": "Celui qui me paie le garba ce soir, je l’épouse.",
+   "react": {
+    "koffi": "choc",
+    "modou": "choc"
+   },
+   "shot": "two"
+  },
+  {
+   "who": "koffi",
+   "pose": "haussement",
+   "text": "Moi, je te paie le garba avec du thon de Dubaï."
+  },
+  {
+   "who": "modou",
+   "pose": "accuse",
+   "text": "Le thon de Dubaï ? Ton thon vient du marché d’Adjamé !"
+  },
+  {
+   "who": "koffi",
+   "pose": "neutre",
+   "text": "Il a pris l’avion. C’est un thon international."
+  },
+  {
+   "who": "modou",
+   "pose": "rire",
+   "text": "Moi, je te paie le garba ET l’attiéké."
+  },
+  {
+   "who": "coumba",
+   "pose": "neutre",
+   "text": "Avec quel argent, Modou ?"
+  },
+  {
+   "who": "modou",
+   "pose": "haussement",
+   "text": "L’attiéké est déjà dans ma poche. Il est chaud.",
+   "react": {
+    "coumba": "choc"
+   }
+  },
+  {
+   "who": "coumba",
+   "pose": "choc",
+   "text": "Dans ta poche ?! Depuis quand ?"
+  },
+  {
+   "who": "modou",
+   "pose": "neutre",
+   "text": "Depuis hier. Je suis un homme prévoyant."
+  },
+  {
+   "who": "koffi",
+   "pose": "rire",
+   "text": "Coumba, moi je paie par carte."
+  },
+  {
+   "who": "coumba",
+   "pose": "neutre",
+   "text": "Quelle carte ?"
+  },
+  {
+   "who": "koffi",
+   "pose": "haussement",
+   "text": "Ma carte… de fidélité. Neuf tampons sur dix !",
+   "react": {
+    "coumba": "choc"
+   }
+  },
+  {
+   "who": "coumba",
+   "pose": "accuse",
+   "text": "Bon. Vous allez payer moitié-moitié.",
+   "shot": "two"
+  },
+  {
+   "who": "modou",
+   "pose": "choc",
+   "text": "Moitié de quoi ? On a zéro tous les deux !"
+  },
+  {
+   "who": "koffi",
+   "pose": "haussement",
+   "text": "Zéro divisé par deux, ça fait toujours zéro, ma chérie."
+  },
+  {
+   "who": "coumba",
+   "pose": "rire",
+   "text": "Moi, j’épouse le vendeur de garba.",
+   "react": {
+    "koffi": "choc",
+    "modou": "choc"
+   },
+   "shot": "cu"
+  }
+ ],
+ "punch": {
+  "beat": 15,
+  "emoji": "😂"
+ }
+}

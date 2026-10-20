@@ -1,0 +1,97 @@
+---
+name: outils-puissants-d-abord
+description: Règle permanente de l'utilisateur, à appliquer AU DÉBUT DE CHAQUE REQUÊTE — chercher d'abord les outils les plus puissants du marché (génération vidéo, animation, 3D, voix, données…), mesurer leur qualité, leur vitesse, leur coût et leur licence, puis les AMÉLIORER et les INTÉGRER dans la tâche en cours, au lieu de bricoler une solution maison qui plafonne. Se déclenche à chaque demande de production (vidéo, animation, film, décor, voix, export) et dès qu'un résultat est lent ou en dessous du niveau attendu.
+---
+
+# Outils puissants d'abord — puis améliorés, puis intégrés
+
+Règle de l'utilisateur (14/10/2026) : « Tout le temps, dans chaque requête, cherche d'abord les outils nécessaires et
+puis les améliorer ensuite et les intégrer dans la tâche en cours. » — « 3 heures pour une vidéo, c'est beaucoup. »
+
+## 1. Au début de chaque requête (avant d'écrire du code)
+1. **Nommer le besoin** en capacités (ex. : « personnages qui bougent naturellement », « lèvres sur la voix », « décor
+   animé », « caméra cinéma », « une vidéo en quelques minutes »).
+2. **Chercher** l'état de l'art du moment pour chaque capacité : recherche web (mode `extended` pour le récent),
+   Hugging Face, GitHub, pages tarifs des API. Toujours plusieurs candidats : un service en ligne (API), un modèle
+   ouvert sur GPU, et ce qui tourne ici sur processeur.
+3. **Mesurer avant de choisir**, sur NOS images (troupe, planches de lieux), jamais sur la démo du fournisseur :
+   qualité (planche de contrôle regardée), **vitesse** (secondes par image ou par plan, matériel indiqué),
+   coût ($ par seconde de vidéo, par film), licence (poids ET code).
+4. **Choisir** le meilleur compromis qualité / temps / coût. Un film d'une minute doit sortir en **minutes**, pas en
+   heures : si l'outil n'y arrive pas sur le processeur du conteneur, il tourne sur GPU (machine de l'utilisateur,
+   GPU loué à la seconde) ou par API — jamais « on attend 3 h ».
+5. **Améliorer** pour notre domaine (pilotage par les pistes du plan : voix, clignements, poses ; style de la troupe ;
+   lieux d'Abidjan) et **intégrer** dans la tâche en cours, avec un contrôle qui prouve le gain (avant / après).
+6. **Consigner** ici (registre ci-dessous) et dans `modeles-libres-moteur` : outil, licence, vitesse mesurée, coût,
+   verdict. Une recherche déjà faite n'est pas refaite, elle est mise à jour.
+
+## 1 bis. GRATUIT et SANS ABONNEMENT (précisions de l'utilisateur, 14/10/2026)
+« Quand je parle d'outils, c'est d'outils puissants mais gratuits » — « sans que je doive m'abonner ».
+- D'abord : modèles OUVERTS (licences acceptées par `modeles-libres-moteur`) exécutés sur du calcul gratuit SANS compte : le processeur du
+  conteneur, la machine de l'utilisateur (son GPU s'il en a un, via le pont Blender), des Spaces publics anonymes.
+- Les API payantes (Veo, Grok, Kling…) et les services à compte (Modal, Kaggle, Runpod…) ne sont PAS proposés par
+  défaut ; seulement si l'utilisateur le demande.
+- Quand le calcul gratuit est lent, changer de MÉTHODE plutôt que d'attendre : calculer une fois et réutiliser
+  (bibliothèques d'états, caches), cadence « en deux », aperçu basse définition (« processeur fictif »), ne calculer
+  que ce qui se voit.
+
+## 2. Garde-fous qui ne changent pas
+- Licences : modèles et code **MIT, Apache-2.0, BSD** pour ce qui tourne chez nous ; les API commerciales passent par
+  le coffre de clés de l'application (jamais une clé dans le dépôt ni dans la conversation, jamais de compte créé au
+  nom de l'utilisateur).
+- Budget : un plafond par film, affiché AVANT l'appel ; « plafond DUR » seulement s'il est réellement appliqué par le code.
+- Aucune donnée inventée : vitesses et coûts mesurés ou cités avec leur source et leur date.
+- Le dépôt est public : images de l'utilisateur seulement dans `.private/` ou le scratchpad.
+
+## 3. Registre des outils (mis à jour à chaque recherche)
+
+| Capacité | Outil | Licence | Vitesse / coût mesurés ou cités | Verdict |
+|---|---|---|---|---|
+| Recherche web gratuite sans clé (1) | Tavily keyless | service gratuit | **mesuré** 1,5–2,3 s, 5 résultats, 3/3 depuis file:// | retenu — rotation `direct/lib/freeEngines.ts` |
+| Recherche web gratuite sans clé (2) | Parallel Search (MCP public anonyme) | service gratuit | **mesuré** 1,3–2,3 s, 8 résultats avec extraits datés, 3/3 | retenu — données chiffrées, contexte |
+| Recherche web gratuite sans clé (3) | Exa (MCP public mcp.exa.ai) | service gratuit (REST = payant) | **mesuré** 1,2–1,5 s, PDF officiels trouvés (BCEAO) | retenu — réglementation, études, entreprises |
+| Recherche web + actualités + images sans clé (4) | Firecrawl keyless | service gratuit (~1 000 crédits/mois/IP) | **mesuré** 0,3–0,8 s web ; images avec largeur/hauteur | retenu — actualité, galerie de designs |
+| LLM gratuit sans clé (chat, outils) | LLM7.io (gpt-oss:20b, nemotron-3-nano:30b, codestral) | service gratuit (anonyme, quota quotidien de jetons par IP) | **mesuré** 1,5 s (gpt-oss), outils + streaming OK ; 429 après les tests du jour | retenu en 1er secours (`llm7:*`), requêtes compactées par JEV |
+| LLM gratuit sans clé (dernier secours) | Pollinations `text.pollinations.ai/openai` (gpt-oss-20b) | service gratuit | **mesuré** 5–6 s, outils OK, 402 dès le 3ᵉ appel rapproché | retenu en dernier secours |
+| LLM dans le navigateur (données privées) | transformers.js 4.3.1 + Qwen3-0.6B / 1.7B ONNX | Apache-2.0 / Apache-2.0 | téléchargement 0,57–1,4 Go ; vitesse à mesurer sur le PC (WebGPU ou processeur) | retenu — seul modèle autorisé sur les fichiers sans clé |
+| Lecture de page entière | Exa `web_fetch_exa` → Parallel `web_fetch` → Jina Reader | services gratuits | **mesuré** 1,0 / 1,5 / 3,2 s | retenu — `web.read` |
+| Bibliothèque mondiale | 19 API publiques (Wikipédia, Crossref, DOAJ, HAL, Europe PMC, OpenAlex, Open Library, Internet Archive, Stack Overflow, npm, Hugging Face, PubChem, GBIF, iNaturalist, Open Food Facts, MusicBrainz, TVmaze, Al-Quran Cloud) | données ouvertes (CC0, CC BY, CC BY-SA, ODbL selon la source) | **mesuré** 17/19 OK depuis file:// (Wikipédia FR et OpenAlex limités sur l'IP du conteneur) | retenu — `library.search`, veille de JEV |
+| Serveur MCP de l'app | `@modelcontextprotocol/sdk` 1.32 + esbuild → `massamba-mcp.mjs`, `.mcpb` | MIT | **mesuré** connexion 0,5 s, 8 outils OK, dossier comité 0,4 s / 0 erreur Open XML | retenu — JEV dans Claude Desktop / Claude Code |
+| Relais gratuits | Wikipédia, Crossref, DuckDuckGo IA | services gratuits | Crossref 3/3 ; Wikipédia 1/3 et DDG 0/3 depuis l'IP partagée du conteneur | relais seulement |
+| Visage vivant (lèvres, yeux, tête) depuis un dessin | LivePortrait (KwaiVGI / Kling) | MIT (code + poids) | **mesuré** : 7,9 s/image sur 4 cœurs CPU du conteneur ; ≈ 30 i/s sur GPU RTX 3090 (FasterLivePortrait, TensorRT) | retenu — `scripts/blenderfilm/liveface.py`, en BIBLIOTHÈQUE d'états (gratuit, ~0 s par film) |
+| Détection de visage de la démo LivePortrait | InsightFace buffalo_l | non commercial | — | refusé : repères de la troupe + landmark.onnx de LivePortrait |
+| LivePortrait accéléré | FasterLivePortrait (ONNX / TensorRT, option MediaPipe) | MIT (vérifié : LICENSE + fiche HF) | **mesuré** 17,6 s/image en ONNX sur ce CPU (pas plus rapide) ; 30+ i/s sur RTX 3090 (annoncé) | pour un GPU ; inutile sur CPU |
+| Plans entièrement animés + voix + lèvres | Veo 3.1 (Google, API Gemini) | commercial (API payante) | ≈ 0,10–0,40 $/s selon version (tracker tiers, sept. 2026) | payant → seulement sur demande |
+| Plans animés image → vidéo | Grok Imagine (xAI) | commercial (API payante) | ≈ 0,04–0,125 $/s selon résolution (agrégateurs, août 2026) | payant → seulement sur demande (circuit Grok de l'app) |
+| Plans animés avec voix et lèvres | Kling 2.6 / 3.0 | commercial (API payante) | ≈ 0,07 $/s muet, 0,14 $/s avec audio (tiers) ; lip-sync seul ≈ 0,025 $/s | payant → seulement sur demande |
+| Animation de personnage par vidéo-guide | Wan2.2-Animate 14B | Apache-2.0 (annoncé) | GPU 80 Go (officiel) ; 5B TI2V sur 24 Go | candidat GPU loué |
+| Vidéo + son ouverte | LTX-2 / 2.3 (Lightricks) | licence maison (gratuite < 10 M$ de revenus) | GPU | hors règle MIT/Apache → non retenu par défaut |
+| Lip-sync sur vidéo | LatentSync (ByteDance) | Apache-2.0 | 8–18 Go VRAM | candidat GPU |
+| Lip-sync rapide | MuseTalk (Tencent) | MIT (à vérifier) | 4 Go VRAM | candidat GPU |
+| Texte → mouvement 3D du corps | HY-Motion 1.0 (Tencent) | à vérifier | GPU | à évaluer |
+| Vidéo → mocap | GVHMR | non commercial | — | refusé |
+| Visage 3D depuis la voix | NVIDIA Audio2Face-3D | NVIDIA Open Model License | — | hors règle par défaut |
+| Fermetures des lèvres (m/b/p) | Rhubarb Lip Sync 1.14.0 | MIT (vérifiée) | **mesuré** : 1,65 s pour 1,78 s de voix (CPU) ; fermetures A 2,25× plus dans les mots à m/b/p | retenu pour les FERMETURES seulement — `scripts/blenderfilm/lipsync.py` |
+| Foule peinte séparée personne par personne | Mask R-CNN v2 (torchvision) | BSD-3 (code), poids COCO | **mesuré** : 49 s par vue, 27 personnes au Grand Marché | retenu — `scripts/blenderfilm/crowd.py` (décor vivant ancré aux pieds) |
+| Réalisateur : consignes de jeu par réplique, 0 $ de vidéo | director.py (règles mesurables + modèle pour les trous) + direction-vocab.json | maison (code du dépôt) | **mesuré** : règles 0,2 s pour 18 répliques ; modèle local 161 s | retenu — étape `film.py` avant `plan.py` (`--sans-realisateur` pour l'A/B) |
+| Modèle texte LOCAL sans clé (JSON contraint) | llama.cpp via llama-cpp-python 0.3.36 + Qwen3 1,7B Q4_K_M (ggml-org) | MIT (llama.cpp) ; Apache-2.0 (Qwen3, fiche HF) | **mesuré** : 4 cœurs, 5,3 jetons/s, 8 s par réplique, JSON valide 5/5 avec grammaire ; choix faibles seul (énergie toujours 1, caméra toujours punch) | retenu pour COMBLER les règles (gestes manquants, réactions sous déclencheur) ; `~/.cache/massamba-models/llm/*.gguf` ; à brancher ensuite au chat (tâche #166) |
+| Gestes capturés par étiquette (25 gestes, ~100 clips) | Index texte CMU (cgspeed/B. Hahne) + téléchargement clip par clip de mocap.cs.cmu.edu | CMU : « free for all uses », pas de revente, pas de crawl | **mesuré** : recherche par mots entiers 0 ms ; chaque geste → clip choisi par réplique (jamais deux fois le même d'affilée) | retenu — `mocap.search`, `mocap.gesture_clip`, `direction-vocab.json` |
+| Modèle texte GRATUIT par API | OpenRouter « :free » (17 modèles le 14/10/2026) | API (rien d'exécuté chez nous) | 20 req/min ; 50/jour sans crédit, 1 000/jour après 10 crédits achetés une fois (doc OpenRouter) | retenu : UNE requête par film (`director.py --mode openrouter`, onglet Réalisateur) ; clé `OPENROUTER_API_KEY` à mettre dans l'environnement par l'utilisateur |
+| Entrées en scène stylées (marches : colère, fier, ivre, pressé, vieux…) | 100STYLE (Ian Mason, Zenodo 8127870) lu par HTTP Range + lecteur BVH maison | CC BY 4.0 (crédit au générique) | **mesuré** : 0,19 s pour lire 82 s de BVH ; 2–11 Mo par style au lieu de 1,47 Go | retenu — `mocap.parse_bvh`, `ensure_bvh`, `entrance_clip` ; vocabulaire `entrees` |
+| GPU loué à la seconde | Runpod / Modal (serverless) | service à compte | L4 ≈ 0,0001–0,0002 $/s ; H100 ≈ 0,0005–0,0011 $/s (comparatif Cerebrium, juil. 2026) | demande un compte → non proposé par défaut |
+| Rendu FINAL d'un film (1 600 images 576×1024) sans GPU | Cycles CPU via le module bpy 5.0.1 (4 cœurs) | GPL (outil, rien de redistribué) | **mesuré** (film 9, 14/10/2026) : 2,57 s/image, rendu 4 106 s, 4 515 s au total avec montage et porte ; EEVEE logiciel : ≈ 150 s par image fixe → écarté | retenu — `film.py` sans `--apercu` ; `--apercu --pas 1` = toutes les images à demi-résolution (0,68 s/image, mêmes mesures de rythme que la pleine résolution) |
+| Colonnes d'un portefeuille comprises en langage métier (« expo », « encours », « provision ») | Schema linking LinkAlign / AutoLink (text-to-SQL, un LLM par requête) vs lexique local ACTE 7 + dictionnaire du fichier + JEV | LinkAlign MIT non vérifié, AutoLink sans licence visible ; lexique : code maison | **mesuré** : 0 aller-retour modèle pour 14 formulations métier, ambiguïté rendue en 2 candidats ; lecture d'une feuille dictionnaire .xlsb : 33 ms (au lieu du classeur entier) | lexique retenu (outils SQL lourds et non vérifiés) |
+| Fidélité d'une page générée au prompt | DSG (questions atomiques) + VQAScore (modèle vision) vs contrôle DOM au pixel | méthodes publiées ; VQAScore = modèle vision à valider | contrôle DOM : 0 $, quelques ms, mesure présence / taille / position de chaque élément nommé | contrôle DOM retenu ; VQAScore en piste (pont vision) |
+| Payer 1/100 du prix standard avec un modèle payant ultra puissant | Brouillon par les gros modèles gratuits OpenRouter (Nemotron 3 Ultra 550B…) + modèle payant en vérificateur par patchs + confiance apprise (économie JEV ÷100) vs tout envoyer au modèle payant | services distants ; code maison | **mesuré** (e2e, tarif du catalogue, 15/10/2026) : mission 6 étapes ÷95 ; réponse validée ÷27, patch ÷17 ; refus +8 % ; données privées ×1 | **retenu** (`server/jev/economy.ts`), interrupteur dans Paramètres |
+| Sciences justes dans le bac à sable (mouvement humain, physique, quantique, maths, projection 3D) | Bibliothèque `jev` maison injectée dans chaque page + fiches de savoirs vs laisser le modèle réécrire les formules | code maison ; Rapier 0.21 Apache-2.0 (npm) | **vérifié** par tests (∫\|ψ\|² = 1, projection aller-retour, RK4, Kepler) ; preuve e2e en page isolée | **retenu** (`server/jev/sandbox/`) ; valeurs de marche = approximations de manuel signalées |
+
+## 4. Leçons
+- 14/10/2026 : LivePortrait image par image = 8 s/image sur processeur (3 h par film) → ANIMATION PAR REMPLACEMENT
+  (méthode des studios : bouches de rechange d'Aardman, tableaux de bouches du dessin animé) : une bibliothèque
+  d'états par pose (5 ouvertures de lèvres × 3 états des yeux) calculée UNE fois et gardée dans le kit, puis chaque
+  film pioche l'état le plus proche de la voix — ≈ 2 min par pose la première fois, ~0 s par film ensuite.
+  La version ONNX (FasterLivePortrait, MIT) n'accélère pas sur processeur (17,6 s/image mesurés) : elle sert au GPU.
+- 14/10/2026 : un film rendu entièrement sur le processeur du conteneur (marionnette 2D + déformation du dessin) a été
+  noté 10/100 : images statiques, bouches qui déforment le visage, fonds inanimés. La déformation géométrique d'un
+  dessin ne remplace pas un modèle appris ; et un modèle appris sur processeur prend des heures. → Toujours chiffrer
+  le temps de production dès le choix de l'outil.

@@ -1,0 +1,268 @@
+// RÈGLES STRICTES D'EXCEL — what Excel itself refuses when it opens a workbook (« Nous avons trouvé un problème dans le
+// contenu… »), and that the Open XML SDK validator does NOT check (it validates the schema, not these rules):
+//  - merged ranges reversed (AT11:AS12), single-cell, or overlapping another merge;
+//  - drawing anchors whose end is before their start;
+//  - cell style indexes beyond the styles' cellXfs list;
+//  - sheet names not unique (Excel compares them case-insensitively), too long or with forbidden characters;
+//  - table columns with duplicate / empty names; slicer caches pointing outside their table.
+// Merges, anchors and style indexes are FIXED in place; the rest is reported (renaming would break references).
+import { strFromU8, strToU8 } from 'fflate';
+import { checkFormula } from './formulaCheck';
+
+type Zip = Record<string, Uint8Array>;
+const unesc = (s: string) =>
+  s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const rd = (z: Zip, p: string) => (z[p] ? strFromU8(z[p]!) : '');
+const wr = (z: Zip, p: string, s: string) => {
+  z[p] = strToU8(s);
+};
+
+export function excelStrict(z: Zip): { fixes: string[]; warnings: string[] } {
+  const fixes: string[] = [];
+  const warnings: string[] = [];
+  const st = rd(z, 'xl/styles.xml');
+  const xfCount = (() => {
+    const b = /<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/.exec(st)?.[1];
+    return b ? (b.match(/<xf\b/g) ?? []).length : Infinity;
+  })();
+  let merges = 0;
+  let styles = 0;
+  for (const p of Object.keys(z).filter((k) => /^xl\/worksheets\/[^/]+\.xml$/.test(k))) {
+    let x = rd(z, p);
+    let changed = false;
+    const mb = /<mergeCells\b[^>]*>([\s\S]*?)<\/mergeCells>/.exec(x);
+    if (mb) {
+      const refs = [...mb[1]!.matchAll(/<mergeCell\b[^>]*\bref="([^"]+)"/g)].map((m) => m[1]!);
+      const ok = validMerges(refs);
+      if (ok.length !== refs.length) {
+        merges += refs.length - ok.length;
+        x = x.replace(
+          mb[0],
+          ok.length
+            ? `<mergeCells count="${ok.length}">${ok.map((r) => `<mergeCell ref="${r}"/>`).join('')}</mergeCells>`
+            : '',
+        );
+        changed = true;
+      }
+    }
+    if (Number.isFinite(xfCount)) {
+      x = x.replace(/<c\b([^>]*?)\bs="(\d+)"/g, (m, a: string, s: string) => {
+        if (+s < xfCount) return m;
+        styles++;
+        changed = true;
+        return `<c${a}s="0"`;
+      });
+      x = x.replace(/<row\b([^>]*?)\bs="(\d+)"/g, (m, a: string, s: string) => {
+        if (+s < xfCount) return m;
+        styles++;
+        changed = true;
+        return `<row${a}s="0"`;
+      });
+    }
+    if (changed) wr(z, p, x);
+  }
+  if (merges)
+    fixes.push(
+      `${merges} fusion(s) de cellules invalide(s) retirée(s) (inversée, d'une seule cellule ou en chevauchement — Excel les refuse)`,
+    );
+  if (styles) fixes.push(`${styles} cellule(s) au style inexistant remise(s) au style normal`);
+  // Drawing anchors: start after end → swapped.
+  let anchors = 0;
+  for (const p of Object.keys(z).filter((k) => /^xl\/drawings\/[^/]+\.xml$/.test(k))) {
+    const d = rd(z, p);
+    const out = d.replace(
+      /<xdr:from><xdr:col>(\d+)<\/xdr:col><xdr:colOff>(-?\d+)<\/xdr:colOff><xdr:row>(\d+)<\/xdr:row><xdr:rowOff>(-?\d+)<\/xdr:rowOff><\/xdr:from><xdr:to><xdr:col>(\d+)<\/xdr:col><xdr:colOff>(-?\d+)<\/xdr:colOff><xdr:row>(\d+)<\/xdr:row><xdr:rowOff>(-?\d+)<\/xdr:rowOff><\/xdr:to>/g,
+      (m, ...g: string[]) => {
+        let [c0, co0, r0, ro0, c1, co1, r1, ro1] = g.slice(0, 8).map((v) => Math.max(0, +v)) as [
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+        ];
+        const bad =
+          g.slice(0, 8).some((v) => +v < 0) ||
+          c1 * 1e8 + co1 < c0 * 1e8 + co0 ||
+          r1 * 1e8 + ro1 < r0 * 1e8 + ro0;
+        if (!bad) return m;
+        anchors++;
+        if (c1 * 1e8 + co1 < c0 * 1e8 + co0) [c0, co0, c1, co1] = [c1, co1, c0, co0];
+        if (r1 * 1e8 + ro1 < r0 * 1e8 + ro0) [r0, ro0, r1, ro1] = [r1, ro1, r0, ro0];
+        return `<xdr:from><xdr:col>${c0}</xdr:col><xdr:colOff>${co0}</xdr:colOff><xdr:row>${r0}</xdr:row><xdr:rowOff>${ro0}</xdr:rowOff></xdr:from><xdr:to><xdr:col>${c1}</xdr:col><xdr:colOff>${co1}</xdr:colOff><xdr:row>${r1}</xdr:row><xdr:rowOff>${ro1}</xdr:rowOff></xdr:to>`;
+      },
+    );
+    if (out !== d) wr(z, p, out);
+  }
+  if (anchors) fixes.push(`${anchors} objet(s) dessiné(s) à l'ancrage inversé remis d'aplomb`);
+  // Workbook: one <definedNames> block at most (an empty « <definedNames /> » left by openpyxl next to a filled one
+  // makes Excel repair the file) — the blocks are merged into the first.
+  let wbx = rd(z, 'xl/workbook.xml');
+  const blocks = [...wbx.matchAll(/<definedNames\s*\/>|<definedNames>([\s\S]*?)<\/definedNames>/g)];
+  if (blocks.length > 1 || (blocks.length === 1 && !blocks[0]![1]?.trim())) {
+    const inner = blocks.map((b) => b[1] ?? '').join('');
+    let first = true;
+    wbx = wbx.replace(/<definedNames\s*\/>|<definedNames>[\s\S]*?<\/definedNames>/g, () => {
+      if (!first) return '';
+      first = false;
+      return inner.trim() ? `<definedNames>${inner}</definedNames>` : '';
+    });
+    wr(z, 'xl/workbook.xml', wbx);
+    fixes.push(
+      'noms définis du classeur regroupés en un seul bloc (un double bloc fait réparer le fichier par Excel)',
+    );
+  }
+  // Reported only.
+  const wb = rd(z, 'xl/workbook.xml');
+  const names = [...wb.matchAll(/<sheet\b[^>]*\bname="([^"]*)"/g)].map((m) =>
+    m[1]!
+      .replace(/&amp;/g, '&')
+      .replace(/&apos;/g, "'")
+      .replace(/&quot;/g, '"'),
+  );
+  const seen = new Set<string>();
+  for (const n of names) {
+    const k = n.toLocaleLowerCase('fr');
+    if (seen.has(k))
+      warnings.push(`deux feuilles portent le même nom « ${n} » (Excel ne distingue pas les majuscules)`);
+    seen.add(k);
+    if (n.length > 31 || /[[\]*?/\\:]/.test(n)) warnings.push(`nom de feuille refusé par Excel : « ${n} »`);
+  }
+  const tableCols = new Map<string, number>();
+  for (const p of Object.keys(z).filter((k) => /^xl\/tables\/[^/]+\.xml$/.test(k))) {
+    const t = rd(z, p);
+    const id = /\bid="(\d+)"/.exec(t)?.[1] ?? '?';
+    const cols = [...t.matchAll(/<tableColumn\b[^>]*\bname="([^"]*)"/g)].map((m) =>
+      m[1]!.toLocaleLowerCase('fr'),
+    );
+    tableCols.set(id, cols.length);
+    if (new Set(cols).size !== cols.length || cols.some((c) => !c.trim()))
+      warnings.push(`tableau ${id} : noms de colonnes vides ou en double`);
+  }
+  for (const p of Object.keys(z).filter((k) => /^xl\/slicerCaches\/[^/]+\.xml$/.test(k))) {
+    const m = /tableSlicerCache\b[^>]*tableId="(\d+)"[^>]*column="(\d+)"/.exec(rd(z, p));
+    if (m && (!tableCols.has(m[1]!) || +m[2]! < 1 || +m[2]! > tableCols.get(m[1]!)!))
+      warnings.push(`segment ${p.split('/').pop()} : colonne hors du tableau`);
+  }
+  // ORPHAN SLICERS: a slicers part no worksheet lists (its dashboard sheet was removed) makes Excel repair the file
+  // (« Removed Part: /xl/slicers/… ») — the part, its caches, their relationships, content types, defined names and
+  // the workbook's slicer-cache list go together.
+  const slicerParts = Object.keys(z).filter((k) => /^xl\/slicers\/[^/]+\.xml$/.test(k));
+  const listed = new Set<string>();
+  for (const p of Object.keys(z).filter((k) => /^xl\/worksheets\/[^/]+\.xml$/.test(k))) {
+    const x = rd(z, p);
+    if (!/<x14:slicer\b/.test(x)) continue;
+    const rels = rd(z, p.replace(/worksheets\/([^/]+)$/, 'worksheets/_rels/$1.rels'));
+    for (const m of rels.matchAll(/<Relationship\b[^>]*Type="[^"]*\/slicer"[^>]*Target="([^"]+)"/g)) listed.add(m[1]!.replace(/^\.\.\//, 'xl/').replace(/^\//, ''));
+  }
+  const orphans = slicerParts.filter((p) => !listed.has(p));
+  if (orphans.length) {
+    const esc = (k: string) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    let ct = rd(z, '[Content_Types].xml');
+    let wrels = rd(z, 'xl/_rels/workbook.xml.rels');
+    let wbx2 = rd(z, 'xl/workbook.xml');
+    const caches = new Set<string>();
+    for (const p of orphans) {
+      for (const m of rd(z, p).matchAll(/\bcache="([^"]+)"/g)) caches.add(m[1]!);
+      delete z[p];
+      ct = ct.replace(new RegExp(`<Override[^>]*PartName="/${esc(p)}"[^>]*/>`), '');
+    }
+    for (const p of Object.keys(z).filter((k) => /^xl\/slicerCaches\/[^/]+\.xml$/.test(k))) {
+      const name = /\bname="([^"]+)"/.exec(rd(z, p))?.[1] ?? '';
+      if (!caches.has(name)) continue;
+      delete z[p];
+      ct = ct.replace(new RegExp(`<Override[^>]*PartName="/${esc(p)}"[^>]*/>`), '');
+      const rel = new RegExp(`<Relationship\\b[^>]*Target="[^"]*${esc(p.replace(/^xl\//, ''))}"[^>]*/>`).exec(wrels)?.[0];
+      if (rel) {
+        const id = /\bId="([^"]+)"/.exec(rel)?.[1];
+        wrels = wrels.replace(rel, '');
+        if (id) wbx2 = wbx2.replace(new RegExp(`<x14:slicerCache r:id="${esc(id)}"/>`), '');
+      }
+      wbx2 = wbx2.replace(new RegExp(`<definedName name="${esc(name)}"[^>]*>#N/A</definedName>`), '');
+    }
+    wbx2 = wbx2.replace(/<x15:slicerCaches[^>]*>\s*<\/x15:slicerCaches>/, '').replace(/<ext uri="\{46BE6895-7355-4a93-B00E-2C351335B9C9\}"[^>]*>\s*<\/ext>/, '').replace(/<extLst>\s*<\/extLst>/, '').replace(/<definedNames>\s*<\/definedNames>/, '');
+    wr(z, '[Content_Types].xml', ct);
+    wr(z, 'xl/_rels/workbook.xml.rels', wrels);
+    wr(z, 'xl/workbook.xml', wbx2);
+    fixes.push(`${orphans.length} segment(s) orphelin(s) retiré(s) avec leurs caches (aucune feuille ne les portait — Excel réparait le fichier)`);
+  }
+  // FORMULAS Excel cannot parse make it repair the file (« Enregistrements réparés : formule »). The usual culprit is a
+  // TEXT written as a formula — a label starting with « = » (« = Total Douteux (100 %) ») that openpyxl stores as
+  // <f> Total Douteux (100 %)</f>: it becomes a text cell again, « = » included. French names / « ; » are translated
+  // and the « _xlfn. » prefix added where Excel requires it (#NAME? otherwise). An empty <v/> next to a formula goes.
+  const known = new Set<string>();
+  for (const m of rd(z, 'xl/workbook.xml').matchAll(/<definedName\b[^>]*\bname="([^"]+)"/g)) known.add(unesc(m[1]!));
+  for (const p of Object.keys(z).filter((k) => /^xl\/tables\/[^/]+\.xml$/.test(k)))
+    for (const m of rd(z, p).matchAll(/\b(?:displayName|name)="([^"]+)"/g)) known.add(unesc(m[1]!));
+  let texts = 0;
+  let translated = 0;
+  let divisions = 0;
+  // « =C30/'Données'!D:D » (a share of the column's total written by a script): Excel reads the whole column through an
+  // implicit intersection and shows a wrong number. The intent is the division by the column's total.
+  const DIV_COL = /\/\s*((?:'(?:[^']|'')+'|[A-Za-z0-9_.]+)!)?(\$?[A-Z]{1,3}\$?:\$?[A-Z]{1,3})(?![A-Za-z0-9_(])/g;
+  for (const p of Object.keys(z).filter((k) => /^xl\/worksheets\/[^/]+\.xml$/.test(k))) {
+    const x = rd(z, p);
+    if (!x.includes('<f')) continue;
+    const out = x.replace(
+      /<c\b([^>]*)>(<f\b[^>]*>)([^<]*)<\/f>(<v\s*\/>|<v>[^<]*<\/v>)?/g,
+      (m, attrs: string, fOpen: string, body: string, vTag: string | undefined) => {
+        if (/\bt="shared"/.test(fOpen) && !body) return m;
+        const original = unesc(body);
+        let text = original.replace(DIV_COL, (_d, sheet: string | undefined, range: string) => {
+          divisions++;
+          return `/SUM(${sheet ?? ''}${range})`;
+        });
+        const v = checkFormula(text, known);
+        if (v.ok) {
+          if (v.fixed) {
+            translated++;
+            text = v.fixed;
+          }
+          // Unchanged: only an empty cached value goes. Rewritten: the cached value goes too (recalculated on load).
+          if (text === original) return vTag && !/<v>[^<]+<\/v>/.test(vTag) ? m.replace(vTag, '') : m;
+          return `<c${attrs}>${fOpen}${esc(text)}</f>`;
+        }
+        texts++;
+        const a = attrs.replace(/\s+t="[^"]*"/, '');
+        return `<c${a} t="inlineStr"><is><t xml:space="preserve">${esc('=' + original)}</t></is>`;
+      },
+    );
+    if (out !== x) wr(z, p, out);
+  }
+  if (translated || divisions) {
+    // Rewritten formulas have no cached value any more: Excel computes them when it opens the file.
+    let wbx = rd(z, 'xl/workbook.xml');
+    if (/<calcPr\b/.test(wbx)) wbx = /fullCalcOnLoad=/.test(wbx) ? wbx.replace(/fullCalcOnLoad="[^"]*"/, 'fullCalcOnLoad="1"') : wbx.replace(/<calcPr\b/, '<calcPr fullCalcOnLoad="1"');
+    else if (/<\/definedNames>/.test(wbx)) wbx = wbx.replace('</definedNames>', '</definedNames><calcPr fullCalcOnLoad="1"/>');
+    else wbx = wbx.replace('</sheets>', '</sheets><calcPr fullCalcOnLoad="1"/>');
+    wr(z, 'xl/workbook.xml', wbx);
+  }
+  if (texts) fixes.push(`${texts} texte(s) écrit(s) comme formule (« = … ») remis en texte — Excel ne pouvait pas les lire et réparait le fichier`);
+  if (translated) fixes.push(`${translated} formule(s) traduite(s) au format de fichier (noms anglais, virgules, préfixe _xlfn.)`);
+  if (divisions) fixes.push(`${divisions} division(s) par une colonne entière (« /D:D ») remplacée(s) par la division par le total de la colonne (SUM) — Excel affichait une valeur fausse`);
+  return { fixes, warnings };
+}
+
+/**
+ * Merged ranges Excel accepts: A1-style, start ≤ end, more than one cell, no overlap with an earlier merge (Excel opens
+ * a file breaking any of these with « Nous avons trouvé un problème dans le contenu » — the Open XML validator does not
+ * check them). The others are dropped, in order.
+ */
+export function validMerges(refs: string[]): string[] {
+  const col = (c: string) => [...c].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0);
+  const kept: { c0: number; r0: number; c1: number; r1: number }[] = [];
+  const out: string[] = [];
+  for (const ref of refs) {
+    const m = /^([A-Z]{1,3})(\d+):([A-Z]{1,3})(\d+)$/.exec(ref);
+    if (!m) continue;
+    const b = { c0: col(m[1]!), r0: +m[2]!, c1: col(m[3]!), r1: +m[4]! };
+    if (b.c1 < b.c0 || b.r1 < b.r0 || (b.c1 === b.c0 && b.r1 === b.r0) || b.r0 < 1) continue;
+    if (kept.some((k) => k.c0 <= b.c1 && b.c0 <= k.c1 && k.r0 <= b.r1 && b.r0 <= k.r1)) continue;
+    kept.push(b);
+    out.push(ref);
+  }
+  return out;
+}

@@ -1,0 +1,15 @@
+# paquets du moteur de la troupe pour la fabrique GitHub (versions mesurées sur la machine de production le 20/10/2026)
+numpy==2.4.6
+scipy==1.17.1
+opencv-python-headless
+mediapipe==1.1.0
+onnxruntime==1.31.0
+diskcache==5.6.3
+ImageHash==4.3.2
+librosa==0.11.0
+soundfile==0.14.0
+pyworld==0.3.4
+piper-tts
+pillow==12.3.0
+faster-whisper==1.1.0
+cryptography

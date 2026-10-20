@@ -1,0 +1,2558 @@
+{
+ "priority": [
+  "imaginaire",
+  "salon-coiffure",
+  "centre-commercial",
+  "aeroport",
+  "gare",
+  "hopital",
+  "tribunal",
+  "ecole",
+  "ceremonie",
+  "maquis",
+  "restaurant",
+  "marche",
+  "plage",
+  "village",
+  "maison",
+  "nature",
+  "parc",
+  "chambre",
+  "bureau",
+  "salon",
+  "cour",
+  "ville",
+  "rue"
+ ],
+ "lead": "\\b(au|aux|a la|a l|dans (le|la|l|les|un|une)|chez|sur (le|la)|vers (le|la))\\s+",
+ "places": [
+  {
+   "id": "salon",
+   "nom": "Salon",
+   "match": "\\b(salon|maison|living|sejour|chez (lui|elle|nous))\\b",
+   "exterieur": false,
+   "kit": "Salon",
+   "template": "piece",
+   "palette": [
+    "#2f8f8a",
+    "#7a4a2a",
+    "#e0b050"
+   ],
+   "habitues": [
+    "Salon",
+    "Cour"
+   ],
+   "heure": "soir",
+   "objets": [
+    {
+     "id": "table",
+     "nom": "table basse",
+     "interaction": "on y pose, on y cache, on tape dessus",
+     "mots": [
+      "table"
+     ]
+    },
+    {
+     "id": "poulet",
+     "nom": "plat de poulet",
+     "interaction": "le plat qui disparaît, la preuve du crime",
+     "mots": [
+      "poulet",
+      "cuisse"
+     ]
+    },
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    },
+    {
+     "id": "tele",
+     "nom": "vieille télévision",
+     "interaction": "coupure de courant au but décisif",
+     "mots": [
+      "télé",
+      "match",
+      "courant"
+     ]
+    },
+    {
+     "id": "billets",
+     "nom": "liasse de billets",
+     "interaction": "on la compte, on la cache",
+     "mots": [
+      "liasse",
+      "billets"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "membre de la famille qui passe",
+     "comportement": "passe",
+     "n": [
+      0,
+      1
+     ]
+    },
+    {
+     "role": "voisin qui regarde par la porte",
+     "comportement": "regarde",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "chat",
+     "comportement": "dort sur le canapé, s’étire, suit la nourriture des yeux",
+     "p": 0.6,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "margouillat",
+     "comportement": "fait des pompes sur le mur",
+     "p": 0.3,
+     "n": [
+      1,
+      1
+     ]
+    }
+   ],
+   "fx": [
+    "ventilateur",
+    "ecran",
+    "poussiere"
+   ],
+   "sons": [
+    "ventilateur",
+    "tele",
+    "enfants"
+   ],
+   "vie": "ventilateur qui tourne, télé allumée en fond, odeur de sauce, le chat qui guette le poulet"
+  },
+  {
+   "id": "cour",
+   "nom": "Cour",
+   "match": "\\b(cour|concession|devant la maison|porte)\\b",
+   "exterieur": true,
+   "kit": "Village",
+   "template": "rue",
+   "palette": [
+    "#9a9a90",
+    "#c9a46a",
+    "#d24b3e"
+   ],
+   "habitues": [
+    "Cour",
+    "Salon"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "chaise",
+     "nom": "chaise en plastique",
+     "interaction": "on s’y effondre, on la tire pour s’asseoir",
+     "mots": [
+      "chaise",
+      "assieds",
+      "asseoir"
+     ]
+    },
+    {
+     "id": "marmite",
+     "nom": "marmite fumante",
+     "interaction": "on y goûte en cachette",
+     "mots": [
+      "marmite",
+      "sauce",
+      "cuisine"
+     ]
+    },
+    {
+     "id": "ballon",
+     "nom": "ballon",
+     "interaction": "il rebondit au mauvais moment",
+     "mots": [
+      "ballon",
+      "foot",
+      "basket"
+     ]
+    },
+    {
+     "id": "linge",
+     "nom": "corde à linge",
+     "interaction": "on se cache derrière le pagne qui sèche",
+     "mots": [
+      "linge",
+      "pagne"
+     ]
+    },
+    {
+     "id": "bouteilles",
+     "nom": "bouteilles",
+     "interaction": "on les cache derrière le dos",
+     "mots": [
+      "bouteille",
+      "boisson",
+      "bière",
+      "sucrerie"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "voisine qui balaie",
+     "comportement": "travaille",
+     "n": [
+      0,
+      1
+     ]
+    },
+    {
+     "role": "enfants qui jouent",
+     "comportement": "passe",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "voisin curieux",
+     "comportement": "regarde",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "poule",
+     "comportement": "picore, s’enfuit en caquetant quand on crie",
+     "p": 0.9,
+     "n": [
+      2,
+      4
+     ]
+    },
+    {
+     "espece": "chevre",
+     "comportement": "broute, mâchouille un papier",
+     "p": 0.35,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "margouillat",
+     "comportement": "fait des pompes sur le mur",
+     "p": 0.5,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "chat",
+     "comportement": "traverse la cour",
+     "p": 0.3,
+     "n": [
+      1,
+      1
+     ]
+    }
+   ],
+   "fx": [
+    "poussiere",
+    "rayons"
+   ],
+   "sons": [
+    "enfants",
+    "oiseaux",
+    "foule"
+   ],
+   "vie": "poules qui picorent, linge qui sèche, enfants qui courent, la voisine qui écoute par-dessus le mur"
+  },
+  {
+   "id": "marche",
+   "nom": "Marché",
+   "match": "\\b(marche|market|etal|vendeuse|commercante)\\b",
+   "exterieur": true,
+   "kit": "Marché",
+   "template": "rue",
+   "palette": [
+    "#e2a23b",
+    "#c0392b",
+    "#2e86c1"
+   ],
+   "habitues": [
+    "Marché"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "tomates",
+     "nom": "pyramide de tomates",
+     "interaction": "on marchande, on renverse",
+     "mots": [
+      "tomate",
+      "légume",
+      "marché"
+     ]
+    },
+    {
+     "id": "billets",
+     "nom": "liasse de billets",
+     "interaction": "on la compte, on la cache",
+     "mots": [
+      "liasse",
+      "billets"
+     ]
+    },
+    {
+     "id": "assiette",
+     "nom": "assiette garnie",
+     "interaction": "on la vide, on la partage mal",
+     "mots": [
+      "attiéké",
+      "garba",
+      "riz",
+      "assiette",
+      "manger",
+      "plat"
+     ]
+    },
+    {
+     "id": "bassine",
+     "nom": "bassine sur la tête",
+     "interaction": "elle vacille, elle tombe",
+     "mots": [
+      "bassine",
+      "tête"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "client qui marchande",
+     "comportement": "discute",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "passant chargé",
+     "comportement": "passe",
+     "n": [
+      1,
+      3
+     ]
+    },
+    {
+     "role": "vendeuse qui crie ses prix",
+     "comportement": "travaille",
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "role": "foule",
+     "comportement": "foule",
+     "n": [
+      6,
+      12
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "poule",
+     "comportement": "dans une cage puis en liberté",
+     "p": 0.6,
+     "n": [
+      1,
+      3
+     ]
+    },
+    {
+     "espece": "chevre",
+     "comportement": "mange les légumes de l’étal",
+     "p": 0.3,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "pigeon",
+     "comportement": "picore les graines tombées",
+     "p": 0.5,
+     "n": [
+      2,
+      4
+     ]
+    }
+   ],
+   "fx": [
+    "poussiere",
+    "rayons",
+    "vapeur"
+   ],
+   "sons": [
+    "foule",
+    "circulation"
+   ],
+   "vie": "foule qui marchande, parasols colorés, poussière dorée, une chèvre qui vole une tomate"
+  },
+  {
+   "id": "maquis",
+   "nom": "Maquis",
+   "match": "\\b(maquis|bar|buvette|allocodrome)\\b",
+   "exterieur": true,
+   "kit": "Maquis",
+   "template": "rue",
+   "palette": [
+    "#1f3b73",
+    "#e8a33d",
+    "#c0392b"
+   ],
+   "habitues": [
+    "Maquis"
+   ],
+   "heure": "nuit",
+   "objets": [
+    {
+     "id": "assiette",
+     "nom": "assiette garnie",
+     "interaction": "on la vide, on la partage mal",
+     "mots": [
+      "attiéké",
+      "garba",
+      "riz",
+      "assiette",
+      "manger",
+      "plat"
+     ]
+    },
+    {
+     "id": "bouteilles",
+     "nom": "bouteilles",
+     "interaction": "on les cache derrière le dos",
+     "mots": [
+      "bouteille",
+      "boisson",
+      "bière",
+      "sucrerie"
+     ]
+    },
+    {
+     "id": "table",
+     "nom": "table basse",
+     "interaction": "on y pose, on y cache, on tape dessus",
+     "mots": [
+      "table"
+     ]
+    },
+    {
+     "id": "chaise",
+     "nom": "chaise en plastique",
+     "interaction": "on s’y effondre, on la tire pour s’asseoir",
+     "mots": [
+      "chaise",
+      "assieds",
+      "asseoir"
+     ]
+    },
+    {
+     "id": "ardoise",
+     "nom": "ardoise des dettes",
+     "interaction": "le nom de Koffi en haut de la liste",
+     "mots": [
+      "ardoise",
+      "crédit",
+      "addition",
+      "dette"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "clients attablés",
+     "comportement": "discute",
+     "n": [
+      2,
+      3
+     ]
+    },
+    {
+     "role": "serveur qui circule",
+     "comportement": "passe",
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "role": "danseur",
+     "comportement": "travaille",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "chat",
+     "comportement": "attend les arêtes sous la table",
+     "p": 0.5,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "chien",
+     "comportement": "mendie près des grillades",
+     "p": 0.3,
+     "n": [
+      1,
+      1
+     ]
+    }
+   ],
+   "fx": [
+    "bokeh",
+    "vapeur",
+    "ecran"
+   ],
+   "sons": [
+    "musique",
+    "foule",
+    "cuisine"
+   ],
+   "vie": "guirlandes lumineuses, fumée des grillades, match sur le grand écran, musique coupée au moment de l’addition"
+  },
+  {
+   "id": "restaurant",
+   "nom": "Restaurant",
+   "match": "\\b(restaurant|resto|cantine|gargote)\\b",
+   "exterieur": false,
+   "kit": "Maquis",
+   "template": "piece",
+   "palette": [
+    "#f2e3c6",
+    "#8e5b3a",
+    "#2a9d8f"
+   ],
+   "habitues": [
+    "Maquis",
+    "Cérémonie"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "assiette",
+     "nom": "assiette garnie",
+     "interaction": "on la vide, on la partage mal",
+     "mots": [
+      "attiéké",
+      "garba",
+      "riz",
+      "assiette",
+      "manger",
+      "plat"
+     ]
+    },
+    {
+     "id": "poulet",
+     "nom": "plat de poulet",
+     "interaction": "le plat qui disparaît, la preuve du crime",
+     "mots": [
+      "poulet",
+      "cuisse"
+     ]
+    },
+    {
+     "id": "marmite",
+     "nom": "marmite fumante",
+     "interaction": "on y goûte en cachette",
+     "mots": [
+      "marmite",
+      "sauce",
+      "cuisine"
+     ]
+    },
+    {
+     "id": "table",
+     "nom": "table basse",
+     "interaction": "on y pose, on y cache, on tape dessus",
+     "mots": [
+      "table"
+     ]
+    },
+    {
+     "id": "chaise",
+     "nom": "chaise en plastique",
+     "interaction": "on s’y effondre, on la tire pour s’asseoir",
+     "mots": [
+      "chaise",
+      "assieds",
+      "asseoir"
+     ]
+    },
+    {
+     "id": "menu",
+     "nom": "ardoise du menu",
+     "interaction": "le prix change pendant qu’on lit",
+     "mots": [
+      "menu",
+      "prix"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "clients qui mangent",
+     "comportement": "discute",
+     "n": [
+      2,
+      3
+     ]
+    },
+    {
+     "role": "serveuse",
+     "comportement": "passe",
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "role": "cuisinière",
+     "comportement": "travaille",
+     "n": [
+      1,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "chat",
+     "comportement": "guette sous les tables",
+     "p": 0.5,
+     "n": [
+      1,
+      1
+     ]
+    }
+   ],
+   "fx": [
+    "vapeur",
+    "ventilateur",
+    "rayons"
+   ],
+   "sons": [
+    "cuisine",
+    "foule",
+    "ventilateur"
+   ],
+   "vie": "marmites fumantes, ventilateur au plafond, clients qui commentent la sauce"
+  },
+  {
+   "id": "salon-coiffure",
+   "nom": "Salon de coiffure",
+   "match": "\\b(coiffure|coiffeuse|salon de beaute|tresses)\\b",
+   "exterieur": false,
+   "kit": "Salon de coiffure",
+   "template": "piece",
+   "palette": [
+    "#f4a6c1",
+    "#ffffff",
+    "#c2185b"
+   ],
+   "habitues": [
+    "Salon de coiffure"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    },
+    {
+     "id": "sechoir",
+     "nom": "sèche-cheveux",
+     "interaction": "bruit qui couvre la vérité, coiffure qui s’envole",
+     "mots": [
+      "sèche",
+      "cheveux",
+      "coiffure",
+      "mèches"
+     ]
+    },
+    {
+     "id": "chaise",
+     "nom": "chaise en plastique",
+     "interaction": "on s’y effondre, on la tire pour s’asseoir",
+     "mots": [
+      "chaise",
+      "assieds",
+      "asseoir"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "cliente sous le casque",
+     "comportement": "attend",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "coiffeuse qui tresse",
+     "comportement": "travaille",
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "role": "cliente qui attend son tour",
+     "comportement": "file",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [],
+   "fx": [
+    "ventilateur",
+    "rayons"
+   ],
+   "sons": [
+    "foule",
+    "ventilateur",
+    "musique"
+   ],
+   "vie": "casques sèche-cheveux qui ronronnent, ragots à voix basse, miroirs à ampoules"
+  },
+  {
+   "id": "ceremonie",
+   "nom": "Cérémonie",
+   "match": "\\b(mariage|ceremonie|bapteme|fete|dot)\\b",
+   "exterieur": true,
+   "kit": "Cérémonie",
+   "template": "parc",
+   "palette": [
+    "#ffffff",
+    "#d4af37",
+    "#b03a2e"
+   ],
+   "habitues": [
+    "Cérémonie"
+   ],
+   "heure": "doree",
+   "objets": [
+    {
+     "id": "assiette",
+     "nom": "assiette garnie",
+     "interaction": "on la vide, on la partage mal",
+     "mots": [
+      "attiéké",
+      "garba",
+      "riz",
+      "assiette",
+      "manger",
+      "plat"
+     ]
+    },
+    {
+     "id": "gateau",
+     "nom": "gâteau d’anniversaire",
+     "interaction": "les bougies, le nom écrit faux",
+     "mots": [
+      "gâteau",
+      "anniversaire",
+      "bougie"
+     ]
+    },
+    {
+     "id": "billets",
+     "nom": "liasse de billets",
+     "interaction": "on la compte, on la cache",
+     "mots": [
+      "liasse",
+      "billets"
+     ]
+    },
+    {
+     "id": "micro",
+     "nom": "micro du DJ",
+     "interaction": "la dédicace qui révèle le secret",
+     "mots": [
+      "micro",
+      "dédicace",
+      "discours"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "invités qui dansent",
+     "comportement": "travaille",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "invités attablés",
+     "comportement": "discute",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "photographe",
+     "comportement": "passe",
+     "n": [
+      0,
+      1
+     ]
+    },
+    {
+     "role": "foule",
+     "comportement": "foule",
+     "n": [
+      6,
+      12
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "oiseau",
+     "comportement": "traverse le ciel",
+     "p": 0.6,
+     "n": [
+      2,
+      3
+     ]
+    },
+    {
+     "espece": "chevre",
+     "comportement": "la chèvre de la dot, attachée",
+     "p": 0.25,
+     "n": [
+      1,
+      1
+     ]
+    }
+   ],
+   "fx": [
+    "bokeh",
+    "rayons",
+    "feuilles"
+   ],
+   "sons": [
+    "musique",
+    "foule"
+   ],
+   "vie": "tentes blanc et or, billets qui volent sur les danseurs, musique trop forte"
+  },
+  {
+   "id": "hopital",
+   "nom": "Hôpital",
+   "match": "\\b(hopital|clinique|infirmerie|maternite|centre de sante|docteur|medecin)\\b",
+   "exterieur": false,
+   "kit": "Hôpital",
+   "template": "piece",
+   "palette": [
+    "#a8d5ba",
+    "#ffffff",
+    "#2e86c1"
+   ],
+   "habitues": [
+    "Hôpital"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "papiers",
+     "nom": "pile de papiers",
+     "interaction": "il manque toujours un papier",
+     "mots": [
+      "papier",
+      "dossier",
+      "bulletin",
+      "facture",
+      "formulaire"
+     ]
+    },
+    {
+     "id": "perfusion",
+     "nom": "pied à perfusion",
+     "interaction": "on s’y accroche pour fuir la facture",
+     "mots": [
+      "perfusion",
+      "piqûre"
+     ]
+    },
+    {
+     "id": "lit",
+     "nom": "lit d’hôpital",
+     "interaction": "le malade imaginaire s’y jette",
+     "mots": [
+      "lit",
+      "malade",
+      "couché"
+     ]
+    },
+    {
+     "id": "poulet",
+     "nom": "plat de poulet",
+     "interaction": "le plat qui disparaît, la preuve du crime",
+     "mots": [
+      "poulet",
+      "cuisse"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "patient qui attend",
+     "comportement": "file",
+     "n": [
+      1,
+      3
+     ]
+    },
+    {
+     "role": "soignant pressé",
+     "comportement": "passe",
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "role": "patient qui tousse",
+     "comportement": "attend",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [],
+   "fx": [
+    "ventilateur",
+    "rayons"
+   ],
+   "sons": [
+    "annonces",
+    "ventilateur",
+    "foule"
+   ],
+   "vie": "salle d’attente pleine, appels au haut-parleur, une infirmière qui court"
+  },
+  {
+   "id": "ecole",
+   "nom": "École",
+   "match": "\\b(ecole|classe|lycee|college|maitre|bulletin)\\b",
+   "exterieur": false,
+   "kit": "École",
+   "template": "piece",
+   "palette": [
+    "#f5e6b8",
+    "#2e7d32",
+    "#1565c0"
+   ],
+   "habitues": [
+    "École"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "papiers",
+     "nom": "pile de papiers",
+     "interaction": "il manque toujours un papier",
+     "mots": [
+      "papier",
+      "dossier",
+      "bulletin",
+      "facture",
+      "formulaire"
+     ]
+    },
+    {
+     "id": "ballon",
+     "nom": "ballon",
+     "interaction": "il rebondit au mauvais moment",
+     "mots": [
+      "ballon",
+      "foot",
+      "basket"
+     ]
+    },
+    {
+     "id": "tableau",
+     "nom": "tableau noir",
+     "interaction": "la faute écrite en grand",
+     "mots": [
+      "tableau",
+      "craie",
+      "dictée"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "élèves qui chahutent",
+     "comportement": "passe",
+     "n": [
+      2,
+      3
+     ]
+    },
+    {
+     "role": "élève qui récite",
+     "comportement": "travaille",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "margouillat",
+     "comportement": "fait des pompes sous la fenêtre",
+     "p": 0.35,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "oiseau",
+     "comportement": "se pose sur le rebord",
+     "p": 0.3,
+     "n": [
+      1,
+      2
+     ]
+    }
+   ],
+   "fx": [
+    "poussiere",
+    "rayons"
+   ],
+   "sons": [
+    "enfants",
+    "oiseaux"
+   ],
+   "vie": "craie qui grince, élèves qui chuchotent, rayons de soleil pleins de poussière"
+  },
+  {
+   "id": "bureau",
+   "nom": "Bureau",
+   "match": "\\b(bureau|banque|office|administration|mairie|guichet)\\b",
+   "exterieur": false,
+   "kit": "Bureau",
+   "template": "piece",
+   "palette": [
+    "#d9d4c7",
+    "#5d6d7e",
+    "#b9770e"
+   ],
+   "habitues": [
+    "Bureau"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "papiers",
+     "nom": "pile de papiers",
+     "interaction": "il manque toujours un papier",
+     "mots": [
+      "papier",
+      "dossier",
+      "bulletin",
+      "facture",
+      "formulaire"
+     ]
+    },
+    {
+     "id": "billets",
+     "nom": "liasse de billets",
+     "interaction": "on la compte, on la cache",
+     "mots": [
+      "liasse",
+      "billets"
+     ]
+    },
+    {
+     "id": "ordinateur",
+     "nom": "vieil ordinateur",
+     "interaction": "il plante au moment de valider",
+     "mots": [
+      "ordinateur",
+      "système",
+      "réseau"
+     ]
+    },
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "collègue débordé",
+     "comportement": "travaille",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "client qui fait la queue",
+     "comportement": "file",
+     "n": [
+      1,
+      3
+     ]
+    },
+    {
+     "role": "vigile",
+     "comportement": "attend",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [],
+   "fx": [
+    "ventilateur",
+    "ecran"
+   ],
+   "sons": [
+    "ventilateur",
+    "foule"
+   ],
+   "vie": "piles de dossiers, ventilateur qui fait voler les papiers, file d’attente qui soupire"
+  },
+  {
+   "id": "tribunal",
+   "nom": "Tribunal",
+   "match": "\\b(tribunal|proces|juge|avocat)\\b",
+   "exterieur": false,
+   "kit": "Tribunal",
+   "template": "hall",
+   "palette": [
+    "#8d6e63",
+    "#f5f5f5",
+    "#1a237e"
+   ],
+   "habitues": [
+    "Tribunal"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "papiers",
+     "nom": "pile de papiers",
+     "interaction": "il manque toujours un papier",
+     "mots": [
+      "papier",
+      "dossier",
+      "bulletin",
+      "facture",
+      "formulaire"
+     ]
+    },
+    {
+     "id": "marteau",
+     "nom": "marteau du juge",
+     "interaction": "on tape pour faire taire",
+     "mots": [
+      "silence",
+      "marteau",
+      "objection"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "public qui chuchote",
+     "comportement": "regarde",
+     "n": [
+      2,
+      3
+     ]
+    },
+    {
+     "role": "greffier",
+     "comportement": "travaille",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [],
+   "fx": [
+    "rayons",
+    "poussiere"
+   ],
+   "sons": [
+    "foule"
+   ],
+   "vie": "public qui chuchote, ventilateurs au plafond, dossiers qui s’empilent"
+  },
+  {
+   "id": "aeroport",
+   "nom": "Aéroport",
+   "match": "\\b(aeroport|avion|vol|douane|frontiere|passeport)\\b",
+   "exterieur": false,
+   "kit": "Douane",
+   "template": "hall",
+   "palette": [
+    "#eceff1",
+    "#1565c0",
+    "#2e7d32"
+   ],
+   "habitues": [
+    "Douane"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "valise",
+     "nom": "valise",
+     "interaction": "on la fouille, elle déborde",
+     "mots": [
+      "valise",
+      "bagage",
+      "voyage"
+     ]
+    },
+    {
+     "id": "papiers",
+     "nom": "pile de papiers",
+     "interaction": "il manque toujours un papier",
+     "mots": [
+      "papier",
+      "dossier",
+      "bulletin",
+      "facture",
+      "formulaire"
+     ]
+    },
+    {
+     "id": "tapis",
+     "nom": "tapis à bagages",
+     "interaction": "la valise qui ne vient jamais",
+     "mots": [
+      "bagage",
+      "tapis"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "voyageurs avec valises",
+     "comportement": "passe",
+     "n": [
+      2,
+      3
+     ]
+    },
+    {
+     "role": "voyageurs qui attendent",
+     "comportement": "file",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "agent de contrôle",
+     "comportement": "travaille",
+     "n": [
+      0,
+      1
+     ]
+    },
+    {
+     "role": "foule",
+     "comportement": "foule",
+     "n": [
+      8,
+      16
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "pigeon",
+     "comportement": "picore sous les bancs",
+     "p": 0.3,
+     "n": [
+      1,
+      2
+     ]
+    }
+   ],
+   "fx": [
+    "rayons",
+    "ecran"
+   ],
+   "sons": [
+    "annonces",
+    "foule"
+   ],
+   "vie": "annonces au haut-parleur, valises qui roulent, contrôle des bagages"
+  },
+  {
+   "id": "gare",
+   "nom": "Gare routière",
+   "match": "\\b(gare|autogare|gbaka|car|bus|woro|terminus)\\b",
+   "exterieur": true,
+   "kit": "Taxi",
+   "template": "rue",
+   "palette": [
+    "#f1c40f",
+    "#27ae60",
+    "#7f8c8d"
+   ],
+   "habitues": [
+    "Taxi",
+    "Marché"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "valise",
+     "nom": "valise",
+     "interaction": "on la fouille, elle déborde",
+     "mots": [
+      "valise",
+      "bagage",
+      "voyage"
+     ]
+    },
+    {
+     "id": "billets",
+     "nom": "liasse de billets",
+     "interaction": "on la compte, on la cache",
+     "mots": [
+      "liasse",
+      "billets"
+     ]
+    },
+    {
+     "id": "bidon",
+     "nom": "bidon et ballots",
+     "interaction": "on s’assoit dessus, ils s’effondrent",
+     "mots": [
+      "ballot",
+      "bidon",
+      "sac"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "voyageurs chargés",
+     "comportement": "passe",
+     "n": [
+      2,
+      3
+     ]
+    },
+    {
+     "role": "apprenti qui crie les destinations",
+     "comportement": "travaille",
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "role": "vendeuse ambulante",
+     "comportement": "passe",
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "role": "foule",
+     "comportement": "foule",
+     "n": [
+      6,
+      14
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "poule",
+     "comportement": "dans un panier sur le toit, s’échappe",
+     "p": 0.5,
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "espece": "chevre",
+     "comportement": "voyage elle aussi",
+     "p": 0.3,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "pigeon",
+     "comportement": "picore",
+     "p": 0.4,
+     "n": [
+      2,
+      3
+     ]
+    }
+   ],
+   "fx": [
+    "poussiere",
+    "rayons"
+   ],
+   "sons": [
+    "circulation",
+    "foule",
+    "annonces"
+   ],
+   "vie": "gbakas qui klaxonnent, apprentis qui crient « Adjamé ! », vendeuses de pain et d’eau"
+  },
+  {
+   "id": "rue",
+   "nom": "Rue",
+   "match": "\\b(rue|quartier|trottoir|carrefour|route|avenue|taxi)\\b",
+   "exterieur": true,
+   "kit": "Taxi",
+   "template": "rue",
+   "palette": [
+    "#f39c12",
+    "#16a085",
+    "#8e44ad"
+   ],
+   "habitues": [
+    "Taxi",
+    "Marché",
+    "Cour"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    },
+    {
+     "id": "bouteilles",
+     "nom": "bouteilles",
+     "interaction": "on les cache derrière le dos",
+     "mots": [
+      "bouteille",
+      "boisson",
+      "bière",
+      "sucrerie"
+     ]
+    },
+    {
+     "id": "moto",
+     "nom": "moto",
+     "interaction": "elle ne démarre pas",
+     "mots": [
+      "moto",
+      "démarre"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "passants",
+     "comportement": "passe",
+     "n": [
+      2,
+      4
+     ]
+    },
+    {
+     "role": "vendeur ambulant",
+     "comportement": "passe",
+     "n": [
+      0,
+      1
+     ]
+    },
+    {
+     "role": "badauds qui commentent",
+     "comportement": "regarde",
+     "n": [
+      0,
+      2
+     ]
+    },
+    {
+     "role": "foule",
+     "comportement": "foule",
+     "n": [
+      4,
+      10
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "chien",
+     "comportement": "trotte et renifle",
+     "p": 0.4,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "poule",
+     "comportement": "traverse la rue",
+     "p": 0.4,
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "espece": "margouillat",
+     "comportement": "fait des pompes sur le mur",
+     "p": 0.4,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "pigeon",
+     "comportement": "picore",
+     "p": 0.3,
+     "n": [
+      2,
+      3
+     ]
+    }
+   ],
+   "fx": [
+    "poussiere",
+    "rayons"
+   ],
+   "sons": [
+    "circulation",
+    "foule"
+   ],
+   "vie": "taxis orange, motos, vendeurs ambulants, badauds qui commentent toute dispute"
+  },
+  {
+   "id": "centre-commercial",
+   "nom": "Centre commercial",
+   "match": "\\b(centre commercial|supermarche|mall|boutique|magasin|caisse)\\b",
+   "exterieur": false,
+   "template": "hall",
+   "palette": [
+    "#fafafa",
+    "#e74c3c",
+    "#3498db"
+   ],
+   "habitues": [
+    "Marché",
+    "Maquis",
+    "Salon de coiffure"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "billets",
+     "nom": "liasse de billets",
+     "interaction": "on la compte, on la cache",
+     "mots": [
+      "liasse",
+      "billets"
+     ]
+    },
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    },
+    {
+     "id": "caddie",
+     "nom": "caddie",
+     "interaction": "il part tout seul",
+     "mots": [
+      "caddie",
+      "courses",
+      "promo"
+     ]
+    },
+    {
+     "id": "vitrine",
+     "nom": "vitrine",
+     "interaction": "on se regarde dedans",
+     "mots": [
+      "vitrine",
+      "promo",
+      "solde"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "clients avec sacs",
+     "comportement": "passe",
+     "n": [
+      2,
+      4
+     ]
+    },
+    {
+     "role": "clients devant une vitrine",
+     "comportement": "regarde",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "agent d’accueil",
+     "comportement": "attend",
+     "n": [
+      0,
+      1
+     ]
+    },
+    {
+     "role": "foule",
+     "comportement": "foule",
+     "n": [
+      6,
+      12
+     ]
+    }
+   ],
+   "animaux": [],
+   "fx": [
+    "rayons",
+    "ecran",
+    "bokeh"
+   ],
+   "sons": [
+    "foule",
+    "annonces",
+    "musique"
+   ],
+   "vie": "carrelage brillant, vitrines en promo, annonces de soldes, escalator qui grince"
+  },
+  {
+   "id": "parc",
+   "nom": "Parc",
+   "match": "\\b(parc|jardin|square|pelouse|banc)\\b",
+   "exterieur": true,
+   "template": "parc",
+   "palette": [
+    "#4caf50",
+    "#8d6e63",
+    "#ffeb3b"
+   ],
+   "habitues": [
+    "Plage",
+    "École",
+    "Cour"
+   ],
+   "heure": "doree",
+   "objets": [
+    {
+     "id": "ballon",
+     "nom": "ballon",
+     "interaction": "il rebondit au mauvais moment",
+     "mots": [
+      "ballon",
+      "foot",
+      "basket"
+     ]
+    },
+    {
+     "id": "banc",
+     "nom": "banc",
+     "interaction": "on s’y endort, quelqu’un s’y assoit déjà",
+     "mots": [
+      "banc",
+      "asseoir"
+     ]
+    },
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "promeneurs",
+     "comportement": "passe",
+     "n": [
+      1,
+      3
+     ]
+    },
+    {
+     "role": "amoureux sur un banc",
+     "comportement": "discute",
+     "n": [
+      0,
+      1
+     ]
+    },
+    {
+     "role": "joggeur",
+     "comportement": "passe",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "oiseau",
+     "comportement": "vole d’arbre en arbre",
+     "p": 0.9,
+     "n": [
+      2,
+      4
+     ]
+    },
+    {
+     "espece": "pigeon",
+     "comportement": "picore les miettes",
+     "p": 0.6,
+     "n": [
+      2,
+      4
+     ]
+    },
+    {
+     "espece": "chien",
+     "comportement": "court après le ballon",
+     "p": 0.35,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "canard",
+     "comportement": "se dandine au bord de l’eau",
+     "p": 0.2,
+     "n": [
+      1,
+      2
+     ]
+    }
+   ],
+   "fx": [
+    "feuilles",
+    "rayons",
+    "poussiere"
+   ],
+   "sons": [
+    "oiseaux",
+    "enfants",
+    "insectes"
+   ],
+   "vie": "oiseaux dans les arbres, feuilles qui tombent, joggeur qui passe deux fois"
+  },
+  {
+   "id": "plage",
+   "nom": "Plage",
+   "match": "\\b(plage|beach|mer|lagune|bord de l eau)\\b",
+   "exterieur": true,
+   "kit": "Plage",
+   "template": "parc",
+   "palette": [
+    "#f6d7a7",
+    "#1abc9c",
+    "#e67e22"
+   ],
+   "habitues": [
+    "Plage"
+   ],
+   "heure": "doree",
+   "objets": [
+    {
+     "id": "assiette",
+     "nom": "assiette garnie",
+     "interaction": "on la vide, on la partage mal",
+     "mots": [
+      "attiéké",
+      "garba",
+      "riz",
+      "assiette",
+      "manger",
+      "plat"
+     ]
+    },
+    {
+     "id": "bouteilles",
+     "nom": "bouteilles",
+     "interaction": "on les cache derrière le dos",
+     "mots": [
+      "bouteille",
+      "boisson",
+      "bière",
+      "sucrerie"
+     ]
+    },
+    {
+     "id": "ballon",
+     "nom": "ballon",
+     "interaction": "il rebondit au mauvais moment",
+     "mots": [
+      "ballon",
+      "foot",
+      "basket"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "pêcheurs avec filets",
+     "comportement": "travaille",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "baigneurs",
+     "comportement": "passe",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "vendeur de noix de coco",
+     "comportement": "passe",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "oiseau",
+     "comportement": "mouettes qui planent",
+     "p": 0.9,
+     "n": [
+      2,
+      4
+     ]
+    },
+    {
+     "espece": "chien",
+     "comportement": "court sur le sable",
+     "p": 0.3,
+     "n": [
+      1,
+      1
+     ]
+    }
+   ],
+   "fx": [
+    "vagues",
+    "rayons"
+   ],
+   "sons": [
+    "vagues",
+    "oiseaux",
+    "foule"
+   ],
+   "vie": "pirogues colorées, vagues, mouettes, vendeurs ambulants sur le sable"
+  },
+  {
+   "id": "village",
+   "nom": "Village",
+   "match": "\\b(village|brousse|case|campagne|champ|ferme)\\b",
+   "exterieur": true,
+   "kit": "Village",
+   "template": "parc",
+   "palette": [
+    "#c0392b",
+    "#8d6e63",
+    "#27ae60"
+   ],
+   "habitues": [
+    "Village"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "marmite",
+     "nom": "marmite fumante",
+     "interaction": "on y goûte en cachette",
+     "mots": [
+      "marmite",
+      "sauce",
+      "cuisine"
+     ]
+    },
+    {
+     "id": "mortier",
+     "nom": "mortier et pilon",
+     "interaction": "on pile le foutou en rythme",
+     "mots": [
+      "foutou",
+      "piler",
+      "mortier"
+     ]
+    },
+    {
+     "id": "chaise",
+     "nom": "chaise en plastique",
+     "interaction": "on s’y effondre, on la tire pour s’asseoir",
+     "mots": [
+      "chaise",
+      "assieds",
+      "asseoir"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "femmes qui pilent",
+     "comportement": "travaille",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "anciens sous l’arbre",
+     "comportement": "discute",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "enfants",
+     "comportement": "passe",
+     "n": [
+      1,
+      2
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "poule",
+     "comportement": "picore, caquette",
+     "p": 0.95,
+     "n": [
+      3,
+      5
+     ]
+    },
+    {
+     "espece": "chevre",
+     "comportement": "broute, bêle au mauvais moment",
+     "p": 0.8,
+     "n": [
+      1,
+      3
+     ]
+    },
+    {
+     "espece": "oiseau",
+     "comportement": "traverse le ciel",
+     "p": 0.7,
+     "n": [
+      2,
+      3
+     ]
+    },
+    {
+     "espece": "canard",
+     "comportement": "se dandine",
+     "p": 0.3,
+     "n": [
+      1,
+      2
+     ]
+    }
+   ],
+   "fx": [
+    "poussiere",
+    "feuilles",
+    "rayons"
+   ],
+   "sons": [
+    "oiseaux",
+    "insectes",
+    "enfants"
+   ],
+   "vie": "baobab, cases, poules partout, chèvres qui bêlent, anciens sous l’arbre à palabres"
+  },
+  {
+   "id": "chambre",
+   "nom": "Chambre",
+   "match": "\\b(chambre|lit|dortoir|logement|appartement|studio)\\b",
+   "exterieur": false,
+   "template": "piece",
+   "palette": [
+    "#f3e5ab",
+    "#6d4c41",
+    "#7e57c2"
+   ],
+   "habitues": [
+    "Salon",
+    "Cour"
+   ],
+   "heure": "soir",
+   "objets": [
+    {
+     "id": "lit",
+     "nom": "lit",
+     "interaction": "on se cache dessous",
+     "mots": [
+      "lit",
+      "dormir",
+      "sieste"
+     ]
+    },
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    },
+    {
+     "id": "armoire",
+     "nom": "armoire",
+     "interaction": "quelqu’un est caché dedans",
+     "mots": [
+      "armoire",
+      "cacher",
+      "caché"
+     ]
+    }
+   ],
+   "pnj": [],
+   "animaux": [
+    {
+     "espece": "chat",
+     "comportement": "dort sur le lit",
+     "p": 0.5,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "margouillat",
+     "comportement": "au plafond",
+     "p": 0.3,
+     "n": [
+      1,
+      1
+     ]
+    }
+   ],
+   "fx": [
+    "ventilateur",
+    "ecran"
+   ],
+   "sons": [
+    "ventilateur",
+    "insectes"
+   ],
+   "vie": "ventilateur qui grince, moustiquaire, téléphone qui vibre sous l’oreiller"
+  },
+  {
+   "id": "ville",
+   "nom": "Plateau",
+   "match": "\\b(plateau|centre ville|centre-ville|ville|tours?|building|immeubles?|boulevard|avenue|quartier des affaires)\\b",
+   "exterieur": true,
+   "template": "ville",
+   "palette": [
+    "#cfd8dc",
+    "#546e7a",
+    "#ff7043"
+   ],
+   "habitues": [
+    "Bureau",
+    "Taxi",
+    "Marché"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    },
+    {
+     "id": "valise",
+     "nom": "mallette",
+     "interaction": "elle s’ouvre et tout s’envole",
+     "mots": [
+      "mallette",
+      "valise",
+      "dossier"
+     ]
+    },
+    {
+     "id": "billets",
+     "nom": "liasse de billets",
+     "interaction": "on la compte, on la cache",
+     "mots": [
+      "liasse",
+      "billets"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "foule des employés",
+     "comportement": "foule",
+     "n": [
+      8,
+      16
+     ]
+    },
+    {
+     "role": "vendeur à la sauvette",
+     "comportement": "travaille",
+     "n": [
+      0,
+      1
+     ]
+    },
+    {
+     "role": "policier qui règle la circulation",
+     "comportement": "regarde",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "pigeon",
+     "comportement": "picore sur le trottoir, s’envole quand on court",
+     "p": 0.8,
+     "n": [
+      2,
+      5
+     ]
+    },
+    {
+     "espece": "oiseau",
+     "comportement": "traverse entre les tours",
+     "p": 0.5,
+     "n": [
+      1,
+      3
+     ]
+    }
+   ],
+   "fx": [
+    "poussiere",
+    "rayons"
+   ],
+   "sons": [
+    "circulation",
+    "foule"
+   ],
+   "vie": "tours de verre, embouteillage de woro-woro, cravates pressées, vendeurs à la sauvette"
+  },
+  {
+   "id": "maison",
+   "nom": "Devant la maison",
+   "match": "\\b(villa|devant la maison|portail|facade|terrasse|cloture|maison de)\\b",
+   "exterieur": true,
+   "template": "maison",
+   "palette": [
+    "#ffe0b2",
+    "#a1887f",
+    "#e91e63"
+   ],
+   "habitues": [
+    "Cour",
+    "Salon"
+   ],
+   "heure": "doree",
+   "objets": [
+    {
+     "id": "chaise",
+     "nom": "chaise en plastique",
+     "interaction": "on s’y effondre, on la tire pour s’asseoir",
+     "mots": [
+      "chaise",
+      "assieds",
+      "asseoir"
+     ]
+    },
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    },
+    {
+     "id": "portail",
+     "nom": "portail",
+     "interaction": "il grince, il est fermé à clé au mauvais moment",
+     "mots": [
+      "portail",
+      "porte",
+      "clé"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "voisins qui passent",
+     "comportement": "passe",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "gardien",
+     "comportement": "regarde",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "chien",
+     "comportement": "aboie derrière le portail",
+     "p": 0.7,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "margouillat",
+     "comportement": "hoche la tête sur le mur",
+     "p": 0.6,
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "espece": "oiseau",
+     "comportement": "chante dans le bougainvillier",
+     "p": 0.6,
+     "n": [
+      1,
+      3
+     ]
+    }
+   ],
+   "fx": [
+    "feuilles",
+    "rayons"
+   ],
+   "sons": [
+    "oiseaux",
+    "enfants"
+   ],
+   "vie": "bougainvillier rose sur le mur, portail en fer forgé, chaises plastique sur la terrasse"
+  },
+  {
+   "id": "nature",
+   "nom": "Brousse",
+   "match": "\\b(brousse|savane|foret|campagne|champs?|montagne|riviere|fleuve|lac|cascade|nature|plantation)\\b",
+   "exterieur": true,
+   "template": "nature",
+   "palette": [
+    "#7cb342",
+    "#8d6e63",
+    "#ffb300"
+   ],
+   "habitues": [
+    "Village",
+    "Cour"
+   ],
+   "heure": "doree",
+   "objets": [
+    {
+     "id": "marmite",
+     "nom": "calebasse d’eau",
+     "interaction": "on la renverse en courant",
+     "mots": [
+      "eau",
+      "calebasse"
+     ]
+    },
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "cultivateurs",
+     "comportement": "travaille",
+     "n": [
+      0,
+      2
+     ]
+    },
+    {
+     "role": "chasseur",
+     "comportement": "passe",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "singe",
+     "comportement": "saute de branche en branche, vole ce qui traîne",
+     "p": 0.85,
+     "n": [
+      1,
+      3
+     ]
+    },
+    {
+     "espece": "antilope",
+     "comportement": "broute au loin puis détale",
+     "p": 0.6,
+     "n": [
+      1,
+      3
+     ]
+    },
+    {
+     "espece": "oiseau",
+     "comportement": "tourne dans le ciel",
+     "p": 0.8,
+     "n": [
+      2,
+      4
+     ]
+    },
+    {
+     "espece": "papillon",
+     "comportement": "volette autour des fleurs",
+     "p": 0.6,
+     "n": [
+      2,
+      5
+     ]
+    }
+   ],
+   "fx": [
+    "feuilles",
+    "rayons",
+    "poussiere"
+   ],
+   "sons": [
+    "oiseaux",
+    "insectes"
+   ],
+   "vie": "hautes herbes dorées, acacias, singes dans les arbres, antilopes au loin, chaleur qui tremble"
+  },
+  {
+   "id": "imaginaire",
+   "nom": "Monde imaginaire",
+   "match": "\\b(reve|(monde|pays|univers|royaume|ile|ville) imaginaire|magique|conte|fantastique|paradis|autre monde|planete|futur)\\b",
+   "exterieur": true,
+   "template": "imaginaire",
+   "palette": [
+    "#7e57c2",
+    "#26c6da",
+    "#ffca28"
+   ],
+   "habitues": [
+    "Cérémonie",
+    "Plage"
+   ],
+   "heure": "soir",
+   "objets": [
+    {
+     "id": "gateau",
+     "nom": "fruit lumineux",
+     "interaction": "on le croque et tout change de couleur",
+     "mots": [
+      "fruit",
+      "magique",
+      "gâteau"
+     ]
+    },
+    {
+     "id": "orange",
+     "nom": "orbe lumineux",
+     "interaction": "il flotte, il s’échappe quand on veut l’attraper",
+     "mots": [
+      "orbe",
+      "boule",
+      "orange"
+     ]
+    }
+   ],
+   "pnj": [],
+   "animaux": [
+    {
+     "espece": "luciole",
+     "comportement": "danse en essaim",
+     "p": 0.95,
+     "n": [
+      4,
+      10
+     ]
+    },
+    {
+     "espece": "papillon",
+     "comportement": "géant et lumineux",
+     "p": 0.7,
+     "n": [
+      2,
+      4
+     ]
+    },
+    {
+     "espece": "oiseau",
+     "comportement": "traverse le ciel violet",
+     "p": 0.5,
+     "n": [
+      1,
+      3
+     ]
+    }
+   ],
+   "fx": [
+    "bokeh",
+    "rayons"
+   ],
+   "sons": [
+    "insectes",
+    "musique"
+   ],
+   "vie": "îles flottantes, champignons géants lumineux, cristaux, deux lunes dans un ciel violet"
+  }
+ ]
+}
