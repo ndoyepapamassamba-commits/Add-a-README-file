@@ -5,3 +5,4 @@
 [608 s] === baye-ndiaye--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14498 Mo
 [730 s] === baye-ndiaye--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13726 Mo
 [851 s] === baye-ndiaye--choc (at_runtime)   |============>                                     | 1/4 - 135.82s/it[K · mémoire libre 13710 Mo
+[972 s] === baye-ndiaye--choc (at_runtime)   |=========================>                        | 2/4 - 137.18s/it[K · mémoire libre 13703 Mo
