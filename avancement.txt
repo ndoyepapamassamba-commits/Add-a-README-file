@@ -8,3 +8,4 @@
 [364 s] 1 images · === decor-commissariat-large-jour   |=========================>                        | 2/4 - 156.89s/it[K · mémoire libre 7012 Mo
 [486 s] 1 images · === decor-commissariat-large-jour   |=========================>                        | 2/4 - 156.89s/it[K · mémoire libre 6994 Mo
 [607 s] 1 images · === decor-commissariat-large-jour   |=====================================>            | 3/4 - 156.75s/it[K · mémoire libre 6994 Mo
+[728 s] 2 images · === maison-professeur-samba-chambre-large-jour   |==================================================| 4/4 - 156.81s/it[K · mémoire libre 11566 Mo
