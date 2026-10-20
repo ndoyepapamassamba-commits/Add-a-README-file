@@ -4,7 +4,7 @@
 # ensuite à partir de cette banque, sans rien réanimer. Toutes les machines tournent en même temps, chacune sa part des clips.
 # Accélérations, sans carte graphique : LoRA FastWan fusionnée au chargement (la même LoRA appliquée à la volée doublait le temps
 # par étape, mesuré le 20/10), clips de 33 images (≈ 1,4 s, bouclables) au lieu de 49, 4 étapes sans CFG, moteur compilé gardé
-# en cache par modèle de processeur, décodage VAE par tranches de temps.
+# en cache par modèle de processeur ; décodage par TAEHV (MIT) : le VAE complet par tuiles prenait ≈ 1 h par clip (mesuré 20/10).
 # Lancement : dépôt de studio-video/banque/demandes/demande.json (liste des clips et nombre de machines).
 name: Banque de mouvements (Wan 2.2)
 on:
@@ -45,6 +45,7 @@ jobs:
           dl umt5.gguf city96/umt5-xxl-encoder-gguf/resolve/main/umt5-xxl-encoder-Q5_K_M.gguf &
           dl vae.safetensors Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan2.2_vae.safetensors &
           dl lora/fastwan.safetensors hum-ma/Wan2.2-TI2V-5B-Turbo-GGUF/resolve/main/Wan2_2_5B_FastWanFullAttn_lora_rank_128_bf16.safetensors &
+          curl -sfL --retry 5 -o $M/taew2_2.safetensors https://github.com/madebyollin/taehv/raw/refs/heads/main/safetensors/taew2_2.safetensors && echo "poids : taew2_2 (TAEHV, MIT) $(du -h $M/taew2_2.safetensors | cut -f1)" &
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg time > /dev/null
           pip install -q cryptography opencv-python-headless numpy
           if [ ! -x ~/sdbin/sd-cli ]; then
@@ -54,7 +55,7 @@ jobs:
             mkdir -p ~/sdbin && cp build/bin/* ~/sdbin/ && echo "compilé en $(( $(date +%s) - t0 )) s"
           else echo "moteur repris du cache"; fi
           wait; ls -la $M $M/lora
-          for f in $M/base.gguf $M/umt5.gguf $M/vae.safetensors $M/lora/fastwan.safetensors; do [ -s $f ] || { echo "poids manquant : $f"; exit 1; }; done
+          for f in $M/base.gguf $M/umt5.gguf $M/vae.safetensors $M/lora/fastwan.safetensors $M/taew2_2.safetensors; do [ -s $f ] || { echo "poids manquant : $f"; exit 1; }; done
           echo "préparation : $(( $(date +%s) - t0 )) s"
       - name: Clips de la part ${{ matrix.part }}
         env: { FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }

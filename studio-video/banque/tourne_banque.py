@@ -5,6 +5,10 @@
 # par étape, 110 s contre 55 s) ; si la fusion échoue, le clip est refait avec l'application à la volée.
 # Mémoire (20/10 22:06, machine Turbo : 610 Mo libres seulement pendant le décodage VAE par tranches de temps) : poids lus en
 # mémoire projetée (--mmap, pages rendues au système quand le décodage en a besoin) et décodage aussi par tuiles (--vae-tiling).
+# 22:46, mesuré sur les 14 machines : le calcul du clip va vite (42 s par étape sur la meilleure), mais le décodage VAE par
+# tuiles prenait 5 à 9 min PAR TUILE (≈ 1 h par clip). → décodage par TAEHV (madebyollin, MIT ; « taew2_2 » pour Wan 2.2 TI2V-5B,
+# pris en charge par stable-diffusion.cpp, docs/taesd.md) : quelques secondes, très peu de mémoire, finesse un peu moindre ;
+# les clips les plus vus pourront être redécodés plus tard avec le VAE complet.
 #   python3 tourne_banque.py TACHES.json PART NB POIDS SORTIE BINAIRE CLE_FABRIQUE.priv.json CLE_CLAUDE.pub.pem
 import json, os, re, subprocess, sys, time
 
@@ -27,13 +31,13 @@ def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude):
             open(pl, 'wb').write(coffre.ouvre_octets(open(os.path.join(ICI, '..', 'images', 'troupe', p + '-planche.msb'), 'rb').read(), priv))
             poses[p] = banque.poses(pl, os.path.join(clair, p))
         avi = os.path.join(clair, t['id'] + '.avi'); mp4 = os.path.join(clair, t['id'] + '.mp4'); t0 = time.time(); mode = None
-        for mode in ('immediately', 'at_runtime'):
+        for mode in ('at_runtime',):   # 20/10 22:46 : « immediately » échoue au chargement sur les poids GGUF (repli constaté sur les 14 machines)
             cmd = ['/usr/bin/time', '-v', '-o', os.path.join(sortie, 'time.txt'), binaire, '-M', 'vid_gen',
                    '--diffusion-model', f'{M}/base.gguf', '--vae', f'{M}/vae.safetensors', '--t5xxl', f'{M}/umt5.gguf',
                    '--lora-model-dir', f'{M}/lora', '--lora-apply-mode', mode, '-i', poses[p][t['pose']],
                    '-p', t['prompt'] + '<lora:fastwan:1>', '-n', NEGATIF, '--cfg-scale', '1', '--sampling-method', 'euler',
                    '--steps', '4', '-W', '384', '-H', '640', '--video-frames', '33', '--flow-shift', '5.0', '--seed', '42',
-                   '-t', '4', '--temporal-tiling', '--vae-tiling', '--mmap', '-o', avi, '-v']
+                   '-t', '4', '--taesd', f'{M}/taew2_2.safetensors', '--mmap', '-o', avi, '-v']
             with open(journal, 'a') as j:
                 j.write(f"=== {t['id']} ({mode})\n"); j.flush()
                 rc = subprocess.run(cmd, stdout=j, stderr=subprocess.STDOUT).returncode
