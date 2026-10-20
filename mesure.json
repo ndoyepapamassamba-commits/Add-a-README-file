@@ -13,6 +13,17 @@
    "h": 448,
    "memoire_max_go": 9.47,
    "run": "39513395486"
+  },
+  {
+   "tache": "decor-chantier-large-jour",
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 596,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.48,
+   "run": "39514755738"
   }
  ]
 }
