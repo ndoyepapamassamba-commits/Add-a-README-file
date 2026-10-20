@@ -22,3 +22,4 @@
 [2670 s] === A2-marche-planches [I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 6617 Mo
 [2793 s] === B-mamie [I] loading tensors completed, taking 5.91s (read: 5.83s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 7006 Mo
 [2914 s] === B-mamie [I] loading tensors completed, taking 5.91s (read: 5.83s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 6717 Mo
+[3035 s] === B-mamie   |============>                                     | 1/4 - 205.19s/it[K · mémoire libre 6705 Mo
