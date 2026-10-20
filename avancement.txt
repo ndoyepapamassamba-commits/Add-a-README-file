@@ -16,3 +16,4 @@
 [1941 s] === tantie-awa--choc (at_runtime)   |============>                                     | 1/4 - 135.37s/it[K · mémoire libre 13781 Mo
 [2062 s] === tantie-awa--choc (at_runtime)   |============>                                     | 1/4 - 135.37s/it[K · mémoire libre 13772 Mo
 [2184 s] === tantie-awa--choc (at_runtime)   |=========================>                        | 2/4 - 135.38s/it[K · mémoire libre 13774 Mo
+[2305 s] === tantie-awa--choc (at_runtime)   |=====================================>            | 3/4 - 135.41s/it[K · mémoire libre 13770 Mo
