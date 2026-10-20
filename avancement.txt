@@ -2,3 +2,4 @@
 [243 s] === koffi--mentir (at_runtime)   |=========================>                        | 2/4 - 80.55s/it[K · mémoire libre 13775 Mo
 [364 s] === baye-ndiaye--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14882 Mo
 [486 s] === baye-ndiaye--rire (at_runtime)   |============>                                     | 1/4 - 80.07s/it[K · mémoire libre 13796 Mo
+[607 s] === baye-ndiaye--rire (at_runtime)   |=========================>                        | 2/4 - 80.82s/it[K · mémoire libre 13791 Mo
