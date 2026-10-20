@@ -4,3 +4,4 @@
 [487 s] 0 images · === decor-cour-large-jour   |=====================================>            | 3/4 - 138.77s/it[K · mémoire libre 6990 Mo
 [609 s] 1 images · === decor-commissariat-large-jour   |==================================================| 4/4 - 129.55s/it[K · mémoire libre 13986 Mo
 [121 s] 1 images · === decor-commissariat-large-jour  · mémoire libre 7000 Mo
+[243 s] 1 images · === decor-commissariat-large-jour   |============>                                     | 1/4 - 158.12s/it[K · mémoire libre 6997 Mo
