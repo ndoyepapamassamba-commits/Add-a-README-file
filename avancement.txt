@@ -9,3 +9,4 @@
 [1095 s] 5 clips · === petit-ibrahima--montrer (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13173 Mo
 [123 s] 6 clips · === monsieur-diarra--parler (at_runtime)   |============>                                     | 1/4 - 78.12s/it[K · mémoire libre 13762 Mo
 [244 s] 6 clips · === monsieur-diarra--parler (at_runtime)   |=========================>                        | 2/4 - 77.66s/it[K · mémoire libre 13772 Mo
+[366 s] 7 clips · === mamie-bintou--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14558 Mo
