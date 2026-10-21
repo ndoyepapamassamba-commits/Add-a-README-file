@@ -77,3 +77,4 @@
 [365 s] 25 clips · === coach-diabate--choc (at_runtime)   |=========================>                        | 2/4 - 134.23s/it[K · mémoire libre 13766 Mo
 [486 s] 25 clips · === coach-diabate--choc (at_runtime)   |=====================================>            | 3/4 - 133.72s/it[K · mémoire libre 13766 Mo
 [124 s] 26 clips · === le-banquier--rire (at_runtime)   |============>                                     | 1/4 - 68.52s/it[K · mémoire libre 13767 Mo
+[246 s] 26 clips · === le-banquier--rire (at_runtime)   |=====================================>            | 3/4 - 67.96s/it[K · mémoire libre 13773 Mo
