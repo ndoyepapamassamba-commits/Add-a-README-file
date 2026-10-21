@@ -14,3 +14,4 @@
 [243 s] 2 images · === maison-sur-awa-cuisine-large-jour   |============>                                     | 1/4 - 157.74s/it[K · mémoire libre 6900 Mo
 [365 s] 2 images · === maison-sur-awa-cuisine-large-jour   |=========================>                        | 2/4 - 156.65s/it[K · mémoire libre 6904 Mo
 [486 s] 2 images · === maison-sur-awa-cuisine-large-jour   |=========================>                        | 2/4 - 156.65s/it[K · mémoire libre 6903 Mo
+[607 s] 2 images · === maison-sur-awa-cuisine-large-jour   |=====================================>            | 3/4 - 156.46s/it[K · mémoire libre 6903 Mo
