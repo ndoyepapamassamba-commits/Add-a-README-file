@@ -54,3 +54,4 @@
 [5461 s] 5 images · === decor-maquis-champ-jour   |=====================================>            | 3/4 - 156.87s/it[K · mémoire libre 7034 Mo
 [5582 s] 6 images · === decor-plage-coin-jour   |==================================================| 4/4 - 156.85s/it[K · mémoire libre 11575 Mo
 [5705 s] 6 images · === decor-plage-coin-jour   |==================================================| 4/4 - 156.85s/it[K · mémoire libre 7026 Mo
+[5826 s] 6 images · === decor-plage-coin-jour   |============>                                     | 1/4 - 161.15s/it[K · mémoire libre 7016 Mo
