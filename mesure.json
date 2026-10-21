@@ -84,6 +84,13 @@
    "lora": "at_runtime",
    "secondes": 370,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "petite-khadija--choc",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 368,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39541116258"
