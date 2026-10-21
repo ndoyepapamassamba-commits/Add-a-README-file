@@ -30,3 +30,4 @@
 [245 s] 10 clips · === chef-traore--hausser@2 (at_runtime)   |=====================================>            | 3/4 - 67.76s/it[K · mémoire libre 13771 Mo
 [367 s] 11 clips · === mamie-bintou--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13780 Mo
 [488 s] 11 clips · === mamie-bintou--ecouter (at_runtime)   |=========================>                        | 2/4 - 67.55s/it[K · mémoire libre 13774 Mo
+[610 s] 11 clips · === mamie-bintou--ecouter (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 10468 Mo
