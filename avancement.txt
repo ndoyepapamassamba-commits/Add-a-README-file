@@ -56,3 +56,4 @@
 [731 s] 16 clips · === general-zongo--montrer (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13800 Mo
 [852 s] 16 clips · === general-zongo--montrer (at_runtime)   |============>                                     | 1/4 - 136.07s/it[K · mémoire libre 13788 Mo
 [974 s] 16 clips · === general-zongo--montrer (at_runtime)   |=========================>                        | 2/4 - 134.40s/it[K · mémoire libre 13776 Mo
+[1095 s] 16 clips · === general-zongo--montrer (at_runtime)   |=====================================>            | 3/4 - 133.95s/it[K · mémoire libre 13767 Mo
