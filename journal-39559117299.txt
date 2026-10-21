@@ -1,0 +1,27 @@
+=== salif-le-parisien--ecouter (at_runtime)
+[V] lora /home/runner/work/_temp/m/lora/fastwan.safetensors:1.00 --- diffusion_engine.cpp:1922
+[I] load /home/runner/work/_temp/m/lora/fastwan.safetensors using safetensors format --- model_loader.cpp:222
+[V] init from '/home/runner/work/_temp/m/lora/fastwan.safetensors', prefix = 'lora.' --- model_loader.cpp:290
+[I] apply lora at runtime --- diffusion_engine.cpp:1837
+[I] apply_loras completed, taking 0.09s --- diffusion_engine.cpp:1962
+[I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 1.20s --- vae.hpp:310
+[I] encode_first_stage completed, taking 1196 ms --- video.cpp:985
+[V] computing condition graph completed, taking 24842 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 24.84s --- video.cpp:1212
+[I] using mmap for '/home/runner/work/_temp/m/lora/fastwan.safetensors' --- model_loader.cpp:896
+[I] sampling completed, taking 536.21s --- video.cpp:1712
+[I] generating latent video completed, taking 536.22s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 18.22s --- vae.hpp:384
+[I] decode_first_stage completed, taking 18.22s --- video.cpp:1243
+[I] runtime_lora_models: --- diffusion_engine.cpp:1902
+[I] (1099 / 1099) LoRA tensors have been applied, lora_file_path = /home/runner/work/_temp/m/lora/fastwan.safetensors --- lora.hpp:1044
+[I] generate_video completed in 580.67s --- video.cpp:1944
+=== dj-kevin--rire (at_runtime)
+[I] encode_first_stage completed, taking 1200 ms --- video.cpp:985
+[V] computing condition graph completed, taking 24395 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 24.40s --- video.cpp:1212
+[I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.01s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 535.15s --- video.cpp:1712
+[I] generating latent video completed, taking 535.17s --- video.cpp:1856
+[I] generate_video completed in 579.19s --- video.cpp:1944
