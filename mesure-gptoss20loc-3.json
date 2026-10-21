@@ -4,12 +4,13 @@
  "appels_scenariste": 38,
  "secondes_scenariste": 7851.678420782089,
  "echecs_scenariste": 0,
- "appels_juge": 36,
+ "appels_juge": 42,
  "echecs_juge": 0,
  "brouillons_refuses_controle": 4,
  "planchers_v17": [
   0.425,
-  0.48
+  0.48,
+  0.443
  ],
  "notes": [
   0.458,
@@ -27,6 +28,11 @@
    "lieu": "Douane",
    "accepte": false,
    "secondes": 1911
+  },
+  {
+   "lieu": "Douane",
+   "accepte": false,
+   "secondes": 1792
   }
  ],
  "drole_v17": [
@@ -138,14 +144,14 @@
    "jetons_par_s": 5.4
   },
   "juge": {
-   "appels": 37,
+   "appels": 43,
    "tronques": 0,
-   "lus_jetons": 347,
-   "cache_jetons": 176,
-   "lecture_s": 27.8,
-   "ecriture_jetons": 83,
-   "ecriture_s": 16.3,
-   "jetons_par_s": 5.1
+   "lus_jetons": 360,
+   "cache_jetons": 172,
+   "lecture_s": 28.5,
+   "ecriture_jetons": 81,
+   "ecriture_s": 17.3,
+   "jetons_par_s": 4.7
   }
  }
 }
