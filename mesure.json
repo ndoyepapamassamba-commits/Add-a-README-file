@@ -175,7 +175,14 @@
    "lora": "at_runtime",
    "secondes": 576,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "salif-le-parisien--colere",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 587,
+   "memoire_max_go": 10.82
   }
  ],
- "run": "39550232510"
+ "run": "39559117299"
 }
