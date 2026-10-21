@@ -42,3 +42,4 @@
 [610 s] 14 clips · === agent-bakary--ecouter (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13186 Mo
 [731 s] 15 clips · === petite-khadija--rire (at_runtime)   |============>                                     | 1/4 - 68.65s/it[K · mémoire libre 13773 Mo
 [853 s] 15 clips · === petite-khadija--rire (at_runtime)   |=====================================>            | 3/4 - 67.82s/it[K · mémoire libre 13781 Mo
+[974 s] 16 clips · === madame-konan--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13798 Mo

@@ -105,6 +105,13 @@
    "lora": "at_runtime",
    "secondes": 308,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "petite-khadija--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 305,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39541116258"
