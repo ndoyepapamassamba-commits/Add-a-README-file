@@ -119,7 +119,14 @@
    "lora": "at_runtime",
    "secondes": 417,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "sorciere-mama-dede--colere",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 175,
+   "memoire_max_go": 10.86
   }
  ],
- "run": "39545665602"
+ "run": "39550232510"
 }

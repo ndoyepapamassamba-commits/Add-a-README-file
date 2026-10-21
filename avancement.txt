@@ -38,3 +38,4 @@
 [1825 s] 17 clips · === sorciere-mama-dede--colere (at_runtime)   |============>                                     | 1/4 - 94.14s/it[K · mémoire libre 13749 Mo
 [1947 s] 17 clips · === sorciere-mama-dede--colere (at_runtime)   |=========================>                        | 2/4 - 94.44s/it[K · mémoire libre 13748 Mo
 [122 s] 17 clips · === sorciere-mama-dede--colere (at_runtime)   |=========================>                        | 2/4 - 38.81s/it[K · mémoire libre 13775 Mo
+[244 s] 18 clips · === docteur-sylla--montrer (at_runtime)   |============>                                     | 1/4 - 39.59s/it[K · mémoire libre 13825 Mo
