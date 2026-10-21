@@ -50,3 +50,4 @@
 [4980 s] 6 images · === decor-hopital-champ-jour   |============>                                     | 1/4 - 133.97s/it[K · mémoire libre 6967 Mo
 [5101 s] 6 images · === decor-hopital-champ-jour   |=========================>                        | 2/4 - 124.19s/it[K · mémoire libre 6968 Mo
 [5222 s] 6 images · === decor-hopital-champ-jour   |=====================================>            | 3/4 - 126.39s/it[K · mémoire libre 6975 Mo
+[5344 s] 6 images · === decor-hopital-champ-jour   |==================================================| 4/4 - 130.27s/it[K · mémoire libre 5771 Mo
