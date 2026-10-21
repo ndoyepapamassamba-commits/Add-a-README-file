@@ -98,6 +98,13 @@
    "lora": "at_runtime",
    "secondes": 581,
    "memoire_max_go": 10.97
+  },
+  {
+   "clip": "boubacar--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 585,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39559117299"
