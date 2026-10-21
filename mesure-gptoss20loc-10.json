@@ -1,12 +1,12 @@
 {
  "modele": "gptoss20loc",
  "part": 10,
- "appels_scenariste": 52,
- "secondes_scenariste": 15327.681252241135,
+ "appels_scenariste": 53,
+ "secondes_scenariste": 15566.116079568863,
  "echecs_scenariste": 0,
  "appels_juge": 74,
  "echecs_juge": 0,
- "brouillons_refuses_controle": 4,
+ "brouillons_refuses_controle": 5,
  "planchers_v17": [
   0.373,
   0.482,
@@ -41,6 +41,11 @@
    "lieu": "Taxi",
    "accepte": false,
    "secondes": 2729
+  },
+  {
+   "lieu": "Taxi",
+   "accepte": false,
+   "secondes": 1766
   }
  ],
  "drole_v17": [
@@ -167,21 +172,25 @@
   [
    3,
    2
+  ],
+  [
+   2,
+   1
   ]
  ],
  "brouillons_illisibles": 6,
  "doublons_autres_machines": 0,
- "secondes_par_brouillon": 294.8,
+ "secondes_par_brouillon": 293.7,
  "temps": {
   "scenariste": {
-   "appels": 52,
+   "appels": 53,
    "tronques": 1,
-   "lus_jetons": 634,
-   "cache_jetons": 1612,
-   "lecture_s": 86.2,
-   "ecriture_jetons": 830,
-   "ecriture_s": 202.2,
-   "jetons_par_s": 4.1
+   "lus_jetons": 638,
+   "cache_jetons": 1583,
+   "lecture_s": 85.6,
+   "ecriture_jetons": 839,
+   "ecriture_s": 201.9,
+   "jetons_par_s": 4.2
   },
   "juge": {
    "appels": 74,
