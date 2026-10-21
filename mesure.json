@@ -154,6 +154,13 @@
    "lora": "at_runtime",
    "secondes": 274,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "grand-pere-ndiaye--colere",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 274,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39545665602"
