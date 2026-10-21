@@ -47,3 +47,4 @@
 [4612 s] 4 images · === perso-le-banquier   |=====================================>            | 3/4 - 395.45s/it[K · mémoire libre 6267 Mo
 [4733 s] 4 images · === perso-le-banquier   |=====================================>            | 3/4 - 395.45s/it[K · mémoire libre 6270 Mo
 [4854 s] 5 images · === decor-maquis-champ-jour   |==================================================| 4/4 - 395.86s/it[K · mémoire libre 12503 Mo
+[4976 s] 5 images · === decor-maquis-champ-jour   |==================================================| 4/4 - 395.86s/it[K · mémoire libre 7041 Mo
