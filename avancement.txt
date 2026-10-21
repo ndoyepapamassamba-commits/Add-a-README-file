@@ -46,3 +46,4 @@
 [5590 s] 5 images · === decor-marche-champ-jour   |==================================================| 4/4 - 392.79s/it[K · mémoire libre 7015 Mo
 [5712 s] 5 images · === decor-marche-champ-jour   |============>                                     | 1/4 - 159.96s/it[K · mémoire libre 7002 Mo
 [5834 s] 5 images · === decor-marche-champ-jour   |============>                                     | 1/4 - 159.96s/it[K · mémoire libre 7049 Mo
+[5955 s] 5 images · === decor-marche-champ-jour   |=========================>                        | 2/4 - 155.52s/it[K · mémoire libre 7036 Mo
