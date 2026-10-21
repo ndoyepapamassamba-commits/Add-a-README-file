@@ -86,6 +86,19 @@
    "h": 720,
    "memoire_max_go": 12.35,
    "run": "39529293602"
+  },
+  {
+   "tache": "perso-le-banquier",
+   "version": 2,
+   "type": "personnage",
+   "etapes": 2,
+   "ok": true,
+   "code": 0,
+   "secondes": 1640,
+   "w": 1280,
+   "h": 720,
+   "memoire_max_go": 12.35,
+   "run": "39529293602"
   }
  ]
 }
