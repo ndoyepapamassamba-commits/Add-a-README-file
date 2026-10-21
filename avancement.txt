@@ -117,3 +117,4 @@
 [2066 s] 32 clips · === le-banquier--choc@2 (at_runtime)   |=========================>                        | 2/4 - 133.32s/it[K · mémoire libre 13773 Mo
 [2187 s] 32 clips · === le-banquier--choc@2 (at_runtime)   |=====================================>            | 3/4 - 133.61s/it[K · mémoire libre 13773 Mo
 [2309 s] 32 clips · === le-banquier--choc@2 (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13169 Mo
+[2430 s] 33 clips · === patron-sery--mentir@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13577 Mo
