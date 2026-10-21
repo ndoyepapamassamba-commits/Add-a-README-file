@@ -1,0 +1,95 @@
+# Scénaristes ouverts sur les machines GitHub (21/10/2026) — voir studio-video/moteur-troupe/histoires_tourne.py.
+# llama.cpp (MIT) + Ministral 3 14B / Mistral Small 3.2 24B (Apache-2.0), contre le scénariste actuel (Pollinations GPT-OSS 20B) ;
+# même juge pour tous. 6 machines au plus, pour laisser la place à la bible et à la banque (20 machines par compte).
+name: Histoires (scénaristes ouverts)
+on:
+  push:
+    branches: [claude/relaxed-noether-svkgiu]
+    paths: ['studio-video/moteur-troupe/histoires_tourne.py', '.github/workflows/histoires-ecriture.yml']
+  workflow_dispatch:
+permissions: { contents: write }
+concurrency: { group: histoires, cancel-in-progress: true }
+defaults:
+  run: { shell: bash }
+env:
+  HF: https://huggingface.co
+  MINUTES: 230
+jobs:
+  part:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 290
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        modele: [ministral14, small24, gptoss20]
+        part: [0, 1]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scénariste et poids
+        if: matrix.modele != 'gptoss20'
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          t0=$(date +%s); M=$RUNNER_TEMP/m; mkdir -p $M ~/llama
+          case ${{ matrix.modele }} in
+            ministral14) P=mistralai/Ministral-3-14B-Instruct-2512-GGUF/resolve/main/Ministral-3-14B-Instruct-2512-Q5_K_M.gguf ;;
+            small24) P=unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF/resolve/main/Mistral-Small-3.2-24B-Instruct-2506-IQ4_XS.gguf ;;
+          esac
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL &
+          curl -sfL --retry 5 --retry-delay 5 -o $M/modele.gguf "$HF/$P" &
+          # llama.cpp : dernière version publiée depuis 14 jours au moins (binaire Ubuntu officiel, sinon compilée ici)
+          python3 - > $RUNNER_TEMP/llama.txt <<'EOF'
+          import json, os, re, urllib.request, datetime as dt
+          q = urllib.request.Request('https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=100',
+                                     headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
+          lim = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=14)
+          for r in json.load(urllib.request.urlopen(q, timeout=60)):
+              if dt.datetime.fromisoformat(r['published_at'].replace('Z', '+00:00')) > lim: continue
+              a = [x['browser_download_url'] for x in r['assets'] if re.fullmatch(r'llama-b\d+-bin-ubuntu-x64\.(zip|tar\.gz)', x['name'])]
+              print(r['tag_name'], a[0] if a else ''); break
+          EOF
+          read TAG URL < $RUNNER_TEMP/llama.txt; echo "llama.cpp $TAG $URL"
+          if [ -n "$URL" ] && curl -sfL --retry 5 -o $RUNNER_TEMP/llama.arc "$URL"; then
+            (cd ~/llama && { unzip -q $RUNNER_TEMP/llama.arc 2>/dev/null || tar xzf $RUNNER_TEMP/llama.arc; })
+          fi
+          LS=$(find ~/llama -name llama-server -type f | head -1)
+          if [ -z "$LS" ] || ! LD_LIBRARY_PATH=$(dirname $LS) $LS --version > /dev/null 2>&1; then
+            echo "binaire officiel indisponible : compilation de $TAG"
+            git clone -q --depth 1 --branch $TAG https://github.com/ggml-org/llama.cpp $RUNNER_TEMP/lc && cd $RUNNER_TEMP/lc
+            cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON -DLLAMA_CURL=OFF > /dev/null && cmake --build build --target llama-server -j 4 > /dev/null
+            LS=$RUNNER_TEMP/lc/build/bin/llama-server
+          fi
+          echo "LS=$LS" >> $GITHUB_ENV; LD_LIBRARY_PATH=$(dirname $LS) $LS --version 2>&1 | tail -2
+          wait; ls -la $M; [ -s $M/modele.gguf ] || { echo "poids manquant"; exit 1; }
+          pip install -q cryptography numpy opencv-python-headless
+          echo "préparation : $(( $(date +%s) - t0 )) s ; disque libre $(df -h / | awk 'NR==2{print $4}')"
+      - name: Serveur du scénariste
+        if: matrix.modele != 'gptoss20'
+        run: |
+          export LD_LIBRARY_PATH=$(dirname $LS); t0=$(date +%s)
+          lance() { $LS -m $RUNNER_TEMP/m/modele.gguf -c 12288 -np 2 -t 4 --host 127.0.0.1 --port 8080 "$@" > $RUNNER_TEMP/serveur.log 2>&1 & echo $! > $RUNNER_TEMP/serveur.pid; }
+          lance -fa on -ctk q8_0 -ctv q8_0; sleep 15
+          kill -0 $(cat $RUNNER_TEMP/serveur.pid) 2>/dev/null || { tail -5 $RUNNER_TEMP/serveur.log; echo "repli sans flash attention"; lance -ctk q8_0; }
+          until curl -sf 127.0.0.1:8080/health > /dev/null; do
+            kill -0 $(cat $RUNNER_TEMP/serveur.pid) 2>/dev/null || { tail -30 $RUNNER_TEMP/serveur.log; exit 1; }
+            [ $(( $(date +%s) - t0 )) -lt 900 ] || { echo "serveur pas prêt en 15 min"; exit 1; }; sleep 5
+          done
+          echo "serveur prêt en $(( $(date +%s) - t0 )) s ; mémoire libre $(free -m | awk '/Mem:/{print $7}') Mo"
+          curl -s 127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \
+            -d '{"messages":[{"role":"user","content":"Dis bonjour en une phrase, en français ivoirien."}],"max_tokens":40}' | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['choices'][0]['message']['content'][:200]); print(d.get('timings'))"
+      - name: Dépendances (scénariste actuel)
+        if: matrix.modele == 'gptoss20'
+        run: pip install -q cryptography numpy opencv-python-headless
+      - name: Histoires de la part ${{ matrix.part }} (${{ matrix.modele }})
+        run: |
+          O=$RUNNER_TEMP/sortie; B=histoires-sortie-${{ matrix.modele }}-${{ matrix.part }}
+          git worktree add -q --detach $O HEAD && (cd $O && git checkout -q --orphan p && git rm -rqf . && git clean -fdq)
+          pousse() { (cd $O && git add -A && git -c user.name=histoires -c user.email=histoires@users.noreply.github.com commit -qm "Histoires : ${{ matrix.modele }} part ${{ matrix.part }} (run ${{ github.run_id }})" && git push -q -f origin HEAD:refs/heads/$B) > /dev/null 2>&1 || true; }
+          ( while sleep 300; do pousse; done ) & P=$!
+          if [ "${{ matrix.modele }}" != gptoss20 ]; then
+            export HISTOIRES_URL=http://127.0.0.1:8080/v1/chat/completions HISTOIRES_DELAI=1800 HISTOIRES_MAX_JETONS=1500 HISTOIRES_TEMP=0.7
+          fi
+          python3 studio-video/moteur-troupe/histoires_tourne.py ${{ matrix.modele }} ${{ matrix.part }} 2 $MINUTES $O \
+            studio-video/animer/cle-claude.pub.pem || true
+          kill $P 2>/dev/null || true; [ -f $RUNNER_TEMP/serveur.log ] && grep -E "eval time|prompt eval" $RUNNER_TEMP/serveur.log | tail -6 > $O/vitesse-${{ matrix.modele }}-${{ matrix.part }}.txt
+          pousse; ls -la $O

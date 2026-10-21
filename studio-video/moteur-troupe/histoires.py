@@ -196,19 +196,28 @@ _VERROU_LOCAL = threading.Lock()
 _EN_VOL = threading.BoundedSemaphore(int(os.environ.get('HISTOIRES_EN_VOL', '2')))
 
 
-def llm(prompt, temp=1.0):
+def llm(prompt, temp=1.0, juge=False):
     """modèle texte : point d'accès compatible OpenAI (HISTOIRES_URL + HISTOIRES_CLE, par ex. la clé de l'utilisateur dans
-    l'app), sinon Pollinations sans clé ; repli hors ligne Qwen3 1,7B (un seul appel à la fois : le modèle local n'est pas
-    réentrant — 4 appels parallèles l'ont fait avorter le 17/10)."""
-    url = os.environ.get('HISTOIRES_URL', LLM_URL); cle = os.environ.get('HISTOIRES_CLE')
-    corps = {'model': LLM_MODELE, 'messages': [{'role': 'user', 'content': prompt}], 'temperature': temp, 'max_tokens': 6000,
+    l'app, ou llama-server sur une machine GitHub), sinon Pollinations sans clé ; repli hors ligne Qwen3 1,7B (un seul appel à
+    la fois : le modèle local n'est pas réentrant — 4 appels parallèles l'ont fait avorter le 17/10).
+    21/10/2026 : le JUGE (juge=True) reste le modèle calibré (Pollinations GPT-OSS 20B : duel V17 contre elle-même 0,5, V17
+    avec/sans chute 0,625) quel que soit le scénariste — sinon changer de scénariste changerait aussi la règle de notation
+    (HISTOIRES_JUGE_URL / HISTOIRES_JUGE_MODELE pour le déplacer explicitement)."""
+    if juge:
+        url = os.environ.get('HISTOIRES_JUGE_URL', LLM_URL); cle = None; modele = os.environ.get('HISTOIRES_JUGE_MODELE', 'openai-fast')
+    else:
+        url = os.environ.get('HISTOIRES_URL', LLM_URL); cle = os.environ.get('HISTOIRES_CLE'); modele = LLM_MODELE
+        temp = float(os.environ.get('HISTOIRES_TEMP', temp))   # les modèles Mistral se défont à 1,0 (réglage conseillé ≤ 0,7)
+    corps = {'model': modele, 'messages': [{'role': 'user', 'content': prompt}], 'temperature': temp,
+             'max_tokens': int(os.environ.get('HISTOIRES_MAX_JETONS', '6000')),
              'reasoning_effort': os.environ.get('HISTOIRES_EFFORT', 'low'), 'seed': int(time.time() * 1e6) % 2 ** 31}
     tete = {'Content-Type': 'application/json', **({'Authorization': f'Bearer {cle}'} if cle else {})}
+    delai = 240 if juge else int(os.environ.get('HISTOIRES_DELAI', '240'))   # un modèle 24B sur 4 cœurs écrit en ≈ 10 min
     err = None
     for essai in range(3):
         try:
             req = urllib.request.Request(url, data=json.dumps(corps).encode(), headers=tete)
-            with _EN_VOL: m = json.loads(urllib.request.urlopen(req, timeout=240).read())['choices'][0]['message']
+            with _EN_VOL: m = json.loads(urllib.request.urlopen(req, timeout=delai).read())['choices'][0]['message']
             if m.get('content'): return m['content']
             err = 'réponse vide (raisonnement seul)'
         except Exception as e:
@@ -293,7 +302,7 @@ def _juge_llm(state, questions):
               "d'Afrikatoon, de Ladjagaï et de « la blague du jour », et tu ne ris jamais par politesse. Note honnêtement.\n\n"
               + '\n\n'.join(f'`{k}` :\n{v}' for k, v in state.items())
               + "\n\nRéponds UNIQUEMENT par un objet JSON avec ces clés :\n" + '\n'.join(lignes))
-    J = _json(llm(prompt, temp=0.2)) or {}
+    J = _json(llm(prompt, temp=0.2, juge=True)) or {}
     out = {}
     for k, q in questions.items():
         v = J[k]

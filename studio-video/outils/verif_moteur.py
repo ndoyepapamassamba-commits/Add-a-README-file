@@ -449,6 +449,30 @@ try:
 except Exception as e:
     echecs.append(f'humour : {e}')
 
+# scénariste ouvert sur machine GitHub (21/10/2026) : HISTOIRES_URL déplace le SCÉNARISTE, jamais le juge calibré
+try:
+    sys.path.insert(0, os.path.join(ICI, 'moteur-troupe')); import histoires as _h10, urllib.request as _u10
+    _vus10, _orig10 = [], _u10.urlopen
+    class _R10:
+        def __init__(s, c): s.c = c
+        def read(s): return json.dumps({'choices': [{'message': {'content': s.c}}]}).encode()
+    def _faux10(req, timeout=None):
+        _vus10.append((req.full_url, json.loads(req.data)['model'], timeout)); return _R10('{}')
+    _env10 = {k: os.environ.get(k) for k in ('HISTOIRES_URL', 'HISTOIRES_DELAI', 'HISTOIRES_JUGE_URL')}
+    os.environ.update(HISTOIRES_URL='http://127.0.0.1:8080/v1/chat/completions', HISTOIRES_DELAI='1800'); os.environ.pop('HISTOIRES_JUGE_URL', None)
+    _u10.urlopen = _faux10
+    try: _h10.llm('x'); _h10.llm('x', juge=True)
+    finally:
+        _u10.urlopen = _orig10
+        for _k, _v in _env10.items():
+            if _v is None: os.environ.pop(_k, None)
+            else: os.environ[_k] = _v
+    if _vus10[0][0] != 'http://127.0.0.1:8080/v1/chat/completions' or _vus10[0][2] != 1800: echecs.append('scénariste : HISTOIRES_URL ou délai ignorés')
+    if _vus10[1][0] != _h10.LLM_URL or _vus10[1][1] != 'openai-fast' or _vus10[1][2] != 240: echecs.append('scénariste : le juge a suivi le scénariste')
+    print('scénariste ouvert : HISTOIRES_URL déplace le scénariste, le juge reste le modèle calibré : OK')
+except Exception as e:
+    echecs.append(f'scénariste ouvert : {e}')
+
 # niveau de la V1 (20/10/2026) : la vidéo 2 (figures collées, animation 20,4 % < 24,3 %) doit être arrêtée par le contrôle
 try:
     sys.path.insert(0, os.path.join(ICI, 'moteur-troupe')); import niveau_v1 as _nv9
