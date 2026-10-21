@@ -51,3 +51,4 @@
 [4125 s] 4 images · === perso-fatou   |==================================================| 4/4 - 397.65s/it[K · mémoire libre 4926 Mo
 [4246 s] 5 images · === perso-coach-diabate   |==================================================| 4/4 - 397.65s/it[K · mémoire libre 6693 Mo
 [4368 s] 5 images · === perso-coach-diabate   |==================================================| 4/4 - 397.65s/it[K · mémoire libre 6322 Mo
+[4489 s] 5 images · === perso-coach-diabate   |==================================================| 4/4 - 397.65s/it[K · mémoire libre 6313 Mo
