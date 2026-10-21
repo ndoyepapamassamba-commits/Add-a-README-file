@@ -87,13 +87,16 @@ jobs:
           # contexte par emplacement ≥ consigne (≈ 4 300 jetons, 5 personnages) + réponse (1 500) ; Small 24B (12,8 Go) tient sous 16 Go
           # GPT-OSS : 32 768 (16 384 par emplacement) — consigne ≈ 4 300 jetons + réponse jusqu'à 4 000 débordaient des 8 192 d'un
           # emplacement ; cache de clés-valeurs de GPT-OSS ≈ 24 Ko par jeton en q8, soit < 1 Go pour tout le contexte
-          case ${{ matrix.modele }} in ministral14) CTX=20480 ;; gptoss20loc|gptoss20hyb) CTX=32768 ;; *) CTX=16384 ;; esac
+          case ${{ matrix.modele }} in ministral14) CTX=20480 ;; gptoss20loc|gptoss20hyb) CTX=49152 ;; *) CTX=16384 ;; esac
+          # 07:25 : 4 emplacements pour GPT-OSS (12 288 jetons chacun) — brouillons sur 0 et 1, réparations et juge sur 2 et 3
+          # (histoires.emplacement) : la consigne du scénariste reste dans le cache de ses emplacements
+          case ${{ matrix.modele }} in gptoss20loc|gptoss20hyb) NP=4 ;; *) NP=2 ;; esac
           # gabarit « harmony » de GPT-OSS ; --swa-full (21/10, llama.cpp server-context.cpp l. 4062-4160) : GPT-OSS alterne des
           # couches à fenêtre glissante de 128 jetons ; sans cache SWA complet, le serveur ne peut reprendre une consigne déjà lue
           # que jusqu'au début du message (points de reprise : début de message, fin de consigne), donc relisait ≈ 4 300 jetons à
           # chaque brouillon. Avec --swa-full, tout le début commun (89 % de la consigne, fixe d'un lieu à l'autre) vient du cache.
           case ${{ matrix.modele }} in gptoss20loc|gptoss20hyb) EXTRA="--jinja --swa-full" ;; *) EXTRA= ;; esac
-          lance() { $LS -m $RUNNER_TEMP/m/modele.gguf -c $CTX -np 2 -t 4 --host 127.0.0.1 --port 8080 $EXTRA "$@" > $RUNNER_TEMP/serveur.log 2>&1 & echo $! > $RUNNER_TEMP/serveur.pid; }
+          lance() { $LS -m $RUNNER_TEMP/m/modele.gguf -c $CTX -np $NP -t 4 --host 127.0.0.1 --port 8080 $EXTRA "$@" > $RUNNER_TEMP/serveur.log 2>&1 & echo $! > $RUNNER_TEMP/serveur.pid; }
           lance -fa on -ctk q8_0 -ctv q8_0; sleep 15
           kill -0 $(cat $RUNNER_TEMP/serveur.pid) 2>/dev/null || { tail -5 $RUNNER_TEMP/serveur.log; echo "repli sans flash attention"; lance -ctk q8_0; }
           until curl -sf 127.0.0.1:8080/health > /dev/null; do
@@ -123,7 +126,7 @@ jobs:
             # 21/10 04:57 : le juge hébergé (même modèle) reproduit le calibrage — V17 contre elle-même 0,5 / 0,5 / 0,5, V17 contre sa
             # version sans chute 0,625 / 0,625 / 0,65 (Pollinations : 0,5 et 0,625), 0 échec, 48 s par duel — alors que Pollinations
             # ne répond plus au juge depuis les machines GitHub : un seul modèle, un seul serveur, scénariste ET juge, sans service extérieur
-            if [ "${{ matrix.modele }}" = gptoss20loc ]; then export HISTOIRES_MAX_JETONS=4000 HISTOIRES_TEMP=1.0 HISTOIRES_JUGE_URL=$HISTOIRES_URL HISTOIRES_JUGE_DELAI=900; fi
+            if [ "${{ matrix.modele }}" = gptoss20loc ]; then export HISTOIRES_MAX_JETONS=4000 HISTOIRES_TEMP=1.0 HISTOIRES_JUGE_URL=$HISTOIRES_URL HISTOIRES_JUGE_DELAI=900 HISTOIRES_EMPLACEMENTS=1; fi
           fi
           # calibrage du juge hébergé fait le 21/10 (run 39544447104) : relancer juge_calibre.py à chaque changement de modèle ou de gabarit
           python3 studio-video/moteur-troupe/histoires_tourne.py ${{ matrix.modele }} ${{ matrix.part }} ${{ matrix.parts }} $MINUTES $O \

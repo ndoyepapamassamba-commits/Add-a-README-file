@@ -217,7 +217,7 @@ def _json(texte):
     return None
 
 
-import threading
+import itertools, threading
 _VERROU_LOCAL = threading.Lock()
 # service gratuit sans clé : au plus 2 appels en vol (20/10/2026, mesuré : 6 appels simultanés — 3 brouillons jugés, 2 questions
 # chacun — laissaient une réponse sans retour au bout de 240 s, alors qu'un appel seul du juge répond en 9 s)
@@ -233,6 +233,17 @@ _EN_VOL_SCEN = threading.BoundedSemaphore(int(os.environ.get('HISTOIRES_EN_VOL_S
 # du cache) — pour savoir si un brouillon passe son temps à LIRE la consigne ou à ÉCRIRE, avant d'accélérer l'un ou l'autre.
 TEMPS = []
 TEMPS_CLES = ('prompt_n', 'cache_n', 'prompt_ms', 'predicted_n', 'predicted_ms')
+# 21/10/2026 07:25 — EMPLACEMENTS DÉDIÉS (HISTOIRES_EMPLACEMENTS=1, llama-server -np 4) : au tour 13, les réparations (consigne
+# courte, sans rien de commun) et le juge chassaient la consigne du scénariste de ses emplacements — un brouillon ne reprenait
+# du cache que 576 à 622 jetons sur ≈ 4 300. Brouillons sur les emplacements 0 et 1, réparations et juge sur 2 et 3 (en
+# alternance : deux à la fois de chaque côté) ; un emplacement occupé fait attendre la requête (llama.cpp server-context.cpp
+# l. 1776-1784 et 2971-2987).
+_BROUILLON, _AUTRE = itertools.count(), itertools.count()
+
+
+def emplacement(prompt, juge):
+    if os.environ.get('HISTOIRES_EMPLACEMENTS') != '1': return None
+    return next(_BROUILLON) % 2 if not juge and prompt.startswith('Tu écris') else 2 + next(_AUTRE) % 2
 
 
 def llm(prompt, temp=1.0, juge=False):
@@ -250,6 +261,8 @@ def llm(prompt, temp=1.0, juge=False):
     corps = {'model': modele, 'messages': [{'role': 'user', 'content': prompt}], 'temperature': temp,
              'max_tokens': int(os.environ.get('HISTOIRES_MAX_JETONS', '6000')),
              'reasoning_effort': os.environ.get('HISTOIRES_EFFORT', 'low'), 'seed': int(time.time() * 1e6) % 2 ** 31}
+    e = emplacement(prompt, juge)
+    if e is not None: corps['id_slot'] = e
     tete = {'Content-Type': 'application/json', **({'Authorization': f'Bearer {cle}'} if cle else {})}
     delai = int(os.environ.get('HISTOIRES_JUGE_DELAI', '240')) if juge else int(os.environ.get('HISTOIRES_DELAI', '240'))   # un modèle 24B sur 4 cœurs écrit en ≈ 10 min
     err = None

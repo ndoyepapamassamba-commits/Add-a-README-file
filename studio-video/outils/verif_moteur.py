@@ -605,6 +605,30 @@ try:
 except Exception as e:
     echecs.append(f'chutes de la machine : {e}')
 
+# emplacements dédiés du serveur (21/10/2026 07:25) : brouillons sur 0 et 1, réparations et juge sur 2 et 3 ; rien sans la variable
+try:
+    import os as _os23, io as _io23, urllib.request as _ur23
+    _vus23 = []; _u23 = _ur23.urlopen; _sv23 = {k: _os23.environ.get(k) for k in ('HISTOIRES_URL', 'HISTOIRES_JUGE_URL', 'HISTOIRES_EMPLACEMENTS')}
+    _ur23.urlopen = lambda req, timeout=0: (_vus23.append(json.loads(req.data).get('id_slot')) or
+                                            _io23.BytesIO(json.dumps({'choices': [{'message': {'content': 'x'}}]}).encode()))
+    try:
+        _os23.environ['HISTOIRES_URL'] = _os23.environ['HISTOIRES_JUGE_URL'] = 'http://127.0.0.1:1/v1/chat/completions'
+        _os23.environ.pop('HISTOIRES_EMPLACEMENTS', None); _h14.llm('Tu écris UNE blague')
+        _os23.environ['HISTOIRES_EMPLACEMENTS'] = '1'
+        for _p23, _j23 in (('Tu écris UNE blague', False), ('Tu écris UNE blague', False), ('Voici un sketch', False), ('Tu es le jury', True)):
+            _h14.llm(_p23, juge=_j23)
+    finally:
+        _ur23.urlopen = _u23
+        for _k23, _v23 in _sv23.items():
+            if _v23 is None: _os23.environ.pop(_k23, None)
+            else: _os23.environ[_k23] = _v23
+    del _h14.TEMPS[-5:]
+    if _vus23[0] is not None or sorted(_vus23[1:3]) != [0, 1] or not all(x in (2, 3) for x in _vus23[3:]):
+        echecs.append(f'emplacements du serveur : {_vus23}')
+    print(f'emplacements du serveur : brouillons {sorted(_vus23[1:3])}, réparation et juge {_vus23[3:]}, aucun sans la variable : OK')
+except Exception as e:
+    echecs.append(f'emplacements du serveur : {e}')
+
 # pas deux fois le même geste (21/10/2026) : départ du clip d'écoute propre à chaque vidéo, continu d'une réplique à l'autre
 try:
     import assemble as _as15
