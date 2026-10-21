@@ -20,3 +20,4 @@
 [2427 s] 4 clips · === chef-traore--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13742 Mo
 [2549 s] 4 clips · === chef-traore--parler (at_runtime)   |============>                                     | 1/4 - 134.57s/it[K · mémoire libre 13743 Mo
 [2670 s] 4 clips · === chef-traore--parler (at_runtime)   |=========================>                        | 2/4 - 134.02s/it[K · mémoire libre 13740 Mo
+[2791 s] 4 clips · === chef-traore--parler (at_runtime)   |=====================================>            | 3/4 - 134.20s/it[K · mémoire libre 13725 Mo
