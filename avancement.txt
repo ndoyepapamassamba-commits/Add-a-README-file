@@ -14,3 +14,4 @@
 [608 s] 2 images · === maison-la-voisine-cuisine-large-jour   |==================================================| 4/4 - 132.89s/it[K · mémoire libre 14512 Mo
 [730 s] 2 images · === maison-la-voisine-cuisine-large-jour   |==================================================| 4/4 - 132.89s/it[K · mémoire libre 6993 Mo
 [851 s] 2 images · === maison-la-voisine-cuisine-large-jour   |============>                                     | 1/4 - 139.52s/it[K · mémoire libre 6991 Mo
+[972 s] 2 images · === maison-la-voisine-cuisine-large-jour   |=========================>                        | 2/4 - 131.32s/it[K · mémoire libre 6982 Mo
