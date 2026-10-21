@@ -79,3 +79,4 @@
 [488 s] 24 clips · === agent-gora--mentir@2 (at_runtime)   |=========================>                        | 2/4 - 67.76s/it[K · mémoire libre 13790 Mo
 [609 s] 24 clips · === agent-gora--mentir@2 (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 12767 Mo
 [730 s] 25 clips · === la-voisine--choc@2 (at_runtime)   |============>                                     | 1/4 - 68.59s/it[K · mémoire libre 13753 Mo
+[852 s] 25 clips · === la-voisine--choc@2 (at_runtime)   |=====================================>            | 3/4 - 68.17s/it[K · mémoire libre 13759 Mo
