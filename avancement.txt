@@ -46,3 +46,4 @@
 [3883 s] 4 images · === perso-chef-traore   |=====================================>            | 3/4 - 395.70s/it[K · mémoire libre 6261 Mo
 [4004 s] 4 images · === perso-chef-traore   |=====================================>            | 3/4 - 395.70s/it[K · mémoire libre 6281 Mo
 [4125 s] 4 images · === perso-chef-traore   |==================================================| 4/4 - 395.43s/it[K · mémoire libre 3001 Mo
+[4247 s] 5 images · === decor-cour-contrechamp-jour   |==================================================| 4/4 - 395.43s/it[K · mémoire libre 7057 Mo
