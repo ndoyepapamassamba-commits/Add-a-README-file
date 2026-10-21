@@ -17,7 +17,7 @@
   1.5
  ],
  "choc_v17": [
-  1.0,
+  0.4,
   1.0,
   0.8
  ],
@@ -26,11 +26,11 @@
   "juge": {
    "appels": 6,
    "tronques": 0,
-   "lus_jetons": 388,
-   "cache_jetons": 101,
-   "lecture_s": 38.5,
-   "ecriture_jetons": 94,
-   "ecriture_s": 20.3,
+   "lus_jetons": 395,
+   "cache_jetons": 94,
+   "lecture_s": 38.6,
+   "ecriture_jetons": 88,
+   "ecriture_s": 19.1,
    "jetons_par_s": 4.6
   }
  }
