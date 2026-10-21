@@ -53,3 +53,4 @@
 [4981 s] 10 images · === maison-professeur-samba-salon-champ-jour   |=========================>                        | 2/4 - 83.58s/it[K · mémoire libre 7042 Mo
 [5102 s] 11 images · === decor-cour-contrechamp-nuit   |==================================================| 4/4 - 85.20s/it[K · mémoire libre 11636 Mo
 [5224 s] 11 images · === decor-cour-contrechamp-nuit   |============>                                     | 1/4 - 89.90s/it[K · mémoire libre 7051 Mo
+[5345 s] 11 images · === decor-cour-contrechamp-nuit   |=========================>                        | 2/4 - 84.61s/it[K · mémoire libre 7042 Mo
