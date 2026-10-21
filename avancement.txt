@@ -29,3 +29,4 @@
 [121 s] 10 clips · === chef-traore--colere@2 (at_runtime)  · mémoire libre 13764 Mo
 [242 s] 10 clips · === chef-traore--colere@2 (at_runtime)   |============>                                     | 1/4 - 134.37s/it[K · mémoire libre 13772 Mo
 [364 s] 10 clips · === chef-traore--colere@2 (at_runtime)   |=========================>                        | 2/4 - 133.67s/it[K · mémoire libre 13769 Mo
+[485 s] 10 clips · === chef-traore--colere@2 (at_runtime)   |=====================================>            | 3/4 - 133.66s/it[K · mémoire libre 13769 Mo
