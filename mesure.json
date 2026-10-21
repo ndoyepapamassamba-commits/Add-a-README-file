@@ -56,6 +56,13 @@
    "lora": "at_runtime",
    "secondes": 580,
    "memoire_max_go": 11.09
+  },
+  {
+   "clip": "maitre-kone--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 579,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39545665602"
