@@ -16,3 +16,4 @@
 [1941 s] 7 clips · === tantie-awa-sarr--parler (at_runtime)   |============>                                     | 1/4 - 134.25s/it[K · mémoire libre 13773 Mo
 [2062 s] 7 clips · === tantie-awa-sarr--parler (at_runtime)   |=========================>                        | 2/4 - 133.58s/it[K · mémoire libre 13755 Mo
 [2183 s] 7 clips · === tantie-awa-sarr--parler (at_runtime)   |=====================================>            | 3/4 - 133.46s/it[K · mémoire libre 13758 Mo
+[2305 s] 7 clips · === tantie-awa-sarr--parler (at_runtime)   |=====================================>            | 3/4 - 133.46s/it[K · mémoire libre 13770 Mo
