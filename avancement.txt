@@ -9,3 +9,4 @@
 [123 s] 6 clips · === mamie-bintou--hausser (at_runtime)   |============>                                     | 1/4 - 96.02s/it[K · mémoire libre 13761 Mo
 [122 s] 6 clips · === tata-prisca--choc (at_runtime)  · mémoire libre 13787 Mo
 [243 s] 6 clips · === tata-prisca--choc (at_runtime)   |============>                                     | 1/4 - 135.97s/it[K · mémoire libre 13796 Mo
+[364 s] 6 clips · === tata-prisca--choc (at_runtime)   |=========================>                        | 2/4 - 135.43s/it[K · mémoire libre 13782 Mo
