@@ -19,3 +19,4 @@
 [1214 s] 2 images · === maison-sur-awa-salon-large-jour   |=========================>                        | 2/4 - 157.71s/it[K · mémoire libre 7025 Mo
 [1335 s] 2 images · === maison-sur-awa-salon-large-jour   |=====================================>            | 3/4 - 157.81s/it[K · mémoire libre 7017 Mo
 [1457 s] 3 images · === perso-professeur-samba   |==================================================| 4/4 - 157.81s/it[K · mémoire libre 11583 Mo
+[1578 s] 3 images · === perso-professeur-samba   |==================================================| 4/4 - 157.81s/it[K · mémoire libre 6314 Mo
