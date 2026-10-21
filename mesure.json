@@ -98,7 +98,14 @@
    "lora": "at_runtime",
    "secondes": 587,
    "memoire_max_go": 11.04
+  },
+  {
+   "clip": "madame-coumba--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 583,
+   "memoire_max_go": 10.84
   }
  ],
- "run": "39543580560"
+ "run": "39545665602"
 }
