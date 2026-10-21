@@ -37,3 +37,4 @@
 [1336 s] 14 clips · === maitre-coulibaly--ecouter (at_runtime)   |============>                                     | 1/4 - 134.74s/it[K · mémoire libre 13773 Mo
 [1458 s] 14 clips · === maitre-coulibaly--ecouter (at_runtime)   |============>                                     | 1/4 - 134.74s/it[K · mémoire libre 13756 Mo
 [1579 s] 14 clips · === maitre-coulibaly--ecouter (at_runtime)   |=========================>                        | 2/4 - 134.11s/it[K · mémoire libre 13767 Mo
+[1700 s] 14 clips · === maitre-coulibaly--ecouter (at_runtime)   |=====================================>            | 3/4 - 134.06s/it[K · mémoire libre 13772 Mo
