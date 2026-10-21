@@ -529,6 +529,45 @@ try:
 except Exception as e:
     echecs.append(f'jeu varié : {e}')
 
+# consigne réutilisable par le cache du serveur (21/10/2026) : le début de la consigne est le même d'un lieu à l'autre (le lieu et la
+# distribution viennent après les règles), et chaque appel garde le chronométrage rendu par llama-server
+try:
+    import os as _os19, io as _io19, urllib.request as _ur19
+    _L19 = list(_h14.LIEUX); _a19, _b19 = _h14.consignes(_L19[0], None, [], '', ''), _h14.consignes(_L19[-1], None, [], '', '')
+    _p19 = len(_os19.path.commonprefix([_a19, _b19])) / min(len(_a19), len(_b19))
+    if _p19 < 0.8: echecs.append(f'consigne : début commun à deux lieux {_p19:.0%} (80 % exigé)')
+    _u19 = _ur19.urlopen; _e19 = _os19.environ.get('HISTOIRES_URL'); _n19 = len(_h14.TEMPS)
+    _ur19.urlopen = lambda req, timeout=0: _io19.BytesIO(json.dumps({'choices': [{'message': {'content': 'x'}, 'finish_reason': 'stop'}],
+                                                                     'timings': {'prompt_n': 9, 'cache_n': 90, 'prompt_ms': 1.0, 'predicted_n': 5, 'predicted_ms': 2.0}}).encode())
+    try:
+        _os19.environ['HISTOIRES_URL'] = 'http://127.0.0.1:1/v1/chat/completions'; _h14.llm('x')
+    finally:
+        _ur19.urlopen = _u19
+        if _e19 is None: _os19.environ.pop('HISTOIRES_URL', None)
+        else: _os19.environ['HISTOIRES_URL'] = _e19
+    if len(_h14.TEMPS) != _n19 + 1 or _h14.TEMPS[-1].get('cache_n') != 90: echecs.append('chronométrage des appels non relevé')
+    del _h14.TEMPS[_n19:]
+    print(f'consigne : début commun à deux lieux {_p19:.0%}, chronométrage du serveur relevé : OK')
+except Exception as e:
+    echecs.append(f'consigne et chronométrage : {e}')
+
+# nom d'un absent (21/10/2026, « L'empreinte de la chaussure ») : « Koffi, ta chaussure… » sans Koffi dans la scène = défaut ;
+# le même nom, Koffi présent, n'en est pas un ; aucune fausse alerte sur les trois sketchs de l'épisode publié V17
+try:
+    _h14.LIEUX['_essai20'] = {'nom': 'x', 'acteurs': ['LA GO LÉOPARD', 'MAÎTRE COULIBALY']}
+    _r20 = lambda t: {'titre': 't', 'repliques': [{'qui': 'LA GO LÉOPARD', 'texte': t, 'jeu': 'accuse'}, {'qui': 'MAÎTRE COULIBALY', 'texte': 'Moi ?', 'jeu': 'choc'}]}
+    if not any('Koffi' in x for x in _h14.controle(_r20('Koffi, ta chaussure est fausse !'), '_essai20')): echecs.append('nom d’un absent non vu')
+    _h14.LIEUX['_essai20']['acteurs'].append('KOFFI')
+    if any('Koffi' in x for x in _h14.controle(_r20('Koffi, ta chaussure est fausse !'), '_essai20')): echecs.append('nom d’un présent refusé')
+    del _h14.LIEUX['_essai20']
+    for _v20 in _h14.V17:
+        _h14.LIEUX['_v20'] = {'nom': 'x', 'acteurs': sorted({r['qui'] for r in _v20['repliques']})}
+        if any("n'est pas dans la scène" in x for x in _h14.controle(_v20, '_v20')): echecs.append(f"nom d’un absent : fausse alerte sur « {_v20['titre']} »")
+    _h14.LIEUX.pop('_v20', None)
+    print('nom d’un absent : « Koffi, … » sans Koffi refusé, avec Koffi accepté, 0 fausse alerte sur la V17 : OK')
+except Exception as e:
+    echecs.append(f'nom d’un absent : {e}')
+
 # pas deux fois le même geste (21/10/2026) : départ du clip d'écoute propre à chaque vidéo, continu d'une réplique à l'autre
 try:
     import assemble as _as15

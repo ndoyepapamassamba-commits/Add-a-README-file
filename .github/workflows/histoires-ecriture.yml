@@ -20,22 +20,20 @@ jobs:
     timeout-minutes: 290
     strategy:
       fail-fast: false
-      max-parallel: 8
+      max-parallel: 12
       # 21/10 05:05 : depuis les machines GitHub, Pollinations ne répond plus au juge (3 appels, 3 échecs) : les concurrents jugés
       # par lui ne peuvent rien accepter. GPT-OSS hébergé (scénariste ET juge, calibré) passe en tête, sur 4 machines ; Small 24B
       # et Ministral 14B restent une machine chacun pour la conformité de forme ; le scénariste Pollinations seul sort du duel.
       # 05:40 : GPT-OSS hébergé écrit à 10 jetons/s (un brouillon raisonné = plusieurs minutes) quand Pollinations écrivait depuis
       # GitHub en 13,6 s par brouillon (seul son juge échouait) : voie hybride gptoss20hyb = écriture Pollinations, juge hébergé calibré.
+      # 06:50 (run 9) : la voie hybride ne peut pas écrire la série (HTTP 402, quota gratuit de Pollinations épuisé ; 15 brouillons,
+      # planchers 0,33 à 0,49, 0 accepté) ; Small 24B et Ministral 14B n'ont rendu aucun lieu en 40 min. GPT-OSS hébergé (2 sketchs
+      # acceptés sur 4 machines en 32 min — 811 s et 1 586 s —, 0 refus) prend les machines laissées par la banque (finie : 138 clips
+      # sur 138) et la bible (4 parts).
       matrix:
-        include:
-          - { modele: gptoss20loc, part: 0, parts: 4 }
-          - { modele: gptoss20hyb, part: 0, parts: 2 }
-          - { modele: gptoss20loc, part: 1, parts: 4 }
-          - { modele: gptoss20hyb, part: 1, parts: 2 }
-          - { modele: gptoss20loc, part: 2, parts: 4 }
-          - { modele: gptoss20loc, part: 3, parts: 4 }
-          - { modele: small24, part: 0, parts: 1 }
-          - { modele: ministral14, part: 0, parts: 1 }
+        modele: [gptoss20loc]
+        part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        parts: [12]
     steps:
       - uses: actions/checkout@v4
       - name: Scénariste et poids
@@ -85,8 +83,14 @@ jobs:
         run: |
           export LD_LIBRARY_PATH=$(dirname $LS); t0=$(date +%s)
           # contexte par emplacement ≥ consigne (≈ 4 300 jetons, 5 personnages) + réponse (1 500) ; Small 24B (12,8 Go) tient sous 16 Go
-          case ${{ matrix.modele }} in ministral14) CTX=20480 ;; *) CTX=16384 ;; esac
-          case ${{ matrix.modele }} in gptoss20loc|gptoss20hyb) EXTRA=--jinja ;; *) EXTRA= ;; esac   # gabarit « harmony » de GPT-OSS
+          # GPT-OSS : 32 768 (16 384 par emplacement) — consigne ≈ 4 300 jetons + réponse jusqu'à 4 000 débordaient des 8 192 d'un
+          # emplacement ; cache de clés-valeurs de GPT-OSS ≈ 24 Ko par jeton en q8, soit < 1 Go pour tout le contexte
+          case ${{ matrix.modele }} in ministral14) CTX=20480 ;; gptoss20loc|gptoss20hyb) CTX=32768 ;; *) CTX=16384 ;; esac
+          # gabarit « harmony » de GPT-OSS ; --swa-full (21/10, llama.cpp server-context.cpp l. 4062-4160) : GPT-OSS alterne des
+          # couches à fenêtre glissante de 128 jetons ; sans cache SWA complet, le serveur ne peut reprendre une consigne déjà lue
+          # que jusqu'au début du message (points de reprise : début de message, fin de consigne), donc relisait ≈ 4 300 jetons à
+          # chaque brouillon. Avec --swa-full, tout le début commun (89 % de la consigne, fixe d'un lieu à l'autre) vient du cache.
+          case ${{ matrix.modele }} in gptoss20loc|gptoss20hyb) EXTRA="--jinja --swa-full" ;; *) EXTRA= ;; esac
           lance() { $LS -m $RUNNER_TEMP/m/modele.gguf -c $CTX -np 2 -t 4 --host 127.0.0.1 --port 8080 $EXTRA "$@" > $RUNNER_TEMP/serveur.log 2>&1 & echo $! > $RUNNER_TEMP/serveur.pid; }
           lance -fa on -ctk q8_0 -ctv q8_0; sleep 15
           kill -0 $(cat $RUNNER_TEMP/serveur.pid) 2>/dev/null || { tail -5 $RUNNER_TEMP/serveur.log; echo "repli sans flash attention"; lance -ctk q8_0; }
@@ -103,11 +107,13 @@ jobs:
       - name: Histoires de la part ${{ matrix.part }} (${{ matrix.modele }})
         run: |
           O=$RUNNER_TEMP/sortie; B=histoires-sortie-${{ matrix.modele }}-${{ matrix.part }}
-          git worktree add -q --detach $O HEAD && (cd $O && git checkout -q --orphan p && git rm -rqf . && git clean -fdq)
+          # la branche de sortie est reprise si elle existe (une relance n'efface plus les sketchs acceptés aux tours précédents)
+          git worktree add -q --detach $O HEAD && (cd $O && if git fetch -q origin "+refs/heads/$B:refs/remotes/origin/$B" 2>/dev/null; \
+            then git checkout -q -B p "origin/$B"; else git checkout -q --orphan p && git rm -rqf . && git clean -fdq; fi)
           pousse() { (cd $O && git add -A && git -c user.name=histoires -c user.email=histoires@users.noreply.github.com commit -qm "Histoires : ${{ matrix.modele }} part ${{ matrix.part }} (run ${{ github.run_id }})" && git push -q -f origin HEAD:refs/heads/$B) > /dev/null 2>&1 || true; }
           ( while sleep 300; do pousse; done ) & P=$!
           if [ "${{ matrix.modele }}" = gptoss20hyb ]; then   # écriture Pollinations, juge hébergé (réglages du calibrage)
-            # 05:57 : Pollinations sans clé refuse 2 appels simultanés d'une même machine (17 refus pour 14 brouillons) : un à la fois
+            # 06:20 : les refus de Pollinations sans clé sont des HTTP 402 (quota gratuit épuisé), pas des appels simultanés
             export HISTOIRES_JUGE_URL=http://127.0.0.1:8080/v1/chat/completions HISTOIRES_JUGE_DELAI=900 HISTOIRES_MAX_JETONS=4000 HISTOIRES_EN_VOL_SCENARISTE=1
           elif [ "${{ matrix.modele }}" != gptoss20 ]; then
             export HISTOIRES_URL=http://127.0.0.1:8080/v1/chat/completions HISTOIRES_DELAI=1800 HISTOIRES_MAX_JETONS=1500 HISTOIRES_TEMP=0.7

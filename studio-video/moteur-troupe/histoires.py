@@ -83,6 +83,25 @@ def _contient(texte, ensemble):
     return sorted({e for e in ensemble if (' ' + e.replace('’', "'") + ' ') in t})
 
 
+# 21/10/2026 (« L'empreinte de la chaussure », 2e sketch accepté sur les machines) : La Go Léopard dit « Koffi, ta chaussure… » à
+# Maître Coulibaly — Koffi n'est pas dans la scène. À 10 000 sketchs, un nom de la troupe lancé à un absent embrouille la vidéo.
+# Mots propres des noms (titres et articles ôtés) ; une apostrophe = le nom en tête de réplique ou en fin, collé à une virgule.
+TITRES = set('maman petit petite tantie tonton grand-pere grand pere monsieur maitre agent professeur madame general tata mecano '
+             'soeur sœur sorciere sorcière mama imam docteur mamie chef le la l frimeur patriarche lyceenne lycéenne go leopard léopard '
+             'future banquier voisine patron mademoiselle apprenti parisien coach dj général mécano grand-père maître'.split())
+
+
+def noms_propres(nom):
+    return {w for w in mots(nom) if w not in TITRES and len(w) > 2}
+
+
+def apostrophes(texte):
+    t = unicodedata.normalize('NFC', texte.lower()).replace('’', "'")
+    m1 = re.match(r"\W*(?:(?:eh+|ah+|oh+|hé+|hein)\W+)?([a-zàâäçéèêëîïôöùûüÿœæñ'\-]+)\s*,", t)
+    m2 = re.search(r",\s*([a-zàâäçéèêëîïôöùûüÿœæñ'\-]+)\W*$", t)
+    return {m.group(1) for m in (m1, m2) if m}
+
+
 # ── écriture ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 def fiche(nom):
     for p in BIBLE['personnages']:
@@ -138,9 +157,6 @@ populaire (comme Afrikatoon, Ladjagaï, « la blague du jour ») : phrases court
 compréhensible par tous. JAMAIS de wolof. Humour familial : on rit des SITUATIONS et des défauts du personnage, jamais d'un groupe,
 d'une ethnie, d'une religion, d'un handicap ou d'un corps ; rien de vulgaire.
 
-LIEU : {L['nom']}. PERSONNAGES (uniquement eux, au moins deux) :
-""" + '\n'.join(fiche(n) for n in L['acteurs']) + f"""
-
 RÈGLES MESURÉES SUR LES VIDÉOS DE LA CHAÎNE :
 {regles}
 
@@ -168,6 +184,9 @@ Jeu de chaque réplique parmi : {', '.join(JEUX)} ; « neutre » pour une répli
                 "contre celui qui les a dits, en trois répliques : « Commande tout ! Ce soir, c'est Koffi qui gère ! » → « Même "
                 "l'addition ? » → « Ah non. L'addition, c'est toi qui gères. » Vise ce ressort, avec une autre situation.\n")
     if recap: txt += f"\nCE QUI FAIT RIRE DANS LES VIDÉOS DE RÉFÉRENCE :\n{recap[:2500]}\n"
+    # 21/10/2026 — tout ce qui précède est identique d'un lieu à l'autre : llama-server reprend ce début de consigne de son cache
+    # (--swa-full sur GPT-OSS) au lieu de le relire à chaque brouillon ; le lieu et la distribution viennent seulement ici.
+    txt += f"\nLIEU : {L['nom']}. PERSONNAGES (uniquement eux, au moins deux) :\n" + '\n'.join(fiche(n) for n in L['acteurs']) + '\n'
     if champion:
         txt += ("\nLE SKETCH À BATTRE (fais PLUS DRÔLE, avec une autre mécanique et une autre chute) :\n"
                 + '\n'.join(f"{r['qui']} : {r['texte']}" for r in champion['repliques']) + '\n')
@@ -202,6 +221,12 @@ _EN_VOL = threading.BoundedSemaphore(int(os.environ.get('HISTOIRES_EN_VOL', '2')
 _EN_VOL_SCEN = threading.BoundedSemaphore(int(os.environ.get('HISTOIRES_EN_VOL_SCENARISTE', os.environ.get('HISTOIRES_EN_VOL', '2'))))
 
 
+# 21/10/2026 : chronométrage de chaque appel, tel que llama-server le rend (champ « timings », cache_n = jetons de consigne repris
+# du cache) — pour savoir si un brouillon passe son temps à LIRE la consigne ou à ÉCRIRE, avant d'accélérer l'un ou l'autre.
+TEMPS = []
+TEMPS_CLES = ('prompt_n', 'cache_n', 'prompt_ms', 'predicted_n', 'predicted_ms')
+
+
 def llm(prompt, temp=1.0, juge=False):
     """modèle texte : point d'accès compatible OpenAI (HISTOIRES_URL + HISTOIRES_CLE, par ex. la clé de l'utilisateur dans
     l'app, ou llama-server sur une machine GitHub), sinon Pollinations sans clé ; repli hors ligne Qwen3 1,7B (un seul appel à
@@ -223,7 +248,9 @@ def llm(prompt, temp=1.0, juge=False):
     for essai in range(3):
         try:
             req = urllib.request.Request(url, data=json.dumps(corps).encode(), headers=tete)
-            with (_EN_VOL if juge else _EN_VOL_SCEN): m = json.loads(urllib.request.urlopen(req, timeout=delai).read())['choices'][0]['message']
+            with (_EN_VOL if juge else _EN_VOL_SCEN): rep = json.loads(urllib.request.urlopen(req, timeout=delai).read())
+            m = rep['choices'][0]['message']; t = rep.get('timings') or {}
+            TEMPS.append({'juge': juge, 'fin': rep['choices'][0].get('finish_reason'), **{k: t.get(k) for k in TEMPS_CLES}})
             if m.get('content'): return m['content']
             err = 'réponse vide (raisonnement seul)'
         except Exception as e:
@@ -269,6 +296,11 @@ def controle(h, lieu, deja=(), fmt='sketch'):
     neutres = sum(1 for r in R if r.get('jeu', 'neutre') == 'neutre')
     if R and neutres * 2 > len(R): d.append(f"{neutres} répliques sur {len(R)} jouées « neutre » : donne à chacune un jeu parmi "
                                          f"{', '.join(j for j in JEUX if j != 'neutre')}")
+    presents = set().union(*(noms_propres(n) for n in acteurs)) if acteurs else set()
+    absents = set().union(*(noms_propres(p['name']) for p in BIBLE['personnages'])) - presents
+    hors = sorted({w for r in R for w in apostrophes(r.get('texte', '')) if w in absents})
+    if hors: d.append(f"{', '.join(w.title() for w in hors)} n'est pas dans la scène : chaque réplique s'adresse à un personnage présent "
+                      f"({', '.join(sorted(acteurs))})")
     longues = [r['texte'] for r in R if len(mots(r.get('texte', ''))) > 14]
     if longues: d.append(f'{len(longues)} réplique(s) de plus de 14 mots')
     ch = [r for r in R if r.get('role') == 'chute' or r.get('chute')]

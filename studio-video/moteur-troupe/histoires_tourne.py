@@ -66,8 +66,21 @@ def main(modele, part, parts, minutes, sortie, pub_claude):
         m = re.search(r'note ([0-9.]+) \(drôle', t)
         if m: stats['notes'].append(float(m.group(1)))
 
+    def temps():   # 21/10/2026 : lecture de la consigne (dont la part reprise du cache) et écriture, par rôle, selon llama-server
+        out = {}
+        for role, juge in (('scenariste', False), ('juge', True)):
+            T = [t for t in H.TEMPS if t['juge'] == juge and t.get('prompt_ms') is not None]
+            if not T: continue
+            S = {k: sum(t.get(k) or 0 for t in T) for k in H.TEMPS_CLES}
+            out[role] = {'appels': len(T), 'tronques': sum(1 for t in T if t.get('fin') == 'length'),
+                         'lus_jetons': round(S['prompt_n'] / len(T)), 'cache_jetons': round(S['cache_n'] / len(T)),
+                         'lecture_s': round(S['prompt_ms'] / 1000 / len(T), 1), 'ecriture_jetons': round(S['predicted_n'] / len(T)),
+                         'ecriture_s': round(S['predicted_ms'] / 1000 / len(T), 1),
+                         'jetons_par_s': round(S['predicted_n'] / max(1e-9, S['predicted_ms'] / 1000), 1)}
+        return out
+
     def ecrit():
-        s = dict(stats, secondes_par_brouillon=round(stats['secondes_scenariste'] / max(1, stats['appels_scenariste']), 1))
+        s = dict(stats, secondes_par_brouillon=round(stats['secondes_scenariste'] / max(1, stats['appels_scenariste']), 1), temps=temps())
         json.dump(s, open(os.path.join(sortie, f'mesure-{modele}-{part}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
         open(os.path.join(sortie, f'journal-{modele}-{part}.msb'), 'wb').write(coffre.scelle_octets('\n'.join(lignes).encode(), pub))
 
@@ -83,7 +96,8 @@ def main(modele, part, parts, minutes, sortie, pub_claude):
             stats['acceptes'] += 1
             h = json.load(open(os.path.join(dossier, f'{i}.json'), encoding='utf-8'))
             h['scenariste'] = modele
-            open(os.path.join(sortie, f'histoire-{modele}-{part}-{k}.msb'), 'wb').write(
+            # nom propre à chaque tour de machines (GITHUB_RUN_ID) : une relance n'écrase plus les sketchs déjà acceptés
+            open(os.path.join(sortie, f"histoire-{modele}-{part}-{os.environ.get('GITHUB_RUN_ID', 'local')}-{k}.msb"), 'wb').write(
                 coffre.scelle_octets(json.dumps(h, ensure_ascii=False).encode(), pub))
         k += 1; ecrit()
     ecrit(); print(json.dumps({k: v for k, v in stats.items() if k != 'lieux'}, ensure_ascii=False), flush=True)
