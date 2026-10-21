@@ -49,3 +49,4 @@
 [1460 s] 17 clips · === maitre-kone--rire (at_runtime)   |=====================================>            | 3/4 - 67.82s/it[K · mémoire libre 13786 Mo
 [123 s] 17 clips · === madame-coumba--ecouter (at_runtime)  · mémoire libre 13761 Mo
 [245 s] 17 clips · === madame-coumba--ecouter (at_runtime)   |============>                                     | 1/4 - 134.24s/it[K · mémoire libre 13763 Mo
+[366 s] 17 clips · === madame-coumba--ecouter (at_runtime)   |=========================>                        | 2/4 - 133.85s/it[K · mémoire libre 13762 Mo
