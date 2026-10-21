@@ -63,6 +63,13 @@
    "lora": "at_runtime",
    "secondes": 584,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "chef-traore--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 579,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39528414471"
