@@ -21,3 +21,4 @@
 [122 s] 8 clips · === agent-gora--mentir (at_runtime)  · mémoire libre 13759 Mo
 [243 s] 8 clips · === agent-gora--mentir (at_runtime)   |============>                                     | 1/4 - 125.80s/it[K · mémoire libre 13762 Mo
 [364 s] 8 clips · === agent-gora--mentir (at_runtime)   |=========================>                        | 2/4 - 125.90s/it[K · mémoire libre 13754 Mo
+[486 s] 8 clips · === agent-gora--mentir (at_runtime)   |=====================================>            | 3/4 - 124.84s/it[K · mémoire libre 13755 Mo
