@@ -69,3 +69,4 @@
 [973 s] 27 clips · === mademoiselle-rosine--colere@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14788 Mo
 [1095 s] 27 clips · === mademoiselle-rosine--colere@2 (at_runtime)   |============>                                     | 1/4 - 72.50s/it[K · mémoire libre 13780 Mo
 [1217 s] 27 clips · === mademoiselle-rosine--colere@2 (at_runtime)   |=====================================>            | 3/4 - 71.21s/it[K · mémoire libre 13772 Mo
+[1338 s] 28 clips · === patron-sery--montrer@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13752 Mo
