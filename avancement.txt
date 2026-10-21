@@ -20,3 +20,4 @@
 [610 s] 2 images · === decor-douane-large-jour   |=====================================>            | 3/4 - 146.84s/it[K · mémoire libre 7006 Mo
 [731 s] 2 images · === maison-baye-ndiaye-salon-large-jour   |==================================================| 4/4 - 146.99s/it[K · mémoire libre 6956 Mo
 [853 s] 2 images · === maison-baye-ndiaye-salon-large-jour   |============>                                     | 1/4 - 150.54s/it[K · mémoire libre 6962 Mo
+[974 s] 2 images · === maison-baye-ndiaye-salon-large-jour   |============>                                     | 1/4 - 150.54s/it[K · mémoire libre 6978 Mo
