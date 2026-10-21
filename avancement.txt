@@ -54,3 +54,4 @@
 [4859 s] 5 images · === decor-cour-coin-jour   |==================================================| 4/4 - 157.44s/it[K · mémoire libre 5825 Mo
 [4980 s] 6 images · === decor-ecole-contrechamp-jour   |==================================================| 4/4 - 157.44s/it[K · mémoire libre 7023 Mo
 [5102 s] 6 images · === decor-ecole-contrechamp-jour   |============>                                     | 1/4 - 162.51s/it[K · mémoire libre 7015 Mo
+[5224 s] 6 images · === decor-ecole-contrechamp-jour   |=========================>                        | 2/4 - 157.38s/it[K · mémoire libre 7015 Mo
