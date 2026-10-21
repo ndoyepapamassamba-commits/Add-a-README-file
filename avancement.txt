@@ -55,3 +55,4 @@
 [4979 s] 6 images · === decor-bureau-champ-jour   |=====================================>            | 3/4 - 118.88s/it[K · mémoire libre 6977 Mo
 [5101 s] 6 images · === decor-bureau-champ-jour   |==================================================| 4/4 - 119.59s/it[K · mémoire libre 5838 Mo
 [5222 s] 7 images · === decor-salon-de-coiffure-coin-jour   |==================================================| 4/4 - 119.59s/it[K · mémoire libre 6944 Mo
+[5344 s] 7 images · === decor-salon-de-coiffure-coin-jour   |============>                                     | 1/4 - 122.97s/it[K · mémoire libre 6953 Mo
