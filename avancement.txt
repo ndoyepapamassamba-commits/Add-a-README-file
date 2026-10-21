@@ -34,3 +34,4 @@
 [2672 s] 4 images · === perso-aliou   |=====================================>            | 3/4 - 222.26s/it[K · mémoire libre 6299 Mo
 [2793 s] 5 images · === decor-cour-champ-jour   |==================================================| 4/4 - 224.34s/it[K · mémoire libre 7207 Mo
 [2916 s] 5 images · === decor-cour-champ-jour   |============>                                     | 1/4 - 94.88s/it[K · mémoire libre 7044 Mo
+[3037 s] 5 images · === decor-cour-champ-jour   |=========================>                        | 2/4 - 89.77s/it[K · mémoire libre 7048 Mo
