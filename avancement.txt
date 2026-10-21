@@ -49,3 +49,4 @@
 [1944 s] 14 clips · === mecano-issa--mentir (at_runtime)   |============>                                     | 1/4 - 134.56s/it[K · mémoire libre 13774 Mo
 [2065 s] 14 clips · === mecano-issa--mentir (at_runtime)   |=========================>                        | 2/4 - 133.27s/it[K · mémoire libre 13774 Mo
 [2187 s] 14 clips · === mecano-issa--mentir (at_runtime)   |=====================================>            | 3/4 - 134.48s/it[K · mémoire libre 13767 Mo
+[2308 s] 14 clips · === mecano-issa--mentir (at_runtime)   |=====================================>            | 3/4 - 134.48s/it[K · mémoire libre 13773 Mo
