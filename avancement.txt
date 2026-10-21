@@ -107,3 +107,4 @@
 [972 s] 26 clips · === djecky--montrer (at_runtime)   |=========================>                        | 2/4 - 134.97s/it[K · mémoire libre 13803 Mo
 [1094 s] 26 clips · === djecky--montrer (at_runtime)   |=====================================>            | 3/4 - 134.72s/it[K · mémoire libre 13804 Mo
 [122 s] 27 clips · === patron-sery--colere (at_runtime)  · mémoire libre 13768 Mo
+[243 s] 27 clips · === patron-sery--colere (at_runtime)   |============>                                     | 1/4 - 135.88s/it[K · mémoire libre 13767 Mo
