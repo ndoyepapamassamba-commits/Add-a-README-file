@@ -55,3 +55,4 @@
 [4861 s] 5 images · === perso-la-go-leopard   |=====================================>            | 3/4 - 375.09s/it[K · mémoire libre 6304 Mo
 [4982 s] 5 images · === perso-la-go-leopard   |=====================================>            | 3/4 - 375.09s/it[K · mémoire libre 6304 Mo
 [5104 s] 5 images · === perso-la-go-leopard   |=====================================>            | 3/4 - 375.09s/it[K · mémoire libre 6309 Mo
+[5225 s] 6 images · === decor-ceremonie-contrechamp-jour   |==================================================| 4/4 - 375.17s/it[K · mémoire libre 11595 Mo
