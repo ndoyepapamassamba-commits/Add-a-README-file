@@ -99,3 +99,4 @@
 [365 s] 28 clips · === patron-sery--mentir (at_runtime)   |=========================>                        | 2/4 - 134.04s/it[K · mémoire libre 13771 Mo
 [486 s] 28 clips · === patron-sery--mentir (at_runtime)   |=====================================>            | 3/4 - 133.89s/it[K · mémoire libre 13771 Mo
 [123 s] 29 clips · === le-tonton--mentir@2 (at_runtime)  · mémoire libre 13777 Mo
+[244 s] 29 clips · === le-tonton--mentir@2 (at_runtime)   |============>                                     | 1/4 - 134.42s/it[K · mémoire libre 13773 Mo
