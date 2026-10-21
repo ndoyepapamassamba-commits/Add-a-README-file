@@ -42,3 +42,4 @@
 [3282 s] 4 images · === perso-agent-doumbia   |=====================================>            | 3/4 - 371.55s/it[K · mémoire libre 6299 Mo
 [3403 s] 4 images · === perso-agent-doumbia   |=====================================>            | 3/4 - 371.55s/it[K · mémoire libre 6294 Mo
 [3525 s] 4 images · === perso-agent-doumbia   |==================================================| 4/4 - 370.89s/it[K · mémoire libre 6810 Mo
+[3646 s] 5 images · === perso-la-go-leopard   |==================================================| 4/4 - 370.89s/it[K · mémoire libre 6966 Mo
