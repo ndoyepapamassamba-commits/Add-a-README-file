@@ -147,6 +147,13 @@
    "lora": "at_runtime",
    "secondes": 183,
    "memoire_max_go": 10.99
+  },
+  {
+   "clip": "le-frimeur--montrer",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 182,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39550232510"
