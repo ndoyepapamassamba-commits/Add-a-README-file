@@ -1,0 +1,78 @@
+=== le-tonton--mentir (at_runtime)
+[V] lora /home/runner/work/_temp/m/lora/fastwan.safetensors:1.00 --- diffusion_engine.cpp:1922
+[I] load /home/runner/work/_temp/m/lora/fastwan.safetensors using safetensors format --- model_loader.cpp:222
+[V] init from '/home/runner/work/_temp/m/lora/fastwan.safetensors', prefix = 'lora.' --- model_loader.cpp:290
+[I] apply lora at runtime --- diffusion_engine.cpp:1837
+[I] apply_loras completed, taking 0.05s --- diffusion_engine.cpp:1962
+[I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 0.86s --- vae.hpp:310
+[I] encode_first_stage completed, taking 859 ms --- video.cpp:985
+[V] computing condition graph completed, taking 6729 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 6.73s --- video.cpp:1212
+[I] using mmap for '/home/runner/work/_temp/m/lora/fastwan.safetensors' --- model_loader.cpp:896
+[I] sampling completed, taking 155.07s --- video.cpp:1712
+[I] generating latent video completed, taking 155.08s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 10.20s --- vae.hpp:384
+[I] decode_first_stage completed, taking 10.20s --- video.cpp:1243
+[I] runtime_lora_models: --- diffusion_engine.cpp:1902
+[I] (1099 / 1099) LoRA tensors have been applied, lora_file_path = /home/runner/work/_temp/m/lora/fastwan.safetensors --- lora.hpp:1044
+[I] generate_video completed in 172.99s --- video.cpp:1944
+=== maman-brigitte--ecouter (at_runtime)
+[I] encode_first_stage completed, taking 860 ms --- video.cpp:985
+[V] computing condition graph completed, taking 6766 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 6.77s --- video.cpp:1212
+[I] sampling completed, taking 153.95s --- video.cpp:1712
+[I] generating latent video completed, taking 153.96s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 10.13s --- vae.hpp:384
+[I] decode_first_stage completed, taking 10.13s --- video.cpp:1243
+[I] generate_video completed in 171.85s --- video.cpp:1944
+=== sur-awa--choc (at_runtime)
+[V] computing vae encode graph completed, taking 0.87s --- vae.hpp:310
+[I] encode_first_stage completed, taking 870 ms --- video.cpp:985
+[V] computing condition graph completed, taking 6657 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 6.66s --- video.cpp:1212
+[I] sampling completed, taking 149.43s --- video.cpp:1712
+[I] generating latent video completed, taking 149.44s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 10.17s --- vae.hpp:384
+[I] decode_first_stage completed, taking 10.17s --- video.cpp:1243
+[I] generate_video completed in 167.26s --- video.cpp:1944
+=== maitre-kone--ecouter (at_runtime)
+[I] encode_first_stage completed, taking 869 ms --- video.cpp:985
+[V] computing condition graph completed, taking 6858 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 6.86s --- video.cpp:1212
+[I] sampling completed, taking 155.89s --- video.cpp:1712
+[I] generating latent video completed, taking 155.90s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 10.02s --- vae.hpp:384
+[I] decode_first_stage completed, taking 10.02s --- video.cpp:1243
+[I] generate_video completed in 173.77s --- video.cpp:1944
+=== general-zongo--mentir (at_runtime)
+[V] computing vae encode graph completed, taking 0.84s --- vae.hpp:310
+[I] encode_first_stage completed, taking 838 ms --- video.cpp:985
+[V] computing condition graph completed, taking 6804 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 6.80s --- video.cpp:1212
+[I] sampling completed, taking 156.15s --- video.cpp:1712
+[I] generating latent video completed, taking 156.16s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 10.52s --- vae.hpp:384
+[I] decode_first_stage completed, taking 10.52s --- video.cpp:1243
+[I] generate_video completed in 174.45s --- video.cpp:1944
+=== grand-pere-ndiaye--choc (at_runtime)
+[I] apply_loras completed, taking 0.06s --- diffusion_engine.cpp:1962
+[V] computing vae encode graph completed, taking 0.91s --- vae.hpp:310
+[I] encode_first_stage completed, taking 914 ms --- video.cpp:985
+[V] computing condition graph completed, taking 7265 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 7.27s --- video.cpp:1212
+[I] sampling completed, taking 157.03s --- video.cpp:1712
+[I] generating latent video completed, taking 157.04s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 10.04s --- vae.hpp:384
+[I] decode_first_stage completed, taking 10.04s --- video.cpp:1243
+[I] generate_video completed in 175.40s --- video.cpp:1944
+=== sorciere-mama-dede--mentir (at_runtime)
+[V] computing vae encode graph completed, taking 0.88s --- vae.hpp:310
+[I] encode_first_stage completed, taking 882 ms --- video.cpp:985
+[V] computing condition graph completed, taking 6829 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 6.83s --- video.cpp:1212
+[I] sampling completed, taking 155.16s --- video.cpp:1712
+[I] generating latent video completed, taking 155.17s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 9.97s --- vae.hpp:384
+[I] decode_first_stage completed, taking 9.97s --- video.cpp:1243
+[I] generate_video completed in 172.98s --- video.cpp:1944
