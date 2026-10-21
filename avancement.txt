@@ -47,3 +47,4 @@
 [729 s] 15 clips · === maman-brigitte--colere (at_runtime)   |============>                                     | 1/4 - 68.25s/it[K · mémoire libre 13744 Mo
 [850 s] 15 clips · === maman-brigitte--colere (at_runtime)   |=====================================>            | 3/4 - 67.47s/it[K · mémoire libre 13751 Mo
 [971 s] 16 clips · === sur-awa--montrer (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13738 Mo
+[1093 s] 16 clips · === sur-awa--montrer (at_runtime)   |=========================>                        | 2/4 - 67.43s/it[K · mémoire libre 13750 Mo
