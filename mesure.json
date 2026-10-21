@@ -161,6 +161,13 @@
    "lora": "at_runtime",
    "secondes": 584,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "grand-pere-ndiaye--ecouter",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 583,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39545665602"
