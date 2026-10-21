@@ -50,3 +50,4 @@
 [4979 s] 6 images · === decor-ceremonie-coin-jour   |==================================================| 4/4 - 401.14s/it[K · mémoire libre 7051 Mo
 [5101 s] 6 images · === decor-ceremonie-coin-jour   |============>                                     | 1/4 - 163.92s/it[K · mémoire libre 7037 Mo
 [5222 s] 6 images · === decor-ceremonie-coin-jour   |============>                                     | 1/4 - 163.92s/it[K · mémoire libre 7033 Mo
+[5344 s] 6 images · === decor-ceremonie-coin-jour   |=========================>                        | 2/4 - 159.88s/it[K · mémoire libre 7032 Mo
