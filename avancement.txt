@@ -56,3 +56,4 @@
 [731 s] 22 clips · === general-zongo--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13821 Mo
 [852 s] 22 clips · === general-zongo--ecouter (at_runtime)   |============>                                     | 1/4 - 135.18s/it[K · mémoire libre 13818 Mo
 [974 s] 22 clips · === general-zongo--ecouter (at_runtime)   |=========================>                        | 2/4 - 134.73s/it[K · mémoire libre 13810 Mo
+[1095 s] 22 clips · === general-zongo--ecouter (at_runtime)   |=====================================>            | 3/4 - 134.52s/it[K · mémoire libre 13805 Mo
