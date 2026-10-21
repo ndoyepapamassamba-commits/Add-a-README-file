@@ -28,3 +28,4 @@
 [2308 s] 4 images · === perso-mecano-issa   |=========================>                        | 2/4 - 398.65s/it[K · mémoire libre 6286 Mo
 [2430 s] 4 images · === perso-mecano-issa   |=========================>                        | 2/4 - 398.65s/it[K · mémoire libre 6287 Mo
 [2551 s] 4 images · === perso-mecano-issa   |=========================>                        | 2/4 - 398.65s/it[K · mémoire libre 6286 Mo
+[2673 s] 4 images · === perso-mecano-issa   |=====================================>            | 3/4 - 397.79s/it[K · mémoire libre 6284 Mo
