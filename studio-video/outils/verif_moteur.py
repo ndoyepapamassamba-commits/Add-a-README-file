@@ -1030,6 +1030,50 @@ try:
 except Exception as e:
     echecs.append(f'satellites / aller-retour calme : {e}')
 
+# 21/10/2026 — v13 : arrière-plan 0,096 (V1 0,161) ; décor seul : 0,000 au maquis (fumée peinte figée, ADE20K sans classe
+# fumée), ombre des feuilles posée sur les parasols et les chaises (« mur le plus proche » de la cour de la V1)
+try:
+    import vie_fond as _vf38, camera_v1 as _cv38, tempfile as _tf38
+    _H38, _W38 = 120, 200; _pl38 = np.full((_H38, _W38, 3), 200.0, np.float32); _pr38 = np.full((_H38, _W38), 0.5, np.float32)
+    _s38 = np.zeros((_H38, _W38), bool); _s38[60:, :] = True                       # sol au soleil en bas, rien en haut
+    _V38 = _vf38.prepare(_pl38, _pr38, (), surfaces=_s38); _f38 = _V38['feuilles']
+    _V38b = _vf38.prepare(_pl38, _pr38, (), surfaces=np.zeros((_H38, _W38), bool))
+    if not len(_f38) or (_f38[:, 1] < 55).any() or len(_V38b['feuilles']):
+        echecs.append('ombre des feuilles : hors des surfaces lues (ou présente sans surface au soleil)')
+    if not {0, 1, 3, 6, 11}.issubset(set(_cv38.SURFACES)):
+        echecs.append('ombre des feuilles : murs, façades et sols ADE20K absents des surfaces')
+    os.environ['CLIPSEG_MODELE'] = 'massamba/absent-pour-le-test'
+    with _tf38.TemporaryDirectory() as _d38:
+        _t38 = _cv38.cartes_texte(np.zeros((32, 32, 3), np.uint8), _d38)
+    os.environ.pop('CLIPSEG_MODELE', None)
+    if _t38 != {}: echecs.append('décor par le texte : sans le modèle, il doit rendre {} (décor ADE20K seul)')
+    _src38 = open(_cv38.__file__, encoding='utf-8').read()
+    if "cartes['fumee']" not in _src38 or 'DV.fumee(V[' not in _src38:
+        echecs.append('décor par le texte : couche fumée ou panache absents du décor de la banque')
+    print(f'arrière-plan : ombre des feuilles sur les surfaces au soleil ({len(_f38)} feuilles, aucune hors du sol), fumée par CLIPSeg, '
+          'panache physique dessiné, repli ADE20K sans le modèle : OK')
+except Exception as e:
+    echecs.append(f'arrière-plan (surfaces, fumée) : {e}')
+
+# 21/10/2026 — fumée peinte qui monte : premier essai, les lettres de l'enseigne, la braise et les ampoules montaient avec elle
+try:
+    import camera_v1 as _cv39
+    _im39 = np.zeros((200, 200, 3), np.float32) + [150, 90, 60]; _yy, _xx = np.mgrid[0:200, 0:200]
+    _a39 = np.clip(1 - np.abs(_xx - 100) / 22.0, 0, 1) * ((_yy > 40) & (_yy < 150)) * 0.75 * (0.7 + 0.3 * np.sin(_yy / 6.0))
+    _im39 = _im39 * (1 - _a39[..., None]) + 235 * _a39[..., None]
+    _im39[150:175, 70:130] = [30, 30, 30]; cv2.circle(_im39, (30, 30), 5, (250, 250, 250), -1)        # grill sous la fumée, ampoule
+    _p39 = np.zeros((200, 200), np.float32); _p39[30:160, 60:140] = 1; _p39[20:40, 20:40] = 1         # CLIPSeg : fumée et ampoule
+    _V39 = _cv39.prepare_volutes(_im39.astype(np.uint8), _p39); x0, y0, x1, y1 = _V39['r']
+    _o39 = _cv39.volutes(_V39, _im39.copy(), 0.7)
+    _amp39 = float(_V39['a'][30 - y0, 30 - x0]) if (x0 <= 30 < x1 and y0 <= 30 < y1) else 0.0
+    _gr39 = float(np.abs(_o39[156:175, 75:125] - _im39[156:175, 75:125]).max()); _mv39 = float(np.abs(_o39[50:140, 85:115] - _im39[50:140, 85:115]).mean())
+    if _amp39 > 0.05 or _gr39 > 1.0 or _mv39 < 1.0:
+        echecs.append(f'fumée qui monte : ampoule prise ({_amp39:.2f}), grill touché ({_gr39:.1f}) ou fumée immobile ({_mv39:.1f})')
+    else:
+        print(f'fumée qui monte : la colonne bouge ({_mv39:.1f} niveaux), grill et ampoule intacts : OK')
+except Exception as e:
+    echecs.append(f'fumée qui monte : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

@@ -41,9 +41,14 @@ def _ciel(plaque, prof):
     return garde
 
 
-def prepare(plaque, prof, masques=(), graine=11):
+def prepare(plaque, prof, masques=(), graine=11, surfaces=None):
     """feuillage du mur le plus proche, ciel des oiseaux et mur libre des papillons, pour une plaque, sa profondeur et les
-    masques des acteurs (là où la plaque est reconstituée)."""
+    masques des acteurs (là où la plaque est reconstituée).
+    surfaces (21/10/2026, banque des 54 personnages) : masque H × W des murs, façades et sols ensoleillables lus sur la
+    segmentation du décor (banque/camera_v1.py) — remplace la recherche du « mur le plus proche » par la profondeur, réglée sur
+    la cour de la V1 : sur les plans larges de la banque, elle retenait les parasols, les étals ou les chaises du premier plan
+    (marché, maquis, salon : 4 % de l'image sous l'ombre, sur des objets). L'ombre des feuilles couvre alors tout ce qui est
+    au soleil, sans bord haut (houppier hors champ au-dessus de toute la scène)."""
     H, W = prof.shape; rng = np.random.default_rng(graine); ciel = _ciel(plaque, prof)
     occ = np.zeros((H, W), np.uint8)
     for m in masques: occ |= ((m if m.ndim == 2 else m[..., 0]) > 0.3).astype(np.uint8)
@@ -53,7 +58,9 @@ def prepare(plaque, prof, masques=(), graine=11):
     # porte pas à la même échelle)
     cand = ~ciel & (prof > LOIN); haut = Y < 0.6 * H
     mur = np.zeros((H, W), bool); y_lim = np.full(W, 0.12 * H, np.float32)
-    if (cand & haut).sum() > 0.01 * H * W:
+    if surfaces is not None:
+        mur = np.asarray(surfaces, bool) & ~ciel
+    elif (cand & haut).sum() > 0.01 * H * W:
         d_mur = float(np.percentile(prof[cand & haut], 75))
         m_ = (cand & (np.abs(prof - d_mur) < 0.1) & (Y < 0.85 * H)).astype(np.uint8)
         m_ = cv2.morphologyEx(m_, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
@@ -71,10 +78,13 @@ def prepare(plaque, prof, masques=(), graine=11):
         bruit = cv2.GaussianBlur(rng.normal(0, 1, (1, W)).astype(np.float32), (0, 0), 0.04 * W)[0]; bruit *= 0.05 * H / max(1e-6, float(np.abs(bruit).max()))
         y_lim = cv2.GaussianBlur((hautc + 0.85 * (bas - hautc)).astype(np.float32)[None], (0, 0), 0.03 * W)[0] + bruit
         px_m = float(np.median((bas - hautc)[cols])) / 2.9   # mur et toit d'une maison basse ≈ 2,9 m : échelle au mur
+        if surfaces is not None: y_lim = np.full(W, H + 0.1 * H, np.float32)   # toute la surface au soleil, sans bord haut
     else: hautc, bas, px_m = np.zeros(W, np.float32), np.full(W, H - 1.0, np.float32), 0.0
     zone = Y < y_lim[None, :]
     lum = cv2.cvtColor(np.clip(plaque, 0, 255).astype(np.uint8), cv2.COLOR_RGB2GRAY).astype(np.float32)
     soleil = np.clip(lum / max(1.0, float(np.percentile(lum[mur], 80))) if mur.any() else 0, 0.35, 1.0)   # un mur à l'ombre en prend moins
+    if surfaces is not None and mur.any():   # surfaces lues : seules les parties au soleil reçoivent l'ombre des feuilles
+        soleil = np.clip((lum / max(1.0, float(np.percentile(lum[mur], 80))) - 0.55) / 0.4, 0.0, 1.0)
     fondu = np.clip((y_lim[None, :] - Y) / (0.08 * H), 0, 1)   # le houppier s'éclaircit vers le bas : pas de bord droit
     poids = cv2.GaussianBlur(mur.astype(np.float32), (0, 0), 0.006 * W) * soleil * fondu
     vol = libre & mur   # papillons : devant la surface même du mur proche (son échelle est connue), loin des acteurs

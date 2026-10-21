@@ -14,6 +14,10 @@ ETIQ = {'feuillage': 'leaves, palm fronds, a plant or a tree', 'tissu': 'hanging
         'fumee': 'smoke or steam', 'lumiere': 'small glowing light bulbs or lamps', 'animal': 'an animal: a chicken, a goat, a dog, a bird',
         'rien': 'none of these: wall, roof, ground, sky, furniture, objects or people'}
 COLS, ROWS = 8, 7
+# FRÉMISSEMENT DES ÉTOFFES (21/10/2026, banque, marché : auvents et pagnes à 13 px/s en médiane à 1080 px, le seuil de la
+# mesure V1 étant 34 px/s ; ×6 de jour) : une étoffe au vent ne fait pas que onduler lentement, son bas bat vite et court
+# (1,7 Hz, 1,2 px × 6 = 7 px au bas des pièces, pincées en haut) ; FREMIT=0 rend l'ancien linge.
+FREMIT = float(os.environ.get('FREMIT', '1.2'))
 
 
 def etiquettes_jev(plaque):
@@ -136,7 +140,7 @@ def champ(V, t, ampl=1.0):
     P = _pre(V); tp = 2 * np.pi * t; a = np.float32(ampl)
     S = lambda om, cs: np.float32(np.sin(tp * om)) * cs[0] + np.float32(np.cos(tp * om)) * cs[1]   # sin(ω·2πt + φ)
     fx = 2.2 * S(0.35, P['p1']) + 0.8 * S(0.9, P['p2']); fy = 0.9 * S(0.5, P['p2b'])   # feuillage : bruissement
-    tx = 3.0 * S(0.6, P['pt'])                                                           # linge : onde qui descend
+    tx = 3.0 * S(0.6, P['pt']) + FREMIT * S(1.7, P['p2'])                                # linge : onde qui descend + frémissement
     mx = 3.2 * S(0.45, P['pf']); my = 2.0 + 1.5 * S(0.3, P['p1'])                        # fumée : volutes qui montent
     dx = P['feuil'] * fx + P['tissu'] * tx + P['fumee'] * mx; dy = P['feuil'] * fy + P['fumee'] * my
     if len(P['ib'][0]):   # bêtes : coups de bec et petits pas, chacune à son rythme

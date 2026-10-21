@@ -45,6 +45,19 @@ TISSU = (18, 63, 81, 86, 92, 106, 114, 131, 149)     # rideau, store, serviette,
 EAU = (21, 26, 60, 109, 128)                         # eau, mer, rivière, piscine, lac
 LAMPE = (36, 82, 134)                                # lampe, lumière, applique
 ANIMAL = (126,)                                      # animal
+# DÉCOR PAR LE TEXTE (21/10/2026, épisode banque 1 v13 : part de l'arrière-plan qui bouge 0,096 contre 0,161 pour la V1 ;
+# décor seul, caméra fixe : 0,000 au maquis, 0,004 au marché, 0,000 au salon). ADE20K n'a pas de classe « fumée » : la colonne
+# de fumée peinte du grill du maquis restait figée et le panache physique de la V1 (decor_vivant.fumee, Morton–Taylor–Turner)
+# ne naissait jamais. CLIPSeg (Lüddecke et Ecker, CVPR 2022 ; poids CIDAS/clipseg-rd64-refined, Apache-2.0, sur CLIP ViT-B/16,
+# MIT ; classe CLIPSegForImageSegmentation de transformers, logits 352 × 352 par phrase) segmente le décor par des mots :
+# fumée et vapeur → couche « fumee » ; vêtements suspendus et auvents → complètent la couche « tissu » d'ADE20K.
+# Une fois par décor, en cache à côté des couches vivantes (texte.npz) ; sans le modèle, le décor garde les couches d'ADE20K.
+DECOR_TEXTE = os.environ.get('DECOR_TEXTE', '1') == '1'
+# SURFACES AU SOLEIL (21/10/2026) : murs, façades et sols où l'ombre des feuilles de la V1 (vie_fond.feuillage) peut passer —
+# ADE20K : mur, bâtiment, sol, route, herbe, trottoir, terre, maison, champ, sable, chemin, escalier, piste de terre
+SURFACES = (0, 1, 3, 6, 9, 11, 13, 25, 29, 46, 52, 53, 91)
+SURFACES_V1 = os.environ.get('SURFACES_V1', '1') == '1'
+MOTS = {'fumee': ('smoke', 'steam'), 'tissu': ('hanging clothes', 'fabric awning')}   # parasols : rigides, hors du tissu
 
 
 def ease(u):
@@ -216,6 +229,82 @@ def _phase(H, W, graine, lam):
     return (p / (p.std() + 1e-6)).astype(np.float32)
 
 
+def cartes_texte(im8, dossier):
+    """{couche: probabilité H × W} lue par CLIPSeg sur le décor (MOTS) ; {} sans le modèle. Cache dossier/texte.npz."""
+    f = os.path.join(dossier, 'texte.npz')
+    if os.path.isfile(f):
+        z = np.load(f); return {k: z[k].astype(np.float32) for k in z.files}
+    try:
+        import torch
+        from transformers import CLIPSegProcessor, CLIPSegForImageSegmentation
+        from PIL import Image
+        nom = os.environ.get('CLIPSEG_MODELE', 'CIDAS/clipseg-rd64-refined'); cd = os.environ.get('CLIPSEG_CACHE') or None
+        proc = CLIPSegProcessor.from_pretrained(nom, cache_dir=cd); mod = CLIPSegForImageSegmentation.from_pretrained(nom, cache_dir=cd).eval()
+        phrases = [m for v in MOTS.values() for m in v]; im = Image.fromarray(im8)
+        with torch.inference_mode():
+            lg = mod(**proc(text=phrases, images=[im] * len(phrases), padding=True, return_tensors='pt')).logits
+        pr = torch.sigmoid(lg).reshape(len(phrases), *lg.shape[-2:]).numpy(); H, W = im8.shape[:2]; out = {}; i = 0
+        for k, v in MOTS.items():
+            out[k] = cv2.resize(pr[i:i + len(v)].max(0), (W, H), interpolation=cv2.INTER_LINEAR).astype(np.float32); i += len(v)
+        del mod
+    except Exception as e:
+        print(f'  décor par le texte indisponible : {e}', file=sys.stderr); return {}
+    tmp = f'{f}.{os.getpid()}.npz'; np.savez_compressed(tmp, **{k: v.astype(np.float16) for k, v in out.items()}); os.replace(tmp, f)
+    return out
+
+
+# FUMÉE PEINTE QUI MONTE (21/10/2026, même épisode) : le panache physique ajouté par-dessus naît du cœur clair de la fumée
+# peinte (13 px de base au maquis) et la colonne peinte, 5 % du décor, restait figée. La texture de la fumée peinte elle-même
+# est advectée vers le haut — méthode publiée, réécrite : Neyret, « Advected Textures », SCA 2003 (deux couches advectées qui
+# se relaient en fondu, chacune remise à zéro quand son poids est nul : aucun saut de boucle), principe repris par Holynski et
+# al., « Animating Pictures with Eulerian Motion Fields », CVPR 2021. Montée de 11 % de la hauteur du décor par seconde
+# (≈ 70 px/s à 1080), méandres latéraux qui changent avec la hauteur et le temps. Premier essai (texture advectée telle
+# quelle) : les lettres de l'enseigne, la braise et la porte sombre montaient avec la fumée — seule l'OPACITÉ de la fumée,
+# séparée de ce qu'elle couvre, est advectée et rendue comme un écart à l'image peinte.
+VOLUTES_V = float(os.environ.get('VOLUTES_V', '0.11'))   # montée, en hauteur de décor par seconde
+VOLUTES_P = 1.6                                           # période de relais des deux couches (s)
+
+
+def prepare_volutes(im8, p):
+    """fumée peinte séparée de ce qui est derrière elle (probabilité CLIPSeg p) : fond reconstitué sous la fumée (cv2.inpaint,
+    Telea), couleur de la fumée (95e centile de sa clarté) et OPACITÉ par pixel — seul ce qui éclaircit et désature le fond est
+    de la fumée (lettres d'enseigne, braise et porte sombre restent en place). None sans fumée."""
+    m = cv2.GaussianBlur(np.clip((p - 0.3) / 0.3, 0, 1).astype(np.float32), (0, 0), 5)
+    if (m > 0.5).sum() < 0.002 * m.size: return None
+    H, W = m.shape; ys, xs = np.nonzero(m > 0.05); mg = int(0.04 * W)
+    x0, x1, y0, y1 = max(0, xs.min() - mg), min(W, xs.max() + mg), max(0, ys.min() - mg), min(H, ys.max() + mg)
+    bloc = np.ascontiguousarray(im8[y0:y1, x0:x1]); mb = m[y0:y1, x0:x1]
+    trou = cv2.dilate((mb > 0.15).astype(np.uint8) * 255, np.ones((9, 9), np.uint8))
+    fond = cv2.inpaint(bloc, trou, 15, cv2.INPAINT_TELEA).astype(np.float32); I = bloc.astype(np.float32)
+    L = lambda x: x @ np.float32([0.299, 0.587, 0.114])
+    sat = lambda x: (x.max(2) - x.min(2)) / np.maximum(x.max(2), 1.0)
+    dedans = mb > 0.5; Ls = float(np.percentile(L(I)[dedans], 95)); cs = I[dedans & (L(I) >= Ls - 1)].mean(0)
+    a = np.clip((L(I) - L(fond)) / np.maximum(Ls - L(fond), 8.0), 0, 1) * np.clip((0.45 - sat(I)) / 0.2, 0, 1) * mb
+    a = cv2.GaussianBlur(a.astype(np.float32), (0, 0), 1.0)
+    # la colonne de fumée seule : les ampoules d'une guirlande, claires et blanches elles aussi, sont des morceaux à part
+    n, lab, st, _ = cv2.connectedComponentsWithStats(cv2.dilate((a > 0.1).astype(np.uint8), np.ones((7, 7), np.uint8)))
+    if n > 1: a = a * cv2.GaussianBlur((lab == 1 + int(np.argmax(st[1:, cv2.CC_STAT_AREA]))).astype(np.float32), (0, 0), 2)
+    h, w = y1 - y0, x1 - x0; X, Y = np.meshgrid(np.arange(w, dtype=np.float32), np.arange(h, dtype=np.float32))
+    col = (a > 0.08); base = np.where(col.any(0), h - 1 - col[::-1].argmax(0), 0).astype(np.float32)   # pied de chaque colonne
+    base = cv2.GaussianBlur(np.maximum.accumulate(np.maximum.accumulate(base)[::-1])[::-1][None], (0, 0), 0.03 * W)[0]   # pied lissé
+    return {'r': (x0, y0, x1, y1), 'a': a, 'd': (cs[None, None, :] - fond).astype(np.float32), 'X': X, 'Y': Y, 'pied': base[None, :], 'H': H}
+
+
+def volutes(Vv, base, t):
+    """base (décor float32) avec la fumée peinte qui monte à l'instant t : l'opacité de la fumée est advectée (deux couches
+    relayées), son pied réalimenté (source continue) ; le décor reçoit l'ÉCART à la fumée peinte — immobile, c'est l'image
+    d'origine exactement."""
+    x0, y0, x1, y1 = Vv['r']; X, Y = Vv['X'], Vv['Y']; v0 = VOLUTES_V * Vv['H']; acc = 0.0
+    for k in (0.0, 0.5):
+        ph = (t / VOLUTES_P + k) % 1.0; tau = ph * VOLUTES_P; w = math.sin(math.pi * ph) ** 2
+        dx = 0.22 * v0 * tau * np.sin(2 * math.pi * (Y / (0.18 * Vv['H']) + 0.21 * t + k))
+        sy = Y + v0 * tau; sy = np.where(sy > Vv['pied'], 2 * Vv['pied'] - sy, sy)   # sous le pied : la source (fumée en miroir)
+        acc = acc + w * cv2.remap(Vv['a'], (X - dx).astype(np.float32), sy.astype(np.float32), cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+    acc = np.where(Y <= Vv['pied'], acc, Vv['a'])                        # sous le pied, rien ne change (grill, braise)
+    out = base.copy(); out[y0:y1, x0:x1] += (acc - Vv['a'])[..., None] * Vv['d']
+    return np.clip(out, 0, 255, out=out)
+
+
 def prepare_decor(img, d, seg, pieds, graine=5, cache=None):
     """tout ce qui ne change pas d'une image à l'autre : plaque, facteur de parallaxe, couches vivantes, ciel et ombres.
     DÉCOR DE LA V1 (21/10/2026, épisode banque 1 : arrière-plan qui bouge 0,09 contre 0,161 pour la V1) : feuillages, linge et
@@ -232,9 +321,17 @@ def prepare_decor(img, d, seg, pieds, graine=5, cache=None):
             cartes = {'feuillage': lisse(np.isin(seg, FEUILLAGE)), 'tissu': lisse(np.isin(seg, TISSU)),
                       'lumiere': lisse(np.isin(seg, LAMPE)), 'animal': lisse(np.isin(seg, ANIMAL))}
             import hashlib, tempfile   # couches en cache (une fois par décor, partagées par les processus de rendu)
-            dv = os.path.join(cache or _dossier_lit(os.path.join(tempfile.gettempdir(), 'x.mov')),
-                              'vie2-' + hashlib.sha1(im8[::7, ::7].tobytes() + seg[::7, ::7].tobytes()).hexdigest()[:12]); os.makedirs(dv, exist_ok=True)
+            cle = hashlib.sha1(im8[::7, ::7].tobytes() + seg[::7, ::7].tobytes()).hexdigest()[:12]
+            racine = cache or _dossier_lit(os.path.join(tempfile.gettempdir(), 'x.mov'))
+            dv = os.path.join(racine, ('vie3-' if DECOR_TEXTE else 'vie2-') + cle); os.makedirs(dv, exist_ok=True)
+            if DECOR_TEXTE:   # fumée et étoffes lues par les mots (CLIPSeg), probabilité > 0,35 : couche pleine à 0,65
+                T = cartes_texte(im8, dv)
+                sur = lambda p: lisse(np.clip((p - 0.35) / 0.3, 0, 1) > 0.5)
+                if 'fumee' in T: cartes['fumee'] = sur(T['fumee'])
+                if 'tissu' in T: cartes['tissu'] = np.maximum(cartes['tissu'], sur(T['tissu']))
             V['dv'] = DV.prepare(dv, im8, (), jev=False, cartes=cartes); sol = DV.soleil(im8)
+            V['panache'] = DV.panache(V['dv'], im8) is not None   # pied, largeur et couleur de la fumée peinte
+            if DECOR_TEXTE and 'fumee' in T: V['volutes'] = prepare_volutes(im8, T['fumee'])
             V['ampl'] = (6.0 if sol is not None and sol[1] > 110 else 1.0) * W / 1080
         except Exception as e:
             print(f'  décor de la V1 non préparé : {e}', file=sys.stderr); V['dv'] = None
@@ -246,7 +343,13 @@ def prepare_decor(img, d, seg, pieds, graine=5, cache=None):
     V['couches'] = couches
     try:
         import vie_fond
-        V['fond'] = vie_fond.prepare(img.astype(np.float32), d, (), graine=11)
+        # ombre des feuilles sur les murs, façades et sols ADE20K au soleil — jamais de nuit ni sous un ciel couvert
+        sol_ = None
+        try:
+            import decor_vivant as DV; sol_ = DV.soleil(np.clip(img, 0, 255).astype(np.uint8))
+        except Exception: pass
+        surf = np.isin(seg, SURFACES) if (SURFACES_V1 and sol_ is not None and sol_[1] > 110) else (np.zeros(seg.shape, bool) if SURFACES_V1 else None)
+        V['fond'] = vie_fond.prepare(img.astype(np.float32), d, (), graine=11, surfaces=surf)
         V['fond']['ciel'] = V['fond']['ciel'] | (seg == 2)
     except Exception as e:
         print(f'  vie du fond non préparée : {e}', file=sys.stderr); V['fond'] = None
@@ -266,8 +369,12 @@ def decor_t(V, t, u):
         import decor_vivant as DV
         dx, dy, gain = DV.champ(V['dv'], t, V['ampl']); mx = mx - dx; my = my - dy
     mx, my = mx.astype(np.float32), my.astype(np.float32)
-    out = cv2.remap(V['img'], mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+    src = volutes(V['volutes'], V['img'], t) if V.get('volutes') else V['img']
+    out = cv2.remap(src, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
     if gain is not None: out = out * gain[..., None]
+    if V.get('panache'):   # panache physique qui monte du grill (decor_vivant.fumee, celui de la V1), derrière les acteurs
+        import decor_vivant as DV
+        out = DV.fumee(V['dv'], out, t)
     if V.get('fond') is not None:
         try: out = out * vie_fond.feuillage(V['fond'], t)[..., None]
         except Exception: pass
