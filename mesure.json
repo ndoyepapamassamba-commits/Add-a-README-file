@@ -24,6 +24,18 @@
    "h": 448,
    "memoire_max_go": 9.47,
    "run": "39514755738"
+  },
+  {
+   "tache": "maison-sur-awa-cuisine-large-jour",
+   "version": 1,
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 693,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.47,
+   "run": "39517651050"
   }
  ]
 }
