@@ -1,17 +1,21 @@
 {
  "modele": "gptoss20hyb",
  "part": 0,
- "appels_scenariste": 6,
- "secondes_scenariste": 194.40606999397278,
- "echecs_scenariste": 4,
- "appels_juge": 8,
+ "appels_scenariste": 10,
+ "secondes_scenariste": 259.3876507282257,
+ "echecs_scenariste": 8,
+ "appels_juge": 24,
  "echecs_juge": 0,
  "brouillons_refuses_controle": 2,
  "planchers_v17": [
-  0.333
+  0.333,
+  0.492,
+  0.415
  ],
  "notes": [
-  0.293
+  0.293,
+  0.438,
+  0.234
  ],
  "acceptes": 0,
  "lieux": [
@@ -19,6 +23,11 @@
    "lieu": "Bureau",
    "accepte": false,
    "secondes": 440
+  },
+  {
+   "lieu": "Cérémonie",
+   "accepte": false,
+   "secondes": 582
   }
  ],
  "reparations": [
@@ -29,8 +38,16 @@
   [
    1,
    0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   1,
+   0
   ]
  ],
  "brouillons_illisibles": 1,
- "secondes_par_brouillon": 32.4
+ "secondes_par_brouillon": 25.9
 }
