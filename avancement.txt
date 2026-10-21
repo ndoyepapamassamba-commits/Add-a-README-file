@@ -47,3 +47,4 @@
 [4008 s] 4 images · === perso-aminata   |=====================================>            | 3/4 - 397.19s/it[K · mémoire libre 6271 Mo
 [4130 s] 4 images · === perso-aminata   |==================================================| 4/4 - 398.00s/it[K · mémoire libre 3165 Mo
 [4251 s] 5 images · === decor-cour-coin-jour   |==================================================| 4/4 - 398.00s/it[K · mémoire libre 7044 Mo
+[4373 s] 5 images · === decor-cour-coin-jour   |============>                                     | 1/4 - 161.67s/it[K · mémoire libre 7019 Mo
