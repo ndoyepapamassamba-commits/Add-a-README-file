@@ -30,3 +30,4 @@
 [244 s] 7 clips · === mamie-bintou--hausser (at_runtime)   |============>                                     | 1/4 - 40.08s/it[K · mémoire libre 13816 Mo
 [122 s] 7 clips · === mamie-bintou--montrer (at_runtime)   |=========================>                        | 2/4 - 39.25s/it[K · mémoire libre 13785 Mo
 [243 s] 8 clips · === agent-bakary--hausser (at_runtime)   |============>                                     | 1/4 - 42.18s/it[K · mémoire libre 13790 Mo
+[364 s] 8 clips · === agent-bakary--hausser (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 10473 Mo
