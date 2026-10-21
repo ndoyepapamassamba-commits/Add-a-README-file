@@ -56,3 +56,4 @@
 [5702 s] 6 images · === decor-hopital-coin-jour   |==================================================| 4/4 - 156.22s/it[K · mémoire libre 7029 Mo
 [5823 s] 6 images · === decor-hopital-coin-jour   |============>                                     | 1/4 - 161.12s/it[K · mémoire libre 7020 Mo
 [5944 s] 6 images · === decor-hopital-coin-jour   |=========================>                        | 2/4 - 156.21s/it[K · mémoire libre 7020 Mo
+[6066 s] 6 images · === decor-hopital-coin-jour   |=====================================>            | 3/4 - 156.17s/it[K · mémoire libre 7022 Mo
