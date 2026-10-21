@@ -13,3 +13,4 @@
 [1578 s] 6 clips · === petit-moussa--parler (at_runtime)   |=========================>                        | 2/4 - 134.30s/it[K · mémoire libre 13744 Mo
 [1699 s] 6 clips · === petit-moussa--parler (at_runtime)   |=====================================>            | 3/4 - 134.36s/it[K · mémoire libre 13747 Mo
 [1821 s] 7 clips · === imam-karim--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13729 Mo
+[1942 s] 7 clips · === imam-karim--hausser (at_runtime)   |============>                                     | 1/4 - 134.63s/it[K · mémoire libre 13751 Mo
