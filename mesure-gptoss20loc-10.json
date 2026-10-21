@@ -4,7 +4,7 @@
  "appels_scenariste": 42,
  "secondes_scenariste": 13410.131309509277,
  "echecs_scenariste": 0,
- "appels_juge": 58,
+ "appels_juge": 64,
  "echecs_juge": 0,
  "brouillons_refuses_controle": 4,
  "planchers_v17": [
@@ -12,7 +12,8 @@
   0.482,
   0.417,
   0.462,
-  0.412
+  0.412,
+  0.433
  ],
  "notes": [
   0.396,
@@ -33,6 +34,11 @@
    "lieu": "Taxi",
    "accepte": false,
    "secondes": 3558
+  },
+  {
+   "lieu": "Taxi",
+   "accepte": false,
+   "secondes": 2729
   }
  ],
  "drole_v17": [
@@ -160,14 +166,14 @@
    "jetons_par_s": 4.1
   },
   "juge": {
-   "appels": 58,
+   "appels": 64,
    "tronques": 0,
-   "lus_jetons": 379,
-   "cache_jetons": 152,
-   "lecture_s": 36.7,
+   "lus_jetons": 385,
+   "cache_jetons": 151,
+   "lecture_s": 37.0,
    "ecriture_jetons": 78,
-   "ecriture_s": 22.5,
-   "jetons_par_s": 3.5
+   "ecriture_s": 23.3,
+   "jetons_par_s": 3.3
   }
  }
 }
