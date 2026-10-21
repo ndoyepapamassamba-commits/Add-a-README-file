@@ -80,3 +80,4 @@
 [2188 s] 14 images · === perso-tata-prisca   |=====================================>            | 3/4 - 388.59s/it[K · mémoire libre 6172 Mo
 [2310 s] 14 images · === perso-tata-prisca   |=====================================>            | 3/4 - 388.59s/it[K · mémoire libre 6172 Mo
 [2431 s] 14 images · === perso-tata-prisca   |=====================================>            | 3/4 - 388.59s/it[K · mémoire libre 6172 Mo
+[2553 s] 14 images · === perso-tata-prisca   |==================================================| 4/4 - 386.61s/it[K · mémoire libre 6833 Mo
