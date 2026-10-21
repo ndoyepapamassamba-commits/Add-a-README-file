@@ -89,3 +89,4 @@
 [4376 s] 7 images · === perso-boubacar   |==================================================| 4/4 - 244.59s/it[K · mémoire libre 6227 Mo
 [4497 s] 7 images · === perso-boubacar   |==================================================| 4/4 - 244.59s/it[K · mémoire libre 6219 Mo
 [4618 s] 7 images · === perso-boubacar   |==================================================| 4/4 - 244.59s/it[K · mémoire libre 6209 Mo
+[4740 s] 7 images · === perso-boubacar   |============>                                     | 1/4 - 461.98s/it[K · mémoire libre 6205 Mo
