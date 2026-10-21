@@ -196,6 +196,13 @@
    "lora": "at_runtime",
    "secondes": 433,
    "memoire_max_go": 11.14
+  },
+  {
+   "clip": "djecky--colere",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 430,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39559117299"
