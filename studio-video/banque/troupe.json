@@ -47,7 +47,12 @@
   "docteur-sylla",
   "la-voisine",
   "mademoiselle-rosine",
-  "coach-diabate"
+  "coach-diabate",
+  "salif-le-parisien",
+  "le-banquier",
+  "dj-kevin",
+  "djecky",
+  "boubacar"
  ],
  "noms": {
   "le-patriarche": "LE PATRIARCHE",
@@ -90,11 +95,17 @@
   "docteur-sylla": "DOCTEUR SYLLA",
   "la-voisine": "LA VOISINE",
   "mademoiselle-rosine": "MADEMOISELLE ROSINE",
-  "coach-diabate": "COACH DIABATÉ"
+  "coach-diabate": "COACH DIABATÉ",
+  "salif-le-parisien": "SALIF LE PARISIEN",
+  "le-banquier": "LE BANQUIER",
+  "dj-kevin": "DJ KÉVIN",
+  "djecky": "DJECKY",
+  "boubacar": "BOUBACAR"
  },
  "fonds": {
   "agent-bakary": "bleu",
   "maman-brigitte": "bleu",
-  "coach-diabate": "bleu"
+  "coach-diabate": "bleu",
+  "dj-kevin": "bleu"
  }
 }
