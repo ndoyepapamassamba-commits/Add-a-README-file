@@ -12,3 +12,4 @@
 [1459 s] 6 clips · === petite-aya--choc (at_runtime)   |============>                                     | 1/4 - 135.72s/it[K · mémoire libre 13781 Mo
 [1580 s] 6 clips · === petite-aya--choc (at_runtime)   |=========================>                        | 2/4 - 135.17s/it[K · mémoire libre 13777 Mo
 [1702 s] 6 clips · === petite-aya--choc (at_runtime)   |=====================================>            | 3/4 - 135.39s/it[K · mémoire libre 13779 Mo
+[1823 s] 7 clips · === adjoua--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13743 Mo
