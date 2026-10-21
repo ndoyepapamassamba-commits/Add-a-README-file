@@ -1,10 +1,10 @@
 {
  "modele": "gptoss20loc",
  "part": 4,
- "appels_scenariste": 34,
- "secondes_scenariste": 8332.49259185791,
+ "appels_scenariste": 35,
+ "secondes_scenariste": 8475.78476190567,
  "echecs_scenariste": 0,
- "appels_juge": 26,
+ "appels_juge": 32,
  "echecs_juge": 0,
  "brouillons_refuses_controle": 3,
  "planchers_v17": [
@@ -24,6 +24,11 @@
    "lieu": "Hôpital",
    "accepte": false,
    "secondes": 1675
+  },
+  {
+   "lieu": "Hôpital",
+   "accepte": false,
+   "secondes": 1952
   }
  ],
  "drole_v17": [
@@ -103,30 +108,34 @@
   [
    3,
    1
+  ],
+  [
+   1,
+   0
   ]
  ],
  "doublons_autres_machines": 0,
- "secondes_par_brouillon": 245.1,
+ "secondes_par_brouillon": 242.2,
  "temps": {
   "scenariste": {
-   "appels": 34,
+   "appels": 35,
    "tronques": 0,
    "lus_jetons": 674,
-   "cache_jetons": 1797,
-   "lecture_s": 78.7,
-   "ecriture_jetons": 769,
-   "ecriture_s": 158.5,
+   "cache_jetons": 1748,
+   "lecture_s": 77.6,
+   "ecriture_jetons": 774,
+   "ecriture_s": 156.9,
    "jetons_par_s": 4.9
   },
   "juge": {
-   "appels": 26,
+   "appels": 32,
    "tronques": 0,
-   "lus_jetons": 396,
-   "cache_jetons": 153,
-   "lecture_s": 39.8,
+   "lus_jetons": 398,
+   "cache_jetons": 147,
+   "lecture_s": 38.7,
    "ecriture_jetons": 81,
-   "ecriture_s": 16.3,
-   "jetons_par_s": 5.0
+   "ecriture_s": 16.5,
+   "jetons_par_s": 4.9
   }
  }
 }
