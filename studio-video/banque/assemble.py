@@ -29,6 +29,36 @@ if os.path.isfile(os.path.join(ICI, 'troupe.json')):   # noms des personnages en
     NOMS.update(json.load(open(os.path.join(ICI, 'troupe.json'), encoding='utf-8')).get('noms', {}))
 
 
+# PROCESSUS SELON LA MÉMOIRE (21/10/2026, banque v21) : le groupe de contrôle du conteneur plafonne à 13,7 Go et compte
+# /dev/shm, où vivent les rendus (10,6 Go mesurés) ; il ne restait que 3 Go et le 3e processus de rendu (0,35 à 0,9 Go chacun,
+# dmesg) a été tué. Le nombre demandé (ASSEMBLE_PROCS) est donc réduit à ce que la marge du groupe — à défaut MemAvailable —
+# laisse : PAR_PROCESSUS par processus, MARGE_PROCS gardée pour le parent (MediaPipe, CLIPSeg)
+PAR_PROCESSUS, MARGE_PROCS = 0.9e9, 1.0e9
+
+
+def marge_memoire():
+    """Octets encore utilisables : plafond du groupe de contrôle (v1 ou v2) moins son usage, sinon MemAvailable."""
+    try:
+        for ligne in open('/proc/self/cgroup'):
+            n, _, chemin = ligne.strip().split(':', 2)
+            for lim, use in ((f'/sys/fs/cgroup/memory{chemin}/memory.limit_in_bytes', f'/sys/fs/cgroup/memory{chemin}/memory.usage_in_bytes'),
+                             (f'/sys/fs/cgroup{chemin}/memory.max', f'/sys/fs/cgroup{chemin}/memory.current')):
+                if ('memory' in n.split(',') or n == '0') and os.path.isfile(lim) and os.path.isfile(use):
+                    l = open(lim).read().strip()
+                    if l.isdigit() and int(l) < 1 << 50: return int(l) - int(open(use).read())
+    except (OSError, ValueError): pass
+    try: return int(next(x for x in open('/proc/meminfo') if x.startswith('MemAvailable')).split()[1]) * 1024
+    except (OSError, StopIteration, ValueError): return None
+
+
+def nb_processus(demande=None):
+    n = int(demande or os.environ.get('ASSEMBLE_PROCS', os.cpu_count() or 4)); m = marge_memoire()
+    if m is None: return max(1, n)
+    k = max(1, min(n, int((m - MARGE_PROCS) // PAR_PROCESSUS)))
+    if k < n: print(f'processus de rendu : {k} au lieu de {n} (marge mémoire {m / 1e9:.1f} Go)', flush=True)
+    return k
+
+
 def _clip(banque, perso, geste):
     """Clip détouré (.mov ARGB) du geste, détouré à la première demande ; repli sur parler, écouter, puis un autre geste."""
     import detoure
@@ -480,7 +510,7 @@ def assemble(plan, sortie):
         if RENDU_V1:   # caméra, parallaxe, décor vivant et gestes de la V1 publiée (camera_v1.py), répliques en parallèle
             from concurrent.futures import ProcessPoolExecutor
             import multiprocessing   # processus neufs : MediaPipe déjà ouvert ici (sens_du_corps), un fork se bloquerait
-            with ProcessPoolExecutor(int(os.environ.get('ASSEMBLE_PROCS', os.cpu_count() or 4)), mp_context=multiprocessing.get_context('spawn')) as ex:
+            with ProcessPoolExecutor(nb_processus(), mp_context=multiprocessing.get_context('spawn')) as ex:
                 segs = list(ex.map(_segment_v1_tache, [(P, r, k, d, gains) for k, r in enumerate(P['repliques'])]))
         else:
             segs = [segment(P, r, k, d, gains) for k, r in enumerate(P['repliques'])]

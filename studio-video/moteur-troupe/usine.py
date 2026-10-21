@@ -21,9 +21,21 @@ REGLAGES = {'cam_px': 3.0, 'rig': 1, 'entites': {'cour': 2}, 'nuages': 0.0, 'bet
 
 
 def _py(*a, env=None, log=None, cwd=None):
+    # 21/10/2026, banque v21 : un processus de rendu tué faute de mémoire (dmesg : oom-kill) laissait ses deux voisins
+    # orphelins, qui gardaient le tuyau de sortie ouvert — l'usine attendait sa fin sans fin (13 min, charge nulle). L'étape
+    # écrit donc dans un fichier (pas de tuyau à vider), tourne dans sa propre session, et tout ce qui en reste à sa sortie
+    # est arrêté : une étape qui échoue échoue tout de suite, avec son message
     t0 = time.time()
-    r = subprocess.run([sys.executable, *a], cwd=cwd, env=dict(os.environ, **(env or {})), capture_output=True, text=True)
-    sortie = (r.stdout + r.stderr)
+    import signal, tempfile
+    with tempfile.TemporaryFile('w+', encoding='utf-8', errors='replace') as fh:
+        p = subprocess.Popen([sys.executable, *a], cwd=cwd, env=dict(os.environ, **(env or {})), stdout=fh, stderr=subprocess.STDOUT,
+                             start_new_session=True)
+        try: p.wait()
+        finally:
+            try: os.killpg(p.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError): pass
+        fh.seek(0); sortie = fh.read()
+    r = subprocess.CompletedProcess(p.args, p.returncode)
     if log:
         with open(log, 'a', encoding='utf-8') as fh: fh.write(f'\n$ {" ".join(map(str, a))}\n{sortie}')
     if r.returncode: raise RuntimeError(f'{os.path.basename(a[0])} a échoué ({r.returncode}) : {sortie.strip().splitlines()[-3:] if sortie.strip() else ""}')

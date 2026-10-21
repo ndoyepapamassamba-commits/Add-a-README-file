@@ -1117,6 +1117,25 @@ try:
 except Exception as e:
     echecs.append(f'regards (marge) : {e}')
 
+# 21/10/2026 — banque v21 : rendu tué faute de mémoire, voisins orphelins qui gardaient la sortie : l'usine attendait sans fin
+try:
+    import usine as _us43, time as _ti43, subprocess as _sp43
+    _d43 = tempfile.mkdtemp(); _p43 = os.path.join(_d43, 'tue.py')
+    open(_p43, 'w').write("import subprocess, sys\nsubprocess.Popen([sys.executable, '-c', 'import time; time.sleep(120)'])\nprint('voisin')\nsys.exit(3)\n")
+    _t43 = _ti43.time(); _m43 = ''
+    try: _us43._py(_p43)
+    except RuntimeError as e: _m43 = str(e)
+    _dt43 = _ti43.time() - _t43; _ti43.sleep(0.3)
+    _o43 = _sp43.run(['pgrep', '-f', 'time.sleep(120)'], capture_output=True, text=True).stdout.split()
+    _ok43 = _us43._py('-c', "print('bonjour')")[1].strip()
+    shutil.rmtree(_d43, ignore_errors=True)
+    if not ('(3)' in _m43 and 'voisin' in _m43 and _dt43 < 10 and not _o43 and _ok43 == 'bonjour'):
+        echecs.append(f'usine : étape tuée non détectée ({_dt43:.1f} s, message {_m43!r}, orphelins {_o43}, sortie {_ok43!r})')
+    else:
+        print(f'usine : étape qui meurt avec un voisin orphelin → échec en {_dt43:.1f} s, aucun orphelin restant : OK')
+except Exception as e:
+    echecs.append(f'usine (orphelins) : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')
