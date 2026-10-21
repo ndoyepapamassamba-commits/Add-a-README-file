@@ -89,3 +89,4 @@
 [3275 s] 7 images · === fiche-le-frimeur   |============>                                     | 1/4 - 240.66s/it[K · mémoire libre 6735 Mo
 [3396 s] 7 images · === fiche-le-frimeur   |============>                                     | 1/4 - 240.66s/it[K · mémoire libre 6735 Mo
 [3517 s] 7 images · === fiche-le-frimeur   |=========================>                        | 2/4 - 235.44s/it[K · mémoire libre 6734 Mo
+[3639 s] 7 images · === fiche-le-frimeur   |=========================>                        | 2/4 - 235.44s/it[K · mémoire libre 6735 Mo
