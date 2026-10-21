@@ -8,3 +8,4 @@
 [974 s] 1 images · === decor-rue-large-jour   |============>                                     | 1/4 - 160.61s/it[K · mémoire libre 7000 Mo
 [1095 s] 1 images · === decor-rue-large-jour   |=========================>                        | 2/4 - 155.92s/it[K · mémoire libre 7015 Mo
 [1217 s] 1 images · === decor-rue-large-jour   |=====================================>            | 3/4 - 155.83s/it[K · mémoire libre 7028 Mo
+[1338 s] 1 images · === decor-rue-large-jour   |=====================================>            | 3/4 - 155.83s/it[K · mémoire libre 7004 Mo
