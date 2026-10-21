@@ -212,7 +212,7 @@ def llm(prompt, temp=1.0, juge=False):
              'max_tokens': int(os.environ.get('HISTOIRES_MAX_JETONS', '6000')),
              'reasoning_effort': os.environ.get('HISTOIRES_EFFORT', 'low'), 'seed': int(time.time() * 1e6) % 2 ** 31}
     tete = {'Content-Type': 'application/json', **({'Authorization': f'Bearer {cle}'} if cle else {})}
-    delai = 240 if juge else int(os.environ.get('HISTOIRES_DELAI', '240'))   # un modèle 24B sur 4 cœurs écrit en ≈ 10 min
+    delai = int(os.environ.get('HISTOIRES_JUGE_DELAI', '240')) if juge else int(os.environ.get('HISTOIRES_DELAI', '240'))   # un modèle 24B sur 4 cœurs écrit en ≈ 10 min
     err = None
     for essai in range(3):
         try:

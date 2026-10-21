@@ -99,6 +99,9 @@ jobs:
             # GPT-OSS raisonne avant d'écrire : le raisonnement compte dans les jetons, et sa température conseillée est 1,0
             if [ "${{ matrix.modele }}" = gptoss20loc ]; then export HISTOIRES_MAX_JETONS=4000 HISTOIRES_TEMP=1.0; fi
           fi
+          if [ "${{ matrix.modele }}" = gptoss20loc ] && [ "${{ matrix.part }}" = 0 ]; then   # le même modèle, juge sans quota ?
+            HISTOIRES_JUGE_URL=$HISTOIRES_URL HISTOIRES_JUGE_DELAI=900 timeout 2400 python3 studio-video/moteur-troupe/juge_calibre.py $O/calibrage-juge.json || true
+          fi
           python3 studio-video/moteur-troupe/histoires_tourne.py ${{ matrix.modele }} ${{ matrix.part }} 2 $MINUTES $O \
             studio-video/animer/cle-claude.pub.pem || true
           kill $P 2>/dev/null || true; [ -f $RUNNER_TEMP/serveur.log ] && grep -E "eval time|prompt eval" $RUNNER_TEMP/serveur.log | tail -6 > $O/vitesse-${{ matrix.modele }}-${{ matrix.part }}.txt
