@@ -35,6 +35,13 @@
    "lora": "at_runtime",
    "secondes": 312,
    "memoire_max_go": 10.83
+  },
+  {
+   "clip": "agent-doumbia--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 313,
+   "memoire_max_go": 11.27
   }
  ],
  "run": "39528414471"
