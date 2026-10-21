@@ -54,3 +54,4 @@
 [121 s] 17 clips · === tiekoro--montrer (at_runtime)   |============>                                     | 1/4 - 68.53s/it[K · mémoire libre 13764 Mo
 [242 s] 17 clips · === tiekoro--montrer (at_runtime)   |=====================================>            | 3/4 - 67.98s/it[K · mémoire libre 13759 Mo
 [364 s] 18 clips · === sorciere-mama-dede--montrer (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13769 Mo
+[485 s] 18 clips · === sorciere-mama-dede--montrer (at_runtime)   |=========================>                        | 2/4 - 68.28s/it[K · mémoire libre 13785 Mo
