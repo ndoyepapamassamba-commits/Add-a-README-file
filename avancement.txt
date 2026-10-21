@@ -24,3 +24,4 @@
 [1459 s] 3 images · === perso-imam-karim   |==================================================| 4/4 - 219.86s/it[K · mémoire libre 6336 Mo
 [1581 s] 3 images · === perso-imam-karim   |==================================================| 4/4 - 219.86s/it[K · mémoire libre 6320 Mo
 [1702 s] 3 images · === perso-imam-karim   |============>                                     | 1/4 - 228.07s/it[K · mémoire libre 6306 Mo
+[1824 s] 3 images · === perso-imam-karim   |============>                                     | 1/4 - 228.07s/it[K · mémoire libre 6306 Mo
