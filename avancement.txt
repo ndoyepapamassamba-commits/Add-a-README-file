@@ -7,3 +7,4 @@
 [850 s] 5 clips · === la-go-leopard--montrer (at_runtime)   |============>                                     | 1/4 - 147.11s/it[K · mémoire libre 13801 Mo
 [971 s] 5 clips · === la-go-leopard--montrer (at_runtime)   |=========================>                        | 2/4 - 147.35s/it[K · mémoire libre 13778 Mo
 [1092 s] 5 clips · === la-go-leopard--montrer (at_runtime)   |=========================>                        | 2/4 - 147.35s/it[K · mémoire libre 13777 Mo
+[1213 s] 5 clips · === la-go-leopard--montrer (at_runtime)   |=====================================>            | 3/4 - 142.04s/it[K · mémoire libre 13780 Mo
