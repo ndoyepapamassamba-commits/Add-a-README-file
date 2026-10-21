@@ -196,7 +196,14 @@
    "lora": "at_runtime",
    "secondes": 303,
    "memoire_max_go": 11.1
+  },
+  {
+   "clip": "le-tonton--parler@2",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 305,
+   "memoire_max_go": 10.86
   }
  ],
- "run": "39564581444"
+ "run": "39585702697"
 }

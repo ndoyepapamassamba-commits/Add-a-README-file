@@ -93,3 +93,4 @@
 [244 s] 27 clips · === patron-sery--parler (at_runtime)   |=====================================>            | 3/4 - 67.79s/it[K · mémoire libre 13769 Mo
 [124 s] 28 clips · === le-tonton--parler@2 (at_runtime)   |============>                                     | 1/4 - 68.89s/it[K · mémoire libre 13769 Mo
 [246 s] 28 clips · === le-tonton--parler@2 (at_runtime)   |=====================================>            | 3/4 - 68.20s/it[K · mémoire libre 13767 Mo
+[367 s] 29 clips · === maman-brigitte--hausser@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13781 Mo
