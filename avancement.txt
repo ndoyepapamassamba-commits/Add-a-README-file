@@ -39,3 +39,4 @@
 [244 s] 14 clips · === mamie-bintou--choc (at_runtime)   |============>                                     | 1/4 - 136.17s/it[K · mémoire libre 13766 Mo
 [365 s] 14 clips · === mamie-bintou--choc (at_runtime)   |=========================>                        | 2/4 - 135.57s/it[K · mémoire libre 13759 Mo
 [486 s] 14 clips · === mamie-bintou--choc (at_runtime)   |=====================================>            | 3/4 - 135.17s/it[K · mémoire libre 13750 Mo
+[123 s] 14 clips · === maman-brigitte--hausser (at_runtime)   |============>                                     | 1/4 - 67.13s/it[K · mémoire libre 13764 Mo
