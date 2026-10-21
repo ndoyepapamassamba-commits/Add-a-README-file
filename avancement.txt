@@ -16,3 +16,4 @@
 [1941 s] 7 clips · === adjoua--colere (at_runtime)   |============>                                     | 1/4 - 134.71s/it[K · mémoire libre 13691 Mo
 [2063 s] 7 clips · === adjoua--colere (at_runtime)   |=========================>                        | 2/4 - 134.81s/it[K · mémoire libre 13690 Mo
 [2184 s] 7 clips · === adjoua--colere (at_runtime)   |=====================================>            | 3/4 - 134.74s/it[K · mémoire libre 13683 Mo
+[2305 s] 7 clips · === adjoua--colere (at_runtime)   |=====================================>            | 3/4 - 134.74s/it[K · mémoire libre 13689 Mo
