@@ -48,3 +48,4 @@
 [5834 s] 5 images · === decor-marche-champ-jour   |============>                                     | 1/4 - 159.96s/it[K · mémoire libre 7049 Mo
 [5955 s] 5 images · === decor-marche-champ-jour   |=========================>                        | 2/4 - 155.52s/it[K · mémoire libre 7036 Mo
 [6077 s] 5 images · === decor-marche-champ-jour   |=====================================>            | 3/4 - 155.55s/it[K · mémoire libre 7045 Mo
+[122 s] 5 images · === fiche-petite-khadija  · mémoire libre 6711 Mo
