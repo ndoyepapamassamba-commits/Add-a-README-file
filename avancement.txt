@@ -5,3 +5,4 @@
 [609 s] 3 clips · === tantie-awa-sarr--mentir (at_runtime)   |============>                                     | 1/4 - 40.58s/it[K · mémoire libre 13704 Mo
 [730 s] 4 clips · === chef-traore--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14110 Mo
 [853 s] 4 clips · === chef-traore--choc (at_runtime)   |=========================>                        | 2/4 - 41.09s/it[K · mémoire libre 13695 Mo
+[974 s] 5 clips · === petit-ibrahima--mentir (at_runtime)   |============>                                     | 1/4 - 40.84s/it[K · mémoire libre 13796 Mo

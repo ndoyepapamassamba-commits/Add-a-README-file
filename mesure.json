@@ -28,6 +28,13 @@
    "lora": "at_runtime",
    "secondes": 181,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "chef-traore--choc",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 185,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39528414471"
