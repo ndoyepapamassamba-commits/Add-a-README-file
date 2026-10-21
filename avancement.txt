@@ -73,3 +73,4 @@
 [1338 s] 20 clips · === maitre-coulibaly--hausser (at_runtime)   |============>                                     | 1/4 - 134.02s/it[K · mémoire libre 13731 Mo
 [1459 s] 20 clips · === maitre-coulibaly--hausser (at_runtime)   |=========================>                        | 2/4 - 133.56s/it[K · mémoire libre 13742 Mo
 [1580 s] 20 clips · === maitre-coulibaly--hausser (at_runtime)   |=========================>                        | 2/4 - 133.56s/it[K · mémoire libre 13742 Mo
+[1702 s] 20 clips · === maitre-coulibaly--hausser (at_runtime)   |=====================================>            | 3/4 - 133.55s/it[K · mémoire libre 13749 Mo
