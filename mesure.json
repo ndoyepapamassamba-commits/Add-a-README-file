@@ -119,7 +119,14 @@
    "lora": "at_runtime",
    "secondes": 181,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "petite-khadija--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 582,
+   "memoire_max_go": 11.13
   }
  ],
- "run": "39543580560"
+ "run": "39545665602"
 }
