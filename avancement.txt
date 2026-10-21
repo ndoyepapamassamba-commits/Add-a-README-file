@@ -55,3 +55,4 @@
 [5227 s] 9 images · === maison-general-zongo-cour-champ-jour   |=====================================>            | 3/4 - 86.37s/it[K · mémoire libre 7033 Mo
 [5348 s] 10 images · === maison-la-voisine-cour-champ-jour   |==================================================| 4/4 - 85.96s/it[K · mémoire libre 7190 Mo
 [5470 s] 10 images · === maison-la-voisine-cour-champ-jour   |============>                                     | 1/4 - 90.30s/it[K · mémoire libre 7029 Mo
+[5591 s] 10 images · === maison-la-voisine-cour-champ-jour   |=========================>                        | 2/4 - 91.33s/it[K · mémoire libre 7033 Mo
