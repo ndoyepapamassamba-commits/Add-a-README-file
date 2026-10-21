@@ -46,3 +46,4 @@
 [731 s] 12 clips · === la-voisine--hausser (at_runtime)   |=====================================>            | 3/4 - 90.33s/it[K · mémoire libre 13768 Mo
 [121 s] 13 clips · === dj-kevin--montrer (at_runtime)  · mémoire libre 13793 Mo
 [243 s] 13 clips · === dj-kevin--montrer (at_runtime)   |============>                                     | 1/4 - 136.15s/it[K · mémoire libre 13781 Mo
+[364 s] 13 clips · === dj-kevin--montrer (at_runtime)   |=========================>                        | 2/4 - 134.77s/it[K · mémoire libre 13781 Mo
