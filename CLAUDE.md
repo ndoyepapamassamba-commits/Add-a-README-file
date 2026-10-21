@@ -31,4 +31,5 @@ livrés automatiquement. Spécification complète : `supabase/SPEC.md`. Guide du
 - Site : dossier `cv/`, publié par GitHub Pages depuis la branche `gh-pages`
   (https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/). Publier = pousser un commit
   testé sur `gh-pages`. Ne pas utiliser githack (page d'avertissement devant le site).
+- Référencement : après chaque publication, `node scripts/indexnow.mjs` signale toutes les URL de `cv/sitemap.xml` à IndexNow (Bing, Yandex…) ; la clé publique est dans `cv/ebb4ea75c352a571bd0b205056c2b276.txt`.
 - Tests : `deno test -A supabase/functions/api/tests/` et `cd e2e && node flow.mjs`.
