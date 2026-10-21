@@ -78,3 +78,4 @@
 [1459 s] 8 images · === perso-djecky   |==================================================| 4/4 - 268.26s/it[K · mémoire libre 6202 Mo
 [1580 s] 8 images · === perso-djecky   |==================================================| 4/4 - 268.26s/it[K · mémoire libre 6177 Mo
 [1702 s] 8 images · === perso-djecky   |==================================================| 4/4 - 268.26s/it[K · mémoire libre 6184 Mo
+[1823 s] 8 images · === perso-djecky   |============>                                     | 1/4 - 503.06s/it[K · mémoire libre 6176 Mo
