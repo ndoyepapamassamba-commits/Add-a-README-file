@@ -28,3 +28,4 @@
 [1823 s] 2 images · === perso-tonton-dieng   |=========================>                        | 2/4 - 395.77s/it[K · mémoire libre 6231 Mo
 [1944 s] 2 images · === perso-tonton-dieng   |=====================================>            | 3/4 - 395.54s/it[K · mémoire libre 6231 Mo
 [2066 s] 2 images · === perso-tonton-dieng   |=====================================>            | 3/4 - 395.54s/it[K · mémoire libre 6225 Mo
+[2187 s] 2 images · === perso-tonton-dieng   |=====================================>            | 3/4 - 395.54s/it[K · mémoire libre 6223 Mo
