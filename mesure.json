@@ -42,7 +42,14 @@
    "lora": "at_runtime",
    "secondes": 180,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "agent-gora--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 581,
+   "memoire_max_go": 10.78
   }
  ],
- "run": "39528414471"
+ "run": "39545665602"
 }
