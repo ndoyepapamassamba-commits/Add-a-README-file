@@ -20,3 +20,4 @@
 [2430 s] 8 clips · === professeur-samba--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13801 Mo
 [2551 s] 8 clips · === professeur-samba--mentir (at_runtime)   |============>                                     | 1/4 - 133.80s/it[K · mémoire libre 13783 Mo
 [2672 s] 8 clips · === professeur-samba--mentir (at_runtime)   |=========================>                        | 2/4 - 133.44s/it[K · mémoire libre 13783 Mo
+[2794 s] 8 clips · === professeur-samba--mentir (at_runtime)   |=====================================>            | 3/4 - 134.85s/it[K · mémoire libre 13768 Mo
