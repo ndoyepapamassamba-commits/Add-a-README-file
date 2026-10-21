@@ -58,3 +58,4 @@
 [1094 s] 16 clips · === tonton-dieng--colere (at_runtime)   |=====================================>            | 3/4 - 133.65s/it[K · mémoire libre 13796 Mo
 [1216 s] 17 clips · === mecano-issa--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13773 Mo
 [1337 s] 17 clips · === mecano-issa--ecouter (at_runtime)   |============>                                     | 1/4 - 134.18s/it[K · mémoire libre 13766 Mo
+[1459 s] 17 clips · === mecano-issa--ecouter (at_runtime)   |============>                                     | 1/4 - 134.18s/it[K · mémoire libre 13766 Mo
