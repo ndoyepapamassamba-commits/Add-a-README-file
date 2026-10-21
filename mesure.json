@@ -111,6 +111,19 @@
    "h": 720,
    "memoire_max_go": 12.35,
    "run": "39529293602"
+  },
+  {
+   "tache": "perso-patron-sery",
+   "version": 3,
+   "type": "personnage",
+   "etapes": 2,
+   "ok": true,
+   "code": 0,
+   "secondes": 3347,
+   "w": 1280,
+   "h": 720,
+   "memoire_max_go": 12.35,
+   "run": "39552212852"
   }
  ]
 }
