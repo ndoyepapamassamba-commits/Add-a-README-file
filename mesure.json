@@ -105,6 +105,13 @@
    "lora": "at_runtime",
    "secondes": 180,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "mecano-issa--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 178,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39543580560"
