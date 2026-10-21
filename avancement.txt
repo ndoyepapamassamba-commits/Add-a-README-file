@@ -35,3 +35,4 @@
 [1820 s] 11 clips · === fatou--rire (at_runtime)   |============>                                     | 1/4 - 125.92s/it[K · mémoire libre 13777 Mo
 [1942 s] 11 clips · === fatou--rire (at_runtime)   |=========================>                        | 2/4 - 128.58s/it[K · mémoire libre 13769 Mo
 [123 s] 11 clips · === fatou--rire (at_runtime)  · mémoire libre 13775 Mo
+[244 s] 11 clips · === fatou--rire (at_runtime)   |============>                                     | 1/4 - 133.59s/it[K · mémoire libre 13768 Mo
