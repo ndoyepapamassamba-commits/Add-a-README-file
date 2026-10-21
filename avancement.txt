@@ -49,3 +49,4 @@
 [4497 s] 6 images · === decor-maquis-coin-jour   |============>                                     | 1/4 - 140.11s/it[K · mémoire libre 7051 Mo
 [4619 s] 6 images · === decor-maquis-coin-jour   |============>                                     | 1/4 - 140.11s/it[K · mémoire libre 7026 Mo
 [4740 s] 6 images · === decor-maquis-coin-jour   |=========================>                        | 2/4 - 135.00s/it[K · mémoire libre 7020 Mo
+[4862 s] 6 images · === decor-maquis-coin-jour   |=====================================>            | 3/4 - 135.44s/it[K · mémoire libre 7021 Mo
