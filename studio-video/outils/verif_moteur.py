@@ -999,6 +999,9 @@ try:
     _src36 = open(_rb36.__file__, encoding='utf-8').read()
     if not (all(b >= a for a, b in zip(_e36, _e36[1:])) and max(_e36) <= 1.0) or 'doux=pl[4]' not in _src36 or 'corps=True' not in _src36:
         echecs.append('cartes : émoji encore élastique sur un personnage (entrée douce absente)')
+    _i36 = [_cf36._image_emoji('1f923', 64, u, fixe=True) for u in (0.1, 0.4, 0.9)]
+    if _i36[0] is not None and any(np.asarray(x).tobytes() != np.asarray(_i36[0]).tobytes() for x in _i36):
+        echecs.append('cartes : émoji encore animé (roulis) sur un personnage')
     _ok36 = 'def mains_vertes' in open(_cv36.__file__, encoding='utf-8').read() and 'mains_vertes(F, mov)' in open(_cv36.__file__, encoding='utf-8').read()
     if not _ok36: echecs.append('mains olive : correction absente de la préparation des clips')
     if _cv36.LIT_VERSION < 5: echecs.append('mains olive : version des clips préparés non relevée (ancien cache relu)')

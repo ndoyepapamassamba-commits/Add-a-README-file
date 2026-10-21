@@ -70,10 +70,14 @@ def _statique(cp):
     except Exception: return None
 
 
-def _image_emoji(cp, d, u):
+def _image_emoji(cp, d, u, fixe=False):
     """l'émoji `cp` à l'instant u (s), taille d × d : image animée si présente, sinon l'émoji 3D fixe ; None si l'émoji
-    n'existe pas (jamais un émoji de remplacement qui dirait autre chose)."""
+    n'existe pas (jamais un émoji de remplacement qui dirait autre chose). fixe (21/10/2026, épisode banque 1 v12 : à-coups
+    sous les cartes) : l'émoji 3D immobile — l'animé (🤣 qui roule d'un côté puis de l'autre) posé sur un personnage fait
+    repartir son mouvement en sens inverse."""
     if cp not in disponibles() and cp not in FIXE: return None
+    if fixe and cp in FIXE and os.path.isfile(f'emoji/{FIXE[cp]}.png'): return _emoji(FIXE[cp], d)
+    if fixe: u = 0.0   # sinon la première image de l'émoji animé, tenue
     fr = _anime(cp)
     if fr:
         tot = sum(x[1] for x in fr); v = u % tot; k = 0
@@ -143,19 +147,19 @@ def carte(W, H, u, titre, rang, total, place, nom_emoji=None, doux=False):
     # 2. émoji principal ANIMÉ (pop élastique, léger balancement amorti)
     if s > 0:
         ang = 0.0 if doux else 6.0 * math.sin(2 * math.pi * 1.6 * u) * math.exp(-1.1 * u)
-        d = max(8, int(base * s)); e = _image_emoji(nom_emoji or PRINCIPAUX[(rang - 1) % len(PRINCIPAUX)], d, u)
+        d = max(8, int(base * s)); e = _image_emoji(nom_emoji or PRINCIPAUX[(rang - 1) % len(PRINCIPAUX)], d, u, fixe=doux)
         if abs(ang) > 0.3: e = e.rotate(ang, resample=Image.BICUBIC, expand=True)
         im.alpha_composite(e, (int(ex - e.width / 2), int(ey - e.height / 2)))
     # 3. éclats d'étoiles qui scintillent
     for k in range(7):
         th = k * 2 * math.pi / 7 + 0.4; rr = R * (1.55 + 0.25 * (k % 3))
-        a = max(0.0, math.sin(2 * math.pi * (1.6 * u + k * 0.37))) * min(1.0, s)
+        a = (0.8 if doux else max(0.0, math.sin(2 * math.pi * (1.6 * u + k * 0.37)))) * min(1.0, s)   # doux : éclats fixes
         if a > 0.05: _etoile(dr, ex + rr * math.cos(th), ey + rr * math.sin(th), 6 + 4 * (k % 2), a, (255, 255, 255) if k % 2 else JAUNE)
     # 4. deux petits émojis satellites qui entrent par les côtés
     for j, (nom, cote) in enumerate(zip(SATELLITES, (-1, 1))):
         v = min(1.0, max(0.0, (u - 0.12 - 0.08 * j) / 0.3)); v = 1 - (1 - v) ** 3
         if v <= 0: continue
-        d2 = int(base * 0.42); e2 = _image_emoji(nom, d2, u + 0.3 * j).rotate(cote * 12, resample=Image.BICUBIC, expand=True)
+        d2 = int(base * 0.42); e2 = _image_emoji(nom, d2, u + 0.3 * j, fixe=doux).rotate(cote * 12, resample=Image.BICUBIC, expand=True)
         x2 = ex + cote * (R * 1.7) * v + cote * (1 - v) * W * 0.6; y2 = ey + R * 0.55 + (0 if doux else 6 * math.sin(2 * math.pi * 1.8 * u + j))
         if v >= 1: x2 = min(max(x2, e2.width / 2 + 6), W - e2.width / 2 - 6)   # jamais coupé par le bord du cadre
         im.alpha_composite(e2, (int(x2 - e2.width / 2), int(y2 - e2.height / 2)))
