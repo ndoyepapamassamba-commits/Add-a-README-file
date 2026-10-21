@@ -48,3 +48,4 @@
 [487 s] 20 clips · === mademoiselle-rosine--parler (at_runtime)   |=========================>                        | 2/4 - 39.04s/it[K · mémoire libre 13812 Mo
 [122 s] 21 clips · === salif-le-parisien--montrer (at_runtime)  · mémoire libre 13768 Mo
 [243 s] 21 clips · === salif-le-parisien--montrer (at_runtime)   |============>                                     | 1/4 - 134.85s/it[K · mémoire libre 13750 Mo
+[365 s] 21 clips · === salif-le-parisien--montrer (at_runtime)   |=========================>                        | 2/4 - 134.35s/it[K · mémoire libre 13748 Mo
