@@ -49,3 +49,4 @@
 [1579 s] 13 clips · === la-voisine--rire (at_runtime)   |=========================>                        | 2/4 - 133.03s/it[K · mémoire libre 13779 Mo
 [1701 s] 13 clips · === la-voisine--rire (at_runtime)   |=====================================>            | 3/4 - 133.14s/it[K · mémoire libre 13786 Mo
 [122 s] 14 clips · === dj-kevin--choc (at_runtime)  · mémoire libre 13770 Mo
+[244 s] 14 clips · === dj-kevin--choc (at_runtime)   |============>                                     | 1/4 - 135.18s/it[K · mémoire libre 13758 Mo
