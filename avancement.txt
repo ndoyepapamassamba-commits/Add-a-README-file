@@ -34,3 +34,4 @@
 [486 s] 9 clips · === agent-gora--parler (at_runtime)   |=========================>                        | 2/4 - 40.04s/it[K · mémoire libre 13752 Mo
 [607 s] 10 clips · === madame-konan--hausser (at_runtime)   |============>                                     | 1/4 - 40.10s/it[K · mémoire libre 13801 Mo
 [729 s] 11 clips · === maitre-coulibaly--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14266 Mo
+[850 s] 11 clips · === maitre-coulibaly--parler (at_runtime)   |=========================>                        | 2/4 - 41.43s/it[K · mémoire libre 13779 Mo
