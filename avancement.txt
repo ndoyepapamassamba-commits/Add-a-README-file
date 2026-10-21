@@ -60,3 +60,4 @@
 [122 s] 6 images · === fiche-sur-awa  · mémoire libre 6686 Mo
 [243 s] 6 images · === fiche-sur-awa   |============>                                     | 1/4 - 143.42s/it[K · mémoire libre 6692 Mo
 [364 s] 6 images · === fiche-sur-awa   |=========================>                        | 2/4 - 141.74s/it[K · mémoire libre 6692 Mo
+[123 s] 6 images · === fiche-sur-awa  · mémoire libre 6730 Mo
