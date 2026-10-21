@@ -38,3 +38,4 @@
 [2548 s] 11 clips · === yaya-lapprenti--parler (at_runtime)   |============>                                     | 1/4 - 133.82s/it[K · mémoire libre 13777 Mo
 [2669 s] 11 clips · === yaya-lapprenti--parler (at_runtime)   |=========================>                        | 2/4 - 133.39s/it[K · mémoire libre 13777 Mo
 [2790 s] 11 clips · === yaya-lapprenti--parler (at_runtime)   |=====================================>            | 3/4 - 133.59s/it[K · mémoire libre 13777 Mo
+[124 s] 11 clips · === yaya-lapprenti--parler (at_runtime)   |============>                                     | 1/4 - 90.90s/it[K · mémoire libre 13756 Mo
