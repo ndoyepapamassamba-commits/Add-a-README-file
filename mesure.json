@@ -189,6 +189,13 @@
    "lora": "at_runtime",
    "secondes": 304,
    "memoire_max_go": 11.04
+  },
+  {
+   "clip": "boubacar--ecouter",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 306,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39559117299"
