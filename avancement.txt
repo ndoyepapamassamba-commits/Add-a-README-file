@@ -72,3 +72,4 @@
 [2673 s] 23 clips · === sorciere-mama-dede--rire (at_runtime)   |=========================>                        | 2/4 - 134.86s/it[K · mémoire libre 13768 Mo
 [2795 s] 23 clips · === sorciere-mama-dede--rire (at_runtime)   |=====================================>            | 3/4 - 135.06s/it[K · mémoire libre 13767 Mo
 [122 s] 23 clips · === sorciere-mama-dede--rire (at_runtime)  · mémoire libre 13790 Mo
+[244 s] 23 clips · === sorciere-mama-dede--rire (at_runtime)   |============>                                     | 1/4 - 135.34s/it[K · mémoire libre 13775 Mo
