@@ -26,3 +26,4 @@
 [3155 s] 9 clips · === aminata--montrer (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13746 Mo
 [3276 s] 9 clips · === aminata--montrer (at_runtime)   |============>                                     | 1/4 - 136.07s/it[K · mémoire libre 13745 Mo
 [3398 s] 9 clips · === aminata--montrer (at_runtime)   |=========================>                        | 2/4 - 135.63s/it[K · mémoire libre 13744 Mo
+[3519 s] 9 clips · === aminata--montrer (at_runtime)   |=====================================>            | 3/4 - 135.33s/it[K · mémoire libre 13747 Mo
