@@ -30,3 +30,4 @@
 [730 s] 12 clips · === grand-pere-ndiaye--mentir (at_runtime)   |=====================================>            | 3/4 - 44.80s/it[K · mémoire libre 13802 Mo
 [852 s] 13 clips · === le-frimeur--hausser (at_runtime)   |=========================>                        | 2/4 - 42.81s/it[K · mémoire libre 13805 Mo
 [974 s] 14 clips · === la-voisine--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13814 Mo
+[1095 s] 14 clips · === la-voisine--parler (at_runtime)   |=====================================>            | 3/4 - 42.17s/it[K · mémoire libre 13803 Mo
