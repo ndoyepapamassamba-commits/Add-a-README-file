@@ -38,3 +38,4 @@
 [3156 s] 4 images · === perso-adjoua   |============>                                     | 1/4 - 403.03s/it[K · mémoire libre 6275 Mo
 [3277 s] 4 images · === perso-adjoua   |=========================>                        | 2/4 - 395.16s/it[K · mémoire libre 6267 Mo
 [3398 s] 4 images · === perso-adjoua   |=========================>                        | 2/4 - 395.16s/it[K · mémoire libre 6267 Mo
+[3520 s] 4 images · === perso-adjoua   |=========================>                        | 2/4 - 395.16s/it[K · mémoire libre 6267 Mo
