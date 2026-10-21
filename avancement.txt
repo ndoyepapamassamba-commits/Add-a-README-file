@@ -3,3 +3,4 @@
 [366 s] 0 clips · === la-lyceenne--mentir (at_runtime)   |=====================================>            | 3/4 - 91.04s/it[K · mémoire libre 13759 Mo
 [488 s] 1 clips · === la-future-maman--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13789 Mo
 [609 s] 1 clips · === la-future-maman--choc (at_runtime)   |============>                                     | 1/4 - 91.30s/it[K · mémoire libre 13769 Mo
+[731 s] 1 clips · === la-future-maman--choc (at_runtime)   |=====================================>            | 3/4 - 91.00s/it[K · mémoire libre 13755 Mo
