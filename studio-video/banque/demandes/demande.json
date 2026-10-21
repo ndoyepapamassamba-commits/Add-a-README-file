@@ -1,66 +1,10 @@
 [
  {
-  "id": "la-go-leopard--hausser@2",
-  "personnage": "la-go-leopard",
-  "geste": "hausser",
-  "pose": 3,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
- },
- {
   "id": "la-go-leopard--rire@2",
   "personnage": "la-go-leopard",
   "geste": "rire",
   "pose": 4,
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character bursts out laughing, shoulders shaking, holds the belly, head thrown back."
- },
- {
-  "id": "la-go-leopard--colere@2",
-  "personnage": "la-go-leopard",
-  "geste": "colere",
-  "pose": 1,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character gets angry, frowns, waves the arms, talks loudly."
- },
- {
-  "id": "chef-traore--montrer@2",
-  "personnage": "chef-traore",
-  "geste": "montrer",
-  "pose": 1,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character points firmly with the index finger while talking, leaning forward slightly, accusing expression."
- },
- {
-  "id": "monsieur-diarra--hausser",
-  "personnage": "monsieur-diarra",
-  "geste": "hausser",
-  "pose": 3,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
- },
- {
-  "id": "monsieur-diarra--rire",
-  "personnage": "monsieur-diarra",
-  "geste": "rire",
-  "pose": 4,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character bursts out laughing, shoulders shaking, holds the belly, head thrown back."
- },
- {
-  "id": "le-tonton--rire",
-  "personnage": "le-tonton",
-  "geste": "rire",
-  "pose": 4,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character bursts out laughing, shoulders shaking, holds the belly, head thrown back."
- },
- {
-  "id": "le-tonton--mentir",
-  "personnage": "le-tonton",
-  "geste": "mentir",
-  "pose": 3,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
- },
- {
-  "id": "mamie-bintou--parler",
-  "personnage": "mamie-bintou",
-  "geste": "parler",
-  "pose": 0,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
  },
  {
   "id": "mamie-bintou--choc",
@@ -70,81 +14,11 @@
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
  },
  {
-  "id": "mamie-bintou--hausser",
-  "personnage": "mamie-bintou",
-  "geste": "hausser",
-  "pose": 3,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
- },
- {
-  "id": "mamie-bintou--rire",
-  "personnage": "mamie-bintou",
-  "geste": "rire",
-  "pose": 4,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character bursts out laughing, shoulders shaking, holds the belly, head thrown back."
- },
- {
-  "id": "madame-coumba--parler",
-  "personnage": "madame-coumba",
-  "geste": "parler",
-  "pose": 0,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
- },
- {
-  "id": "madame-coumba--ecouter",
-  "personnage": "madame-coumba",
-  "geste": "ecouter",
-  "pose": 0,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character listens attentively, blinks, nods slowly, small breathing movement, mouth closed."
- },
- {
-  "id": "madame-coumba--choc",
-  "personnage": "madame-coumba",
-  "geste": "choc",
-  "pose": 2,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
- },
- {
-  "id": "madame-coumba--hausser",
-  "personnage": "madame-coumba",
-  "geste": "hausser",
-  "pose": 3,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
- },
- {
-  "id": "madame-coumba--rire",
-  "personnage": "madame-coumba",
-  "geste": "rire",
-  "pose": 4,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character bursts out laughing, shoulders shaking, holds the belly, head thrown back."
- },
- {
   "id": "madame-coumba--mentir",
   "personnage": "madame-coumba",
   "geste": "mentir",
   "pose": 3,
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
- },
- {
-  "id": "tata-prisca--choc",
-  "personnage": "tata-prisca",
-  "geste": "choc",
-  "pose": 2,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
- },
- {
-  "id": "tata-prisca--hausser",
-  "personnage": "tata-prisca",
-  "geste": "hausser",
-  "pose": 3,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
- },
- {
-  "id": "agent-bakary--parler",
-  "personnage": "agent-bakary",
-  "geste": "parler",
-  "pose": 0,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
  },
  {
   "id": "agent-bakary--montrer",
@@ -189,20 +63,6 @@
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
  },
  {
-  "id": "maman-brigitte--ecouter",
-  "personnage": "maman-brigitte",
-  "geste": "ecouter",
-  "pose": 0,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character listens attentively, blinks, nods slowly, small breathing movement, mouth closed."
- },
- {
-  "id": "maman-brigitte--montrer",
-  "personnage": "maman-brigitte",
-  "geste": "montrer",
-  "pose": 1,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character points firmly with the index finger while talking, leaning forward slightly, accusing expression."
- },
- {
   "id": "maman-brigitte--hausser",
   "personnage": "maman-brigitte",
   "geste": "hausser",
@@ -222,20 +82,6 @@
   "geste": "mentir",
   "pose": 3,
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
- },
- {
-  "id": "petite-khadija--parler",
-  "personnage": "petite-khadija",
-  "geste": "parler",
-  "pose": 0,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
- },
- {
-  "id": "petite-khadija--choc",
-  "personnage": "petite-khadija",
-  "geste": "choc",
-  "pose": 2,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
  },
  {
   "id": "petite-khadija--hausser",
@@ -273,20 +119,6 @@
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character points firmly with the index finger while talking, leaning forward slightly, accusing expression."
  },
  {
-  "id": "agent-gora--choc",
-  "personnage": "agent-gora",
-  "geste": "choc",
-  "pose": 2,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
- },
- {
-  "id": "agent-gora--hausser",
-  "personnage": "agent-gora",
-  "geste": "hausser",
-  "pose": 3,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
- },
- {
   "id": "agent-gora--rire",
   "personnage": "agent-gora",
   "geste": "rire",
@@ -322,20 +154,6 @@
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character listens attentively, blinks, nods slowly, small breathing movement, mouth closed."
  },
  {
-  "id": "sur-awa--montrer",
-  "personnage": "sur-awa",
-  "geste": "montrer",
-  "pose": 1,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character points firmly with the index finger while talking, leaning forward slightly, accusing expression."
- },
- {
-  "id": "sur-awa--choc",
-  "personnage": "sur-awa",
-  "geste": "choc",
-  "pose": 2,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
- },
- {
   "id": "sur-awa--hausser",
   "personnage": "sur-awa",
   "geste": "hausser",
@@ -362,13 +180,6 @@
   "geste": "parler",
   "pose": 0,
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
- },
- {
-  "id": "madame-konan--ecouter",
-  "personnage": "madame-konan",
-  "geste": "ecouter",
-  "pose": 0,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character listens attentively, blinks, nods slowly, small breathing movement, mouth closed."
  },
  {
   "id": "madame-konan--montrer",
@@ -420,13 +231,6 @@
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character listens attentively, blinks, nods slowly, small breathing movement, mouth closed."
  },
  {
-  "id": "tonton-dieng--montrer",
-  "personnage": "tonton-dieng",
-  "geste": "montrer",
-  "pose": 1,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character points firmly with the index finger while talking, leaning forward slightly, accusing expression."
- },
- {
   "id": "tonton-dieng--choc",
   "personnage": "tonton-dieng",
   "geste": "choc",
@@ -469,13 +273,6 @@
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
  },
  {
-  "id": "maitre-kone--ecouter",
-  "personnage": "maitre-kone",
-  "geste": "ecouter",
-  "pose": 0,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character listens attentively, blinks, nods slowly, small breathing movement, mouth closed."
- },
- {
   "id": "maitre-kone--choc",
   "personnage": "maitre-kone",
   "geste": "choc",
@@ -502,13 +299,6 @@
   "geste": "colere",
   "pose": 1,
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character gets angry, frowns, waves the arms, talks loudly."
- },
- {
-  "id": "maitre-kone--mentir",
-  "personnage": "maitre-kone",
-  "geste": "mentir",
-  "pose": 3,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
  },
  {
   "id": "maitre-coulibaly--ecouter",
@@ -560,13 +350,6 @@
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
  },
  {
-  "id": "general-zongo--parler",
-  "personnage": "general-zongo",
-  "geste": "parler",
-  "pose": 0,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
- },
- {
   "id": "general-zongo--ecouter",
   "personnage": "general-zongo",
   "geste": "ecouter",
@@ -602,20 +385,6 @@
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character bursts out laughing, shoulders shaking, holds the belly, head thrown back."
  },
  {
-  "id": "general-zongo--colere",
-  "personnage": "general-zongo",
-  "geste": "colere",
-  "pose": 1,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character gets angry, frowns, waves the arms, talks loudly."
- },
- {
-  "id": "general-zongo--mentir",
-  "personnage": "general-zongo",
-  "geste": "mentir",
-  "pose": 3,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
- },
- {
   "id": "mecano-issa--parler",
   "personnage": "mecano-issa",
   "geste": "parler",
@@ -642,13 +411,6 @@
   "geste": "choc",
   "pose": 2,
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
- },
- {
-  "id": "mecano-issa--hausser",
-  "personnage": "mecano-issa",
-  "geste": "hausser",
-  "pose": 3,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
  },
  {
   "id": "mecano-issa--rire",
@@ -700,13 +462,6 @@
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
  },
  {
-  "id": "tiekoro--hausser",
-  "personnage": "tiekoro",
-  "geste": "hausser",
-  "pose": 3,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
- },
- {
   "id": "tiekoro--rire",
   "personnage": "tiekoro",
   "geste": "rire",
@@ -742,20 +497,6 @@
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character listens attentively, blinks, nods slowly, small breathing movement, mouth closed."
  },
  {
-  "id": "grand-pere-ndiaye--montrer",
-  "personnage": "grand-pere-ndiaye",
-  "geste": "montrer",
-  "pose": 1,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character points firmly with the index finger while talking, leaning forward slightly, accusing expression."
- },
- {
-  "id": "grand-pere-ndiaye--choc",
-  "personnage": "grand-pere-ndiaye",
-  "geste": "choc",
-  "pose": 2,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
- },
- {
   "id": "grand-pere-ndiaye--hausser",
   "personnage": "grand-pere-ndiaye",
   "geste": "hausser",
@@ -782,13 +523,6 @@
   "geste": "mentir",
   "pose": 3,
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
- },
- {
-  "id": "fatou--parler",
-  "personnage": "fatou",
-  "geste": "parler",
-  "pose": 0,
-  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
  },
  {
   "id": "fatou--ecouter",
@@ -950,5 +684,285 @@
   "geste": "mentir",
   "pose": 3,
   "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
+ },
+ {
+  "id": "yaya-lapprenti--parler",
+  "personnage": "yaya-lapprenti",
+  "geste": "parler",
+  "pose": 0,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
+ },
+ {
+  "id": "yaya-lapprenti--ecouter",
+  "personnage": "yaya-lapprenti",
+  "geste": "ecouter",
+  "pose": 0,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character listens attentively, blinks, nods slowly, small breathing movement, mouth closed."
+ },
+ {
+  "id": "yaya-lapprenti--montrer",
+  "personnage": "yaya-lapprenti",
+  "geste": "montrer",
+  "pose": 1,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character points firmly with the index finger while talking, leaning forward slightly, accusing expression."
+ },
+ {
+  "id": "yaya-lapprenti--choc",
+  "personnage": "yaya-lapprenti",
+  "geste": "choc",
+  "pose": 2,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
+ },
+ {
+  "id": "yaya-lapprenti--hausser",
+  "personnage": "yaya-lapprenti",
+  "geste": "hausser",
+  "pose": 3,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
+ },
+ {
+  "id": "yaya-lapprenti--rire",
+  "personnage": "yaya-lapprenti",
+  "geste": "rire",
+  "pose": 4,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character bursts out laughing, shoulders shaking, holds the belly, head thrown back."
+ },
+ {
+  "id": "yaya-lapprenti--colere",
+  "personnage": "yaya-lapprenti",
+  "geste": "colere",
+  "pose": 1,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character gets angry, frowns, waves the arms, talks loudly."
+ },
+ {
+  "id": "yaya-lapprenti--mentir",
+  "personnage": "yaya-lapprenti",
+  "geste": "mentir",
+  "pose": 3,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
+ },
+ {
+  "id": "docteur-sylla--parler",
+  "personnage": "docteur-sylla",
+  "geste": "parler",
+  "pose": 0,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
+ },
+ {
+  "id": "docteur-sylla--ecouter",
+  "personnage": "docteur-sylla",
+  "geste": "ecouter",
+  "pose": 0,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character listens attentively, blinks, nods slowly, small breathing movement, mouth closed."
+ },
+ {
+  "id": "docteur-sylla--montrer",
+  "personnage": "docteur-sylla",
+  "geste": "montrer",
+  "pose": 1,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character points firmly with the index finger while talking, leaning forward slightly, accusing expression."
+ },
+ {
+  "id": "docteur-sylla--choc",
+  "personnage": "docteur-sylla",
+  "geste": "choc",
+  "pose": 2,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
+ },
+ {
+  "id": "docteur-sylla--hausser",
+  "personnage": "docteur-sylla",
+  "geste": "hausser",
+  "pose": 3,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
+ },
+ {
+  "id": "docteur-sylla--rire",
+  "personnage": "docteur-sylla",
+  "geste": "rire",
+  "pose": 4,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character bursts out laughing, shoulders shaking, holds the belly, head thrown back."
+ },
+ {
+  "id": "docteur-sylla--colere",
+  "personnage": "docteur-sylla",
+  "geste": "colere",
+  "pose": 1,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character gets angry, frowns, waves the arms, talks loudly."
+ },
+ {
+  "id": "docteur-sylla--mentir",
+  "personnage": "docteur-sylla",
+  "geste": "mentir",
+  "pose": 3,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
+ },
+ {
+  "id": "la-voisine--parler",
+  "personnage": "la-voisine",
+  "geste": "parler",
+  "pose": 0,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
+ },
+ {
+  "id": "la-voisine--ecouter",
+  "personnage": "la-voisine",
+  "geste": "ecouter",
+  "pose": 0,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character listens attentively, blinks, nods slowly, small breathing movement, mouth closed."
+ },
+ {
+  "id": "la-voisine--montrer",
+  "personnage": "la-voisine",
+  "geste": "montrer",
+  "pose": 1,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character points firmly with the index finger while talking, leaning forward slightly, accusing expression."
+ },
+ {
+  "id": "la-voisine--choc",
+  "personnage": "la-voisine",
+  "geste": "choc",
+  "pose": 2,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
+ },
+ {
+  "id": "la-voisine--hausser",
+  "personnage": "la-voisine",
+  "geste": "hausser",
+  "pose": 3,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
+ },
+ {
+  "id": "la-voisine--rire",
+  "personnage": "la-voisine",
+  "geste": "rire",
+  "pose": 4,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character bursts out laughing, shoulders shaking, holds the belly, head thrown back."
+ },
+ {
+  "id": "la-voisine--colere",
+  "personnage": "la-voisine",
+  "geste": "colere",
+  "pose": 1,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character gets angry, frowns, waves the arms, talks loudly."
+ },
+ {
+  "id": "la-voisine--mentir",
+  "personnage": "la-voisine",
+  "geste": "mentir",
+  "pose": 3,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
+ },
+ {
+  "id": "mademoiselle-rosine--parler",
+  "personnage": "mademoiselle-rosine",
+  "geste": "parler",
+  "pose": 0,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
+ },
+ {
+  "id": "mademoiselle-rosine--ecouter",
+  "personnage": "mademoiselle-rosine",
+  "geste": "ecouter",
+  "pose": 0,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character listens attentively, blinks, nods slowly, small breathing movement, mouth closed."
+ },
+ {
+  "id": "mademoiselle-rosine--montrer",
+  "personnage": "mademoiselle-rosine",
+  "geste": "montrer",
+  "pose": 1,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character points firmly with the index finger while talking, leaning forward slightly, accusing expression."
+ },
+ {
+  "id": "mademoiselle-rosine--choc",
+  "personnage": "mademoiselle-rosine",
+  "geste": "choc",
+  "pose": 2,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
+ },
+ {
+  "id": "mademoiselle-rosine--hausser",
+  "personnage": "mademoiselle-rosine",
+  "geste": "hausser",
+  "pose": 3,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
+ },
+ {
+  "id": "mademoiselle-rosine--rire",
+  "personnage": "mademoiselle-rosine",
+  "geste": "rire",
+  "pose": 4,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character bursts out laughing, shoulders shaking, holds the belly, head thrown back."
+ },
+ {
+  "id": "mademoiselle-rosine--colere",
+  "personnage": "mademoiselle-rosine",
+  "geste": "colere",
+  "pose": 1,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character gets angry, frowns, waves the arms, talks loudly."
+ },
+ {
+  "id": "mademoiselle-rosine--mentir",
+  "personnage": "mademoiselle-rosine",
+  "geste": "mentir",
+  "pose": 3,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
+ },
+ {
+  "id": "coach-diabate--parler",
+  "personnage": "coach-diabate",
+  "geste": "parler",
+  "pose": 0,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character talks animatedly with natural lip movement and small hand gestures, slight head nods."
+ },
+ {
+  "id": "coach-diabate--ecouter",
+  "personnage": "coach-diabate",
+  "geste": "ecouter",
+  "pose": 0,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character listens attentively, blinks, nods slowly, small breathing movement, mouth closed."
+ },
+ {
+  "id": "coach-diabate--montrer",
+  "personnage": "coach-diabate",
+  "geste": "montrer",
+  "pose": 1,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character points firmly with the index finger while talking, leaning forward slightly, accusing expression."
+ },
+ {
+  "id": "coach-diabate--choc",
+  "personnage": "coach-diabate",
+  "geste": "choc",
+  "pose": 2,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character freezes in shock, eyes wide open, jaw drops, then slowly shakes the head in disbelief."
+ },
+ {
+  "id": "coach-diabate--hausser",
+  "personnage": "coach-diabate",
+  "geste": "hausser",
+  "pose": 3,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character shrugs with open hands, raises the eyebrows, talks with an innocent face."
+ },
+ {
+  "id": "coach-diabate--rire",
+  "personnage": "coach-diabate",
+  "geste": "rire",
+  "pose": 4,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character bursts out laughing, shoulders shaking, holds the belly, head thrown back."
+ },
+ {
+  "id": "coach-diabate--colere",
+  "personnage": "coach-diabate",
+  "geste": "colere",
+  "pose": 1,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character gets angry, frowns, waves the arms, talks loudly."
+ },
+ {
+  "id": "coach-diabate--mentir",
+  "personnage": "coach-diabate",
+  "geste": "mentir",
+  "pose": 3,
+  "prompt": "3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright blue background, static camera, smooth natural motion: the character smiles too much, eyes darting left and right, nervous laugh, scratches the head."
  }
 ]

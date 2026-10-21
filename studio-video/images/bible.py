@@ -62,7 +62,10 @@ STYLE = "Pixar-style 3D animated film background in exactly the same rendering s
 SOL_LIBRE = 'eye-level camera, wide open empty ground in the middle foreground'   # sans nommer de personnage (sinon le modèle en dessine)
 POSES = ('five poses side by side of this ONE character only (no other person), on a plain flat bright {fond} background (nothing '
          'else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral '
-         'standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing')
+         'standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing; empty hands in every pose '
+         '(nothing held, nothing floating)')
+# 21/10 04:45 — Patron Séry v2 : l'ardoise de sa fiche flotte près de la hanche quand les deux mains sont sur les joues (pose de
+# choc) ; un objet tenu ne suit pas le geste et flotterait aussi dans les clips de la banque → mains vides sur les poses
 # 21/10 00:55 — Agent Bakary dessiné en uniforme vert sur fond vert : indétourable. Les personnages habillés surtout de vert sont
 # dessinés (et animés, banque.py) sur fond BLEU ; tous les autres restent sur le vert validé.
 FOND_BLEU = {'AGENT BAKARY', 'MAMAN BRIGITTE', 'COACH DIABATÉ', 'DJ KÉVIN'}   # DJ Kévin (21/10 03:55) : lunettes vert fluo inventées par le modèle
@@ -120,9 +123,10 @@ REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2,
            'perso-yaya-lapprenti': 2, 'perso-maitre-coulibaly': 2, 'perso-le-banquier': 3, 'perso-le-tonton': 2,
            'perso-mamie-bintou': 2, 'perso-madame-konan': 2,
            # 21/10 01:35, lot 5 : veste de Koffi (DJ Kevin, Boubacar), comptoir collé aux poses (Patron Séry)
-           'perso-dj-kevin': 3, 'perso-boubacar': 3, 'perso-patron-sery': 2,
+           'perso-dj-kevin': 3, 'perso-boubacar': 3, 'perso-patron-sery': 3,
            # 21/10 04:25 : Boubacar v2 en lunettes noires sur la fiche, lunettes claires sur les poses, alors que sa fiche n'en dit
            # rien (lunettes de Koffi, l'image de style) → « sans lunettes » quand la fiche n'en porte pas (sans_lunettes)
+           # 21/10 04:45 : Patron Séry v2 sans sa moustache sur deux poses, ardoise flottante → v3 (traits rappelés, mains vides)
            # 21/10 01:36, planches déjà acceptées relues avec ce défaut en tête : rire de Koffi (lunettes, visage) sur la dernière pose
            # (Djecky, Général Zongo, Mécano Issa, Monsieur Diarra, Tiékoro), Le Frimeur sosie de Koffi, rire de Baye (Grand-père
            # Ndiaye, Tonton Dieng)

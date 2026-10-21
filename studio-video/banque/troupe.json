@@ -42,7 +42,12 @@
   "grand-pere-ndiaye",
   "fatou",
   "sorciere-mama-dede",
-  "le-frimeur"
+  "le-frimeur",
+  "yaya-lapprenti",
+  "docteur-sylla",
+  "la-voisine",
+  "mademoiselle-rosine",
+  "coach-diabate"
  ],
  "noms": {
   "le-patriarche": "LE PATRIARCHE",
@@ -80,10 +85,16 @@
   "grand-pere-ndiaye": "GRAND-PÈRE NDIAYE",
   "fatou": "FATOU",
   "sorciere-mama-dede": "SORCIÈRE MAMA DÉDÉ",
-  "le-frimeur": "LE FRIMEUR"
+  "le-frimeur": "LE FRIMEUR",
+  "yaya-lapprenti": "YAYA L’APPRENTI",
+  "docteur-sylla": "DOCTEUR SYLLA",
+  "la-voisine": "LA VOISINE",
+  "mademoiselle-rosine": "MADEMOISELLE ROSINE",
+  "coach-diabate": "COACH DIABATÉ"
  },
  "fonds": {
   "agent-bakary": "bleu",
-  "maman-brigitte": "bleu"
+  "maman-brigitte": "bleu",
+  "coach-diabate": "bleu"
  }
 }
