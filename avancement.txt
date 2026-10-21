@@ -7,3 +7,4 @@
 [851 s] 6 clips · === petit-moussa--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13786 Mo
 [972 s] 6 clips · === petit-moussa--rire (at_runtime)   |============>                                     | 1/4 - 90.09s/it[K · mémoire libre 13775 Mo
 [1094 s] 6 clips · === petit-moussa--rire (at_runtime)   |=====================================>            | 3/4 - 91.30s/it[K · mémoire libre 13777 Mo
+[1215 s] 7 clips · === adjoua--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13649 Mo
