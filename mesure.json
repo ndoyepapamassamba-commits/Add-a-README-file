@@ -84,6 +84,18 @@
    "h": 720,
    "memoire_max_go": 12.37,
    "run": "39517651050"
+  },
+  {
+   "tache": "decor-ceremonie-contrechamp-jour",
+   "version": 1,
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 657,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.48,
+   "run": "39517651050"
   }
  ]
 }
