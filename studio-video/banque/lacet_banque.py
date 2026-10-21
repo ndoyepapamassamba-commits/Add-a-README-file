@@ -17,7 +17,11 @@ ANGLE = float(os.environ.get('LACET_BANQUE', '20'))   # degrés vers le partenai
 # le champ lissé de 20° amplifié ×1,6 : 8,8 à 13,1° et 9,9 à 13,4°, tête entière tournée, coiffure intacte (×2,2 tord l'afro)
 GAIN = float(os.environ.get('LACET_GAIN', '1.6'))
 T = 128                                               # grille du champ (carré du visage)
-VERSION = 3   # 2 : orientation déjà dessinée gardée (gain) ; 3 : un champ par côté (le champ retourné ne tournait vers la gauche que de 5°)
+VERSION = 4   # 2 : orientation déjà dessinée gardée (gain) ; 3 : un champ par côté (le champ retourné ne tournait vers la gauche que de 5°)
+# 4 : gain ÉTALONNÉ par personnage et par côté (21/10/2026, épisode banque 1 : regards 0,167 contre 0,846 pour la V1). Mesuré
+# comme niveau_v1 (FaceLandmarker, lacet lu sur la tête agrandie) : un même gain donne +8,2° à Tiékoro et +15,5° à Patron Séry,
+# −5,5° à Mamie Bintou et −11,9° à Tata Prisca ; le gain qui tourne le plus est gardé (1,2 à 2,0 ; au-delà la coiffure se tord).
+GAINS = (1.2, 1.6, 2.0)
 
 
 def _fl():
@@ -51,9 +55,43 @@ def lacet_peint(v3):
 
 def gain(C, sens=1.0):
     """un visage déjà dessiné de trois quarts du côté voulu est peu tourné en plus (V1 : « lacet au plus 6° pour les visages de
-    trois quarts », sinon le menton s'étire) ; un visage de face ou tourné de l'autre côté reçoit le gain plein."""
+    trois quarts », sinon le menton s'étire) ; un visage de face ou tourné de l'autre côté reçoit le gain étalonné de ce côté."""
     lp = float(C.get('peint', 0.0)) * (1 if sens >= 0 else -1) if C else 0.0
-    return GAIN if lp < 6 else max(0.3, GAIN * (1 - (lp - 6) / 14))
+    g = float(C.get('gd' if sens >= 0 else 'gg', GAIN)) if C else GAIN
+    return g if lp < 6 else max(0.3, g * (1 - (lp - 6) / 14))
+
+
+def _lu(rgba):
+    """lacet du visage (degrés, + : vers la droite de l'image) lu comme niveau_v1 : haut de l'image agrandi, FaceLandmarker."""
+    import niveau_v1 as N
+    if '_N' not in _OUT: _OUT['_N'] = N._outils()
+    mp, _, fl = _OUT['_N']; t = _sur_gris(rgba)[:int(rgba.shape[0] * 0.45)]
+    return N._lacet(mp, fl, cv2.cvtColor(cv2.resize(t, (384, int(384 * t.shape[0] / t.shape[1]))), cv2.COLOR_RGB2BGR))
+
+
+_OUT = {}
+
+
+def _tourne_une(F0, boite, Fc, w, g):
+    x, y, s = boite; H, W = F0.shape[:2]; out = F0.copy()
+    x0, y0, x1, y1 = max(0, int(np.floor(x))), max(0, int(np.floor(y))), min(W, int(np.ceil(x + s))), min(H, int(np.ceil(y + s)))
+    Mi = np.float32([[s / T, 0, x - x0], [0, s / T, y - y0]]); tr = (x1 - x0, y1 - y0)
+    Fr = cv2.warpAffine(np.ascontiguousarray(Fc), Mi, tr, flags=cv2.INTER_LINEAR) * np.float32(s / T * g)
+    wr = cv2.warpAffine(w, Mi, tr, flags=cv2.INTER_LINEAR)
+    gx, gy = np.meshgrid(np.arange(tr[0], dtype=np.float32), np.arange(tr[1], dtype=np.float32))
+    out[y0:y1, x0:x1] = cv2.remap(np.ascontiguousarray(F0[y0:y1, x0:x1]), gx + Fr[..., 0] * wr, gy + Fr[..., 1] * wr,
+                                  cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+    return out
+
+
+def etalonne(F0, boite, F, Fg, w):
+    """(gain vers la droite, gain vers la gauche, lacets obtenus) : pour chaque côté, le gain de GAINS qui tourne le plus la tête
+    lue (le lacet neutre en référence) ; GAIN si le visage n'est plus lu."""
+    n0 = _lu(F0) or 0.0; res = {}
+    for cote, Fc, sg in (('gd', F, 1.0), ('gg', Fg, -1.0)):
+        mes = [(sg * (v - n0), g, v) for g in GAINS for v in [_lu(_tourne_une(F0, boite, Fc, w, g))] if v is not None]
+        res[cote] = max(mes)[1] if mes else GAIN; res['l' + cote[1]] = round(max(mes)[2], 1) if mes else None
+    return res
 
 
 def champ(perso, mov, F0=None):
@@ -61,7 +99,8 @@ def champ(perso, mov, F0=None):
     f = os.path.join(os.path.dirname(mov), f'{perso}.lacet.npz'); cle = json.dumps([VERSION, ANGLE, T, os.path.basename(mov)])
     if os.path.isfile(f):
         z = np.load(f)
-        if str(z['cle']) == cle: return {'F': z['F'].astype(np.float32), 'Fg': z['Fg'].astype(np.float32), 'w': z['w'].astype(np.float32), 'peint': float(z['peint'])}
+        if str(z['cle']) == cle: return {'F': z['F'].astype(np.float32), 'Fg': z['Fg'].astype(np.float32), 'w': z['w'].astype(np.float32),
+                                         'peint': float(z['peint']), 'gd': float(z['gd']), 'gg': float(z['gg'])}
     import lp_onnx as LP, expressions_lp as E
     if F0 is None:
         raw = __import__('subprocess').run(['ffmpeg', '-v', 'error', '-i', mov, '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'],
@@ -74,11 +113,12 @@ def champ(perso, mov, F0=None):
     m, w = _poids(); n0 = rend(0.0); mm = m > 0.5
     essai = dis.calc(rend(-12.0), n0, None); signe = -1.0 if float(essai[..., 0][mm].mean()) < 0 else 1.0   # sens mesuré (expressions_lp.lacets)
     F = E._lisse_flux(dis.calc(rend(signe * ANGLE), n0, None), w); Fg = E._lisse_flux(dis.calc(rend(-signe * ANGLE), n0, None), w)
-    lp = lacet_peint(v3)
+    lp = lacet_peint(v3); et = etalonne(F0, LP.recadre(None, v3), F, Fg, w)
     tmp = f'{f}.{os.getpid()}.npz'   # écriture atomique : les répliques sont rendues en parallèle
-    np.savez_compressed(tmp, cle=np.array(cle), F=F.astype(np.float16), Fg=Fg.astype(np.float16), w=w.astype(np.float16), peint=np.array(lp))
+    np.savez_compressed(tmp, cle=np.array(cle), F=F.astype(np.float16), Fg=Fg.astype(np.float16), w=w.astype(np.float16), peint=np.array(lp),
+                        gd=np.array(et['gd']), gg=np.array(et['gg']))
     os.replace(tmp, f)
-    return {'F': F, 'Fg': Fg, 'w': w, 'peint': lp}
+    return {'F': F, 'Fg': Fg, 'w': w, 'peint': lp, 'gd': et['gd'], 'gg': et['gg']}
 
 
 def clip_ecoute(mov):

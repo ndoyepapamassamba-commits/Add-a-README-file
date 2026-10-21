@@ -26,6 +26,12 @@ import numpy as np, cv2
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(ICI, '..', 'moteur-troupe'))
+# VITESSE RÉELLE DE LA V1 (21/10/2026) : dans la V1, la largeur du décor bornait le glissement (tourne.py : « 0,5 px/image au
+# lieu de 2,5 », mesuré le 17/10) ; caméra au-dessus de 25 px/s (bande à 288 de large) 4,2 % du temps, 90e centile 15,9 px/s.
+# Les décors de la banque laissaient filer cam_px entier : 26,5 % du temps au-dessus de 25 px/s, 90e centile 40,2 px/s, et les
+# 9 à-coups de l'épisode banque 1 (V1 : 1) tombent tous dans ces glissements. CAM_V1 ramène la vitesse à celle de la V1.
+CAM_V1 = float(os.environ.get('CAM_V1', '0.4'))
+DECOR_V1 = os.environ.get('DECOR_V1', '1') == '1'
 REG = {'plan_s': 5.0, 'cam_px': 2.5, 'pousse': 1.10, 'parallaxe': 0.35, 'whip_s': 0.45, 'ouverture': 1.2, 'zoom_chute': 1.15}
 ECRAN_V1 = 576              # largeur d'écran de la V1 (tourne.CW) : cam_px est compté sur elle
 COUPE_S = 2.5               # durée minimale d'un plan avant une coupe sur le parleur suivant
@@ -37,6 +43,8 @@ def aspect(BW, BH):
 FEUILLAGE = (4, 17, 66, 72)                          # ADE20K : arbre, plante, fleur, palmier
 TISSU = (18, 63, 81, 86, 92, 106, 114, 131, 149)     # rideau, store, serviette, auvent, vêtements, dais, tente, couverture, drapeau
 EAU = (21, 26, 60, 109, 128)                         # eau, mer, rivière, piscine, lac
+LAMPE = (36, 82, 134)                                # lampe, lumière, applique
+ANIMAL = (126,)                                      # animal
 
 
 def ease(u):
@@ -108,11 +116,14 @@ def cadre(B, noms, sorte, BW, BH, cote=0.0):
 # ── DÉCOUPAGE EN PLANS ────────────────────────────────────────────────────────────────────────────────────────────────────
 def plans(P, B, BW, BH):
     """plans de la vidéo : [{'t0', 't1', 'sorte', 'garde', 'cs' (ouverture), 'c0', 'c1', 'cp' (coup de zoom), 'tw'}]."""
-    R = P['repliques']; S = []; cur = None
+    R = P['repliques']; S = []; cur = None; avant = None
     chute = next((k for k, r in enumerate(R) if r.get('chute')), None)
     for k, r in enumerate(R):
         t0, t1 = r['_t0'], r['_t0'] + float(r['duree'])
         if k == chute: cur = None; S.append({'t0': t0, 't1': t1, 'sorte': 'serre', 'garde': [r['qui']], 'k': [k]}); continue
+        # 21/10/2026 (épisode banque 1) : l'attente avant la 1re réplique était prise pour une réaction (gros plan de 0,8 s), et
+        # le plan d'ouverture des sketchs 2 et 3 n'était plus le premier : ni plan large, ni plan à deux. Elle ouvre le plan suivant.
+        if not r.get('qui') and not S and (chute is None or k < chute): avant = (t0, k); continue
         if not r.get('qui'):   # réaction après la chute : gros plan de celui qui encaisse
             ch = R[chute]['qui'] if chute is not None else None
             re_ = r.get('reagit', {}); cible = next((n for n, g in re_.items() if g == 'choc' and n != ch), next((n for n in re_ if n != ch), ch))
@@ -125,7 +136,15 @@ def plans(P, B, BW, BH):
             cur['t1'] = t1; cur['k'].append(k)
             if r['qui'] not in cur['garde']: cur['garde'].append(r['qui'])
         else:
-            cur = {'t0': t0, 't1': t1, 'sorte': None, 'garde': [r['qui']], 'k': [k]}; S.append(cur)
+            cur = {'t0': t0, 't1': t1, 'sorte': None, 'garde': [r['qui']], 'k': [k]}
+            # PLAN À DEUX DE RELANCE (21/10/2026) : après un champ-contrechamp X / Y, le retour sur X montre les deux — la V1 tient
+            # ses plans à deux, les nôtres n'en avaient plus après l'ouverture (sketch 2 : 8 plans moyens d'une personne, regards
+            # 0,167 contre 0,846) ; le nombre de coupes ne change pas
+            if len(S) >= 2 and S[-1].get('sorte') is None and S[-2].get('sorte') is None and len(S[-1]['garde']) == len(S[-2]['garde']) == 1 \
+                    and S[-2]['garde'][0] == r['qui'] and S[-1]['garde'][0] != r['qui']:
+                cur['garde'] = [r['qui'], S[-1]['garde'][0]]; cur['sorte'] = 'duo'
+            if avant: cur['t0'], cur['k'] = avant[0], [avant[1]] + cur['k']; avant = None
+            S.append(cur)
     for i, s in enumerate(S):
         if s['sorte'] is None:
             if len(s['garde']) == 1:   # un seul parleur : il s'adresse au précédent (ou au plus proche)
@@ -148,7 +167,7 @@ def plans(P, B, BW, BH):
 def mouvement(s, B, BW, BH, i):
     """cadre d'arrivée c1 : glissement de cam_px vers le côté qui a de la place, sinon de l'autre côté, sinon grue, avec poussée
     (tourne.cadres_du_plan) ; trajet entier sans tête coupée."""
-    c0 = s['c0']; d = s['t1'] - s['t0']; cible = REG['cam_px'] * 30 * d / ECRAN_V1 * c0[2]   # pixels de bande parcourus
+    c0 = s['c0']; d = s['t1'] - s['t0']; cible = CAM_V1 * REG['cam_px'] * 30 * d / ECRAN_V1 * c0[2]   # pixels de bande parcourus
     dirn = 1.0 if BW - (c0[0] + c0[2] / 2) >= c0[0] - c0[2] / 2 else -1.0; sens_v = -1.0 if i % 2 else 1.0
     essais = []
     for g, dr, vv, pz in ([(g, dirn, 0, z) for g in (1.0, 0.7, 0.45, 0.25) for z in (REG['pousse'], 1.0)] + [(g, -dirn, 0, z) for g in (1.0, 0.7, 0.45) for z in (REG['pousse'], 1.0)]
@@ -185,12 +204,29 @@ def _phase(H, W, graine, lam):
     return (p / (p.std() + 1e-6)).astype(np.float32)
 
 
-def prepare_decor(img, d, seg, pieds, graine=5):
-    """tout ce qui ne change pas d'une image à l'autre : plaque, facteur de parallaxe, couches vivantes, ciel et ombres."""
+def prepare_decor(img, d, seg, pieds, graine=5, cache=None):
+    """tout ce qui ne change pas d'une image à l'autre : plaque, facteur de parallaxe, couches vivantes, ciel et ombres.
+    DÉCOR DE LA V1 (21/10/2026, épisode banque 1 : arrière-plan qui bouge 0,09 contre 0,161 pour la V1) : feuillages, linge et
+    auvents, ampoules et bêtes sont animés par les textures de mouvement de la V1 elle-même (moteur-troupe/decor_vivant.py,
+    Chuang et al. 2005, ×6 de jour comme tourne.py), leurs couches lues sur la segmentation ADE20K du décor au lieu de l'œil
+    de JEV ; le balancement maison (≈ 4 px/s à l'écran, sous le seuil de 9 px/s de la mesure) ne reste que pour l'eau."""
     H, W = d.shape; V = {'img': img.astype(np.float32), 'k': facteur_parallaxe(d, pieds), 'H': H, 'W': W}
     V['X'], V['Y'] = np.meshgrid(np.arange(W, dtype=np.float32), np.arange(H, dtype=np.float32))
-    couches = []
-    for classes, ampl, freq, vertical in ((FEUILLAGE, 2.6, 0.55, 0.35), (TISSU, 2.2, 0.42, 0.25), (EAU, 0.9, 1.3, 1.0)):
+    couches = []; V['dv'] = None
+    if DECOR_V1:
+        try:
+            import decor_vivant as DV
+            im8 = np.clip(img, 0, 255).astype(np.uint8); lisse = lambda m: cv2.GaussianBlur(m.astype(np.float32), (0, 0), 3)
+            cartes = {'feuillage': lisse(np.isin(seg, FEUILLAGE)), 'tissu': lisse(np.isin(seg, TISSU)),
+                      'lumiere': lisse(np.isin(seg, LAMPE)), 'animal': lisse(np.isin(seg, ANIMAL))}
+            import hashlib, tempfile   # couches en cache (une fois par décor, partagées par les processus de rendu)
+            dv = os.path.join(cache or _dossier_lit(os.path.join(tempfile.gettempdir(), 'x.mov')),
+                              'vie-' + hashlib.sha1(im8[::7, ::7].tobytes() + seg[::7, ::7].tobytes()).hexdigest()[:12]); os.makedirs(dv, exist_ok=True)
+            V['dv'] = DV.prepare(dv, im8, (), jev=False, cartes=cartes); sol = DV.soleil(im8)
+            V['ampl'] = (6.0 if sol is not None and sol[1] > 110 else 1.0) * W / 1080
+        except Exception as e:
+            print(f'  décor de la V1 non préparé : {e}', file=sys.stderr); V['dv'] = None
+    for classes, ampl, freq, vertical in (((EAU, 0.9, 1.3, 1.0),) if V['dv'] is not None else ((FEUILLAGE, 2.6, 0.55, 0.35), (TISSU, 2.2, 0.42, 0.25), (EAU, 0.9, 1.3, 1.0))):
         m = np.isin(seg, classes).astype(np.float32)
         if m.mean() < 0.002: continue
         m = cv2.GaussianBlur(cv2.erode(m, np.ones((5, 5), np.uint8)), (0, 0), 3) * (W / 1080)   # bords tenus, pas de déchirure
@@ -213,8 +249,13 @@ def decor_t(V, t, u):
     for c in V['couches']:
         s = np.sin(2 * math.pi * c['f'] * t + c['phi']) * g
         mx = mx + c['m'] * s; my = my + c['m'] * c['v'] * np.cos(2 * math.pi * c['f'] * 0.8 * t + c['phi'])
+    gain = None
+    if V.get('dv') is not None:   # textures de mouvement de la V1 (tourne.py : mx − dx, lumière des ampoules)
+        import decor_vivant as DV
+        dx, dy, gain = DV.champ(V['dv'], t, V['ampl']); mx = mx - dx; my = my - dy
     mx, my = mx.astype(np.float32), my.astype(np.float32)
     out = cv2.remap(V['img'], mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+    if gain is not None: out = out * gain[..., None]
     if V.get('fond') is not None:
         try: out = out * vie_fond.feuillage(V['fond'], t)[..., None]
         except Exception: pass
@@ -237,7 +278,7 @@ def despill(F, plein=False):
     return F
 
 
-LIT_VERSION = 2   # 2 : reflet vert ôté partout sur les personnages tournés sur fond vert
+LIT_VERSION = 3   # 2 : reflet vert ôté partout sur les personnages tournés sur fond vert ; 3 : gain de tête étalonné (lacet_banque v4)
 LIT_PLAFOND = float(os.environ.get('LIT_PLAFOND_GO', '4')) * (1 << 30)   # cache en mémoire partagée : plus vieux effacés au-delà
 
 

@@ -46,8 +46,10 @@ def _phase(H, W, graine, lam):
     return cv2.resize(n, (W, H), interpolation=cv2.INTER_CUBIC)
 
 
-def prepare(d, plaque, masques=(), jev=True):
-    """couches du décor pour la scène d : masques doux par nature + phases ; cache d/vie.npz (+ vie.json : étiquettes)."""
+def prepare(d, plaque, masques=(), jev=True, cartes=None):
+    """couches du décor pour la scène d : masques doux par nature + phases ; cache d/vie.npz (+ vie.json : étiquettes).
+    cartes (21/10/2026, banque des 54 personnages) : {étiquette: carte H × W de 0 à 1} venue de la segmentation ADE20K du
+    décor (banque/camera_v1.py), à la place des cases étiquetées par l'œil de JEV — mêmes couches, même mouvement que la V1."""
     cache = f'{d}/vie.npz'
     if os.path.isfile(cache):
         z = np.load(cache); return {k: z[k] for k in z.files}
@@ -57,7 +59,9 @@ def prepare(d, plaque, masques=(), jev=True):
         mm = (m if m.ndim == 2 else m[..., 0]).astype(np.float32); mm = mm / max(1.0, mm.max())
         hors_acteurs = np.minimum(hors_acteurs, 1 - np.clip(cv2.dilate(mm, np.ones((31, 31), np.uint8)), 0, 1))
     hors_acteurs = cv2.GaussianBlur(hors_acteurs, (0, 0), 6)
-    if jev and os.path.isfile(f'{d}/vie.json'):   # étiquettes déjà lues pour ce décor (scène composée sur la même plaque,
+    if cartes is not None:
+        pass
+    elif jev and os.path.isfile(f'{d}/vie.json'):   # étiquettes déjà lues pour ce décor (scène composée sur la même plaque,
         P = json.load(open(f'{d}/vie.json'))       # scene_nouvelle.py : 280 questions au juge épargnées, 19/10/2026)
     elif jev:   # JEV ne voit que le décor : acteurs et restes d'acteurs peints en gris (sinon une robe fait « linge »)
         vu = (plaque.astype(np.float32) * hors_acteurs[..., None] + 128 * (1 - hors_acteurs[..., None])).astype(np.uint8)
@@ -69,7 +73,8 @@ def prepare(d, plaque, masques=(), jev=True):
     lisse = lambda m, s=4: cv2.GaussianBlur(m.astype(np.float32), (0, 0), s)
     vert = ((Hh > 22) & (Hh < 95) & (S > 60) & (V > 40)).astype(np.float32)           # feuillage peint (vert à jaune-vert)
     g = lambda lab: _grille(P, lab, H, W) if P else np.zeros((H, W), np.float32)
-    feuil = lisse(vert) * (np.maximum(g('feuillage'), 0.0 if P else 0.6)) * hors_acteurs
+    if cartes is not None: g = lambda lab: np.asarray(cartes.get(lab, np.zeros((H, W), np.float32)), np.float32)
+    feuil = lisse(vert) * (np.maximum(g('feuillage'), 0.0 if (P or cartes is not None) else 0.6)) * hors_acteurs
     # linge, rideau : ce qui se distingue du mur (écart à la couleur médiane de la case) dans les cases « tissu »
     med = cv2.medianBlur(plaque, 31).astype(np.float32); ecart = np.abs(plaque.astype(np.float32) - med).sum(2)
     sur = lambda m: np.clip((m - 0.35) / 0.4, 0, 1)   # seules les cases dont JEV est sûr comptent (pas de mur qui ondule)

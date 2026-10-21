@@ -230,10 +230,35 @@ def _programme(P, k, nom, gains, cache):
     return pr
 
 
+PEINT_TROIS_QUARTS = 12.0   # degrés (lacet_banque.lacet_peint) au-delà desquels le visage est dessiné de trois quarts
+
+
+def sens_du_corps(P, nom):
+    """'droite' (clip tel quel) ou 'gauche' (miroir). SENS DU CORPS (21/10/2026, épisode banque 1, regards 0,167 contre 0,846) :
+    un personnage dessiné de trois quarts ne tourne pas la tête de l'autre côté — lus comme niveau_v1, Modou +28°, Agent Doumbia
+    +26°, Adjoua +20°, Coumba +19°, et encore +11 à +22° tournés vers la gauche au gain 1,6 : seul le miroir le fait regarder
+    les autres. Le miroir suit donc le sens dessiné (lacet_banque.champ) et la place des autres acteurs ; un visage de face
+    garde la règle de la place (les autres à gauche : miroir)."""
+    a = P['acteurs'][nom]; xs = [b.get('x', 0.5) for n, b in P['acteurs'].items() if n != nom]
+    veut = (1.0 if float(np.mean(xs)) >= a.get('x', 0.5) else -1.0) if xs else (1.0 if a.get('x', 0.5) <= 0.5 else -1.0)
+    try:
+        import lacet_banque as LB
+        C = LB.champ(*LB.clip_ecoute(_clip(P['banque'], nom, 'ecouter')[0])); p = float(C['peint']) if C else 0.0
+    except Exception:
+        p = 0.0
+    if abs(p) >= PEINT_TROIS_QUARTS: return 'droite' if p * veut > 0 else 'gauche'
+    return 'droite' if veut > 0 else 'gauche'
+
+
 def vise(P, k, nom):
     """acteur que regarde `nom` pendant la réplique k."""
     R = P['repliques']; r = R[k]; autres = [n for n in P['acteurs'] if n != nom]
     if not autres: return None
+    # PLAN À DEUX (21/10/2026) : deux personnages montrés ensemble se regardent — sinon, dans une scène à cinq, le plan à deux
+    # de deux parleurs voisins les montrait tournés tous deux vers un troisième hors champ (lacets +16,8 et +17,1 mesurés)
+    s = next((x for x in P.get('_plans') or [] if x['t0'] - 1e-6 <= r['_t0'] < x['t1'] - 1e-6), None) if '_t0' in r else None
+    if s and s.get('sorte') == 'duo' and len(s['garde']) == 2 and nom in s['garde'] and (not r.get('qui') or r['qui'] in s['garde']):
+        return next(n for n in s['garde'] if n != nom)
     if not r.get('qui'):   # réaction après la chute : vers l'auteur de la chute (lui, vers celui qui encaisse le plus près)
         ch = next((x['qui'] for x in R if x.get('chute')), None)
         if ch and ch != nom: return ch
@@ -354,12 +379,14 @@ def prepare(P, d):
         P['_occultants'][nom] = (fo if part > 0 else None, prof); info[nom] = {'profondeur': round(prof, 3), 'cache': round(part, 4)}
     if RENDU_V1:
         import camera_v1
+        for nom, a in P['acteurs'].items(): a['regarde'] = sens_du_corps(P, nom)
         hauts = {nom: camera_v1.haut_du_clip(camera_v1.lit_clip(_clip(P['banque'], nom, 'ecouter')[0], 96, 160, False, (1, 1, 1), tete=False))
                  for nom in P['acteurs']}
         B = camera_v1.boites(P, BW, BH, hauts); P['_plans'] = camera_v1.plans(P, B, BW, BH)
         P['_occ_v1'] = {nom: ((np.asarray(Image.open(fo), np.float32)[..., 3] / 255) if fo else None, prof)
                         for nom, (fo, prof) in P['_occultants'].items()}
         info['plans'] = [{'t0': round(x['t0'], 2), 't1': round(x['t1'], 2), 'sorte': x['sorte'], 'garde': x['garde']} for x in P['_plans']]
+        _decor_v1(P)   # décor préparé ici, une fois : les processus de rendu en héritent (couches de la V1 sans course au cache)
     return gains, info
 
 

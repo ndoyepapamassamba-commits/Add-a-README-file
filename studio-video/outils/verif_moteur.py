@@ -849,6 +849,38 @@ try:
 except Exception as e:
     echecs.append(f'banque : {e}')
 
+# 21/10/2026 13:30 — épisode banque 1 mesuré contre la V1 (regards 0,167 contre 0,846 ; à-coups 3,0 contre 0,8 ; caméra au-dessus de
+# 25 px/s 26,5 % du temps contre 4,2 %) : l'attente avant la 1re réplique ouvre le plan d'ensemble (plus de gros plan de 0,8 s) ;
+# plan à deux de relance après un champ-contrechamp ; deux personnages d'un plan à deux se regardent ; miroir choisi d'après le
+# sens dessiné ; gain de tête étalonné par côté ; caméra à la vitesse mesurée de la V1 ; décor animé par les textures de la V1
+try:
+    import camera_v1 as _cv31, assemble as _as31, lacet_banque as _lb31, decor_vivant as _dv31, tempfile as _tf31
+    _A31 = {'a': {'x': 0.27, 'sol': 0.97, 'taille': 0.9}, 'b': {'x': 0.6, 'sol': 0.97, 'taille': 0.9}, 'c': {'x': 0.9, 'sol': 0.97, 'taille': 0.9}}
+    _P31 = {'acteurs': _A31, 'repliques': []}; _t31 = 0.0
+    for _q31, _d31, _c31, _a31 in ((None, 0.8, 0, None), ('a', 3.0, 0, 'b'), ('b', 2.8, 0, 'a'), ('a', 3.1, 0, 'c'), ('b', 2.9, 0, 'a'), ('a', 2.6, 1, 'b'), (None, 2.0, 0, None)):
+        _P31['repliques'].append({'qui': _q31, 'duree': _d31, '_t0': _t31, 'chute': bool(_c31), 'reagit': {} if _q31 or _t31 == 0 else {'a': 'rire', 'b': 'choc'},
+                                  **({'a': _a31} if _a31 else {})}); _t31 += _d31
+    _B31 = _cv31.boites(_P31, 1080, 630, {'a': 0.05, 'b': 0.05, 'c': 0.05}); _S31 = _cv31.plans(_P31, _B31, 1080, 630); _P31['_plans'] = _S31
+    _so31 = [x['sorte'] for x in _S31]
+    if _S31[0]['t0'] != 0.0 or _so31[0] != 'duo' or _S31[0].get('cs') is None or _so31.count('duo') < 2 or _so31[-2:] != ['serre', 'gros']:
+        echecs.append(f'regards V1 : découpage {_so31} (ouverture à {_S31[0]["t0"]})')
+    if _as31.vise(_P31, 3, 'a') != 'b' or _as31.vise(_P31, 0, 'b') != 'a':   # « a » parle à « c » hors champ : dans le plan à deux, il regarde « b »
+        echecs.append('regards V1 : les deux personnages du plan à deux ne se regardent pas')
+    _sv31 = (_as31._clip, _lb31.champ)
+    _as31._clip = lambda b, n, g: (f'/x/{n}--ecouter.mov', {}); _lb31.champ = lambda p, ec, F0=None: {'peint': {'a': -25.0, 'b': -25.0, 'c': 0.0}[p]}
+    try: _sd31 = {n: _as31.sens_du_corps({**_P31, 'banque': '/x'}, n) for n in _A31}
+    finally: _as31._clip, _lb31.champ = _sv31
+    if _sd31 != {'a': 'gauche', 'b': 'droite', 'c': 'gauche'}: echecs.append(f'regards V1 : miroir selon le sens dessiné {_sd31}')
+    if _lb31.VERSION < 4 or _lb31.gain({'peint': 0.0, 'gd': 2.0, 'gg': 1.2}, 1.0) != 2.0 or _lb31.gain({'peint': 0.0, 'gd': 2.0, 'gg': 1.2}, -1.0) != 1.2:
+        echecs.append('regards V1 : gain de tête non étalonné par côté')
+    if _cv31.CAM_V1 > 0.5: echecs.append('caméra V1 : glissement plus rapide que la V1 mesurée')
+    _im31 = np.zeros((90, 120, 3), np.uint8); _im31[..., 1] = 160; _im31[..., 0] = 60
+    _V31 = _dv31.prepare(_tf31.mkdtemp(), _im31, (), jev=False, cartes={'feuillage': np.ones((90, 120), np.float32)})
+    if float(_V31['feuil'].mean()) < 0.5 or float(np.abs(_dv31.champ(_V31, 1.3, 6.0)[0]).max()) < 1.0: echecs.append('décor V1 : textures de la V1 non branchées sur les cartes ADE20K')
+    print(f"regards et caméra V1 : {' → '.join(_so31)}, plan à deux qui se regarde, miroir selon le sens dessiné, gain étalonné, caméra à {_cv31.CAM_V1} × cam_px, décor par textures de la V1 : OK")
+except Exception as e:
+    echecs.append(f'regards V1 : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')
