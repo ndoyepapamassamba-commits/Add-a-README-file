@@ -85,3 +85,4 @@
 [1341 s] 26 clips · === le-frimeur--hausser@2 (at_runtime)   |============>                                     | 1/4 - 133.74s/it[K · mémoire libre 13759 Mo
 [1462 s] 26 clips · === le-frimeur--hausser@2 (at_runtime)   |=========================>                        | 2/4 - 133.18s/it[K · mémoire libre 13774 Mo
 [1584 s] 26 clips · === le-frimeur--hausser@2 (at_runtime)   |=========================>                        | 2/4 - 133.18s/it[K · mémoire libre 13772 Mo
+[1705 s] 26 clips · === le-frimeur--hausser@2 (at_runtime)   |=====================================>            | 3/4 - 133.34s/it[K · mémoire libre 13779 Mo
