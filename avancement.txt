@@ -47,3 +47,4 @@
 [3890 s] 5 images · === perso-la-go-leopard   |==================================================| 4/4 - 370.89s/it[K · mémoire libre 6302 Mo
 [4011 s] 5 images · === perso-la-go-leopard   |============>                                     | 1/4 - 378.45s/it[K · mémoire libre 6312 Mo
 [4133 s] 5 images · === perso-la-go-leopard   |============>                                     | 1/4 - 378.45s/it[K · mémoire libre 6299 Mo
+[4254 s] 5 images · === perso-la-go-leopard   |============>                                     | 1/4 - 378.45s/it[K · mémoire libre 6307 Mo
