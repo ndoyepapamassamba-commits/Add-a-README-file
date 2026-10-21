@@ -182,6 +182,13 @@
    "lora": "at_runtime",
    "secondes": 582,
    "memoire_max_go": 10.61
+  },
+  {
+   "clip": "coach-diabate--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 582,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39550232510"
