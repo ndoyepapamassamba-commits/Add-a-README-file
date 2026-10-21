@@ -147,7 +147,14 @@
    "lora": "at_runtime",
    "secondes": 300,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "le-banquier--choc",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 269,
+   "memoire_max_go": 10.81
   }
  ],
- "run": "39550232510"
+ "run": "39559117299"
 }
