@@ -1,12 +1,12 @@
 {
  "modele": "gptoss20hyb",
  "part": 0,
- "appels_scenariste": 15,
- "secondes_scenariste": 349.22892355918884,
- "echecs_scenariste": 12,
+ "appels_scenariste": 19,
+ "secondes_scenariste": 416.7250225543976,
+ "echecs_scenariste": 16,
  "appels_juge": 32,
  "echecs_juge": 0,
- "brouillons_refuses_controle": 3,
+ "brouillons_refuses_controle": 4,
  "planchers_v17": [
   0.333,
   0.492,
@@ -35,6 +35,11 @@
    "lieu": "Hôpital",
    "accepte": false,
    "secondes": 409
+  },
+  {
+   "lieu": "Marché",
+   "accepte": false,
+   "secondes": 138
   }
  ],
  "reparations": [
@@ -61,8 +66,12 @@
   [
    3,
    0
+  ],
+  [
+   2,
+   1
   ]
  ],
- "brouillons_illisibles": 2,
- "secondes_par_brouillon": 23.3
+ "brouillons_illisibles": 4,
+ "secondes_par_brouillon": 21.9
 }
