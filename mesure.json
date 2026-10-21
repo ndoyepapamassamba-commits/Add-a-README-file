@@ -161,6 +161,13 @@
    "lora": "at_runtime",
    "secondes": 429,
    "memoire_max_go": 10.9
+  },
+  {
+   "clip": "maman-brigitte--mentir@2",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 431,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39585702697"
