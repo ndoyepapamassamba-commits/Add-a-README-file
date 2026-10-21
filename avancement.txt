@@ -108,3 +108,4 @@
 [973 s] 30 clips · === agent-gora--choc@2 (at_runtime)   |=========================>                        | 2/4 - 133.69s/it[K · mémoire libre 13785 Mo
 [1094 s] 30 clips · === agent-gora--choc@2 (at_runtime)   |=====================================>            | 3/4 - 133.22s/it[K · mémoire libre 13784 Mo
 [1216 s] 31 clips · === le-frimeur--mentir@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13815 Mo
+[1337 s] 31 clips · === le-frimeur--mentir@2 (at_runtime)   |============>                                     | 1/4 - 134.02s/it[K · mémoire libre 13790 Mo
