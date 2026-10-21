@@ -206,6 +206,18 @@ def regressions(nouveau, ancien):
         if ancien.get(k) is not None and (nouveau.get(k) is None or nouveau[k] > ancien[k]): out.append(f"{NOMS[k]} : {nouveau.get(k)} (avant {ancien[k]})")
     return out
 
+def record(rec, p):
+    """21/10/2026 (banque v25) : la référence « sans régression » est le MEILLEUR de chaque critère déjà atteint par
+    l'épisode, pas la seule version précédente — sinon une version qui recule devient la référence et le recul suivant passe
+    (v25 comparée à v20 : vitesse 3,3 → 3,2 ; la v26 l'aurait été à 3,2)."""
+    if not rec: return dict(p)
+    out = dict(p)
+    for k in PLUS:
+        if rec.get(k) is not None and (p.get(k) is None or rec[k] > p[k]): out[k] = rec[k]
+    for k in MOINS:   # le teint n'a pas de « meilleur » (gamme de la V1) : il est comparé à la version précédente
+        if rec.get(k) is not None and (p.get(k) is None or rec[k] < p[k]): out[k] = rec[k]
+    return out
+
 if __name__ == '__main__':
     import sys
     a = sys.argv[1:]; bd = tuple(float(x) for x in a[2].split(':')) if len(a) > 2 else None

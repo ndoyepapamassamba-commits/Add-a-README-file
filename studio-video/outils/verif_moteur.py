@@ -1180,6 +1180,20 @@ try:
 except Exception as e:
     echecs.append(f'mémoire (processus) : {e}')
 
+# 21/10/2026 — v25 comparée à la seule v20 : une version qui recule ne doit pas devenir la référence (record par critère)
+try:
+    import niveau_v1 as _nv46
+    _a46 = {'persos_vitesse': 3.3, 'regards': 0.857, 'sautes_min': 9.0, 'teint_b': 23.0}
+    _b46 = {'persos_vitesse': 3.2, 'regards': 1.0, 'sautes_min': 8.2, 'teint_b': 23.0}
+    _r46 = _nv46.record(_nv46.record(None, _a46), _b46)
+    _g46 = _nv46.regressions({'persos_vitesse': 3.25, 'regards': 0.97, 'sautes_min': 8.5, 'teint_b': 22.0}, _r46)
+    if (_r46['persos_vitesse'], _r46['regards'], _r46['sautes_min'], _r46['teint_b']) != (3.3, 1.0, 8.2, 23.0) or len(_g46) != 3:
+        echecs.append(f'non-régression : record {_r46}, régressions {_g46}')
+    else:
+        print('non-régression : référence = meilleur de chaque critère de l\'épisode (teint : version précédente) : OK')
+except Exception as e:
+    echecs.append(f'non-régression (record) : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

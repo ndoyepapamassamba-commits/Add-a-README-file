@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.join(ICI, '..', 'moteur-troupe'))
 # 9 à-coups de l'épisode banque 1 (V1 : 1) tombent tous dans ces glissements. CAM_V1 ramène la vitesse à celle de la V1.
 CAM_V1 = float(os.environ.get('CAM_V1', '0.4'))
 DECOR_V1 = os.environ.get('DECOR_V1', '1') == '1'
-REG = {'plan_s': 5.0, 'cam_px': 2.5, 'pousse': 1.10, 'parallaxe': 0.35, 'whip_s': 0.45, 'ouverture': 1.2, 'zoom_chute': 1.15}
+REG = {'plan_s': 5.0, 'cam_px': 2.5, 'pousse': 1.12, 'parallaxe': 0.35, 'whip_s': 0.45, 'ouverture': 1.2, 'zoom_chute': 1.15}   # pousse 1,10 → 1,12 (v26 : place des personnages 0,375 contre 0,376 au record)
 ECRAN_V1 = 576              # largeur d'écran de la V1 (tourne.CW) : cam_px est compté sur elle
 COUPE_S = 2.5               # durée minimale d'un plan avant une coupe sur le parleur suivant
 SORTIE = None               # (largeur, hauteur) de l'image de scène si elle diffère de la toile (format V1 : 576 × 460)
@@ -645,7 +645,8 @@ def image_a(F, p):
 # plantés) en deux sinusoïdes lentes, plus ample quand l'acteur parle, et le souffle (le corps s'allonge de 0,4 %, ancré aux
 # pieds). Doux et continu : aucun retournement brusque (à-coups) ni saute.
 VIE_CORPS = os.environ.get('VIE_CORPS', '1') == '1'
-VIE_DEG = (0.9, 0.62)      # amplitude du balancement (degrés) : parle, écoute (v16-v17 à 0,65/0,45 : corps 0,167 ; v18 à 0,8/0,55 : 0,170, V1 0,172)
+VIE_DEG = (1.0, 0.7)       # amplitude du balancement (degrés) : parle, écoute (v16-v17 à 0,65/0,45 : corps 0,167 ; v18 à 0,8/0,55 : 0,170, V1 0,172 ;
+#                            v19-v25 à 0,9/0,62 : 0,176, vitesse 3,27 → 3,24 px/s quand la tête s'est tournée plus franchement, v25)
 
 
 def vie_corps(im, t, pr):

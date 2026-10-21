@@ -186,8 +186,10 @@ def banque(d, v, cle, cache):
     t1 = time.time(); sys.path.insert(0, ICI); import niveau_v1
     H = json.load(open(f'{d}/histoire.json', encoding='utf-8')); pl = [s_.get('plancher_v17') for s_ in H['sketchs']]
     p = niveau_v1.profil(f'{D}/film.mp4'); e = niveau_v1.ecarts(p, humour=min(pl) if pl and None not in pl else None)
-    dern = os.path.join(os.path.dirname(d), 'banque-dernier-profil.json')
-    rg = niveau_v1.regressions(p, json.load(open(dern))) if os.path.isfile(dern) else []
+    dern = os.path.join(os.path.dirname(d), 'banque-dernier-profil.json'); rec_f = os.path.join(d, 'record-profil.json')
+    rec = json.load(open(rec_f)) if os.path.isfile(rec_f) else None   # meilleur de chaque critère déjà atteint par l'épisode
+    rg = niveau_v1.regressions(p, rec) if rec else []
+    json.dump(niveau_v1.record(rec, p), open(rec_f, 'w'), ensure_ascii=False)
     json.dump(p, open(dern, 'w'), ensure_ascii=False); T['mesure_v1'] = round(time.time() - t1, 1); T['total'] = round(time.time() - t0, 1)
     B = {'profil': p, 'reference_v1': niveau_v1.reference(), 'humour_sketchs': pl, 'sous_la_V1': e, 'regressions': rg,
          'statut': 'depasse_la_v1' if not (e or rg) else 'a_corriger', 'durees_s': T}
