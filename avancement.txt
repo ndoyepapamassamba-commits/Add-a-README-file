@@ -3,3 +3,4 @@
 [364 s] 4 clips · === la-lyceenne--montrer (at_runtime)   |=========================>                        | 2/4 - 134.01s/it[K · mémoire libre 13774 Mo
 [485 s] 4 clips · === la-lyceenne--montrer (at_runtime)   |=====================================>            | 3/4 - 133.87s/it[K · mémoire libre 13766 Mo
 [606 s] 5 clips · === la-go-leopard--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14559 Mo
+[728 s] 5 clips · === la-go-leopard--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13779 Mo
