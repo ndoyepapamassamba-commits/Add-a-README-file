@@ -120,3 +120,4 @@
 [2186 s] 8 images · === perso-le-banquier   |=====================================>            | 3/4 - 391.89s/it[K · mémoire libre 6161 Mo
 [2307 s] 8 images · === perso-le-banquier   |=====================================>            | 3/4 - 391.89s/it[K · mémoire libre 6152 Mo
 [2428 s] 8 images · === perso-le-banquier   |=====================================>            | 3/4 - 391.89s/it[K · mémoire libre 6152 Mo
+[2550 s] 8 images · === perso-le-banquier   |=====================================>            | 3/4 - 391.89s/it[K · mémoire libre 6152 Mo
