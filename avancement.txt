@@ -23,3 +23,4 @@
 [2791 s] 4 clips · === chef-traore--parler (at_runtime)   |=====================================>            | 3/4 - 134.20s/it[K · mémoire libre 13725 Mo
 [2913 s] 4 clips · === chef-traore--parler (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13852 Mo
 [3034 s] 5 clips · === petit-ibrahima--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13743 Mo
+[3155 s] 5 clips · === petit-ibrahima--hausser (at_runtime)   |============>                                     | 1/4 - 135.63s/it[K · mémoire libre 13739 Mo
