@@ -210,6 +210,13 @@
    "lora": "at_runtime",
    "secondes": 306,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "le-frimeur--parler@2",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 302,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39585702697"
