@@ -37,3 +37,4 @@
 [850 s] 11 clips · === maitre-coulibaly--parler (at_runtime)   |=========================>                        | 2/4 - 41.43s/it[K · mémoire libre 13779 Mo
 [972 s] 12 clips · === mecano-issa--hausser (at_runtime)   |============>                                     | 1/4 - 41.18s/it[K · mémoire libre 13737 Mo
 [1093 s] 12 clips · === mecano-issa--hausser (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 11185 Mo
+[1214 s] 13 clips · === fatou--parler (at_runtime)   |=========================>                        | 2/4 - 41.89s/it[K · mémoire libre 13748 Mo
