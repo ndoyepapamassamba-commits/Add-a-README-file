@@ -54,3 +54,4 @@
 [5338 s] 5 images · === decor-marche-contrechamp-jour   |=========================>                        | 2/4 - 156.54s/it[K · mémoire libre 7016 Mo
 [5459 s] 5 images · === decor-marche-contrechamp-jour   |=====================================>            | 3/4 - 156.67s/it[K · mémoire libre 7015 Mo
 [5580 s] 6 images · === decor-salon-champ-jour   |==================================================| 4/4 - 156.76s/it[K · mémoire libre 11577 Mo
+[5702 s] 6 images · === decor-salon-champ-jour   |==================================================| 4/4 - 156.76s/it[K · mémoire libre 7052 Mo
