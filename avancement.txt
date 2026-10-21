@@ -77,3 +77,4 @@
 [1460 s] 21 clips · === coach-diabate--colere (at_runtime)   |=========================>                        | 2/4 - 93.03s/it[K · mémoire libre 13772 Mo
 [1582 s] 21 clips · === coach-diabate--colere (at_runtime)   |=====================================>            | 3/4 - 93.43s/it[K · mémoire libre 13771 Mo
 [122 s] 22 clips · === dj-kevin--parler (at_runtime)   |=========================>                        | 2/4 - 40.13s/it[K · mémoire libre 13805 Mo
+[244 s] 23 clips · === boubacar--hausser (at_runtime)   |============>                                     | 1/4 - 41.25s/it[K · mémoire libre 13787 Mo
