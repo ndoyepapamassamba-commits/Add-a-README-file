@@ -63,3 +63,4 @@
 [1338 s] 24 clips · === la-voisine--parler@2 (at_runtime)   |============>                                     | 1/4 - 135.71s/it[K · mémoire libre 13785 Mo
 [1459 s] 24 clips · === la-voisine--parler@2 (at_runtime)   |============>                                     | 1/4 - 135.71s/it[K · mémoire libre 13776 Mo
 [1581 s] 24 clips · === la-voisine--parler@2 (at_runtime)   |=========================>                        | 2/4 - 134.92s/it[K · mémoire libre 13775 Mo
+[1702 s] 24 clips · === la-voisine--parler@2 (at_runtime)   |=====================================>            | 3/4 - 134.93s/it[K · mémoire libre 13767 Mo
