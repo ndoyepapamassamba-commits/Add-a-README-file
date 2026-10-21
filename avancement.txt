@@ -113,3 +113,4 @@
 [1580 s] 31 clips · === le-frimeur--mentir@2 (at_runtime)   |=========================>                        | 2/4 - 133.12s/it[K · mémoire libre 13776 Mo
 [1702 s] 31 clips · === le-frimeur--mentir@2 (at_runtime)   |=====================================>            | 3/4 - 133.38s/it[K · mémoire libre 13782 Mo
 [1823 s] 32 clips · === le-banquier--choc@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13776 Mo
+[1945 s] 32 clips · === le-banquier--choc@2 (at_runtime)   |============>                                     | 1/4 - 133.79s/it[K · mémoire libre 13766 Mo
