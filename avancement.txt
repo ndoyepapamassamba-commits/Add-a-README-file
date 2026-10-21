@@ -29,3 +29,4 @@
 [2430 s] 3 images · === perso-tiekoro   |=====================================>            | 3/4 - 328.73s/it[K · mémoire libre 6256 Mo
 [2551 s] 3 images · === perso-tiekoro   |=====================================>            | 3/4 - 328.73s/it[K · mémoire libre 6255 Mo
 [2672 s] 3 images · === perso-tiekoro   |==================================================| 4/4 - 319.61s/it[K · mémoire libre 2981 Mo
+[2793 s] 4 images · === perso-la-voisine   |==================================================| 4/4 - 319.61s/it[K · mémoire libre 6643 Mo
