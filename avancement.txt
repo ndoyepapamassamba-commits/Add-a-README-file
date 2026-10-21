@@ -43,3 +43,4 @@
 [1458 s] 10 clips · === maman-brigitte--rire (at_runtime)   |============>                                     | 1/4 - 135.78s/it[K · mémoire libre 13784 Mo
 [122 s] 10 clips · === madame-coumba--hausser (at_runtime)  · mémoire libre 13767 Mo
 [243 s] 10 clips · === madame-coumba--hausser (at_runtime)   |============>                                     | 1/4 - 134.26s/it[K · mémoire libre 13763 Mo
+[365 s] 10 clips · === madame-coumba--hausser (at_runtime)   |=========================>                        | 2/4 - 133.65s/it[K · mémoire libre 13748 Mo
