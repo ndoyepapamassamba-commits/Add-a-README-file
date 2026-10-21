@@ -71,6 +71,10 @@ def parrain(d, nom):
 
 d = sys.argv[1]; S = json.load(open(f'{d}/scene.json')); img = cv2.cvtColor(cv2.imread(f'{d}/image.png'), cv2.COLOR_BGR2RGB)
 seuls = set(sys.argv[2:]); RDE = os.environ.get('EXPRESSIONS_RECETTES_DE')
+# ÉMOTIONS D'ABORD UTILES (21/10/2026, « si je peux avoir la vidéo à 21 h ») : EXPRESSIONS_EMOTIONS=neutre,joie,… ne dessine que
+# les émotions dont l'épisode a besoin (jeu.JEU_EMO, réactions) ; tourne.py ignore une émotion absente (expressions_lp._poids) et
+# une passe sans la variable complète la bibliothèque plus tard (les émotions faites sont reprises)
+EMOS_SEULES = [e for e in os.environ.get('EXPRESSIONS_EMOTIONS', '').split(',') if e in XL.EMO] or None
 for a in S['acteurs']:
     if seuls and a['slug'] not in seuls: continue
     f3 = f"{d}/rig/visage3d-{a['slug']}.npy"
@@ -82,7 +86,7 @@ for a in S['acteurs']:
     if not RDE and os.environ.get('EXPRESSIONS_PARRAIN', '1') != '0' and not os.path.isfile(f"{d}/expressions/{a['slug']}/meta.json"):
         par, prov = parrain(d, a['nom'])
         if par: print(a['nom'], ': recettes parrainées par', prov, flush=True)
-    t0 = time.time(); meta = XL.bibliotheque(img, np.load(f3), f"{d}/expressions/{a['slug']}", journal=lambda m: print(a['nom'], m.strip(), flush=True) if 'garde' in m else None, alpha=al, parrain=par,
+    t0 = time.time(); meta = XL.bibliotheque(img, np.load(f3), f"{d}/expressions/{a['slug']}", emotions=EMOS_SEULES, journal=lambda m: print(a['nom'], m.strip(), flush=True) if 'garde' in m else None, alpha=al, parrain=par,
                          juge=None if os.environ.get('EXPRESSIONS_JUGE', '1') == '0' else 'jev')   # EXPRESSIONS_JUGE=0 : voie rapide, recettes du parrain
     J = meta['jev']; autre = [e for e in meta['emotions'] if e != 'neutre' and meta['recettes'][e] != XL.EMO[e]]
     print(a['nom'], len(meta['emotions']), 'émotions ×', len(meta['bouche']), 'bouches,', round(time.time() - t0), 's ; lisibilité',

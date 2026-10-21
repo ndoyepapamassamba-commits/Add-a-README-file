@@ -1258,7 +1258,9 @@ try:
     _p51 = open(os.path.join(ICI, 'moteur-troupe', 'prepare_expressions.py'), encoding='utf-8').read()
     if "elif not juger and not meme and e != 'neutre' and (parrain or {}).get(e):" not in _t51 or "os.environ.get('EXPRESSIONS_JUGE', '1') == '0'" not in _p51:
         echecs.append('visages : voie rapide (recettes du parrain sans juge) absente')
-    else: print('visages : voie rapide sur demande (EXPRESSIONS_JUGE=0, recettes du parrain), juge par défaut : OK')
+    elif "emotions=EMOS_SEULES" not in _p51 or "e in B['meta']['emotions']" not in _t51:
+        echecs.append("visages : sous-ensemble d'émotions (EXPRESSIONS_EMOTIONS) sans garde au tournage (émotion absente ignorée)")
+    else: print('visages : voie rapide sur demande (EXPRESSIONS_JUGE=0, recettes du parrain ; EXPRESSIONS_EMOTIONS, émotion absente ignorée), juge par défaut : OK')
 except Exception as e:
     echecs.append(f'visages (voie rapide) : {e}')
 
