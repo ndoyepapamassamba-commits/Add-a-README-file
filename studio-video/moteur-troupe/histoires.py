@@ -195,9 +195,10 @@ _VERROU_LOCAL = threading.Lock()
 # service gratuit sans clé : au plus 2 appels en vol (20/10/2026, mesuré : 6 appels simultanés — 3 brouillons jugés, 2 questions
 # chacun — laissaient une réponse sans retour au bout de 240 s, alors qu'un appel seul du juge répond en 9 s)
 _EN_VOL = threading.BoundedSemaphore(int(os.environ.get('HISTOIRES_EN_VOL', '2')))
-# 21/10/2026 : écriture et jugement ont chacun leur plafond. Voie hybride (écriture Pollinations sans clé, juge hébergé) : depuis une
-# machine GitHub, 2 brouillons en vol → 17 appels refusés pour 14 servis (un seul brouillon par tour au lieu de 3) ;
-# HISTOIRES_EN_VOL_SCENARISTE=1 les envoie l'un après l'autre sans ralentir le juge hébergé (2 emplacements).
+# 21/10/2026 : écriture et jugement ont chacun leur plafond (HISTOIRES_EN_VOL_SCENARISTE). Voie hybride (écriture Pollinations sans
+# clé, juge hébergé) : 17 appels refusés pour 14 servis. CORRECTION 06:20 (journal de la machine) : les refus sont des HTTP 402
+# « Payment Required » — quota gratuit épuisé —, pas des appels simultanés ; un à la fois n'y change presque rien (4 refus sur 10).
+# Pollinations sans clé ne peut donc pas écrire 10 000 sketchs gratuitement : GPT-OSS hébergé (0 refus) reste la voie de production.
 _EN_VOL_SCEN = threading.BoundedSemaphore(int(os.environ.get('HISTOIRES_EN_VOL_SCENARISTE', os.environ.get('HISTOIRES_EN_VOL', '2'))))
 
 
