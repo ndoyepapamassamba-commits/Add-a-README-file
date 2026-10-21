@@ -64,3 +64,4 @@
 [122 s] 8 images · === fiche-monsieur-diarra  · mémoire libre 6727 Mo
 [243 s] 8 images · === fiche-monsieur-diarra   |============>                                     | 1/4 - 132.65s/it[K · mémoire libre 6720 Mo
 [365 s] 8 images · === fiche-monsieur-diarra   |=========================>                        | 2/4 - 132.32s/it[K · mémoire libre 6726 Mo
+[123 s] 8 images · === fiche-monsieur-diarra  · mémoire libre 6729 Mo
