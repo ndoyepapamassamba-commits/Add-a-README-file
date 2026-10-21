@@ -38,3 +38,4 @@
 [608 s] 12 clips · === sur-awa--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14588 Mo
 [730 s] 12 clips · === sur-awa--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13806 Mo
 [851 s] 12 clips · === sur-awa--ecouter (at_runtime)   |============>                                     | 1/4 - 135.34s/it[K · mémoire libre 13800 Mo
+[972 s] 12 clips · === sur-awa--ecouter (at_runtime)   |=========================>                        | 2/4 - 133.92s/it[K · mémoire libre 13798 Mo
