@@ -46,3 +46,4 @@
 [3644 s] 6 images · === decor-salon-contrechamp-jour   |============>                                     | 1/4 - 114.06s/it[K · mémoire libre 6995 Mo
 [3765 s] 6 images · === decor-salon-contrechamp-jour   |=========================>                        | 2/4 - 109.32s/it[K · mémoire libre 6994 Mo
 [3887 s] 6 images · === decor-salon-contrechamp-jour   |=====================================>            | 3/4 - 109.47s/it[K · mémoire libre 6991 Mo
+[4008 s] 7 images · === decor-pharmacie-champ-jour   |==================================================| 4/4 - 109.55s/it[K · mémoire libre 12646 Mo
