@@ -82,9 +82,29 @@ def enveloppe(wav, n, fps):
     return np.clip((e - bas) / max(haut - bas, 1e-9), 0, 1)
 
 
-def aller_retour(N):
+def bornes_calmes(m, N):
+    """(a, b) : où retourner l'aller-retour d'un clip sans pose tenue (boucle() → None) — les deux images les plus calmes du
+    clip à au moins 10 images d'écart ; None si le mouvement n'est pas lu.
+    RETOURNEMENT AU CALME (21/10/2026, épisode banque 1 v13 : à-coups de 39,3 et 44,77 s, la main de Tiékoro qui repart en sens
+    inverse) : son clip « parler » bouge encore à ses deux bouts (1,4 à 2,8 contre 0,5 à 0,9 aux images 5 et 19) ; retourné à
+    la dernière image, le geste repartait à l'envers en pleine vitesse. Comme les Video Textures (Schödl et al., 2000 : on ne
+    raccorde que là où le raccord ne se voit pas), le clip se retourne là où le corps marque déjà une pause : arrivée et départ
+    y coûtent tous deux m[b-1] (en b) et m[a] (en a)."""
+    if m is None or len(m) != N or N < 14: return None
+    s = np.convolve(np.asarray(m, float), np.ones(3) / 3, mode='same')
+    # le couple le plus calme à au moins 10 images d'écart (a ≥ 1 : la 1re différence d'un clip est souvent faussée)
+    c = min((s[a] + s[b - 1], a, b) for a in range(1, N - 10) for b in range(a + 10, N))
+    return (c[1], c[2])
+
+
+def aller_retour(N, m=None):
     """aller-retour du clip qui RALENTIT avant chaque retournement (21/10/2026 : le retournement sec à pleine vitesse était un
-    à-coup mesuré, 2,3 par minute contre 0,8 sur la V1) : les deux dernières images de chaque bout sont tenues un peu."""
+    à-coup mesuré, 2,3 par minute contre 0,8 sur la V1) : les deux dernières images de chaque bout sont tenues un peu.
+    m (mouvement du clip) : retourné aux images les plus calmes (bornes_calmes) au lieu des deux bouts."""
+    ab = bornes_calmes(m, N) if m is not None else None
+    if ab:
+        a, b = ab
+        return list(range(a, b - 1)) + [b - 1, b - 1, b, b, b] + list(range(b - 2, a + 1, -1)) + [a + 1, a + 1, a, a, a]
     if N < 6: return list(range(N)) + list(range(N - 2, 0, -1))
     aller = list(range(N - 2)) + [N - 2, N - 2, N - 1, N - 1, N - 1]
     retour = list(range(N - 3, 1, -1)) + [1, 1, 0, 0, 0]
@@ -143,7 +163,7 @@ def ordre(q, e, fps, poids=None, m=None, impose=True):
     normale au lieu de s'arrêter sur les images bouche fermée). m : mouvement du corps du clip (mouvement()) — les pas qui
     l'escamotent ou le retiennent sont pénalisés (CORPS)."""
     N = len(q); n = len(e); bc = boucle(m, N)
-    Q = parcours(N, bc, int(3.5 * n * FPS_CLIP / fps) + 2 * N) if bc else aller_retour(N)
+    Q = parcours(N, bc, int(3.5 * n * FPS_CLIP / fps) + 2 * N) if bc else aller_retour(N, m)
     K = max(1, round(len(Q) * fps / FPS_CLIP)); pos = [min(len(Q) - 1, int(k * FPS_CLIP / fps)) for k in range(K)]
     # POSITION EXACTE (21/10/2026, épisode banque 1 v9) : le clip à 16 images/s passait à 30 en tenant une image puis en sautant,
     # et une image d'échantillon sur 15 avançait de deux images du clip — en plein geste rapide, une saute. Chaque image de

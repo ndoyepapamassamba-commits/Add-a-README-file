@@ -155,11 +155,16 @@ def carte(W, H, u, titre, rang, total, place, nom_emoji=None, doux=False):
         th = k * 2 * math.pi / 7 + 0.4; rr = R * (1.55 + 0.25 * (k % 3))
         a = (0.8 if doux else max(0.0, math.sin(2 * math.pi * (1.6 * u + k * 0.37)))) * min(1.0, s)   # doux : éclats fixes
         if a > 0.05: _etoile(dr, ex + rr * math.cos(th), ey + rr * math.sin(th), 6 + 4 * (k % 2), a, (255, 255, 255) if k % 2 else JAUNE)
-    # 4. deux petits émojis satellites qui entrent par les côtés
+    # 4. deux petits émojis satellites qui entrent par les côtés. doux (21/10/2026, épisode banque 1 v13 : les 3 à-coups de
+    #    21,57–21,70 s restaient avec l'émoji fixe — vecteur moyen sur le corps +x puis −x puis +x : le satellite de gauche
+    #    glissait vers la droite, puis celui de droite vers la gauche, 0,08 s plus tard, au-dessus des deux personnages) :
+    #    les deux apparaissent ENSEMBLE, en fondu, à leur place — aucun glissement sur un corps.
     for j, (nom, cote) in enumerate(zip(SATELLITES, (-1, 1))):
-        v = min(1.0, max(0.0, (u - 0.12 - 0.08 * j) / 0.3)); v = 1 - (1 - v) ** 3
+        v = min(1.0, max(0.0, (u - 0.12 - (0 if doux else 0.08 * j)) / 0.3)); v = 1 - (1 - v) ** 3
         if v <= 0: continue
         d2 = int(base * 0.42); e2 = _image_emoji(nom, d2, u + 0.3 * j, fixe=doux).rotate(cote * 12, resample=Image.BICUBIC, expand=True)
+        if doux:
+            e2 = e2.copy(); e2.putalpha(e2.getchannel('A').point(lambda p, v=v: int(p * v))); v = 1.0
         x2 = ex + cote * (R * 1.7) * v + cote * (1 - v) * W * 0.6; y2 = ey + R * 0.55 + (0 if doux else 6 * math.sin(2 * math.pi * 1.8 * u + j))
         if v >= 1: x2 = min(max(x2, e2.width / 2 + 6), W - e2.width / 2 - 6)   # jamais coupé par le bord du cadre
         im.alpha_composite(e2, (int(x2 - e2.width / 2), int(y2 - e2.height / 2)))

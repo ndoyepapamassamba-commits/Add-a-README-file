@@ -242,9 +242,10 @@ def _programme(P, k, nom, gains, cache):
         pr['t_dep'] = R[j]['_t0'] - (depart(P.get('titre', ''), nom, 0.0, mov) if j == 0 else 0.0)
         try:   # geste joué une fois puis boucle sur la pose tenue (levres_banque.boucle) — l'écoute ne rejoue plus le geste à l'envers
             import levres_banque as LB
-            pr['boucle'] = LB.boucle(LB.mouvement(mov[:-4] + '.mp4'), len(F))
+            m_ = LB.mouvement(mov[:-4] + '.mp4'); pr['boucle'] = LB.boucle(m_, len(F))
+            pr['bornes'] = None if pr['boucle'] else LB.bornes_calmes(m_, len(F))   # sans pose tenue : retourné au calme
         except Exception:
-            pr['boucle'] = None
+            pr['boucle'] = pr['bornes'] = None
     return pr
 
 
@@ -333,7 +334,7 @@ def vise(P, k, nom):
 def _image_acteur(pr, t, i):
     import camera_v1
     if pr.get('idx'): return camera_v1.image_a(pr['F'], float(pr['idx'][min(i, len(pr['idx']) - 1)]))
-    return camera_v1.image_a(pr['F'], camera_v1.position_douce(t - pr['t_dep'], len(pr['F']), boucle=pr.get('boucle')))
+    return camera_v1.image_a(pr['F'], camera_v1.position_douce(t - pr['t_dep'], len(pr['F']), boucle=pr.get('boucle'), bornes=pr.get('bornes')))
 
 
 def bande_v1(P, k, gains, ecrit):

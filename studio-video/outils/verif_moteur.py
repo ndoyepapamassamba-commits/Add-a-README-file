@@ -1009,6 +1009,27 @@ try:
 except Exception as e:
     echecs.append(f'cartes / mains : {e}')
 
+# 21/10/2026 — v13 : à-coups sous les cartes (petits émojis qui glissent l'un après l'autre sur les corps, 21,57–21,70 et
+# 51,37 s) ; aller-retour retourné à pleine vitesse au bout des clips sans pose tenue
+try:
+    import cartes_fx as _cf37, levres_banque as _lb37, camera_v1 as _cv37
+    _p37 = (540, 260, 520, 170); _A37 = []
+    for _u in (0.13, 0.2, 0.3, 0.45):
+        _A37.append(np.asarray(_cf37.carte(1080, 630, _u, 'T', 2, 3, _p37, doux=True))[..., 3])
+    _c37 = [np.nonzero(a[300:420].max(0) > 30)[0] for a in _A37]   # bande des satellites (sous l'émoji)
+    _g37 = [(c.min(), c.max()) if len(c) else None for c in _c37]
+    if any(g is None for g in _g37[1:]) or len({g for g in _g37[1:]}) != 1:
+        echecs.append(f'cartes douces : les petits émojis glissent encore (étendue {_g37})')
+    _m37 = np.array([2.8, 1.8, 1.3, .9, 1.5, .9, .8, 1.1, 1.4, 1.3, 1.8, 1.8, 3, 2, 1.1, .6, .8, .6, .7, .5, 1, 1.4, 1.6, 1.8, 2, 2.2, 2.1, 1.7, 2.3, 2.2, 1.8, 1.5, 1.5])
+    _b37 = _lb37.bornes_calmes(_m37, 33); _q37 = _lb37.aller_retour(33, _m37)
+    if _b37 != (6, 19) or min(_q37) != 6 or max(_q37) != 19 or _lb37.aller_retour(33)[-1] != 0:
+        echecs.append(f'aller-retour : pas retourné aux images calmes du clip « parler » de Tiékoro ({_b37})')
+    if abs(_cv37.position_douce(0.0, 33, bornes=(6, 19)) - 6) > 1e-6 or abs(_cv37.position_douce(13 / 16, 33, bornes=(6, 19)) - 19) > 1e-6:
+        echecs.append('aller-retour en cosinus : bornes calmes ignorées')
+    print(f'cartes douces : petits émojis en fondu à leur place ({_g37[1]}) ; aller-retour retourné au calme {_b37} : OK')
+except Exception as e:
+    echecs.append(f'satellites / aller-retour calme : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

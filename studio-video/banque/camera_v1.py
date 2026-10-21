@@ -449,11 +449,15 @@ def haut_du_clip(F):
     return float(ys[0]) / F.shape[1] if len(ys) else 0.05
 
 
-def position_douce(t, n, fps_clip=16.0, dep=0.0, boucle=None):
+def position_douce(t, n, fps_clip=16.0, dep=0.0, boucle=None, bornes=None):
     """position (fractionnaire) dans le clip : aller-retour à temps en cosinus — vitesse nulle aux deux bouts, plus de
     retournement sec ; même vitesse moyenne que le clip. boucle = (g0, c0) (levres_banque.boucle, 21/10/2026) : le clip est
     joué une fois en entier, geste compris, puis l'aller-retour en cosinus ne parcourt que la pose tenue c0 … n-1 — jamais
-    plus le geste à l'envers."""
+    plus le geste à l'envers. bornes = (a, b) (levres_banque.bornes_calmes) : clip sans pose tenue, retourné à ses deux
+    images les plus calmes."""
+    if not boucle and bornes:
+        a, b = bornes; T = (b - a) / fps_clip; ph = ((t + dep) / max(T, 1e-3)) % 2.0; v = ph if ph <= 1 else 2 - ph
+        return a + (b - a) * (1 - math.cos(math.pi * v)) / 2
     if boucle:
         u = t + dep; T1 = (n - 1) / fps_clip
         if u < T1: return max(0.0, u * fps_clip)
