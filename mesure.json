@@ -112,6 +112,13 @@
    "lora": "at_runtime",
    "secondes": 581,
    "memoire_max_go": 11.09
+  },
+  {
+   "clip": "tonton-dieng--colere",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 581,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39545665602"
