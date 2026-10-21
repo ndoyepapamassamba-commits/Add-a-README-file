@@ -1,0 +1,67 @@
+=== agent-doumbia--montrer (at_runtime)
+[V] lora /home/runner/work/_temp/m/lora/fastwan.safetensors:1.00 --- diffusion_engine.cpp:1922
+[I] load /home/runner/work/_temp/m/lora/fastwan.safetensors using safetensors format --- model_loader.cpp:222
+[V] init from '/home/runner/work/_temp/m/lora/fastwan.safetensors', prefix = 'lora.' --- model_loader.cpp:290
+[I] apply lora at runtime --- diffusion_engine.cpp:1837
+[I] apply_loras completed, taking 0.05s --- diffusion_engine.cpp:1962
+[I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 0.83s --- vae.hpp:310
+[I] encode_first_stage completed, taking 829 ms --- video.cpp:985
+[V] computing condition graph completed, taking 7588 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 7.59s --- video.cpp:1212
+[I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.01s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] using mmap for '/home/runner/work/_temp/m/lora/fastwan.safetensors' --- model_loader.cpp:896
+[I] sampling completed, taking 157.47s --- video.cpp:1712
+[I] generating latent video completed, taking 157.48s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 9.02s --- vae.hpp:384
+[I] decode_first_stage completed, taking 9.02s --- video.cpp:1243
+[I] runtime_lora_models: --- diffusion_engine.cpp:1902
+[I] (1099 / 1099) LoRA tensors have been applied, lora_file_path = /home/runner/work/_temp/m/lora/fastwan.safetensors --- lora.hpp:1044
+[I] generate_video completed in 175.02s --- video.cpp:1944
+=== la-future-maman--colere (at_runtime)
+[V] computing vae encode graph completed, taking 0.81s --- vae.hpp:310
+[I] encode_first_stage completed, taking 814 ms --- video.cpp:985
+[V] computing condition graph completed, taking 6843 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 6.84s --- video.cpp:1212
+[I] sampling completed, taking 157.14s --- video.cpp:1712
+[I] generating latent video completed, taking 157.15s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 8.99s --- vae.hpp:384
+[I] decode_first_stage completed, taking 8.99s --- video.cpp:1243
+[I] generate_video completed in 173.90s --- video.cpp:1944
+=== imam-karim--montrer (at_runtime)
+[V] computing condition graph completed, taking 6911 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 6.91s --- video.cpp:1212
+[I] sampling completed, taking 157.43s --- video.cpp:1712
+[I] generating latent video completed, taking 157.44s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 8.83s --- vae.hpp:384
+[I] decode_first_stage completed, taking 8.83s --- video.cpp:1243
+[I] generate_video completed in 174.12s --- video.cpp:1944
+=== tantie-awa-sarr--colere (at_runtime)
+[I] encode_first_stage completed, taking 826 ms --- video.cpp:985
+[I] loading tensors completed, taking 0.00s (read: 0.00s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 6702 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 6.70s --- video.cpp:1212
+[I] sampling completed, taking 157.64s --- video.cpp:1712
+[I] generating latent video completed, taking 157.65s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 8.75s --- vae.hpp:384
+[I] decode_first_stage completed, taking 8.75s --- video.cpp:1243
+[I] generate_video completed in 174.04s --- video.cpp:1944
+=== chef-traore--montrer (at_runtime)
+[V] computing vae encode graph completed, taking 0.82s --- vae.hpp:310
+[I] encode_first_stage completed, taking 822 ms --- video.cpp:985
+[V] computing condition graph completed, taking 6998 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 7.00s --- video.cpp:1212
+[I] sampling completed, taking 155.59s --- video.cpp:1712
+[I] generating latent video completed, taking 155.60s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 8.56s --- vae.hpp:384
+[I] decode_first_stage completed, taking 8.56s --- video.cpp:1243
+[I] generate_video completed in 172.09s --- video.cpp:1944
+=== petit-ibrahima--colere (at_runtime)
+[I] encode_first_stage completed, taking 815 ms --- video.cpp:985
+[V] computing condition graph completed, taking 6721 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 6.72s --- video.cpp:1212
+[I] sampling completed, taking 154.69s --- video.cpp:1712
+[I] generating latent video completed, taking 154.70s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 8.54s --- vae.hpp:384
+[I] decode_first_stage completed, taking 8.54s --- video.cpp:1243
+[I] generate_video completed in 170.88s --- video.cpp:1944
