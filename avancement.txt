@@ -79,3 +79,4 @@
 [3761 s] 5 images · === fiche-docteur-sylla   |=====================================>            | 3/4 - 236.08s/it[K · mémoire libre 6719 Mo
 [3882 s] 5 images · === fiche-docteur-sylla   |=====================================>            | 3/4 - 236.08s/it[K · mémoire libre 6728 Mo
 [4003 s] 6 images · === perso-docteur-sylla   |==================================================| 4/4 - 236.59s/it[K · mémoire libre 13682 Mo
+[4125 s] 6 images · === perso-docteur-sylla   |==================================================| 4/4 - 236.59s/it[K · mémoire libre 6638 Mo
