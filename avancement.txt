@@ -65,3 +65,4 @@
 [1581 s] 24 clips · === la-voisine--parler@2 (at_runtime)   |=========================>                        | 2/4 - 134.92s/it[K · mémoire libre 13775 Mo
 [1702 s] 24 clips · === la-voisine--parler@2 (at_runtime)   |=====================================>            | 3/4 - 134.93s/it[K · mémoire libre 13767 Mo
 [1823 s] 25 clips · === le-banquier--hausser@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13784 Mo
+[1945 s] 25 clips · === le-banquier--hausser@2 (at_runtime)   |============>                                     | 1/4 - 135.26s/it[K · mémoire libre 13774 Mo
