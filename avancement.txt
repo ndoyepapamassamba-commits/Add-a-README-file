@@ -18,3 +18,4 @@
 [729 s] 2 images · === maison-professeur-samba-chambre-large-jour   |=====================================>            | 3/4 - 176.65s/it[K · mémoire libre 6985 Mo
 [851 s] 3 images · === perso-maitre-coulibaly   |==================================================| 4/4 - 176.59s/it[K · mémoire libre 11479 Mo
 [972 s] 3 images · === perso-maitre-coulibaly   |==================================================| 4/4 - 176.59s/it[K · mémoire libre 6263 Mo
+[1094 s] 3 images · === perso-maitre-coulibaly   |==================================================| 4/4 - 176.59s/it[K · mémoire libre 6261 Mo
