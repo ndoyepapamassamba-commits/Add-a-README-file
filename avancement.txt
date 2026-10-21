@@ -18,3 +18,4 @@
 [2185 s] 7 clips · === imam-karim--hausser (at_runtime)   |=====================================>            | 3/4 - 134.27s/it[K · mémoire libre 13746 Mo
 [2306 s] 7 clips · === imam-karim--hausser (at_runtime)   |=====================================>            | 3/4 - 134.27s/it[K · mémoire libre 13746 Mo
 [2427 s] 8 clips · === professeur-samba--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13745 Mo
+[2549 s] 8 clips · === professeur-samba--parler (at_runtime)   |============>                                     | 1/4 - 136.48s/it[K · mémoire libre 13753 Mo
