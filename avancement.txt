@@ -48,3 +48,4 @@
 [4376 s] 7 images · === decor-terrain-de-foot-champ-jour   |=========================>                        | 2/4 - 89.92s/it[K · mémoire libre 7041 Mo
 [4498 s] 7 images · === decor-terrain-de-foot-champ-jour   |=====================================>            | 3/4 - 89.85s/it[K · mémoire libre 7033 Mo
 [4619 s] 8 images · === decor-cuisine-coin-jour   |==================================================| 4/4 - 87.75s/it[K · mémoire libre 7051 Mo
+[4741 s] 8 images · === decor-cuisine-coin-jour   |=========================>                        | 2/4 - 86.64s/it[K · mémoire libre 7054 Mo
