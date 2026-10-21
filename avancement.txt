@@ -50,3 +50,4 @@
 [123 s] 16 clips · === sorciere-mama-dede--ecouter (at_runtime)  · mémoire libre 13750 Mo
 [244 s] 16 clips · === sorciere-mama-dede--ecouter (at_runtime)   |============>                                     | 1/4 - 135.58s/it[K · mémoire libre 13746 Mo
 [365 s] 16 clips · === sorciere-mama-dede--ecouter (at_runtime)   |=========================>                        | 2/4 - 134.99s/it[K · mémoire libre 13745 Mo
+[487 s] 16 clips · === sorciere-mama-dede--ecouter (at_runtime)   |=====================================>            | 3/4 - 135.00s/it[K · mémoire libre 13746 Mo
