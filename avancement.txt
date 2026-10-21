@@ -37,3 +37,4 @@
 [3280 s] 6 images · === decor-salon-coin-jour   |=========================>                        | 2/4 - 84.10s/it[K · mémoire libre 7037 Mo
 [3401 s] 6 images · === decor-salon-coin-jour   |=====================================>            | 3/4 - 85.34s/it[K · mémoire libre 7041 Mo
 [3522 s] 7 images · === decor-pharmacie-contrechamp-jour   |==================================================| 4/4 - 85.36s/it[K · mémoire libre 7036 Mo
+[3644 s] 7 images · === decor-pharmacie-contrechamp-jour   |=========================>                        | 2/4 - 84.21s/it[K · mémoire libre 7035 Mo
