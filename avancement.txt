@@ -61,3 +61,4 @@
 [5956 s] 11 images · === decor-taxi-large-nuit   |=========================>                        | 2/4 - 88.71s/it[K · mémoire libre 7029 Mo
 [6078 s] 11 images · === decor-taxi-large-nuit   |=====================================>            | 3/4 - 88.28s/it[K · mémoire libre 7029 Mo
 [123 s] 11 images · === fiche-grand-pere-ndiaye  · mémoire libre 6959 Mo
+[245 s] 11 images · === fiche-grand-pere-ndiaye  · mémoire libre 6703 Mo
