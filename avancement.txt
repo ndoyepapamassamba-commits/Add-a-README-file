@@ -37,3 +37,4 @@
 [1946 s] 17 clips · === tiekoro--parler (at_runtime)   |============>                                     | 1/4 - 134.75s/it[K · mémoire libre 13790 Mo
 [2068 s] 17 clips · === tiekoro--parler (at_runtime)   |=========================>                        | 2/4 - 133.79s/it[K · mémoire libre 13793 Mo
 [2189 s] 17 clips · === tiekoro--parler (at_runtime)   |=====================================>            | 3/4 - 133.86s/it[K · mémoire libre 13796 Mo
+[2311 s] 17 clips · === tiekoro--parler (at_runtime)   |=====================================>            | 3/4 - 133.86s/it[K · mémoire libre 13790 Mo
