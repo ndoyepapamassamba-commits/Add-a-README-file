@@ -119,7 +119,14 @@ def livre(i, D=None, journal=print):
          'doublon_de': proche if r >= doublons.SEUIL_PROCHE else None, 'ressemblance': r}
     import niveau_v1   # « pas moins que la V1 » : animation mesurée contre la V1 + personnages au rendu validé (20/10/2026)
     acteurs = [a for s in (e.get('sketchs') or []) for a in s.get('acteurs', [])]
-    nv, F['niveau_v1'] = niveau_v1.motifs(os.path.join(D, 'film.mp4') if os.path.isfile(os.path.join(D, 'film.mp4')) else src, acteurs)
+    film = os.path.join(D, 'film.mp4') if os.path.isfile(os.path.join(D, 'film.mp4')) else src
+    nv, F['niveau_v1'] = niveau_v1.motifs(film, acteurs)
+    # 21/10/2026 — « toutes les vidéos devront avoir ou dépasser les mesures de la V1. Même l'humour » : profil complet (corps,
+    # taille, décor, regards, à-coups, sautes, plans) contre la V1 publiée, et le plus faible duel des sketchs contre la V1
+    pl = [s.get('plancher_v17') for s in (e.get('sketchs') or [])]
+    F['profil_v1'] = niveau_v1.profil(film)
+    nv = [x for x in nv if not x.startswith('animation sous la V1')] + niveau_v1.ecarts(
+        F['profil_v1'], humour=min(pl) if pl and None not in pl else None)
     F['motifs'] = ([] if F['a_publier'] else [f"juge : {', '.join(map(str, rap.get('echecs') or [])) or 'porte échouée'}"]) \
         + ([] if (mesure['ssim'] or 0) >= SSIM_MIN else [f"qualité téléphone : SSIM {mesure['ssim']} < {SSIM_MIN}"]) + nv
     F['statut'] = 'doublon' if r >= doublons.SEUIL_DOUBLON else ('a_corriger' if F['motifs'] else 'pret')

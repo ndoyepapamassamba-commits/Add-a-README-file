@@ -748,6 +748,22 @@ try:
 except Exception as e:
     echecs.append(f'niveau V1 : {e}')
 
+# profil complet contre la V1 (21/10/2026) : « toutes les vidéos devront avoir ou dépasser les mesures de la V1. Même l'humour »,
+# « même le teint », « tes nouvelles vidéos devront même dépasser V1 ». La V1 contre elle-même ne la dépasse pas (8 critères à égalité,
+# teint dans la gamme) ; « L'autre moitié » (usine, mesurée le 21/10) est arrêtée sur les 11 critères.
+try:
+    _r27 = _nv9.reference()
+    _m27 = {'persos_bouge': 0.026, 'persos_vitesse': 0.5, 'taille_persos': 0.207, 'fond_bouge': 0.003, 'regards': 0.0,
+            'acoups_min': 2.3, 'sautes_min': 18.5, 'plans_min': 2.3, 'teint_L': 55.3, 'teint_b': 57.0}
+    _e27 = _nv9.ecarts(_r27, humour=0.55)
+    if len(_e27) != 8 or any('teint' in x or 'humour' in x for x in _e27): echecs.append(f'profil V1 : la V1 contre elle-même {_e27}')
+    _x27 = {k: (v * 1.1 if k in _nv9.PLUS else v * 0.9 if k in _nv9.MOINS else v) for k, v in _r27.items() if isinstance(v, (int, float))}
+    if _nv9.ecarts(_x27, humour=0.6): echecs.append(f'profil V1 : une vidéo qui dépasse la V1 partout est refusée {_nv9.ecarts(_x27, humour=0.6)}')
+    if len(_nv9.ecarts(_m27)) != 11: echecs.append(f"profil V1 : « L'autre moitié » {len(_nv9.ecarts(_m27))} écarts au lieu de 11")
+    print("profil V1 : dépasser la V1 exigé (égaler ne suffit pas), teint dans sa gamme, « L'autre moitié » arrêtée sur 11 critères : OK")
+except Exception as e:
+    echecs.append(f'profil V1 : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

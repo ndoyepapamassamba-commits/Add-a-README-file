@@ -605,7 +605,8 @@ def une(dossier, lieu, recap='', K=3, tours_max=4, seuil=0.6, journal=print, fmt
             ch = next(r['texte'] for r in h['repliques'] if r.get('role') == 'chute' or r.get('chute'))
             for r in h['repliques']:
                 if r.get('role') == 'chute': r['chute'] = True
-            h.update(id=i, lieu=lieu, image=lieu, format=fmt, lieu_bible=LIEUX[lieu].get('lieu_bible'), acteurs=sorted({r['qui'] for r in h['repliques']}, key=LIEUX[lieu]['acteurs'].index))
+            h.update(id=i, lieu=lieu, image=lieu, format=fmt, lieu_bible=LIEUX[lieu].get('lieu_bible'), acteurs=sorted({r['qui'] for r in h['repliques']}, key=LIEUX[lieu]['acteurs'].index),
+                     plancher_v17=pv, notes_juge=n)   # 21/10/2026 : l'humour contre la V1 suit le sketch jusqu'à la porte V1 de la vidéo
             json.dump(h, open(f'{dossier}/{i}.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
             R['acceptees'].append({'id': i, 'titre': h.get('titre'), 'lieu': lieu, 'mecanique': h.get('mecanique'), 'chute': ch, 'notes': n,
                                    'duel': p_, 'contre': champ['id'] if champ else None, 'date': time.strftime('%d/%m/%Y %H:%M')})

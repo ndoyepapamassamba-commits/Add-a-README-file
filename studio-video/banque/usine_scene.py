@@ -82,9 +82,17 @@ def tourne(sketch, cle, cache, dossier, sortie):
     if manque: raise SystemExit(f'gestes pas encore tournés pour : {", ".join(manque)}')
     d = decor(lieu, priv, os.path.join(cache, 'decors')); T['ouverture_s'] = round(time.time() - t0, 1); t1 = time.time()
     plan = scene.plan(h, d, os.path.join(cache, 'clips'), dossier, lieu); T['voix_s'] = round(time.time() - t1, 1); t2 = time.time()
-    r = assemble.assemble(plan, sortie); T['montage_s'] = round(time.time() - t2, 1)
+    r = assemble.assemble(plan, sortie); T['montage_s'] = round(time.time() - t2, 1); t3 = time.time()
+    # PORTE V1 (21/10/2026) — « toutes les vidéos devront avoir ou dépasser les mesures de la V1. Même l'humour » : même mesure que
+    # la V1 publiée (niveau_v1.profil, bande de la scène de l'assembleur), humour = duel du sketch contre la V1 (plancher V17)
+    sys.path.insert(0, os.path.join(ICI, '..', 'moteur-troupe')); import niveau_v1
+    p = niveau_v1.profil(sortie, (assemble.BY / assemble.H_, (assemble.BY + assemble.BH) / assemble.H_))
+    e = niveau_v1.ecarts(p, humour=h.get('plancher_v17')); T['mesure_v1_s'] = round(time.time() - t3, 1)
+    bulletin = {'profil': p, 'reference_v1': niveau_v1.reference(), 'sous_la_V1': e, 'statut': 'a_corriger' if e else 'au_niveau_v1'}
+    json.dump(bulletin, open(sortie + '.v1.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     return {'sketch': h.get('titre'), 'lieu': lieu, 'acteurs': acteurs, 'decor': os.path.basename(d), 'clips_ouverts': n,
-            'video': sortie, 'duree_s': r.get('duree_s'), **T, 'total_s': round(time.time() - t0, 1)}
+            'video': sortie, 'duree_s': r.get('duree_s'), 'niveau_v1': bulletin['statut'], 'sous_la_V1': len(e), **T,
+            'total_s': round(time.time() - t0, 1)}
 
 
 if __name__ == '__main__':
