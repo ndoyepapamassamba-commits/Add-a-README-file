@@ -105,6 +105,13 @@
    "lora": "at_runtime",
    "secondes": 299,
    "memoire_max_go": 11.12
+  },
+  {
+   "clip": "madame-konan--colere",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 298,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39545665602"
