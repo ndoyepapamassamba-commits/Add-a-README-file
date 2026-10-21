@@ -79,3 +79,4 @@
 [124 s] 26 clips · === le-banquier--rire (at_runtime)   |============>                                     | 1/4 - 68.52s/it[K · mémoire libre 13767 Mo
 [246 s] 26 clips · === le-banquier--rire (at_runtime)   |=====================================>            | 3/4 - 67.96s/it[K · mémoire libre 13773 Mo
 [367 s] 27 clips · === boubacar--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13793 Mo
+[489 s] 27 clips · === boubacar--ecouter (at_runtime)   |=========================>                        | 2/4 - 68.02s/it[K · mémoire libre 13788 Mo
