@@ -111,3 +111,4 @@
 [7643 s] 8 images · === perso-salif-le-parisien   |============>                                     | 1/4 - 444.52s/it[K · mémoire libre 6189 Mo
 [7764 s] 8 images · === perso-salif-le-parisien   |============>                                     | 1/4 - 444.52s/it[K · mémoire libre 6188 Mo
 [7885 s] 8 images · === perso-salif-le-parisien   |=========================>                        | 2/4 - 441.14s/it[K · mémoire libre 6186 Mo
+[8006 s] 8 images · === perso-salif-le-parisien   |=========================>                        | 2/4 - 441.14s/it[K · mémoire libre 6182 Mo
