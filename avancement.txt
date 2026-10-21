@@ -21,3 +21,4 @@
 [1093 s] 14 clips · === agent-bakary--choc (at_runtime)   |=====================================>            | 3/4 - 134.49s/it[K · mémoire libre 13745 Mo
 [123 s] 14 clips · === madame-coumba--mentir (at_runtime)  · mémoire libre 13776 Mo
 [245 s] 14 clips · === madame-coumba--mentir (at_runtime)   |============>                                     | 1/4 - 135.02s/it[K · mémoire libre 13777 Mo
+[366 s] 14 clips · === madame-coumba--mentir (at_runtime)   |=========================>                        | 2/4 - 133.95s/it[K · mémoire libre 13776 Mo
