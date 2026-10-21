@@ -27,6 +27,10 @@ FORCE = 0.30         # assombrissement au cœur de l'ombre d'un rameau (essai JE
                      # pénombre d'un feuillage clairsemé. La porte F (vie du décor) ne dépend pas de cette ombre
 
 
+VENT_FEUILLES = float(__import__('os').environ.get('VENT_FEUILLES', '1.0'))   # frémissement des feuilles (× l'amplitude de la V1) ;
+# une plaque peut porter le sien (V['vent'], banque/camera_v1.py)
+
+
 def rafale(t, psi=0.0):
     """rafales communes du vent (mêmes que linge.compose) : 0,65 à 1."""
     return 0.65 + 0.35 * (0.5 + 0.5 * math.sin(2 * math.pi * 0.11 * t + psi))
@@ -113,10 +117,10 @@ def feuillage(V, t, psi=0.0):
     """facteur de lumière (H × W, ≤ 1) : ombre des rameaux au temps t, calculée à demi-résolution puis remontée."""
     H, W = V['H'], V['W']
     if not len(V['feuilles']): return np.ones((H, W), np.float32)
-    h, w = H // 2, W // 2; m = np.zeros((h, w), np.float32); g = rafale(t, psi); fr = 0.5 + 0.5 * g
+    h, w = H // 2, W // 2; m = np.zeros((h, w), np.float32); g = rafale(t, psi); fr = 0.5 + 0.5 * g; vf = V.get('vent', VENT_FEUILLES)
     for x, y, a, b, ang, A_b, f_b, ph_b, A_l, f_l, ph_l in V['feuilles']:
         bx = A_b * g * math.sin(2 * math.pi * f_b * t + ph_b); by = 0.35 * A_b * g * math.sin(2 * math.pi * f_b * t + ph_b + 1.1)
-        lx = A_l * fr * math.sin(2 * math.pi * f_l * t + ph_l); ly = 0.6 * A_l * fr * math.cos(2 * math.pi * 1.3 * f_l * t + ph_l)
+        lx = vf * A_l * fr * math.sin(2 * math.pi * f_l * t + ph_l); ly = 0.6 * vf * A_l * fr * math.cos(2 * math.pi * 1.3 * f_l * t + ph_l)
         cv2.ellipse(m, (int(round((x + bx + lx) / 2)), int(round((y + by + ly) / 2))), (max(1, int(a / 2)), max(1, int(b / 2))),
                     float(ang + 14.0 * fr * math.sin(2 * math.pi * 1.7 * f_l * t + ph_l)), 0, 360, 1.0, -1)
     m = cv2.GaussianBlur(m, (0, 0), 0.0011 * W)                    # pénombre : feuilles à quelques mètres du mur (plus, la forme des feuilles se perd)

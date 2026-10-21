@@ -97,7 +97,10 @@ def bornes_calmes(m, N):
     return (c[1], c[2])
 
 
-def temps_coutures(m, N):
+COUTURES = os.environ.get('COUTURES', '0') == '1'   # v16 mesurée : sautes 10,5 → 12,0 (voir temps_coutures) — désactivé
+
+
+def temps_coutures(m, N, force=False):
     """carte du temps du clip (N positions croissantes de 0 à N-1) : les transitions où le corps saute plus que ses deux
     voisines (pic local, rapport > 1,15) prennent plus de temps (jusqu'à ×2), les autres un peu moins — même durée totale.
     COUTURES DU VAE DE WAN (21/10/2026, épisode banque 1 v14 : sautes 15,7 par minute, la V1 11,2 ; les grappes de 40,4 et
@@ -105,8 +108,10 @@ def temps_coutures(m, N):
     image à part (Wan, 2025) — nos clips de 33 images = 1 + 4 × 8. Mesuré sur les 33 clips de la banque : à chaque couture
     (transitions 4→5, 8→9 … et 0→1) le corps bouge 1,33 fois plus que ses voisines en médiane (1re image : 1,61), contre 1,09
     ailleurs ; en plein geste, la main y saute. Jouée plus lentement, la couture s'étale sur plus d'images interpolées.
-    None si le mouvement n'est pas lu."""
-    if m is None or len(m) != N or N < 4: return None
+    MESURÉ SUR L'ÉPISODE (v16, avec le corps vivant) : sautes 10,5 → 12,0 par minute — la grappe du geste de Doumbia passe de 2
+    à 4 sautes (40,57–40,83 s) : étalée, la couture fait deux sautes moyennes au lieu d'une grande, chacune encore au-dessus
+    de 3 fois la médiane. Désactivé (COUTURES=1 pour le rétablir). None si le mouvement n'est pas lu."""
+    if not (COUTURES or force) or m is None or len(m) != N or N < 4: return None
     m = np.asarray(m, float); w = np.ones(N - 1)
     for i in range(N - 1):
         v = [m[j] for j in (i - 1, i + 1) if 0 <= j < N - 1]

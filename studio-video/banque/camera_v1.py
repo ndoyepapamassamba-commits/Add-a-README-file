@@ -57,6 +57,11 @@ DECOR_TEXTE = os.environ.get('DECOR_TEXTE', '1') == '1'
 # ADE20K : mur, bâtiment, sol, route, herbe, trottoir, terre, maison, champ, sable, chemin, escalier, piste de terre
 SURFACES = (0, 1, 3, 6, 9, 11, 13, 25, 29, 46, 52, 53, 91)
 SURFACES_V1 = os.environ.get('SURFACES_V1', '1') == '1'
+# VENT DANS LES FEUILLES (21/10/2026, v15 : plan à deux du marché 0,02 à 0,04 de fond qui bouge) : la V1 tenait son ombre de
+# feuillage en plans serrés sur le mur de la cour, qui grossissaient le frémissement ; sur les plans plus larges de la banque,
+# 1,6 à 3,2 px de frémissement restaient sous le seuil. Feuilles ×2 (rafale) : banc en cadre de plan à deux, marché 0,008 →
+# 0,023, salon 0,021 → 0,062 ; taches de soleil tamisé jugées naturelles sur le rendu (sol du salon, chaussée du marché).
+VENT_BANQUE = float(os.environ.get('VENT_BANQUE', '2.0'))
 MOTS = {'fumee': ('smoke', 'steam'), 'tissu': ('hanging clothes', 'fabric awning')}   # parasols : rigides, hors du tissu
 
 
@@ -350,6 +355,7 @@ def prepare_decor(img, d, seg, pieds, graine=5, cache=None):
         except Exception: pass
         surf = np.isin(seg, SURFACES) if (SURFACES_V1 and sol_ is not None and sol_[1] > 110) else (np.zeros(seg.shape, bool) if SURFACES_V1 else None)
         V['fond'] = vie_fond.prepare(img.astype(np.float32), d, (), graine=11, surfaces=surf)
+        V['fond']['vent'] = VENT_BANQUE
         V['fond']['ciel'] = V['fond']['ciel'] | (seg == 2)
     except Exception as e:
         print(f'  vie du fond non préparée : {e}', file=sys.stderr); V['fond'] = None

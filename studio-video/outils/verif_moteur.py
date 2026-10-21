@@ -1078,7 +1078,8 @@ except Exception as e:
 try:
     import levres_banque as _lb40, assemble as _as40
     _m40 = np.array([3.3, 2.1, 1.3, 1.0, 1.5, 1.4, 1.3, 1.6, 2.1, 2.1, 2.0, 1.5, 2.3, 1.6, 1.4, 1.2, 1.6, 1.2, 1.4, 1.0, 1.8, 1.5, 1.4, 0.9, 1.2, 1.0, 1.0, 0.7, 0.7, 0.7, 0.8, 0.6, 0.6])
-    _T40 = _lb40.temps_coutures(_m40, 33); _d40 = np.diff(_T40); _v40 = _m40[:32] / _d40
+    _T40 = _lb40.temps_coutures(_m40, 33, force=True); _d40 = np.diff(_T40); _v40 = _m40[:32] / _d40
+    if _lb40.COUTURES is False and _lb40.temps_coutures(_m40, 33) is not None: echecs.append('coutures de Wan : actives malgré COUTURES=0')
     _ok40 = abs(_T40[0]) < 1e-9 and abs(_T40[-1] - 32) < 1e-9 and _d40[12] > 1.2 and _d40[0] > 1.2 and _v40.max() < _m40[:32].max() - 0.5
     _src40 = open(_as40.__file__, encoding='utf-8').read()
     if not _ok40 or 'LB.au_temps(p, pr.get' not in _src40:
