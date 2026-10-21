@@ -55,3 +55,4 @@
 [849 s] 4 images · === fiche-maitre-coulibaly   |=====================================>            | 3/4 - 236.94s/it[K · mémoire libre 6710 Mo
 [971 s] 4 images · === fiche-maitre-coulibaly   |=====================================>            | 3/4 - 236.94s/it[K · mémoire libre 6702 Mo
 [1092 s] 5 images · === perso-maitre-coulibaly   |==================================================| 4/4 - 236.33s/it[K · mémoire libre 11127 Mo
+[1213 s] 5 images · === perso-maitre-coulibaly   |==================================================| 4/4 - 236.33s/it[K · mémoire libre 6204 Mo
