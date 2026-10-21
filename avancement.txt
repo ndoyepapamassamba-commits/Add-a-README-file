@@ -94,3 +94,4 @@
 [4011 s] 10 images · === perso-la-voisine   |============>                                     | 1/4 - 398.90s/it[K · mémoire libre 6198 Mo
 [4132 s] 10 images · === perso-la-voisine   |============>                                     | 1/4 - 398.90s/it[K · mémoire libre 6198 Mo
 [4253 s] 10 images · === perso-la-voisine   |============>                                     | 1/4 - 398.90s/it[K · mémoire libre 6191 Mo
+[4375 s] 10 images · === perso-la-voisine   |============>                                     | 1/4 - 398.90s/it[K · mémoire libre 6190 Mo
