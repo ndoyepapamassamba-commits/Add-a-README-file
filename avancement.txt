@@ -25,3 +25,4 @@
 [972 s] 11 clips · === madame-coumba--ecouter (at_runtime)   |=========================>                        | 2/4 - 135.32s/it[K · mémoire libre 13814 Mo
 [122 s] 11 clips · === monsieur-diarra--mentir (at_runtime)   |============>                                     | 1/4 - 92.08s/it[K · mémoire libre 13769 Mo
 [244 s] 11 clips · === monsieur-diarra--mentir (at_runtime)   |=========================>                        | 2/4 - 89.20s/it[K · mémoire libre 13767 Mo
+[365 s] 11 clips · === monsieur-diarra--mentir (at_runtime)   |=====================================>            | 3/4 - 89.66s/it[K · mémoire libre 13783 Mo
