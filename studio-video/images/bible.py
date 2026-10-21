@@ -95,6 +95,14 @@ def texte_dessinable(t):
     return re.sub(r'\s+', ' ', t.replace('en couronne', 'noué haut sur la tête')).strip()
 
 
+def sans_objet_tenu(t):
+    """21/10 06:55 — Patron Séry v3 : « ardoise et craie à la main » dessinée sur la FICHE ; la planche (« same accessories »
+    d'après la fiche) la garde malgré « empty hands », et elle flotte contre la hanche quand la main s'ouvre. Les objets tenus
+    (« à la main », « sous le bras », « levé ») sortent de la tenue dessinée : mains vides dès la fiche (21 fiches en parlent)."""
+    garde = [x for x in re.split(r',\s*', t or '') if not re.search(r'à la main|en main|dans la main|sous le bras|\blevée?\b', x)]
+    return ', '.join(garde).rstrip('.').strip() + ('.' if garde else '')
+
+
 def slug(t):
     return re.sub(r'[^a-z0-9]+', '-', unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode().lower()).strip('-')
 
@@ -123,10 +131,11 @@ REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2,
            'perso-yaya-lapprenti': 2, 'perso-maitre-coulibaly': 2, 'perso-le-banquier': 3, 'perso-le-tonton': 2,
            'perso-mamie-bintou': 2, 'perso-madame-konan': 2,
            # 21/10 01:35, lot 5 : veste de Koffi (DJ Kevin, Boubacar), comptoir collé aux poses (Patron Séry)
-           'perso-dj-kevin': 3, 'perso-boubacar': 3, 'perso-patron-sery': 3,
+           'perso-dj-kevin': 3, 'perso-boubacar': 3, 'perso-patron-sery': 4,
            # 21/10 04:25 : Boubacar v2 en lunettes noires sur la fiche, lunettes claires sur les poses, alors que sa fiche n'en dit
            # rien (lunettes de Koffi, l'image de style) → « sans lunettes » quand la fiche n'en porte pas (sans_lunettes)
            # 21/10 04:45 : Patron Séry v2 sans sa moustache sur deux poses, ardoise flottante → v3 (traits rappelés, mains vides)
+           # 21/10 06:55 : Patron Séry v3, moustache revenue mais ardoise encore sur 2 poses (flottante sur la 3e) → v4, fiche mains vides
            # 21/10 01:36, planches déjà acceptées relues avec ce défaut en tête : rire de Koffi (lunettes, visage) sur la dernière pose
            # (Djecky, Général Zongo, Mécano Issa, Monsieur Diarra, Tiékoro), Le Frimeur sosie de Koffi, rire de Baye (Grand-père
            # Ndiaye, Tonton Dieng)
@@ -198,7 +207,7 @@ def taches():
                   'ref_px': 448 * 768,   # la fiche entière, sans réduction : c'est l'identité à garder
                   'fiche': {'w': 448, 'h': 768, 'refs': [ref_style(p) + '-neutre.msb'], 'ref_px': 448 * 768,
                             'prompt': FICHE.format(nom=nom.title(), apparence=texte_dessinable(p.get('apparence')),
-                                                   tenue=texte_dessinable(p.get('tenue')), fond=fond) + sans_lunettes(p)},
+                                                   tenue=sans_objet_tenu(texte_dessinable(p.get('tenue'))), fond=fond) + sans_lunettes(p)},
                   # 21/10 04:00 : la fine moustache du Banquier (sa fiche la dit) disparaissait des poses ; « same face » ne suffit
                   # pas pour un détail fin → les traits de la fiche sont rappelés à la planche
                   'prompt': PLANCHE.format(poses=POSES.format(fond=fond)) + (f" Keep these features in every pose: {traits_physiques(p.get('apparence'))}" if traits_physiques(p.get('apparence')) else '') + sans_lunettes(p),
