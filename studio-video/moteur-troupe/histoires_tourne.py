@@ -93,6 +93,9 @@ def main(modele, part, parts, minutes, sortie, pub_claude):
     H.llm = llm
     lignes = []
 
+    import threading
+    dernier = [time.time()]; verrou = threading.Lock()
+
     def journal(t):
         lignes.append(t); print(t, flush=True)
         if 'brouillon refusé' in t: stats['brouillons_refuses_controle'] += 1
@@ -103,6 +106,13 @@ def main(modele, part, parts, minutes, sortie, pub_claude):
         if m: stats['planchers_v17'].append(float(m.group(1)))
         m = re.search(r'note ([0-9.]+) \(drôle', t)
         if m: stats['notes'].append(float(m.group(1)))
+        # mesure écrite au fil de l'essai (au plus une fois par minute) : un essai dure 15 à 30 min, la poussée a lieu toutes
+        # les 5 min — le chronométrage du scénariste se lit avant la fin du premier lieu (21/10 07:55)
+        if time.time() - dernier[0] > 60 and verrou.acquire(blocking=False):   # journal est appelé par plusieurs fils
+            try:
+                dernier[0] = time.time(); ecrit()
+            except Exception: pass
+            finally: verrou.release()
 
     def temps():   # 21/10/2026 : lecture de la consigne (dont la part reprise du cache) et écriture, par rôle, selon llama-server
         out = {}
