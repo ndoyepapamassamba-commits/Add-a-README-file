@@ -73,3 +73,4 @@
 [245 s] 21 clips · === le-banquier--choc (at_runtime)   |=====================================>            | 3/4 - 59.31s/it[K · mémoire libre 13773 Mo
 [366 s] 22 clips · === djecky--mentir (at_runtime)   |============>                                     | 1/4 - 61.30s/it[K · mémoire libre 13774 Mo
 [488 s] 22 clips · === djecky--mentir (at_runtime)   |=====================================>            | 3/4 - 59.54s/it[K · mémoire libre 13773 Mo
+[123 s] 23 clips · === madame-coumba--choc@2 (at_runtime)   |============>                                     | 1/4 - 68.47s/it[K · mémoire libre 13755 Mo
