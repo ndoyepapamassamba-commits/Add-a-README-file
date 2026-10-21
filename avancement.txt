@@ -20,3 +20,4 @@
 [2432 s] 3 images · === perso-petite-khadija   |==================================================| 4/4 - 155.45s/it[K · mémoire libre 6312 Mo
 [2553 s] 3 images · === perso-petite-khadija   |============>                                     | 1/4 - 394.51s/it[K · mémoire libre 6308 Mo
 [2674 s] 3 images · === perso-petite-khadija   |============>                                     | 1/4 - 394.51s/it[K · mémoire libre 6290 Mo
+[2796 s] 3 images · === perso-petite-khadija   |============>                                     | 1/4 - 394.51s/it[K · mémoire libre 6295 Mo
