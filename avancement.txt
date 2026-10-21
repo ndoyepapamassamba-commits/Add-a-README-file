@@ -83,3 +83,4 @@
 [2310 s] 12 images · === perso-grand-pere-ndiaye   |=========================>                        | 2/4 - 458.23s/it[K · mémoire libre 6174 Mo
 [2431 s] 12 images · === perso-grand-pere-ndiaye   |=========================>                        | 2/4 - 458.23s/it[K · mémoire libre 6172 Mo
 [2553 s] 12 images · === perso-grand-pere-ndiaye   |=====================================>            | 3/4 - 457.66s/it[K · mémoire libre 6178 Mo
+[2674 s] 12 images · === perso-grand-pere-ndiaye   |=====================================>            | 3/4 - 457.66s/it[K · mémoire libre 6168 Mo
