@@ -1,1 +1,2 @@
 [122 s] 4 clips · === le-patriarche--rire (at_runtime)   |============>                                     | 1/4 - 85.80s/it[K · mémoire libre 13791 Mo
+[244 s] 4 clips · === le-patriarche--rire (at_runtime)   |=========================>                        | 2/4 - 84.27s/it[K · mémoire libre 13792 Mo
