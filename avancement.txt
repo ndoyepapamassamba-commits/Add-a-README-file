@@ -91,3 +91,4 @@
 [2671 s] 7 images · === perso-agent-bakary   |==================================================| 4/4 - 382.63s/it[K · mémoire libre 2987 Mo
 [2792 s] 7 images · === fiche-fatou   |==================================================| 4/4 - 382.63s/it[K · mémoire libre 6998 Mo
 [2914 s] 7 images · === fiche-fatou   |==================================================| 4/4 - 382.63s/it[K · mémoire libre 6704 Mo
+[3036 s] 7 images · === fiche-fatou   |============>                                     | 1/4 - 225.48s/it[K · mémoire libre 6696 Mo
