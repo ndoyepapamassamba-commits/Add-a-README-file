@@ -18,6 +18,51 @@ def _grille(t):
     return round(t * FPS)
 
 
+def _ease(u):
+    u = min(1.0, max(0.0, u)); return u * u * (3 - 2 * u)
+
+
+def _visages(img_bgr):
+    """boîtes (x0, y0, x1, y1) des visages de l'image : peau du visage du segmenteur MediaPipe (classe 3, peau.py)."""
+    import peau
+    mp, seg = peau._seg(); rgb = np.ascontiguousarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
+    m = cv2.resize(np.squeeze(seg.segment(mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)).category_mask.numpy_view()),
+                   (img_bgr.shape[1], img_bgr.shape[0]), interpolation=cv2.INTER_NEAREST) == 3
+    k, _, st, _ = cv2.connectedComponentsWithStats(m.astype(np.uint8))
+    return [(x, y, x + w, y + h) for x, y, w, h, a in st[1:] if a > 0.004 * m.size]
+
+
+def _place_carte(titre, visages):
+    """(centre x, centre y de l'émoji, haut du titre, taille de base) qui couvre le moins de visage — tourne.place_carte
+    (v34 : l'émoji couvrait le visage de Coumba, le titre la tête de Petit Mamadou), mêmes positions candidates."""
+    from PIL import ImageFont
+    import cartes_fx
+    f = ImageFont.truetype(cartes_fx.FONT, 34)
+    try: f.set_variation_by_name(b'Black')
+    except Exception: pass
+    lignes, cur = 1, ''
+    for w_ in titre.split():
+        if f.getlength((cur + ' ' + w_).strip()) > CW - 60: lignes += 1; cur = w_
+        else: cur = (cur + ' ' + w_).strip()
+    th = 44 * lignes
+    def couvre(r):
+        tot = 0.0
+        for v in visages:
+            mx, my = 0.15 * (v[2] - v[0]), 0.15 * (v[3] - v[1])
+            tot += max(0.0, min(r[2], v[2] + mx) - max(r[0], v[0] - mx)) * max(0.0, min(r[3], v[3] + my) - max(r[1], v[1] - my))
+        return tot
+    best = None
+    for base in (210, 170, 140):
+        sz = 1.32 * base
+        for k_, (ex, ey, ty) in enumerate(((CW / 2, 145, 290), (CW * 0.27, 30 + sz / 2, CH - th - 14), (CW * 0.73, 30 + sz / 2, CH - th - 14),
+                                         (CW * 0.27, CH - 14 - sz / 2, 18), (CW * 0.73, CH - 14 - sz / 2, 18), (CW / 2, CH - 14 - sz / 2, 18))):
+            ex = min(CW - sz / 2 - 4, max(sz / 2 + 4, ex))
+            cle = (couvre((ex - sz / 2, ey - sz / 2, ex + sz / 2, ey + sz / 2)) + couvre((30, ty - 6, CW - 30, ty + th)), 210 - base, k_)
+            if best is None or cle < best[0]: best = (cle, (ex, ey, ty, base))
+        if best[0][0] == 0: break
+    return best[1]
+
+
 def plan_sketch(S, lignes, t0, t1, decor, banque):
     """plan de montage d'un sketch (même forme que scene.plan) à partir du minutage de voix.py : chaque réplique commence quand
     sa voix commence (la synchro des lèvres part de la première image), l'attente avant la 1re réplique et la réaction tenue
@@ -67,8 +112,8 @@ def rend(episode, version, cle, cache):
     H = json.load(open(os.path.join(episode, 'histoire.json'), encoding='utf-8')); T = json.load(open(os.path.join(episode, 'timeline.json'), encoding='utf-8'))
     D = os.path.join(episode, version); os.makedirs(os.path.join(D, 'clip'), exist_ok=True)
     assemble.FPS = FPS; camera_v1.SORTIE = (CW, CH); n = _grille(T['total']); taches = []; info = {}
-    tmp = tempfile.mkdtemp(prefix='rendu-banque-')
-    for S in T['sketchs']:
+    tmp = tempfile.mkdtemp(prefix='rendu-banque-'); deja = 0.0
+    for j, S in enumerate(T['sketchs']):
         HS = next(x for x in H['sketchs'] if x['id'] == S['id']); lieu = HS.get('lieu_bible') or HS.get('lieu'); lieu = usine_scene.DECOR_DU_LIEU.get(lieu, lieu)
         lignes = sorted([L for L in T['lines'] if L['sketch'] == S['id']], key=lambda L: L['t0'])
         acteurs = sorted({scene.slug(L['qui']) for L in lignes} | {scene.slug(a) for a in HS.get('acteurs') or []})
@@ -79,7 +124,15 @@ def rend(episode, version, cle, cache):
         # carte qui suit le sketch (« LE CHOC », titre suivant) au lieu d'une image figée — dans la V1, l'arrière-plan bouge
         # aussi sous les cartes (mesuré seconde par seconde : 0,50 à 1,0 aux cartes ; épisode banque 1 : image fixe)
         fin = max([c['t1'] for c in T.get('cartes', []) if abs(c['t0'] - S['t1']) < 0.05] + [S['t1']])
-        P = plan_sketch(HS, lignes, S['t0'], fin, decor, os.path.join(cache, 'clips'))
+        # AUCUNE IMAGE FIGÉE (21/10/2026, épisode banque 1 v6 : 11 sautes sur 31 dans les 0,4 premières secondes des sketchs 1
+        # et 2) : entre la fin d'une carte et la 1re image du sketch suivant (0,25 s), et avant le 1er sketch (0,3 s), l'image
+        # la plus proche était recopiée — résidu 0,0, puis la poussée d'ouverture démarrait d'un coup (7 ‰ de zoom par image,
+        # résidu 4) : saute. La V1 pousse plus vite encore (jusqu'à 37 ‰ par image, mesuré à 25,2 s) sans saute, parce que sa
+        # scène bouge déjà sous la carte. Le sketch commence donc dès la fin de la carte précédente (dès 0 pour le premier,
+        # attente avant la 1re réplique allongée d'autant) et le dernier joue jusqu'au bout de la bande son, sous la boucle
+        if j == len(T['sketchs']) - 1: fin = max(fin, T['total'])
+        t0 = min(deja, S['t0']); deja = fin
+        P = plan_sketch(HS, lignes, t0, fin, decor, os.path.join(cache, 'clips'))
         gains, inf = assemble.prepare(P, tmp); info[S['id']] = {'lieu': lieu, 'decor': os.path.basename(decor), 'plans': inf.get('plans')}
         taches += [(P, k, gains, D) for k in range(len(P['repliques']))]
     # processus NEUFS (spawn) : le parent a déjà ouvert MediaPipe (sens dessiné des personnages, assemble.sens_du_corps) ; des
@@ -87,14 +140,26 @@ def rend(episode, version, cle, cache):
     import multiprocessing
     with ProcessPoolExecutor(int(os.environ.get('ASSEMBLE_PROCS', os.cpu_count() or 4)), mp_context=multiprocessing.get_context('spawn')) as ex:
         list(ex.map(_tache, taches))
-    # avant le 1er sketch et pendant les cartes entre sketchs : l'image la plus proche, assombrie comme une carte de la V1
-    # (tourne.carte_sur_scene : l'image continue sous l'émoji et le titre posés par compose.py)
+    # CARTES DE LA V1 (21/10/2026, épisode banque 1 v7) : pendant les cartes entre sketchs, l'image (qui continue de jouer)
+    # s'assombrit et porte, DANS la scène, l'émoji animé, ses rayons et le ruban du titre du sketch suivant — la carte de la V1
+    # (tourne.sur_scene → cartes_fx.carte), posée hors des visages (tourne.place_carte). Avant, la scène était seulement
+    # assombrie : mesuré sur la V1, le décor bouge à 0,5–1,0 sous ses cartes et le résidu y reste à 1,2–1,5 ; sous les nôtres
+    # 0,4–0,5, si bien que la poussée d'ouverture du sketch suivant (résidu 3 à 5) comptait 7 sautes. Une image manquante
+    # (il ne devrait plus y en avoir) : la plus proche
+    import cartes_fx
+    ids = [x['id'] for x in H['sketchs']]; places = {}
     faites = sorted(int(f[1:6]) for f in os.listdir(os.path.join(D, 'clip')) if f.startswith('f'))
     for i in range(n):
-        f = os.path.join(D, 'clip', f'f{i:05d}.jpg'); carte = any(c['t0'] <= i / FPS < c['t1'] for c in T.get('cartes', []))
-        if os.path.isfile(f) and not carte: continue
+        f = os.path.join(D, 'clip', f'f{i:05d}.jpg'); c = next((c for c in T.get('cartes', []) if c['t0'] <= i / FPS < c['t1']), None)
+        if os.path.isfile(f) and c is None: continue
         im = cv2.imread(f) if os.path.isfile(f) else cv2.imread(os.path.join(D, 'clip', f'f{min(faites, key=lambda x: abs(x - i)):05d}.jpg'))
-        cv2.imwrite(f, (im * (0.65 if carte else 1.0)).astype(np.uint8), [cv2.IMWRITE_JPEG_QUALITY, 94])
+        if c is not None:
+            titre = next((x.get('titre', '') for x in H['sketchs'] if x['id'] == c.get('apres')), '').upper()
+            if c['t0'] not in places: places[c['t0']] = _place_carte(titre, _visages(im))
+            t = i / FPS; k = _ease((t - (c['t0'] - 0.05)) / 0.15)
+            cal = cartes_fx.carte(CW, CH, t - c['t0'], titre, ids.index(c['apres']) + 1 if c.get('apres') in ids else 1, len(ids), places[c['t0']]).astype(np.float32)
+            a = cal[..., 3:] / 255.0; im = im.astype(np.float32) * (1 - 0.35 * k) * (1 - a) + cal[..., 2::-1] * a
+        cv2.imwrite(f, np.clip(im, 0, 255).astype(np.uint8), [cv2.IMWRITE_JPEG_QUALITY, 94])
     for f in os.listdir(os.path.join(D, 'clip')):   # rien au-delà de la durée de la bande son
         if f.startswith('f') and int(f[1:6]) >= n: os.remove(os.path.join(D, 'clip', f))
     json.dump({'images': n, 'fps': FPS, 'banque': True, 'grammaire': 'V1 (camera_v1.py)', 'sketchs': info,

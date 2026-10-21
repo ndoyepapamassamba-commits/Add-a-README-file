@@ -97,7 +97,13 @@ def prepare(d, plaque, masques=(), jev=True, cartes=None):
     n, lab, st, _ = cv2.connectedComponentsWithStats((tissu > 0.15).astype(np.uint8))
     haut = np.zeros((H, W), np.float32); ys = np.mgrid[0:H, 0:W][0].astype(np.float32)
     for i in range(1, n):
-        if st[i, cv2.CC_STAT_AREA] > 0.08 * H * W: continue   # un « linge » grand comme un mur n'est pas du linge
+        if st[i, cv2.CC_STAT_AREA] > 0.08 * H * W:
+            if cartes is None: continue   # un « linge » grand comme un mur n'est pas du linge
+            # CARTES ADE20K (21/10/2026, banque, décor du marché immobile : 0,001 de fond qui bouge) : une rangée d'auvents,
+            # de rideaux et de pagnes suspendus ne fait qu'un morceau (15,7 % de l'image), écarté en entier ; ici chaque
+            # colonne du morceau est pincée à son propre haut, comme une étoffe accrochée
+            m = lab == i; c_ = m.any(0); top = np.where(c_, m.argmax(0), 0); bas = np.where(c_, H - 1 - m[::-1].argmax(0), 0)
+            haut[m] = np.clip((ys - top[None, :]) / np.maximum(8, bas - top)[None, :], 0, 1)[m]; continue
         y0, hh = st[i, cv2.CC_STAT_TOP], max(8, st[i, cv2.CC_STAT_HEIGHT]); m = lab == i
         haut[m] = np.clip((ys[m] - y0) / hh, 0, 1)
     V_ = dict(feuil=feuil, tissu=tissu * cv2.GaussianBlur(haut, (0, 0), 4), fumee=fumee, ampoules=ampoules, bete=bete,

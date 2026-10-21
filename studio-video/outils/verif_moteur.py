@@ -923,7 +923,16 @@ try:
     if _vm32._fl()[1] == 'fl-hérité': echecs.append('rendu banque : détecteur de visages hérité réutilisé dans un autre processus')
     _src32 = _in32.getsource(_rb32.rend)
     if "c['t0'] - S['t1']" not in _src32 or 'carte' not in _src32: echecs.append('rendu banque : scène figée sous les cartes')
-    print('rendu banque : processus neufs (spawn), détecteurs par processus, scène qui continue sous les cartes : OK')
+    # 21/10/2026 17:00 (v6 : 11 sautes sur 31 au départ des sketchs) : plus d'image figée entre une carte et le sketch suivant,
+    # ni avant le premier, ni après le dernier
+    if "min(deja, S['t0'])" not in _src32 or "T['total']" not in _src32: echecs.append('rendu banque : image figée avant un sketch ou après le dernier')
+    # 21/10/2026 17:30 (v7 : 7 sautes à la reprise du sketch 2) : la carte de la V1 (émoji animé, rayons, ruban du titre) est
+    # dessinée dans la scène, hors des visages, comme tourne.sur_scene
+    if 'cartes_fx.carte' not in _src32: echecs.append('rendu banque : carte de la V1 absente de la scène (seulement assombrie)')
+    _pc32 = _rb32._place_carte('LE TITRE', [(_rb32.CW / 2 - 90, 40, _rb32.CW / 2 + 90, 250)]); _sz32 = 1.32 * _pc32[3]
+    if not (_pc32[0] + _sz32 / 2 <= _rb32.CW / 2 - 90 or _pc32[0] - _sz32 / 2 >= _rb32.CW / 2 + 90 or _pc32[1] - _sz32 / 2 >= 250):
+        echecs.append(f'rendu banque : émoji de la carte posé sur le visage {_pc32}')
+    print('rendu banque : processus neufs (spawn), détecteurs par processus, scène qui continue sous les cartes et entre les sketchs, carte de la V1 hors des visages : OK')
 except Exception as e:
     echecs.append(f'rendu banque : {e}')
 

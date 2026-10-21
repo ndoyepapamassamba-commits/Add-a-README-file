@@ -221,7 +221,7 @@ def prepare_decor(img, d, seg, pieds, graine=5, cache=None):
                       'lumiere': lisse(np.isin(seg, LAMPE)), 'animal': lisse(np.isin(seg, ANIMAL))}
             import hashlib, tempfile   # couches en cache (une fois par décor, partagées par les processus de rendu)
             dv = os.path.join(cache or _dossier_lit(os.path.join(tempfile.gettempdir(), 'x.mov')),
-                              'vie-' + hashlib.sha1(im8[::7, ::7].tobytes() + seg[::7, ::7].tobytes()).hexdigest()[:12]); os.makedirs(dv, exist_ok=True)
+                              'vie2-' + hashlib.sha1(im8[::7, ::7].tobytes() + seg[::7, ::7].tobytes()).hexdigest()[:12]); os.makedirs(dv, exist_ok=True)
             V['dv'] = DV.prepare(dv, im8, (), jev=False, cartes=cartes); sol = DV.soleil(im8)
             V['ampl'] = (6.0 if sol is not None and sol[1] > 110 else 1.0) * W / 1080
         except Exception as e:
