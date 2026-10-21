@@ -52,3 +52,4 @@
 [4862 s] 8 images · === decor-cuisine-coin-jour   |=====================================>            | 3/4 - 87.29s/it[K · mémoire libre 7053 Mo
 [4984 s] 9 images · === maison-general-zongo-cour-champ-jour   |==================================================| 4/4 - 88.05s/it[K · mémoire libre 7054 Mo
 [5105 s] 9 images · === maison-general-zongo-cour-champ-jour   |============>                                     | 1/4 - 93.39s/it[K · mémoire libre 7034 Mo
+[5227 s] 9 images · === maison-general-zongo-cour-champ-jour   |=====================================>            | 3/4 - 86.37s/it[K · mémoire libre 7033 Mo
