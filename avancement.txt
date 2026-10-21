@@ -39,3 +39,4 @@
 [1215 s] 13 clips · === sur-awa--mentir (at_runtime)   |============>                                     | 1/4 - 83.43s/it[K · mémoire libre 13726 Mo
 [1337 s] 13 clips · === sur-awa--mentir (at_runtime)   |=========================>                        | 2/4 - 82.79s/it[K · mémoire libre 13738 Mo
 [123 s] 13 clips · === mamie-bintou--rire (at_runtime)  · mémoire libre 13775 Mo
+[244 s] 13 clips · === mamie-bintou--rire (at_runtime)   |============>                                     | 1/4 - 135.22s/it[K · mémoire libre 13758 Mo
