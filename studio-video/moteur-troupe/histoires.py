@@ -235,6 +235,9 @@ def noms_exacts(h, lieu):
     for r in h.get('repliques') or []:
         q = n(r.get('qui', ''))
         cand = [a for a in acteurs if n(a) == q] or [a for a in acteurs if q and (q in n(a) or n(a) in q)]
+        if not cand:   # faute de frappe du scénariste (« Petit Mussa ») : le nom le plus proche, s'il l'est vraiment
+            import difflib
+            cand = [a for a in acteurs if n(a) in difflib.get_close_matches(q, [n(x) for x in acteurs], n=1, cutoff=0.8)]
         if len(cand) == 1: r['qui'] = cand[0]
     return h
 

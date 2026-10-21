@@ -127,6 +127,13 @@ REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2,
 # en cours ; la répartition des tâches entre machines ne bouge pas tant que l'ordre de la liste est gardé — vérifié à chaque passe).
 
 
+# 21/10 01:50 — PRIORITÉ AUX PERSONNAGES : la banque de mouvements (les gestes des nouveaux personnages, sans lesquels aucune
+# vidéo ne les montre) attend derrière la bible sur les 20 machines du compte. Les décors secondaires (autres vues, nuit,
+# ambiances : rang 3 et plus) passent à la passe suivante ; chaque machine rend sa place dès ses personnages et ses maisons
+# de jour faits. Remettre à False (et pousser bible/taches.json) pour les tourner.
+REPORTER_SECONDAIRES = True
+
+
 GENRES = json.load(open(os.path.join(ICI, '..', 'blender', 'film', 'characters.json'), encoding='utf-8'))
 DECENNIES = {'vingtaine': 25, 'trentaine': 35, 'quarantaine': 45, 'cinquantaine': 55, 'soixantaine': 65, 'septantaine': 75}
 
@@ -192,6 +199,7 @@ def taches():
                                          f"open empty floor in the middle foreground, completely empty, no people.")})
     for t in T:
         if t['id'] in REFAIRE: t['version'] = REFAIRE[t['id']]
+        if REPORTER_SECONDAIRES and rang(t) >= 3: t['plus_tard'] = True
     return sorted(T, key=rang)
 
 

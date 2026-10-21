@@ -62,9 +62,10 @@ def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude, minute
     faits = {i for i in presents if versions.get(i, 1) == next((t.get('version', 1) for t in T if t['id'] == i), 1)}
     priv = coffre._priv(priv_fabrique, coffre._phrase()); pub = coffre._pub(pub_claude); refs = {}
     duree = {}   # type de tâche → plus longue durée vue, pour ne pas commencer une image qui dépasserait le temps de la machine
-    print(json.dumps({'part': int(part), 'taches': len(T), 'deja_faites': len(faits & {t['id'] for t in T})}), flush=True)
+    print(json.dumps({'part': int(part), 'taches': len(T), 'deja_faites': len(faits & {t['id'] for t in T}), 'reportees': sum(1 for t in T if t.get('plus_tard') and t['id'] not in faits)}), flush=True)
     for t in T:
         if t['id'] in faits: continue
+        if t.get('plus_tard'): continue   # décor secondaire reporté (bible.REPORTER_SECONDAIRES) : la place va à la banque
         if time.time() + duree.get(t['type'], 0) > fin:
             print(json.dumps({'arret': 'temps de la machine', 'reste': sum(x['id'] not in faits for x in T)}), flush=True); break
         for r in t['refs'] + t.get('fiche', {}).get('refs', []):
