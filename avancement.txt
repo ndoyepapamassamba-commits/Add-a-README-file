@@ -41,3 +41,4 @@
 [244 s] 18 clips · === docteur-sylla--montrer (at_runtime)   |============>                                     | 1/4 - 39.59s/it[K · mémoire libre 13825 Mo
 [365 s] 19 clips · === mademoiselle-rosine--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13821 Mo
 [487 s] 19 clips · === mademoiselle-rosine--colere (at_runtime)   |=====================================>            | 3/4 - 38.83s/it[K · mémoire libre 13804 Mo
+[122 s] 20 clips · === le-banquier--parler (at_runtime)  · mémoire libre 13791 Mo
