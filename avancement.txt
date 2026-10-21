@@ -109,3 +109,4 @@
 [5701 s] 8 images · === perso-le-frimeur   |=====================================>            | 3/4 - 438.17s/it[K · mémoire libre 6196 Mo
 [5823 s] 8 images · === perso-le-frimeur   |==================================================| 4/4 - 437.80s/it[K · mémoire libre 5213 Mo
 [123 s] 8 images · === fiche-agent-gora  · mémoire libre 6697 Mo
+[244 s] 8 images · === fiche-agent-gora  · mémoire libre 6697 Mo
