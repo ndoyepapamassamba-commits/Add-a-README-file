@@ -210,6 +210,13 @@
    "lora": "at_runtime",
    "secondes": 582,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "le-frimeur--colere@2",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 579,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39585702697"
