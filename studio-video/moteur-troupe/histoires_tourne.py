@@ -102,6 +102,7 @@ def main(modele, part, parts, minutes, sortie, pub_claude):
             stats['acceptes'] += 1
             h = json.load(open(os.path.join(dossier, f'{i}.json'), encoding='utf-8'))
             h['scenariste'] = modele
+            H.CHUTES_DEJA.extend(r['texte'] for r in h['repliques'] if r.get('chute'))   # plus de reformulation sur cette machine
             # nom propre à chaque tour de machines (GITHUB_RUN_ID) : une relance n'écrase plus les sketchs déjà acceptés
             open(os.path.join(sortie, f"histoire-{modele}-{part}-{os.environ.get('GITHUB_RUN_ID', 'local')}-{k}.msb"), 'wb').write(
                 coffre.scelle_octets(json.dumps(h, ensure_ascii=False).encode(), pub))

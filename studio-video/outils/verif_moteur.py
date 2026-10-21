@@ -589,6 +589,22 @@ try:
 except Exception as e:
     echecs.append(f'porte drôle : {e}')
 
+# chutes de la machine (21/10/2026) : chaque essai a son registre ; les chutes déjà acceptées sur la machine (CHUTES_DEJA) doivent
+# arriver au contrôle des quasi-doublons de tout nouvel essai
+try:
+    import tempfile as _tf22
+    _sv22 = {k: getattr(_h14, k) for k in ('llm', 'verifie', 'CHUTES_DEJA')}; _vu22 = []
+    _h14.llm = lambda *a, **k: '{}'; _h14.verifie = lambda t, l, deja=(), *a, **k: (_vu22.append(list(deja)) or (None, []))
+    _h14.CHUTES_DEJA = ['Dans la sauce grée, mon djê !']
+    try:
+        with _tf22.TemporaryDirectory() as _d22: _h14.une(_d22, next(iter(_h14.LIEUX)), K=1, tours_max=1, journal=lambda t: None)
+    finally:
+        for _k22, _v22 in _sv22.items(): setattr(_h14, _k22, _v22)
+    if not _vu22 or 'Dans la sauce grée, mon djê !' not in _vu22[0]: echecs.append('chutes de la machine absentes du contrôle des doublons')
+    print('chutes de la machine : transmises au contrôle des quasi-doublons de chaque essai : OK')
+except Exception as e:
+    echecs.append(f'chutes de la machine : {e}')
+
 # pas deux fois le même geste (21/10/2026) : départ du clip d'écoute propre à chaque vidéo, continu d'une réplique à l'autre
 try:
     import assemble as _as15

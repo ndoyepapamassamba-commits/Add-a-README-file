@@ -120,6 +120,9 @@ SEUIL_V17 = 0.5
 # trois sketchs publiés de la V17, mesurée par le même juge au départ de chaque machine (histoires_tourne) ; 0 = pas de porte.
 # Le plancher (6 appels du juge) n'est plus joué pour un brouillon sous la porte.
 DROLE_MIN = 0.0
+# chutes déjà acceptées ailleurs dans la même série (histoires_tourne : celles de la machine) — chaque essai a son propre registre,
+# sans cette liste une machine ne comparait jamais une chute neuve à celles qu'elle avait déjà acceptées (21/10/2026)
+CHUTES_DEJA = []
 
 FORMATS = {'blague': {'n': (2, 4), 'duree': '5 à 9 secondes', 'rappel': False},
            'sketch': {'n': (6, 10), 'duree': '15 à 25 secondes', 'rappel': True}}
@@ -500,7 +503,8 @@ def charge(dossier, i):
 
 def une(dossier, lieu, recap='', K=3, tours_max=4, seuil=0.6, journal=print, fmt='sketch'):
     """écrit des brouillons jusqu'à battre le champion du registre (ou à défaut le meilleur de 4 tours) ; → id ou None."""
-    R = registre(dossier); deja = [a['chute'] for a in R['acceptees']] + [r['texte'] for v in V17 for r in v['repliques'] if r.get('chute')]
+    R = registre(dossier); deja = ([a['chute'] for a in R['acceptees']] + [r['texte'] for v in V17 for r in v['repliques'] if r.get('chute')]
+                                   + CHUTES_DEJA)
     champ = charge(dossier, R['acceptees'][-1]['id']) if R['acceptees'] else None
     faiblesses = ''
     for tour in range(tours_max):
