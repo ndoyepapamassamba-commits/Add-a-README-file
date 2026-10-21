@@ -17,3 +17,4 @@
 [972 s] 2 images · === maison-sur-awa-salon-large-jour   |============>                                     | 1/4 - 168.10s/it[K · mémoire libre 7026 Mo
 [1093 s] 2 images · === maison-sur-awa-salon-large-jour   |=========================>                        | 2/4 - 157.71s/it[K · mémoire libre 7025 Mo
 [1214 s] 2 images · === maison-sur-awa-salon-large-jour   |=========================>                        | 2/4 - 157.71s/it[K · mémoire libre 7025 Mo
+[1335 s] 2 images · === maison-sur-awa-salon-large-jour   |=====================================>            | 3/4 - 157.81s/it[K · mémoire libre 7017 Mo
