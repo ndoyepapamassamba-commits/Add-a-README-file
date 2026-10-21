@@ -60,3 +60,4 @@
 [6066 s] 6 images · === decor-salon-champ-jour   |=====================================>            | 3/4 - 156.81s/it[K · mémoire libre 7027 Mo
 [122 s] 6 images · === fiche-agent-gora  · mémoire libre 6675 Mo
 [243 s] 6 images · === fiche-agent-gora  · mémoire libre 6663 Mo
+[122 s] 6 images · === fiche-agent-gora  · mémoire libre 6690 Mo
