@@ -301,7 +301,7 @@ def _ordre_plan(P, s, nom, mov, n_images):
     # à l'écoute, la bouche n'est qu'à peine tenue fermée (poids 0,15) : v4, poids plein — le corps s'arrêtait sur les images
     # bouche fermée (part du corps qui bouge 0,184 → 0,165)
     w = np.concatenate([np.full(n, 1.0 if p else ECOUTE_POIDS) for n, p in zip(ns, parle)])
-    o = LB.ordre(q, e, FPS, w); out, a = {}, 0
+    o = LB.ordre(q, e, FPS, w, m=LB.mouvement(mov[:-4] + '.mp4')); out, a = {}, 0
     for j, n in zip(ks, ns): out[j] = o[a:a + n]; a += n
     return out
 
