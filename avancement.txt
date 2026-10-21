@@ -98,3 +98,4 @@
 [1215 s] 8 images · === perso-maman-brigitte   |============>                                     | 1/4 - 323.63s/it[K · mémoire libre 6134 Mo
 [1337 s] 8 images · === perso-maman-brigitte   |============>                                     | 1/4 - 323.63s/it[K · mémoire libre 6129 Mo
 [1458 s] 8 images · === perso-maman-brigitte   |=========================>                        | 2/4 - 313.94s/it[K · mémoire libre 6130 Mo
+[1580 s] 8 images · === perso-maman-brigitte   |=========================>                        | 2/4 - 313.94s/it[K · mémoire libre 6130 Mo
