@@ -71,3 +71,4 @@
 [731 s] 19 clips · === le-frimeur--colere (at_runtime)   |=====================================>            | 3/4 - 92.94s/it[K · mémoire libre 13790 Mo
 [852 s] 20 clips · === la-voisine--montrer (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14057 Mo
 [974 s] 20 clips · === la-voisine--montrer (at_runtime)   |============>                                     | 1/4 - 93.23s/it[K · mémoire libre 13793 Mo
+[1095 s] 20 clips · === la-voisine--montrer (at_runtime)   |=========================>                        | 2/4 - 92.54s/it[K · mémoire libre 13793 Mo
