@@ -30,3 +30,4 @@
 [123 s] 10 clips · === le-tonton--choc (at_runtime)   |============>                                     | 1/4 - 83.34s/it[K · mémoire libre 13751 Mo
 [244 s] 10 clips · === le-tonton--choc (at_runtime)   |=========================>                        | 2/4 - 82.80s/it[K · mémoire libre 13751 Mo
 [365 s] 10 clips · === le-tonton--choc (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13176 Mo
+[487 s] 11 clips · === tata-prisca--mentir (at_runtime)   |============>                                     | 1/4 - 84.94s/it[K · mémoire libre 13767 Mo
