@@ -32,3 +32,4 @@
 [1456 s] 10 clips · === mecano-issa--rire (at_runtime)   |=========================>                        | 2/4 - 125.19s/it[K · mémoire libre 13735 Mo
 [1578 s] 10 clips · === mecano-issa--rire (at_runtime)   |=====================================>            | 3/4 - 124.80s/it[K · mémoire libre 13738 Mo
 [1699 s] 11 clips · === fatou--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13750 Mo
+[1820 s] 11 clips · === fatou--rire (at_runtime)   |============>                                     | 1/4 - 125.92s/it[K · mémoire libre 13777 Mo
