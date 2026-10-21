@@ -851,5 +851,25 @@
   "activite": "",
   "genre": "femme",
   "age": 28
+ },
+ "SEKOU": {
+  "height": 1.75,
+  "voice": "siwis",
+  "pitch": 1.0,
+  "dessin": "scene",
+  "lieux": [],
+  "activite": "",
+  "genre": "homme",
+  "age": 32
+ },
+ "GEORGETTE": {
+  "height": 1.64,
+  "voice": "siwis",
+  "pitch": 1.0,
+  "dessin": "scene",
+  "lieux": [],
+  "activite": "",
+  "genre": "femme",
+  "age": 55
  }
 }

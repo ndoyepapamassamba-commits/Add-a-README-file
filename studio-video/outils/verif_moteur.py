@@ -1244,7 +1244,7 @@ try:
     _l50 = float(_re48.search(r'^LACET_MAX = ([0-9.]+)', _t50, _re48.M).group(1))
     _te50 = float(_re48.search(r'^TEINT_MAX = ([0-9.]+)', _t50, _re48.M).group(1))
     if _l50 > 45 or _te50 > 40: echecs.append(f'scène générée : seuils trop larges (lacet {_l50}°, teint L* {_te50})')
-    elif not all(x in _t50 for x in ('pose_landmarker_heavy.task', 'output_facial_transformation_matrixes=True', 'subprocess.Popen', 'prepare_expressions.py')):
+    elif not all(x in _t50 for x in ('pose_landmarker_heavy.task', 'output_facial_transformation_matrixes=True', 'subprocess.Popen', 'prepare_expressions.py', 'pp == n')):
         echecs.append('scène générée : tri par squelette et orientation du visage, ou visages en parallèle, absent')
     elif 'import prepare_scene' in _t50: echecs.append('scène générée : importer prepare_scene exécute le script entier')
     else: print(f'scène générée : tri visages de face (≤ {_l50:.0f}°) et teint (L* ≤ {_te50:.0f}), visages en parallèle : OK')

@@ -111,10 +111,15 @@ def _toutes_distinctes():
         enfant = n[5] > 1.05; t0, t1 = (1.10, 1.22) if enfant else (0.72, 0.88) if n[5] < 0.95 else (0.90, 1.10)   # hommes : siwis resserrée (0,92 : 72,5 % des mots compris, 0,76-0,84 : 81,2 %)
         cands = sorted(((m, round(t, 2)) for m in np.arange(0.88, 1.1401, 0.02) for t in np.arange(t0, t1 + 1e-6, 0.02)),
                        key=lambda c: abs(np.log(c[0])) / D_HAUTEUR + abs(c[1] - n[5]) / D_TIMBRE)
+        # TROISIÈME AXE (21/10/2026, 31 hommes : FOFANA et SEKOU, 32 ans, recevaient la même voix, plan hauteur × timbre plein) :
+        # l'étendue de l'intonation (±1 unité, 0,2) n'est essayée qu'après tout le plan à l'étendue naturelle — les voix déjà
+        # attribuées ne changent pas
         choix = n
-        for m, t in cands:
-            v = (n[0], None, int(round(n[2] * m)), n[3], n[4], float(t))
-            if all(_distance(v, p) >= 1.0 for p in pris if p[0] == v[0]): choix = v; break
+        for e in (n[3], round(n[3] + D_ETENDUE, 2), round(n[3] - D_ETENDUE, 2)):
+            for m, t in cands:
+                v = (n[0], None, int(round(n[2] * m)), e, n[4], float(t))
+                if all(_distance(v, p) >= 1.0 for p in pris if p[0] == v[0]): choix = v; break
+            if choix is not n: break
         _DISTINCTES[nom] = choix; pris.append(choix)
     return _DISTINCTES
 

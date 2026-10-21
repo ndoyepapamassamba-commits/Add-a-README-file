@@ -58,11 +58,18 @@ def visages_lisibles(img, n):
     FL = vision.FaceLandmarker.create_from_options(vision.FaceLandmarkerOptions(base_options=BaseOptions(model_asset_path=M + 'face_landmarker.task'),
                                                                                   num_faces=1, min_face_detection_confidence=0.2,
                                                                                   output_facial_transformation_matrixes=True))
-    H, W = img.shape[:2]; lus, nez = [], []
+    H, W = img.shape[:2]; lus, nez, larg = [], [], []
+    poses = []
     for p in PL.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(img))).pose_landmarks:
-        P = np.array([[q.x * W, q.y * H] for q in p]); s = max(float(np.linalg.norm(P[11] - P[12])), 20.0)
+        P = np.array([[q.x * W, q.y * H] for q in p]); poses.append((max(float(np.linalg.norm(P[11] - P[12])), 20.0), P))
+    # PREMIER PLAN SEULEMENT (21/10/2026, garba-etal-93 accepté à tort : trois personnages au premier plan, dont deux qui ont
+    # l'air d'enfants) : les figurants du fond (épaules < la moitié des plus larges) ne comptent pas ; au premier plan, il faut
+    # exactement n personnes — visages_lisibles.premier_plan
+    smax = max((s for s, _ in poses), default=1.0)
+    for s, P in sorted(poses, key=lambda x: -x[0]):
+        if s < 0.5 * smax: continue
         if any(np.linalg.norm(P[0] - q) < 0.5 * s for q in nez): continue   # même personne détectée deux fois
-        nez.append(P[0])
+        nez.append(P[0]); larg.append(s)
         x0, x1 = int(max(0, P[0, 0] - 0.9 * s)), int(min(W, P[0, 0] + 0.9 * s))
         y0, y1 = int(max(0, P[0, 1] - 1.2 * s)), int(min(H, P[0, 1] + 0.7 * s))
         c = np.ascontiguousarray(img[y0:y1, x0:x1]); lacet = None
@@ -74,7 +81,7 @@ def visages_lisibles(img, n):
         lus.append(lacet)
     PL.close(); FL.close()
     xs = sorted(float(n[0]) for n in nez); ecart = (xs[-1] - xs[0]) / (H * 9 / 16) if len(xs) >= 2 else 0.0
-    visages_lisibles.ecart = ecart
+    visages_lisibles.ecart = ecart; visages_lisibles.premier_plan = len(nez)
     return sum(1 for l in lus if l is not None and abs(l) <= LACET_MAX), lus
 
 
@@ -87,10 +94,10 @@ def teint_ok(chemin, n):
 def choisit(variantes, n):
     for v in variantes:
         img = cv2.cvtColor(cv2.imread(v), cv2.COLOR_BGR2RGB); lus, lacets = visages_lisibles(img, n); t, L = teint_ok(v, n)
-        ec = getattr(visages_lisibles, 'ecart', 0.0)
+        ec = getattr(visages_lisibles, 'ecart', 0.0); pp = getattr(visages_lisibles, 'premier_plan', 0)
         print(os.path.basename(v), ': visages', lus, '/', n, [None if x is None else round(x) for x in lacets], '; teint', [round(x, 1) for x in L],
-              '; écart des visages', round(ec, 2))
-        if lus >= n and t and ec <= ECART_MAX: return v
+              '; écart des visages', round(ec, 2), '; premier plan', pp)
+        if lus >= n and pp == n and t and ec <= ECART_MAX: return v
     return None
 
 
