@@ -11,3 +11,4 @@
 [1337 s] 6 clips · === petite-aya--rire (at_runtime)   |============>                                     | 1/4 - 135.03s/it[K · mémoire libre 13767 Mo
 [1459 s] 6 clips · === petite-aya--rire (at_runtime)   |============>                                     | 1/4 - 135.03s/it[K · mémoire libre 13774 Mo
 [1580 s] 6 clips · === petite-aya--rire (at_runtime)   |=========================>                        | 2/4 - 134.31s/it[K · mémoire libre 13772 Mo
+[1701 s] 6 clips · === petite-aya--rire (at_runtime)   |=====================================>            | 3/4 - 134.30s/it[K · mémoire libre 13773 Mo
