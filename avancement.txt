@@ -61,3 +61,4 @@
 [1338 s] 17 clips · === grand-pere-ndiaye--hausser (at_runtime)   |============>                                     | 1/4 - 134.65s/it[K · mémoire libre 13780 Mo
 [1460 s] 17 clips · === grand-pere-ndiaye--hausser (at_runtime)   |============>                                     | 1/4 - 134.65s/it[K · mémoire libre 13759 Mo
 [123 s] 17 clips · === grand-pere-ndiaye--hausser (at_runtime)   |============>                                     | 1/4 - 68.00s/it[K · mémoire libre 13758 Mo
+[245 s] 17 clips · === grand-pere-ndiaye--hausser (at_runtime)   |=====================================>            | 3/4 - 67.62s/it[K · mémoire libre 13777 Mo
