@@ -35,6 +35,13 @@
    "lora": "at_runtime",
    "secondes": 583,
    "memoire_max_go": 10.99
+  },
+  {
+   "clip": "la-future-maman--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 579,
+   "memoire_max_go": 11.25
   }
  ],
  "run": "39528414471"
