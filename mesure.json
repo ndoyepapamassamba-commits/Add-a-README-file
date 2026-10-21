@@ -147,7 +147,14 @@
    "lora": "at_runtime",
    "secondes": 581,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "patron-sery--choc",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 580,
+   "memoire_max_go": 10.87
   }
  ],
- "run": "39559117299"
+ "run": "39564581444"
 }
