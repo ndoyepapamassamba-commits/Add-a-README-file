@@ -1,0 +1,56 @@
+=== fiche-agent-gora
+[V] resize vae ref image 0 from 977x331 to 1008x336 --- image.cpp:308
+[I] loading tensors completed, taking 0.20s (read: 0.01s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 22.76s --- vae.hpp:310
+[I] encode_first_stage completed, taking 22.82s --- image.cpp:398
+[I] loading tensors completed, taking 0.60s (read: 0.53s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 24601 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 24.60s --- image.cpp:529
+[I] loading tensors completed, taking 0.81s (read: 0.78s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 777.21s --- image.cpp:899
+[I] generating 1 latent images completed, taking 777.21s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.17s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 31.83s --- vae.hpp:384
+[I] decode_first_stage completed, taking 31.83s --- image.cpp:624
+[I] generate_image completed in 856.52s --- image.cpp:1050
+=== perso-agent-gora
+[V] resize vae ref image 0 from 768x448 to 768x448 --- image.cpp:308
+[I] loading tensors completed, taking 0.40s (read: 0.21s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 23.07s --- vae.hpp:310
+[I] encode_first_stage completed, taking 23.09s --- image.cpp:398
+[I] loading tensors completed, taking 5.01s (read: 4.91s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 29013 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 29.01s --- image.cpp:529
+[I] loading tensors completed, taking 10.15s (read: 10.08s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 1402.93s --- image.cpp:899
+[I] generating 1 latent images completed, taking 1402.93s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.17s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 84.82s --- vae.hpp:384
+[I] decode_first_stage completed, taking 84.82s --- image.cpp:624
+[I] generate_image completed in 1539.90s --- image.cpp:1050
+=== fiche-le-frimeur
+[V] computing vae encode graph completed, taking 23.24s --- vae.hpp:310
+[I] encode_first_stage completed, taking 23.30s --- image.cpp:398
+[I] loading tensors completed, taking 7.75s (read: 7.70s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 32703 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 32.70s --- image.cpp:529
+[I] loading tensors completed, taking 5.41s (read: 5.26s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 776.38s --- image.cpp:899
+[I] generating 1 latent images completed, taking 776.38s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 31.51s --- vae.hpp:384
+[I] decode_first_stage completed, taking 31.51s --- image.cpp:624
+[I] generate_image completed in 863.95s --- image.cpp:1050
+=== perso-le-frimeur
+[I] loading tensors completed, taking 0.40s (read: 0.21s, memcpy: 0.00s, convert: 0.04s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 23.13s --- vae.hpp:310
+[I] encode_first_stage completed, taking 23.15s --- image.cpp:398
+[I] loading tensors completed, taking 1.20s (read: 1.16s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 25136 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 25.14s --- image.cpp:529
+[I] loading tensors completed, taking 4.19s (read: 4.12s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 1424.44s --- image.cpp:899
+[I] generating 1 latent images completed, taking 1424.44s --- image.cpp:911
+[V] computing vae decode graph completed, taking 86.40s --- vae.hpp:384
+[I] decode_first_stage completed, taking 86.41s --- image.cpp:624
+[I] generate_image completed in 1559.17s --- image.cpp:1050
