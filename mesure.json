@@ -56,6 +56,13 @@
    "lora": "at_runtime",
    "secondes": 179,
    "memoire_max_go": 10.74
+  },
+  {
+   "clip": "agent-bakary--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 185,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39541116258"
