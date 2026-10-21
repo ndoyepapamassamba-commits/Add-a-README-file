@@ -161,7 +161,14 @@
    "lora": "at_runtime",
    "secondes": 586,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "patron-sery--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 307,
+   "memoire_max_go": 10.98
   }
  ],
- "run": "39559117299"
+ "run": "39564581444"
 }
