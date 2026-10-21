@@ -75,3 +75,4 @@
 [1943 s] 19 clips · === dj-kevin--mentir@2 (at_runtime)   |============>                                     | 1/4 - 134.76s/it[K · mémoire libre 13761 Mo
 [2065 s] 19 clips · === dj-kevin--mentir@2 (at_runtime)   |=========================>                        | 2/4 - 134.10s/it[K · mémoire libre 13770 Mo
 [2186 s] 19 clips · === dj-kevin--mentir@2 (at_runtime)   |=====================================>            | 3/4 - 133.48s/it[K · mémoire libre 13774 Mo
+[2307 s] 19 clips · === dj-kevin--mentir@2 (at_runtime)   |=====================================>            | 3/4 - 133.48s/it[K · mémoire libre 13770 Mo
