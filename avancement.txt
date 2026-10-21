@@ -30,3 +30,4 @@
 [2188 s] 3 images · === perso-imam-karim   |=====================================>            | 3/4 - 225.29s/it[K · mémoire libre 6305 Mo
 [2310 s] 3 images · === perso-imam-karim   |==================================================| 4/4 - 227.63s/it[K · mémoire libre 6858 Mo
 [2431 s] 4 images · === perso-mademoiselle-rosine   |==================================================| 4/4 - 227.63s/it[K · mémoire libre 6702 Mo
+[2553 s] 4 images · === perso-mademoiselle-rosine   |==================================================| 4/4 - 227.63s/it[K · mémoire libre 6308 Mo
