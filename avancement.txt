@@ -16,3 +16,4 @@
 [851 s] 2 images · === maison-la-voisine-cuisine-large-jour   |============>                                     | 1/4 - 139.52s/it[K · mémoire libre 6991 Mo
 [972 s] 2 images · === maison-la-voisine-cuisine-large-jour   |=========================>                        | 2/4 - 131.32s/it[K · mémoire libre 6982 Mo
 [1094 s] 2 images · === maison-la-voisine-cuisine-large-jour   |=====================================>            | 3/4 - 127.49s/it[K · mémoire libre 6979 Mo
+[1215 s] 3 images · === perso-tiekoro   |==================================================| 4/4 - 133.96s/it[K · mémoire libre 14056 Mo
