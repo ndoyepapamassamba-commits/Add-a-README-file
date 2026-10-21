@@ -1,16 +1,26 @@
 {
  "modele": "gptoss20loc",
  "part": 5,
- "appels_scenariste": 0,
- "secondes_scenariste": 0.0,
+ "appels_scenariste": 13,
+ "secondes_scenariste": 4087.0155119895935,
  "echecs_scenariste": 0,
- "appels_juge": 6,
+ "appels_juge": 20,
  "echecs_juge": 0,
- "brouillons_refuses_controle": 0,
- "planchers_v17": [],
- "notes": [],
- "acceptes": 0,
- "lieux": [],
+ "brouillons_refuses_controle": 1,
+ "planchers_v17": [
+  0.503
+ ],
+ "notes": [
+  0.411
+ ],
+ "acceptes": 1,
+ "lieux": [
+  {
+   "lieu": "Maquis",
+   "accepte": true,
+   "secondes": 2686
+  }
+ ],
  "drole_v17": [
   1.5,
   1.5,
@@ -21,17 +31,58 @@
   1.0,
   0.5
  ],
- "secondes_par_brouillon": 0.0,
+ "reparations": [
+  [
+   5,
+   1
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   1,
+   2
+  ]
+ ],
+ "brouillons_illisibles": 1,
+ "secondes_par_brouillon": 314.4,
  "temps": {
-  "juge": {
-   "appels": 6,
+  "scenariste": {
+   "appels": 13,
    "tronques": 0,
-   "lus_jetons": 395,
-   "cache_jetons": 94,
-   "lecture_s": 38.5,
-   "ecriture_jetons": 92,
-   "ecriture_s": 20.4,
-   "jetons_par_s": 4.5
+   "lus_jetons": 1016,
+   "cache_jetons": 1220,
+   "lecture_s": 109.9,
+   "ecriture_jetons": 840,
+   "ecriture_s": 192.4,
+   "jetons_par_s": 4.4
+  },
+  "juge": {
+   "appels": 20,
+   "tronques": 0,
+   "lus_jetons": 404,
+   "cache_jetons": 111,
+   "lecture_s": 37.6,
+   "ecriture_jetons": 99,
+   "ecriture_s": 21.7,
+   "jetons_par_s": 4.6
   }
  }
 }
