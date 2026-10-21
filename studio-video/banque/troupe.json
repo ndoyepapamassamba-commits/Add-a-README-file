@@ -33,7 +33,14 @@
   "agent-gora",
   "sur-awa",
   "madame-konan",
-  "tonton-dieng"
+  "tonton-dieng",
+  "maitre-kone",
+  "maitre-coulibaly",
+  "general-zongo",
+  "mecano-issa",
+  "tiekoro",
+  "grand-pere-ndiaye",
+  "fatou"
  ],
  "noms": {
   "le-patriarche": "LE PATRIARCHE",
@@ -62,7 +69,14 @@
   "agent-gora": "AGENT GORA",
   "sur-awa": "SŒUR AWA",
   "madame-konan": "MADAME KONAN",
-  "tonton-dieng": "TONTON DIENG"
+  "tonton-dieng": "TONTON DIENG",
+  "maitre-kone": "MAÎTRE KONÉ",
+  "maitre-coulibaly": "MAÎTRE COULIBALY",
+  "general-zongo": "GÉNÉRAL ZONGO",
+  "mecano-issa": "MÉCANO ISSA",
+  "tiekoro": "TIÉKORO",
+  "grand-pere-ndiaye": "GRAND-PÈRE NDIAYE",
+  "fatou": "FATOU"
  },
  "fonds": {
   "agent-bakary": "bleu",

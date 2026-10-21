@@ -65,7 +65,7 @@ POSES = ('five poses side by side of this ONE character only (no other person), 
          'standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing')
 # 21/10 00:55 — Agent Bakary dessiné en uniforme vert sur fond vert : indétourable. Les personnages habillés surtout de vert sont
 # dessinés (et animés, banque.py) sur fond BLEU ; tous les autres restent sur le vert validé.
-FOND_BLEU = {'AGENT BAKARY', 'MAMAN BRIGITTE', 'COACH DIABATÉ'}
+FOND_BLEU = {'AGENT BAKARY', 'MAMAN BRIGITTE', 'COACH DIABATÉ', 'DJ KÉVIN'}   # DJ Kévin (21/10 03:55) : lunettes vert fluo inventées par le modèle
 # 21/10 01:30, lot 4 lu à côté des planches V1 : la pose « rire » de la planche de RÉFÉRENCE déteint sur le nouveau personnage
 # (Banquier, Yaya, Tonton rient avec la coupe, les lunettes ou la chemise de Koffi ; Mamie Bintou porte la robe et le tablier de
 # Maman Nounou). Remède en DEUX ÉTAPES (planche de personnage des studios : un dessin de face validé, puis les poses d'après lui) :
@@ -117,10 +117,10 @@ REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2,
            'perso-maitre-kone': 2, 'perso-la-voisine': 2, 'perso-sorciere-mama-dede': 2, 'perso-fatou': 2, 'perso-petite-khadija': 2,
            # 21/10 01:30, lot 4 : la pose de rire (ou toute la tenue) reprise de la planche de référence (Yaya, Maître Coulibaly,
            # Banquier, Tonton, Mamie Bintou), bulle « Refusé ! » (Banquier), voiture (Yaya), couronne et caisse (Madame Konan)
-           'perso-yaya-lapprenti': 2, 'perso-maitre-coulibaly': 2, 'perso-le-banquier': 2, 'perso-le-tonton': 2,
+           'perso-yaya-lapprenti': 2, 'perso-maitre-coulibaly': 2, 'perso-le-banquier': 3, 'perso-le-tonton': 2,
            'perso-mamie-bintou': 2, 'perso-madame-konan': 2,
            # 21/10 01:35, lot 5 : veste de Koffi (DJ Kevin, Boubacar), comptoir collé aux poses (Patron Séry)
-           'perso-dj-kevin': 2, 'perso-boubacar': 2, 'perso-patron-sery': 2,
+           'perso-dj-kevin': 3, 'perso-boubacar': 2, 'perso-patron-sery': 2,
            # 21/10 01:36, planches déjà acceptées relues avec ce défaut en tête : rire de Koffi (lunettes, visage) sur la dernière pose
            # (Djecky, Général Zongo, Mécano Issa, Monsieur Diarra, Tiékoro), Le Frimeur sosie de Koffi, rire de Baye (Grand-père
            # Ndiaye, Tonton Dieng)
@@ -134,6 +134,15 @@ REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2,
 # vidéo ne les montre) attend derrière la bible sur les 20 machines du compte. Les décors secondaires (autres vues, nuit,
 # ambiances : rang 3 et plus) passent à la passe suivante ; chaque machine rend sa place dès ses personnages et ses maisons
 # de jour faits. Remettre à False (et pousser bible/taches.json) pour les tourner.
+def traits_physiques(apparence):
+    """traits du visage et du corps à garder d'une pose à l'autre (moustache, lunettes, barbe, coiffure…), sans les expressions
+    ni les gestes de la fiche (« sourire suffisant, poing serré ») qui contrediraient les poses de la planche."""
+    geste = re.compile(r'sourire|poing|pouce|clin|regard|\bair\b|\brire\b|\bmine\b|grimace|\bmoue\b|\blev[ée]|serr[ée]|\bmains?\b|\bbras\b|posture|geste|'
+                       r'pétillant|malicieu|complice|triomph|fier|fière|sérieu|joyeu|curieu|gourmand', re.I)
+    t = ', '.join(c.strip() for c in re.split(r'[,.;]', texte_dessinable(apparence)) if c.strip() and not geste.search(c))
+    return t + '.' if t else ''
+
+
 REPORTER_SECONDAIRES = True
 
 
@@ -178,7 +187,10 @@ def taches():
                   'fiche': {'w': 448, 'h': 768, 'refs': [ref_style(p) + '-neutre.msb'], 'ref_px': 448 * 768,
                             'prompt': FICHE.format(nom=nom.title(), apparence=texte_dessinable(p.get('apparence')),
                                                    tenue=texte_dessinable(p.get('tenue')), fond=fond)},
-                  'prompt': PLANCHE.format(poses=POSES.format(fond=fond)), **({'fond': 'bleu'} if nom in FOND_BLEU else {})})
+                  # 21/10 04:00 : la fine moustache du Banquier (sa fiche la dit) disparaissait des poses ; « same face » ne suffit
+                  # pas pour un détail fin → les traits de la fiche sont rappelés à la planche
+                  'prompt': PLANCHE.format(poses=POSES.format(fond=fond)) + (f" Keep these features in every pose: {traits_physiques(p.get('apparence'))}" if traits_physiques(p.get('apparence')) else ''),
+                  **({'fond': 'bleu'} if nom in FOND_BLEU else {})})
     lieux_joues = {r['lieu'] for r in M['figures_du_quartier']} | {l for j in M['journee'] for l in j['lieux']}
     for lieu, desc in LIEUX.items():
         for v, vd in VUES.items():

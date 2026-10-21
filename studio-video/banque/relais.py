@@ -43,9 +43,29 @@ def controle(planche, dossier):
         x += 1
     segs = [s for s in segs if s[1] - s[0] > 25]
     hauts = [int(np.ptp(np.nonzero((~vert)[:, a:b].sum(1) > 2)[0])) for a, b in segs] if segs else []
-    ok = bool(1 <= len(segs) <= 8 and min(hauts) >= 0.5 * im.shape[0] and vert.mean() >= 0.30)
+    trous = trous_tete(vert, segs)
+    ok = bool(1 <= len(segs) <= 8 and min(hauts) >= 0.5 * im.shape[0] and vert.mean() >= 0.30 and not trous)
     return ok, {'silhouettes': len(segs), 'fond': round(float(vert.mean()), 3),
-                'hauteur_min': round(min(hauts) / im.shape[0], 3) if hauts else 0}
+                'hauteur_min': round(min(hauts) / im.shape[0], 3) if hauts else 0, **({'trous_tete': trous} if trous else {})}
+
+
+def trous_tete(fond, segs):
+    """21/10 03:55 — DJ Kévin dessiné avec des lunettes vert fluo sur le fond vert : à l'incrustation, ses verres deviennent
+    transparents. Une zone couleur de fond ENFERMÉE dans le haut d'une silhouette (tête : 15 % de sa hauteur) et grande comme
+    un verre de lunettes est un défaut ; plus bas, un bras sur la hanche enferme du fond légitimement. Mesuré sur 33 planches :
+    verres de DJ Kévin 1,09 à 1,61 ‰ de h², anses de la bassine de Maman Brigitte 0,46 à 0,51 ‰ (le fond doit s'y voir),
+    points de 0,07 à 0,25 ‰ → seuil 0,8 ‰. → nombre de silhouettes touchées."""
+    import cv2, numpy as np
+    n, lab, st, _ = cv2.connectedComponentsWithStats(fond.astype(np.uint8), 8)
+    H, W = fond.shape; bord = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]])))
+    touchees = 0
+    for a, b in segs:
+        col = (~fond)[:, a:b].sum(1) > 2; ys = np.nonzero(col)[0]
+        if not len(ys): continue
+        y0, y1 = ys[0], ys[0] + int(0.15 * (ys[-1] - ys[0]))
+        ids = [i for i in np.unique(lab[y0:y1, a:b]) if i and i not in bord and st[i, 4] >= 0.0008 * (ys[-1] - ys[0]) ** 2]
+        if any(st[i, 1] >= y0 and st[i, 1] + st[i, 3] <= y1 + 4 for i in ids): touchees += 1
+    return touchees
 
 
 def main(priv_claude, pub_fabrique, travail):
