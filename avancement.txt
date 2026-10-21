@@ -21,3 +21,4 @@
 [2552 s] 8 clips · === aliou--choc (at_runtime)   |============>                                     | 1/4 - 135.58s/it[K · mémoire libre 13773 Mo
 [2673 s] 8 clips · === aliou--choc (at_runtime)   |=========================>                        | 2/4 - 135.14s/it[K · mémoire libre 13778 Mo
 [2795 s] 8 clips · === aliou--choc (at_runtime)   |=====================================>            | 3/4 - 135.23s/it[K · mémoire libre 13769 Mo
+[2916 s] 8 clips · === aliou--choc (at_runtime)   |=====================================>            | 3/4 - 135.23s/it[K · mémoire libre 13775 Mo
