@@ -141,3 +141,4 @@
 [3766 s] 8 images · === perso-le-frimeur   |============>                                     | 1/4 - 361.63s/it[K · mémoire libre 6170 Mo
 [3888 s] 8 images · === perso-le-frimeur   |============>                                     | 1/4 - 361.63s/it[K · mémoire libre 6154 Mo
 [4009 s] 8 images · === perso-le-frimeur   |============>                                     | 1/4 - 361.63s/it[K · mémoire libre 6153 Mo
+[4131 s] 8 images · === perso-le-frimeur   |=========================>                        | 2/4 - 348.71s/it[K · mémoire libre 6146 Mo
