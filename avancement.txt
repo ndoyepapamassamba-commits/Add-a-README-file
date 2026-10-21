@@ -54,3 +54,4 @@
 [729 s] 22 clips · === dj-kevin--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13788 Mo
 [851 s] 22 clips · === dj-kevin--colere (at_runtime)   |============>                                     | 1/4 - 135.61s/it[K · mémoire libre 13770 Mo
 [972 s] 22 clips · === dj-kevin--colere (at_runtime)   |=========================>                        | 2/4 - 134.00s/it[K · mémoire libre 13764 Mo
+[1093 s] 22 clips · === dj-kevin--colere (at_runtime)   |=====================================>            | 3/4 - 133.78s/it[K · mémoire libre 13763 Mo
