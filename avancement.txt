@@ -30,3 +30,4 @@
 [2185 s] 3 images · === perso-tantie-awa-sarr   |=====================================>            | 3/4 - 395.25s/it[K · mémoire libre 6255 Mo
 [2306 s] 3 images · === perso-tantie-awa-sarr   |=====================================>            | 3/4 - 395.25s/it[K · mémoire libre 6250 Mo
 [2428 s] 4 images · === perso-adjoua   |==================================================| 4/4 - 396.10s/it[K · mémoire libre 14578 Mo
+[2549 s] 4 images · === perso-adjoua   |==================================================| 4/4 - 396.10s/it[K · mémoire libre 6679 Mo
