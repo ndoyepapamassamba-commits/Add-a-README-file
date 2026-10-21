@@ -56,6 +56,18 @@ def masque_fond(im):
 # sur les 2 dernières) : refaits sous une version plus haute (« <personnage>--<geste>@2 »), les anciens clips gardés (aucune vidéo
 # supprimée) ; l'assemblage prend la version la plus haute.
 VERSIONS = {'la-go-leopard': 2, 'chef-traore': 2}
+# 21/10/2026 10:40 — TEINT (« même le teint des personnages, nous sommes en Afrique de l'Ouest ») : les 11 personnages redessinés
+# à la peau de la V1 (bible.PEAU, relais.teint_planche : L* 15 à 27,1, tous dans la gamme) sont retournés en version 2. Tant que
+# leurs nouveaux gestes ne sont pas tournés, les anciens restent jouables — peau.py ramène déjà leur peau au teint de la V1 dans la
+# chaîne : PLANCHER = plus basse version encore acceptée par l'assemblage (sinon VERSIONS : un clip de découpe fautive, jamais).
+TEINT = ('madame-coumba', 'agent-gora', 'mecano-issa', 'le-frimeur', 'le-banquier', 'la-voisine', 'le-tonton', 'patron-sery',
+         'mademoiselle-rosine', 'dj-kevin', 'maman-brigitte')
+for _p in TEINT: VERSIONS[_p] = VERSIONS.get(_p, 1) + 1
+PLANCHER = {_p: VERSIONS[_p] - 1 for _p in TEINT}
+
+
+def plancher(p):
+    return PLANCHER.get(p, VERSIONS.get(p, 1))
 
 
 def taches(qui=None):

@@ -225,19 +225,63 @@ def decor_t(V, t, u):
 TETE_V1 = os.environ.get('TETE_V1', '1') == '1'   # têtes tournées vers le partenaire (lacet_banque.py)
 
 
-def despill(F):
-    """liseré vert du détourage (vu sur les gros plans de la grammaire V1 : oreilles, cou, mains) : sur la bande du bord de la
-    découpe seulement, le vert ne dépasse plus le plus fort du rouge et du bleu (suppression de débordement classique)."""
+def despill(F, plein=False):
+    """liseré vert du détourage (vu sur les gros plans de la grammaire V1 : oreilles, cou, mains) : le vert ne dépasse plus le
+    plus fort du rouge et du bleu (suppression de débordement classique) — sur la bande du bord de la découpe, ou partout
+    (plein) pour un personnage tourné sur fond VERT : il n'a rien de vert à lui (les personnages habillés de vert sont tournés
+    sur fond bleu, bible.FOND_BLEU), tout vert qui dépasse est un reflet du fond (vu sur les mains de Le Frimeur)."""
     for i in range(len(F)):
-        a = F[i, ..., 3]; bord = (cv2.erode((a > 250).astype(np.uint8), np.ones((7, 7), np.uint8)) == 0) & (a > 0)
-        r, g, b = F[i, ..., 0], F[i, ..., 1], F[i, ..., 2]; m = bord & (g > np.maximum(r, b))
+        a = F[i, ..., 3]; zone = (a > 0) if plein else (cv2.erode((a > 250).astype(np.uint8), np.ones((7, 7), np.uint8)) == 0) & (a > 0)
+        r, g, b = F[i, ..., 0], F[i, ..., 1], F[i, ..., 2]; m = zone & (g > np.maximum(r, b))
         g[m] = np.maximum(r, b)[m]
     return F
 
 
+LIT_VERSION = 2   # 2 : reflet vert ôté partout sur les personnages tournés sur fond vert
+LIT_PLAFOND = float(os.environ.get('LIT_PLAFOND_GO', '4')) * (1 << 30)   # cache en mémoire partagée : plus vieux effacés au-delà
+
+
+def _dossier_lit(mov):
+    """où garder les clips préparés. DISQUE (21/10/2026, épisode de 3 sketchs arrêté à 1 484 images sur 2 400 : « Not enough
+    free space ») : LIT_CACHE s'il est donné ; sinon la mémoire partagée (/dev/shm : ne prend rien au disque de la machine,
+    lue plus vite) tant qu'il lui reste 4 Gio ; à défaut à côté du clip."""
+    d = os.environ.get('LIT_CACHE')
+    if not d:
+        try:
+            st = os.statvfs('/dev/shm'); d = '/dev/shm/massamba-lit' if st.f_bavail * st.f_frsize > 4 * (1 << 30) else None
+        except OSError: d = None
+    if not d: return os.path.dirname(mov)
+    os.makedirs(d, exist_ok=True); return d
+
+
+def _retention_lit(d):
+    """garde le cache en mémoire partagée sous LIT_PLAFOND : les variantes les moins récemment écrites partent d'abord (un
+    fichier encore ouvert par un rendu reste lisible jusqu'à sa fermeture)."""
+    if not d.startswith('/dev/shm'): return
+    F = sorted((os.path.getmtime(p), os.path.getsize(p), p) for p in (os.path.join(d, x) for x in os.listdir(d)) if p.endswith('.npy'))
+    tot = sum(s for _, s, _ in F)
+    for _, s, p in F:
+        if tot <= LIT_PLAFOND: break
+        try: os.remove(p); tot -= s
+        except OSError: pass
+
+
 def lit_clip(mov, w, h, flip, gains, tete=True, sens=1.0):
-    """images RGBA du clip à la taille voulue (float32) : tête tournée vers la droite de l'image (avant le miroir : vers le
-    partenaire dans les deux cas), liseré vert ôté, retournées et teintées de la lumière du décor."""
+    """images RGBA du clip à la taille voulue (uint8, lues à la demande) : tête tournée vers la droite de l'image
+    (avant le miroir : vers le partenaire dans les deux cas), teint de la V1, liseré vert ôté, retournées et teintées de la
+    lumière du décor. MÉMOIRE (21/10/2026, épisode de 3 sketchs : un processus de rendu tué) : chaque variante préparée est
+    gardée en octets (.lit-*.npy, _dossier_lit) et ouverte en lecture à la demande — 16 fois moins de mémoire qu'en
+    flottants, et calculée une fois pour toutes les répliques et tous les épisodes."""
+    import hashlib
+    cle = f"{os.path.basename(mov)}|{os.path.getmtime(mov):.0f}|{w}x{h}|{int(bool(flip))}|{float(sens):+.3f}|{tuple(round(float(g), 3) for g in gains)}|{int(bool(tete))}|{LIT_VERSION}"
+    d = _dossier_lit(mov); f = os.path.join(d, f"{os.path.basename(mov)[:-4]}.lit-{hashlib.sha1(cle.encode()).hexdigest()[:12]}.npy")
+    if os.path.isfile(f): return np.load(f, mmap_mode='r')
+    F = _prepare_clip(mov, w, h, flip, gains, tete, sens)
+    tmp = f'{f[:-4]}.{os.getpid()}.npy'; np.save(tmp, F); os.replace(tmp, f); _retention_lit(d)
+    return np.load(f, mmap_mode='r')
+
+
+def _prepare_clip(mov, w, h, flip, gains, tete, sens):
     raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', mov, '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'], capture_output=True, check=True).stdout
     p = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', mov],
                        capture_output=True, text=True, check=True).stdout.strip().split(',')
@@ -254,11 +298,16 @@ def lit_clip(mov, w, h, flip, gains, tete=True, sens=1.0):
             perso, ec = LB.clip_ecoute(mov); C = LB.champ(perso, ec); F = LB.tourne(F, mov, C, LB.gain(C, sens) * sens)
         except Exception as e:
             print(f'  tête non tournée ({os.path.basename(mov)}) : {e}', file=sys.stderr)
-    F = despill(F)
+    try:
+        import banque
+        plein = banque.fond_de(os.path.basename(mov).split('--')[0]) == 'vert'
+    except Exception:
+        plein = False
+    F = despill(F, plein)
     F = np.stack([cv2.resize(f, (w, h), interpolation=cv2.INTER_AREA if w < W0 else cv2.INTER_CUBIC) for f in F])
     if flip: F = F[:, :, ::-1]
     F[..., :3] *= np.array(gains, np.float32)
-    return np.ascontiguousarray(np.clip(F, 0, 255))
+    return np.ascontiguousarray(np.clip(F, 0, 255).round().astype(np.uint8))
 
 
 def haut_du_clip(F):
@@ -275,8 +324,8 @@ def position_douce(t, n, fps_clip=16.0, dep=0.0):
 
 
 def image_a(F, p):
-    i = int(math.floor(p)); a = p - i; j = min(i + 1, len(F) - 1)
-    return F[i] if a < 1e-3 else F[i] * (1 - a) + F[j] * a
+    i = int(math.floor(p)); a = p - i; j = min(i + 1, len(F) - 1); fi = np.asarray(F[i], np.float32)
+    return fi if a < 1e-3 else fi * (1 - a) + np.asarray(F[j], np.float32) * a
 
 
 def colle(canvas, im, x, y):

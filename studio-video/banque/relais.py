@@ -98,7 +98,9 @@ def main(priv_claude, pub_fabrique, travail):
         for f in noms:
             if not (f.startswith('perso-') and f.endswith('.msb')): continue
             nom = f[len('perso-'):-4]
-            if nom in troupe['personnages']: continue
+            # 21/10 10:40 : un personnage déjà relayé revient quand la bible l'a redessiné (version plus haute : teint) ;
+            # troupe.json garde la version de chaque planche relayée
+            if nom in troupe['personnages'] and troupe.get('versions', {}).get(nom, 1) >= taches.get(f[:-4], {}).get('version', 1): continue
             if version.get(f[:-4], 1) < taches.get(f[:-4], {}).get('version', 1):
                 ecartes[nom] = {'raison': 'version périmée, planche à refaire'}; continue
             png = os.path.join(travail, nom + '.png')
@@ -109,7 +111,9 @@ def main(priv_claude, pub_fabrique, travail):
             if f'fiche-{nom}.msb' in noms:   # 21/10 : fiche de face (bible en deux étapes) = pose neutre de la banque
                 fiche = coffre.ouvre_octets(_git('show', f'origin/{br}:fiche-{nom}.msb').stdout, priv)
                 open(os.path.join(ICI, '..', 'images', 'troupe', f'{nom}-fiche.msb'), 'wb').write(coffre.scelle_octets(fiche, pub))
-            troupe['personnages'].append(nom); troupe['noms'][nom] = taches.get(f'perso-{nom}', {}).get('nom', nom.upper()); acceptes.append(nom)
+            if nom not in troupe['personnages']: troupe['personnages'].append(nom)
+            troupe['noms'][nom] = taches.get(f'perso-{nom}', {}).get('nom', nom.upper()); acceptes.append(nom)
+            troupe.setdefault('versions', {})[nom] = version.get(f[:-4], 1)
             if taches.get(f'perso-{nom}', {}).get('fond') == 'bleu': troupe.setdefault('fonds', {})[nom] = 'bleu'
     json.dump(troupe, open(banque.TROUPE, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     faits = {f[:-4] for br in branches('banque-sortie-') for f in fichiers(br) if f.endswith('.msb')}

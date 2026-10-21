@@ -826,6 +826,29 @@ try:
 except Exception as e:
     echecs.append(f'teint : {e}')
 
+# 21/10/2026 10:45 — les 11 planches redessinées entrent dans la banque (relais : version relayée gardée dans troupe.json, un
+# personnage redessiné revient) ; leurs gestes sont refaits en version 2 sans bloquer les épisodes (plancher : l'ancien geste,
+# retouché par peau.py, joue en attendant) ; clips préparés gardés hors du disque (/dev/shm, plafond, plus vieux effacés)
+try:
+    sys.path.insert(0, os.path.join(ICI, 'banque')); import banque as _bq29, camera_v1 as _cv29, tempfile as _tf29
+    _tr29 = json.load(open(_bq29.TROUPE, encoding='utf-8'))
+    if any(_tr29.get('versions', {}).get(p, 1) < _v28.get(f'perso-{p}', 1) for p in _bq29.TEINT): echecs.append('banque : planche redessinée pas relayée')
+    if any(_bq29.VERSIONS[p] < 2 or _bq29.plancher(p) != _bq29.VERSIONS[p] - 1 for p in _bq29.TEINT) or _bq29.plancher('la-go-leopard') != 2: echecs.append('banque : versions / plancher du teint')
+    _ids29 = {t['id'] for t in _bq29.taches(list(_bq29.TEINT))}
+    if not all(f'{p}--parler@2' in _ids29 for p in _bq29.TEINT): echecs.append('banque : gestes du teint non redemandés')
+    _d29 = _tf29.mkdtemp(); os.environ['LIT_CACHE'] = _d29
+    if _cv29._dossier_lit('/x/y.mov') != _d29: echecs.append('banque : LIT_CACHE ignoré')
+    del os.environ['LIT_CACHE']
+    if os.path.isdir('/dev/shm'):   # rétention : 3 fichiers de 1 000 octets, plafond 2 500 → le plus vieux part
+        _s29 = _tf29.mkdtemp(dir='/dev/shm'); _p29 = _cv29.LIT_PLAFOND; _cv29.LIT_PLAFOND = 2500
+        for k in range(3): open(os.path.join(_s29, f'c{k}.npy'), 'wb').write(b'0' * 1000); os.utime(os.path.join(_s29, f'c{k}.npy'), (1e9 + k, 1e9 + k))
+        _cv29._retention_lit(_s29); _cv29.LIT_PLAFOND = _p29
+        if sorted(os.listdir(_s29)) != ['c1.npy', 'c2.npy']: echecs.append(f'banque : rétention du cache {sorted(os.listdir(_s29))}')
+        __import__('shutil').rmtree(_s29)
+    print('banque : 11 planches redessinées relayées, gestes redemandés en version 2 avec plancher, cache des clips hors disque : OK')
+except Exception as e:
+    echecs.append(f'banque : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

@@ -200,7 +200,10 @@ _v = (["Qwen3-TTS (Apache-2.0) d'après OpenSLR 57 (Apache-2.0)"] if 'qwen3' in 
 _tg = json.load(open(f'{D}/tournage.json')) if os.path.isfile(f'{D}/tournage.json') else {}
 _anim = ('Animation : InfiniteTalk, MeiGen-AI (Apache-2.0) sur Wan2.1 (Apache-2.0)' if _tg.get('generatif') else
          'Bouches et paupières : LaMa (Apache-2.0), MediaPipe (Apache-2.0)' if _tg.get('peint') else 'Visages : LivePortrait (MIT)')
-credit = 'Voix : ' + ', '.join(_v) + f' · Images : Z-Image-Turbo (Apache-2.0) · {_anim} · Émojis animés : Noto Emoji, Google (CC BY 4.0)'
+if _tg.get('banque'):   # épisode de la banque (21/10/2026) : personnages et décors de la bible, gestes de la banque
+    _anim = 'Gestes : Wan 2.2 (Apache-2.0) · Têtes : LivePortrait (MIT)'
+_img = 'FLUX.2 [klein] 4B (Apache-2.0)' if _tg.get('banque') else 'Z-Image-Turbo (Apache-2.0)'
+credit = 'Voix : ' + ', '.join(_v) + f' · Images : {_img} · {_anim} · Émojis animés : Noto Emoji, Google (CC BY 4.0)'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import marque
 import jeu as _jeu
 _chuteurs = [L['qui'] for L in sorted(T['lines'], key=lambda L: L['t0']) if L.get('chute')]   # qui porte chaque chute, dans l'ordre

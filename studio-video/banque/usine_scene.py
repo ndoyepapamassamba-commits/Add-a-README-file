@@ -34,18 +34,20 @@ def _ouvre(br, f, priv):
 def clips(acteurs, priv, cache):
     """gestes des acteurs à la version en vigueur (banque.VERSIONS), ouverts une fois dans le cache partagé. Un clip d'une
     version plus basse (tourné depuis une découpe fautive) n'est jamais ouvert : assemble prendrait sinon l'ancien geste quand
-    le nouveau n'est pas encore tourné. Les gestes parler et écouter sont exigés à la bonne version."""
+    le nouveau n'est pas encore tourné — sauf au-dessus de banque.plancher (planche redessinée pour le teint : l'ancien geste,
+    retouché par peau.py, joue jusqu'à ce que le nouveau soit tourné ; assemble prend toujours la version la plus haute).
+    Les gestes parler et écouter sont exigés au moins au plancher."""
     import banque
     os.makedirs(cache, exist_ok=True); n = 0
     def version(f): return int(f[:-4].rsplit('@', 1)[1]) if '@' in f else 1
     for br in _branches('banque-sortie-'):
         for f in _git('ls-tree', '--name-only', f'origin/{br}', text=True).stdout.split():
             p = f.split('--')[0]
-            if not f.endswith('.msb') or p not in acteurs or version(f) < banque.VERSIONS.get(p, 1): continue
+            if not f.endswith('.msb') or p not in acteurs or version(f) < banque.plancher(p): continue
             if not os.path.exists(os.path.join(cache, f[:-4] + '.mp4')):
                 open(os.path.join(cache, f[:-4] + '.mp4'), 'wb').write(_ouvre(br, f, priv)); n += 1
     def present(a, g):
-        v = banque.VERSIONS.get(a, 1)
+        v = banque.plancher(a)
         return any(x == f'{a}--{g}.mp4' and v == 1 or x.startswith(f'{a}--{g}@') and version(x) >= v for x in os.listdir(cache))
     manque = [f'{a} ({g})' for a in acteurs for g in ('parler', 'ecouter') if not present(a, g)]
     return n, manque

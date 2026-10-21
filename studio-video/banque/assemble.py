@@ -246,7 +246,7 @@ def vise(P, k, nom):
 
 def _image_acteur(pr, t, i):
     import camera_v1
-    if pr.get('idx'): return pr['F'][pr['idx'][min(i, len(pr['idx']) - 1)]]
+    if pr.get('idx'): return np.asarray(pr['F'][pr['idx'][min(i, len(pr['idx']) - 1)]], np.float32)
     return camera_v1.image_a(pr['F'], camera_v1.position_douce(t - pr['t_dep'], len(pr['F'])))
 
 
