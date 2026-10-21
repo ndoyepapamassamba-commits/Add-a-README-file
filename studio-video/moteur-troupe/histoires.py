@@ -368,8 +368,9 @@ def ressemblance(a, b):
 
 # REGISTRE COMMUN DES CHUTES ENTRE MACHINES (21/10/2026) — risque « 10 000 » du rapport du matin : chaque machine ne connaissait que
 # ses propres chutes, deux machines pouvaient accepter la même blague. Les textes restent scellés pour Claude (dépôt public) :
-# chaque machine publie l'EMPREINTE de ses chutes, chaque trigramme de caractères haché par BLAKE2b à clé, clé tirée du secret de
-# la fabrique par HKDF — méthode des clés de liaison cryptographiques (Schnell et al. 2009 ; clkhash 0.18.3, Apache-2.0 :
+# chaque machine publie l'EMPREINTE de ses chutes, chaque trigramme de caractères haché par BLAKE2b à clé, clé tirée par HKDF de la
+# clé privée RSA-4096 de la fabrique (jamais de la phrase seule : une chute connue, vidéo publiée, permettrait d'essayer des phrases à
+# grande vitesse) — méthode des clés de liaison cryptographiques (Schnell et al. 2009 ; clkhash 0.18.3, Apache-2.0 :
 # bloomfilter.py l. 248-258 blake_hash_token, key_derivation.py l. 20 hkdf), sans le filtre de Bloom : l'ensemble des trigrammes
 # hachés garde EXACTEMENT la ressemblance de Jaccard ci-dessus (même seuil), sans exposer un mot.
 CLE_EMPREINTE = None    # posée par histoires_tourne (secret de la machine) ; sans clé, pas de contrôle entre machines
@@ -380,7 +381,8 @@ DOUBLONS_AILLEURS = [0]
 def cle_empreinte(secret):
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-    return HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b'massamba-chutes-v1').derive(secret.encode())
+    return HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b'massamba-chutes-v1').derive(
+        secret if isinstance(secret, bytes) else secret.encode())
 
 
 def empreinte(t, cle):

@@ -35,6 +35,24 @@ def lieux_de_la_part(part, parts):
     return [d for i, d in enumerate(D) if i % parts == part]
 
 
+def cle_des_chutes():
+    """clé du registre commun : HKDF de la clé privée RSA-4096 de la fabrique (branche fabrique-donnees, ouverte par la phrase
+    FABRIQUE_CLE avec PBKDF2 600 000 tours, coffre._priv) ; None sans la phrase (essai local) ou si la clé est introuvable."""
+    phrase = os.environ.get('FABRIQUE_CLE', '')
+    if not phrase: return None
+    import subprocess, tempfile
+    from cryptography.hazmat.primitives import serialization
+    depot = os.path.abspath(os.path.join(ICI, '..', '..'))
+    try:
+        subprocess.run(['git', '-C', depot, 'fetch', '-q', 'origin', 'fabrique-donnees'], capture_output=True, timeout=120)
+        j = subprocess.run(['git', '-C', depot, 'show', 'FETCH_HEAD:cle.priv.json'], capture_output=True, timeout=60).stdout
+        with tempfile.NamedTemporaryFile(suffix='.json') as f:
+            f.write(j); f.flush(); k = coffre._priv(f.name, phrase)
+        return H.cle_empreinte(k.private_bytes(serialization.Encoding.DER, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
+    except Exception as e:
+        print(f'registre commun des chutes : clé introuvable ({type(e).__name__})', flush=True); return None
+
+
 def empreintes_des_machines(sortie):
     """registre commun (histoires.CHUTES_AUTRES) : les empreintes publiées par toutes les machines sur leurs branches
     histoires-sortie-* (poussées toutes les 5 min par le workflow), plus celles de cette machine, reprises de sa branche."""
@@ -110,9 +128,8 @@ def main(modele, part, parts, minutes, sortie, pub_claude):
         if dr: H.DROLE_MIN = min(dr)
         stats['drole_v17'] = dr; stats['choc_v17'] = [n['choc'] for n in nv if n]
         journal(f"porte V17 : drôle {dr} → au moins {H.DROLE_MIN}/4 pour aller au plancher"); ecrit()
-    # registre commun des chutes (histoires.deja_ailleurs) : clé tirée du secret de la fabrique, jamais écrite nulle part
-    secret = os.environ.get('HISTOIRES_CLE_CHUTES', '')
-    H.CLE_EMPREINTE = H.cle_empreinte(secret) if secret else None
+    # registre commun des chutes (histoires.deja_ailleurs) : clé tirée de la clé privée de la fabrique, jamais écrite nulle part
+    H.CLE_EMPREINTE = cle_des_chutes(); stats['registre_commun'] = bool(H.CLE_EMPREINTE)
     mes_chutes = os.path.join(sortie, f'chutes-{modele}-{part}.json')
     miennes = json.load(open(mes_chutes)).get('empreintes', []) if os.path.exists(mes_chutes) else []
     L = lieux_de_la_part(part, parts); k = 0
