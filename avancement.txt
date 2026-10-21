@@ -26,3 +26,4 @@
 [2063 s] 3 images · === perso-petite-aya   |============>                                     | 1/4 - 399.31s/it[K · mémoire libre 6286 Mo
 [2184 s] 3 images · === perso-petite-aya   |============>                                     | 1/4 - 399.31s/it[K · mémoire libre 6279 Mo
 [2305 s] 3 images · === perso-petite-aya   |=========================>                        | 2/4 - 394.59s/it[K · mémoire libre 6279 Mo
+[2426 s] 3 images · === perso-petite-aya   |=========================>                        | 2/4 - 394.59s/it[K · mémoire libre 6279 Mo
