@@ -77,7 +77,14 @@
    "lora": "at_runtime",
    "secondes": 582,
    "memoire_max_go": 10.72
+  },
+  {
+   "clip": "madame-coumba--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 179,
+   "memoire_max_go": 10.79
   }
  ],
- "run": "39537354097"
+ "run": "39543580560"
 }
