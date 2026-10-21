@@ -18,3 +18,4 @@
 [730 s] 3 images · === maison-la-voisine-salon-large-jour   |==================================================| 4/4 - 134.41s/it[K · mémoire libre 7007 Mo
 [852 s] 3 images · === maison-la-voisine-salon-large-jour   |============>                                     | 1/4 - 140.60s/it[K · mémoire libre 6993 Mo
 [973 s] 3 images · === maison-la-voisine-salon-large-jour   |=========================>                        | 2/4 - 134.95s/it[K · mémoire libre 6984 Mo
+[1095 s] 3 images · === maison-la-voisine-salon-large-jour   |=====================================>            | 3/4 - 135.53s/it[K · mémoire libre 6990 Mo
