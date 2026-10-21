@@ -97,3 +97,4 @@
 [3400 s] 7 images · === fiche-fatou   |=========================>                        | 2/4 - 214.18s/it[K · mémoire libre 6680 Mo
 [3521 s] 7 images · === fiche-fatou   |=====================================>            | 3/4 - 212.23s/it[K · mémoire libre 6671 Mo
 [3642 s] 7 images · === fiche-fatou   |==================================================| 4/4 - 213.66s/it[K · mémoire libre 6589 Mo
+[3764 s] 8 images · === perso-fatou   |==================================================| 4/4 - 213.66s/it[K · mémoire libre 6575 Mo
