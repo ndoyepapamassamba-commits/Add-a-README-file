@@ -97,3 +97,4 @@
 [3764 s] 10 images · === perso-maitre-kone   |==================================================| 4/4 - 208.50s/it[K · mémoire libre 6220 Mo
 [3885 s] 10 images · === perso-maitre-kone   |==================================================| 4/4 - 208.50s/it[K · mémoire libre 6209 Mo
 [4006 s] 10 images · === perso-maitre-kone   |==================================================| 4/4 - 208.50s/it[K · mémoire libre 6202 Mo
+[4128 s] 10 images · === perso-maitre-kone   |============>                                     | 1/4 - 392.69s/it[K · mémoire libre 6194 Mo
