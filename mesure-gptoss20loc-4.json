@@ -26,12 +26,12 @@
   "juge": {
    "appels": 6,
    "tronques": 0,
-   "lus_jetons": 388,
-   "cache_jetons": 101,
-   "lecture_s": 21.7,
-   "ecriture_jetons": 101,
-   "ecriture_s": 14.4,
-   "jetons_par_s": 7.0
+   "lus_jetons": 395,
+   "cache_jetons": 94,
+   "lecture_s": 38.9,
+   "ecriture_jetons": 92,
+   "ecriture_s": 21.8,
+   "jetons_par_s": 4.2
   }
  }
 }
