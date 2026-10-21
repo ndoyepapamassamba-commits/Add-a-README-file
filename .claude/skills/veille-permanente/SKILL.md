@@ -77,6 +77,8 @@ sur les designs : une veille sur le DESIGN et sur l'ANALYSE doit être constante
 
 ## 4. Journal de veille (le plus récent en haut)
 
+- **21/10/2026 05:20** — quasi-doublons de textes courts : MinHash/LSH (datasketch, MIT) et TF-IDF (scikit-learn, BSD) conçus pour des millions de documents ; pour 10 000 chutes de 8 mots, le Jaccard sur trigrammes suffit (43 ms) et n'ajoute aucune dépendance aux machines GitHub. Doublons de sens (même blague, autres mots) : multilingual-e5-small (MIT) prévu à la fusion des registres, hors des machines d'écriture (GPT-OSS y occupe 13 Go sur 16).
+
 - **21/10/2026 05:00** — ggml-org/gpt-oss-20b-GGUF (Apache-2.0, MXFP4 12,1 Go, 3,6 G paramètres actifs) servi par llama-server (gabarit harmony) sur une machine GitHub à 4 cœurs : juge calibré reproduit (0,5 / 0,633 contre 0,5 / 0,625), 48 s par duel, sans quota. Pollinations ne répond plus au juge depuis GitHub.
 
 - **21/10/2026 (nuit)** — Self-Refine (Madaan et al., NeurIPS 2023, code Apache-2.0) : retour précis → réécriture ciblée, greffé dans la machine à histoires (réparer au lieu de jeter). Piper 1.8 : `phoneme_ids.py` l. 194-197 saute tout phonème absent de la table du modèle (« ̃ » de gilles-low) ; voix d'homme passées sur siwis + WORLD (66 % → 81 % des mots, Whisper). Voie suivante retenue : Qwen3-TTS 0.6B (Apache-2.0) + OpenSLR 57 African Accented French (Apache-2.0), déjà branché (voix_qwen.py, 92 % le 17/10).
