@@ -109,25 +109,60 @@ def face5(box, src=None):
 # BOÎTE (ses points de squelette, marge de cheveux au-dessus du nez) + ses points en positif et ceux des autres en négatif.
 # Repli MagicTouch si SAM échoue ; PREPARE_SAM=0 rend l'ancienne voie.
 def sam_personnes(img, Ps):
-    import torch, linge
+    # Silhouette complète en trois temps (21/10/2026, essais sur le salon, le gbaka et le marché) : 1) SAM (boîte + squelette,
+    # les autres acteurs en négatif) donne le corps sans déborder ; 2) des ANCRES autour de la tête et aux mains, chacune
+    # interrogée seule, rattachent ce que SAM avait laissé (chevelure, peigne, billets, téléphone) si le morceau touche le
+    # corps et reste dans sa petite boîte ; 3) la classe « cheveux / accessoires » du segmenteur MediaPipe multiclasse
+    # (Apache-2.0) au-dessus des épaules complète une coiffure volumineuse (afro de la coiffeuse : 26 % → 96 % rattachée),
+    # puis les piqûres du masque sont bouchées. L'image n'est encodée qu'une fois (27 s les trois scènes).
+    import torch, linge, mediapipe as mp_
+    from mediapipe.tasks.python import vision as v_, BaseOptions as BO_
     _, mod = linge._sam(); H_, W_ = img.shape[:2]; sx, sy = 1024 / W_, 1024 / H_
     x_ = cv2.resize(img, (1024, 1024), interpolation=cv2.INTER_LINEAR).astype(np.float32) / 255
     x_ = (x_ - np.array([0.485, 0.456, 0.406], np.float32)) / np.array([0.229, 0.224, 0.225], np.float32)
-    pv = torch.from_numpy(x_.transpose(2, 0, 1)[None].copy()); out = []
-    vis = lambda p: [i for i in (0, 11, 12, 13, 14, 15, 16, 23, 24) if p[i, 2] > 0.4 and 0 <= p[i, 0] < W_ and 0 <= p[i, 1] < H_]
-    for k, p in enumerate(Ps):
-        s = float(np.linalg.norm(p[11, :2] - p[12, :2])) or 40.0; idx = vis(p) or [0, 11, 12]
-        xs, ys = p[idx, 0], p[idx, 1]
-        box = [max(0, xs.min() - 0.6 * s), max(0, p[0, 1] - 1.4 * s), min(W_ - 1, xs.max() + 0.6 * s),
-               min(H_ - 1, max(ys.max(), p[[27, 28], 1].max() if p[[27, 28], 2].min() > 0.3 else ys.max()) + 0.4 * s)]
-        pos = [(p[i, 0], p[i, 1]) for i in idx]
-        neg = [(q[i, 0], q[i, 1]) for j, q in enumerate(Ps) if j != k for i in vis(q) if box[0] <= q[i, 0] <= box[2] and box[1] <= q[i, 1] <= box[3]]
+    with torch.no_grad(): emb = mod.get_image_embeddings(torch.from_numpy(x_.transpose(2, 0, 1)[None].copy()))
+    seg = v_.ImageSegmenter.create_from_options(v_.ImageSegmenterOptions(base_options=BO_(model_asset_path=M + 'selfie_multiclass_256x256.tflite'), output_confidence_masks=True))
+    def sam(pos, neg, box, multi):
         pts = torch.tensor([[[[x * sx, y * sy] for x, y in pos + neg]]], dtype=torch.float32)
         lab = torch.tensor([[[1] * len(pos) + [0] * len(neg)]], dtype=torch.int64)
         bx = torch.tensor([[[box[0] * sx, box[1] * sy, box[2] * sx, box[3] * sy]]], dtype=torch.float32)
-        with torch.no_grad():
-            o = mod(pixel_values=pv, input_points=pts, input_labels=lab, input_boxes=bx, multimask_output=False)
-        out.append((cv2.resize(o.pred_masks[0, 0, 0].numpy(), (W_, H_), interpolation=cv2.INTER_LINEAR) > 0).astype(np.float32))
+        with torch.no_grad(): o = mod(image_embeddings=emb, input_points=pts, input_labels=lab, input_boxes=bx, multimask_output=multi)
+        return [cv2.resize(o.pred_masks[0, 0, j].numpy(), (W_, H_)) > 0 for j in range(o.pred_masks.shape[2])], o.iou_scores[0, 0].numpy()
+    vis = lambda p, I=(0, 11, 12, 13, 14, 15, 16, 23, 24): [i for i in I if p[i, 2] > 0.4 and 0 <= p[i, 0] < W_ and 0 <= p[i, 1] < H_]
+    out = []
+    for k, p in enumerate(Ps):
+        s = float(np.linalg.norm(p[11, :2] - p[12, :2])) or 40.0; idx = vis(p) or [0, 11, 12]; xs, ys = p[idx, 0], p[idx, 1]
+        box = [max(0, xs.min() - 0.6 * s), max(0, p[0, 1] - 1.4 * s), min(W_ - 1, xs.max() + 0.6 * s), min(H_ - 1, ys.max() + 2.5 * s)]
+        neg = [(q[i, 0], q[i, 1]) for j, q in enumerate(Ps) if j != k for i in vis(q)]
+        m = sam([(p[i, 0], p[i, 1]) for i in idx], neg, box, False)[0][0].astype(np.uint8)
+        near = cv2.dilate(m, np.ones((int(0.15 * s) | 1,) * 2, np.uint8)).astype(bool)
+        ancres = [(p[0, 0] + dx * s, p[0, 1] - dy * s, 1.2) for dx, dy in ((0, 0.9), (-0.6, 0.6), (0.6, 0.6), (0, 1.3))] + \
+                 [(p[i, 0], p[i, 1], 0.7) for i in vis(p, (15, 16, 19, 20))]
+        for ax, ay, r in ancres:
+            bb = [max(0, ax - r * s), max(0, ay - r * s), min(W_ - 1, ax + r * s), min(H_ - 1, ay + r * s)]
+            ms, sc = sam([(ax, ay)], neg, bb, True)
+            dans = np.zeros((H_, W_), bool); dans[int(bb[1]):int(bb[3]) + 1, int(bb[0]):int(bb[2]) + 1] = True
+            ok = [q for q, c in zip(ms, sc) if c > 0.6 and (q & near).any() and (q & ~dans).sum() < 0.03 * max(1, q.sum())]
+            if ok: m |= max(ok, key=lambda q: q.sum()).astype(np.uint8)
+        hx, hy = p[0, :2]; c0, r0 = int(max(0, hx - 1.7 * s)), int(max(0, hy - 2.0 * s)); c1, r1 = int(min(W_, hx + 1.7 * s)), int(min(H_, hy + 0.8 * s))
+        if c1 - c0 > 8 and r1 - r0 > 8:
+            cr = np.ascontiguousarray(img[r0:r1, c0:c1]); kz = 512 / max(cr.shape[:2])
+            rs = seg.segment(mp_.Image(image_format=mp_.ImageFormat.SRGB, data=np.ascontiguousarray(cv2.resize(cr, None, fx=kz, fy=kz, interpolation=cv2.INTER_CUBIC))))
+            if rs.confidence_masks:
+                hair = cv2.resize(np.maximum(rs.confidence_masks[1].numpy_view(), rs.confidence_masks[5].numpy_view()), (c1 - c0, r1 - r0)) > 0.5
+                hair[int(max(0, p[[11, 12], 1].min() - r0)):] = False   # au-dessus des épaules seulement
+                full = np.zeros((H_, W_), np.uint8); full[r0:r1, c0:c1] = hair
+                n_, lab_ = cv2.connectedComponents(full); tou = cv2.dilate(m, np.ones((5, 5), np.uint8)).astype(bool)
+                for c in range(1, n_):
+                    if (tou & (lab_ == c)).any(): m |= (lab_ == c).astype(np.uint8)
+        # trous : seules les piqûres (motifs du pagne, 0,000–0,03 épaule²) sont bouchées ; la boucle du bras sur la hanche
+        # (0,11–0,23 épaule², mesuré sur Princesse, Josiane, Soumaïla, Junior) reste du décor, elle ne doit pas suivre le bras
+        ff = m.copy(); cv2.floodFill(ff, np.zeros((H_ + 2, W_ + 2), np.uint8), (0, 0), 1)
+        n_, lab_, st_, _ = cv2.connectedComponentsWithStats((1 - ff).astype(np.uint8))
+        for c in range(1, n_):
+            if st_[c, 4] < 0.05 * s * s: m[lab_ == c] = 1
+        out.append(m.astype(np.float32))
+    seg.close()
     return out
 SAMM = None
 if not ALPHAS and os.environ.get('PREPARE_SAM', '1') != '0':

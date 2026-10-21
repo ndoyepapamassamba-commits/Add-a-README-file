@@ -1229,6 +1229,10 @@ try:
     _t49 = open(os.path.join(ICI, 'moteur-troupe', 'prepare_scene.py'), encoding='utf-8').read()
     if _f49: echecs.append(f'voix saison 2 hors de la gamme naturelle : {_f49} {_h49}')
     elif "os.environ.get('PREPARE_SAM', '1')" not in _t49 or 'def sam_personnes' not in _t49: echecs.append('prepare_scene : découpe SAM 2.1 absente ou désactivée par défaut')
+    # silhouette complète : ancres tête et mains, chevelure (classes 1 et 5 du segmenteur), piqûres seules bouchées (la boucle
+    # du bras sur la hanche, 0,11–0,23 épaule², reste du décor)
+    elif not all(x in _t49 for x in ('get_image_embeddings', 'selfie_multiclass_256x256.tflite', 'confidence_masks[5]', '0.05 * s * s')):
+        echecs.append('prepare_scene : silhouette SAM incomplète (ancres, chevelure ou seuil des trous manquant)')
     else: print(f'saison 2 : voix naturelles {_h49}, découpe SAM 2.1 par défaut : OK')
 except Exception as e:
     echecs.append(f'saison 2 (voix, découpe) : {e}')

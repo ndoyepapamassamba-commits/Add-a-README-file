@@ -21,7 +21,12 @@ def visage3d(img, box):
     f = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/face_landmarker.task'
     FL = vision.FaceLandmarker.create_from_options(vision.FaceLandmarkerOptions(base_options=BaseOptions(model_asset_path=f), num_faces=1, min_face_detection_confidence=0.2))
     x0, y0, x1, y1 = [int(v) for v in box]; x0, y0 = max(0, x0), max(0, y0); x1, y1 = min(img.shape[1], x1), min(img.shape[0], y1)
-    c = np.ascontiguousarray(img[y0:y1, x0:x1]); r = FL.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=c)); FL.close()
+    c = np.ascontiguousarray(img[y0:y1, x0:x1]); r = FL.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=c))
+    if not r.face_landmarks:
+        # petit visage de trois quarts (scènes générées de la saison 2, 21/10/2026 : Soumaïla et Junior au gbaka « non lus ») :
+        # seconde lecture sur le recadrage agrandi ×2, les coordonnées normalisées restent celles du recadrage
+        r = FL.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(cv2.resize(c, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC))))
+    FL.close()
     if not r.face_landmarks: return None
     h, w = c.shape[:2]
     return np.array([[p.x * w + x0, p.y * h + y0, -p.z * w] for p in r.face_landmarks[0]], np.float64)
