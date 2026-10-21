@@ -37,3 +37,4 @@
 [729 s] 9 clips · === tata-prisca--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13806 Mo
 [851 s] 9 clips · === tata-prisca--parler (at_runtime)   |============>                                     | 1/4 - 135.73s/it[K · mémoire libre 13808 Mo
 [972 s] 9 clips · === tata-prisca--parler (at_runtime)   |=========================>                        | 2/4 - 134.52s/it[K · mémoire libre 13810 Mo
+[1093 s] 9 clips · === tata-prisca--parler (at_runtime)   |=====================================>            | 3/4 - 134.40s/it[K · mémoire libre 13809 Mo
