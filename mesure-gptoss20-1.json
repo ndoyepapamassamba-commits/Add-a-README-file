@@ -1,12 +1,12 @@
 {
  "modele": "gptoss20",
  "part": 1,
- "appels_scenariste": 5,
- "secondes_scenariste": 1312.5203351974487,
- "echecs_scenariste": 1,
+ "appels_scenariste": 9,
+ "secondes_scenariste": 2336.532185792923,
+ "echecs_scenariste": 3,
  "appels_juge": 0,
  "echecs_juge": 0,
- "brouillons_refuses_controle": 4,
+ "brouillons_refuses_controle": 6,
  "planchers_v17": [],
  "notes": [],
  "acceptes": 0,
@@ -15,7 +15,12 @@
    "lieu": "Cour",
    "accepte": false,
    "secondes": 1046
+  },
+  {
+   "lieu": "Douane",
+   "accepte": false,
+   "secondes": 1024
   }
  ],
- "secondes_par_brouillon": 262.5
+ "secondes_par_brouillon": 259.6
 }
