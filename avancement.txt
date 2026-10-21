@@ -1,3 +1,4 @@
 [122 s] 4 clips · === le-patriarche--ecouter (at_runtime)  · mémoire libre 13838 Mo
 [243 s] 4 clips · === le-patriarche--ecouter (at_runtime)   |============>                                     | 1/4 - 136.00s/it[K · mémoire libre 13820 Mo
 [365 s] 4 clips · === le-patriarche--ecouter (at_runtime)   |=========================>                        | 2/4 - 133.77s/it[K · mémoire libre 13819 Mo
+[486 s] 4 clips · === le-patriarche--ecouter (at_runtime)   |=====================================>            | 3/4 - 134.40s/it[K · mémoire libre 13813 Mo
