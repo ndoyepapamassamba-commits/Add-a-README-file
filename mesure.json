@@ -77,6 +77,13 @@
    "lora": "at_runtime",
    "secondes": 369,
    "memoire_max_go": 10.94
+  },
+  {
+   "clip": "tata-prisca--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 370,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39541116258"
