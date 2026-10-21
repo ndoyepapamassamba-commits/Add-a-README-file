@@ -54,3 +54,4 @@
 [5465 s] 7 images · === decor-eglise-coin-jour   |==================================================| 4/4 - 130.27s/it[K · mémoire libre 6971 Mo
 [5586 s] 7 images · === decor-eglise-coin-jour   |============>                                     | 1/4 - 127.35s/it[K · mémoire libre 6973 Mo
 [5708 s] 7 images · === decor-eglise-coin-jour   |=========================>                        | 2/4 - 131.11s/it[K · mémoire libre 6972 Mo
+[5829 s] 7 images · === decor-eglise-coin-jour   |=====================================>            | 3/4 - 134.57s/it[K · mémoire libre 6969 Mo
