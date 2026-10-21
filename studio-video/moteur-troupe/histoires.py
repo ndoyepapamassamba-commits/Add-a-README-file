@@ -195,6 +195,10 @@ _VERROU_LOCAL = threading.Lock()
 # service gratuit sans clé : au plus 2 appels en vol (20/10/2026, mesuré : 6 appels simultanés — 3 brouillons jugés, 2 questions
 # chacun — laissaient une réponse sans retour au bout de 240 s, alors qu'un appel seul du juge répond en 9 s)
 _EN_VOL = threading.BoundedSemaphore(int(os.environ.get('HISTOIRES_EN_VOL', '2')))
+# 21/10/2026 : écriture et jugement ont chacun leur plafond. Voie hybride (écriture Pollinations sans clé, juge hébergé) : depuis une
+# machine GitHub, 2 brouillons en vol → 17 appels refusés pour 14 servis (un seul brouillon par tour au lieu de 3) ;
+# HISTOIRES_EN_VOL_SCENARISTE=1 les envoie l'un après l'autre sans ralentir le juge hébergé (2 emplacements).
+_EN_VOL_SCEN = threading.BoundedSemaphore(int(os.environ.get('HISTOIRES_EN_VOL_SCENARISTE', os.environ.get('HISTOIRES_EN_VOL', '2'))))
 
 
 def llm(prompt, temp=1.0, juge=False):
@@ -218,7 +222,7 @@ def llm(prompt, temp=1.0, juge=False):
     for essai in range(3):
         try:
             req = urllib.request.Request(url, data=json.dumps(corps).encode(), headers=tete)
-            with _EN_VOL: m = json.loads(urllib.request.urlopen(req, timeout=delai).read())['choices'][0]['message']
+            with (_EN_VOL if juge else _EN_VOL_SCEN): m = json.loads(urllib.request.urlopen(req, timeout=delai).read())['choices'][0]['message']
             if m.get('content'): return m['content']
             err = 'réponse vide (raisonnement seul)'
         except Exception as e:

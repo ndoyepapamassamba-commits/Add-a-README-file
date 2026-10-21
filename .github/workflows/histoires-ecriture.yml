@@ -107,7 +107,8 @@ jobs:
           pousse() { (cd $O && git add -A && git -c user.name=histoires -c user.email=histoires@users.noreply.github.com commit -qm "Histoires : ${{ matrix.modele }} part ${{ matrix.part }} (run ${{ github.run_id }})" && git push -q -f origin HEAD:refs/heads/$B) > /dev/null 2>&1 || true; }
           ( while sleep 300; do pousse; done ) & P=$!
           if [ "${{ matrix.modele }}" = gptoss20hyb ]; then   # écriture Pollinations, juge hébergé (réglages du calibrage)
-            export HISTOIRES_JUGE_URL=http://127.0.0.1:8080/v1/chat/completions HISTOIRES_JUGE_DELAI=900 HISTOIRES_MAX_JETONS=4000
+            # 05:57 : Pollinations sans clé refuse 2 appels simultanés d'une même machine (17 refus pour 14 brouillons) : un à la fois
+            export HISTOIRES_JUGE_URL=http://127.0.0.1:8080/v1/chat/completions HISTOIRES_JUGE_DELAI=900 HISTOIRES_MAX_JETONS=4000 HISTOIRES_EN_VOL_SCENARISTE=1
           elif [ "${{ matrix.modele }}" != gptoss20 ]; then
             export HISTOIRES_URL=http://127.0.0.1:8080/v1/chat/completions HISTOIRES_DELAI=1800 HISTOIRES_MAX_JETONS=1500 HISTOIRES_TEMP=0.7
             # GPT-OSS raisonne avant d'écrire : le raisonnement compte dans les jetons, et sa température conseillée est 1,0
