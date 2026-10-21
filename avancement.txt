@@ -26,3 +26,4 @@
 [3156 s] 9 clips · === chef-traore--hausser (at_runtime)   |============>                                     | 1/4 - 134.37s/it[K · mémoire libre 13753 Mo
 [3277 s] 9 clips · === chef-traore--hausser (at_runtime)   |=========================>                        | 2/4 - 133.93s/it[K · mémoire libre 13745 Mo
 [3398 s] 9 clips · === chef-traore--hausser (at_runtime)   |=====================================>            | 3/4 - 134.02s/it[K · mémoire libre 13747 Mo
+[122 s] 10 clips · === la-go-leopard--parler@2 (at_runtime)   |============>                                     | 1/4 - 82.49s/it[K · mémoire libre 13753 Mo
