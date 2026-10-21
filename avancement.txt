@@ -26,3 +26,4 @@
 [3159 s] 9 clips · === aminata--mentir (at_runtime)   |============>                                     | 1/4 - 135.90s/it[K · mémoire libre 13765 Mo
 [3280 s] 9 clips · === aminata--mentir (at_runtime)   |=========================>                        | 2/4 - 135.61s/it[K · mémoire libre 13770 Mo
 [3402 s] 9 clips · === aminata--mentir (at_runtime)   |=====================================>            | 3/4 - 135.30s/it[K · mémoire libre 13773 Mo
+[3523 s] 9 clips · === aminata--mentir (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13158 Mo
