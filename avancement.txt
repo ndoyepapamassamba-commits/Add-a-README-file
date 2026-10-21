@@ -15,3 +15,4 @@
 [1821 s] 3 clips · === tantie-awa-sarr--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13733 Mo
 [1942 s] 3 clips · === tantie-awa-sarr--hausser (at_runtime)   |============>                                     | 1/4 - 135.22s/it[K · mémoire libre 13725 Mo
 [2063 s] 3 clips · === tantie-awa-sarr--hausser (at_runtime)   |=========================>                        | 2/4 - 134.93s/it[K · mémoire libre 13722 Mo
+[2185 s] 3 clips · === tantie-awa-sarr--hausser (at_runtime)   |=========================>                        | 2/4 - 134.93s/it[K · mémoire libre 13731 Mo
