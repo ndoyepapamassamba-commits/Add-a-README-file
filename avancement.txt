@@ -120,3 +120,4 @@
 [6675 s] 8 images · === perso-patron-sery   |============>                                     | 1/4 - 378.28s/it[K · mémoire libre 6170 Mo
 [6796 s] 8 images · === perso-patron-sery   |=========================>                        | 2/4 - 373.45s/it[K · mémoire libre 6210 Mo
 [6918 s] 8 images · === perso-patron-sery   |=========================>                        | 2/4 - 373.45s/it[K · mémoire libre 6176 Mo
+[7039 s] 8 images · === perso-patron-sery   |=========================>                        | 2/4 - 373.45s/it[K · mémoire libre 6159 Mo
