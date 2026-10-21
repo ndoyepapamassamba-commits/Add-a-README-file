@@ -4,3 +4,4 @@
 [485 s] 5 clips · === la-go-leopard--parler (at_runtime)   |=========================>                        | 2/4 - 67.49s/it[K · mémoire libre 13796 Mo
 [607 s] 5 clips · === la-go-leopard--parler (at_runtime)   |=====================================>            | 3/4 - 67.62s/it[K · mémoire libre 13771 Mo
 [728 s] 6 clips · === petit-moussa--hausser (at_runtime)   |============>                                     | 1/4 - 68.08s/it[K · mémoire libre 13766 Mo
+[849 s] 6 clips · === petit-moussa--hausser (at_runtime)   |=====================================>            | 3/4 - 67.53s/it[K · mémoire libre 13769 Mo
