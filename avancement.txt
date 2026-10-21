@@ -68,3 +68,4 @@
 [1942 s] 21 clips · === mecano-issa--colere (at_runtime)   |============>                                     | 1/4 - 134.01s/it[K · mémoire libre 13744 Mo
 [2063 s] 21 clips · === mecano-issa--colere (at_runtime)   |=========================>                        | 2/4 - 133.51s/it[K · mémoire libre 13744 Mo
 [2184 s] 21 clips · === mecano-issa--colere (at_runtime)   |=====================================>            | 3/4 - 133.43s/it[K · mémoire libre 13750 Mo
+[2306 s] 21 clips · === mecano-issa--colere (at_runtime)   |=====================================>            | 3/4 - 133.43s/it[K · mémoire libre 13749 Mo
