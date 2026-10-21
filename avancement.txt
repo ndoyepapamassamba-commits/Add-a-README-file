@@ -29,3 +29,4 @@
 [3519 s] 9 clips · === aminata--montrer (at_runtime)   |=====================================>            | 3/4 - 135.33s/it[K · mémoire libre 13747 Mo
 [3640 s] 9 clips · === aminata--montrer (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 10390 Mo
 [124 s] 10 clips · === chef-traore--parler@2 (at_runtime)   |============>                                     | 1/4 - 89.17s/it[K · mémoire libre 13769 Mo
+[123 s] 10 clips · === chef-traore--choc@2 (at_runtime)   |============>                                     | 1/4 - 87.90s/it[K · mémoire libre 13768 Mo
