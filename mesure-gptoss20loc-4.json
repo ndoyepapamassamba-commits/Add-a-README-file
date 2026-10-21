@@ -4,13 +4,14 @@
  "appels_scenariste": 76,
  "secondes_scenariste": 17865.97363424301,
  "echecs_scenariste": 0,
- "appels_juge": 68,
+ "appels_juge": 74,
  "echecs_juge": 0,
  "brouillons_refuses_controle": 7,
  "planchers_v17": [
   0.405,
   0.522,
-  0.488
+  0.488,
+  0.633
  ],
  "notes": [
   0.428,
@@ -18,7 +19,7 @@
   0.418,
   0.399
  ],
- "acceptes": 1,
+ "acceptes": 2,
  "lieux": [
   {
    "lieu": "Hôpital",
@@ -49,6 +50,11 @@
    "lieu": "Hôpital",
    "accepte": false,
    "secondes": 2518
+  },
+  {
+   "lieu": "Hôpital",
+   "accepte": true,
+   "secondes": 948
   }
  ],
  "drole_v17": [
@@ -240,14 +246,14 @@
    "jetons_par_s": 5.2
   },
   "juge": {
-   "appels": 68,
+   "appels": 74,
    "tronques": 0,
-   "lus_jetons": 412,
-   "cache_jetons": 127,
-   "lecture_s": 39.1,
+   "lus_jetons": 413,
+   "cache_jetons": 128,
+   "lecture_s": 38.8,
    "ecriture_jetons": 78,
-   "ecriture_s": 16.8,
-   "jetons_par_s": 4.6
+   "ecriture_s": 17.4,
+   "jetons_par_s": 4.5
   }
  }
 }
