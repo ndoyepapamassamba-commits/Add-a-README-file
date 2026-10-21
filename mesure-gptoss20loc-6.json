@@ -12,26 +12,26 @@
  "acceptes": 0,
  "lieux": [],
  "drole_v17": [
-  1.5,
+  1.0,
   1.5,
   1.5
  ],
  "choc_v17": [
-  0.5,
   1.0,
-  1.0
+  1.0,
+  0.0
  ],
  "secondes_par_brouillon": 0.0,
  "temps": {
   "juge": {
    "appels": 6,
    "tronques": 0,
-   "lus_jetons": 395,
-   "cache_jetons": 94,
-   "lecture_s": 40.8,
-   "ecriture_jetons": 80,
-   "ecriture_s": 21.5,
-   "jetons_par_s": 3.7
+   "lus_jetons": 245,
+   "cache_jetons": 250,
+   "lecture_s": 11.6,
+   "ecriture_jetons": 93,
+   "ecriture_s": 14.5,
+   "jetons_par_s": 6.4
   }
  }
 }
