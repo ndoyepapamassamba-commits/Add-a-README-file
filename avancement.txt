@@ -35,3 +35,4 @@
 [123 s] 15 clips · === agent-bakary--rire (at_runtime)   |=========================>                        | 2/4 - 39.23s/it[K · mémoire libre 13782 Mo
 [244 s] 16 clips · === madame-konan--parler (at_runtime)   |============>                                     | 1/4 - 40.23s/it[K · mémoire libre 13800 Mo
 [366 s] 17 clips · === maitre-coulibaly--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13810 Mo
+[487 s] 17 clips · === maitre-coulibaly--choc (at_runtime)   |=====================================>            | 3/4 - 39.39s/it[K · mémoire libre 13805 Mo
