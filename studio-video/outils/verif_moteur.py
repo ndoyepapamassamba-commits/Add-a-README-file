@@ -519,6 +519,16 @@ try:
 except Exception as e:
     echecs.append(f'quasi-doublons : {e}')
 
+# jeu varié (21/10/2026, « La Douane du Gâteau ») : plus de la moitié des répliques en « neutre » = défaut à réparer, la moitié non
+try:
+    _L18 = next(iter(_h14.LIEUX))
+    def _d18(jeux): return [x for x in _h14.controle({'titre': 't', 'repliques': [{'qui': '', 'texte': 'a', 'jeu': j} for j in jeux]}, _L18) if 'neutre' in x]
+    if not _d18(['neutre', 'neutre', 'neutre', 'choc']): echecs.append('jeu varié : 3 neutres sur 4 non vus')
+    if _d18(['neutre', 'neutre', 'accuse', 'choc']): echecs.append('jeu varié : 2 neutres sur 4 refusés')
+    print('jeu varié : 3 répliques « neutre » sur 4 à réparer, 2 sur 4 acceptées : OK')
+except Exception as e:
+    echecs.append(f'jeu varié : {e}')
+
 # pas deux fois le même geste (21/10/2026) : départ du clip d'écoute propre à chaque vidéo, continu d'une réplique à l'autre
 try:
     import assemble as _as15

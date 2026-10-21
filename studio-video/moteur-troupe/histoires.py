@@ -157,7 +157,7 @@ LEXIQUE (sens exact, n'en mets que 2 ou 3) : {lex}
 FORMAT : de {F['n'][0]} à {F['n'][1]} répliques, chacune de 14 mots au plus ; la CHUTE (dernière réplique avant le bouton éventuel) fait
 8 mots au plus{' et REPREND un mot de la première réplique avec un autre sens' if F['rappel'] else ', le mot drôle en DERNIER'} ;
 {'la chute est la DERNIÈRE réplique (la réaction choquée est jouée en image) ; deux répliques de suite jamais du même personnage ; ' if fmt == 'sketch' else 'un bouton final de 3 à 6 mots est permis (réaction) ; '}2 à 4 marques du parler ivoirien, pas plus.
-Jeu de chaque réplique parmi : {', '.join(JEUX)}.
+Jeu de chaque réplique parmi : {', '.join(JEUX)} ; « neutre » pour une réplique sur deux au plus (le jeu choisit le geste à l'écran).
 """
     if fmt == 'sketch': txt += CHOC
     txt += ("\nNIVEAU MINIMUM À DÉPASSER (épisode publié, NE PAS le recopier, ses chutes sont interdites) :\n"
@@ -264,6 +264,11 @@ def controle(h, lieu, deja=(), fmt='sketch'):
     acteurs = set(LIEUX[lieu]['acteurs'])
     if any(r.get('qui') not in acteurs for r in R): d.append('personnage hors du lieu : ' + ', '.join(sorted({r.get('qui', '?') for r in R} - acteurs)))
     if len({r.get('qui') for r in R}) < 2: d.append('un seul personnage parle')
+    # 21/10/2026 (« La Douane du Gâteau », 1er sketch accepté sur la machine) : 7 répliques sur 7 jouées « neutre » → le même geste
+    # « parler » d'un bout à l'autre de la vidéo. Plus de la moitié en « neutre » : à réparer (un appel), le jeu choisit le geste.
+    neutres = sum(1 for r in R if r.get('jeu', 'neutre') == 'neutre')
+    if R and neutres * 2 > len(R): d.append(f"{neutres} répliques sur {len(R)} jouées « neutre » : donne à chacune un jeu parmi "
+                                         f"{', '.join(j for j in JEUX if j != 'neutre')}")
     longues = [r['texte'] for r in R if len(mots(r.get('texte', ''))) > 14]
     if longues: d.append(f'{len(longues)} réplique(s) de plus de 14 mots')
     ch = [r for r in R if r.get('role') == 'chute' or r.get('chute')]
