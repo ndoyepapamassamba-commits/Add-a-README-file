@@ -39,3 +39,4 @@
 [3035 s] 4 images · === perso-maitre-kone   |=====================================>            | 3/4 - 303.11s/it[K · mémoire libre 6223 Mo
 [3157 s] 4 images · === perso-maitre-kone   |==================================================| 4/4 - 306.34s/it[K · mémoire libre 6818 Mo
 [3278 s] 5 images · === perso-yaya-lapprenti   |==================================================| 4/4 - 306.34s/it[K · mémoire libre 11546 Mo
+[3400 s] 5 images · === perso-yaya-lapprenti   |==================================================| 4/4 - 306.34s/it[K · mémoire libre 6253 Mo
