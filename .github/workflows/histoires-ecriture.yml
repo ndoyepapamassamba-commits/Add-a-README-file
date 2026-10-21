@@ -1,6 +1,6 @@
 # Scénaristes ouverts sur les machines GitHub (21/10/2026) — voir studio-video/moteur-troupe/histoires_tourne.py.
 # llama.cpp (MIT) + Ministral 3 14B / Mistral Small 3.2 24B / GPT-OSS 20B hébergé ici (Apache-2.0), contre le scénariste actuel (Pollinations GPT-OSS 20B) ;
-# même juge pour tous. 8 machines au plus, pour laisser la place à la bible et à la banque (20 machines par compte).
+# GPT-OSS hébergé écrit et juge (calibré) ; 6 machines au plus, pour laisser la place à la bible et à la banque (20 machines par compte).
 name: Histoires (scénaristes ouverts)
 on:
   push:
@@ -20,10 +20,18 @@ jobs:
     timeout-minutes: 290
     strategy:
       fail-fast: false
-      max-parallel: 8
+      max-parallel: 6
+      # 21/10 05:05 : depuis les machines GitHub, Pollinations ne répond plus au juge (3 appels, 3 échecs) : les concurrents jugés
+      # par lui ne peuvent rien accepter. GPT-OSS hébergé (scénariste ET juge, calibré) passe en tête, sur 4 machines ; Small 24B
+      # et Ministral 14B restent une machine chacun pour la conformité de forme ; le scénariste Pollinations sort du duel.
       matrix:
-        modele: [ministral14, small24, gptoss20, gptoss20loc]
-        part: [0, 1]
+        include:
+          - { modele: gptoss20loc, part: 0, parts: 4 }
+          - { modele: gptoss20loc, part: 1, parts: 4 }
+          - { modele: gptoss20loc, part: 2, parts: 4 }
+          - { modele: gptoss20loc, part: 3, parts: 4 }
+          - { modele: small24, part: 0, parts: 1 }
+          - { modele: ministral14, part: 0, parts: 1 }
     steps:
       - uses: actions/checkout@v4
       - name: Scénariste et poids
@@ -102,10 +110,8 @@ jobs:
             # ne répond plus au juge depuis les machines GitHub : un seul modèle, un seul serveur, scénariste ET juge, sans service extérieur
             if [ "${{ matrix.modele }}" = gptoss20loc ]; then export HISTOIRES_MAX_JETONS=4000 HISTOIRES_TEMP=1.0 HISTOIRES_JUGE_URL=$HISTOIRES_URL HISTOIRES_JUGE_DELAI=900; fi
           fi
-          if [ "${{ matrix.modele }}" = gptoss20loc ] && [ "${{ matrix.part }}" = 0 ]; then   # le même modèle, juge sans quota ?
-            HISTOIRES_JUGE_URL=$HISTOIRES_URL HISTOIRES_JUGE_DELAI=900 timeout 2400 python3 studio-video/moteur-troupe/juge_calibre.py $O/calibrage-juge.json || true
-          fi
-          python3 studio-video/moteur-troupe/histoires_tourne.py ${{ matrix.modele }} ${{ matrix.part }} 2 $MINUTES $O \
+          # calibrage du juge hébergé fait le 21/10 (run 39544447104) : relancer juge_calibre.py à chaque changement de modèle ou de gabarit
+          python3 studio-video/moteur-troupe/histoires_tourne.py ${{ matrix.modele }} ${{ matrix.part }} ${{ matrix.parts }} $MINUTES $O \
             studio-video/animer/cle-claude.pub.pem || true
           kill $P 2>/dev/null || true; [ -f $RUNNER_TEMP/serveur.log ] && grep -E "eval time|prompt eval" $RUNNER_TEMP/serveur.log | tail -6 > $O/vitesse-${{ matrix.modele }}-${{ matrix.part }}.txt
           pousse; ls -la $O
