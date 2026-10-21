@@ -2,3 +2,4 @@
 [243 s] 4 clips · === le-patriarche--hausser (at_runtime)   |=====================================>            | 3/4 - 67.54s/it[K · mémoire libre 13783 Mo
 [364 s] 5 clips · === la-go-leopard--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13799 Mo
 [485 s] 5 clips · === la-go-leopard--parler (at_runtime)   |=========================>                        | 2/4 - 67.49s/it[K · mémoire libre 13796 Mo
+[607 s] 5 clips · === la-go-leopard--parler (at_runtime)   |=====================================>            | 3/4 - 67.62s/it[K · mémoire libre 13771 Mo
