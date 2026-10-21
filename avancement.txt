@@ -79,3 +79,4 @@
 [122 s] 22 clips · === dj-kevin--parler (at_runtime)   |=========================>                        | 2/4 - 40.13s/it[K · mémoire libre 13805 Mo
 [244 s] 23 clips · === boubacar--hausser (at_runtime)   |============>                                     | 1/4 - 41.25s/it[K · mémoire libre 13787 Mo
 [123 s] 24 clips · === maman-brigitte--parler@2 (at_runtime)  · mémoire libre 13783 Mo
+[245 s] 24 clips · === maman-brigitte--parler@2 (at_runtime)   |============>                                     | 1/4 - 134.64s/it[K · mémoire libre 13754 Mo
