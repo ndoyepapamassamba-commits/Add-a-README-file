@@ -42,3 +42,4 @@
 [2554 s] 18 clips · === sorciere-mama-dede--parler (at_runtime)   |============>                                     | 1/4 - 134.29s/it[K · mémoire libre 13802 Mo
 [2675 s] 18 clips · === sorciere-mama-dede--parler (at_runtime)   |=========================>                        | 2/4 - 133.41s/it[K · mémoire libre 13795 Mo
 [2797 s] 18 clips · === sorciere-mama-dede--parler (at_runtime)   |=====================================>            | 3/4 - 133.27s/it[K · mémoire libre 13786 Mo
+[122 s] 18 clips · === sorciere-mama-dede--parler (at_runtime)   |=========================>                        | 2/4 - 39.78s/it[K · mémoire libre 13780 Mo
