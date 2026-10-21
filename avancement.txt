@@ -21,3 +21,4 @@
 [2548 s] 8 clips · === professeur-samba--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13667 Mo
 [2670 s] 8 clips · === professeur-samba--colere (at_runtime)   |============>                                     | 1/4 - 136.05s/it[K · mémoire libre 13669 Mo
 [2791 s] 8 clips · === professeur-samba--colere (at_runtime)   |=========================>                        | 2/4 - 135.49s/it[K · mémoire libre 13665 Mo
+[2912 s] 8 clips · === professeur-samba--colere (at_runtime)   |=====================================>            | 3/4 - 135.43s/it[K · mémoire libre 13666 Mo
