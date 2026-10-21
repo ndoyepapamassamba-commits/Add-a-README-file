@@ -89,3 +89,4 @@
 [1578 s] 14 images · === perso-madame-coumba   |============>                                     | 1/4 - 443.11s/it[K · mémoire libre 6163 Mo
 [1700 s] 14 images · === perso-madame-coumba   |============>                                     | 1/4 - 443.11s/it[K · mémoire libre 6163 Mo
 [1821 s] 14 images · === perso-madame-coumba   |============>                                     | 1/4 - 443.11s/it[K · mémoire libre 6151 Mo
+[1942 s] 14 images · === perso-madame-coumba   |============>                                     | 1/4 - 443.11s/it[K · mémoire libre 6143 Mo
