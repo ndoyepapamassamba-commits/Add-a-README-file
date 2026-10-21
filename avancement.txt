@@ -1,1 +1,2 @@
 [122 s] 4 clips · === le-patriarche--choc (at_runtime)   |============>                                     | 1/4 - 72.24s/it[K · mémoire libre 13786 Mo
+[243 s] 4 clips · === le-patriarche--choc (at_runtime)   |=====================================>            | 3/4 - 68.23s/it[K · mémoire libre 13790 Mo
