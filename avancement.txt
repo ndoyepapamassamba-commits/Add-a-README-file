@@ -59,3 +59,4 @@
 [366 s] 17 clips · === la-voisine--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13807 Mo
 [487 s] 17 clips · === la-voisine--mentir (at_runtime)   |=====================================>            | 3/4 - 39.17s/it[K · mémoire libre 13773 Mo
 [122 s] 18 clips · === salif-le-parisien--ecouter (at_runtime)  · mémoire libre 13767 Mo
+[244 s] 18 clips · === salif-le-parisien--ecouter (at_runtime)   |============>                                     | 1/4 - 134.90s/it[K · mémoire libre 13755 Mo
