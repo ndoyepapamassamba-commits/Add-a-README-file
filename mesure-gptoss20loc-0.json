@@ -4,7 +4,7 @@
  "appels_scenariste": 0,
  "secondes_scenariste": 0.0,
  "echecs_scenariste": 0,
- "appels_juge": 6,
+ "appels_juge": 18,
  "echecs_juge": 0,
  "brouillons_refuses_controle": 0,
  "planchers_v17": [],
@@ -21,17 +21,21 @@
   1.0,
   1.5
  ],
+ "calibrage": {
+  "meme": 0.492,
+  "avec_sans_chute": 0.578
+ },
  "secondes_par_brouillon": 0.0,
  "temps": {
   "juge": {
-   "appels": 6,
+   "appels": 18,
    "tronques": 0,
-   "lus_jetons": 245,
-   "cache_jetons": 250,
-   "lecture_s": 21.3,
-   "ecriture_jetons": 88,
-   "ecriture_s": 20.6,
-   "jetons_par_s": 4.3
+   "lus_jetons": 217,
+   "cache_jetons": 297,
+   "lecture_s": 23.6,
+   "ecriture_jetons": 69,
+   "ecriture_s": 13.0,
+   "jetons_par_s": 5.3
   }
  }
 }
