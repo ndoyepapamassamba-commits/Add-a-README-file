@@ -35,3 +35,4 @@
 [3156 s] 4 images · === perso-mamie-bintou   |==================================================| 4/4 - 398.29s/it[K · mémoire libre 14094 Mo
 [3278 s] 4 images · === perso-mamie-bintou   |==================================================| 4/4 - 398.29s/it[K · mémoire libre 6690 Mo
 [3399 s] 4 images · === perso-mamie-bintou   |==================================================| 4/4 - 398.29s/it[K · mémoire libre 6293 Mo
+[3521 s] 4 images · === perso-mamie-bintou   |==================================================| 4/4 - 398.29s/it[K · mémoire libre 6284 Mo
