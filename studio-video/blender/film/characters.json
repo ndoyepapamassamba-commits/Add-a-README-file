@@ -759,5 +759,77 @@
   "activite": "porte une bassine d’attiéké sur la tête en criant les prix",
   "genre": "femme",
   "age": 45
+ },
+ "SOUMAILA": {
+  "height": 1.75,
+  "voice": "gilles",
+  "pitch": 0.95,
+  "dessin": "scene",
+  "lieux": [
+   "Gbaka"
+  ],
+  "activite": "chauffeur de gbaka, compte chaque franc",
+  "genre": "homme",
+  "age": 48
+ },
+ "JUNIOR": {
+  "height": 1.72,
+  "voice": "gilles",
+  "pitch": 1.05,
+  "dessin": "scene",
+  "lieux": [
+   "Gbaka"
+  ],
+  "activite": "apprenti du gbaka, encaisse les passagers",
+  "genre": "homme",
+  "age": 19
+ },
+ "JOSIANE": {
+  "height": 1.65,
+  "voice": "siwis",
+  "pitch": 0.97,
+  "dessin": "scene",
+  "lieux": [
+   "Salon"
+  ],
+  "activite": "coiffeuse, peigne toujours à la main",
+  "genre": "femme",
+  "age": 35
+ },
+ "PRINCESSE": {
+  "height": 1.66,
+  "voice": "siwis",
+  "pitch": 1.06,
+  "dessin": "scene",
+  "lieux": [
+   "Salon"
+  ],
+  "activite": "cliente coquette au petit budget",
+  "genre": "femme",
+  "age": 22
+ },
+ "MAMAN AKISSI": {
+  "height": 1.62,
+  "voice": "siwis",
+  "pitch": 0.92,
+  "dessin": "scene",
+  "lieux": [
+   "Marché"
+  ],
+  "activite": "vendeuse de tomates, imbattable sur les prix",
+  "genre": "femme",
+  "age": 50
+ },
+ "SERAPHINE": {
+  "height": 1.64,
+  "voice": "siwis",
+  "pitch": 1.02,
+  "dessin": "scene",
+  "lieux": [
+   "Marché"
+  ],
+  "activite": "cliente bavarde, téléphone toujours levé",
+  "genre": "femme",
+  "age": 42
  }
 }

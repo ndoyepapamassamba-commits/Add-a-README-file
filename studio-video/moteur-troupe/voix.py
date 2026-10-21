@@ -28,9 +28,19 @@ CAST = {  # deux voix sources propres et libres : siwis (CC-BY 4.0) et gilles (C
   'BAYE NDIAYE':   ('fr_FR-gilles-low', None, 115, 1.60, 0.85, 0.95),
   'MODOU':         ('fr_FR-gilles-low', None, 125, 1.60, 0.85, 1.00),
   'KOFFI':         ('fr_FR-gilles-low', None, 120, 1.40, 0.85, 1.04),
+  # NOUVEAUX PERSONNAGES, SAISON 2 (21/10/2026, « je ne veux pas des personnages de l'ancienne troupe ») : voix posées à la main,
+  # sinon l'attribution « distincte » partagée par 60 personnages les repousse loin de leur hauteur naturelle (mesuré : Junior,
+  # homme de 19 ans, 166 Hz — homonyme d'un garçon de 16 ans de la fabrique —, Princesse 243 Hz) ; hommes sur siwis resserrée
+  'SOUMAILA':      ('fr_FR-siwis-medium', None, 108, 1.50, 0.85, 0.80),
+  'JUNIOR':        ('fr_FR-siwis-medium', None, 130, 1.50, 0.85, 0.86),
+  'JOSIANE':       ('fr_FR-siwis-medium', None, 222, 1.35, 0.85, 0.92),
+  'PRINCESSE':     ('fr_FR-siwis-medium', None, 240, 1.35, 0.85, 1.10),
+  'MAMAN AKISSI':  ('fr_FR-siwis-medium', None, 184, 1.40, 0.85, 0.90),
+  'SERAPHINE':     ('fr_FR-siwis-medium', None, 196, 1.35, 0.85, 1.08),
 }
 # débit visé (syllabes par seconde de parole) : chaîne 5,92 (hommes) / 4,71 (femmes), Ladjagaï 6,3–6,7 → un cran au-dessus de la chaîne
-DEBIT = {'MAMAN NOUNOU': 5.4, 'TANTIE AWA': 5.4, 'COUMBA': 5.4, 'PETIT MAMADOU': 5.6, 'BAYE NDIAYE': 6.0, 'MODOU': 6.2, 'KOFFI': 6.2}
+DEBIT = {'MAMAN NOUNOU': 5.4, 'TANTIE AWA': 5.4, 'COUMBA': 5.4, 'PETIT MAMADOU': 5.6, 'BAYE NDIAYE': 6.0, 'MODOU': 6.2, 'KOFFI': 6.2,
+         'SOUMAILA': 6.0, 'JUNIOR': 6.2, 'JOSIANE': 5.4, 'PRINCESSE': 5.6, 'MAMAN AKISSI': 5.4, 'SERAPHINE': 5.6}
 
 
 # TOUTE LA TROUPE A UNE VOIX (19/10/2026, « une solution globale ») : un personnage absent du tableau reçoit la sienne,

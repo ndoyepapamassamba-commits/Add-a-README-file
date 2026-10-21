@@ -1220,6 +1220,19 @@ try:
 except Exception as e:
     echecs.append(f'tournage (libellés du juge) : {e}')
 
+# 21/10/2026 — saison 2 (nouveaux personnages, scènes générées) : voix à hauteur naturelle (l'attribution partagée donnait
+# 166 Hz à Junior, homme de 19 ans) et découpe SAM 2.1 par défaut dans prepare_scene (MagicTouch débordait sur le gbaka)
+try:
+    sys.path.insert(0, os.path.join(ICI, 'moteur-troupe')); import voix as _vx49
+    _h49 = {n: _vx49.CAST[n][2] for n in ('SOUMAILA', 'JUNIOR', 'JOSIANE', 'PRINCESSE', 'MAMAN AKISSI', 'SERAPHINE')}
+    _f49 = [n for n, f in _h49.items() if not ((95 <= f <= 140) if n in ('SOUMAILA', 'JUNIOR') else (180 <= f <= 240))]
+    _t49 = open(os.path.join(ICI, 'moteur-troupe', 'prepare_scene.py'), encoding='utf-8').read()
+    if _f49: echecs.append(f'voix saison 2 hors de la gamme naturelle : {_f49} {_h49}')
+    elif "os.environ.get('PREPARE_SAM', '1')" not in _t49 or 'def sam_personnes' not in _t49: echecs.append('prepare_scene : découpe SAM 2.1 absente ou désactivée par défaut')
+    else: print(f'saison 2 : voix naturelles {_h49}, découpe SAM 2.1 par défaut : OK')
+except Exception as e:
+    echecs.append(f'saison 2 (voix, découpe) : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')
