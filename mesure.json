@@ -49,6 +49,13 @@
    "lora": "at_runtime",
    "secondes": 581,
    "memoire_max_go": 11.26
+  },
+  {
+   "clip": "imam-karim--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 582,
+   "memoire_max_go": 11.27
   }
  ],
  "run": "39528414471"
