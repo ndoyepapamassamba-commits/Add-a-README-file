@@ -1449,7 +1449,7 @@ def realise(plans):
         if s[3] != 'gros' or not d_ or not d_.get('visage_px') or parleurs_de(SC[s[2]], s): return choix
         px = d_['visage_px']
         if px.get(choix, 0) >= REACTION_MIN: return choix
-        if d_.get('juge') == 'règles locales':   # JEV coupé : le plus petit cadre qui donne REACTION_MIN (têtes coupées déjà écartées)
+        if str(d_.get('juge', '')).startswith('règles locales'):   # JEV coupé (libellé « règles locales (géométrie mesurée) ») : le plus petit cadre qui donne REACTION_MIN (têtes coupées déjà écartées)
             ok = [k_ for k_ in px if px[k_] >= REACTION_MIN]
             return min(ok, key=lambda k_: px[k_]) if ok else choix
         sale_ = lambda k_: max(d_['rendu'][k_], d_['mains'][k_] if d_['mains'][k_] >= SEUIL_MAINS else 0.0)

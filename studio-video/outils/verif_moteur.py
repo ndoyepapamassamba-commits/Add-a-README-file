@@ -1207,6 +1207,19 @@ try:
 except Exception as e:
     echecs.append(f'profil V1 (accord personnage/décor) : {e}')
 
+# 21/10/2026 — ep02 v2 arrêté (KeyError 'visage') : le gros plan de réaction comparait le juge à « règles locales » à l'égalité
+# alors que le libellé posé est « règles locales (géométrie mesurée) » ; la branche JEV lisait alors des coupes absentes
+try:
+    import re as _re48
+    _t48 = open(os.path.join(ICI, 'moteur-troupe', 'tourne.py'), encoding='utf-8').read()
+    _eg48 = _re48.findall(r"""get\(['"]juge['"][^)]*\)\s*==\s*['"]([^'"]+)['"]""", _t48)
+    _lib48 = set(_re48.findall(r"""['"]juge['"]\s*:\s*['"]([^'"]+)['"]""", _t48))
+    _faux48 = [x for x in _eg48 if x not in _lib48]
+    if _faux48: echecs.append(f'tournage : juge comparé à un libellé jamais posé {_faux48} (posés : {sorted(_lib48)})')
+    else: print('tournage : libellés du juge comparés comme ils sont posés (gros plan de réaction) : OK')
+except Exception as e:
+    echecs.append(f'tournage (libellés du juge) : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')
