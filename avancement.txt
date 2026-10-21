@@ -27,3 +27,4 @@
 [3278 s] 9 clips · === chef-traore--rire (at_runtime)   |=========================>                        | 2/4 - 133.94s/it[K · mémoire libre 13655 Mo
 [3399 s] 9 clips · === chef-traore--rire (at_runtime)   |=====================================>            | 3/4 - 133.88s/it[K · mémoire libre 13655 Mo
 [122 s] 10 clips · === la-go-leopard--ecouter@2 (at_runtime)  · mémoire libre 13765 Mo
+[244 s] 10 clips · === la-go-leopard--ecouter@2 (at_runtime)   |============>                                     | 1/4 - 134.63s/it[K · mémoire libre 13766 Mo
