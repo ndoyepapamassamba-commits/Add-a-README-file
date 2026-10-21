@@ -51,3 +51,4 @@
 [122 s] 14 clips · === dj-kevin--choc (at_runtime)  · mémoire libre 13770 Mo
 [244 s] 14 clips · === dj-kevin--choc (at_runtime)   |============>                                     | 1/4 - 135.18s/it[K · mémoire libre 13758 Mo
 [365 s] 14 clips · === dj-kevin--choc (at_runtime)   |=========================>                        | 2/4 - 134.50s/it[K · mémoire libre 13755 Mo
+[486 s] 14 clips · === dj-kevin--choc (at_runtime)   |=====================================>            | 3/4 - 134.43s/it[K · mémoire libre 13763 Mo
