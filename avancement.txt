@@ -100,3 +100,4 @@
 [1338 s] 31 clips · === la-voisine--montrer@2 (at_runtime)   |============>                                     | 1/4 - 134.46s/it[K · mémoire libre 13782 Mo
 [1459 s] 31 clips · === la-voisine--montrer@2 (at_runtime)   |============>                                     | 1/4 - 134.46s/it[K · mémoire libre 13782 Mo
 [1581 s] 31 clips · === la-voisine--montrer@2 (at_runtime)   |=========================>                        | 2/4 - 134.11s/it[K · mémoire libre 13785 Mo
+[1702 s] 31 clips · === la-voisine--montrer@2 (at_runtime)   |=====================================>            | 3/4 - 133.67s/it[K · mémoire libre 13784 Mo
