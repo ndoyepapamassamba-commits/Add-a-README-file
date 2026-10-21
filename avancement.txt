@@ -57,3 +57,4 @@
 [5830 s] 7 images · === decor-plage-contrechamp-jour   |============>                                     | 1/4 - 164.12s/it[K · mémoire libre 7041 Mo
 [5951 s] 7 images · === decor-plage-contrechamp-jour   |============>                                     | 1/4 - 164.12s/it[K · mémoire libre 7032 Mo
 [6072 s] 7 images · === decor-plage-contrechamp-jour   |=========================>                        | 2/4 - 158.82s/it[K · mémoire libre 7029 Mo
+[123 s] 7 images · === fiche-mecano-issa  · mémoire libre 6625 Mo
