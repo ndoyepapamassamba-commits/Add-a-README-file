@@ -56,3 +56,4 @@
 [4732 s] 5 images · === perso-coach-diabate   |============>                                     | 1/4 - 402.76s/it[K · mémoire libre 6290 Mo
 [4853 s] 5 images · === perso-coach-diabate   |============>                                     | 1/4 - 402.76s/it[K · mémoire libre 6286 Mo
 [4974 s] 5 images · === perso-coach-diabate   |============>                                     | 1/4 - 402.76s/it[K · mémoire libre 6285 Mo
+[5096 s] 5 images · === perso-coach-diabate   |=========================>                        | 2/4 - 397.07s/it[K · mémoire libre 6285 Mo
