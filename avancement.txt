@@ -74,3 +74,4 @@
 [1581 s] 9 images · === perso-tiekoro   |============>                                     | 1/4 - 395.64s/it[K · mémoire libre 6181 Mo
 [1702 s] 9 images · === perso-tiekoro   |============>                                     | 1/4 - 395.64s/it[K · mémoire libre 6173 Mo
 [1824 s] 9 images · === perso-tiekoro   |=========================>                        | 2/4 - 389.32s/it[K · mémoire libre 6172 Mo
+[1945 s] 9 images · === perso-tiekoro   |=========================>                        | 2/4 - 389.32s/it[K · mémoire libre 6175 Mo
