@@ -82,3 +82,4 @@
 [1219 s] 23 clips · === le-frimeur--ecouter@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13780 Mo
 [1340 s] 23 clips · === le-frimeur--ecouter@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13777 Mo
 [1462 s] 23 clips · === le-frimeur--ecouter@2 (at_runtime)   |============>                                     | 1/4 - 135.79s/it[K · mémoire libre 13781 Mo
+[1583 s] 23 clips · === le-frimeur--ecouter@2 (at_runtime)   |=========================>                        | 2/4 - 134.77s/it[K · mémoire libre 13759 Mo
