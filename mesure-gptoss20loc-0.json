@@ -4,7 +4,7 @@
  "appels_scenariste": 60,
  "secondes_scenariste": 15884.428198337555,
  "echecs_scenariste": 0,
- "appels_juge": 86,
+ "appels_juge": 98,
  "echecs_juge": 0,
  "brouillons_refuses_controle": 6,
  "planchers_v17": [
@@ -14,7 +14,8 @@
   0.362,
   0.333,
   0.375,
-  0.427
+  0.427,
+  0.408
  ],
  "notes": [
   0.408,
@@ -23,7 +24,8 @@
   0.306,
   0.361,
   0.291,
-  0.403
+  0.403,
+  0.539
  ],
  "acceptes": 0,
  "lieux": [
@@ -41,6 +43,11 @@
    "lieu": "Bureau",
    "accepte": false,
    "secondes": 2624
+  },
+  {
+   "lieu": "Village",
+   "accepte": false,
+   "secondes": 2623
   }
  ],
  "drole_v17": [
@@ -220,14 +227,14 @@
    "jetons_par_s": 4.7
   },
   "juge": {
-   "appels": 86,
+   "appels": 98,
    "tronques": 0,
-   "lus_jetons": 343,
-   "cache_jetons": 176,
-   "lecture_s": 33.4,
+   "lus_jetons": 344,
+   "cache_jetons": 178,
+   "lecture_s": 33.2,
    "ecriture_jetons": 76,
-   "ecriture_s": 18.1,
-   "jetons_par_s": 4.2
+   "ecriture_s": 18.3,
+   "jetons_par_s": 4.1
   }
  }
 }
