@@ -84,7 +84,14 @@
    "lora": "at_runtime",
    "secondes": 586,
    "memoire_max_go": 11.07
+  },
+  {
+   "clip": "agent-bakary--montrer",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 583,
+   "memoire_max_go": 11.1
   }
  ],
- "run": "39543580560"
+ "run": "39545665602"
 }
