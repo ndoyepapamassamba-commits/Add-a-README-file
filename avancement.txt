@@ -50,3 +50,4 @@
 [4616 s] 9 images · === decor-cyber-cafe-coin-jour   |=====================================>            | 3/4 - 86.81s/it[K · mémoire libre 7034 Mo
 [4738 s] 10 images · === maison-professeur-samba-salon-champ-jour   |==================================================| 4/4 - 85.76s/it[K · mémoire libre 7207 Mo
 [4860 s] 10 images · === maison-professeur-samba-salon-champ-jour   |============>                                     | 1/4 - 85.02s/it[K · mémoire libre 7042 Mo
+[4981 s] 10 images · === maison-professeur-samba-salon-champ-jour   |=========================>                        | 2/4 - 83.58s/it[K · mémoire libre 7042 Mo
