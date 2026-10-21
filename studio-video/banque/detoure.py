@@ -8,10 +8,40 @@
 #  · débordement du vert sur les bords ramené (V plafonné à max(R, B) + 12 sur 4 px autour du fond) ;
 #  · OMBRE DE CONTACT cuite dans le calque : ellipse sombre floue sous les pieds (ligne la plus basse de la silhouette sur tout le
 #    clip), 60 % de la largeur des pieds, opacité 0,45 — le personnage touche le sol du décor.
+#  · VERT RESTÉ DANS LES CREUX (21/10/2026, « Le cahier dans la tête ») : entre le bras et le corps, entre les doigts, le fond
+#    est à l'ombre ou mêlé au costume par la compression (48,191,36 ; 15,69,12) — trop loin du vert pur pour la distance, il restait
+#    opaque (6 % des pixels opaques de Monsieur Diarra) et la main virait au jaune. Quand la fiche du personnage ne porte AUCUN vert
+#    (47 personnages sur 54), toute teinte proche de celle du fond, assez saturée, est rendue transparente et le vert est plafonné
+#    au maximum de R et B sur toute l'image ; les 7 qui portent du vert (Modou, Coach Diabaté…) gardent la règle prudente.
 # GREFFE : numpy + OpenCV (Apache-2.0) pour le calcul, ffmpeg (LGPL, programme séparé) pour lire et écrire ; rien d'IA.
 #   python3 detoure.py CLIP.mp4 [...]      → CLIP.mov à côté, et ses pieds (x, y) en fraction du cadre dans CLIP.pieds.json
-import json, os, subprocess, sys
+import json, os, re, subprocess, sys, unicodedata
+from functools import lru_cache
 import numpy as np
+
+VERSION = 2   # 2 : creux verts rendus transparents (personnages sans vert) — un détourage plus ancien est refait
+
+
+@lru_cache(maxsize=None)
+def porte_du_vert(perso):
+    """la fiche du personnage (slug) mentionne-t-elle du vert ? inconnu → oui (règle prudente)."""
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'images')); import bible
+        for p in json.load(open(bible.PERSONNAGES, encoding='utf-8'))['personnages']:
+            sl = re.sub(r'[^a-z0-9]+', '-', unicodedata.normalize('NFKD', p['name']).encode('ascii', 'ignore').decode().lower()).strip('-')
+            if sl == perso: return bool(re.search(r'\bvert|kaki|olive|émeraude|green', f"{p.get('tenue', '')} {p.get('apparence', '')}", re.I))
+    except Exception:
+        pass
+    return True
+
+
+def creux_verts(im, couleur):
+    """probabilité (0-1) qu'un pixel soit du fond à l'ombre ou mêlé : teinte à ±28° de celle du fond, saturé, pas noir."""
+    import cv2
+    hsv = cv2.cvtColor(im, cv2.COLOR_RGB2HSV).astype(np.float32)
+    hf = float(cv2.cvtColor(np.uint8([[couleur]]), cv2.COLOR_RGB2HSV)[0, 0, 0])
+    dh = np.abs(hsv[..., 0] - hf); dh = np.minimum(dh, 180 - dh)
+    return (np.clip((14 - dh) / 6, 0, 1) * np.clip((hsv[..., 1] - 70) / 40, 0, 1) * np.clip((hsv[..., 2] - 25) / 20, 0, 1))
 
 
 def _images(f):
@@ -43,6 +73,8 @@ def detoure(clip):
     import cv2
     ims, fps = _images(clip); N, H, W, _ = ims.shape
     couleur = fond(ims[0]); als = np.stack([alpha(im, couleur) for im in ims])
+    strict = not porte_du_vert(os.path.basename(clip).split('--')[0])
+    if strict: als = np.stack([a * (1 - creux_verts(im, couleur)) for a, im in zip(als, ims)])
     bas = max(int(np.nonzero(a.max(1) > 0.5)[0].max()) for a in als)               # pieds : ligne la plus basse du clip
     lignes = als[:, max(0, bas - int(0.06 * H)):bas + 1].max(axis=(0, 1)) > 0.5; xs = np.nonzero(lignes)[0]   # les deux pieds
     cx, lp = (xs.min() + xs.max()) / 2, max(20, xs.max() - xs.min())
@@ -56,11 +88,12 @@ def detoure(clip):
         c = im.astype(np.float32)
         bord = cv2.dilate((a < 0.5).astype(np.uint8), np.ones((9, 9), np.uint8)) > 0   # 4 px autour du fond : le vert y déborde
         c[..., 1] = np.where(bord, np.minimum(c[..., 1], np.maximum(c[..., 0], c[..., 2]) + 12), c[..., 1])
+        if strict: c[..., 1] = np.minimum(c[..., 1], np.maximum(c[..., 0], c[..., 2]))   # aucun vert chez ce personnage
         ao = a + ombre * (1 - a)                                                  # ombre sous le personnage (noire)
         c = c * (a / np.maximum(ao, 1e-6))[..., None]
         p.stdin.write(np.dstack([np.clip(c, 0, 255), np.clip(ao * 255, 0, 255)]).astype(np.uint8).tobytes())
     p.stdin.close(); p.wait()
-    pieds = {'x': round(cx / W, 4), 'y': round(bas / H, 4), 'largeur': round(lp / W, 4)}
+    pieds = {'x': round(cx / W, 4), 'y': round(bas / H, 4), 'largeur': round(lp / W, 4), 'detourage': VERSION, 'strict': strict}
     json.dump(pieds, open(os.path.splitext(clip)[0] + '.pieds.json', 'w'))
     return sortie, pieds
 

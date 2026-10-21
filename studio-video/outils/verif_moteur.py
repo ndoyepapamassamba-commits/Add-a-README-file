@@ -519,6 +519,36 @@ try:
 except Exception as e:
     echecs.append(f'quasi-doublons : {e}')
 
+# pas deux fois le même geste (21/10/2026) : départ du clip d'écoute propre à chaque vidéo, continu d'une réplique à l'autre
+try:
+    import assemble as _as15
+    _vrai15 = _as15._images_clip; _as15._images_clip = lambda mov: 50   # clip d'écoute type (50 images, aller-retour de 100)
+    _d15 = [_as15.depart(t, 'x', 0.0, 'c.mov') for t in ('Sketch A', 'Sketch B', 'Sketch C', 'Sketch D')]
+    if len(set(_d15)) < 3: echecs.append(f'gestes : départ identique d\'une vidéo à l\'autre {_d15}')
+    _a15, _b15 = _as15.depart('Sketch A', 'x', 1.25, 'c.mov'), _as15.depart('Sketch A', 'x', 2.0, 'c.mov')
+    if abs(((_b15 - _a15) * _as15.FPS) % 100 - 0.75 * _as15.FPS) > 1e-6: echecs.append('gestes : écoute discontinue entre deux répliques')
+    print('pas deux fois le même geste : départ propre à la vidéo, continu entre répliques : OK')
+    _as15._images_clip = _vrai15
+except Exception as e:
+    echecs.append(f'gestes : {e}')
+
+# creux verts (21/10/2026) : fond à l'ombre entre le bras et le corps rendu transparent chez un personnage sans vert,
+# tee-shirt vert (Modou) gardé par la règle prudente
+try:
+    import numpy as _np16, detoure as _dt16
+    _im16 = _np16.zeros((60, 60, 3), _np16.uint8); _im16[:] = (1, 241, 1)               # fond du tournage
+    _im16[10:50, 10:50] = (225, 215, 160); _im16[25:35, 25:35] = (38, 115, 15)          # costume beige, creux vert à l'ombre
+    _im16[12:18, 12:18] = (74, 194, 12)                                                 # tee-shirt vert de Modou
+    _f16 = _dt16.fond(_im16); _a16 = _dt16.alpha(_im16, _f16); _s16 = _a16 * (1 - _dt16.creux_verts(_im16, _f16))
+    if _a16[30, 30] < 0.5: echecs.append('creux verts : témoin faux (creux déjà transparent)')
+    if _s16[30, 30] > 0.1: echecs.append(f'creux verts : creux à l\'ombre resté opaque ({_s16[30, 30]:.2f})')
+    # tee-shirt vert : la règle prudente (inchangée) le laisse à 0,85 d'opacité — défaut ancien des 7 personnages en vert, noté
+    if _s16[40, 40] < 0.99 or _a16[15, 15] < 0.8: echecs.append('creux verts : costume ou tee-shirt troué')
+    if _dt16.porte_du_vert('monsieur-diarra') or not _dt16.porte_du_vert('modou'): echecs.append('creux verts : fiches mal lues')
+    print('creux verts : fond à l\'ombre transparent, costume et tee-shirt vert gardés : OK')
+except Exception as e:
+    echecs.append(f'creux verts : {e}')
+
 # voix et raccords (21/10/2026) : hommes sur la voix source complète (gilles-low sans « ̃ » : 66 % des mots compris),
 # « garçon » reconnu comme enfant, voix toutes distinctes ; répliques en images entières, son PCM jusqu'au seul encodage AAC
 try:

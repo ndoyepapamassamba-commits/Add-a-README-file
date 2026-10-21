@@ -13,7 +13,8 @@
 # PLAN.json : {"decor": "decor.png", "titre": "…", "lieu": "cour|maquis" (ambiance réelle, facultatif), "acteurs": {"koffi": {"x": 0.25, "sol": 0.97, "taille": 0.95,
 #   "regarde": "droite", "occultation": true}, …}, "repliques": [{"qui": "koffi", "geste": "montrer", "voix": "r1.wav", "texte": "…",
 #   "reagit": {"coumba": "choc"}, "chute": false}, {"duree": 1.6, "reagit": {…}}, …], "banque": "dossier des clips <personnage>--<geste>.mp4"}
-import json, os, subprocess, sys, tempfile, textwrap, time
+import hashlib, json, os, subprocess, sys, tempfile, textwrap, time
+from functools import lru_cache
 import numpy as np
 
 ICI = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, ICI)
@@ -38,9 +39,27 @@ def _clip(banque, perso, geste):
         f = max(vs, key=version) if vs else ''   # clip refait (banque.VERSIONS) : la version la plus haute
         if os.path.isfile(f):
             mov = f[:-4] + '.mov'
-            if not os.path.isfile(mov) or not os.path.isfile(f[:-4] + '.pieds.json'): detoure.detoure(f)
+            if (not os.path.isfile(mov) or not os.path.isfile(f[:-4] + '.pieds.json')
+                    or json.load(open(f[:-4] + '.pieds.json')).get('detourage', 1) < detoure.VERSION): detoure.detoure(f)   # détourage périmé : refait
             return mov, json.load(open(f[:-4] + '.pieds.json'))
     raise FileNotFoundError(f'aucun clip pour {perso} ({geste})')
+
+
+@lru_cache(maxsize=None)
+def _images_clip(mov):
+    """nombre d'images du clip à la cadence du montage."""
+    p = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', mov], capture_output=True, text=True)
+    return max(1, round(float(p.stdout or 1) * FPS))
+
+
+def depart(titre, nom, t0, mov):
+    """PAS DEUX FOIS LE MÊME GESTE (21/10/2026, pensé pour 10 000 vidéos) : un personnage revient ≈ 580 fois avec ses 8 clips ; chaque
+    réplique relançait l'aller-retour à sa première image — même mouvement d'écoute au même instant dans chaque vidéo, et saut à
+    chaque changement de réplique. Le départ suit désormais l'horloge de la vidéo (continu d'une réplique à l'autre), décalé d'une
+    valeur propre à la vidéo et à l'acteur (empreinte du titre) : → secondes dans l'aller-retour, en images entières."""
+    n = 2 * _images_clip(mov)   # aller + retour
+    base = int(hashlib.sha1(f'{titre}|{nom}'.encode()).hexdigest(), 16) % n
+    return ((base + round(t0 * FPS)) % n) / FPS
 
 
 def _image_rgba(mov):
@@ -131,8 +150,9 @@ def segment(P, r, k, dossier, gains):
                      f'colorchannelmixer=rr={gr:.3f}:gg={gv:.3f}:bb={gb:.3f}{flip}[p{i}]')
         else:   # aller-retour (le clip joué puis renversé) : boucle sans saut, quelle que soit la durée de la réplique
             entrees += ['-i', mov]
+            dep = depart(titre, nom, r.get('_t0', 0.0), mov)
             f.append(f'[{i}:v]fps={FPS},format=rgba,split[a{i}][b{i}];[b{i}]reverse[r{i}];[a{i}][r{i}]concat=n=2:v=1:a=0,'
-                     f'loop=-1:size=9999,trim=duration={dur},setpts=PTS-STARTPTS,scale={w}:{h},'
+                     f'loop=-1:size=9999,trim=start={dep:.6f}:duration={dur},setpts=PTS-STARTPTS,scale={w}:{h},'
                      f'colorchannelmixer=rr={gr:.3f}:gg={gv:.3f}:bb={gb:.3f}{flip}[p{i}]')
         x = int(a.get('x', 0.5) * BW - px * w); y = int(a.get('sol', 0.97) * BH - pieds['y'] * h)   # pieds sur la ligne de sol
         f.append(f'[{dernier}][p{i}]overlay=x={x}:y={y}:shortest=0[f{i}]'); dernier = f'f{i}'; i += 1
@@ -196,7 +216,8 @@ def assemble(plan, sortie):
     # segment AAC ajoute sa trame d'amorce), la synchro des lèvres glissait d'une réplique à l'autre. Chaque réplique dure
     # désormais un nombre entier d'images, et le son des segments reste en PCM (2 000 échantillons exacts par image à 48 kHz)
     # jusqu'à un SEUL encodage AAC de toute la scène.
-    for r in P['repliques']: r['duree'] = en_images(r['duree'])
+    t = 0.0
+    for r in P['repliques']: r['duree'] = en_images(r['duree']); r['_t0'] = t; t += r['duree']   # _t0 : voir depart()
     gains = {}
     with tempfile.TemporaryDirectory() as d:
         dp, seg = couches(P['decor']); P['_occultants'] = {}; info = {}
