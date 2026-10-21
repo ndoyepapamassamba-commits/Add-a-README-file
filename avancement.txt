@@ -73,3 +73,4 @@
 [2548 s] 22 clips · === fatou--colere (at_runtime)   |============>                                     | 1/4 - 134.04s/it[K · mémoire libre 13750 Mo
 [2670 s] 22 clips · === fatou--colere (at_runtime)   |=========================>                        | 2/4 - 133.63s/it[K · mémoire libre 13742 Mo
 [2791 s] 22 clips · === fatou--colere (at_runtime)   |=====================================>            | 3/4 - 133.70s/it[K · mémoire libre 13744 Mo
+[122 s] 22 clips · === fatou--colere (at_runtime)  · mémoire libre 13763 Mo
