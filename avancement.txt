@@ -105,3 +105,4 @@
 [1945 s] 32 clips · === le-banquier--colere@2 (at_runtime)   |============>                                     | 1/4 - 134.35s/it[K · mémoire libre 13813 Mo
 [2066 s] 32 clips · === le-banquier--colere@2 (at_runtime)   |=========================>                        | 2/4 - 133.69s/it[K · mémoire libre 13804 Mo
 [2188 s] 32 clips · === le-banquier--colere@2 (at_runtime)   |=====================================>            | 3/4 - 134.42s/it[K · mémoire libre 13795 Mo
+[2310 s] 32 clips · === le-banquier--colere@2 (at_runtime)   |=====================================>            | 3/4 - 134.42s/it[K · mémoire libre 13795 Mo
