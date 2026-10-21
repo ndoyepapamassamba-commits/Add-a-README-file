@@ -17,3 +17,4 @@
 [849 s] 2 images · === maison-mecano-issa-chambre-large-jour   |==================================================| 4/4 - 156.47s/it[K · mémoire libre 7026 Mo
 [971 s] 2 images · === maison-mecano-issa-chambre-large-jour   |============>                                     | 1/4 - 161.80s/it[K · mémoire libre 7004 Mo
 [1092 s] 2 images · === maison-mecano-issa-chambre-large-jour   |=========================>                        | 2/4 - 156.54s/it[K · mémoire libre 7004 Mo
+[1213 s] 2 images · === maison-mecano-issa-chambre-large-jour   |=====================================>            | 3/4 - 156.65s/it[K · mémoire libre 7004 Mo
