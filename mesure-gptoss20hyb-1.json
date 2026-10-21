@@ -1,12 +1,12 @@
 {
  "modele": "gptoss20hyb",
  "part": 1,
- "appels_scenariste": 5,
- "secondes_scenariste": 326.81385707855225,
- "echecs_scenariste": 8,
+ "appels_scenariste": 13,
+ "secondes_scenariste": 482.5466113090515,
+ "echecs_scenariste": 20,
  "appels_juge": 0,
  "echecs_juge": 0,
- "brouillons_refuses_controle": 1,
+ "brouillons_refuses_controle": 7,
  "planchers_v17": [],
  "notes": [],
  "acceptes": 0,
@@ -20,8 +20,28 @@
    "lieu": "Douane",
    "accepte": false,
    "secondes": 78
+  },
+  {
+   "lieu": "Maquis",
+   "accepte": false,
+   "secondes": 156
+  },
+  {
+   "lieu": "Plage",
+   "accepte": false,
+   "secondes": 200
   }
  ],
  "brouillons_illisibles": 4,
- "secondes_par_brouillon": 65.4
+ "reparations": [
+  [
+   2,
+   1
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "secondes_par_brouillon": 37.1
 }
