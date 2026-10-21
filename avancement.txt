@@ -58,3 +58,4 @@
 [5339 s] 6 images · === decor-ecole-champ-jour   |=========================>                        | 2/4 - 156.76s/it[K · mémoire libre 7035 Mo
 [5460 s] 6 images · === decor-ecole-champ-jour   |=====================================>            | 3/4 - 156.48s/it[K · mémoire libre 7026 Mo
 [5581 s] 7 images · === decor-tribunal-coin-jour   |==================================================| 4/4 - 156.47s/it[K · mémoire libre 11595 Mo
+[5703 s] 7 images · === decor-tribunal-coin-jour   |==================================================| 4/4 - 156.47s/it[K · mémoire libre 7046 Mo
