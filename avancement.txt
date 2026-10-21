@@ -14,3 +14,4 @@
 [1701 s] 6 clips · === petite-aya--rire (at_runtime)   |=====================================>            | 3/4 - 134.30s/it[K · mémoire libre 13773 Mo
 [1823 s] 7 clips · === tantie-awa-sarr--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13791 Mo
 [1945 s] 7 clips · === tantie-awa-sarr--ecouter (at_runtime)   |============>                                     | 1/4 - 134.74s/it[K · mémoire libre 13771 Mo
+[2066 s] 7 clips · === tantie-awa-sarr--ecouter (at_runtime)   |=========================>                        | 2/4 - 133.94s/it[K · mémoire libre 13747 Mo
