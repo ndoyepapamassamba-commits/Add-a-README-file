@@ -456,6 +456,8 @@ def une(dossier, lieu, recap='', K=3, tours_max=4, seuil=0.6, journal=print, fmt
         with ThreadPoolExecutor(len(bons)) as p:
             notes = list(p.map(lambda h: _essai(lambda: juge(h)), bons))
         cands = sorted([(n['note'], h, n) for h, n in zip(bons, notes) if n and n['mechant'] < 0.5], key=lambda x: -x[0])
+        if not any(notes):   # 21/10 : le juge (Pollinations) ne répondait plus depuis les machines GitHub et l'échec passait pour
+            journal(f'  juge injoignable ({len(bons)} brouillon(s) conforme(s) non jugé(s))'); continue   # « méchant ou vulgaire »
         if not cands: faiblesses = 'jugé méchant ou vulgaire'; continue
         note, h, n = cands[0]
         p_ = duel(h, champ) if champ else 1.0
