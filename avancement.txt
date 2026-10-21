@@ -61,3 +61,4 @@
 [972 s] 18 clips · === maman-brigitte--parler (at_runtime)   |=========================>                        | 2/4 - 134.18s/it[K · mémoire libre 13787 Mo
 [1093 s] 18 clips · === maman-brigitte--parler (at_runtime)   |=====================================>            | 3/4 - 133.91s/it[K · mémoire libre 13780 Mo
 [123 s] 18 clips · === agent-bakary--colere (at_runtime)  · mémoire libre 13783 Mo
+[245 s] 18 clips · === agent-bakary--colere (at_runtime)   |============>                                     | 1/4 - 134.38s/it[K · mémoire libre 13746 Mo
