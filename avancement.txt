@@ -18,3 +18,4 @@
 [488 s] 2 images · === maison-mecano-issa-cuisine-large-jour   |=========================>                        | 2/4 - 157.57s/it[K · mémoire libre 6985 Mo
 [609 s] 2 images · === maison-mecano-issa-cuisine-large-jour   |=====================================>            | 3/4 - 157.71s/it[K · mémoire libre 6990 Mo
 [731 s] 3 images · === perso-petit-ibrahima   |==================================================| 4/4 - 157.69s/it[K · mémoire libre 11543 Mo
+[852 s] 3 images · === perso-petit-ibrahima   |==================================================| 4/4 - 157.69s/it[K · mémoire libre 6256 Mo
