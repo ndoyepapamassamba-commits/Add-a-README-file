@@ -26,3 +26,4 @@
 [244 s] 10 clips · === tonton-dieng--hausser (at_runtime)   |============>                                     | 1/4 - 41.38s/it[K · mémoire libre 13806 Mo
 [366 s] 10 clips · === tonton-dieng--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14641 Mo
 [487 s] 11 clips · === general-zongo--rire (at_runtime)   |=========================>                        | 2/4 - 42.55s/it[K · mémoire libre 13799 Mo
+[609 s] 12 clips · === grand-pere-ndiaye--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13805 Mo
