@@ -54,3 +54,4 @@
 [5465 s] 6 images · === decor-ceremonie-coin-jour   |=====================================>            | 3/4 - 159.83s/it[K · mémoire libre 7031 Mo
 [5586 s] 6 images · === decor-ceremonie-coin-jour   |==================================================| 4/4 - 160.34s/it[K · mémoire libre 5828 Mo
 [5708 s] 7 images · === decor-plage-contrechamp-jour   |==================================================| 4/4 - 160.34s/it[K · mémoire libre 7055 Mo
+[5830 s] 7 images · === decor-plage-contrechamp-jour   |============>                                     | 1/4 - 164.12s/it[K · mémoire libre 7041 Mo
