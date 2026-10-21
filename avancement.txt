@@ -88,3 +88,4 @@
 [1579 s] 24 clips · === la-voisine--colere (at_runtime)   |=========================>                        | 2/4 - 134.78s/it[K · mémoire libre 13774 Mo
 [1701 s] 24 clips · === la-voisine--colere (at_runtime)   |=====================================>            | 3/4 - 134.60s/it[K · mémoire libre 13775 Mo
 [123 s] 25 clips · === salif-le-parisien--parler (at_runtime)   |=========================>                        | 2/4 - 40.55s/it[K · mémoire libre 13775 Mo
+[244 s] 26 clips · === dj-kevin--hausser (at_runtime)   |============>                                     | 1/4 - 41.46s/it[K · mémoire libre 13758 Mo
