@@ -53,3 +53,4 @@
 [4494 s] 7 images · === decor-pharmacie-champ-jour   |==================================================| 4/4 - 109.73s/it[K · mémoire libre 5774 Mo
 [4615 s] 8 images · === decor-boutique-coin-jour   |==================================================| 4/4 - 109.73s/it[K · mémoire libre 6974 Mo
 [4737 s] 8 images · === decor-boutique-coin-jour   |============>                                     | 1/4 - 113.93s/it[K · mémoire libre 6975 Mo
+[4858 s] 8 images · === decor-boutique-coin-jour   |=========================>                        | 2/4 - 109.03s/it[K · mémoire libre 6975 Mo
