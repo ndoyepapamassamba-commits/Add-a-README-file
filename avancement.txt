@@ -32,3 +32,4 @@
 [122 s] 10 clips · === le-frimeur--mentir (at_runtime)   |============>                                     | 1/4 - 68.58s/it[K · mémoire libre 13766 Mo
 [244 s] 10 clips · === le-frimeur--mentir (at_runtime)   |=====================================>            | 3/4 - 67.86s/it[K · mémoire libre 13759 Mo
 [365 s] 11 clips · === la-voisine--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13769 Mo
+[487 s] 11 clips · === la-voisine--choc (at_runtime)   |=========================>                        | 2/4 - 68.02s/it[K · mémoire libre 13788 Mo
