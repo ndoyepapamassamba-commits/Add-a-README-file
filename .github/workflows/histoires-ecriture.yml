@@ -1,6 +1,6 @@
 # Scénaristes ouverts sur les machines GitHub (21/10/2026) — voir studio-video/moteur-troupe/histoires_tourne.py.
-# llama.cpp (MIT) + Ministral 3 14B / Mistral Small 3.2 24B (Apache-2.0), contre le scénariste actuel (Pollinations GPT-OSS 20B) ;
-# même juge pour tous. 6 machines au plus, pour laisser la place à la bible et à la banque (20 machines par compte).
+# llama.cpp (MIT) + Ministral 3 14B / Mistral Small 3.2 24B / GPT-OSS 20B hébergé ici (Apache-2.0), contre le scénariste actuel (Pollinations GPT-OSS 20B) ;
+# même juge pour tous. 8 machines au plus, pour laisser la place à la bible et à la banque (20 machines par compte).
 name: Histoires (scénaristes ouverts)
 on:
   push:
@@ -20,9 +20,9 @@ jobs:
     timeout-minutes: 290
     strategy:
       fail-fast: false
-      max-parallel: 6
+      max-parallel: 8
       matrix:
-        modele: [ministral14, small24, gptoss20]
+        modele: [ministral14, small24, gptoss20, gptoss20loc]
         part: [0, 1]
     steps:
       - uses: actions/checkout@v4
@@ -34,6 +34,8 @@ jobs:
           case ${{ matrix.modele }} in
             ministral14) P=mistralai/Ministral-3-14B-Instruct-2512-GGUF/resolve/main/Ministral-3-14B-Instruct-2512-Q5_K_M.gguf ;;
             small24) P=unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF/resolve/main/Mistral-Small-3.2-24B-Instruct-2506-IQ4_XS.gguf ;;
+            # 21/10 : le scénariste actuel (GPT-OSS 20B, Apache-2.0) hébergé ici, sans quota (Pollinations : refus 402) ; 3,6 G actifs
+            gptoss20loc) P=ggml-org/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-MXFP4.gguf ;;
           esac
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL &
           curl -sfL --retry 5 --retry-delay 5 -o $M/modele.gguf "$HF/$P" &
@@ -72,7 +74,8 @@ jobs:
           export LD_LIBRARY_PATH=$(dirname $LS); t0=$(date +%s)
           # contexte par emplacement ≥ consigne (≈ 4 300 jetons, 5 personnages) + réponse (1 500) ; Small 24B (12,8 Go) tient sous 16 Go
           case ${{ matrix.modele }} in ministral14) CTX=20480 ;; *) CTX=16384 ;; esac
-          lance() { $LS -m $RUNNER_TEMP/m/modele.gguf -c $CTX -np 2 -t 4 --host 127.0.0.1 --port 8080 "$@" > $RUNNER_TEMP/serveur.log 2>&1 & echo $! > $RUNNER_TEMP/serveur.pid; }
+          case ${{ matrix.modele }} in gptoss20loc) EXTRA=--jinja ;; *) EXTRA= ;; esac   # gabarit « harmony » de GPT-OSS
+          lance() { $LS -m $RUNNER_TEMP/m/modele.gguf -c $CTX -np 2 -t 4 --host 127.0.0.1 --port 8080 $EXTRA "$@" > $RUNNER_TEMP/serveur.log 2>&1 & echo $! > $RUNNER_TEMP/serveur.pid; }
           lance -fa on -ctk q8_0 -ctv q8_0; sleep 15
           kill -0 $(cat $RUNNER_TEMP/serveur.pid) 2>/dev/null || { tail -5 $RUNNER_TEMP/serveur.log; echo "repli sans flash attention"; lance -ctk q8_0; }
           until curl -sf 127.0.0.1:8080/health > /dev/null; do
@@ -93,6 +96,8 @@ jobs:
           ( while sleep 300; do pousse; done ) & P=$!
           if [ "${{ matrix.modele }}" != gptoss20 ]; then
             export HISTOIRES_URL=http://127.0.0.1:8080/v1/chat/completions HISTOIRES_DELAI=1800 HISTOIRES_MAX_JETONS=1500 HISTOIRES_TEMP=0.7
+            # GPT-OSS raisonne avant d'écrire : le raisonnement compte dans les jetons, et sa température conseillée est 1,0
+            if [ "${{ matrix.modele }}" = gptoss20loc ]; then export HISTOIRES_MAX_JETONS=4000 HISTOIRES_TEMP=1.0; fi
           fi
           python3 studio-video/moteur-troupe/histoires_tourne.py ${{ matrix.modele }} ${{ matrix.part }} 2 $MINUTES $O \
             studio-video/animer/cle-claude.pub.pem || true
