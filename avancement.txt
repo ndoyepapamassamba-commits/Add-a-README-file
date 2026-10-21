@@ -61,3 +61,4 @@
 [122 s] 18 clips · === salif-le-parisien--ecouter (at_runtime)  · mémoire libre 13767 Mo
 [244 s] 18 clips · === salif-le-parisien--ecouter (at_runtime)   |============>                                     | 1/4 - 134.90s/it[K · mémoire libre 13755 Mo
 [365 s] 18 clips · === salif-le-parisien--ecouter (at_runtime)   |=========================>                        | 2/4 - 134.22s/it[K · mémoire libre 13761 Mo
+[486 s] 18 clips · === salif-le-parisien--ecouter (at_runtime)   |=====================================>            | 3/4 - 133.67s/it[K · mémoire libre 13756 Mo
