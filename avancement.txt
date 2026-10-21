@@ -62,3 +62,4 @@
 [1214 s] 20 clips · === maitre-kone--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13740 Mo
 [1335 s] 20 clips · === maitre-kone--hausser (at_runtime)   |============>                                     | 1/4 - 133.94s/it[K · mémoire libre 13723 Mo
 [1457 s] 20 clips · === maitre-kone--hausser (at_runtime)   |============>                                     | 1/4 - 133.94s/it[K · mémoire libre 13730 Mo
+[1578 s] 20 clips · === maitre-kone--hausser (at_runtime)   |=========================>                        | 2/4 - 133.52s/it[K · mémoire libre 13729 Mo
