@@ -1,0 +1,72 @@
+{
+ "titre": "Les diplômes du marché",
+ "mecanique": "révélation",
+ "repliques": [
+  {
+   "qui": "PROFESSEUR SAMBA",
+   "jeu": "frime",
+   "role": "accroche",
+   "texte": "Silence ! J'ai trois diplômes, moi ! Respectez votre maître, hein !"
+  },
+  {
+   "qui": "PETITE AYA",
+   "jeu": "neutre",
+   "role": "marche 1",
+   "texte": "Maître, ma sœur dit que tu les as achetés avec les tomates."
+  },
+  {
+   "qui": "PROFESSEUR SAMBA",
+   "jeu": "choc",
+   "role": "marche 1",
+   "texte": "Ehhh ! Avec les tomates ? Qui raconte ces bêtises ?"
+  },
+  {
+   "qui": "PETIT MOUSSA",
+   "jeu": "malice",
+   "role": "marche 2",
+   "texte": "Au marché de Treichville, monsieur. Trois diplômes pour deux barres !"
+  },
+  {
+   "qui": "PROFESSEUR SAMBA",
+   "jeu": "panique",
+   "role": "marche 2",
+   "texte": "Mensonge ! Mes diplômes sont encadrés dans mon salon, dêh !"
+  },
+  {
+   "qui": "PETITE AYA",
+   "jeu": "neutre",
+   "role": "marche 3",
+   "texte": "Ma sœur dit que le cadre coûtait plus cher que les diplômes."
+  },
+  {
+   "qui": "PROFESSEUR SAMBA",
+   "jeu": "soupcon",
+   "role": "marche 3",
+   "texte": "Et ta sœur, comment elle sait tout ça, hein ?"
+  },
+  {
+   "qui": "PETITE AYA",
+   "jeu": "innocent",
+   "role": "chute",
+   "texte": "Maître, c'est elle qui vend les diplômes !",
+   "chute": true
+  }
+ ],
+ "lieu": "ecole-professeur-samba-petit-moussa-petite-aya",
+ "lieu_bible": "École",
+ "plancher_v17": 0.502,
+ "duels_v17": [
+  0.56,
+  0.495,
+  0.45
+ ],
+ "auteur": "Claude (contrôles et juge de la machine à histoires)",
+ "scene": {
+  "decor": "decor-ecole-champ-jour (bible V1)",
+  "video_s": 29.0,
+  "calcul_s": 159,
+  "sonie_lufs": -15.7,
+  "juge": "GPT-OSS 20B (Pollinations, gratuit) — duels V17 dans les deux ordres",
+  "date": "21/10/2026"
+ }
+}
