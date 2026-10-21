@@ -25,3 +25,4 @@
 [971 s] 3 images · === perso-agent-bakary   |==================================================| 4/4 - 157.47s/it[K · mémoire libre 6260 Mo
 [1092 s] 3 images · === perso-agent-bakary   |==================================================| 4/4 - 157.47s/it[K · mémoire libre 6254 Mo
 [1214 s] 3 images · === perso-agent-bakary   |============>                                     | 1/4 - 402.30s/it[K · mémoire libre 6251 Mo
+[1335 s] 3 images · === perso-agent-bakary   |============>                                     | 1/4 - 402.30s/it[K · mémoire libre 6247 Mo
