@@ -70,6 +70,13 @@
    "lora": "at_runtime",
    "secondes": 577,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "fatou--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 577,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39545665602"
