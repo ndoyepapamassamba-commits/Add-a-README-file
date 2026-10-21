@@ -105,6 +105,13 @@
    "lora": "at_runtime",
    "secondes": 586,
    "memoire_max_go": 10.87
+  },
+  {
+   "clip": "sur-awa--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 584,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39545665602"
