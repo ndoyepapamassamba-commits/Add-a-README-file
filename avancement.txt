@@ -16,3 +16,4 @@
 [1943 s] 9 clips · === aminata--rire (at_runtime)   |============>                                     | 1/4 - 81.38s/it[K · mémoire libre 13702 Mo
 [2065 s] 9 clips · === aminata--rire (at_runtime)   |=====================================>            | 3/4 - 80.38s/it[K · mémoire libre 13704 Mo
 [122 s] 10 clips · === monsieur-diarra--choc (at_runtime)  · mémoire libre 13784 Mo
+[244 s] 10 clips · === monsieur-diarra--choc (at_runtime)   |============>                                     | 1/4 - 135.76s/it[K · mémoire libre 13772 Mo
