@@ -42,3 +42,4 @@
 [245 s] 11 clips · === yaya-lapprenti--parler (at_runtime)   |=========================>                        | 2/4 - 90.85s/it[K · mémoire libre 13756 Mo
 [366 s] 11 clips · === yaya-lapprenti--parler (at_runtime)   |=====================================>            | 3/4 - 91.22s/it[K · mémoire libre 13765 Mo
 [488 s] 12 clips · === la-voisine--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13790 Mo
+[609 s] 12 clips · === la-voisine--hausser (at_runtime)   |============>                                     | 1/4 - 92.59s/it[K · mémoire libre 13775 Mo
