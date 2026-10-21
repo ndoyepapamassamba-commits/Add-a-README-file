@@ -45,3 +45,4 @@
 [4006 s] 4 images · === perso-docteur-sylla   |=========================>                        | 2/4 - 437.29s/it[K · mémoire libre 6239 Mo
 [4128 s] 4 images · === perso-docteur-sylla   |=====================================>            | 3/4 - 439.27s/it[K · mémoire libre 6240 Mo
 [122 s] 4 images · === fiche-maitre-coulibaly  · mémoire libre 6682 Mo
+[243 s] 4 images · === fiche-maitre-coulibaly  · mémoire libre 6668 Mo
