@@ -313,7 +313,9 @@ def reparation(h, d, lieu, fmt='sketch'):
 def verifie(t, lieu, deja=(), fmt='sketch', journal=print):
     """brouillon brut → (sketch, défauts restants) après au plus REPARATIONS réparations ciblées ; (None, None) si illisible."""
     h = _json(t) if t else None
-    if not h or not h.get('repliques'): return None, None
+    if not h or not h.get('repliques'):   # compté (duel du 21/10 : 6 brouillons de Ministral perdus sans trace)
+        if t: journal(f'  brouillon illisible (pas de sketch JSON, {len(t)} caractères)')
+        return None, None
     d = controle(noms_exacts(h, lieu), lieu, deja, fmt)
     for k in range(REPARATIONS):
         if not d or any(x in IRREPARABLES for x in d): break

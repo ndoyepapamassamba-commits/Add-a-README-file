@@ -70,7 +70,9 @@ jobs:
         if: matrix.modele != 'gptoss20'
         run: |
           export LD_LIBRARY_PATH=$(dirname $LS); t0=$(date +%s)
-          lance() { $LS -m $RUNNER_TEMP/m/modele.gguf -c 12288 -np 2 -t 4 --host 127.0.0.1 --port 8080 "$@" > $RUNNER_TEMP/serveur.log 2>&1 & echo $! > $RUNNER_TEMP/serveur.pid; }
+          # contexte par emplacement ≥ consigne (≈ 4 300 jetons, 5 personnages) + réponse (1 500) ; Small 24B (12,8 Go) tient sous 16 Go
+          case ${{ matrix.modele }} in ministral14) CTX=20480 ;; *) CTX=16384 ;; esac
+          lance() { $LS -m $RUNNER_TEMP/m/modele.gguf -c $CTX -np 2 -t 4 --host 127.0.0.1 --port 8080 "$@" > $RUNNER_TEMP/serveur.log 2>&1 & echo $! > $RUNNER_TEMP/serveur.pid; }
           lance -fa on -ctk q8_0 -ctv q8_0; sleep 15
           kill -0 $(cat $RUNNER_TEMP/serveur.pid) 2>/dev/null || { tail -5 $RUNNER_TEMP/serveur.log; echo "repli sans flash attention"; lance -ctk q8_0; }
           until curl -sf 127.0.0.1:8080/health > /dev/null; do

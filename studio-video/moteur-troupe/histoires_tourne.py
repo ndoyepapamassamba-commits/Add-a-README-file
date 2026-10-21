@@ -9,13 +9,17 @@
 #   python3 histoires_tourne.py MODELE PART PARTS MINUTES SORTIE CLE_CLAUDE.pub.pem
 #   → SORTIE/histoire-*.msb (sketchs acceptés, scellés pour Claude), SORTIE/mesure-MODELE-PART.json (chiffres seuls),
 #     SORTIE/journal-MODELE-PART.msb (journal scellé : il cite les titres)
-import json, os, re, sys, time, unicodedata
+import json, os, random, re, sys, time, unicodedata
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ICI); sys.path.insert(0, os.path.join(ICI, '..', 'fabrique'))
 import histoires as H, coffre
 
 MARGE = 25 * 60   # on n'ouvre plus de lieu à moins de 25 min de la fin (un lieu = jusqu'à 2 tours de 3 brouillons)
+# DISTRIBUTION BORNÉE (21/10/2026) : la Cour réunit 26 personnages de la banque, leurs 26 fiches faisaient ≈ 7 200 jetons de
+# consigne, plus que la place d'un emplacement du serveur (6 144) : 6 brouillons de Ministral sur 6 illisibles. Un sketch se
+# joue à 2-4 : chaque essai tire au plus 5 personnages du lieu (≈ 4 300 jetons), le même tirage pour tous les scénaristes.
+DISTRIBUTION_MAX = 5
 
 
 def slug(t):
@@ -54,6 +58,9 @@ def main(modele, part, parts, minutes, sortie, pub_claude):
     def journal(t):
         lignes.append(t); print(t, flush=True)
         if 'brouillon refusé' in t: stats['brouillons_refuses_controle'] += 1
+        if 'brouillon illisible' in t: stats['brouillons_illisibles'] = stats.get('brouillons_illisibles', 0) + 1
+        m = re.search(r'réparation \d+ : (\d+) défaut\(s\) → (\d+)', t)
+        if m: stats.setdefault('reparations', []).append([int(m.group(1)), int(m.group(2))])
         m = re.search(r'plancher V17 : ([0-9.]+)', t)
         if m: stats['planchers_v17'].append(float(m.group(1)))
         m = re.search(r'note ([0-9.]+) \(drôle', t)
@@ -67,6 +74,7 @@ def main(modele, part, parts, minutes, sortie, pub_claude):
     L = lieux_de_la_part(part, parts); k = 0
     while L and time.time() + MARGE < fin:
         lieu, acteurs = L[k % len(L)]
+        acteurs = sorted(random.Random(f'{lieu}-{k}').sample(acteurs, min(DISTRIBUTION_MAX, len(acteurs))))
         cle = H.distribution(lieu, acteurs); dossier = os.path.join(clair, f'{slug(lieu)}-{k}'); os.makedirs(dossier, exist_ok=True)
         journal(f'=== {lieu} ({len(acteurs)} personnages), essai {k}'); t0 = time.time()
         i = H._essai(lambda: H.une(dossier, cle, tours_max=2, journal=journal))
