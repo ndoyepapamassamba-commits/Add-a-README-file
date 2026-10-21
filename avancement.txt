@@ -59,3 +59,4 @@
 [5466 s] 6 images · === decor-ecole-contrechamp-jour   |=====================================>            | 3/4 - 157.57s/it[K · mémoire libre 7018 Mo
 [5588 s] 7 images · === decor-gare-routiere-champ-jour   |==================================================| 4/4 - 157.53s/it[K · mémoire libre 11585 Mo
 [5709 s] 7 images · === decor-gare-routiere-champ-jour   |==================================================| 4/4 - 157.53s/it[K · mémoire libre 7023 Mo
+[5831 s] 7 images · === decor-gare-routiere-champ-jour   |============>                                     | 1/4 - 158.45s/it[K · mémoire libre 7014 Mo
