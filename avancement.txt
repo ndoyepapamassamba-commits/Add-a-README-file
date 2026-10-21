@@ -20,3 +20,4 @@
 [364 s] 2 images · === maison-sur-awa-cour-large-jour   |=========================>                        | 2/4 - 157.95s/it[K · mémoire libre 6989 Mo
 [485 s] 2 images · === maison-sur-awa-cour-large-jour   |=========================>                        | 2/4 - 157.95s/it[K · mémoire libre 6989 Mo
 [607 s] 2 images · === maison-sur-awa-cour-large-jour   |=====================================>            | 3/4 - 157.88s/it[K · mémoire libre 6988 Mo
+[728 s] 3 images · === perso-agent-bakary   |==================================================| 4/4 - 157.47s/it[K · mémoire libre 11542 Mo
