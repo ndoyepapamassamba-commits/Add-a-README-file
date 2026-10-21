@@ -36,3 +36,4 @@
 [2669 s] 4 images · === perso-chef-traore   |==================================================| 4/4 - 397.00s/it[K · mémoire libre 6302 Mo
 [2791 s] 4 images · === perso-chef-traore   |==================================================| 4/4 - 397.00s/it[K · mémoire libre 6274 Mo
 [2912 s] 4 images · === perso-chef-traore   |============>                                     | 1/4 - 400.59s/it[K · mémoire libre 6266 Mo
+[3033 s] 4 images · === perso-chef-traore   |============>                                     | 1/4 - 400.59s/it[K · mémoire libre 6266 Mo
