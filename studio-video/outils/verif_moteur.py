@@ -1237,6 +1237,20 @@ try:
 except Exception as e:
     echecs.append(f'saison 2 (voix, découpe) : {e}')
 
+# 21/10/2026 — scène générée en une commande (scene_generee.py) : tri des variantes par visages LUS ET de face (un profil ne
+# s'anime pas : gbaka-71 à −52° refusé) et par teint de la V1, puis bibliothèques de visages lancées en parallèle
+try:
+    _t50 = open(os.path.join(ICI, 'moteur-troupe', 'scene_generee.py'), encoding='utf-8').read()
+    _l50 = float(_re48.search(r'^LACET_MAX = ([0-9.]+)', _t50, _re48.M).group(1))
+    _te50 = float(_re48.search(r'^TEINT_MAX = ([0-9.]+)', _t50, _re48.M).group(1))
+    if _l50 > 45 or _te50 > 40: echecs.append(f'scène générée : seuils trop larges (lacet {_l50}°, teint L* {_te50})')
+    elif not all(x in _t50 for x in ('pose_landmarker_heavy.task', 'output_facial_transformation_matrixes=True', 'subprocess.Popen', 'prepare_expressions.py')):
+        echecs.append('scène générée : tri par squelette et orientation du visage, ou visages en parallèle, absent')
+    elif 'import prepare_scene' in _t50: echecs.append('scène générée : importer prepare_scene exécute le script entier')
+    else: print(f'scène générée : tri visages de face (≤ {_l50:.0f}°) et teint (L* ≤ {_te50:.0f}), visages en parallèle : OK')
+except Exception as e:
+    echecs.append(f'scène générée : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')
