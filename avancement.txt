@@ -33,3 +33,4 @@
 [2305 s] 3 images · === perso-djecky   |=====================================>            | 3/4 - 398.33s/it[K · mémoire libre 6263 Mo
 [2426 s] 4 images · === perso-chef-traore   |==================================================| 4/4 - 397.00s/it[K · mémoire libre 14862 Mo
 [2548 s] 4 images · === perso-chef-traore   |==================================================| 4/4 - 397.00s/it[K · mémoire libre 6686 Mo
+[2669 s] 4 images · === perso-chef-traore   |==================================================| 4/4 - 397.00s/it[K · mémoire libre 6302 Mo
