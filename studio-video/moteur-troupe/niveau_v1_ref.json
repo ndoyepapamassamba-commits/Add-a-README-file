@@ -11,5 +11,40 @@
  "plans_min": 4.0,
  "teint_L": 35.3,
  "teint_b": 26.0,
- "video": "troupe2/ep01/v17/film.mp4 (publiée sur TikTok le 20/10/2026)"
+ "video": "troupe2/ep01/v17/film.mp4 (publiée sur TikTok le 20/10/2026)",
+ "teint_dessins_v1": {
+  "L": 52.5,
+  "b": 48.0,
+  "personnages": {
+   "koffi": [
+    35.9,
+    36.0
+   ],
+   "coumba": [
+    52.5,
+    48.0
+   ],
+   "baye-ndiaye": [
+    39.4,
+    33.5
+   ],
+   "maman-nounou": [
+    44.7,
+    45.0
+   ],
+   "modou": [
+    37.3,
+    38.0
+   ],
+   "petit-mamadou": [
+    42.4,
+    45.0
+   ],
+   "tantie-awa": [
+    40.8,
+    41.0
+   ]
+  },
+  "mesure": "dessins d origine des 7 personnages de la V1 (workbench/.private/troupe), médiane des figures, même éclairage que les fiches"
+ }
 }

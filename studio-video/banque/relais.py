@@ -45,8 +45,23 @@ def controle(planche, dossier):
     hauts = [int(np.ptp(np.nonzero((~vert)[:, a:b].sum(1) > 2)[0])) for a, b in segs] if segs else []
     trous = trous_tete(vert, segs)
     ok = bool(1 <= len(segs) <= 8 and min(hauts) >= 0.5 * im.shape[0] and vert.mean() >= 0.30 and not trous)
+    tn = teint_planche(im); ok = ok and tn['dans_la_gamme_v1']
     return ok, {'silhouettes': len(segs), 'fond': round(float(vert.mean()), 3),
-                'hauteur_min': round(min(hauts) / im.shape[0], 3) if hauts else 0, **({'trous_tete': trous} if trous else {})}
+                'hauteur_min': round(min(hauts) / im.shape[0], 3) if hauts else 0, **({'trous_tete': trous} if trous else {}), 'teint': tn}
+
+
+def teint_planche(im):
+    """21/10/2026, consigne : « même le teint des personnages, nous sommes en Afrique de l'Ouest ». Peau des figures de la planche
+    (niveau_v1.teint, segmenteur MediaPipe) : médianes L* et b* au plus celles du personnage le plus clair de la V1, mesuré de la même
+    façon sur les dessins d'origine (Coumba : L* 52,5, b* 48). Mesuré le 21/10 : 11 fiches de la bible au-dessus (Le Banquier 69,8)."""
+    import numpy as np
+    sys.path.insert(0, os.path.join(ICI, '..', 'moteur-troupe')); import niveau_v1
+    global _SEG
+    if '_SEG' not in globals(): _SEG = niveau_v1._outils()
+    mp, seg, _ = _SEG; t = niveau_v1.teint(im, seg=seg, mp=mp); b = niveau_v1.reference()['teint_dessins_v1']
+    if not t: return {'L': None, 'b': None, 'dans_la_gamme_v1': False}
+    L, bb = float(np.median([x[0] for x in t])), float(np.median([x[1] for x in t]))
+    return {'L': round(L, 1), 'b': round(bb, 1), 'dans_la_gamme_v1': bool(L <= b['L'] and bb <= b['b'])}
 
 
 def trous_tete(fond, segs):

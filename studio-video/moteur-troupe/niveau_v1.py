@@ -187,6 +187,18 @@ def ecarts(p, ref=None, humour=None):
     if humour is None or humour <= 0.5: out.append(f"{NOMS['humour']} : {humour if humour is not None else 'non jugé'} (au-dessus de 0,5)")
     return out
 
+
+def regressions(nouveau, ancien):
+    """21/10/2026, consigne : « les améliorer sans régression » — critères où la nouvelle version recule par rapport à la précédente
+    (moins de mouvement, de place, de décor vivant, de regards, de plans ; plus d'à-coups, de sautes ; peau plus claire ou plus
+    orangée). Liste vide = aucune régression."""
+    out = []
+    for k in PLUS:
+        if ancien.get(k) is not None and (nouveau.get(k) is None or nouveau[k] < ancien[k]): out.append(f"{NOMS[k]} : {nouveau.get(k)} (avant {ancien[k]})")
+    for k in MOINS + TEINT:
+        if ancien.get(k) is not None and (nouveau.get(k) is None or nouveau[k] > ancien[k]): out.append(f"{NOMS[k]} : {nouveau.get(k)} (avant {ancien[k]})")
+    return out
+
 if __name__ == '__main__':
     import sys
     a = sys.argv[1:]; bd = tuple(float(x) for x in a[2].split(':')) if len(a) > 2 else None

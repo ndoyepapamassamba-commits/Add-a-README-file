@@ -88,7 +88,12 @@ def tourne(sketch, cle, cache, dossier, sortie):
     sys.path.insert(0, os.path.join(ICI, '..', 'moteur-troupe')); import niveau_v1
     p = niveau_v1.profil(sortie, (assemble.BY / assemble.H_, (assemble.BY + assemble.BH) / assemble.H_))
     e = niveau_v1.ecarts(p, humour=h.get('plancher_v17')); T['mesure_v1_s'] = round(time.time() - t3, 1)
-    bulletin = {'profil': p, 'reference_v1': niveau_v1.reference(), 'sous_la_V1': e, 'statut': 'a_corriger' if e else 'au_niveau_v1'}
+    # « les améliorer sans régression » : comparé aussi à la dernière vidéo de l'usine (aucun critère ne doit reculer)
+    dern = os.path.join(os.path.dirname(os.path.abspath(sortie)), 'usine-dernier-profil.json')
+    rg = niveau_v1.regressions(p, json.load(open(dern))) if os.path.isfile(dern) else []
+    bulletin = {'profil': p, 'reference_v1': niveau_v1.reference(), 'sous_la_V1': e, 'regressions': rg,
+                'statut': 'a_corriger' if (e or rg) else 'depasse_la_v1'}
+    json.dump(p, open(dern, 'w'), ensure_ascii=False)
     json.dump(bulletin, open(sortie + '.v1.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     return {'sketch': h.get('titre'), 'lieu': lieu, 'acteurs': acteurs, 'decor': os.path.basename(d), 'clips_ouverts': n,
             'video': sortie, 'duree_s': r.get('duree_s'), 'niveau_v1': bulletin['statut'], 'sous_la_V1': len(e), **T,

@@ -760,7 +760,10 @@ try:
     _x27 = {k: (v * 1.1 if k in _nv9.PLUS else v * 0.9 if k in _nv9.MOINS else v) for k, v in _r27.items() if isinstance(v, (int, float))}
     if _nv9.ecarts(_x27, humour=0.6): echecs.append(f'profil V1 : une vidéo qui dépasse la V1 partout est refusée {_nv9.ecarts(_x27, humour=0.6)}')
     if len(_nv9.ecarts(_m27)) != 11: echecs.append(f"profil V1 : « L'autre moitié » {len(_nv9.ecarts(_m27))} écarts au lieu de 11")
-    print("profil V1 : dépasser la V1 exigé (égaler ne suffit pas), teint dans sa gamme, « L'autre moitié » arrêtée sur 11 critères : OK")
+    if _nv9.regressions(_x27, _r27) or len(_nv9.regressions(_m27, _r27)) != 10: echecs.append('profil V1 : régressions mal vues')
+    _b27 = _nv9.reference()['teint_dessins_v1']
+    if not (_b27['L'] >= max(v[0] for v in _b27['personnages'].values()) and 50 <= _b27['L'] <= 55): echecs.append(f'profil V1 : gamme de teint des dessins {_b27}')
+    print("profil V1 : dépasser la V1 exigé (égaler ne suffit pas), teint dans sa gamme, « L'autre moitié » arrêtée sur 11 critères, régressions vues, gamme de teint des dessins V1 : OK")
 except Exception as e:
     echecs.append(f'profil V1 : {e}')
 
