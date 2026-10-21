@@ -1,0 +1,21 @@
+{
+ "modele": "small24",
+ "part": 0,
+ "appels_scenariste": 6,
+ "secondes_scenariste": 3944.386188030243,
+ "echecs_scenariste": 0,
+ "appels_juge": 1,
+ "echecs_juge": 1,
+ "brouillons_refuses_controle": 5,
+ "planchers_v17": [],
+ "notes": [],
+ "acceptes": 0,
+ "lieux": [
+  {
+   "lieu": "Bureau",
+   "accepte": false,
+   "secondes": 2192
+  }
+ ],
+ "secondes_par_brouillon": 657.4
+}
