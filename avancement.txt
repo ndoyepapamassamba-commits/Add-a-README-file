@@ -43,3 +43,4 @@
 [4129 s] 4 images · === perso-la-voisine   |==================================================| 4/4 - 319.20s/it[K · mémoire libre 2963 Mo
 [4250 s] 5 images · === decor-maquis-contrechamp-jour   |==================================================| 4/4 - 319.20s/it[K · mémoire libre 6977 Mo
 [4372 s] 5 images · === decor-maquis-contrechamp-jour   |============>                                     | 1/4 - 138.91s/it[K · mémoire libre 6983 Mo
+[4494 s] 5 images · === decor-maquis-contrechamp-jour   |=========================>                        | 2/4 - 134.63s/it[K · mémoire libre 6982 Mo
