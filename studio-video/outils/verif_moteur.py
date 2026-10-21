@@ -767,6 +767,20 @@ try:
 except Exception as e:
     echecs.append(f'profil V1 : {e}')
 
+# 21/10/2026 09:45 — teint écrit dans chaque fiche de la bible (aucune fiche texte ne disait la peau : 11 sur 32 plus claires que la
+# V1) ; la planche garde la peau sombre ; les 11 sont redessinées (version montée), l'ordre des tâches ne bouge pas
+try:
+    sys.path.insert(0, os.path.join(ICI, 'images')); import bible as _bb28
+    _T28 = _bb28.taches(); _P28 = [t for t in _T28 if t['type'] == 'personnage']
+    if any(_bb28.PEAU not in t['fiche']['prompt'] or 'dark brown skin' not in t['prompt'] for t in _P28): echecs.append('teint : peau absente d\'une fiche ou d\'une planche')
+    _v28 = {t['id']: t.get('version', 1) for t in _P28}
+    if _v28.get('perso-le-banquier', 1) < 4 or _v28.get('perso-patron-sery', 1) < 5 or _v28.get('perso-madame-coumba', 1) < 3: echecs.append('teint : personnages trop clairs non redessinés')
+    _o28 = json.load(open(os.path.join(ICI, 'images', 'bible', 'taches.json'), encoding='utf-8'))
+    if [t['id'] for t in _o28] != [t['id'] for t in _T28] or _o28 != _T28: echecs.append('teint : bible/taches.json pas régénéré (ou ordre changé)')
+    print(f'teint : peau sombre écrite dans les {len(_P28)} fiches et planches, 11 personnages trop clairs redessinés, ordre des tâches gardé : OK')
+except Exception as e:
+    echecs.append(f'teint : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

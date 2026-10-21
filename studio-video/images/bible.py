@@ -77,11 +77,17 @@ FOND_BLEU = {'AGENT BAKARY', 'MAMAN BRIGITTE', 'COACH DIABATÉ', 'DJ KÉVIN'}   
 #   2. PLANCHE : les 5 poses avec sa propre fiche comme SEULE référence (aucune autre identité dans l'image 1).
 # Fiches texte nettoyées : les répliques entre guillemets (« Refusé ! ») devenaient des bulles de texte, « noué en couronne »
 # une vraie couronne, la posture (« assise derrière la caisse ») du mobilier : seules l'apparence et la tenue sont dessinées.
+# 21/10/2026 09:45 — consigne : « même le teint des personnages, nous sommes en Afrique de l'Ouest ». Aucune fiche texte ne dit la
+# couleur de peau : sur 32 fiches mesurées (niveau_v1.teint, peau découpée par MediaPipe selfie_multiclass, médiane CIELAB), 11
+# sortent plus claires que le plus clair des 7 dessins de la V1 (L* 52,5 / b* 48 ; Le Banquier L* 69,8, Le Tonton 62,4, Patron
+# Séry 60,4…). La peau est désormais écrite dans chaque fiche, et la planche la garde.
+PEAU = ('Skin: deep dark brown West African (Ivorian) complexion, as dark as a typical person from Abidjan, never light, beige, '
+        'caramel or pale skin.')
 FICHE = ('Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as '
-         'image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — {nom}: {apparence} Outfit: '
+         'image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — {nom}: {apparence} ' + PEAU + ' Outfit: '
          '{tenue} Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat '
          'bright {fond} background with nothing else (no wall, no floor line, no object, no text).')
-PLANCHE = ('Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same '
+PLANCHE = ('Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same dark brown skin tone, same '
            'body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. '
            'Drawn {poses}. Same face, same hairstyle and same outfit in every pose, no text.')
 
@@ -141,6 +147,11 @@ REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2,
            # Ndiaye, Tonton Dieng)
            'perso-djecky': 3, 'perso-general-zongo': 2, 'perso-mecano-issa': 2, 'perso-monsieur-diarra': 2, 'perso-tiekoro': 2,
            'perso-le-frimeur': 2, 'perso-grand-pere-ndiaye': 2, 'perso-tonton-dieng': 2}
+# 21/10 09:45 — TEINT : les 11 fiches plus claires que la V1 (L* médian de la peau > 52,5 ou b* > 48) sont redessinées avec la peau
+# écrite (PEAU) ; le relais bible → banque refuse désormais une planche hors de la gamme de teint de la V1 (relais.teint_planche)
+for _i in ('madame-coumba', 'agent-gora', 'mecano-issa', 'le-frimeur', 'le-banquier', 'la-voisine', 'le-tonton', 'patron-sery',
+           'mademoiselle-rosine', 'dj-kevin', 'maman-brigitte'):
+    REFAIRE['perso-' + _i] = REFAIRE.get('perso-' + _i, 1) + 1
 # Les corrections sont regroupées en UNE passe : pousser bible/taches.json redémarre les 20 machines (chacune ne perd que l'image
 # en cours ; la répartition des tâches entre machines ne bouge pas tant que l'ordre de la liste est gardé — vérifié à chaque passe).
 
