@@ -63,3 +63,4 @@
 [728 s] 22 clips · === djecky--rire (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 12785 Mo
 [124 s] 23 clips · === madame-coumba--ecouter@2 (at_runtime)  · mémoire libre 13766 Mo
 [246 s] 23 clips · === madame-coumba--ecouter@2 (at_runtime)   |============>                                     | 1/4 - 134.61s/it[K · mémoire libre 13752 Mo
+[367 s] 23 clips · === madame-coumba--ecouter@2 (at_runtime)   |=========================>                        | 2/4 - 133.65s/it[K · mémoire libre 13756 Mo
