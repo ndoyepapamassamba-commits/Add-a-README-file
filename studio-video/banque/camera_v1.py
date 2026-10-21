@@ -61,8 +61,8 @@ SURFACES_V1 = os.environ.get('SURFACES_V1', '1') == '1'
 # feuillage en plans serrés sur le mur de la cour, qui grossissaient le frémissement ; sur les plans plus larges de la banque,
 # 1,6 à 3,2 px de frémissement restaient sous le seuil. Feuilles ×2 (rafale) : banc en cadre de plan à deux, marché 0,008 →
 # 0,023, salon 0,021 → 0,062 ; taches de soleil tamisé jugées naturelles sur le rendu (sol du salon, chaussée du marché).
-VENT_BANQUE = float(os.environ.get('VENT_BANQUE', '2.5'))   # v18 à 2,0 : fond 0,147 ; banc plan à deux ×2,5 : maquis 0,020 → 0,025, marché 0,011 → 0,019
-FORCE_BANQUE = float(os.environ.get('FORCE_BANQUE', '0.35'))   # ombre des feuilles un peu plus marquée qu'à la cour de la V1 (0,30) : plans plus larges
+VENT_BANQUE = float(os.environ.get('VENT_BANQUE', '2.8'))   # v18 à 2,0 : fond 0,147 ; v19 à 2,5 (ombre 0,35) : 0,158 (V1 0,161)
+FORCE_BANQUE = float(os.environ.get('FORCE_BANQUE', '0.38'))   # ombre des feuilles un peu plus marquée qu'à la cour de la V1 (0,30) : plans plus larges
 MOTS = {'fumee': ('smoke', 'steam'), 'tissu': ('hanging clothes', 'fabric awning')}   # parasols : rigides, hors du tissu
 
 
