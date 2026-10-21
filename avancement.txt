@@ -50,3 +50,4 @@
 [122 s] 24 clips · === patron-sery--rire (at_runtime)   |============>                                     | 1/4 - 69.06s/it[K · mémoire libre 13750 Mo
 [243 s] 24 clips · === patron-sery--rire (at_runtime)   |=====================================>            | 3/4 - 68.45s/it[K · mémoire libre 13762 Mo
 [123 s] 25 clips · === le-tonton--rire@2 (at_runtime)   |=========================>                        | 2/4 - 40.07s/it[K · mémoire libre 13781 Mo
+[244 s] 26 clips · === agent-gora--ecouter@2 (at_runtime)   |============>                                     | 1/4 - 41.18s/it[K · mémoire libre 13825 Mo
