@@ -21,3 +21,4 @@
 [1095 s] 3 images · === maison-la-voisine-salon-large-jour   |=====================================>            | 3/4 - 135.53s/it[K · mémoire libre 6990 Mo
 [1216 s] 3 images · === maison-la-voisine-salon-large-jour   |==================================================| 4/4 - 134.96s/it[K · mémoire libre 5887 Mo
 [1338 s] 4 images · === perso-petit-moussa   |==================================================| 4/4 - 134.96s/it[K · mémoire libre 6679 Mo
+[1460 s] 4 images · === perso-petit-moussa   |==================================================| 4/4 - 134.96s/it[K · mémoire libre 6302 Mo
