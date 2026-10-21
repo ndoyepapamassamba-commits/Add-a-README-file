@@ -73,3 +73,4 @@
 [122 s] 23 clips · === patron-sery--hausser (at_runtime)   |============>                                     | 1/4 - 69.04s/it[K · mémoire libre 13769 Mo
 [244 s] 23 clips · === patron-sery--hausser (at_runtime)   |=====================================>            | 3/4 - 68.28s/it[K · mémoire libre 13766 Mo
 [125 s] 24 clips · === le-tonton--hausser@2 (at_runtime)  · mémoire libre 13763 Mo
+[246 s] 24 clips · === le-tonton--hausser@2 (at_runtime)   |============>                                     | 1/4 - 134.20s/it[K · mémoire libre 13768 Mo
