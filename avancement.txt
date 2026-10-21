@@ -12,3 +12,4 @@
 [1457 s] 8 clips · === professeur-samba--choc (at_runtime)   |=========================>                        | 2/4 - 68.77s/it[K · mémoire libre 13763 Mo
 [1578 s] 9 clips · === chef-traore--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13760 Mo
 [1699 s] 9 clips · === chef-traore--mentir (at_runtime)   |============>                                     | 1/4 - 69.33s/it[K · mémoire libre 13745 Mo
+[1821 s] 9 clips · === chef-traore--mentir (at_runtime)   |=====================================>            | 3/4 - 68.60s/it[K · mémoire libre 13752 Mo
