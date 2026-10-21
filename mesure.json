@@ -98,6 +98,13 @@
    "lora": "at_runtime",
    "secondes": 190,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "la-voisine--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 191,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39545665602"
