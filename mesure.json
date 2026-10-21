@@ -70,7 +70,14 @@
    "lora": "at_runtime",
    "secondes": 167,
    "memoire_max_go": 11.27
+  },
+  {
+   "clip": "la-go-leopard--montrer@2",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 167,
+   "memoire_max_go": 10.95
   }
  ],
- "run": "39528414471"
+ "run": "39536335050"
 }
