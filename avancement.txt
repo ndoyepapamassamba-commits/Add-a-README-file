@@ -1,1 +1,2 @@
 [123 s] 4 clips · === la-lyceenne--ecouter (at_runtime)   |============>                                     | 1/4 - 84.26s/it[K · mémoire libre 13787 Mo
+[244 s] 4 clips · === la-lyceenne--ecouter (at_runtime)   |=========================>                        | 2/4 - 79.58s/it[K · mémoire libre 13751 Mo
