@@ -81,3 +81,4 @@
 [2309 s] 21 clips · === tiekoro--rire (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13128 Mo
 [2430 s] 22 clips · === sorciere-mama-dede--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13734 Mo
 [2552 s] 22 clips · === sorciere-mama-dede--hausser (at_runtime)   |============>                                     | 1/4 - 133.91s/it[K · mémoire libre 13747 Mo
+[2673 s] 22 clips · === sorciere-mama-dede--hausser (at_runtime)   |=========================>                        | 2/4 - 133.36s/it[K · mémoire libre 13747 Mo
