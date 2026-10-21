@@ -62,3 +62,4 @@
 [245 s] 13 images · === fiche-tata-prisca  · mémoire libre 6675 Mo
 [124 s] 13 images · === fiche-tata-prisca  · mémoire libre 6729 Mo
 [245 s] 13 images · === fiche-tata-prisca  · mémoire libre 6718 Mo
+[367 s] 13 images · === fiche-tata-prisca   |============>                                     | 1/4 - 205.14s/it[K · mémoire libre 6715 Mo
