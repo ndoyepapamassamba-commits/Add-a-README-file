@@ -29,3 +29,4 @@
 [1823 s] 3 images · === perso-petit-ibrahima   |=========================>                        | 2/4 - 397.08s/it[K · mémoire libre 6225 Mo
 [1945 s] 3 images · === perso-petit-ibrahima   |=========================>                        | 2/4 - 397.08s/it[K · mémoire libre 6230 Mo
 [2066 s] 3 images · === perso-petit-ibrahima   |=====================================>            | 3/4 - 397.03s/it[K · mémoire libre 6227 Mo
+[2187 s] 3 images · === perso-petit-ibrahima   |=====================================>            | 3/4 - 397.03s/it[K · mémoire libre 6218 Mo
