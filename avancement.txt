@@ -48,3 +48,4 @@
 [4737 s] 5 images · === decor-maquis-contrechamp-jour   |==================================================| 4/4 - 135.34s/it[K · mémoire libre 7199 Mo
 [4858 s] 6 images · === decor-hopital-champ-jour   |==================================================| 4/4 - 135.34s/it[K · mémoire libre 6975 Mo
 [4980 s] 6 images · === decor-hopital-champ-jour   |============>                                     | 1/4 - 133.97s/it[K · mémoire libre 6967 Mo
+[5101 s] 6 images · === decor-hopital-champ-jour   |=========================>                        | 2/4 - 124.19s/it[K · mémoire libre 6968 Mo
