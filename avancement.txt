@@ -57,3 +57,4 @@
 [4979 s] 8 images · === decor-boutique-coin-jour   |==================================================| 4/4 - 109.48s/it[K · mémoire libre 7205 Mo
 [5101 s] 9 images · === decor-rue-contrechamp-jour   |==================================================| 4/4 - 109.48s/it[K · mémoire libre 6963 Mo
 [5222 s] 9 images · === decor-rue-contrechamp-jour   |============>                                     | 1/4 - 115.03s/it[K · mémoire libre 6958 Mo
+[5343 s] 9 images · === decor-rue-contrechamp-jour   |=========================>                        | 2/4 - 109.86s/it[K · mémoire libre 6971 Mo
