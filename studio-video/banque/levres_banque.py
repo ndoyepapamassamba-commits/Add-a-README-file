@@ -89,6 +89,14 @@ def images(mov):
     return sorted(os.path.join(d, f) for f in os.listdir(d) if f.endswith('.png'))
 
 
+def ordre_voix(mov, mp4, wav, dur, fps, n_images):
+    """indices des images du clip (n_images) pour chaque image de sortie, la bouche suivant la voix ; None si la mesure est
+    impossible (rendu image par image de camera_v1)."""
+    q = ouverture(mp4)
+    if q is None or len(q) != n_images: return None
+    n = max(1, int(round(dur * fps))); return ordre(q, enveloppe(wav, n, fps), fps)
+
+
 def liste_concat(mov, mp4, wav, dur, fps, chemin_liste):
     """liste ffmpeg (concat) des images du clip dans l'ordre qui suit la voix ; None si la mesure est impossible."""
     q = ouverture(mp4); ims = images(mov)

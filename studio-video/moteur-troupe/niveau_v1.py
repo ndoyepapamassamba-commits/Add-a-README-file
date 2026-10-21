@@ -153,9 +153,16 @@ def profil(video, bande=None, cadence=15):
     duree = i / fps; mn = max(duree / 60, 1e-9)
     rs = np.array(resid or [0.0]); med = np.array([np.median(rs[max(0, j - 15):j + 1]) for j in range(len(rs))])
     sautes = int(((rs > 3 * np.maximum(med, 0.5)) & (rs > 2)).sum())
-    try:
-        from scenedetect import detect, ContentDetector   # PySceneDetect 0.7.2 (BSD-3), réglages d'origine
-        plans = max(1, len(detect(video, ContentDetector())))
+    try:   # PySceneDetect 0.7.2 (BSD-3), réglages d'origine, sur la BANDE de la scène (21/10/2026 : sur l'image entière, le
+        # fond flou et les sous-titres, identiques d'un plan à l'autre, noyaient les coupes de la scène — 0 coupe vue sur
+        # 4 réelles dans « L'autre moitié » ; la V1 est remesurée de la même façon)
+        import subprocess, tempfile
+        from scenedetect import detect, ContentDetector
+        with tempfile.TemporaryDirectory() as d_:
+            b_ = _os.path.join(d_, 'bande.mp4'); h0 = f'trunc(ih*{y0:.6f}/2)*2'; hh = f'trunc(ih*{y1 - y0:.6f}/2)*2'
+            subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', video, '-an', '-vf', f'crop=iw:{hh}:0:{h0},scale=480:-2',
+                            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', b_], check=True)
+            plans = max(1, len(detect(b_, ContentDetector())))
     except Exception:
         plans = None
     moy = lambda x: round(float(np.mean(x)), 3) if x else 0.0

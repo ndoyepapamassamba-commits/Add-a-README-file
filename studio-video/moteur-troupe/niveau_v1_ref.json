@@ -8,7 +8,7 @@
  "regards_images": 26,
  "acoups_min": 0.8,
  "sautes_min": 11.2,
- "plans_min": 4.0,
+ "plans_min": 13.6,
  "teint_L": 35.3,
  "teint_b": 26.0,
  "video": "troupe2/ep01/v17/film.mp4 (publiée sur TikTok le 20/10/2026)",
@@ -46,5 +46,6 @@
    ]
   },
   "mesure": "dessins d origine des 7 personnages de la V1 (workbench/.private/troupe), médiane des figures, même éclairage que les fiches"
- }
+ },
+ "plans_mesure": "coupes PySceneDetect (ContentDetector, réglages d'origine) comptées sur la bande de la scène, remesuré le 21/10/2026 (4,0 sur l'image entière)"
 }

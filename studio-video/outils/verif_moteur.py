@@ -767,6 +767,29 @@ try:
 except Exception as e:
     echecs.append(f'profil V1 : {e}')
 
+# 21/10/2026 10:40 — « généraliser les changements pour pousser la V1 à toutes les vidéos » : l'assembleur commun de la banque monte
+# avec la grammaire de la V1 (camera_v1.py) — ouverture large poussée vers l'échange, coupe à chaque parleur, serré + coup de zoom
+# sur la chute, gros plan de réaction ; mouvement de caméra sans tête coupée ; boucle de geste à vitesse nulle aux retournements
+try:
+    sys.path.insert(0, os.path.join(ICI, 'banque')); import camera_v1 as _cv29, assemble as _as29
+    _P29 = {'acteurs': {'a': {'x': 0.27, 'sol': 0.97, 'taille': 0.9}, 'b': {'x': 0.73, 'sol': 0.97, 'taille': 0.9}}, 'repliques': []}
+    _t29 = 0.0
+    for _q29, _d29, _c29 in (('a', 3.0, 0), ('b', 2.8, 0), ('a', 3.1, 0), ('b', 2.6, 1), (None, 2.0, 0)):
+        _P29['repliques'].append({'qui': _q29, 'duree': _d29, '_t0': _t29, 'chute': bool(_c29), **({} if _q29 else {'reagit': {'a': 'choc', 'b': 'rire'}})}); _t29 += _d29
+    _B29 = _cv29.boites(_P29, 1080, 630, {'a': 0.05, 'b': 0.05}); _S29 = _cv29.plans(_P29, _B29, 1080, 630)
+    _so29 = [x['sorte'] for x in _S29]
+    if _so29[0] != 'duo' or _so29[-2:] != ['serre', 'gros'] or 'moyen' not in _so29 or _S29[0].get('cs') is None or _S29[-2].get('tw') is None:
+        echecs.append(f'grammaire V1 : découpage {_so29}')
+    if not all(_cv29.tetes_ok(_B29, _cv29.cadre_t(x, t)[0], x['garde']) for x in _S29 for t in np.linspace(x['t0'], x['t1'] - 0.01, 7) if x['sorte'] != 'gros'):
+        echecs.append('grammaire V1 : une tête gardée sort du cadre')
+    _v29 = [_cv29.position_douce(t, 33) for t in (1.99, 2.0, 2.01)]
+    if abs((_v29[2] - _v29[1]) / 0.01) > 0.5 or abs((_v29[1] - _v29[0]) / 0.01) > 0.5: echecs.append('grammaire V1 : retournement de boucle sec')
+    if not _as29.RENDU_V1: echecs.append('grammaire V1 : rendu V1 coupé par défaut')
+    if _nv9.reference().get('plans_min') != 13.6: echecs.append('grammaire V1 : plans de la V1 non remesurés sur la bande')
+    print(f"grammaire V1 : {' → '.join(_so29)}, têtes gardées dans le cadre, boucle douce, référence remesurée (13,6 plans/min) : OK")
+except Exception as e:
+    echecs.append(f'grammaire V1 : {e}')
+
 # 21/10/2026 09:45 — teint écrit dans chaque fiche de la bible (aucune fiche texte ne disait la peau : 11 sur 32 plus claires que la
 # V1) ; la planche garde la peau sombre ; les 11 sont redessinées (version montée), l'ordre des tâches ne bouge pas
 try:
