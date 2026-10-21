@@ -29,3 +29,4 @@
 [122 s] 10 clips · === la-go-leopard--ecouter@2 (at_runtime)  · mémoire libre 13765 Mo
 [244 s] 10 clips · === la-go-leopard--ecouter@2 (at_runtime)   |============>                                     | 1/4 - 134.63s/it[K · mémoire libre 13766 Mo
 [365 s] 10 clips · === la-go-leopard--ecouter@2 (at_runtime)   |=========================>                        | 2/4 - 134.47s/it[K · mémoire libre 13764 Mo
+[488 s] 10 clips · === la-go-leopard--ecouter@2 (at_runtime)   |=====================================>            | 3/4 - 134.19s/it[K · mémoire libre 13765 Mo
