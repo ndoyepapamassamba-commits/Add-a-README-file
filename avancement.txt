@@ -75,3 +75,4 @@
 [122 s] 25 clips · === coach-diabate--choc (at_runtime)  · mémoire libre 13775 Mo
 [244 s] 25 clips · === coach-diabate--choc (at_runtime)   |============>                                     | 1/4 - 135.27s/it[K · mémoire libre 13769 Mo
 [365 s] 25 clips · === coach-diabate--choc (at_runtime)   |=========================>                        | 2/4 - 134.23s/it[K · mémoire libre 13766 Mo
+[486 s] 25 clips · === coach-diabate--choc (at_runtime)   |=====================================>            | 3/4 - 133.72s/it[K · mémoire libre 13766 Mo
