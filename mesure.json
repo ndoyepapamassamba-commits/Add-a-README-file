@@ -168,6 +168,13 @@
    "lora": "at_runtime",
    "secondes": 277,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "docteur-sylla--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 276,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39545665602"
