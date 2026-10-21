@@ -28,3 +28,4 @@
 [3398 s] 5 clips · === petit-ibrahima--hausser (at_runtime)   |=====================================>            | 3/4 - 135.48s/it[K · mémoire libre 13730 Mo
 [122 s] 6 clips · === monsieur-diarra--parler (at_runtime)   |=========================>                        | 2/4 - 37.61s/it[K · mémoire libre 13785 Mo
 [244 s] 7 clips · === mamie-bintou--hausser (at_runtime)   |============>                                     | 1/4 - 40.08s/it[K · mémoire libre 13816 Mo
+[122 s] 7 clips · === mamie-bintou--montrer (at_runtime)   |=========================>                        | 2/4 - 39.25s/it[K · mémoire libre 13785 Mo
