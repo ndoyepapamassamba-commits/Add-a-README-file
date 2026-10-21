@@ -71,3 +71,4 @@
 [2554 s] 25 clips · === docteur-sylla--hausser (at_runtime)   |============>                                     | 1/4 - 134.92s/it[K · mémoire libre 13790 Mo
 [2675 s] 25 clips · === docteur-sylla--hausser (at_runtime)   |=========================>                        | 2/4 - 134.16s/it[K · mémoire libre 13795 Mo
 [2797 s] 25 clips · === docteur-sylla--hausser (at_runtime)   |=====================================>            | 3/4 - 134.19s/it[K · mémoire libre 13797 Mo
+[122 s] 25 clips · === docteur-sylla--hausser (at_runtime)  · mémoire libre 13759 Mo
