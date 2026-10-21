@@ -72,6 +72,18 @@
    "h": 448,
    "memoire_max_go": 9.47,
    "run": "39517651050"
+  },
+  {
+   "tache": "decor-ecole-champ-jour",
+   "version": 1,
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 697,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.48,
+   "run": "39517651050"
   }
  ]
 }
