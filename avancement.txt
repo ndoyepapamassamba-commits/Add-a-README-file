@@ -24,3 +24,4 @@
 [608 s] 13 clips · === maman-brigitte--rire (at_runtime)   |============>                                     | 1/4 - 40.40s/it[K · mémoire libre 13747 Mo
 [122 s] 13 clips · === monsieur-diarra--rire (at_runtime)  · mémoire libre 13784 Mo
 [243 s] 13 clips · === monsieur-diarra--rire (at_runtime)   |============>                                     | 1/4 - 135.12s/it[K · mémoire libre 13768 Mo
+[365 s] 13 clips · === monsieur-diarra--rire (at_runtime)   |=========================>                        | 2/4 - 134.85s/it[K · mémoire libre 13775 Mo
