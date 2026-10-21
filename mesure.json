@@ -49,6 +49,13 @@
    "lora": "at_runtime",
    "secondes": 578,
    "memoire_max_go": 11.24
+  },
+  {
+   "clip": "tantie-awa-sarr--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 578,
+   "memoire_max_go": 11.27
   }
  ],
  "run": "39528414471"
