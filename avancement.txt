@@ -12,3 +12,4 @@
 [487 s] 12 clips · === madame-coumba--montrer (at_runtime)   |=====================================>            | 3/4 - 39.97s/it[K · mémoire libre 13806 Mo
 [122 s] 13 clips · === la-go-leopard--colere@2 (at_runtime)  · mémoire libre 13763 Mo
 [243 s] 13 clips · === la-go-leopard--colere@2 (at_runtime)   |============>                                     | 1/4 - 135.65s/it[K · mémoire libre 13765 Mo
+[365 s] 13 clips · === la-go-leopard--colere@2 (at_runtime)   |=========================>                        | 2/4 - 135.51s/it[K · mémoire libre 13767 Mo
