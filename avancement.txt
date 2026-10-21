@@ -51,3 +51,4 @@
 [4980 s] 11 images · === decor-ceremonie-large-nuit   |==================================================| 4/4 - 84.08s/it[K · mémoire libre 7306 Mo
 [5101 s] 11 images · === decor-ceremonie-large-nuit   |============>                                     | 1/4 - 90.02s/it[K · mémoire libre 7052 Mo
 [5223 s] 11 images · === decor-ceremonie-large-nuit   |=========================>                        | 2/4 - 86.39s/it[K · mémoire libre 7052 Mo
+[5344 s] 12 images · === decor-ecole-large-nuit   |==================================================| 4/4 - 86.01s/it[K · mémoire libre 14202 Mo
