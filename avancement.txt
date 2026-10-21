@@ -78,3 +78,4 @@
 [243 s] 14 images · === fiche-madame-coumba  · mémoire libre 6692 Mo
 [365 s] 14 images · === fiche-madame-coumba   |============>                                     | 1/4 - 237.69s/it[K · mémoire libre 6691 Mo
 [486 s] 14 images · === fiche-madame-coumba   |============>                                     | 1/4 - 237.69s/it[K · mémoire libre 6686 Mo
+[607 s] 14 images · === fiche-madame-coumba   |=========================>                        | 2/4 - 236.33s/it[K · mémoire libre 6690 Mo
