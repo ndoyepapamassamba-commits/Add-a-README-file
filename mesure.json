@@ -140,6 +140,13 @@
    "lora": "at_runtime",
    "secondes": 308,
    "memoire_max_go": 10.77
+  },
+  {
+   "clip": "maman-brigitte--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 311,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39543580560"
