@@ -80,3 +80,4 @@
 [850 s] 26 clips · === coach-diabate--parler (at_runtime)   |============>                                     | 1/4 - 135.84s/it[K · mémoire libre 13757 Mo
 [971 s] 26 clips · === coach-diabate--parler (at_runtime)   |=========================>                        | 2/4 - 133.99s/it[K · mémoire libre 13746 Mo
 [1093 s] 26 clips · === coach-diabate--parler (at_runtime)   |=====================================>            | 3/4 - 133.93s/it[K · mémoire libre 13749 Mo
+[123 s] 27 clips · === le-banquier--montrer (at_runtime)  · mémoire libre 13793 Mo
