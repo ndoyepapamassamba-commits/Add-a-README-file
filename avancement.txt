@@ -53,3 +53,4 @@
 [1461 s] 18 clips · === sorciere-mama-dede--mentir (at_runtime)   |=====================================>            | 3/4 - 66.64s/it[K · mémoire libre 13780 Mo
 [1582 s] 19 clips · === docteur-sylla--choc (at_runtime)   |============>                                     | 1/4 - 61.27s/it[K · mémoire libre 13774 Mo
 [1704 s] 19 clips · === docteur-sylla--choc (at_runtime)   |=====================================>            | 3/4 - 61.90s/it[K · mémoire libre 13769 Mo
+[1826 s] 20 clips · === mademoiselle-rosine--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13784 Mo
