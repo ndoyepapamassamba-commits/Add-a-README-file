@@ -54,3 +54,4 @@
 [5459 s] 5 images · === decor-taxi-champ-jour   |=====================================>            | 3/4 - 156.22s/it[K · mémoire libre 7022 Mo
 [5580 s] 6 images · === decor-hopital-coin-jour   |==================================================| 4/4 - 156.22s/it[K · mémoire libre 7190 Mo
 [5702 s] 6 images · === decor-hopital-coin-jour   |==================================================| 4/4 - 156.22s/it[K · mémoire libre 7029 Mo
+[5823 s] 6 images · === decor-hopital-coin-jour   |============>                                     | 1/4 - 161.12s/it[K · mémoire libre 7020 Mo
