@@ -1,0 +1,21 @@
+{
+ "modele": "ministral14",
+ "part": 1,
+ "appels_scenariste": 6,
+ "secondes_scenariste": 5357.668974399567,
+ "echecs_scenariste": 0,
+ "appels_juge": 0,
+ "echecs_juge": 0,
+ "brouillons_refuses_controle": 0,
+ "planchers_v17": [],
+ "notes": [],
+ "acceptes": 0,
+ "lieux": [
+  {
+   "lieu": "Cour",
+   "accepte": false,
+   "secondes": 2742
+  }
+ ],
+ "secondes_par_brouillon": 892.9
+}
