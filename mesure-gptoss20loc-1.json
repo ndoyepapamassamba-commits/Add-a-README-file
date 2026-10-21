@@ -1,12 +1,12 @@
 {
  "modele": "gptoss20loc",
  "part": 1,
- "appels_scenariste": 33,
- "secondes_scenariste": 9368.662276983261,
+ "appels_scenariste": 34,
+ "secondes_scenariste": 9659.961711645126,
  "echecs_scenariste": 0,
- "appels_juge": 42,
+ "appels_juge": 46,
  "echecs_juge": 0,
- "brouillons_refuses_controle": 2,
+ "brouillons_refuses_controle": 3,
  "planchers_v17": [
   0.437,
   0.57,
@@ -28,6 +28,11 @@
    "lieu": "École",
    "accepte": true,
    "secondes": 1345
+  },
+  {
+   "lieu": "Cour",
+   "accepte": false,
+   "secondes": 2128
   }
  ],
  "drole_v17": [
@@ -114,31 +119,35 @@
   [
    1,
    0
+  ],
+  [
+   1,
+   1
   ]
  ],
  "brouillons_illisibles": 1,
  "doublons_autres_machines": 0,
- "secondes_par_brouillon": 283.9,
+ "secondes_par_brouillon": 284.1,
  "temps": {
   "scenariste": {
-   "appels": 33,
+   "appels": 34,
    "tronques": 0,
-   "lus_jetons": 772,
-   "cache_jetons": 1483,
-   "lecture_s": 99.0,
-   "ecriture_jetons": 811,
-   "ecriture_s": 165.7,
+   "lus_jetons": 766,
+   "cache_jetons": 1442,
+   "lecture_s": 98.2,
+   "ecriture_jetons": 822,
+   "ecriture_s": 167.3,
    "jetons_par_s": 4.9
   },
   "juge": {
-   "appels": 42,
+   "appels": 46,
    "tronques": 0,
-   "lus_jetons": 369,
+   "lus_jetons": 366,
    "cache_jetons": 180,
-   "lecture_s": 34.5,
-   "ecriture_jetons": 79,
-   "ecriture_s": 20.3,
-   "jetons_par_s": 3.9
+   "lecture_s": 34.6,
+   "ecriture_jetons": 80,
+   "ecriture_s": 19.8,
+   "jetons_par_s": 4.0
   }
  }
 }
