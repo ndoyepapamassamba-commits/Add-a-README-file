@@ -16,3 +16,4 @@
 [486 s] 2 images · === maison-sur-awa-cuisine-large-jour   |=========================>                        | 2/4 - 156.65s/it[K · mémoire libre 6903 Mo
 [607 s] 2 images · === maison-sur-awa-cuisine-large-jour   |=====================================>            | 3/4 - 156.46s/it[K · mémoire libre 6903 Mo
 [729 s] 3 images · === perso-tantie-awa-sarr   |==================================================| 4/4 - 156.37s/it[K · mémoire libre 11534 Mo
+[851 s] 3 images · === perso-tantie-awa-sarr   |==================================================| 4/4 - 156.37s/it[K · mémoire libre 6275 Mo
