@@ -109,12 +109,13 @@ def face5(box, src=None):
 # BOÎTE (ses points de squelette, marge de cheveux au-dessus du nez) + ses points en positif et ceux des autres en négatif.
 # Repli MagicTouch si SAM échoue ; PREPARE_SAM=0 rend l'ancienne voie.
 def sam_personnes(img, Ps):
-    # Silhouette complète en trois temps (21/10/2026, essais sur le salon, le gbaka et le marché) : 1) SAM (boîte + squelette,
-    # les autres acteurs en négatif) donne le corps sans déborder ; 2) des ANCRES autour de la tête et aux mains, chacune
-    # interrogée seule, rattachent ce que SAM avait laissé (chevelure, peigne, billets, téléphone) si le morceau touche le
-    # corps et reste dans sa petite boîte ; 3) la classe « cheveux / accessoires » du segmenteur MediaPipe multiclasse
-    # (Apache-2.0) au-dessus des épaules complète une coiffure volumineuse (afro de la coiffeuse : 26 % → 96 % rattachée),
-    # puis les piqûres du masque sont bouchées. L'image n'est encodée qu'une fois (27 s les trois scènes).
+    # Silhouette complète (21/10/2026, essais salon / gbaka / marché) : 1) SAM (boîte + squelette, les autres acteurs en
+    # négatif) donne le corps de chacun sans déborder sur le décor ; 2) des ANCRES autour de la tête et aux mains, interrogées
+    # seules, rattachent les morceaux proches ; 3) tout ce que le segmenteur MediaPipe multiclasse (Apache-2.0) reconnaît comme
+    # PERSONNE (cheveux, peau, visage, vêtements, accessoires) dans la boîte de l'acteur et qui touche son corps lui est
+    # rattaché, sauf ce qui appartient au voisin — l'afro entière et le peigne de la coiffeuse, les tresses de la cliente, le
+    # téléphone de Séraphine, les billets de Junior ; le gbaka n'est plus emporté. Seules les piqûres du masque sont bouchées.
+    # L'image n'est encodée qu'une fois.
     import torch, linge, mediapipe as mp_
     from mediapipe.tasks.python import vision as v_, BaseOptions as BO_
     _, mod = linge._sam(); H_, W_ = img.shape[:2]; sx, sy = 1024 / W_, 1024 / H_
@@ -129,30 +130,33 @@ def sam_personnes(img, Ps):
         with torch.no_grad(): o = mod(image_embeddings=emb, input_points=pts, input_labels=lab, input_boxes=bx, multimask_output=multi)
         return [cv2.resize(o.pred_masks[0, 0, j].numpy(), (W_, H_)) > 0 for j in range(o.pred_masks.shape[2])], o.iou_scores[0, 0].numpy()
     vis = lambda p, I=(0, 11, 12, 13, 14, 15, 16, 23, 24): [i for i in I if p[i, 2] > 0.4 and 0 <= p[i, 0] < W_ and 0 <= p[i, 1] < H_]
-    out = []
-    for k, p in enumerate(Ps):
+    geo, bases = [], []
+    for k, p in enumerate(Ps):   # 1) corps de chacun, d'abord tous : le voisin sert ensuite de limite
         s = float(np.linalg.norm(p[11, :2] - p[12, :2])) or 40.0; idx = vis(p) or [0, 11, 12]; xs, ys = p[idx, 0], p[idx, 1]
         box = [max(0, xs.min() - 0.6 * s), max(0, p[0, 1] - 1.4 * s), min(W_ - 1, xs.max() + 0.6 * s), min(H_ - 1, ys.max() + 2.5 * s)]
         neg = [(q[i, 0], q[i, 1]) for j, q in enumerate(Ps) if j != k for i in vis(q)]
-        m = sam([(p[i, 0], p[i, 1]) for i in idx], neg, box, False)[0][0].astype(np.uint8)
+        bases.append(sam([(p[i, 0], p[i, 1]) for i in idx], neg, box, False)[0][0].astype(np.uint8)); geo.append((s, xs, ys, neg))
+    out = []
+    for k, p in enumerate(Ps):
+        s, xs, ys, neg = geo[k]; m = bases[k].copy()
         near = cv2.dilate(m, np.ones((int(0.15 * s) | 1,) * 2, np.uint8)).astype(bool)
         ancres = [(p[0, 0] + dx * s, p[0, 1] - dy * s, 1.2) for dx, dy in ((0, 0.9), (-0.6, 0.6), (0.6, 0.6), (0, 1.3))] + \
                  [(p[i, 0], p[i, 1], 0.7) for i in vis(p, (15, 16, 19, 20))]
-        for ax, ay, r in ancres:
+        for ax, ay, r in ancres:   # 2)
             bb = [max(0, ax - r * s), max(0, ay - r * s), min(W_ - 1, ax + r * s), min(H_ - 1, ay + r * s)]
             ms, sc = sam([(ax, ay)], neg, bb, True)
             dans = np.zeros((H_, W_), bool); dans[int(bb[1]):int(bb[3]) + 1, int(bb[0]):int(bb[2]) + 1] = True
             ok = [q for q, c in zip(ms, sc) if c > 0.6 and (q & near).any() and (q & ~dans).sum() < 0.03 * max(1, q.sum())]
             if ok: m |= max(ok, key=lambda q: q.sum()).astype(np.uint8)
-        hx, hy = p[0, :2]; c0, r0 = int(max(0, hx - 1.7 * s)), int(max(0, hy - 2.0 * s)); c1, r1 = int(min(W_, hx + 1.7 * s)), int(min(H_, hy + 0.8 * s))
-        if c1 - c0 > 8 and r1 - r0 > 8:
-            cr = np.ascontiguousarray(img[r0:r1, c0:c1]); kz = 512 / max(cr.shape[:2])
+        c0, c1 = int(max(0, xs.min() - 1.2 * s)), int(min(W_, xs.max() + 1.2 * s)); r0, r1 = int(max(0, p[0, 1] - 2.2 * s)), int(min(H_, ys.max() + 0.5 * s))
+        if c1 - c0 > 8 and r1 - r0 > 8:   # 3)
+            cr = np.ascontiguousarray(img[r0:r1, c0:c1]); kz = 768 / max(cr.shape[:2])
             rs = seg.segment(mp_.Image(image_format=mp_.ImageFormat.SRGB, data=np.ascontiguousarray(cv2.resize(cr, None, fx=kz, fy=kz, interpolation=cv2.INTER_CUBIC))))
             if rs.confidence_masks:
-                hair = cv2.resize(np.maximum(rs.confidence_masks[1].numpy_view(), rs.confidence_masks[5].numpy_view()), (c1 - c0, r1 - r0)) > 0.5
-                hair[int(max(0, p[[11, 12], 1].min() - r0)):] = False   # au-dessus des épaules seulement
-                full = np.zeros((H_, W_), np.uint8); full[r0:r1, c0:c1] = hair
-                n_, lab_ = cv2.connectedComponents(full); tou = cv2.dilate(m, np.ones((5, 5), np.uint8)).astype(bool)
+                full = np.zeros((H_, W_), np.uint8); full[r0:r1, c0:c1] = cv2.resize(1.0 - rs.confidence_masks[0].numpy_view(), (c1 - c0, r1 - r0)) > 0.5
+                for j in range(len(Ps)):
+                    if j != k: full[cv2.dilate(bases[j], np.ones((9, 9), np.uint8)) > 0] = 0
+                n_, lab_ = cv2.connectedComponents(full); tou = cv2.dilate(m, np.ones((int(0.15 * s) | 1,) * 2, np.uint8)).astype(bool)
                 for c in range(1, n_):
                     if (tou & (lab_ == c)).any(): m |= (lab_ == c).astype(np.uint8)
         # trous : seules les piqûres (motifs du pagne, 0,000–0,03 épaule²) sont bouchées ; la boucle du bras sur la hanche
@@ -190,7 +194,12 @@ for kk, (name, p) in enumerate(zip(names, P)):
     if not SAMM: m = m & (env | keep_low)
     n, lab = cv2.connectedComponents(m)
     sh = p[[11, 12], :2].mean(0).astype(int); l = lab[min(H - 1, sh[1]), min(W - 1, sh[0])]
-    if l > 0: m = (lab == l).astype(np.uint8)
+    if l > 0 and SAMM:
+        # silhouette SAM : les morceaux rattachés (mèches d'afro, peigne, téléphone) ne touchent pas toujours le corps pixel à
+        # pixel — gardés s'ils sont à moins de 0,15 épaule du corps, sinon ils restaient dans la plaque (afro coupée en deux)
+        pr = cv2.dilate((lab == l).astype(np.uint8), np.ones((int(0.15 * s0) | 1,) * 2, np.uint8)).astype(bool)
+        m = np.isin(lab, [c for c in range(1, n) if c == l or (pr & (lab == c)).any()]).astype(np.uint8)
+    elif l > 0: m = (lab == l).astype(np.uint8)
     if ALPHAS: m = (ALPHAS[kk] > 0.5).astype(np.uint8)   # découpe exacte du compositeur, sans l'enveloppe du squelette
     masks.append(m)
     s = float(np.linalg.norm(p[11, :2] - p[12, :2])); hx, hy = p[0, :2]
