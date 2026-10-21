@@ -4,13 +4,14 @@
  "appels_scenariste": 30,
  "secondes_scenariste": 8308.551339626312,
  "echecs_scenariste": 0,
- "appels_juge": 38,
+ "appels_juge": 44,
  "echecs_juge": 0,
  "brouillons_refuses_controle": 3,
  "planchers_v17": [
   0.463,
   0.383,
-  0.423
+  0.423,
+  0.455
  ],
  "notes": [
   0.539,
@@ -24,6 +25,11 @@
    "lieu": "Cérémonie",
    "accepte": false,
    "secondes": 3693
+  },
+  {
+   "lieu": "Cérémonie",
+   "accepte": false,
+   "secondes": 2509
   }
  ],
  "drole_v17": [
@@ -127,13 +133,13 @@
    "jetons_par_s": 4.3
   },
   "juge": {
-   "appels": 40,
+   "appels": 46,
    "tronques": 0,
-   "lus_jetons": 375,
-   "cache_jetons": 144,
-   "lecture_s": 36.7,
-   "ecriture_jetons": 70,
-   "ecriture_s": 19.9,
+   "lus_jetons": 372,
+   "cache_jetons": 151,
+   "lecture_s": 36.4,
+   "ecriture_jetons": 71,
+   "ecriture_s": 20.3,
    "jetons_par_s": 3.5
   }
  }
