@@ -18,10 +18,15 @@ BIBLIO = os.path.realpath(os.path.expanduser(os.environ.get('MASSAMBA_BIBLIO', '
 M = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/'
 TEINT_MAX = 40.0   # L* de peau (niveau_v1.teint) : V1 ≈ 32 ; scènes de l'épisode 4 mesurées 31,4 à 38,8 ; usine refusée 50 à 54
 LACET_MAX = 45.0   # au-delà, profil : la bouche et le choc final ne se lisent plus (gbaka-71 : −52°, refusé le 21/10)
+# PLAN À DEUX POSSIBLE (21/10/2026, épisode 4 : salon en champ-contrechamp, plan médian 2,3 s contre 3,5 s pour la V1) : écart
+# horizontal des nez ≤ ECART_MAX × largeur d'un cadre vertical 9:16 de toute la hauteur — marché 0,76 (plan à deux tenu),
+# gbaka-91 0,89, salon-81 1,07 (impossible : une coupe par réplique)
+ECART_MAX = 0.8
 STYLE = ("3D animated feature film still in the style of Pixar, warm cinematic lighting, sharp focus everywhere, no depth of field "
          "blur. Black West African characters with dark brown skin, both faces turned three-quarters towards the camera, faces "
-         "large and clearly visible, eyes open, mouths closed, standing about one metre apart, NOT touching each other, arms "
-         "away from the body, full bodies visible from head to feet, no text, no letters, no logo, no other people. ")
+         "large and clearly visible, eyes open, mouths closed, standing close together near the centre of the image, about half a metre "
+         "apart, NOT touching each other, arms away from the body, full bodies visible from head to feet, no text, no letters, no logo, "
+         "no other people. ")
 
 
 def dessine(nom, description, graines):
@@ -68,6 +73,8 @@ def visages_lisibles(img, n):
                 R = np.array(r.facial_transformation_matrixes[0])[:3, :3]; lacet = float(np.degrees(np.arctan2(R[0, 2], R[2, 2]))); break
         lus.append(lacet)
     PL.close(); FL.close()
+    xs = sorted(float(n[0]) for n in nez); ecart = (xs[-1] - xs[0]) / (H * 9 / 16) if len(xs) >= 2 else 0.0
+    visages_lisibles.ecart = ecart
     return sum(1 for l in lus if l is not None and abs(l) <= LACET_MAX), lus
 
 
@@ -80,8 +87,10 @@ def teint_ok(chemin, n):
 def choisit(variantes, n):
     for v in variantes:
         img = cv2.cvtColor(cv2.imread(v), cv2.COLOR_BGR2RGB); lus, lacets = visages_lisibles(img, n); t, L = teint_ok(v, n)
-        print(os.path.basename(v), ': visages', lus, '/', n, [None if x is None else round(x) for x in lacets], '; teint', [round(x, 1) for x in L])
-        if lus >= n and t: return v
+        ec = getattr(visages_lisibles, 'ecart', 0.0)
+        print(os.path.basename(v), ': visages', lus, '/', n, [None if x is None else round(x) for x in lacets], '; teint', [round(x, 1) for x in L],
+              '; écart des visages', round(ec, 2))
+        if lus >= n and t and ec <= ECART_MAX: return v
     return None
 
 

@@ -65,6 +65,26 @@ def _texte_double(dr, xy, txt, f, couleur=(255, 255, 255), dec=2, ancre='la'):
 
 
 TITRES = {'PETIT', 'PETITE', 'GRAND', 'GRAND-PÈRE', 'GRAND-MÈRE', 'MONSIEUR', 'MADAME', 'MAÎTRE', 'SŒUR', 'AGENT', 'DOCTEUR', 'LE', 'LA'}
+MOTS_VIDES = {'LE', 'LA', 'LES', 'DU', 'DE', 'DES', 'UN', 'UNE', 'EN', 'ET', 'AU', 'AUX'}
+
+
+def mot_titre(titre):
+    """premier mot qui compte d'un titre de sketch : « LES TRESSES EN ROUTE » → « TRESSES », « L'INFLUENCEUSE DU MARCHÉ » →
+    « INFLUENCEUSE », « MISS CÔTE D'IVOIRE… DE DOS » → « MISS »."""
+    for m in titre.upper().replace('…', ' ').split():
+        m = m.split("'")[-1].split('’')[-1].strip('.,!?:;')
+        if m and m not in MOTS_VIDES: return m
+    return titre.upper()
+
+
+def vote_choix(chuteurs, titres):
+    """VOTE SANS DOUBLON (21/10/2026, épisode 4 : « 1 JOSIANE 2 MAMAN 3 JOSIANE ») : quand un même personnage porte deux chutes,
+    on vote pour le sketch (mot de son titre) et non plus pour le personnage → (question à l'écran, choix, début de légende)."""
+    noms = [nom_court(n) for n in chuteurs]
+    if len(set(noms)) == len(noms) or len(titres) != len(noms): return 'QUI EST LE PLUS MALIN ?', noms, 'Le plus malin'
+    return 'QUEL SKETCH EST LE MEILLEUR ?', [mot_titre(t) for t in titres], 'Le meilleur sketch'
+
+
 def nom_court(n):
     """nom lisible d'un coup d'œil : « PETIT MAMADOU » → « MAMADOU », « BAYE NDIAYE » → « BAYE », « TANTIE AWA » reste entier."""
     m = n.upper().split()
@@ -85,7 +105,8 @@ def _lignes(txt, f, largeur):
 class Habillage:
     def __init__(self, W, H, clip_y, ch, sketchs, total, safe_gauche=32, safe_droite=None, fps=30, chutes=(), vote=None, t_vote=None):
         self.W, self.H, self.y0, self.y1, self.total, self.fps = W, H, clip_y, clip_y + ch, total, fps
-        self.vote_noms = [nom_court(n) for n in (vote or [])]; self.t_vote = t_vote if t_vote is not None else total - FIN_S - 1.0
+        _tit = [s_.get('titre', '') for s_ in sketchs] if sketchs and isinstance(sketchs[0], dict) else []
+        self.vote_question, self.vote_noms, _ = vote_choix(vote or [], _tit) if vote else ('', [], ''); self.t_vote = t_vote if t_vote is not None else total - FIN_S - 1.0
         self.sg, self.sd = safe_gauche, (safe_droite if safe_droite is not None else W - 64)
         self.sk = [(s['t0'], s['t1'], (s.get('titre') or '').upper()) for s in sketchs]
         self.chutes = sorted(chutes)   # instants des prises de choc (jeu.prise_t) : un émoji animé jaillit sur chaque chute
@@ -243,7 +264,7 @@ class Habillage:
         if k not in self._cache:
             h = self.H - self.y1; im = Image.new('RGBA', (self.W, h), (0, 0, 0, 0)); dr = ImageDraw.Draw(im)
             cx = (self.sg + self.sd) / 2; larg = self.sd - self.sg
-            _texte_double(dr, (cx, 44), 'QUI EST LE PLUS MALIN ?', police(34), couleur=JAUNE, dec=2, ancre='mm')
+            _texte_double(dr, (cx, 44), self.vote_question, police(34), couleur=JAUNE, dec=2, ancre='mm')
             choix = '   '.join(f'{i + 1} {n}' for i, n in enumerate(self.vote_noms))
             for sz in (30, 27, 24, 21, 18):
                 f = police(sz, b'Bold')

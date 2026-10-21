@@ -77,7 +77,8 @@ def variantes(H, ep=None, m=None):
     ch = [r['qui'] for s in H.get('sketchs', []) for r in s.get('repliques', [])[-1:] if r.get('chute')]
     if len(ch) >= 2:
         import marque as _mq
-        vote = 'Le plus malin : ' + ', '.join(f'{i + 1} {_mq.nom_court(n).capitalize()}' for i, n in enumerate(ch)) + ' ? Réponds en commentaire 👇'
+        _vq, _vc, _vl = _mq.vote_choix(ch, [s.get('titre', '') for s in H.get('sketchs', []) if s.get('repliques', [{}])[-1].get('chute')])
+        vote = _vl + ' : ' + ', '.join(f'{i + 1} {c.capitalize()}' for i, c in enumerate(_vc)) + ' ? Réponds en commentaire 👇'
         V = {k: (f"{tete} 😂\n{vote}" if k == 'camp' else f'{v}\n{vote}') for k, v in V.items()}
     return {k: f'{v}\n{pied}' for k, v in V.items()}
 

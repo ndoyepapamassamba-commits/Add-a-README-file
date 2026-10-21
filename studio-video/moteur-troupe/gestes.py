@@ -142,6 +142,26 @@ def prepare(img, alpha, pts, visage_box, bbox=None):
         if garde.sum() < 40: continue
         bras_m = cv2.GaussianBlur(cv2.dilate(garde.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(np.float32), (0, 0), 1.0)
         nue = float(garde[(s > 0.2) & (s < 0.9) & (d < 0.25 * lf)].mean()) if ((s > 0.2) & (s < 0.9) & (d < 0.25 * lf)).any() else 0.0
+        # OBJET TENU (21/10/2026, « la brosse de la coiffeuse est détachée ») : le calque ne gardait que la PEAU du bras ; la tête
+        # de la brosse de Josiane (pas de la peau) restait au corps et flottait à côté du poing dès que la main bougeait. Les
+        # morceaux de la découpe de l'acteur qui ne sont pas de la peau, touchent la main, sont du côté de la main (au-delà des
+        # trois quarts de l'avant-bras), restent petits et ne sortent pas de la boîte du bras (une robe, un tablier y sortent)
+        # suivent désormais la main : brosse, téléphone tenu à bout de bras, billet.
+        # Cherché seulement au-delà du poignet (s > 0,8, à moins de 1,8 avant-bras de la main) : dans la découpe entière, la brosse
+        # brune de Josiane (59, 43, 42, prise pour de la peau) tenait au corps par la chevelure et le poing ; dans cette zone,
+        # un objet tenu en est entièrement contenu, une robe ou une chevelure en touche le bord et reste au corps.
+        Rz = (s > 0.8) & (np.hypot(xs - main[0], ys - main[1]) < 1.8 * lf)
+        # le liseré du bras (bord anticrénelé, pas assez « peau ») est retiré : il reliait la brosse au bord de la zone
+        obj = (np.clip(alpha[y0:y1, x0:x1], 0, 1) > 0.5) & ~(pk > 0.5) & ~(cv2.dilate(garde.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0) & Rz
+        if obj.any():
+            n2, lab2, st2, _ = cv2.connectedComponentsWithStats(obj.astype(np.uint8))
+            pres = cv2.dilate(garde.astype(np.uint8), np.ones((7, 7), np.uint8)) > 0; gs = int(garde.sum())
+            bordz = Rz & ~(cv2.erode(Rz.astype(np.uint8), np.ones((3, 3), np.uint8)) > 0)
+            for k in range(1, n2):
+                comp = lab2 == k
+                if st2[k, cv2.CC_STAT_AREA] <= 1.5 * gs and (comp & pres).any() and not (comp & bordz).any():
+                    garde |= comp
+            bras_m = cv2.GaussianBlur(cv2.dilate(garde.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(np.float32), (0, 0), 1.0)
         if nue >= 0.4:   # avant-bras nu : le calque va du coude au bout des doigts, fondu au coude
             piv = E; fondu = np.where(s > 1.0, 1.0, _lisse(s, 0.06, 0.32))
         else:            # manche : seule la main pivote, au poignet

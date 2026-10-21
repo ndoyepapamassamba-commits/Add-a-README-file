@@ -214,7 +214,8 @@ HAB = marque.Habillage(W, H, CLIP_Y, CH_, T['sketchs'], T['total'], SAFE['left']
                        t_vote=max(_fin_paroles + 0.3, T['total'] - marque.FIN_S - 1.0))
 # légende de publication : accroche, mots-clés de la chaîne, crédit CC-BY des voix (attribution exigée par la licence)
 _tit = ' · '.join(s_['titre'].capitalize() for s_ in T['sketchs'] if s_.get('titre'))
-_q = ('Le plus malin : ' + ', '.join(f'{i + 1} {marque.nom_court(n).capitalize()}' for i, n in enumerate(_chuteurs)) + ' ? Réponds en commentaire 👇'
+_vq, _vc, _vl = marque.vote_choix(_chuteurs, [s_.get('titre', '') for s_ in T['sketchs']])
+_q = (_vl + ' : ' + ', '.join(f'{i + 1} {c.capitalize()}' for i, c in enumerate(_vc)) + ' ? Réponds en commentaire 👇'
       if len(_chuteurs) >= 2 else 'Tu es team qui ? Dis-le en commentaire 👇')
 open(f'{D}/legende.txt', 'w', encoding='utf-8').write(f"{_tit} 😂🤣\n{_q}\nEnvoie-la à celui qui fait pareil 😂\n"
     f"#drole #comedy #funny #humour #afrique #pourtoi #fyp\n\nCrédits — {credit}\n")

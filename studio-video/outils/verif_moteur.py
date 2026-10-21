@@ -1264,6 +1264,27 @@ try:
 except Exception as e:
     echecs.append(f'visages (voie rapide) : {e}')
 
+# 21/10/2026 — « la brosse de la coiffeuse est détachée » (épisode 4) : un objet tenu (brosse, peigne, téléphone) qui touche la
+# main entre dans le calque de l'avant-bras et suit le geste ; vote sans doublon (« 1 JOSIANE 2 MAMAN 3 JOSIANE ») ; scène
+# générée refusée si les personnages sont trop écartés pour un plan à deux (salon-81 : 1,07, une coupe par réplique)
+try:
+    _g52 = open(os.path.join(ICI, 'moteur-troupe', 'gestes.py'), encoding='utf-8').read()
+    _r52 = open(os.path.join(ICI, 'moteur-troupe', 'prepare_rig.py'), encoding='utf-8').read()
+    _v52 = int(_re48.search(r'^VERSION_BRAS = ([0-9]+)', _r52, _re48.M).group(1))
+    _e52 = float(_re48.search(r'^ECART_MAX = ([0-9.]+)', _t50, _re48.M).group(1))
+    sys.path.insert(0, os.path.join(ICI, 'moteur-troupe')); import marque as _mq52
+    _a52 = _mq52.vote_choix(['JOSIANE', 'MAMAN AKISSI', 'JOSIANE'], ["MISS CÔTE D'IVOIRE… DE DOS", "L'INFLUENCEUSE DU MARCHÉ", 'LES TRESSES EN ROUTE'])
+    _b52 = _mq52.vote_choix(['JOSIANE', 'MAMAN AKISSI', 'PRINCESSE'], ['A', 'B', 'C'])
+    if 'OBJET TENU' not in _g52 or 'connectedComponentsWithStats(obj' not in _g52 or _v52 < 6:
+        echecs.append(f'gestes : objet tenu hors du calque de la main (VERSION_BRAS {_v52})')
+    elif _a52[1] != ['MISS', 'INFLUENCEUSE', 'TRESSES'] or _b52[0] != 'QUI EST LE PLUS MALIN ?' or len(set(_b52[1])) != 3:
+        echecs.append(f'vote : doublon possible ({_a52[1]}, {_b52[1]})')
+    elif _e52 > 0.8 or 'visages_lisibles.ecart' not in _t50 or 'ec <= ECART_MAX' not in _t50:
+        echecs.append(f'scène générée : écart des personnages non contrôlé (ECART_MAX {_e52})')
+    else: print(f'objet tenu dans la main (bras v{_v52}), vote sans doublon {_a52[1]}, écart des personnages ≤ {_e52} : OK')
+except Exception as e:
+    echecs.append(f'objet tenu, vote, écart : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')
