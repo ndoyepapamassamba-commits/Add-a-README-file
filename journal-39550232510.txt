@@ -1,0 +1,52 @@
+=== grand-pere-ndiaye--hausser (at_runtime)
+[V] lora /home/runner/work/_temp/m/lora/fastwan.safetensors:1.00 --- diffusion_engine.cpp:1922
+[I] load /home/runner/work/_temp/m/lora/fastwan.safetensors using safetensors format --- model_loader.cpp:222
+[V] init from '/home/runner/work/_temp/m/lora/fastwan.safetensors', prefix = 'lora.' --- model_loader.cpp:290
+[I] apply lora at runtime --- diffusion_engine.cpp:1837
+[I] apply_loras completed, taking 0.07s --- diffusion_engine.cpp:1962
+[I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 1.68s --- vae.hpp:310
+[I] encode_first_stage completed, taking 1685 ms --- video.cpp:985
+[I] loading tensors completed, taking 0.00s (read: 0.00s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 10747 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 10.75s --- video.cpp:1212
+[I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.01s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] using mmap for '/home/runner/work/_temp/m/lora/fastwan.safetensors' --- model_loader.cpp:896
+[I] sampling completed, taking 270.50s --- video.cpp:1712
+[I] generating latent video completed, taking 270.51s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 17.56s --- vae.hpp:384
+[I] decode_first_stage completed, taking 17.56s --- video.cpp:1243
+[I] runtime_lora_models: --- diffusion_engine.cpp:1902
+[I] (1099 / 1099) LoRA tensors have been applied, lora_file_path = /home/runner/work/_temp/m/lora/fastwan.safetensors --- lora.hpp:1044
+[I] generate_video completed in 300.64s --- video.cpp:1944
+=== le-frimeur--ecouter (at_runtime)
+[V] computing vae encode graph completed, taking 1.33s --- vae.hpp:310
+[I] encode_first_stage completed, taking 1327 ms --- video.cpp:985
+[V] computing condition graph completed, taking 10951 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 10.95s --- video.cpp:1212
+[I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 271.24s --- video.cpp:1712
+[I] generating latent video completed, taking 271.26s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 17.01s --- vae.hpp:384
+[I] decode_first_stage completed, taking 17.01s --- video.cpp:1243
+[I] generate_video completed in 300.68s --- video.cpp:1944
+=== docteur-sylla--rire (at_runtime)
+[V] computing vae encode graph completed, taking 1.30s --- vae.hpp:310
+[I] encode_first_stage completed, taking 1301 ms --- video.cpp:985
+[V] computing condition graph completed, taking 10847 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 10.85s --- video.cpp:1212
+[I] sampling completed, taking 270.22s --- video.cpp:1712
+[I] generating latent video completed, taking 270.24s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 16.50s --- vae.hpp:384
+[I] decode_first_stage completed, taking 16.50s --- video.cpp:1243
+[I] generate_video completed in 299.02s --- video.cpp:1944
+=== coach-diabate--ecouter (at_runtime)
+[V] computing vae encode graph completed, taking 1.26s --- vae.hpp:310
+[I] encode_first_stage completed, taking 1258 ms --- video.cpp:985
+[V] computing condition graph completed, taking 10824 ms --- conditioner.hpp:1608
+[I] get_learned_condition completed, taking 10.82s --- video.cpp:1212
+[I] sampling completed, taking 270.29s --- video.cpp:1712
+[I] generating latent video completed, taking 270.31s --- video.cpp:1856
+[V] computing vae decode graph completed, taking 16.55s --- vae.hpp:384
+[I] decode_first_stage completed, taking 16.55s --- video.cpp:1243
+[I] generate_video completed in 299.08s --- video.cpp:1944
