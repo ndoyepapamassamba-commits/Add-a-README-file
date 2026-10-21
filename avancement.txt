@@ -32,3 +32,4 @@
 [1338 s] 16 clips · === maitre-kone--colere (at_runtime)   |============>                                     | 1/4 - 134.48s/it[K · mémoire libre 13796 Mo
 [1460 s] 16 clips · === maitre-kone--colere (at_runtime)   |============>                                     | 1/4 - 134.48s/it[K · mémoire libre 13786 Mo
 [1581 s] 16 clips · === maitre-kone--colere (at_runtime)   |=========================>                        | 2/4 - 134.02s/it[K · mémoire libre 13788 Mo
+[1703 s] 16 clips · === maitre-kone--colere (at_runtime)   |=====================================>            | 3/4 - 133.61s/it[K · mémoire libre 13780 Mo
