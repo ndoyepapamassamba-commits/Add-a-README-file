@@ -7,3 +7,4 @@
 [852 s] 2 clips · === petite-aya--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13767 Mo
 [974 s] 2 clips · === petite-aya--mentir (at_runtime)   |============>                                     | 1/4 - 94.91s/it[K · mémoire libre 13762 Mo
 [1095 s] 2 clips · === petite-aya--mentir (at_runtime)   |=========================>                        | 2/4 - 93.77s/it[K · mémoire libre 13758 Mo
+[1217 s] 2 clips · === petite-aya--mentir (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13382 Mo
