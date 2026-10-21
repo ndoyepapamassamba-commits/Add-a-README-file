@@ -15,3 +15,4 @@
 [606 s] 1 images · === decor-lagune-large-jour   |=====================================>            | 3/4 - 156.69s/it[K · mémoire libre 7000 Mo
 [728 s] 2 images · === maison-mecano-issa-chambre-large-jour   |==================================================| 4/4 - 156.47s/it[K · mémoire libre 11542 Mo
 [849 s] 2 images · === maison-mecano-issa-chambre-large-jour   |==================================================| 4/4 - 156.47s/it[K · mémoire libre 7026 Mo
+[971 s] 2 images · === maison-mecano-issa-chambre-large-jour   |============>                                     | 1/4 - 161.80s/it[K · mémoire libre 7004 Mo
