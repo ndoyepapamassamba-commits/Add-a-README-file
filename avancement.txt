@@ -65,3 +65,4 @@
 [487 s] 7 images · === fiche-mecano-issa   |=========================>                        | 2/4 - 169.57s/it[K · mémoire libre 6699 Mo
 [608 s] 7 images · === fiche-mecano-issa   |=====================================>            | 3/4 - 169.43s/it[K · mémoire libre 6699 Mo
 [729 s] 7 images · === fiche-mecano-issa   |==================================================| 4/4 - 169.94s/it[K · mémoire libre 7337 Mo
+[851 s] 8 images · === perso-mecano-issa   |==================================================| 4/4 - 169.94s/it[K · mémoire libre 6601 Mo
