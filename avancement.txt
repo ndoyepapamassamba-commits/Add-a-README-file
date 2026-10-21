@@ -51,3 +51,4 @@
 [5097 s] 5 images · === decor-maquis-champ-jour   |============>                                     | 1/4 - 162.35s/it[K · mémoire libre 7031 Mo
 [5219 s] 5 images · === decor-maquis-champ-jour   |=========================>                        | 2/4 - 157.06s/it[K · mémoire libre 7029 Mo
 [5340 s] 5 images · === decor-maquis-champ-jour   |=========================>                        | 2/4 - 157.06s/it[K · mémoire libre 7026 Mo
+[5461 s] 5 images · === decor-maquis-champ-jour   |=====================================>            | 3/4 - 156.87s/it[K · mémoire libre 7034 Mo
