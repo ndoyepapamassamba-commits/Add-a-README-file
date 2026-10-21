@@ -16,3 +16,4 @@
 [729 s] 2 images · === maison-fatou-cuisine-large-jour   |=====================================>            | 3/4 - 82.44s/it[K · mémoire libre 7009 Mo
 [850 s] 3 images · === perso-tata-prisca   |==================================================| 4/4 - 83.14s/it[K · mémoire libre 6297 Mo
 [972 s] 3 images · === perso-tata-prisca   |==================================================| 4/4 - 83.14s/it[K · mémoire libre 6293 Mo
+[1093 s] 3 images · === perso-tata-prisca   |============>                                     | 1/4 - 219.11s/it[K · mémoire libre 6286 Mo
