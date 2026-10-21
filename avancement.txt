@@ -49,3 +49,4 @@
 [1093 s] 15 clips · === petite-khadija--mentir (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13869 Mo
 [123 s] 15 clips · === agent-gora--montrer (at_runtime)  · mémoire libre 13799 Mo
 [244 s] 15 clips · === agent-gora--montrer (at_runtime)   |============>                                     | 1/4 - 134.14s/it[K · mémoire libre 13790 Mo
+[366 s] 15 clips · === agent-gora--montrer (at_runtime)   |=========================>                        | 2/4 - 133.44s/it[K · mémoire libre 13793 Mo
