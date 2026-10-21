@@ -19,3 +19,4 @@
 [1336 s] 8 clips · === mecano-issa--montrer (at_runtime)   |============>                                     | 1/4 - 134.70s/it[K · mémoire libre 13797 Mo
 [1457 s] 8 clips · === mecano-issa--montrer (at_runtime)   |============>                                     | 1/4 - 134.70s/it[K · mémoire libre 13776 Mo
 [1578 s] 8 clips · === mecano-issa--montrer (at_runtime)   |=========================>                        | 2/4 - 133.87s/it[K · mémoire libre 13790 Mo
+[1699 s] 8 clips · === mecano-issa--montrer (at_runtime)   |=====================================>            | 3/4 - 134.04s/it[K · mémoire libre 13796 Mo
