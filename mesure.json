@@ -175,6 +175,13 @@
    "lora": "at_runtime",
    "secondes": 579,
    "memoire_max_go": 10.95
+  },
+  {
+   "clip": "agent-gora--parler@2",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 577,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39585702697"
