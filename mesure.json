@@ -24,6 +24,18 @@
    "h": 448,
    "memoire_max_go": 9.48,
    "run": "39514755738"
+  },
+  {
+   "tache": "maison-mecano-issa-cour-large-jour",
+   "version": 1,
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 697,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.48,
+   "run": "39517651050"
   }
  ]
 }

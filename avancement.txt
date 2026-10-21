@@ -17,3 +17,4 @@
 [364 s] 2 images · === maison-mecano-issa-cour-large-jour   |=========================>                        | 2/4 - 157.52s/it[K · mémoire libre 6977 Mo
 [486 s] 2 images · === maison-mecano-issa-cour-large-jour   |=========================>                        | 2/4 - 157.52s/it[K · mémoire libre 6977 Mo
 [607 s] 2 images · === maison-mecano-issa-cour-large-jour   |=====================================>            | 3/4 - 157.19s/it[K · mémoire libre 6969 Mo
+[728 s] 3 images · === perso-djecky   |==================================================| 4/4 - 157.25s/it[K · mémoire libre 11531 Mo
