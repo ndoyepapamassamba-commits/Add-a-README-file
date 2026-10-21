@@ -119,6 +119,13 @@
    "lora": "at_runtime",
    "secondes": 585,
    "memoire_max_go": 11.09
+  },
+  {
+   "clip": "yaya-lapprenti--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 582,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39550232510"
