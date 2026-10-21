@@ -46,3 +46,4 @@
 [244 s] 22 clips · === salif-le-parisien--rire (at_runtime)   |=====================================>            | 3/4 - 69.52s/it[K · mémoire libre 13771 Mo
 [366 s] 23 clips · === djecky--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13808 Mo
 [488 s] 23 clips · === djecky--ecouter (at_runtime)   |=========================>                        | 2/4 - 68.53s/it[K · mémoire libre 13800 Mo
+[609 s] 23 clips · === djecky--ecouter (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13914 Mo
