@@ -120,3 +120,4 @@
 [731 s] 13 images · === fiche-mademoiselle-rosine   |=====================================>            | 3/4 - 212.88s/it[K · mémoire libre 6690 Mo
 [852 s] 13 images · === fiche-mademoiselle-rosine   |=====================================>            | 3/4 - 212.88s/it[K · mémoire libre 6691 Mo
 [974 s] 13 images · === perso-mademoiselle-rosine   |==================================================| 4/4 - 213.18s/it[K · mémoire libre 11672 Mo
+[1095 s] 13 images · === perso-mademoiselle-rosine   |==================================================| 4/4 - 213.18s/it[K · mémoire libre 6636 Mo
