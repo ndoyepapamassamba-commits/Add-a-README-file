@@ -20,3 +20,4 @@
 [1334 s] 2 images · === maison-la-voisine-chambre-large-jour   |=====================================>            | 3/4 - 156.47s/it[K · mémoire libre 6935 Mo
 [1456 s] 3 images · === perso-petite-aya   |==================================================| 4/4 - 156.50s/it[K · mémoire libre 6971 Mo
 [1577 s] 3 images · === perso-petite-aya   |==================================================| 4/4 - 156.50s/it[K · mémoire libre 6310 Mo
+[1699 s] 3 images · === perso-petite-aya   |==================================================| 4/4 - 156.50s/it[K · mémoire libre 6305 Mo
