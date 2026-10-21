@@ -57,3 +57,4 @@
 [486 s] 17 clips · === le-tonton--rire (at_runtime)   |=====================================>            | 3/4 - 133.32s/it[K · mémoire libre 13770 Mo
 [608 s] 18 clips · === maman-brigitte--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14558 Mo
 [729 s] 18 clips · === maman-brigitte--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13810 Mo
+[851 s] 18 clips · === maman-brigitte--parler (at_runtime)   |============>                                     | 1/4 - 134.53s/it[K · mémoire libre 13777 Mo
