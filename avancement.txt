@@ -70,3 +70,4 @@
 [852 s] 22 clips · === djecky--parler (at_runtime)   |============>                                     | 1/4 - 136.72s/it[K · mémoire libre 13820 Mo
 [973 s] 22 clips · === djecky--parler (at_runtime)   |=========================>                        | 2/4 - 134.19s/it[K · mémoire libre 13810 Mo
 [1094 s] 22 clips · === djecky--parler (at_runtime)   |=====================================>            | 3/4 - 134.45s/it[K · mémoire libre 13811 Mo
+[122 s] 23 clips · === patron-sery--hausser (at_runtime)   |============>                                     | 1/4 - 69.04s/it[K · mémoire libre 13769 Mo
