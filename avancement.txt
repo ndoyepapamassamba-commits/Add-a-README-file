@@ -17,3 +17,4 @@
 [2063 s] 7 clips · === adjoua--montrer (at_runtime)   |============>                                     | 1/4 - 136.09s/it[K · mémoire libre 13746 Mo
 [2185 s] 7 clips · === adjoua--montrer (at_runtime)   |=========================>                        | 2/4 - 135.48s/it[K · mémoire libre 13755 Mo
 [2306 s] 7 clips · === adjoua--montrer (at_runtime)   |=========================>                        | 2/4 - 135.48s/it[K · mémoire libre 13756 Mo
+[2427 s] 7 clips · === adjoua--montrer (at_runtime)   |=====================================>            | 3/4 - 135.53s/it[K · mémoire libre 13762 Mo
