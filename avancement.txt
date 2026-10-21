@@ -57,3 +57,4 @@
 [851 s] 15 clips · === boubacar--mentir (at_runtime)   |============>                                     | 1/4 - 135.01s/it[K · mémoire libre 13782 Mo
 [972 s] 15 clips · === boubacar--mentir (at_runtime)   |=========================>                        | 2/4 - 134.39s/it[K · mémoire libre 13777 Mo
 [1094 s] 15 clips · === boubacar--mentir (at_runtime)   |=====================================>            | 3/4 - 134.27s/it[K · mémoire libre 13772 Mo
+[122 s] 16 clips · === maman-brigitte--choc@2 (at_runtime)  · mémoire libre 13763 Mo
