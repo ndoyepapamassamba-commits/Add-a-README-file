@@ -112,6 +112,13 @@
    "lora": "at_runtime",
    "secondes": 177,
    "memoire_max_go": 11.11
+  },
+  {
+   "clip": "madame-konan--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 174,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39545665602"
