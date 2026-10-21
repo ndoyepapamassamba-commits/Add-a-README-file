@@ -42,3 +42,4 @@
 [3886 s] 8 images · === decor-atelier-de-couture-champ-jour   |==================================================| 4/4 - 84.61s/it[K · mémoire libre 7035 Mo
 [4008 s] 8 images · === decor-atelier-de-couture-champ-jour   |=========================>                        | 2/4 - 82.31s/it[K · mémoire libre 7043 Mo
 [4130 s] 8 images · === decor-atelier-de-couture-champ-jour   |=====================================>            | 3/4 - 82.35s/it[K · mémoire libre 7042 Mo
+[4251 s] 9 images · === decor-rue-coin-jour   |==================================================| 4/4 - 82.07s/it[K · mémoire libre 7028 Mo
