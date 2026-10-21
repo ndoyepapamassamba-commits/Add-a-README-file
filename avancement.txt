@@ -38,3 +38,4 @@
 [852 s] 12 clips · === coach-diabate--mentir (at_runtime)   |=====================================>            | 3/4 - 67.73s/it[K · mémoire libre 13760 Mo
 [121 s] 13 clips · === dj-kevin--ecouter (at_runtime)  · mémoire libre 13769 Mo
 [243 s] 13 clips · === dj-kevin--ecouter (at_runtime)   |============>                                     | 1/4 - 134.12s/it[K · mémoire libre 13749 Mo
+[364 s] 13 clips · === dj-kevin--ecouter (at_runtime)   |=========================>                        | 2/4 - 133.71s/it[K · mémoire libre 13770 Mo
