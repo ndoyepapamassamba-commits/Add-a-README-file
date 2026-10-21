@@ -226,3 +226,4 @@ Sources du 14/10/2026 : [EMAGE (CVPR 2024)](https://openaccess.thecvf.com/conten
   coût) ; un design n'entre dans la galerie que validé par la skill `m365-verification` ; une méthode d'analyse n'entre
   dans `dossier.compose` que testée (vitest) et vérifiée contre le brief.
 - **Trace** : chaque passe = une ligne dans §4 + une note datée ; les refus (licence, qualité) sont consignés aussi.
+| 21/10/2026 | **Voix distinctes à grande échelle** | Mesure interne (pas de veille externe nécessaire : la contrainte est géométrique) : grille hauteur ×0,88–1,14 × timbre 0,72–0,88 au pas de distance 1 ≈ 17 voix d'homme par voix source ; 31 hommes dans la bible → troisième axe (étendue de l'intonation ±0,2) ajouté à `voix._toutes_distinctes`, voix existantes inchangées. Greffe suivante pour dépasser ~50 hommes : seconde voix source libre d'homme (siwis resserrée + voix clonées OpenSLR 57 déjà mesurées à 92 % le 17/10). | intégré |
