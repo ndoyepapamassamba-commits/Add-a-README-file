@@ -64,3 +64,4 @@
 [609 s] 21 clips · === general-zongo--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13785 Mo
 [730 s] 21 clips · === general-zongo--hausser (at_runtime)   |=========================>                        | 2/4 - 60.05s/it[K · mémoire libre 13774 Mo
 [851 s] 22 clips · === grand-pere-ndiaye--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13790 Mo
+[973 s] 22 clips · === grand-pere-ndiaye--colere (at_runtime)   |=========================>                        | 2/4 - 60.43s/it[K · mémoire libre 13788 Mo
