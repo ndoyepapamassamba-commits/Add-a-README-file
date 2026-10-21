@@ -1,12 +1,12 @@
 {
  "modele": "gptoss20",
  "part": 0,
- "appels_scenariste": 7,
- "secondes_scenariste": 96.39738035202026,
- "echecs_scenariste": 10,
+ "appels_scenariste": 13,
+ "secondes_scenariste": 176.31679677963257,
+ "echecs_scenariste": 19,
  "appels_juge": 2,
  "echecs_juge": 2,
- "brouillons_refuses_controle": 2,
+ "brouillons_refuses_controle": 4,
  "planchers_v17": [],
  "notes": [],
  "acceptes": 0,
@@ -20,6 +20,16 @@
    "lieu": "Cérémonie",
    "accepte": false,
    "secondes": 156
+  },
+  {
+   "lieu": "Hôpital",
+   "accepte": false,
+   "secondes": 96
+  },
+  {
+   "lieu": "Marché",
+   "accepte": false,
+   "secondes": 108
   }
  ],
  "reparations": [
@@ -34,7 +44,16 @@
   [
    3,
    0
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   1,
+   1
   ]
  ],
- "secondes_par_brouillon": 13.8
+ "brouillons_illisibles": 2,
+ "secondes_par_brouillon": 13.6
 }
