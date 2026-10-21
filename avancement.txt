@@ -10,3 +10,4 @@
 [122 s] 6 clips · === tata-prisca--choc (at_runtime)  · mémoire libre 13787 Mo
 [243 s] 6 clips · === tata-prisca--choc (at_runtime)   |============>                                     | 1/4 - 135.97s/it[K · mémoire libre 13796 Mo
 [364 s] 6 clips · === tata-prisca--choc (at_runtime)   |=========================>                        | 2/4 - 135.43s/it[K · mémoire libre 13782 Mo
+[486 s] 6 clips · === tata-prisca--choc (at_runtime)   |=====================================>            | 3/4 - 135.19s/it[K · mémoire libre 13788 Mo
