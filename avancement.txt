@@ -26,3 +26,4 @@
 [3158 s] 9 clips · === aminata--choc (at_runtime)   |============>                                     | 1/4 - 134.85s/it[K · mémoire libre 13787 Mo
 [3279 s] 9 clips · === aminata--choc (at_runtime)   |=========================>                        | 2/4 - 134.08s/it[K · mémoire libre 13787 Mo
 [3400 s] 9 clips · === aminata--choc (at_runtime)   |=====================================>            | 3/4 - 134.46s/it[K · mémoire libre 13786 Mo
+[122 s] 10 clips · === chef-traore--rire@2 (at_runtime)  · mémoire libre 13757 Mo
