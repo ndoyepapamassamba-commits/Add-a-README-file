@@ -28,3 +28,4 @@
 [123 s] 12 clips · === monsieur-diarra--hausser (at_runtime)  · mémoire libre 13745 Mo
 [244 s] 12 clips · === monsieur-diarra--hausser (at_runtime)   |============>                                     | 1/4 - 134.38s/it[K · mémoire libre 13750 Mo
 [365 s] 12 clips · === monsieur-diarra--hausser (at_runtime)   |=========================>                        | 2/4 - 134.35s/it[K · mémoire libre 13761 Mo
+[487 s] 12 clips · === monsieur-diarra--hausser (at_runtime)   |=====================================>            | 3/4 - 134.96s/it[K · mémoire libre 13754 Mo
