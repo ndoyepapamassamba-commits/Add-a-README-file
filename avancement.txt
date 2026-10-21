@@ -59,3 +59,4 @@
 [5951 s] 13 images · === decor-douane-large-nuit   |=========================>                        | 2/4 - 83.88s/it[K · mémoire libre 7040 Mo
 [6073 s] 13 images · === decor-douane-large-nuit   |=====================================>            | 3/4 - 83.41s/it[K · mémoire libre 7032 Mo
 [123 s] 13 images · === fiche-tata-prisca  · mémoire libre 6685 Mo
+[245 s] 13 images · === fiche-tata-prisca  · mémoire libre 6675 Mo
