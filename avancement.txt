@@ -93,3 +93,4 @@
 [3399 s] 6 images · === fiche-sorciere-mama-dede   |=====================================>            | 3/4 - 195.10s/it[K · mémoire libre 6725 Mo
 [3520 s] 7 images · === perso-sorciere-mama-dede   |==================================================| 4/4 - 195.11s/it[K · mémoire libre 6621 Mo
 [3642 s] 7 images · === perso-sorciere-mama-dede   |==================================================| 4/4 - 195.11s/it[K · mémoire libre 6233 Mo
+[3763 s] 7 images · === perso-sorciere-mama-dede   |==================================================| 4/4 - 195.11s/it[K · mémoire libre 6231 Mo
