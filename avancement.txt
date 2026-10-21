@@ -77,3 +77,4 @@
 [609 s] 22 clips · === maman-brigitte--rire@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14568 Mo
 [731 s] 22 clips · === maman-brigitte--rire@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13793 Mo
 [853 s] 22 clips · === maman-brigitte--rire@2 (at_runtime)   |============>                                     | 1/4 - 136.87s/it[K · mémoire libre 13793 Mo
+[974 s] 22 clips · === maman-brigitte--rire@2 (at_runtime)   |=========================>                        | 2/4 - 135.62s/it[K · mémoire libre 13782 Mo
