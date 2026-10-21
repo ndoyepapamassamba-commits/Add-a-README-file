@@ -98,6 +98,13 @@
    "lora": "at_runtime",
    "secondes": 417,
    "memoire_max_go": 11.13
+  },
+  {
+   "clip": "madame-konan--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 421,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39545665602"
