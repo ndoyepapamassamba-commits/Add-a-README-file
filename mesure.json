@@ -98,6 +98,13 @@
    "lora": "at_runtime",
    "secondes": 584,
    "memoire_max_go": 11.1
+  },
+  {
+   "clip": "maman-brigitte--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 581,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39543580560"
