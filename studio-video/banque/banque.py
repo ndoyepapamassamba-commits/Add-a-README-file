@@ -40,25 +40,42 @@ def taches(qui=None):
             for p in (qui or personnages()) for g, (po, c) in GESTES.items()]
 
 
-def poses(planche, dossier):
-    """Les 5 poses d'une planche, de gauche à droite, sur leur fond vert d'origine, au format vertical de Wan (384×640)."""
+def boites(planche):
+    """Boîtes (x0, x1) des poses de la planche, de gauche à droite, et la correspondance geste → pose.
+    21/10/2026 — par COMPOSANTES CONNEXES de la silhouette (plus par colonnes : un bras tendu au-dessus de la pose voisine
+    fusionnait deux poses ; Coumba et Koffi donnaient 3 blocs au lieu de 5). Un bloc où des poses se touchent est coupé selon
+    la largeur d'une pose seule (Maman Nounou 3 blocs → 5 poses, Tantie Awa 4 → 5). Une planche à 4 poses (la bible en dessine
+    parfois 4 : Grand-père Ndiaye, sans haussement d'épaules) prête sa 4e pose au haussement et au rire ; en dessous de
+    3 poses lisibles, repli historique : 5 parts égales."""
     import cv2, numpy as np
-    im = cv2.imread(planche); hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV); vert_bgr = (0, 255, 0)
+    im = cv2.imread(planche); H, W = im.shape[:2]; hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
     vert = (hsv[..., 0] > 35) & (hsv[..., 0] < 85) & (hsv[..., 1] > 120) & (hsv[..., 2] > 80)
-    col = (~vert).sum(0) > 3; segs = []; x = 0; W = len(col)
-    while x < W:                                   # colonnes occupées → silhouettes (les écarts verts les séparent)
-        if col[x]:
-            s = x
-            while x < W and col[x]: x += 1
-            segs.append([s, x])
-        x += 1
-    segs = [s for s in segs if s[1] - s[0] > 25]
-    while len(segs) > 5:                           # morceaux d'une même pose (main tendue) : on recolle les plus proches
-        i = min(range(len(segs) - 1), key=lambda k: segs[k + 1][0] - segs[k][1]); segs[i] = [segs[i][0], segs[i + 1][1]]; del segs[i + 1]
-    if len(segs) < 5:                              # poses qui se touchent : on coupe la planche en 5 parts égales
-        segs = [[k * W // 5, (k + 1) * W // 5] for k in range(5)]
-    os.makedirs(dossier, exist_ok=True); sorties = []
-    for k, (a, b) in enumerate(segs[:5]):
+    m = cv2.morphologyEx((~vert).astype(np.uint8), cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    n, lab, st, _ = cv2.connectedComponentsWithStats(m)
+    blocs = sorted((int(st[i, 0]), int(st[i, 0] + st[i, 2])) for i in range(1, n) if st[i, 3] >= 0.4 * H)
+    if blocs:
+        larg = [b - a for a, b in blocs]; mini = min(larg)
+        unite = float(np.median([l for l in larg if l < 1.6 * mini]))
+        poses_ = []
+        for (a, b) in blocs:
+            k = max(1, int(round((b - a) / unite)))
+            poses_ += [(a + (b - a) * j // k, a + (b - a) * (j + 1) // k) for j in range(k)]
+    else:
+        poses_ = []
+    if len(poses_) < 3: poses_ = [(k * W // 5, (k + 1) * W // 5) for k in range(5)]
+    poses_ = poses_[:5]
+    carte = list(range(5)) if len(poses_) == 5 else [0, 1, 2, len(poses_) - 1, len(poses_) - 1] if len(poses_) == 4 else [0, 1, 2, 2, 2]
+    return poses_, carte
+
+
+def poses(planche, dossier):
+    """Les 5 poses d'une planche (dans l'ordre des gestes), sur fond vert, au format vertical de Wan (384×640)."""
+    import cv2, numpy as np
+    im = cv2.imread(planche); hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV); vert_bgr = (0, 255, 0); W = im.shape[1]
+    vert = (hsv[..., 0] > 35) & (hsv[..., 0] < 85) & (hsv[..., 1] > 120) & (hsv[..., 2] > 80)
+    segs, carte = boites(planche)
+    os.makedirs(dossier, exist_ok=True); faites = []
+    for k, (a, b) in enumerate(segs):
         c = im[:, max(0, a - 12):min(W, b + 12)].copy()
         v = vert[:, max(0, a - 12):min(W, b + 12)]          # bouts des poses voisines : seule la grande silhouette reste
         n, lab, st, _ = cv2.connectedComponentsWithStats((~v).astype(np.uint8))
@@ -70,8 +87,8 @@ def poses(planche, dossier):
         r = min(600 / h, 360 / w); c = cv2.resize(c, (int(w * r), int(h * r)), interpolation=cv2.INTER_AREA)
         toile = np.full((640, 384, 3), vert_bgr, np.uint8); h, w = c.shape[:2]
         y0, x0 = 640 - h - 20, (384 - w) // 2; toile[y0:y0 + h, x0:x0 + w] = c
-        f = os.path.join(dossier, f'pose{k}.png'); cv2.imwrite(f, toile); sorties.append(f)
-    return sorties
+        f = os.path.join(dossier, f'pose{k}.png'); cv2.imwrite(f, toile); faites.append(f)
+    return [faites[carte[g]] for g in range(5)]
 
 
 if __name__ == '__main__':

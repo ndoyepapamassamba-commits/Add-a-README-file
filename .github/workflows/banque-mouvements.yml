@@ -21,15 +21,26 @@ defaults:
 env:
   SD_CPP: 0518b34374761cb82aeda5ad3c2f0686fdad2cec
   HF: https://huggingface.co
-  PARTS: 20
 jobs:
+  plan:   # autant de machines que de clips, 20 au plus (les machines gratuites d'un compte sont plafonnées à 20 en même temps)
+    runs-on: ubuntu-24.04
+    outputs: { parts: '${{ steps.p.outputs.parts }}', nb: '${{ steps.p.outputs.nb }}' }
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        run: |
+          python3 -c "
+          import json; n = len(json.load(open('studio-video/banque/demandes/demande.json'))); k = max(1, min(20, n))
+          print(f'parts={json.dumps(list(range(k)))}'); print(f'nb={k}'); print(n, 'clips,', k, 'machines', file=__import__('sys').stderr)" >> $GITHUB_OUTPUT
   part:
+    needs: plan
     runs-on: ubuntu-24.04
     timeout-minutes: 340
+    env: { PARTS: '${{ needs.plan.outputs.nb }}' }
     strategy:
       fail-fast: false
       matrix:
-        part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+        part: ${{ fromJSON(needs.plan.outputs.parts) }}
     steps:
       - uses: actions/checkout@v4
       - name: Processeur de la machine
