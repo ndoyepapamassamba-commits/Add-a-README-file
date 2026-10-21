@@ -50,3 +50,4 @@
 [4371 s] 5 images · === perso-yaya-lapprenti   |=====================================>            | 3/4 - 293.95s/it[K · mémoire libre 6221 Mo
 [4492 s] 5 images · === perso-yaya-lapprenti   |==================================================| 4/4 - 291.08s/it[K · mémoire libre 6844 Mo
 [4613 s] 6 images · === decor-bureau-champ-jour   |==================================================| 4/4 - 291.08s/it[K · mémoire libre 7115 Mo
+[4736 s] 6 images · === decor-bureau-champ-jour   |============>                                     | 1/4 - 122.68s/it[K · mémoire libre 6978 Mo
