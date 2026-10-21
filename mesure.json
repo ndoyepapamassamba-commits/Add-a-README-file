@@ -26,6 +26,18 @@
    "h": 448,
    "memoire_max_go": 9.48,
    "run": "39517651050"
+  },
+  {
+   "tache": "maison-mecano-issa-salon-large-jour",
+   "version": 2,
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 694,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.48,
+   "run": "39517651050"
   }
  ]
 }

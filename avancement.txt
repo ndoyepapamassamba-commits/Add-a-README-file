@@ -15,3 +15,4 @@
 [1824 s] 2 images · === maison-mecano-issa-salon-large-jour   |=========================>                        | 2/4 - 155.44s/it[K · mémoire libre 7053 Mo
 [1946 s] 2 images · === maison-mecano-issa-salon-large-jour   |=====================================>            | 3/4 - 155.64s/it[K · mémoire libre 7044 Mo
 [2067 s] 2 images · === maison-mecano-issa-salon-large-jour   |==================================================| 4/4 - 155.45s/it[K · mémoire libre 6741 Mo
+[2188 s] 3 images · === perso-petite-khadija   |==================================================| 4/4 - 155.45s/it[K · mémoire libre 6610 Mo
