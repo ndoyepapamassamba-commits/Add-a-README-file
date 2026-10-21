@@ -84,3 +84,4 @@
 [2673 s] 22 clips · === sorciere-mama-dede--hausser (at_runtime)   |=========================>                        | 2/4 - 133.36s/it[K · mémoire libre 13747 Mo
 [2794 s] 22 clips · === sorciere-mama-dede--hausser (at_runtime)   |=====================================>            | 3/4 - 133.36s/it[K · mémoire libre 13751 Mo
 [123 s] 22 clips · === sorciere-mama-dede--hausser (at_runtime)  · mémoire libre 13777 Mo
+[245 s] 22 clips · === sorciere-mama-dede--hausser (at_runtime)   |============>                                     | 1/4 - 133.95s/it[K · mémoire libre 13744 Mo
