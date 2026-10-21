@@ -31,3 +31,4 @@
 [2670 s] 3 images · === perso-professeur-samba   |=====================================>            | 3/4 - 398.33s/it[K · mémoire libre 6280 Mo
 [2792 s] 3 images · === perso-professeur-samba   |=====================================>            | 3/4 - 398.33s/it[K · mémoire libre 6280 Mo
 [2913 s] 3 images · === perso-professeur-samba   |=====================================>            | 3/4 - 398.33s/it[K · mémoire libre 6282 Mo
+[3034 s] 3 images · === perso-professeur-samba   |=====================================>            | 3/4 - 398.33s/it[K · mémoire libre 6280 Mo
