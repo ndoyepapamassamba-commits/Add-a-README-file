@@ -80,3 +80,4 @@
 [974 s] 22 clips · === maman-brigitte--rire@2 (at_runtime)   |=========================>                        | 2/4 - 135.62s/it[K · mémoire libre 13782 Mo
 [1097 s] 22 clips · === maman-brigitte--rire@2 (at_runtime)   |=====================================>            | 3/4 - 135.66s/it[K · mémoire libre 13781 Mo
 [1219 s] 23 clips · === le-frimeur--ecouter@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13780 Mo
+[1340 s] 23 clips · === le-frimeur--ecouter@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13777 Mo
