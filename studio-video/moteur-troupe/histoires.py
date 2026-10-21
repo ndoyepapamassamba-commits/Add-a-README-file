@@ -51,6 +51,12 @@ def distributions(disponibles):
 
 
 JEUX = ['accuse', 'innocent', 'malice', 'panique', 'choc', 'marchande', 'soupcon', 'frime', 'rire', 'camera', 'neutre']
+# 21/10/2026 08:20 (« Match à la t-shirt », accepté au tour 14 avec 5 répliques « neutre » sur 8) : le modèle invente des jeux hors
+# liste ; ils étaient comptés comme joués puis ramenés à « neutre » APRÈS le contrôle. Les plus courants vont au geste voisin.
+JEU_VOISIN = {'surprise': 'choc', 'surpris': 'choc', 'stupeur': 'choc', 'colere': 'accuse', 'colère': 'accuse', 'reproche': 'accuse',
+              'moquerie': 'malice', 'ironie': 'malice', 'ruse': 'malice', 'peur': 'panique', 'inquiet': 'panique', 'joie': 'rire',
+              'amuse': 'rire', 'fierte': 'frime', 'fierté': 'frime', 'vantard': 'frime', 'doute': 'soupcon', 'soupçon': 'soupcon',
+              'mefiance': 'soupcon', 'méfiance': 'soupcon', 'negocie': 'marchande', 'innocence': 'innocent'}
 
 # Parler ivoirien populaire, FAMILIAL (sens tirés du Wiktionnaire, annexe « Liste de mots nouchis » ; mots crus écartés).
 LEXIQUE = {'barre': 'mille francs CFA', 'gbêss': 'cinq cents francs', 'gbonhon': 'cinq mille francs', 'plomb': 'cent francs',
@@ -314,6 +320,9 @@ def controle(h, lieu, deja=(), fmt='sketch'):
     if len({r.get('qui') for r in R}) < 2: d.append('un seul personnage parle')
     # 21/10/2026 (« La Douane du Gâteau », 1er sketch accepté sur la machine) : 7 répliques sur 7 jouées « neutre » → le même geste
     # « parler » d'un bout à l'autre de la vidéo. Plus de la moitié en « neutre » : à réparer (un appel), le jeu choisit le geste.
+    for r in R:   # jeu hors liste : geste voisin, sinon « neutre » — AVANT le compte (il passait pour joué)
+        j = str(r.get('jeu') or 'neutre').strip().lower()
+        r['jeu'] = j if j in JEUX else JEU_VOISIN.get(j, 'neutre')
     neutres = sum(1 for r in R if r.get('jeu', 'neutre') == 'neutre')
     if R and neutres * 2 > len(R): d.append(f"{neutres} répliques sur {len(R)} jouées « neutre » : donne à chacune un jeu parmi "
                                          f"{', '.join(j for j in JEUX if j != 'neutre')}")
@@ -343,8 +352,6 @@ def controle(h, lieu, deja=(), fmt='sketch'):
     if w: d.append('wolof interdit : ' + ', '.join(w))
     c_ = _contient(tout, CRU)
     if c_: d.append('mot cru : ' + ', '.join(c_))
-    for r in R:
-        if r.get('jeu') not in JEUX: r['jeu'] = 'neutre'
     return d
 
 

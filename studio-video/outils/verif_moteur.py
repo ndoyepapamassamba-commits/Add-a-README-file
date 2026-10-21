@@ -677,6 +677,20 @@ try:
 except Exception as e:
     echecs.append(f'consigne du juge : {e}')
 
+# jeux inventés (21/10/2026 08:20, « Match à la t-shirt ») : un jeu hors liste compte comme « neutre » dans le contrôle (il passait
+# pour joué puis devenait « neutre ») ; les plus courants vont au geste voisin ; aucune alerte sur la V17
+try:
+    _l26 = next(iter(_h14.LIEUX)); _a26 = _h14.LIEUX[_l26]['acteurs']
+    _s26 = lambda js: {'repliques': [{'qui': _a26[i % 2], 'texte': 'Ehhh, c’est comment, hein ?', 'jeu': j} for i, j in enumerate(js)]}
+    _h26 = _s26(['neutre', 'xyz', 'abc', 'malice']); _d26 = _h14.controle(_h26, _l26, fmt='blague')
+    _v26 = _s26(['Surprise', 'colère', 'neutre', 'rire']); _e26 = _h14.controle(_v26, _l26, fmt='blague')
+    if not any('jouées « neutre »' in x for x in _d26): echecs.append(f'jeux inventés : 3 neutres de fait sur 4 non vus ({_d26})')
+    if [r['jeu'] for r in _v26['repliques']] != ['choc', 'accuse', 'neutre', 'rire'] or any('neutre' in x for x in _e26):
+        echecs.append(f"jeux inventés : geste voisin faux {[r['jeu'] for r in _v26['repliques']]}")
+    print('jeux inventés : comptés « neutre » avant le contrôle, surprise → choc, colère → accuse : OK')
+except Exception as e:
+    echecs.append(f'jeux inventés : {e}')
+
 # pas deux fois le même geste (21/10/2026) : départ du clip d'écoute propre à chaque vidéo, continu d'une réplique à l'autre
 try:
     import assemble as _as15
