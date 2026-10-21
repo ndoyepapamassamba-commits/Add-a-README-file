@@ -18,3 +18,4 @@
 [2189 s] 5 clips · === petit-ibrahima--choc (at_runtime)   |============>                                     | 1/4 - 91.67s/it[K · mémoire libre 13652 Mo
 [2310 s] 5 clips · === petit-ibrahima--choc (at_runtime)   |=========================>                        | 2/4 - 91.24s/it[K · mémoire libre 13649 Mo
 [2432 s] 5 clips · === petit-ibrahima--choc (at_runtime)   |=====================================>            | 3/4 - 92.60s/it[K · mémoire libre 13653 Mo
+[123 s] 6 clips · === chef-traore--mentir@2 (at_runtime)  · mémoire libre 13764 Mo
