@@ -97,3 +97,4 @@
 [487 s] 8 images · === fiche-djecky   |============>                                     | 1/4 - 249.36s/it[K · mémoire libre 6710 Mo
 [609 s] 8 images · === fiche-djecky   |=========================>                        | 2/4 - 248.17s/it[K · mémoire libre 6695 Mo
 [730 s] 8 images · === fiche-djecky   |=========================>                        | 2/4 - 248.17s/it[K · mémoire libre 6701 Mo
+[852 s] 8 images · === fiche-djecky   |=====================================>            | 3/4 - 250.58s/it[K · mémoire libre 6684 Mo
