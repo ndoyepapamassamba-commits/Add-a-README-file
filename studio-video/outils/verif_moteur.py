@@ -1136,6 +1136,30 @@ try:
 except Exception as e:
     echecs.append(f'usine (orphelins) : {e}')
 
+# 21/10/2026 — banque v22 : la rétention du cache des clips lisait la date d'un temporaire qu'un voisin venait de renommer
+try:
+    import camera_v1 as _cv44, numpy as _np44
+    _d44 = tempfile.mkdtemp(dir='/dev/shm', prefix='lit-verif-') if os.path.isdir('/dev/shm') else None
+    if _d44:
+        for _k in range(4): _np44.save(f'{_d44}/a.lit-{_k:012x}.npy', _np44.zeros((64, 64), _np44.uint8))
+        _np44.save(f'{_d44}/a.lit-{9:012x}.4242.npy', _np44.zeros(8, _np44.uint8))
+        _st44, _n44 = os.stat, [0]
+        def _course44(p, *a, **kw):
+            _n44[0] += 1
+            if _n44[0] == 2: os.remove(p)
+            return _st44(p, *a, **kw)
+        _pl44 = _cv44.LIT_PLAFOND; os.stat = _course44; _cv44.LIT_PLAFOND = 5000; _e44 = None
+        try: _cv44._retention_lit(_d44)
+        except Exception as e: _e44 = e
+        finally: os.stat = _st44; _cv44.LIT_PLAFOND = _pl44
+        _r44 = sorted(os.listdir(_d44)); shutil.rmtree(_d44, ignore_errors=True)
+        if _e44 or 'a.lit-000000000009.4242.npy' not in _r44 or len(_r44) != 2:
+            echecs.append(f'cache des clips : course entre processus non tenue ({_e44!r}, restent {_r44})')
+        else:
+            print('cache des clips : fichier disparu en cours de rétention sauté, temporaire d\'un voisin épargné : OK')
+except Exception as e:
+    echecs.append(f'cache des clips (course) : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

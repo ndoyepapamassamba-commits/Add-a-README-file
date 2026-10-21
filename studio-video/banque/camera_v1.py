@@ -21,7 +21,7 @@
 #    (16 → 24 i/s sans image répétée une fois sur deux).
 # Rendu image par image en numpy (positions au sous-pixel : la caméra ne saute jamais d'un pixel entier), puis ffmpeg pour le
 # fond, les titres et le son (assemble.segment).
-import json, math, os, subprocess, sys
+import json, math, os, re, subprocess, sys
 import numpy as np, cv2
 
 ICI = os.path.dirname(os.path.abspath(__file__))
@@ -515,8 +515,15 @@ def _retention_lit(d):
     """garde le cache en mémoire partagée sous LIT_PLAFOND : les variantes les moins récemment écrites partent d'abord (un
     fichier encore ouvert par un rendu reste lisible jusqu'à sa fermeture)."""
     if not d.startswith('/dev/shm'): return
-    F = sorted((os.path.getmtime(p), os.path.getsize(p), p) for p in (os.path.join(d, x) for x in os.listdir(d)) if p.endswith('.npy'))
-    tot = sum(s for _, s, _ in F)
+    # COURSE ENTRE PROCESSUS (21/10/2026, banque v22) : un voisin renomme son fichier temporaire (.lit-<clé>.<pid>.npy) ou
+    # efface une variante entre la liste et la lecture de sa date — FileNotFoundError, rendu arrêté. Les temporaires ne sont
+    # pas comptés, un fichier disparu est sauté
+    F = []
+    for x in os.listdir(d):
+        if not x.endswith('.npy') or re.search(r'\.lit-[0-9a-f]{12}\.\d+\.npy$', x): continue
+        try: st = os.stat(os.path.join(d, x)); F.append((st.st_mtime, st.st_size, os.path.join(d, x)))
+        except FileNotFoundError: pass
+    F.sort(); tot = sum(s for _, s, _ in F)
     for _, s, p in F:
         if tot <= LIT_PLAFOND: break
         try: os.remove(p); tot -= s
@@ -532,10 +539,12 @@ def lit_clip(mov, w, h, flip, gains, tete=True, sens=1.0):
     import hashlib, lacet_banque, peau
     cle = f"{os.path.basename(mov)}|{os.path.getmtime(mov):.0f}|{w}x{h}|{int(bool(flip))}|{float(sens):+.3f}|{tuple(round(float(g), 3) for g in gains)}|{int(bool(tete))}|{LIT_VERSION}.{lacet_banque.VERSION}.{lacet_banque.SIGMA}.{peau.VERSION}"
     d = _dossier_lit(mov); f = os.path.join(d, f"{os.path.basename(mov)[:-4]}.lit-{hashlib.sha1(cle.encode()).hexdigest()[:12]}.npy")
-    if os.path.isfile(f): return np.load(f, mmap_mode='r')
+    try: return np.load(f, mmap_mode='r')
+    except FileNotFoundError: pass   # absent, ou effacé par la rétention d'un voisin entre-temps : préparé ici
     F = _prepare_clip(mov, w, h, flip, gains, tete, sens)
     tmp = f'{f[:-4]}.{os.getpid()}.npy'; np.save(tmp, F); os.replace(tmp, f); _retention_lit(d)
-    return np.load(f, mmap_mode='r')
+    try: return np.load(f, mmap_mode='r')
+    except FileNotFoundError: return F
 
 
 def _prepare_clip(mov, w, h, flip, gains, tete, sens):
