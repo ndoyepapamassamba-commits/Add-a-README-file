@@ -638,6 +638,29 @@ try:
 except Exception as e:
     echecs.append(f'emplacements du serveur : {e}')
 
+# registre commun des chutes (21/10/2026) : empreintes BLAKE2b à clé des trigrammes — même ressemblance que sur le texte, la
+# reformulation d'une chute d'une AUTRE machine est refusée (irréparable), une chute neuve passe, aucun mot dans l'empreinte
+try:
+    _k24 = _h14.cle_empreinte('essai-verif-moteur'); _a24, _b24 = 'Dans la sauce grée, mon djê !', 'Mon djê ? Dans la sauce grée !'
+    _ea24, _eb24 = _h14.empreinte(_a24, _k24), _h14.empreinte(_b24, _k24)
+    if abs(len(_ea24 & _eb24) / len(_ea24 | _eb24) - _h14.ressemblance(_a24, _b24)) > 1e-9: echecs.append('registre commun : ressemblance changée par l’empreinte')
+    if any(g in ' '.join(_ea24) for g in ('sau', 'djê', 'grée')): echecs.append('registre commun : texte lisible dans l’empreinte')
+    _sv24 = (_h14.CLE_EMPREINTE, _h14.CHUTES_AUTRES, _h14.DOUBLONS_AILLEURS[0])
+    try:
+        _h14.CLE_EMPREINTE, _h14.CHUTES_AUTRES = _k24, [_ea24]
+        _l24 = next(iter(_h14.LIEUX)); _ac24 = _h14.LIEUX[_l24]['acteurs']
+        _s24 = lambda c: {'repliques': [{'qui': _ac24[0], 'texte': 'Ehhh, la sauce est où, hein ?', 'jeu': 'soupcon'},
+                                        {'qui': _ac24[1], 'texte': c, 'jeu': 'malice', 'chute': True}]}
+        _d24a = _h14.controle(_s24(_b24), _l24, fmt='blague'); _d24b = _h14.controle(_s24('Sourd aux dettes, pas aux barres !'), _l24, fmt='blague')
+        _n24 = _h14.DOUBLONS_AILLEURS[0] - _sv24[2]
+    finally:
+        _h14.CLE_EMPREINTE, _h14.CHUTES_AUTRES, _h14.DOUBLONS_AILLEURS[0] = _sv24
+    if 'chute déjà utilisée' not in _d24a or 'chute déjà utilisée' in _d24b or _n24 != 1:
+        echecs.append(f'registre commun : reformulation {_d24a}, chute neuve {_d24b}, doublons comptés {_n24}')
+    print('registre commun des chutes : reformulation d’une autre machine refusée, chute neuve acceptée, texte illisible : OK')
+except Exception as e:
+    echecs.append(f'registre commun des chutes : {e}')
+
 # pas deux fois le même geste (21/10/2026) : départ du clip d'écoute propre à chaque vidéo, continu d'une réplique à l'autre
 try:
     import assemble as _as15

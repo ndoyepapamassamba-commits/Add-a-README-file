@@ -110,6 +110,8 @@ jobs:
         if: matrix.modele == 'gptoss20'
         run: pip install -q cryptography numpy opencv-python-headless
       - name: Histoires de la part ${{ matrix.part }} (${{ matrix.modele }})
+        # registre commun des chutes (21/10) : empreintes BLAKE2b à clé, clé tirée de ce secret, jamais écrite (histoires.deja_ailleurs)
+        env: { HISTOIRES_CLE_CHUTES: '${{ secrets.FABRIQUE_CLE }}' }
         run: |
           O=$RUNNER_TEMP/sortie; B=histoires-sortie-${{ matrix.modele }}-${{ matrix.part }}
           # la branche de sortie est reprise si elle existe (une relance n'efface plus les sketchs acceptés aux tours précédents)

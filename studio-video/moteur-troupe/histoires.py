@@ -14,7 +14,7 @@
 # 5. ÉCHELLE : le meilleur brouillon affronte le CHAMPION en duel (JEV « lequel fait le plus rire ? », dans les deux ordres
 #    pour annuler le biais de position) ; il n'entre au registre que s'il gagne. Chaque histoire acceptée est donc plus drôle
 #    que la précédente pour le même juge ; un tour perdu renvoie au scénariste les faiblesses relevées.
-import json, os, re, sys, time, uuid, base64, unicodedata, urllib.request
+import json, os, re, sys, time, uuid, base64, hashlib, unicodedata, urllib.request
 import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
@@ -336,7 +336,7 @@ def controle(h, lieu, deja=(), fmt='sketch'):
         if len(mots(c)) > 8: d.append(f'chute de {len(mots(c))} mots (8 au plus)')
         acc = {w for w in mots(R[0]['texte']) if len(w) > 3}
         if F['rappel'] and not acc & {w for w in mots(c) if len(w) > 3}: d.append("la chute ne reprend aucun mot de l'accroche (pas de rappel)")
-        if any(ressemblance(c, x) >= SEUIL_DOUBLON for x in deja): d.append('chute déjà utilisée')
+        if any(ressemblance(c, x) >= SEUIL_DOUBLON for x in deja) or deja_ailleurs(c): d.append('chute déjà utilisée')
     tout = ' '.join(r.get('texte', '') for r in R)
     if len(_contient(tout, MARQUES)) < (1 if fmt == 'blague' else 2): d.append('pas assez de marques du parler ivoirien')
     w = _contient(tout, WOLOF)
@@ -364,6 +364,35 @@ def _trigrammes(t):
 
 def ressemblance(a, b):
     A, B = _trigrammes(a), _trigrammes(b); return len(A & B) / max(1, len(A | B))
+
+
+# REGISTRE COMMUN DES CHUTES ENTRE MACHINES (21/10/2026) — risque « 10 000 » du rapport du matin : chaque machine ne connaissait que
+# ses propres chutes, deux machines pouvaient accepter la même blague. Les textes restent scellés pour Claude (dépôt public) :
+# chaque machine publie l'EMPREINTE de ses chutes, chaque trigramme de caractères haché par BLAKE2b à clé, clé tirée du secret de
+# la fabrique par HKDF — méthode des clés de liaison cryptographiques (Schnell et al. 2009 ; clkhash 0.18.3, Apache-2.0 :
+# bloomfilter.py l. 248-258 blake_hash_token, key_derivation.py l. 20 hkdf), sans le filtre de Bloom : l'ensemble des trigrammes
+# hachés garde EXACTEMENT la ressemblance de Jaccard ci-dessus (même seuil), sans exposer un mot.
+CLE_EMPREINTE = None    # posée par histoires_tourne (secret de la machine) ; sans clé, pas de contrôle entre machines
+CHUTES_AUTRES = []      # empreintes des chutes acceptées sur toutes les machines (histoires-sortie-*)
+DOUBLONS_AILLEURS = [0]
+
+
+def cle_empreinte(secret):
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+    return HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b'massamba-chutes-v1').derive(secret.encode())
+
+
+def empreinte(t, cle):
+    return frozenset(hashlib.blake2b(g.encode(), key=cle, digest_size=8).hexdigest() for g in _trigrammes(t))
+
+
+def deja_ailleurs(c):
+    if not (CLE_EMPREINTE and CHUTES_AUTRES): return False
+    E = empreinte(c, CLE_EMPREINTE)
+    if any(len(E & e) / max(1, len(E | e)) >= SEUIL_DOUBLON for e in CHUTES_AUTRES):
+        DOUBLONS_AILLEURS[0] += 1; return True
+    return False
 
 
 # RÉPARER AU LIEU DE JETER (21/10/2026) — duel des scénaristes sur les machines GitHub : 11 brouillons du scénariste actuel sur 11

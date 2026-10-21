@@ -35,6 +35,26 @@ def lieux_de_la_part(part, parts):
     return [d for i, d in enumerate(D) if i % parts == part]
 
 
+def empreintes_des_machines(sortie):
+    """registre commun (histoires.CHUTES_AUTRES) : les empreintes publiées par toutes les machines sur leurs branches
+    histoires-sortie-* (poussées toutes les 5 min par le workflow), plus celles de cette machine, reprises de sa branche."""
+    import subprocess
+    depot = os.path.abspath(os.path.join(ICI, '..', '..'))
+    def g(*a): return subprocess.run(['git', '-C', depot, *a], capture_output=True, text=True, timeout=120).stdout
+    E = []
+    try:
+        g('fetch', '-q', 'origin', '+refs/heads/histoires-sortie-*:refs/remotes/origin/histoires-sortie-*')
+        for b in g('for-each-ref', '--format=%(refname:short)', 'refs/remotes/origin/histoires-sortie-*').split():
+            for f in g('ls-tree', '--name-only', b).split():
+                if f.startswith('chutes-') and f.endswith('.json'):
+                    E += json.loads(g('show', f'{b}:{f}') or '{}').get('empreintes', [])
+    except Exception as e:
+        print(f'registre commun des chutes injoignable : {e}', flush=True)
+    for f in os.listdir(sortie):
+        if f.startswith('chutes-') and f.endswith('.json'): E += json.load(open(os.path.join(sortie, f))).get('empreintes', [])
+    return list({frozenset(e) for e in E})
+
+
 def main(modele, part, parts, minutes, sortie, pub_claude):
     part, parts, fin = int(part), int(parts), time.time() + float(minutes) * 60
     pub = coffre._pub(pub_claude); os.makedirs(sortie, exist_ok=True)
@@ -90,8 +110,15 @@ def main(modele, part, parts, minutes, sortie, pub_claude):
         if dr: H.DROLE_MIN = min(dr)
         stats['drole_v17'] = dr; stats['choc_v17'] = [n['choc'] for n in nv if n]
         journal(f"porte V17 : drôle {dr} → au moins {H.DROLE_MIN}/4 pour aller au plancher"); ecrit()
+    # registre commun des chutes (histoires.deja_ailleurs) : clé tirée du secret de la fabrique, jamais écrite nulle part
+    secret = os.environ.get('HISTOIRES_CLE_CHUTES', '')
+    H.CLE_EMPREINTE = H.cle_empreinte(secret) if secret else None
+    mes_chutes = os.path.join(sortie, f'chutes-{modele}-{part}.json')
+    miennes = json.load(open(mes_chutes)).get('empreintes', []) if os.path.exists(mes_chutes) else []
     L = lieux_de_la_part(part, parts); k = 0
     while L and time.time() + MARGE < fin:
+        if H.CLE_EMPREINTE:
+            H.CHUTES_AUTRES = empreintes_des_machines(sortie); stats['chutes_registre_commun'] = len(H.CHUTES_AUTRES)
         lieu, acteurs = L[k % len(L)]
         acteurs = sorted(random.Random(f'{lieu}-{k}').sample(acteurs, min(DISTRIBUTION_MAX, len(acteurs))))
         cle = H.distribution(lieu, acteurs); dossier = os.path.join(clair, f'{slug(lieu)}-{k}'); os.makedirs(dossier, exist_ok=True)
@@ -103,10 +130,13 @@ def main(modele, part, parts, minutes, sortie, pub_claude):
             h = json.load(open(os.path.join(dossier, f'{i}.json'), encoding='utf-8'))
             h['scenariste'] = modele
             H.CHUTES_DEJA.extend(r['texte'] for r in h['repliques'] if r.get('chute'))   # plus de reformulation sur cette machine
+            if H.CLE_EMPREINTE:   # et sur les autres : l'empreinte part avec la prochaine poussée de la branche
+                miennes += [sorted(H.empreinte(r['texte'], H.CLE_EMPREINTE)) for r in h['repliques'] if r.get('chute')]
+                json.dump({'empreintes': miennes}, open(mes_chutes, 'w'))
             # nom propre à chaque tour de machines (GITHUB_RUN_ID) : une relance n'écrase plus les sketchs déjà acceptés
             open(os.path.join(sortie, f"histoire-{modele}-{part}-{os.environ.get('GITHUB_RUN_ID', 'local')}-{k}.msb"), 'wb').write(
                 coffre.scelle_octets(json.dumps(h, ensure_ascii=False).encode(), pub))
-        k += 1; ecrit()
+        stats['doublons_autres_machines'] = H.DOUBLONS_AILLEURS[0]; k += 1; ecrit()
     ecrit(); print(json.dumps({k: v for k, v in stats.items() if k != 'lieux'}, ensure_ascii=False), flush=True)
 
 
