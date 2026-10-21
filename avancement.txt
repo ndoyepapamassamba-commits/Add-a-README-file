@@ -49,3 +49,4 @@
 [610 s] 20 clips · === maman-brigitte--rire (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13239 Mo
 [731 s] 21 clips · === sur-awa--mentir (at_runtime)   |============>                                     | 1/4 - 68.97s/it[K · mémoire libre 13785 Mo
 [123 s] 21 clips · === madame-konan--mentir (at_runtime)  · mémoire libre 13770 Mo
+[245 s] 21 clips · === madame-konan--mentir (at_runtime)   |============>                                     | 1/4 - 134.79s/it[K · mémoire libre 13777 Mo
