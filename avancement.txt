@@ -88,3 +88,4 @@
 [1948 s] 24 clips · === mademoiselle-rosine--rire@2 (at_runtime)   |============>                                     | 1/4 - 135.70s/it[K · mémoire libre 13782 Mo
 [2069 s] 24 clips · === mademoiselle-rosine--rire@2 (at_runtime)   |=========================>                        | 2/4 - 135.14s/it[K · mémoire libre 13771 Mo
 [2191 s] 24 clips · === mademoiselle-rosine--rire@2 (at_runtime)   |=========================>                        | 2/4 - 135.14s/it[K · mémoire libre 13781 Mo
+[2312 s] 24 clips · === mademoiselle-rosine--rire@2 (at_runtime)   |=====================================>            | 3/4 - 135.53s/it[K · mémoire libre 13781 Mo
