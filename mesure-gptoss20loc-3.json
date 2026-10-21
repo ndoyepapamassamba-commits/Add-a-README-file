@@ -1,8 +1,8 @@
 {
  "modele": "gptoss20loc",
  "part": 3,
- "appels_scenariste": 78,
- "secondes_scenariste": 14990.237094640732,
+ "appels_scenariste": 81,
+ "secondes_scenariste": 15736.715335607529,
  "echecs_scenariste": 0,
  "appels_juge": 72,
  "echecs_juge": 0,
@@ -229,20 +229,32 @@
   [
    3,
    1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   5,
+   3
   ]
  ],
  "brouillons_illisibles": 7,
  "doublons_autres_machines": 0,
- "secondes_par_brouillon": 192.2,
+ "secondes_par_brouillon": 194.3,
  "temps": {
   "scenariste": {
-   "appels": 78,
+   "appels": 81,
    "tronques": 0,
-   "lus_jetons": 533,
-   "cache_jetons": 1626,
-   "lecture_s": 48.9,
-   "ecriture_jetons": 753,
-   "ecriture_s": 134.9,
+   "lus_jetons": 542,
+   "cache_jetons": 1569,
+   "lecture_s": 49.1,
+   "ecriture_jetons": 761,
+   "ecriture_s": 136.0,
    "jetons_par_s": 5.6
   },
   "juge": {
