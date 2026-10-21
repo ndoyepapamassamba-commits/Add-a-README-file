@@ -11,3 +11,4 @@
 [1336 s] 6 clips · === petit-moussa--parler (at_runtime)   |============>                                     | 1/4 - 134.84s/it[K · mémoire libre 13746 Mo
 [1457 s] 6 clips · === petit-moussa--parler (at_runtime)   |============>                                     | 1/4 - 134.84s/it[K · mémoire libre 13748 Mo
 [1578 s] 6 clips · === petit-moussa--parler (at_runtime)   |=========================>                        | 2/4 - 134.30s/it[K · mémoire libre 13744 Mo
+[1699 s] 6 clips · === petit-moussa--parler (at_runtime)   |=====================================>            | 3/4 - 134.36s/it[K · mémoire libre 13747 Mo
