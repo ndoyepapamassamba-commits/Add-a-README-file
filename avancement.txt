@@ -33,3 +33,4 @@
 [2793 s] 5 images · === decor-ceremonie-champ-jour   |============>                                     | 1/4 - 90.81s/it[K · mémoire libre 7044 Mo
 [2915 s] 5 images · === decor-ceremonie-champ-jour   |=========================>                        | 2/4 - 85.39s/it[K · mémoire libre 7049 Mo
 [3036 s] 5 images · === decor-ceremonie-champ-jour   |==================================================| 4/4 - 86.67s/it[K · mémoire libre 5850 Mo
+[3158 s] 6 images · === decor-salon-coin-jour   |============>                                     | 1/4 - 89.12s/it[K · mémoire libre 7030 Mo
