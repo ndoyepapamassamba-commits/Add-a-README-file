@@ -1,2 +1,3 @@
 [121 s] 4 clips · === la-lyceenne--hausser (at_runtime)  · mémoire libre 13799 Mo
 [243 s] 4 clips · === la-lyceenne--hausser (at_runtime)   |============>                                     | 1/4 - 136.15s/it[K · mémoire libre 13774 Mo
+[364 s] 4 clips · === la-lyceenne--hausser (at_runtime)   |=========================>                        | 2/4 - 134.33s/it[K · mémoire libre 13776 Mo
