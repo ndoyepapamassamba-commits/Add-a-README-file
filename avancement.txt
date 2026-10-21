@@ -52,3 +52,4 @@
 [1093 s] 11 clips · === petite-khadija--colere (at_runtime)   |=====================================>            | 3/4 - 133.81s/it[K · mémoire libre 13761 Mo
 [1214 s] 12 clips · === madame-konan--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13778 Mo
 [122 s] 12 clips · === agent-gora--ecouter (at_runtime)   |=========================>                        | 2/4 - 39.76s/it[K · mémoire libre 13783 Mo
+[243 s] 13 clips · === tonton-dieng--rire (at_runtime)   |============>                                     | 1/4 - 39.97s/it[K · mémoire libre 13736 Mo
