@@ -13,3 +13,4 @@
 [1579 s] 8 clips · === aliou--ecouter (at_runtime)   |============>                                     | 1/4 - 80.54s/it[K · mémoire libre 13732 Mo
 [1701 s] 8 clips · === aliou--ecouter (at_runtime)   |=====================================>            | 3/4 - 79.88s/it[K · mémoire libre 13737 Mo
 [1822 s] 9 clips · === aminata--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13695 Mo
+[1943 s] 9 clips · === aminata--rire (at_runtime)   |============>                                     | 1/4 - 81.38s/it[K · mémoire libre 13702 Mo
