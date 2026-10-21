@@ -68,3 +68,4 @@
 [609 s] 22 clips · === djecky--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14589 Mo
 [730 s] 22 clips · === djecky--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13833 Mo
 [852 s] 22 clips · === djecky--parler (at_runtime)   |============>                                     | 1/4 - 136.72s/it[K · mémoire libre 13820 Mo
+[973 s] 22 clips · === djecky--parler (at_runtime)   |=========================>                        | 2/4 - 134.19s/it[K · mémoire libre 13810 Mo
