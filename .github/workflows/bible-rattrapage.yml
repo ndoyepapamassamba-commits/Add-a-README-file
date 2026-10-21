@@ -10,6 +10,8 @@
 # RATTRAPAGE (21/10/2026) : relance seulement les parts listées ci-dessous (même programme, mêmes branches, reprise sans rien refaire),
 # dans son propre groupe : la bible en cours n'est pas interrompue. Cause du 21/10 00:20 : part 1 tombée sur un moteur en cache
 # compilé pour un autre processeur (instruction illégale, code 132).
+# 21/10/2026 09:50 — TEINT : les 11 personnages plus clairs que la V1 (bible.PEAU, version montée) sont sur les parts 3, 4, 5, 9, 13,
+# 14, 15, 16, 18 et 19 ; chaque part ne refait que ses images de version montée (≈ 1 à 2 personnages).
 name: Bible V1 — rattrapage
 on:
   push:
@@ -31,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        part: [1]
+        part: [3, 4, 5, 9, 13, 14, 15, 16, 18, 19]
     steps:
       - uses: actions/checkout@v4
       - name: Processeur de la machine
