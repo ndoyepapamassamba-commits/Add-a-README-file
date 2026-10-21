@@ -125,7 +125,7 @@ def feuillage(V, t, psi=0.0):
                     float(ang + 14.0 * fr * math.sin(2 * math.pi * 1.7 * f_l * t + ph_l)), 0, 360, 1.0, -1)
     m = cv2.GaussianBlur(m, (0, 0), 0.0011 * W)                    # pénombre : feuilles à quelques mètres du mur (plus, la forme des feuilles se perd)
     m = cv2.resize(m, (W, H), interpolation=cv2.INTER_LINEAR)
-    return (1.0 - FORCE * np.clip(m, 0, 1) * V['poids']).astype(np.float32)
+    return (1.0 - V.get('force', FORCE) * np.clip(m, 0, 1) * V['poids']).astype(np.float32)
 
 
 def _trace(img, pts, ep, corps, coul, far, queue=None):

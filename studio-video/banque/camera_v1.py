@@ -61,7 +61,8 @@ SURFACES_V1 = os.environ.get('SURFACES_V1', '1') == '1'
 # feuillage en plans serrés sur le mur de la cour, qui grossissaient le frémissement ; sur les plans plus larges de la banque,
 # 1,6 à 3,2 px de frémissement restaient sous le seuil. Feuilles ×2 (rafale) : banc en cadre de plan à deux, marché 0,008 →
 # 0,023, salon 0,021 → 0,062 ; taches de soleil tamisé jugées naturelles sur le rendu (sol du salon, chaussée du marché).
-VENT_BANQUE = float(os.environ.get('VENT_BANQUE', '2.0'))
+VENT_BANQUE = float(os.environ.get('VENT_BANQUE', '2.5'))   # v18 à 2,0 : fond 0,147 ; banc plan à deux ×2,5 : maquis 0,020 → 0,025, marché 0,011 → 0,019
+FORCE_BANQUE = float(os.environ.get('FORCE_BANQUE', '0.35'))   # ombre des feuilles un peu plus marquée qu'à la cour de la V1 (0,30) : plans plus larges
 MOTS = {'fumee': ('smoke', 'steam'), 'tissu': ('hanging clothes', 'fabric awning')}   # parasols : rigides, hors du tissu
 
 
@@ -365,7 +366,7 @@ def prepare_decor(img, d, seg, pieds, graine=5, cache=None, nom=None):
         except Exception: pass
         surf = np.isin(seg, SURFACES) if (SURFACES_V1 and sol_ is not None and de_jour(nom, sol_[1])) else (np.zeros(seg.shape, bool) if SURFACES_V1 else None)
         V['fond'] = vie_fond.prepare(img.astype(np.float32), d, (), graine=11, surfaces=surf)
-        V['fond']['vent'] = VENT_BANQUE
+        V['fond']['vent'] = VENT_BANQUE; V['fond']['force'] = FORCE_BANQUE
         V['fond']['ciel'] = V['fond']['ciel'] | (seg == 2)
     except Exception as e:
         print(f'  vie du fond non préparée : {e}', file=sys.stderr); V['fond'] = None
@@ -626,7 +627,7 @@ def image_a(F, p):
 # plantés) en deux sinusoïdes lentes, plus ample quand l'acteur parle, et le souffle (le corps s'allonge de 0,4 %, ancré aux
 # pieds). Doux et continu : aucun retournement brusque (à-coups) ni saute.
 VIE_CORPS = os.environ.get('VIE_CORPS', '1') == '1'
-VIE_DEG = (0.8, 0.55)      # amplitude du balancement (degrés) : parle, écoute (v16-v17 à 0,65 et 0,45 : corps 0,167, vitesse 3,1 = V1)
+VIE_DEG = (0.9, 0.62)      # amplitude du balancement (degrés) : parle, écoute (v16-v17 à 0,65/0,45 : corps 0,167 ; v18 à 0,8/0,55 : 0,170, V1 0,172)
 
 
 def vie_corps(im, t, pr):
