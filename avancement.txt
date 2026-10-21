@@ -43,3 +43,4 @@
 [487 s] 19 clips · === mademoiselle-rosine--colere (at_runtime)   |=====================================>            | 3/4 - 38.83s/it[K · mémoire libre 13804 Mo
 [122 s] 20 clips · === le-banquier--parler (at_runtime)  · mémoire libre 13791 Mo
 [244 s] 20 clips · === le-banquier--parler (at_runtime)   |============>                                     | 1/4 - 135.94s/it[K · mémoire libre 13773 Mo
+[365 s] 20 clips · === le-banquier--parler (at_runtime)   |=========================>                        | 2/4 - 135.68s/it[K · mémoire libre 13777 Mo
