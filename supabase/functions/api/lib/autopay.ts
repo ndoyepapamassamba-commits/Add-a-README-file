@@ -19,6 +19,8 @@ export const MANUAL_WINDOW_MS = 48 * HOUR_MS;
 export const NEAR_MATCH_WINDOW_MS = 2 * HOUR_MS;
 /** …and at most this much above its catalogue price. */
 export const NEAR_MATCH_OVERPAY = 100;
+/** Catalogue prices from this amount on unlock on their exact unique amount only (no rounded-up near match). */
+export const HIGH_TICKET_MIN_AMOUNT = 10_000;
 export const NOTIFY_MAX_BYTES = 4 * 1024;
 export const MAX_NOTIFIED_AMOUNT = 10_000_000;
 export const PHONE_EVENT_TYPE = "phone.notification";
@@ -125,6 +127,9 @@ export type MatchHow = "exact" | "near" | "ambiguous" | "none";
  * (a round catalogue price is too common among personal transfers). Exact `manual_amount` first; else a
  * single recent order the customer may have rounded up (manual_amount < amount ≤ price + 100, created in the
  * last 2 h). Several candidates → none: the owner decides.
+ * High-ticket orders (catalogue price `amount` ≥ HIGH_TICKET_MIN_AMOUNT, e.g. a 25 000 F course) never take
+ * part in the near match: only their exact unique amount unlocks them, so a round 25 000 F family transfer, or
+ * any other figure close to the price, unlocks nothing (the owner can still unlock from admin.html).
  */
 export function matchManualOrder(orders: OrderRow[], amount: number, now: Date): { order: OrderRow | null; how: MatchHow } {
   const withAmount = orders.filter((o) => o.manual_amount !== null && o.status !== "paid");
@@ -132,6 +137,7 @@ export function matchManualOrder(orders: OrderRow[], amount: number, now: Date):
   if (exact.length === 1) return { order: exact[0], how: "exact" };
   if (exact.length > 1) return { order: null, how: "ambiguous" };
   const near = withAmount.filter((o) =>
+    o.amount < HIGH_TICKET_MIN_AMOUNT &&
     now.getTime() - Date.parse(o.created_at) <= NEAR_MATCH_WINDOW_MS &&
     (o.manual_amount as number) < amount && amount <= o.amount + NEAR_MATCH_OVERPAY
   );

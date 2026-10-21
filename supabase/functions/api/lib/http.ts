@@ -42,6 +42,25 @@ export function json(status: number, body: unknown): Response {
   });
 }
 
+/**
+ * A file download (course files): the bytes as an attachment, never cached, CORS like every response and
+ * `content-disposition` readable by the page. `filename` is a validated download name (no quote, no slash).
+ */
+export function fileResponse(bytes: Uint8Array, mime: string, filename: string): Response {
+  return new Response(bytes as Uint8Array<ArrayBuffer>, {
+    status: 200,
+    headers: {
+      ...CORS_HEADERS,
+      "Access-Control-Expose-Headers": "content-disposition",
+      "content-type": mime,
+      "content-disposition": `attachment; filename="${filename.replace(/["\\\r\n]/g, "_")}"`,
+      "content-length": String(bytes.byteLength),
+      "cache-control": "no-store, private",
+      "x-content-type-options": "nosniff",
+    },
+  });
+}
+
 export function errorResponse(
   status: number,
   code: string,

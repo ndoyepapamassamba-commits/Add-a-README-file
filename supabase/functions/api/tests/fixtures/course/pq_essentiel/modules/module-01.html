@@ -1,0 +1,65 @@
+<section class="module" data-module="1">
+  <h2 id="m1-lorem">Module test 1 — Lorem ipsum</h2>
+  <p>Lorem ipsum dolor sit amet, <strong>consectetur</strong> adipiscing elit, <em>sed do eiusmod</em> tempor. Appuyez sur <kbd>Ctrl</kbd> puis lisez <code>Lorem.Ipsum</code>.</p>
+  <h3 id="m1-dolor">Dolor sit amet</h3>
+  <ul>
+    <li>Lorem ipsum</li>
+    <li>Dolor sit amet</li>
+  </ul>
+  <ol>
+    <li>Consectetur</li>
+    <li>Adipiscing</li>
+  </ol>
+  <pre class="m-code">let
+    Lorem = 1,
+    Ipsum = Lorem + 1
+in
+    Ipsum</pre>
+  <table class="data">
+    <caption>Tableau test (données inventées)</caption>
+    <thead>
+      <tr><th scope="col">Lorem</th><th scope="col" class="num">Ipsum</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Dolor</td><td class="num">1 234</td></tr>
+      <tr><td colspan="2">Sit amet</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" width="200" height="80" role="img" aria-label="Schéma test" focusable="false">
+      <title>Schéma test</title>
+      <desc>Deux boîtes reliées par une flèche (lorem).</desc>
+      <defs>
+        <marker id="m1-fleche" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#13A89E"/>
+        </marker>
+      </defs>
+      <g stroke="#0B2545" stroke-width="2" fill="none">
+        <rect x="5" y="20" width="60" height="40" rx="4" ry="4"/>
+        <rect x="135" y="20" width="60" height="40" rx="4" ry="4"/>
+        <line x1="65" y1="40" x2="133" y2="40" marker-end="url(#m1-fleche)"/>
+        <circle cx="100" cy="12" r="4"/>
+        <ellipse cx="100" cy="70" rx="8" ry="4"/>
+        <polyline points="90,60 100,64 110,60"/>
+        <polygon points="96,8 104,8 100,2"/>
+      </g>
+      <text x="35" y="44" text-anchor="middle" font-size="10" fill="#1A2433">Lorem<tspan x="165" y="44">Ipsum</tspan></text>
+    </svg>
+    <figcaption>Schéma test — lorem ipsum.</figcaption>
+  </figure>
+  <div class="callout-info"><p>Lorem ipsum : information test.</p></div>
+  <div class="callout-warning"><p>Dolor sit amet : avertissement test.</p></div>
+  <div class="callout-source"><p>Source test : <a href="https://example.org/lorem" rel="noopener">example.org</a>.</p></div>
+  <div class="exercise">
+    <h3 id="m1-exercice">Exercice test</h3>
+    <p>Lorem ipsum dolor sit amet.</p>
+    <details class="solution">
+      <summary>Voir la solution</summary>
+      <pre class="m-code">let
+    Dolor = "sit amet"
+in
+    Dolor</pre>
+      <p class="expected">Résultat attendu : 2 lignes (données inventées).</p>
+    </details>
+  </div>
+</section>

@@ -259,6 +259,7 @@ Deno.test("GET /config exposes prices and the payment modes", async () => {
     currency: "XOF",
     prices: { cv: 1000, lettre: 1000, pack: 1500, stage: 1500, premium: 5000, stageMulti: 2500 },
     payment: { wave: true, manual: false, manualWaveNumber: null, ownerWhatsapp: "221771234567" },
+    courses: { pq_essentiel: { price: 25000, open: false } }, // Teranga Pro (SPEC_COURSE §3.1), additive
   });
   const manual = await makeHarness({ wave: null, env: { MANUAL_WAVE_NUMBER: "77 000 11 22", OWNER_WHATSAPP: "+221 78 999 88 77", BRAND_NAME: "TCV" } })
     .call("GET", "/config");

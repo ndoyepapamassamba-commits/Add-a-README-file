@@ -1,7 +1,10 @@
 // Catalogue: products, templates and their prices.
-import type { Config, OrderInput, Product, Template } from "./types.ts";
+import type { Config, CourseProduct, DocumentProduct, OrderInput, Product, Template } from "./types.ts";
 
-export const PRODUCTS: readonly Product[] = ["cv", "lettre", "pack", "stage", "premium"];
+/** Products that generate a document. Course ids are NOT in this list: the document path keeps refusing them. */
+export const PRODUCTS: readonly DocumentProduct[] = ["cv", "lettre", "pack", "stage", "premium"];
+/** Teranga Pro courses on sale (POST /orders hands them to course.ts). */
+export const COURSE_PRODUCTS: readonly CourseProduct[] = ["pq_essentiel"];
 export const TEMPLATES: readonly Template[] = ["classique", "moderne", "elegant"];
 export const DEFAULT_TEMPLATE: Template = "classique";
 
@@ -9,16 +12,20 @@ export const DEFAULT_TEMPLATE: Template = "classique";
 export const STAGE_MAX_COMPANIES = 5;
 export const STAGE_MULTI_FROM = 2;
 
-export function isProduct(v: unknown): v is Product {
+export function isProduct(v: unknown): v is DocumentProduct {
   return typeof v === "string" && (PRODUCTS as readonly string[]).includes(v);
+}
+
+export function isCourseProduct(v: unknown): v is CourseProduct {
+  return typeof v === "string" && (COURSE_PRODUCTS as readonly string[]).includes(v);
 }
 
 export function isTemplate(v: unknown): v is Template {
   return typeof v === "string" && (TEMPLATES as readonly string[]).includes(v);
 }
 
-export function priceOf(product: Product, config: Pick<Config, "prices">): number {
-  return config.prices[product];
+export function priceOf(product: Product, config: Pick<Config, "prices" | "coursePrices">): number {
+  return isCourseProduct(product) ? config.coursePrices[product] : config.prices[product];
 }
 
 /**
@@ -28,7 +35,7 @@ export function priceOf(product: Product, config: Pick<Config, "prices">): numbe
 export function orderPrice(
   product: Product,
   data: Pick<OrderInput, "internship">,
-  config: Pick<Config, "prices" | "stageMultiPrice">,
+  config: Pick<Config, "prices" | "coursePrices" | "stageMultiPrice">,
 ): number {
   const companies = data.internship?.companies.length ?? 0;
   if (product === "stage" && companies >= STAGE_MULTI_FROM) return config.stageMultiPrice;

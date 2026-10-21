@@ -1,11 +1,14 @@
-// Local server: the real API (MemoryStore + FakeWave) at /api/*, the static site from cv/ at /, a fake
-// Wave payment page at /fake-wave/pay/<sessionId> and a fake owner phone at /fake-phone (manual mode: posts a
-// Wave notification to /api/payments/notify).  Run: deno run -A supabase/functions/api/dev.ts
-// Env: PORT (default 8787), DEV_PAYMENT = wave (default) | manual | none.
+// Local server: the real API (MemoryStore + FakeWave) at /api/*, the static site from cv/ at / (and at /cv/), the
+// Teranga Pro pages from formation/ at /formation/, a fake Wave payment page at /fake-wave/pay/<sessionId> and a
+// fake owner phone at /fake-phone (manual mode: posts a Wave notification to /api/payments/notify).
+// Run: deno run -A supabase/functions/api/dev.ts
+// Env: PORT (default 8787), DEV_PAYMENT = wave (default) | manual | none, PQ_SALES_OPEN (default true here),
+// COURSE_ASSETS_DIR (private course tree `<dir>/pq_essentiel/…`; default: the public lorem fixture).
 import { createApp } from "./lib/app.ts";
 import { MANUAL_WINDOW_MS } from "./lib/autopay.ts";
 import { DEFAULT_RETURN_PREFIXES, envFrom, loadConfig } from "./lib/config.ts";
 import { MemoryStore } from "./lib/store_memory.ts";
+import { COURSE_FIXTURE_DIR, loadCourseAssetDir } from "./dev_course.ts";
 import { checkoutCompletedEvent, FakeWave, signedWebhookRequest } from "./lib/wave.ts";
 import type { Config } from "./lib/types.ts";
 
@@ -53,6 +56,9 @@ export function devConfig(port: number, payment: DevPayment): Config {
     ADMIN_KEY: DEV_ADMIN_KEY,
     CRON_SECRET: DEV_CRON_SECRET,
     PHONE_HOOK_KEY: DEV_PHONE_HOOK_KEY,
+    // Dev sells the course by default; PQ_SALES_OPEN=false shows the closed sales page.
+    PQ_SALES_OPEN: Deno.env.get("PQ_SALES_OPEN") ?? "true",
+    PRICE_PQ_ESSENTIEL: Deno.env.get("PRICE_PQ_ESSENTIEL"),
   }));
   // The only place where an http:// return URL is accepted, and where the MacroDroid link of the admin page
   // points at this local server instead of production.
@@ -151,12 +157,41 @@ export interface DevServer {
   store: MemoryStore;
   wave: FakeWave | null;
   config: Config;
+  /** Resolves once the course assets are in the store (the API waits for it). */
+  ready: Promise<void>;
 }
 
-export function createDevServer(opts: { port: number; payment: DevPayment; cvRoot: string }): DevServer {
+export interface DevServerOptions {
+  port: number;
+  payment: DevPayment;
+  cvRoot: string;
+  /** Default: `<cvRoot>/../formation`. */
+  formationRoot?: string;
+  /** Default: COURSE_ASSETS_DIR when set, else the public lorem fixture. */
+  courseAssetsDir?: string;
+}
+
+/** Loads the course tree into the store; logs where it came from and how many files, never their content. */
+async function seedCourse(store: MemoryStore, dir: string, fixture: boolean): Promise<void> {
+  try {
+    const assets = await loadCourseAssetDir(dir);
+    for (const a of assets) await store.putCourseAsset(a.name, a.mime, a.bytes);
+    console.log(fixture ? "[dev] course assets: fixture (lorem)" : `[dev] course assets: ${dir} (${assets.length} files)`);
+  } catch (err) {
+    console.error(`[dev] course assets: ${dir} could not be read`, err instanceof Error ? err.message : err);
+  }
+}
+
+const cvAlias = (path: string) => path.slice("/cv".length) || "/";
+
+export function createDevServer(opts: DevServerOptions): DevServer {
   const origin = `http://localhost:${opts.port}`;
   const config = devConfig(opts.port, opts.payment);
   const store = new MemoryStore();
+  const formationRoot = opts.formationRoot ?? `${opts.cvRoot.replace(/\/+$/, "")}/../formation`;
+  const envAssets = Deno.env.get("COURSE_ASSETS_DIR")?.trim();
+  const courseAssetsDir = opts.courseAssetsDir ?? (envAssets || COURSE_FIXTURE_DIR);
+  const ready = seedCourse(store, courseAssetsDir, courseAssetsDir === COURSE_FIXTURE_DIR);
   const wave = opts.payment === "wave" ? new FakeWave({ launchBase: `${origin}/fake-wave/pay/` }) : null;
   const api = createApp({ store, wave, config, now: () => new Date() });
 
@@ -182,7 +217,10 @@ export function createDevServer(opts: { port: number; payment: DevPayment; cvRoo
   async function handler(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
-    if (path === "/api" || path.startsWith("/api/")) return api(req);
+    if (path === "/api" || path.startsWith("/api/")) {
+      await ready;
+      return api(req);
+    }
     const fake = /^\/fake-wave\/pay\/([^/]+)(?:\/(payer|annuler))?$/.exec(path);
     if (fake) return fakeWave(req, decodeURIComponent(fake[1]), fake[2]);
     if (req.method !== "GET" && req.method !== "HEAD") return text(405, "Méthode non autorisée.");
@@ -191,17 +229,21 @@ export function createDevServer(opts: { port: number; payment: DevPayment; cvRoo
       const open = (await store.listOpenManualOrders(since)).filter((o) => o.manual_amount !== null);
       return fakePhonePage(open.map((o) => ({ id: o.id, amount: o.manual_amount as number })));
     }
-    if (path === "/config.js") {
+    if (path === "/config.js" || path === "/cv/config.js") {
       const js = `window.TCV_CONFIG = { apiBase: ${JSON.stringify(`${origin}/api`)} };\n`;
       return new Response(js, { headers: { "content-type": CONTENT_TYPES.js, "cache-control": "no-store" } });
     }
-    const file = await resolveStatic(opts.cvRoot, path === "/" ? "/index.html" : path);
+    if (path === "/formation") return new Response(null, { status: 301, headers: { location: "/formation/" } });
+    let file: string | null;
+    if (path.startsWith("/formation/")) file = await resolveStatic(formationRoot, path.slice("/formation".length));
+    else if (path === "/cv" || path.startsWith("/cv/")) file = await resolveStatic(opts.cvRoot, cvAlias(path));
+    else file = await resolveStatic(opts.cvRoot, path === "/" ? "/index.html" : path);
     if (!file) return text(404, "Page introuvable.");
     const body = req.method === "HEAD" ? null : await Deno.readFile(file);
     return new Response(body, { headers: { "content-type": contentTypeFor(file), "cache-control": "no-store" } });
   }
 
-  return { handler, store, wave, config };
+  return { handler, store, wave, config, ready };
 }
 
 if (import.meta.main) {
@@ -216,6 +258,7 @@ if (import.meta.main) {
     onListen: () => {
       console.log(`Teranga CV dev server (paiement: ${payment})`);
       console.log(`  Site      ${origin}/index.html`);
+      console.log(`  Formation ${origin}/formation/`);
       console.log(`  Admin     ${origin}/admin.html#k=${DEV_ADMIN_KEY}`);
       console.log(`  API       ${origin}/api/health   ${origin}/api/config`);
       console.log(`  Cron      curl -X POST -H 'x-cron-secret: ${DEV_CRON_SECRET}' ${origin}/api/cron/daily`);
