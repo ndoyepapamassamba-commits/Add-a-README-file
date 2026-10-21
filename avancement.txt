@@ -58,3 +58,4 @@
 [5591 s] 10 images · === maison-la-voisine-cour-champ-jour   |=========================>                        | 2/4 - 91.33s/it[K · mémoire libre 7033 Mo
 [5713 s] 10 images · === maison-la-voisine-cour-champ-jour   |==================================================| 4/4 - 88.25s/it[K · mémoire libre 5825 Mo
 [5834 s] 11 images · === decor-taxi-large-nuit   |============>                                     | 1/4 - 91.98s/it[K · mémoire libre 7033 Mo
+[5956 s] 11 images · === decor-taxi-large-nuit   |=========================>                        | 2/4 - 88.71s/it[K · mémoire libre 7029 Mo
