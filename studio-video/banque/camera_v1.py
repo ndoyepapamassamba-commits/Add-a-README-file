@@ -29,6 +29,11 @@ sys.path.insert(0, os.path.join(ICI, '..', 'moteur-troupe'))
 REG = {'plan_s': 5.0, 'cam_px': 2.5, 'pousse': 1.10, 'parallaxe': 0.35, 'whip_s': 0.45, 'ouverture': 1.2, 'zoom_chute': 1.15}
 ECRAN_V1 = 576              # largeur d'écran de la V1 (tourne.CW) : cam_px est compté sur elle
 COUPE_S = 2.5               # durée minimale d'un plan avant une coupe sur le parleur suivant
+SORTIE = None               # (largeur, hauteur) de l'image de scène si elle diffère de la toile (format V1 : 576 × 460)
+
+
+def aspect(BW, BH):
+    return SORTIE[0] / SORTIE[1] if SORTIE else BW / BH
 FEUILLAGE = (4, 17, 66, 72)                          # ADE20K : arbre, plante, fleur, palmier
 TISSU = (18, 63, 81, 86, 92, 106, 114, 131, 149)     # rideau, store, serviette, auvent, vêtements, dais, tente, couverture, drapeau
 EAU = (21, 26, 60, 109, 128)                         # eau, mer, rivière, piscine, lac
@@ -51,10 +56,10 @@ def boites(P, BW, BH, hauts):
 
 
 def _borne(c, BW, BH):
-    cx, cy, w, h = c; A = BW / BH
+    cx, cy, w, h = c; A = aspect(BW, BH)
     if h > BH: h = BH; w = h * A
     if w > BW: w = BW; h = w / A
-    return (min(max(cx, w / 2), BW - w / 2), min(max(cy, h / 2), BH - h / 2), w, h)
+    return (float(min(max(cx, w / 2), BW - w / 2)), float(min(max(cy, h / 2), BH - h / 2)), float(w), float(h))
 
 
 def _dans(b, c, marge=0.0):
@@ -75,13 +80,17 @@ def tetes_ok(B, c, garde):
 def cadre(B, noms, sorte, BW, BH, cote=0.0):
     """cadre (cx, cy, w, h) au format de la bande : large, duo (les acteurs nommés, de la tête à la taille), moyen (un acteur,
     de la tête à mi-cuisse, place du côté où il regarde), serre (tête et buste), gros (visage)."""
-    A = BW / BH
-    if sorte == 'large' or not noms: return (BW / 2, BH / 2, BW, BH)
+    A = aspect(BW, BH)
+    if sorte == 'large' or not noms:   # plan d'ensemble : toute la hauteur, centré sur les acteurs
+        xs = [B[n]['x'] for n in (noms or B)] or [BW / 2]
+        return _borne((float(np.mean(xs)), BH / 2, BH * A, BH), BW, BH)
     x0 = min(B[n]['corps'][0] for n in noms); x1 = max(B[n]['corps'][2] for n in noms); hm = max(B[n]['h'] for n in noms)
     haut = min(B[n]['corps'][1] for n in noms)
-    if sorte == 'duo': h = max(0.66 * hm, (x1 - x0 + 0.3 * hm) / A); cx = (x0 + x1) / 2
+    # cadres resserrés (21/10/2026, place des personnages 0,28 contre 0,366 sur la V1) : plan à deux de la tête aux hanches,
+    # plan moyen de la tête à la taille
+    if sorte == 'duo': h = max(0.58 * hm, (x1 - x0 + 0.18 * hm) / A); cx = (x0 + x1) / 2
     else:
-        k = {'moyen': 0.74, 'serre': 0.5, 'gros': 0.32}[sorte]; h = k * hm
+        k = {'moyen': 0.6, 'serre': 0.46, 'gros': 0.3}[sorte]; h = k * hm
         cx = (x0 + x1) / 2 + cote * {'moyen': 0.14, 'serre': 0.1, 'gros': 0.05}[sorte] * h * A
     cy = haut - 0.09 * h + h / 2
     c = _borne((cx, cy, h * A, h), BW, BH)
@@ -92,7 +101,7 @@ def cadre(B, noms, sorte, BW, BH, cote=0.0):
         for k in (1.15, 1.3, 1.5, 1.8, 2.2):
             c2 = _borne((c[0], c[1], c[2] * k, c[3] * k), BW, BH)
             if tetes_ok(B, c2, noms): return c2
-        return (BW / 2, BH / 2, BW, BH)
+        return _borne((BW / 2, BH / 2, BH * A, BH), BW, BH)
     return c
 
 
@@ -199,11 +208,12 @@ def prepare_decor(img, d, seg, pieds, graine=5):
 def decor_t(V, t, u):
     """décor au temps t, la caméra ayant glissé de u = (ux, uy) depuis son cadre de référence (parallaxe)."""
     import vie_fond
-    mx = V['X'] + (V['k'] - 1) * u[0]; my = V['Y'] + (V['k'] - 1) * u[1]
+    mx = V['X'] + (V['k'] - 1) * float(u[0]); my = V['Y'] + (V['k'] - 1) * float(u[1])
     g = vie_fond.rafale(t)
     for c in V['couches']:
         s = np.sin(2 * math.pi * c['f'] * t + c['phi']) * g
         mx = mx + c['m'] * s; my = my + c['m'] * c['v'] * np.cos(2 * math.pi * c['f'] * 0.8 * t + c['phi'])
+    mx, my = mx.astype(np.float32), my.astype(np.float32)
     out = cv2.remap(V['img'], mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
     if V.get('fond') is not None:
         try: out = out * vie_fond.feuillage(V['fond'], t)[..., None]
@@ -212,13 +222,43 @@ def decor_t(V, t, u):
 
 
 # ── GESTES : boucle douce et images interpolées ───────────────────────────────────────────────────────────────────────────
-def lit_clip(mov, w, h, flip, gains):
-    """images RGBA du clip à la taille voulue (float32), retournées et teintées de la lumière du décor."""
-    raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', mov, '-vf', f'scale={w}:{h}:flags=bicubic' + (',hflip' if flip else ''),
-                          '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'], capture_output=True, check=True).stdout
-    F = np.frombuffer(raw, np.uint8).reshape(-1, h, w, 4).astype(np.float32)
+TETE_V1 = os.environ.get('TETE_V1', '1') == '1'   # têtes tournées vers le partenaire (lacet_banque.py)
+
+
+def despill(F):
+    """liseré vert du détourage (vu sur les gros plans de la grammaire V1 : oreilles, cou, mains) : sur la bande du bord de la
+    découpe seulement, le vert ne dépasse plus le plus fort du rouge et du bleu (suppression de débordement classique)."""
+    for i in range(len(F)):
+        a = F[i, ..., 3]; bord = (cv2.erode((a > 250).astype(np.uint8), np.ones((7, 7), np.uint8)) == 0) & (a > 0)
+        r, g, b = F[i, ..., 0], F[i, ..., 1], F[i, ..., 2]; m = bord & (g > np.maximum(r, b))
+        g[m] = np.maximum(r, b)[m]
+    return F
+
+
+def lit_clip(mov, w, h, flip, gains, tete=True, sens=1.0):
+    """images RGBA du clip à la taille voulue (float32) : tête tournée vers la droite de l'image (avant le miroir : vers le
+    partenaire dans les deux cas), liseré vert ôté, retournées et teintées de la lumière du décor."""
+    raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', mov, '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'], capture_output=True, check=True).stdout
+    p = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', mov],
+                       capture_output=True, text=True, check=True).stdout.strip().split(',')
+    W0, H0 = int(p[0]), int(p[1]); F = np.frombuffer(raw, np.uint8).reshape(-1, H0, W0, 4).astype(np.float32)
+    if tete:   # teint de la V1 (peau.py), avant la tête tournée : la couleur suit la déformation
+        try:
+            import peau, lacet_banque as LB
+            perso, ec = LB.clip_ecoute(mov); F = peau.teinte(F, mov, perso, ec)
+        except Exception as e:
+            print(f'  teint non ramené ({os.path.basename(mov)}) : {e}', file=sys.stderr)
+    if tete and TETE_V1:
+        try:
+            import lacet_banque as LB
+            perso, ec = LB.clip_ecoute(mov); C = LB.champ(perso, ec); F = LB.tourne(F, mov, C, LB.gain(C, sens) * sens)
+        except Exception as e:
+            print(f'  tête non tournée ({os.path.basename(mov)}) : {e}', file=sys.stderr)
+    F = despill(F)
+    F = np.stack([cv2.resize(f, (w, h), interpolation=cv2.INTER_AREA if w < W0 else cv2.INTER_CUBIC) for f in F])
+    if flip: F = F[:, :, ::-1]
     F[..., :3] *= np.array(gains, np.float32)
-    return np.clip(F, 0, 255)
+    return np.ascontiguousarray(np.clip(F, 0, 255))
 
 
 def haut_du_clip(F):
@@ -249,7 +289,9 @@ def colle(canvas, im, x, y):
 
 
 def camera(canvas, c, BW, BH):
-    """image vue par la caméra : cadre c = (cx, cy, w, h) de la scène ramené à la bande, au sous-pixel."""
+    """image vue par la caméra : cadre c = (cx, cy, w, h) de la scène ramené à l'image de sortie (SORTIE, sinon la toile),
+    au sous-pixel."""
+    if SORTIE: BW, BH = SORTIE
     cx, cy, w, h = c; sc = BW / w
     src = cv2.GaussianBlur(canvas, (0, 0), 0.45 / sc) if sc < 0.95 else canvas
     M = np.float32([[sc, 0, -(cx - w / 2) * sc], [0, sc, -(cy - h / 2) * sc]])

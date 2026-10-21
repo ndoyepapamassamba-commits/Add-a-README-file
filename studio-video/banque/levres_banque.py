@@ -51,9 +51,18 @@ def enveloppe(wav, n, fps):
     return np.clip((e - bas) / max(haut - bas, 1e-9), 0, 1)
 
 
+def aller_retour(N):
+    """aller-retour du clip qui RALENTIT avant chaque retournement (21/10/2026 : le retournement sec à pleine vitesse était un
+    à-coup mesuré, 2,3 par minute contre 0,8 sur la V1) : les deux dernières images de chaque bout sont tenues un peu."""
+    if N < 6: return list(range(N)) + list(range(N - 2, 0, -1))
+    aller = list(range(N - 2)) + [N - 2, N - 2, N - 1, N - 1, N - 1]
+    retour = list(range(N - 3, 1, -1)) + [1, 1, 0, 0, 0]
+    return aller + retour
+
+
 def ordre(q, e, fps):
     """indices d'images du clip (aller-retour) pour chaque image de sortie, la bouche suivant l'enveloppe e."""
-    N = len(q); Q = list(range(N)) + list(range(N - 2, 0, -1))          # aller-retour sans répéter les extrémités
+    N = len(q); Q = aller_retour(N)
     K = max(1, round(len(Q) * fps / FPS_CLIP)); R = [Q[min(len(Q) - 1, int(k * FPS_CLIP / fps))] for k in range(K)]
     qr = q[R]; lo, hi = np.percentile(q, 10), np.percentile(q, 90); ech = max(hi - lo, 1e-4)
     cible = lo + e * (hi - lo); n = len(e)
@@ -73,7 +82,7 @@ def ordre(q, e, fps):
 
 def ordre_mesure(q, e, fps):
     """(corrélation avant, après) entre ouverture montrée et énergie de la voix ; avant = aller-retour à vitesse normale."""
-    N = len(q); Q = list(range(N)) + list(range(N - 2, 0, -1))
+    N = len(q); Q = aller_retour(N)
     avant = [Q[int(t * FPS_CLIP / fps) % len(Q)] for t in range(len(e))]
     apres = ordre(q, e, fps)
     c = lambda s: float(np.corrcoef(q[s], e)[0, 1]) if np.std(q[s]) > 0 and np.std(e) > 0 else 0.0

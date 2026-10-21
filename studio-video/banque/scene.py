@@ -45,7 +45,8 @@ def plan(h, decor, banque, dossier, lieu=None):
     for k, r in enumerate(h['repliques']):
         y, _ = voix.synth(r['qui'], r['texte']); f = os.path.join(dossier, f'r{k}.wav'); wavfile.write(f, voix.SR, y)
         R.append({'qui': slug(r['qui']), 'geste': GESTE_DU_JEU.get(r.get('jeu'), 'parler'), 'voix': f, 'texte': r['texte'],
-                  'reagit': {}, 'chute': bool(r.get('chute') or r.get('role') == 'chute')})
+                  'reagit': {}, 'chute': bool(r.get('chute') or r.get('role') == 'chute'),
+                  **({'a': slug(r['a'])} if r.get('a') and slug(r['a']) in acteurs else {})})   # à qui il parle : vers qui sa tête se tourne
     for k, r in enumerate(R[:-1]):   # la réplique qui suit une accusation : l'accusé encaisse (choc) avant de répondre
         if r['geste'] == 'montrer' and R[k + 1]['qui'] != r['qui']: r['reagit'] = {R[k + 1]['qui']: 'choc'}
     ch = next((r for r in R if r['chute']), R[-1])

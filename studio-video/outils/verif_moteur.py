@@ -790,6 +790,28 @@ try:
 except Exception as e:
     echecs.append(f'grammaire V1 : {e}')
 
+# 21/10/2026 12:30 — épisode de la banque au format de la V1 (rendu_banque.plan_sketch) : répliques posées sur la grille des 30 i/s,
+# chacune commence quand sa voix commence, aucun trou ni chevauchement du début à la fin du sketch, réaction tenue après la
+# chute (choc des autres, rire de l'auteur) ; têtes tournées vers celui qui parle (assemble.vise)
+try:
+    import rendu_banque as _rb30
+    _L30 = [{'qui': 'KOFFI', 'texte': 'a', 'jeu': 'accuse', 'a': 'COUMBA', 'wav': 'x.wav', 't0': 1.1, 'dur': 2.0},
+            {'qui': 'COUMBA', 'texte': 'b', 'jeu': 'innocent', 'wav': 'y.wav', 't0': 3.36, 'dur': 1.5},
+            {'qui': 'KOFFI', 'texte': 'c', 'jeu': 'rire', 'chute': True, 'wav': 'z.wav', 't0': 5.17, 'dur': 1.8}]
+    _P30 = _rb30.plan_sketch({'titre': 'T', 'acteurs': ['KOFFI', 'COUMBA']}, _L30, 0.3, 9.3, 'd.png', 'b')
+    _R30 = _P30['repliques']; _i30 = [(r['_i0'], r['_i1']) for r in _R30]
+    if _i30[0][0] != 9 or _i30[-1][1] != 279 or any(a[1] != b[0] for a, b in zip(_i30, _i30[1:])): echecs.append(f'épisode banque : segments {_i30}')
+    if [r.get('qui') for r in _R30 if r.get('voix')] != ['koffi', 'coumba', 'koffi'] or any(round(r['_t0'] * 30) != round(L['t0'] * 30) for r, L in zip([r for r in _R30 if r.get('voix')], _L30)):
+        echecs.append('épisode banque : une réplique ne commence pas avec sa voix')
+    if _R30[-1].get('qui') or _R30[-1]['reagit'] != {'koffi': 'rire', 'coumba': 'choc'}: echecs.append(f"épisode banque : réaction {_R30[-1]}")
+    import assemble as _as30
+    _P30['acteurs'] = {'koffi': {'x': 0.27}, 'coumba': {'x': 0.73}}
+    if _as30.vise(_P30, 2, 'coumba') != 'koffi' or _as30.vise(_P30, 1, 'koffi') != 'coumba' or _as30.vise(_P30, 1, 'coumba') != 'koffi':
+        echecs.append('épisode banque : regards (vise)')
+    print('épisode banque au format V1 : répliques sur la grille des 30 i/s, sans trou, réaction tenue, têtes vers celui qui parle : OK')
+except Exception as e:
+    echecs.append(f'épisode banque : {e}')
+
 # 21/10/2026 09:45 — teint écrit dans chaque fiche de la bible (aucune fiche texte ne disait la peau : 11 sur 32 plus claires que la
 # V1) ; la planche garde la peau sombre ; les 11 sont redessinées (version montée), l'ordre des tâches ne bouge pas
 try:

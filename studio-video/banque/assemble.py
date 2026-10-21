@@ -208,10 +208,14 @@ def _programme(P, k, nom, gains, cache):
     geste = lambda rr: rr.get('geste', 'parler') if nom == rr.get('qui') else rr.get('reagit', {}).get(nom, 'ecouter')
     mov, pieds = _clip(P['banque'], nom, geste(r))
     h = int(BH * a.get('taille', 0.95)); w = int(h * 384 / 640) // 2 * 2; flip = a.get('regarde', 'droite') == 'gauche'
-    cle = (mov, w, h, flip)
-    if cle not in cache: cache[cle] = camera_v1.lit_clip(mov, w, h, flip, gains[nom])
+    # REGARDS (21/10/2026) : la tête se tourne vers celui qui parle ; celui qui parle, vers celui à qui il parle (« a » du
+    # sketch, sinon le parleur précédent, sinon le plus proche) ; après la chute, tous vers son auteur. Le corps garde son sens.
+    cible = vise(P, k, nom); d_ = (1.0 if P['acteurs'][cible]['x'] > a['x'] else -1.0) if cible else (-1.0 if flip else 1.0)
+    sens = -d_ if flip else d_   # sens de la tête dans le clip, avant le miroir
+    cle = (mov, w, h, flip, sens)
+    if cle not in cache: cache[cle] = camera_v1.lit_clip(mov, w, h, flip, gains[nom], sens=sens)
     F = cache[cle]; px = (1 - pieds['x']) if flip else pieds['x']
-    pr = {'F': F, 'x': int(round(a.get('x', 0.5) * BW - px * w)), 'y': int(round(a.get('sol', 0.97) * BH - pieds['y'] * h)), 'mov': mov}
+    pr = {'F': F, 'x': int(round(a.get('x', 0.5) * BW - px * w)), 'y': int(round(a.get('sol', 0.97) * BH - pieds['y'] * h)), 'mov': mov, 'sens': sens}
     if nom == r.get('qui') and r.get('voix') and os.environ.get('LEVRES_BANQUE', '1') == '1':
         try:
             import levres_banque
@@ -220,9 +224,24 @@ def _programme(P, k, nom, gains, cache):
             print(f'  synchro labiale non appliquée ({nom}) : {e}', file=sys.stderr)
     if not pr.get('idx'):
         j = k
-        while j > 0 and not (nom == R[j - 1].get('qui') and R[j - 1].get('voix')) and _clip(P['banque'], nom, geste(R[j - 1]))[0] == mov: j -= 1
+        while j > 0 and not (nom == R[j - 1].get('qui') and R[j - 1].get('voix')) and _clip(P['banque'], nom, geste(R[j - 1]))[0] == mov \
+                and vise(P, j - 1, nom) == cible: j -= 1
         pr['t_dep'] = R[j]['_t0'] - (depart(P.get('titre', ''), nom, 0.0, mov) if j == 0 else 0.0)
     return pr
+
+
+def vise(P, k, nom):
+    """acteur que regarde `nom` pendant la réplique k."""
+    R = P['repliques']; r = R[k]; autres = [n for n in P['acteurs'] if n != nom]
+    if not autres: return None
+    if not r.get('qui'):   # réaction après la chute : vers l'auteur de la chute (lui, vers celui qui encaisse le plus près)
+        ch = next((x['qui'] for x in R if x.get('chute')), None)
+        if ch and ch != nom: return ch
+    elif r['qui'] != nom: return r['qui']
+    elif r.get('a') in autres: return r['a']
+    prec = next((R[j]['qui'] for j in range(k - 1, -1, -1) if R[j].get('qui') and R[j]['qui'] != nom), None)
+    suiv = next((R[j]['qui'] for j in range(k + 1, len(R)) if R[j].get('qui') and R[j]['qui'] != nom), None)
+    return prec or suiv or min(autres, key=lambda n: abs(P['acteurs'][n]['x'] - P['acteurs'][nom]['x']))
 
 
 def _image_acteur(pr, t, i):
@@ -243,7 +262,7 @@ def bande_v1(P, k, gains, ecrit):
     if k > 0 and abs(s['t0'] - r['_t0']) > 1e-6:
         for nm in noms:
             pp = _programme(P, k - 1, nm, gains, cache)
-            if pp['mov'] != prog[nm]['mov'] or pp.get('idx') or prog[nm].get('idx'):
+            if pp['mov'] != prog[nm]['mov'] or pp['sens'] != prog[nm]['sens'] or pp.get('idx') or prog[nm].get('idx'):
                 n0 = max(1, round(float(P['repliques'][k - 1]['duree']) * FPS))
                 avant[nm] = _image_acteur(pp, r['_t0'] - 1 / FPS, n0 - 1)
     vis = (max(s['c0'][0] - s['c0'][2] / 2, s['c1'][0] - s['c1'][2] / 2), max(s['c0'][1] - s['c0'][3] / 2, s['c1'][1] - s['c1'][3] / 2),
@@ -261,7 +280,7 @@ def bande_v1(P, k, gains, ecrit):
             camera_v1.colle(cv, im, pr['x'], pr['y'])
             if occ[nm][0] is not None:   # ce qui est devant lui dans le décor repasse par-dessus (à sa parallaxe)
                 mo = cv2.remap(occ[nm][0], mx, my, cv2.INTER_LINEAR)[..., None]; cv = cv * (1 - mo) + dec * mo
-        ecrit(np.clip(camera_v1.camera(cv, c, BW, BH), 0, 255).astype(np.uint8).tobytes())
+        ecrit(np.clip(camera_v1.camera(cv, c, BW, BH), 0, 255).astype(np.uint8))
 
 
 def segment_v1(P, r, k, dossier, gains):
@@ -285,7 +304,7 @@ def segment_v1(P, r, k, dossier, gains):
                            '-af', 'apad', '-t', str(dur), '-r', str(FPS), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18',
                            '-pix_fmt', 'yuv420p', '-video_track_timescale', str(FPS * 512), '-c:a', 'pcm_s16le', '-ar', '48000',
                            '-ac', '2', sortie], stdin=subprocess.PIPE)
-    try: bande_v1(P, k, gains, pr.stdin.write)
+    try: bande_v1(P, k, gains, lambda a: pr.stdin.write(a.tobytes()))
     finally: pr.stdin.close()
     if pr.wait(): raise RuntimeError(f'segment {k} : ffmpeg a échoué')
     return sortie
@@ -321,6 +340,29 @@ def en_images(d):
     return max(1, round(float(d) * FPS)) / FPS
 
 
+def prepare(P, d):
+    """lumière de chaque acteur, ce qui passe devant lui dans le décor, et (rendu V1) boîtes et découpage en plans ;
+    → (gains, info). Partagé par assemble() et rendu_banque.py (même scène, même calcul)."""
+    from PIL import Image
+    gains = {}; dp, seg = couches(P['decor']); P['_occultants'] = {}; info = {}
+    for nom, a in P['acteurs'].items():
+        mov, pieds = _clip(P['banque'], nom, 'ecouter'); gains[nom] = lumiere(P['decor'], a, mov, pieds)
+        h = int(BH * a.get('taille', 0.95)); w = int(h * 384 / 640); X, Y = a.get('x', 0.5) * BW, a.get('sol', 0.97) * BH
+        prof = profondeur_pieds(dp, seg, X, Y)
+        boite = (int(X - w / 2) - 10, int(Y - h) - 10, int(X + w / 2) + 10, int(Y) + 30)
+        fo, part = occultant(P['decor'], dp, seg, prof, boite, d, nom) if a.get('occultation', True) else (None, 0)
+        P['_occultants'][nom] = (fo if part > 0 else None, prof); info[nom] = {'profondeur': round(prof, 3), 'cache': round(part, 4)}
+    if RENDU_V1:
+        import camera_v1
+        hauts = {nom: camera_v1.haut_du_clip(camera_v1.lit_clip(_clip(P['banque'], nom, 'ecouter')[0], 96, 160, False, (1, 1, 1), tete=False))
+                 for nom in P['acteurs']}
+        B = camera_v1.boites(P, BW, BH, hauts); P['_plans'] = camera_v1.plans(P, B, BW, BH)
+        P['_occ_v1'] = {nom: ((np.asarray(Image.open(fo), np.float32)[..., 3] / 255) if fo else None, prof)
+                        for nom, (fo, prof) in P['_occultants'].items()}
+        info['plans'] = [{'t0': round(x['t0'], 2), 't1': round(x['t1'], 2), 'sorte': x['sorte'], 'garde': x['garde']} for x in P['_plans']]
+    return gains, info
+
+
 def assemble(plan, sortie):
     P = json.load(open(plan, encoding='utf-8')); t0 = time.time()
     for r in P['repliques']:   # durée = voix + respiration avant la réplique suivante
@@ -335,27 +377,10 @@ def assemble(plan, sortie):
     # jusqu'à un SEUL encodage AAC de toute la scène.
     t = 0.0
     for r in P['repliques']: r['duree'] = en_images(r['duree']); r['_t0'] = t; t += r['duree']   # _t0 : voir depart()
-    gains = {}
-    import cv2
-    from PIL import Image
     with tempfile.TemporaryDirectory() as d:
-        dp, seg = couches(P['decor']); P['_occultants'] = {}; info = {}
-        for nom, a in P['acteurs'].items():
-            mov, pieds = _clip(P['banque'], nom, 'ecouter'); gains[nom] = lumiere(P['decor'], a, mov, pieds)
-            h = int(BH * a.get('taille', 0.95)); w = int(h * 384 / 640); X, Y = a.get('x', 0.5) * BW, a.get('sol', 0.97) * BH
-            prof = profondeur_pieds(dp, seg, X, Y)
-            boite = (int(X - w / 2) - 10, int(Y - h) - 10, int(X + w / 2) + 10, int(Y) + 30)
-            fo, part = occultant(P['decor'], dp, seg, prof, boite, d, nom) if a.get('occultation', True) else (None, 0)
-            P['_occultants'][nom] = (fo if part > 0 else None, prof); info[nom] = {'profondeur': round(prof, 3), 'cache': round(part, 4)}
+        gains, info = prepare(P, d)
         if RENDU_V1:   # caméra, parallaxe, décor vivant et gestes de la V1 publiée (camera_v1.py), répliques en parallèle
-            import camera_v1
             from concurrent.futures import ProcessPoolExecutor
-            hauts = {nom: camera_v1.haut_du_clip(camera_v1.lit_clip(_clip(P['banque'], nom, 'ecouter')[0], 96, 160, False, (1, 1, 1)))
-                     for nom in P['acteurs']}
-            B = camera_v1.boites(P, BW, BH, hauts); P['_plans'] = camera_v1.plans(P, B, BW, BH)
-            P['_occ_v1'] = {nom: ((np.asarray(Image.open(fo), np.float32)[..., 3] / 255) if fo else None, prof)
-                            for nom, (fo, prof) in P['_occultants'].items()}
-            info['plans'] = [{'t0': round(x['t0'], 2), 't1': round(x['t1'], 2), 'sorte': x['sorte'], 'garde': x['garde']} for x in P['_plans']]
             with ProcessPoolExecutor(int(os.environ.get('ASSEMBLE_PROCS', os.cpu_count() or 4))) as ex:
                 segs = list(ex.map(_segment_v1_tache, [(P, r, k, d, gains) for k, r in enumerate(P['repliques'])]))
         else:

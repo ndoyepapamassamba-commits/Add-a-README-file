@@ -154,6 +154,36 @@ def marionnettes(d, v, moteur='tourne_marionnettes.py', e_tournage=None):
             'film': f'{D}/tiktok-1080x1920.mp4'}
 
 
+# ── BANQUE AU FORMAT DE LA V1 (21/10/2026, « généraliser les changements pour pousser la V1 à toutes les vidéos » ; « des vidéos
+# de 1 minute … regroupant 3 sketchs, même format que V1 ») : la chaîne de la V1 elle-même (voix, rires, ambiance, montage
+# compose.py, planche, export), seul le tournage vient de la banque des 54 personnages (banque/rendu_banque.py, grammaire de
+# la V1). Porte V1 en sortie : profil mesuré comme la V1, humour = le plus faible duel des 3 sketchs contre la V1, sans
+# régression par rapport au dernier épisode de la banque.
+def banque(d, v, cle, cache):
+    d = os.path.abspath(d); D = os.path.join(d, v); log = f'{d}/{v}-usine.log'; T = {}; t0 = time.time()
+    env = {'PIPER_VOICES': os.environ.get('PIPER_VOICES', os.path.expanduser('~/.cache/massamba-models/piper/'))}
+    etape = lambda nom, *a, e=None: T.__setitem__(nom, _py(*a, env=dict(env, **(e or {})), log=log, cwd=d)[0])
+    etape('voix', f'{ICI}/voix.py')
+    etape('rires', f'{ICI}/musique.py', 'timeline.json', 'voix/mix.wav', 'voix/mix-musique.wav')
+    etape('ambiance', f'{ICI}/ambiance.py', 'timeline.json', 'voix/mix-musique.wav', 'voix/mix-ambiance.wav')
+    etape('tournage', os.path.join(ICI, '..', 'banque', 'rendu_banque.py'), d, v, os.path.abspath(cle), os.path.abspath(cache))
+    tk = f'{D}/tiktok-1080x1920.mp4'
+    etape('montage', f'{ICI}/compose.py', D, f'{D}/film.mp4', e={'COMPOSE_TIKTOK': tk})
+    etape('planche', f'{ICI}/planche_repliques.py', f'{D}/film.mp4', 'timeline.json', f'{D}/planche.jpg')
+    if os.path.isfile(f'{D}/legende.txt'): shutil.copy(f'{D}/legende.txt', f'{d}/{v}-legende.txt')
+    t1 = time.time(); sys.path.insert(0, ICI); import niveau_v1
+    H = json.load(open(f'{d}/histoire.json', encoding='utf-8')); pl = [s_.get('plancher_v17') for s_ in H['sketchs']]
+    p = niveau_v1.profil(f'{D}/film.mp4'); e = niveau_v1.ecarts(p, humour=min(pl) if pl and None not in pl else None)
+    dern = os.path.join(os.path.dirname(d), 'banque-dernier-profil.json')
+    rg = niveau_v1.regressions(p, json.load(open(dern))) if os.path.isfile(dern) else []
+    json.dump(p, open(dern, 'w'), ensure_ascii=False); T['mesure_v1'] = round(time.time() - t1, 1); T['total'] = round(time.time() - t0, 1)
+    B = {'profil': p, 'reference_v1': niveau_v1.reference(), 'humour_sketchs': pl, 'sous_la_V1': e, 'regressions': rg,
+         'statut': 'depasse_la_v1' if not (e or rg) else 'a_corriger', 'durees_s': T}
+    json.dump(B, open(f'{D}/niveau-v1.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    json.dump({'durees_s': T, 't0': t0}, open(f'{D}/usine-etapes.json', 'w'))
+    return {'episode': os.path.basename(d), 'version': v, 'film': tk, 'statut': B['statut'], 'sous_la_V1': e, 'regressions': rg, 'durees_s': T}
+
+
 # ── ESSAI ÉCLAIR (19/10/2026, « tu dois chercher un moyen de produire un film entier en 1 minute pour accélérer les tests ») ──
 # Même chaîne que `tourne`, sans les images : voix (mémo par réplique), bouches (repères Rhubarb en cache), rires, ambiance,
 # puis tourne.py en TOURNE_SANS_RENDU=1 (pistes, jeu, regards, mesures image par image sur la grille des 30 i/s, sans
@@ -405,6 +435,7 @@ if __name__ == '__main__':
     elif c == 'generatif':   # chaîne générative (20/10/2026) : plans animés par InfiniteTalk (generatif/), même montage et même juge
         print(json.dumps(marionnettes(sys.argv[2], sys.argv[3], '../generatif/assemble_generatif.py', {'GENERATIF_DIR': os.path.abspath(sys.argv[4])}), ensure_ascii=False, indent=1))
     elif c == 'eclair': print(json.dumps(eclair(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
+    elif c == 'banque': print(json.dumps(banque(*sys.argv[2:6]), ensure_ascii=False, indent=1))   # dossier version clé cache
     elif c == 'finit': print(json.dumps(finit(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
     elif c == 'a_corriger':
         f = os.path.join(BIBLIO, 'a-corriger.json'); print(open(f, encoding='utf-8').read() if os.path.isfile(f) else '{}')
