@@ -61,3 +61,4 @@
 [243 s] 5 images · === fiche-mamie-bintou  · mémoire libre 6674 Mo
 [123 s] 5 images · === fiche-mamie-bintou  · mémoire libre 6736 Mo
 [244 s] 5 images · === fiche-mamie-bintou   |============>                                     | 1/4 - 133.54s/it[K · mémoire libre 6735 Mo
+[365 s] 5 images · === fiche-mamie-bintou   |=========================>                        | 2/4 - 131.49s/it[K · mémoire libre 6727 Mo
