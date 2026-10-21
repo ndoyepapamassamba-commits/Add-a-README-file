@@ -31,3 +31,4 @@
 [1947 s] 3 images · === maison-fatou-salon-large-jour   |==================================================| 4/4 - 151.87s/it[K · mémoire libre 7245 Mo
 [2068 s] 4 images · === perso-agent-doumbia   |==================================================| 4/4 - 151.87s/it[K · mémoire libre 6638 Mo
 [2190 s] 4 images · === perso-agent-doumbia   |==================================================| 4/4 - 151.87s/it[K · mémoire libre 6285 Mo
+[2311 s] 4 images · === perso-agent-doumbia   |==================================================| 4/4 - 151.87s/it[K · mémoire libre 6310 Mo
