@@ -78,3 +78,4 @@
 [1826 s] 26 clips · === le-banquier--rire@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13756 Mo
 [1948 s] 26 clips · === le-banquier--rire@2 (at_runtime)   |============>                                     | 1/4 - 134.63s/it[K · mémoire libre 13744 Mo
 [2069 s] 26 clips · === le-banquier--rire@2 (at_runtime)   |=========================>                        | 2/4 - 134.13s/it[K · mémoire libre 13751 Mo
+[2191 s] 26 clips · === le-banquier--rire@2 (at_runtime)   |=====================================>            | 3/4 - 134.18s/it[K · mémoire libre 13758 Mo
