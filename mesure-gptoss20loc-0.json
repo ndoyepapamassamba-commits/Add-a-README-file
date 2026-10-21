@@ -1,17 +1,18 @@
 {
  "modele": "gptoss20loc",
  "part": 0,
- "appels_scenariste": 15,
- "secondes_scenariste": 4652.5669775009155,
+ "appels_scenariste": 17,
+ "secondes_scenariste": 5103.503818035126,
  "echecs_scenariste": 0,
- "appels_juge": 28,
+ "appels_juge": 32,
  "echecs_juge": 0,
- "brouillons_refuses_controle": 1,
+ "brouillons_refuses_controle": 2,
  "planchers_v17": [
   0.453
  ],
  "notes": [
-  0.408
+  0.408,
+  0.321
  ],
  "acceptes": 0,
  "lieux": [],
@@ -67,29 +68,37 @@
   [
    4,
    2
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   1
   ]
  ],
- "secondes_par_brouillon": 310.2,
+ "secondes_par_brouillon": 300.2,
  "temps": {
   "scenariste": {
-   "appels": 15,
+   "appels": 17,
    "tronques": 0,
-   "lus_jetons": 979,
-   "cache_jetons": 1069,
-   "lecture_s": 102.1,
-   "ecriture_jetons": 775,
-   "ecriture_s": 182.2,
-   "jetons_par_s": 4.3
+   "lus_jetons": 932,
+   "cache_jetons": 954,
+   "lecture_s": 94.2,
+   "ecriture_jetons": 803,
+   "ecriture_s": 183.1,
+   "jetons_par_s": 4.4
   },
   "juge": {
-   "appels": 28,
+   "appels": 32,
    "tronques": 0,
-   "lus_jetons": 274,
-   "cache_jetons": 245,
-   "lecture_s": 28.3,
-   "ecriture_jetons": 71,
+   "lus_jetons": 280,
+   "cache_jetons": 238,
+   "lecture_s": 29.0,
+   "ecriture_jetons": 73,
    "ecriture_s": 14.9,
-   "jetons_par_s": 4.8
+   "jetons_par_s": 4.9
   }
  }
 }
