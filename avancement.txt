@@ -9,3 +9,4 @@
 [122 s] 6 clips · === monsieur-diarra--rire (at_runtime)  · mémoire libre 13778 Mo
 [243 s] 6 clips · === monsieur-diarra--rire (at_runtime)   |============>                                     | 1/4 - 136.82s/it[K · mémoire libre 13774 Mo
 [122 s] 6 clips · === tata-prisca--hausser (at_runtime)  · mémoire libre 13775 Mo
+[244 s] 6 clips · === tata-prisca--hausser (at_runtime)   |============>                                     | 1/4 - 134.96s/it[K · mémoire libre 13763 Mo
