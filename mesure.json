@@ -98,6 +98,13 @@
    "lora": "at_runtime",
    "secondes": 303,
    "memoire_max_go": 11.04
+  },
+  {
+   "clip": "tata-prisca--montrer",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 303,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39541116258"
