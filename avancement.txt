@@ -19,3 +19,4 @@
 [1214 s] 2 images · === maison-la-voisine-cour-large-jour   |=========================>                        | 2/4 - 156.89s/it[K · mémoire libre 6996 Mo
 [1335 s] 2 images · === maison-la-voisine-cour-large-jour   |=====================================>            | 3/4 - 156.67s/it[K · mémoire libre 6997 Mo
 [1457 s] 3 images · === perso-sur-awa   |==================================================| 4/4 - 156.60s/it[K · mémoire libre 7554 Mo
+[1578 s] 3 images · === perso-sur-awa   |==================================================| 4/4 - 156.60s/it[K · mémoire libre 6326 Mo
