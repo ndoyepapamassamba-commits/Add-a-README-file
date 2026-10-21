@@ -11,3 +11,4 @@
 [243 s] 1 images · === maison-general-zongo-cour-large-jour   |============>                                     | 1/4 - 158.31s/it[K · mémoire libre 6940 Mo
 [365 s] 1 images · === maison-general-zongo-cour-large-jour   |=========================>                        | 2/4 - 157.35s/it[K · mémoire libre 6941 Mo
 [486 s] 1 images · === maison-general-zongo-cour-large-jour   |=========================>                        | 2/4 - 157.35s/it[K · mémoire libre 6932 Mo
+[607 s] 1 images · === maison-general-zongo-cour-large-jour   |=====================================>            | 3/4 - 157.01s/it[K · mémoire libre 6923 Mo
