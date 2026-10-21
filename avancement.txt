@@ -58,3 +58,4 @@
 [5225 s] 6 images · === decor-ceremonie-contrechamp-jour   |==================================================| 4/4 - 375.17s/it[K · mémoire libre 11595 Mo
 [5347 s] 6 images · === decor-ceremonie-contrechamp-jour   |==================================================| 4/4 - 375.17s/it[K · mémoire libre 7024 Mo
 [5468 s] 6 images · === decor-ceremonie-contrechamp-jour   |============>                                     | 1/4 - 151.01s/it[K · mémoire libre 7016 Mo
+[5590 s] 6 images · === decor-ceremonie-contrechamp-jour   |=========================>                        | 2/4 - 146.00s/it[K · mémoire libre 7000 Mo
