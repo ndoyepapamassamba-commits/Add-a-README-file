@@ -75,3 +75,4 @@
 [1461 s] 25 clips · === la-voisine--ecouter@2 (at_runtime)   |=========================>                        | 2/4 - 133.66s/it[K · mémoire libre 13761 Mo
 [1583 s] 25 clips · === la-voisine--ecouter@2 (at_runtime)   |=========================>                        | 2/4 - 133.66s/it[K · mémoire libre 13761 Mo
 [1704 s] 25 clips · === la-voisine--ecouter@2 (at_runtime)   |=====================================>            | 3/4 - 133.67s/it[K · mémoire libre 13761 Mo
+[1826 s] 26 clips · === le-banquier--rire@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13756 Mo
