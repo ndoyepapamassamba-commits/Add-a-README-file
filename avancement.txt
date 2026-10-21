@@ -68,3 +68,4 @@
 [1945 s] 25 clips · === le-banquier--hausser@2 (at_runtime)   |============>                                     | 1/4 - 135.26s/it[K · mémoire libre 13774 Mo
 [2066 s] 25 clips · === le-banquier--hausser@2 (at_runtime)   |=========================>                        | 2/4 - 135.02s/it[K · mémoire libre 13774 Mo
 [2188 s] 25 clips · === le-banquier--hausser@2 (at_runtime)   |=========================>                        | 2/4 - 135.02s/it[K · mémoire libre 13774 Mo
+[2309 s] 25 clips · === le-banquier--hausser@2 (at_runtime)   |=====================================>            | 3/4 - 133.98s/it[K · mémoire libre 13777 Mo
