@@ -756,11 +756,12 @@ try:
     _m27 = {'persos_bouge': 0.026, 'persos_vitesse': 0.5, 'taille_persos': 0.207, 'fond_bouge': 0.003, 'regards': 0.0,
             'acoups_min': 2.3, 'sautes_min': 18.5, 'plans_min': 2.3, 'teint_L': 55.3, 'teint_b': 57.0}
     _e27 = _nv9.ecarts(_r27, humour=0.55)
-    if len(_e27) != 8 or any('teint' in x or 'humour' in x for x in _e27): echecs.append(f'profil V1 : la V1 contre elle-même {_e27}')
+    # 8 critères + accord personnage/décor (2, v26 refusée)
+    if len(_e27) != 10 or any('teint' in x or 'humour' in x for x in _e27): echecs.append(f'profil V1 : la V1 contre elle-même {_e27}')
     _x27 = {k: (v * 1.1 if k in _nv9.PLUS else v * 0.9 if k in _nv9.MOINS else v) for k, v in _r27.items() if isinstance(v, (int, float))}
     if _nv9.ecarts(_x27, humour=0.6): echecs.append(f'profil V1 : une vidéo qui dépasse la V1 partout est refusée {_nv9.ecarts(_x27, humour=0.6)}')
-    if len(_nv9.ecarts(_m27)) != 11: echecs.append(f"profil V1 : « L'autre moitié » {len(_nv9.ecarts(_m27))} écarts au lieu de 11")
-    if _nv9.regressions(_x27, _r27) or len(_nv9.regressions(_m27, _r27)) != 10: echecs.append('profil V1 : régressions mal vues')
+    if len(_nv9.ecarts(_m27)) != 13: echecs.append(f"profil V1 : « L'autre moitié » {len(_nv9.ecarts(_m27))} écarts au lieu de 13")
+    if _nv9.regressions(_x27, _r27) or len(_nv9.regressions(_m27, _r27)) != 12: echecs.append('profil V1 : régressions mal vues')
     _b27 = _nv9.reference()['teint_dessins_v1']
     if not (_b27['L'] >= max(v[0] for v in _b27['personnages'].values()) and 50 <= _b27['L'] <= 55): echecs.append(f'profil V1 : gamme de teint des dessins {_b27}')
     print("profil V1 : dépasser la V1 exigé (égaler ne suffit pas), teint dans sa gamme, « L'autre moitié » arrêtée sur 11 critères, régressions vues, gamme de teint des dessins V1 : OK")
@@ -1193,6 +1194,18 @@ try:
         print('non-régression : référence = meilleur de chaque critère de l\'épisode (teint : version précédente) : OK')
 except Exception as e:
     echecs.append(f'non-régression (record) : {e}')
+
+# 21/10/2026 — v26 refusée par l'utilisateur (« elles ne ressemblent pas au décor ») alors que toutes les mesures la disaient
+# au-dessus de la V1 : l'accord personnage/décor doit l'arrêter (profils mesurés : V1 8,5 / 1,88 ; v26 15,8 / 0,93)
+try:
+    _p47 = dict(_nv9.reference()); _p47.update({'accord_lumiere': 15.8, 'nettete_persos': 0.93})
+    _e47 = _nv9.ecarts(_p47, humour=0.6)
+    if not (any('lumière personnage' in x for x in _e47) and any('netteté des personnages' in x for x in _e47)):
+        echecs.append(f'profil V1 : la v26 (personnages collés) passerait {_e47}')
+    else:
+        print('profil V1 : personnages collés sur le décor (v26) arrêtés — lumière 15,8 contre 8,5, netteté 0,93 contre 1,88 : OK')
+except Exception as e:
+    echecs.append(f'profil V1 (accord personnage/décor) : {e}')
 
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)

@@ -59,14 +59,15 @@ import json as _json, os as _os
 _ICI = _os.path.dirname(_os.path.abspath(__file__))
 BANDE_V1 = (282 / 1024, 742 / 1024)     # bande image du format V1 (titre au-dessus, mots en dessous ; jev_regard.CLIP)
 REF_PROFIL = _os.path.join(_ICI, 'niveau_v1_ref.json')
-PLUS = ('persos_bouge', 'persos_vitesse', 'taille_persos', 'fond_bouge', 'regards', 'plans_min')
-MOINS = ('acoups_min', 'sautes_min')
+PLUS = ('persos_bouge', 'persos_vitesse', 'taille_persos', 'fond_bouge', 'regards', 'plans_min', 'nettete_persos')
+MOINS = ('acoups_min', 'sautes_min', 'accord_lumiere')
 TEINT = ('teint_L', 'teint_b')   # pas « mieux » : dans la gamme de la V1 (pas plus clair, pas plus orangé)
 NOMS = {'persos_bouge': 'part du corps des personnages qui bouge', 'persos_vitesse': 'vitesse du jeu (px/s)',
         'taille_persos': 'place des personnages dans la scène', 'fond_bouge': "part de l'arrière-plan qui bouge",
         'regards': 'personnages qui se regardent', 'plans_min': 'plans par minute',
         'acoups_min': 'à-coups par minute (aller-retour)', 'sautes_min': 'sautes par minute', 'humour': 'humour (duel contre la V1)',
-        'teint_L': 'clarté de la peau du personnage le plus clair (L*)', 'teint_b': 'teinte orangée de la peau (b*)'}
+        'teint_L': 'clarté de la peau du personnage le plus clair (L*)', 'teint_b': 'teinte orangée de la peau (b*)',
+        'accord_lumiere': 'écart de lumière personnage/décor (L*)', 'nettete_persos': 'netteté des personnages / décor autour'}
 
 
 def _outils():
@@ -110,7 +111,7 @@ def profil(video, bande=None, cadence=15):
     mp, seg, fl = _outils(); y0, y1 = bande or BANDE_V1
     c = cv2.VideoCapture(video); fps = c.get(cv2.CAP_PROP_FPS) or 30; pas = max(1, int(round(fps / cadence))); fe = fps / pas
     dis = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM)
-    prev = masque = None; i = k = 0; pb, pv, ta, fb, resid, peaux = [], [], [], [], [], []; vprec = None; acoups = 0; reg = [0, 0]
+    prev = masque = None; i = k = 0; pb, pv, ta, fb, resid, peaux = [], [], [], [], [], []; vprec = None; acoups = 0; reg = [0, 0]; acL, acN = [], []
     while True:
         ok, f = c.read()
         if not ok: break
@@ -123,6 +124,19 @@ def profil(video, bande=None, cadence=15):
                                                 data=np.ascontiguousarray(cv2.cvtColor(b, cv2.COLOR_BGR2RGB)))).category_mask.numpy_view())
             masque = cv2.resize((m > 0).astype(np.uint8), (g.shape[1], g.shape[0]), interpolation=cv2.INTER_NEAREST).astype(bool)
             peaux.extend(teint(b, m))
+            # PERSONNAGE DANS SON DÉCOR (21/10/2026, v26 refusée : « elles ne ressemblent pas au décor ») : écart de lumière L*
+            # entre chaque personnage et l'anneau de décor qui l'entoure, et netteté du personnage rapportée à ce décor. V1 :
+            # 8,5 et 1,85 (personnages peints dans la scène, fond plus doux) ; v26 : 15,8 et 0,93 (découpages collés, plus flous
+            # que le décor) — mesuré image par image à 3 i/s
+            mb = cv2.resize((m > 0).astype(np.uint8), (b.shape[1], b.shape[0]), interpolation=cv2.INTER_NEAREST)
+            n2, lab2, st2, _ = cv2.connectedComponentsWithStats(mb)
+            Lb = cv2.cvtColor(b, cv2.COLOR_BGR2LAB)[..., 0].astype(np.float32) * 100 / 255
+            lap = np.abs(cv2.Laplacian(cv2.cvtColor(b, cv2.COLOR_BGR2GRAY), cv2.CV_32F)); ker = np.ones((int(0.06 * b.shape[1]) | 1,) * 2, np.uint8)
+            for j in range(1, n2):
+                if st2[j, 4] < 0.02 * mb.size: continue
+                pj = lab2 == j; an = cv2.dilate(pj.astype(np.uint8), ker).astype(bool) & (mb == 0)
+                if an.sum() < 200: continue
+                acL.append(abs(float(Lb[pj].mean() - Lb[an].mean()))); acN.append(float(lap[pj].mean() / max(float(lap[an].mean()), 1e-3)))
             if k % int(cadence) == 0:     # regards, une fois par seconde : les deux personnages des bords, tête agrandie
                 n, lab, st, _ = cv2.connectedComponentsWithStats((m > 0).astype(np.uint8))
                 gros = sorted([s for s in st[1:] if s[4] > 0.02 * m.size], key=lambda s: s[0])
@@ -172,7 +186,8 @@ def profil(video, bande=None, cadence=15):
             'plans_min': round(plans / mn, 1) if plans else None,
             # teint : 9e décile des personnages-images (le plus clair compte, pas la moyenne)
             'teint_L': round(float(np.percentile([x[0] for x in peaux], 90)), 1) if peaux else None,
-            'teint_b': round(float(np.percentile([x[1] for x in peaux], 90)), 1) if peaux else None}
+            'teint_b': round(float(np.percentile([x[1] for x in peaux], 90)), 1) if peaux else None,
+            'accord_lumiere': round(float(np.median(acL)), 1) if acL else None, 'nettete_persos': round(float(np.median(acN)), 2) if acN else None}
 
 
 def reference():

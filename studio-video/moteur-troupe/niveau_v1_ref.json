@@ -47,5 +47,8 @@
   },
   "mesure": "dessins d origine des 7 personnages de la V1 (workbench/.private/troupe), médiane des figures, même éclairage que les fiches"
  },
- "plans_mesure": "coupes PySceneDetect (ContentDetector, réglages d'origine) comptées sur la bande de la scène, remesuré le 21/10/2026 (4,0 sur l'image entière)"
+ "plans_mesure": "coupes PySceneDetect (ContentDetector, réglages d'origine) comptées sur la bande de la scène, remesuré le 21/10/2026 (4,0 sur l'image entière)",
+ "accord_lumiere": 8.5,
+ "nettete_persos": 1.88,
+ "accord_mesure": "personnage contre l'anneau de décor qui l'entoure (6 % de la largeur), 5 fois par seconde, médianes ; remesuré sur la V1 le 21/10/2026 après le refus de la v26"
 }
