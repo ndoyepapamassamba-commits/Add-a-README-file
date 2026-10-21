@@ -4,14 +4,15 @@
  "appels_scenariste": 41,
  "secondes_scenariste": 13510.139830589294,
  "echecs_scenariste": 0,
- "appels_juge": 56,
+ "appels_juge": 62,
  "echecs_juge": 0,
  "brouillons_refuses_controle": 3,
  "planchers_v17": [
   0.508,
   0.613,
   0.395,
-  0.435
+  0.435,
+  0.4
  ],
  "notes": [
   0.344,
@@ -159,14 +160,14 @@
    "jetons_par_s": 4.4
   },
   "juge": {
-   "appels": 56,
+   "appels": 63,
    "tronques": 0,
-   "lus_jetons": 373,
-   "cache_jetons": 161,
-   "lecture_s": 34.9,
-   "ecriture_jetons": 80,
-   "ecriture_s": 19.5,
-   "jetons_par_s": 4.1
+   "lus_jetons": 390,
+   "cache_jetons": 153,
+   "lecture_s": 35.7,
+   "ecriture_jetons": 78,
+   "ecriture_s": 19.6,
+   "jetons_par_s": 4.0
   }
  }
 }
