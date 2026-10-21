@@ -28,7 +28,14 @@
    "lora": "at_runtime",
    "secondes": 300,
    "memoire_max_go": 11.27
+  },
+  {
+   "clip": "le-patriarche--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 319,
+   "memoire_max_go": 11.08
   }
  ],
- "run": "39510605985"
+ "run": "39528414471"
 }
