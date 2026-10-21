@@ -113,3 +113,4 @@
 [366 s] 8 images · === fiche-agent-gora   |============>                                     | 1/4 - 194.77s/it[K · mémoire libre 6711 Mo
 [488 s] 8 images · === fiche-agent-gora   |=========================>                        | 2/4 - 195.06s/it[K · mémoire libre 6693 Mo
 [609 s] 8 images · === fiche-agent-gora   |=========================>                        | 2/4 - 195.06s/it[K · mémoire libre 6692 Mo
+[730 s] 8 images · === fiche-agent-gora   |=====================================>            | 3/4 - 192.38s/it[K · mémoire libre 6686 Mo
