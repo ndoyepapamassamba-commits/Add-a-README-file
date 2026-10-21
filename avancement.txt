@@ -121,3 +121,4 @@
 [6676 s] 11 images · === perso-yaya-lapprenti   |============>                                     | 1/4 - 392.47s/it[K · mémoire libre 6175 Mo
 [6797 s] 11 images · === perso-yaya-lapprenti   |============>                                     | 1/4 - 392.47s/it[K · mémoire libre 6167 Mo
 [6919 s] 11 images · === perso-yaya-lapprenti   |============>                                     | 1/4 - 392.47s/it[K · mémoire libre 6156 Mo
+[7040 s] 11 images · === perso-yaya-lapprenti   |=========================>                        | 2/4 - 388.97s/it[K · mémoire libre 6156 Mo
