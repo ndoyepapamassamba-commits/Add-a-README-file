@@ -42,6 +42,13 @@
    "lora": "at_runtime",
    "secondes": 629,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "petit-moussa--colere",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 622,
+   "memoire_max_go": 11.26
   }
  ],
  "run": "39528414471"
