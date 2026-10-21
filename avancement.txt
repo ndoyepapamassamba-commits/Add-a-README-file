@@ -74,3 +74,4 @@
 [1340 s] 25 clips · === la-voisine--ecouter@2 (at_runtime)   |============>                                     | 1/4 - 134.08s/it[K · mémoire libre 13764 Mo
 [1461 s] 25 clips · === la-voisine--ecouter@2 (at_runtime)   |=========================>                        | 2/4 - 133.66s/it[K · mémoire libre 13761 Mo
 [1583 s] 25 clips · === la-voisine--ecouter@2 (at_runtime)   |=========================>                        | 2/4 - 133.66s/it[K · mémoire libre 13761 Mo
+[1704 s] 25 clips · === la-voisine--ecouter@2 (at_runtime)   |=====================================>            | 3/4 - 133.67s/it[K · mémoire libre 13761 Mo
