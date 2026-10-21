@@ -62,3 +62,4 @@
 [5955 s] 5 images · === decor-taxi-contrechamp-jour   |==================================================| 4/4 - 394.86s/it[K · mémoire libre 7056 Mo
 [6077 s] 5 images · === decor-taxi-contrechamp-jour   |============>                                     | 1/4 - 161.77s/it[K · mémoire libre 7041 Mo
 [122 s] 5 images · === fiche-tonton-dieng  · mémoire libre 6719 Mo
+[244 s] 5 images · === fiche-tonton-dieng  · mémoire libre 6715 Mo
