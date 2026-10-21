@@ -56,3 +56,4 @@
 [5587 s] 12 images · === decor-ecole-large-nuit   |=========================>                        | 2/4 - 89.06s/it[K · mémoire libre 7031 Mo
 [5708 s] 12 images · === decor-ecole-large-nuit   |=====================================>            | 3/4 - 85.50s/it[K · mémoire libre 7030 Mo
 [5830 s] 13 images · === decor-douane-large-nuit   |==================================================| 4/4 - 84.27s/it[K · mémoire libre 7032 Mo
+[5951 s] 13 images · === decor-douane-large-nuit   |=========================>                        | 2/4 - 83.88s/it[K · mémoire libre 7040 Mo
