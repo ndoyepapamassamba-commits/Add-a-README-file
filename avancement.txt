@@ -83,3 +83,4 @@
 [366 s] 24 clips · === maman-brigitte--parler@2 (at_runtime)   |=========================>                        | 2/4 - 134.18s/it[K · mémoire libre 13766 Mo
 [487 s] 24 clips · === maman-brigitte--parler@2 (at_runtime)   |=====================================>            | 3/4 - 133.90s/it[K · mémoire libre 13764 Mo
 [609 s] 25 clips · === mecano-issa--hausser@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14518 Mo
+[730 s] 25 clips · === mecano-issa--hausser@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13765 Mo
