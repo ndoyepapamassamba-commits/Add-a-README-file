@@ -56,3 +56,4 @@
 [487 s] 18 clips · === la-go-leopard--rire@2 (at_runtime)   |=====================================>            | 3/4 - 134.15s/it[K · mémoire libre 13763 Mo
 [608 s] 19 clips · === sur-awa--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14538 Mo
 [729 s] 19 clips · === sur-awa--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13790 Mo
+[850 s] 19 clips · === sur-awa--parler (at_runtime)   |============>                                     | 1/4 - 136.01s/it[K · mémoire libre 13773 Mo
