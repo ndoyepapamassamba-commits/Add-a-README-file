@@ -42,6 +42,13 @@
    "lora": "at_runtime",
    "secondes": 581,
    "memoire_max_go": 11.25
+  },
+  {
+   "clip": "petite-aya--montrer",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 580,
+   "memoire_max_go": 11.24
   }
  ],
  "run": "39528414471"
