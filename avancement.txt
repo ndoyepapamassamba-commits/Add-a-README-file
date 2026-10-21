@@ -52,3 +52,4 @@
 [1337 s] 17 clips · === tonton-dieng--colere (at_runtime)   |============>                                     | 1/4 - 67.94s/it[K · mémoire libre 13760 Mo
 [1458 s] 17 clips · === tonton-dieng--colere (at_runtime)   |=====================================>            | 3/4 - 67.40s/it[K · mémoire libre 13749 Mo
 [123 s] 17 clips · === le-tonton--rire (at_runtime)  · mémoire libre 13776 Mo
+[244 s] 17 clips · === le-tonton--rire (at_runtime)   |============>                                     | 1/4 - 134.00s/it[K · mémoire libre 13741 Mo
