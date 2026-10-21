@@ -51,3 +51,4 @@
 [5095 s] 5 images · === decor-taxi-champ-jour   |============>                                     | 1/4 - 160.44s/it[K · mémoire libre 7008 Mo
 [5216 s] 5 images · === decor-taxi-champ-jour   |=========================>                        | 2/4 - 156.29s/it[K · mémoire libre 7013 Mo
 [5338 s] 5 images · === decor-taxi-champ-jour   |=====================================>            | 3/4 - 156.22s/it[K · mémoire libre 7013 Mo
+[5459 s] 5 images · === decor-taxi-champ-jour   |=====================================>            | 3/4 - 156.22s/it[K · mémoire libre 7022 Mo
