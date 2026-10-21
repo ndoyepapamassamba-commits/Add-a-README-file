@@ -16,3 +16,4 @@
 [1944 s] 7 clips · === adjoua--choc (at_runtime)   |============>                                     | 1/4 - 134.67s/it[K · mémoire libre 13789 Mo
 [2065 s] 7 clips · === adjoua--choc (at_runtime)   |=========================>                        | 2/4 - 133.73s/it[K · mémoire libre 13784 Mo
 [2187 s] 7 clips · === adjoua--choc (at_runtime)   |=====================================>            | 3/4 - 133.19s/it[K · mémoire libre 13789 Mo
+[2308 s] 7 clips · === adjoua--choc (at_runtime)   |=====================================>            | 3/4 - 133.19s/it[K · mémoire libre 13792 Mo
