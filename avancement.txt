@@ -71,3 +71,4 @@
 [2306 s] 21 clips · === mecano-issa--colere (at_runtime)   |=====================================>            | 3/4 - 133.43s/it[K · mémoire libre 13749 Mo
 [2427 s] 22 clips · === fatou--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13751 Mo
 [2548 s] 22 clips · === fatou--colere (at_runtime)   |============>                                     | 1/4 - 134.04s/it[K · mémoire libre 13750 Mo
+[2670 s] 22 clips · === fatou--colere (at_runtime)   |=========================>                        | 2/4 - 133.63s/it[K · mémoire libre 13742 Mo
