@@ -831,5 +831,25 @@
   "activite": "cliente bavarde, téléphone toujours levé",
   "genre": "femme",
   "age": 42
+ },
+ "FOFANA": {
+  "height": 1.75,
+  "voice": "siwis",
+  "pitch": 1.0,
+  "dessin": "scene",
+  "lieux": [],
+  "activite": "",
+  "genre": "homme",
+  "age": 45
+ },
+ "BRIGITTE": {
+  "height": 1.64,
+  "voice": "siwis",
+  "pitch": 1.0,
+  "dessin": "scene",
+  "lieux": [],
+  "activite": "",
+  "genre": "femme",
+  "age": 28
  }
 }
