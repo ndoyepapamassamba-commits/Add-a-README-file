@@ -1,27 +1,29 @@
 {
  "modele": "gptoss20loc",
  "part": 9,
- "appels_scenariste": 51,
- "secondes_scenariste": 7973.278595685959,
+ "appels_scenariste": 54,
+ "secondes_scenariste": 8178.304674625397,
  "echecs_scenariste": 0,
- "appels_juge": 54,
+ "appels_juge": 64,
  "echecs_juge": 0,
- "brouillons_refuses_controle": 6,
+ "brouillons_refuses_controle": 7,
  "planchers_v17": [
   0.462,
   0.372,
   0.447,
   0.567,
-  0.54
+  0.54,
+  0.563
  ],
  "notes": [
   0.423,
   0.419,
   0.524,
   0.396,
-  0.524
+  0.524,
+  0.428
  ],
- "acceptes": 2,
+ "acceptes": 3,
  "lieux": [
   {
    "lieu": "Salon de coiffure",
@@ -42,6 +44,11 @@
    "lieu": "Salon de coiffure",
    "accepte": true,
    "secondes": 671
+  },
+  {
+   "lieu": "Salon de coiffure",
+   "accepte": true,
+   "secondes": 899
   }
  ],
  "drole_v17": [
@@ -55,7 +62,7 @@
   0.5
  ],
  "registre_commun": true,
- "chutes_registre_commun": 6,
+ "chutes_registre_commun": 10,
  "reparations": [
   [
    3,
@@ -180,27 +187,27 @@
  ],
  "brouillons_illisibles": 3,
  "doublons_autres_machines": 0,
- "secondes_par_brouillon": 156.3,
+ "secondes_par_brouillon": 151.5,
  "temps": {
   "scenariste": {
-   "appels": 51,
+   "appels": 54,
    "tronques": 0,
-   "lus_jetons": 611,
-   "cache_jetons": 1483,
-   "lecture_s": 39.3,
-   "ecriture_jetons": 825,
-   "ecriture_s": 112.6,
+   "lus_jetons": 584,
+   "cache_jetons": 1616,
+   "lecture_s": 37.9,
+   "ecriture_jetons": 799,
+   "ecriture_s": 109.1,
    "jetons_par_s": 7.3
   },
   "juge": {
-   "appels": 54,
+   "appels": 64,
    "tronques": 0,
-   "lus_jetons": 385,
-   "cache_jetons": 161,
-   "lecture_s": 20.2,
-   "ecriture_jetons": 72,
-   "ecriture_s": 12.5,
-   "jetons_par_s": 5.8
+   "lus_jetons": 381,
+   "cache_jetons": 159,
+   "lecture_s": 20.0,
+   "ecriture_jetons": 73,
+   "ecriture_s": 12.8,
+   "jetons_par_s": 5.7
   }
  }
 }
