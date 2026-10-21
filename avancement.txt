@@ -28,3 +28,4 @@
 [971 s] 9 clips · === maitre-kone--choc (at_runtime)   |=====================================>            | 3/4 - 124.53s/it[K · mémoire libre 13755 Mo
 [1092 s] 10 clips · === mecano-issa--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14511 Mo
 [1214 s] 10 clips · === mecano-issa--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13763 Mo
+[1335 s] 10 clips · === mecano-issa--rire (at_runtime)   |============>                                     | 1/4 - 125.40s/it[K · mémoire libre 13743 Mo
