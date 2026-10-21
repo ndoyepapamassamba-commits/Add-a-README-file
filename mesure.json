@@ -35,6 +35,13 @@
    "lora": "at_runtime",
    "secondes": 185,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "petit-ibrahima--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 185,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39528414471"
