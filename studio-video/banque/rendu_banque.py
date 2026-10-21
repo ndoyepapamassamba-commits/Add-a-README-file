@@ -149,6 +149,8 @@ def rend(episode, version, cle, cache):
     # processus NEUFS (spawn) : le parent a déjà ouvert MediaPipe (sens dessiné des personnages, assemble.sens_du_corps) ; des
     # enfants clonés (fork) en héritent l'état sans ses fils et se bloquent au premier visage à lire (v2 : 2 191 images sur 2 400)
     import multiprocessing
+    try: camera_v1._retention_lit(camera_v1._dossier_lit(os.path.join(cache, 'x.mov')))   # cache ramené à son plafond avant de compter
+    except Exception: pass
     with ProcessPoolExecutor(assemble.nb_processus(), mp_context=multiprocessing.get_context('spawn')) as ex:   # selon la mémoire
         list(ex.map(_tache, taches))
     # CARTES DE LA V1 (21/10/2026, épisode banque 1 v7) : pendant les cartes entre sketchs, l'image (qui continue de jouer)

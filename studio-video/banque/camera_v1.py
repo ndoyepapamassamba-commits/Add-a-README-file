@@ -530,6 +530,15 @@ def _retention_lit(d):
         except OSError: pass
 
 
+def croissance_lit():
+    """octets que le cache des clips peut encore prendre en mémoire partagée avant son plafond (0 s'il est ailleurs)."""
+    d = os.environ.get('LIT_CACHE') or '/dev/shm/massamba-lit'
+    if not d.startswith('/dev/shm'): return 0
+    try: deja = sum(os.path.getsize(os.path.join(d, x)) for x in os.listdir(d) if x.endswith('.npy'))
+    except OSError: deja = 0
+    return max(0, int(LIT_PLAFOND - deja))
+
+
 def lit_clip(mov, w, h, flip, gains, tete=True, sens=1.0):
     """images RGBA du clip à la taille voulue (uint8, lues à la demande) : tête tournée vers la droite de l'image
     (avant le miroir : vers le partenaire dans les deux cas), teint de la V1, liseré vert ôté, retournées et teintées de la

@@ -1160,6 +1160,26 @@ try:
 except Exception as e:
     echecs.append(f'cache des clips (course) : {e}')
 
+# 21/10/2026 — banque v23/v24 : processus de rendu tués faute de mémoire ; la marge lue doit être celle du groupe de contrôle
+# (plafond moins usage, /dev/shm compris), pas MemAvailable (4,5 Go lus pour 2,3 Go réels)
+try:
+    import assemble as _as45
+    _lim45 = None
+    for _l45 in open('/proc/self/cgroup'):
+        _h45, _c45, _p45 = _l45.strip().split(':', 2)
+        if 'memory' in _c45.split(',') and os.path.isfile(f'/sys/fs/cgroup/memory{_p45}/memory.limit_in_bytes'):
+            _lim45 = int(open(f'/sys/fs/cgroup/memory{_p45}/memory.limit_in_bytes').read())
+            _use45 = int(open(f'/sys/fs/cgroup/memory{_p45}/memory.usage_in_bytes').read())
+    _m45 = _as45.marge_memoire()
+    if _lim45 is not None and _lim45 < 1 << 50 and abs(_m45 - (_lim45 - _use45)) > 0.5e9:
+        echecs.append(f'mémoire : marge lue {_m45 / 1e9:.2f} Go, groupe de contrôle {(_lim45 - _use45) / 1e9:.2f} Go')
+    elif _as45.PAR_PROCESSUS < 1.0e9:
+        echecs.append(f'mémoire : {_as45.PAR_PROCESSUS / 1e9:.1f} Go par processus, sous la crête mesurée (0,97 Go)')
+    else:
+        print(f'mémoire : marge du groupe {_m45 / 1e9:.1f} Go, {_as45.PAR_PROCESSUS / 1e9:.1f} Go par processus, cache des clips compté : OK')
+except Exception as e:
+    echecs.append(f'mémoire (processus) : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

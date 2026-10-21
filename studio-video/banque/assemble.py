@@ -32,18 +32,22 @@ if os.path.isfile(os.path.join(ICI, 'troupe.json')):   # noms des personnages en
 # PROCESSUS SELON LA MÉMOIRE (21/10/2026, banque v21) : le groupe de contrôle du conteneur plafonne à 13,7 Go et compte
 # /dev/shm, où vivent les rendus (10,6 Go mesurés) ; il ne restait que 3 Go et le 3e processus de rendu (0,35 à 0,9 Go chacun,
 # dmesg) a été tué. Le nombre demandé (ASSEMBLE_PROCS) est donc réduit à ce que la marge du groupe — à défaut MemAvailable —
-# laisse : PAR_PROCESSUS par processus, MARGE_PROCS gardée pour le parent (MediaPipe, CLIPSeg)
-PAR_PROCESSUS, MARGE_PROCS = 0.9e9, 1.0e9
+# laisse : PAR_PROCESSUS par processus, MARGE_PROCS gardée pour le parent (MediaPipe, CLIPSeg), et la place que le cache des
+# clips préparés (/dev/shm/massamba-lit, camera_v1.LIT_PLAFOND) peut encore prendre. v23 : 3 processus pour 4,3 Go, un tué à
+# 0,97 Go (préparation d'un clip : toutes ses images en flottants, plusieurs copies) — 1,2 Go par processus
+PAR_PROCESSUS, MARGE_PROCS = 1.2e9, 0.8e9
 
 
 def marge_memoire():
     """Octets encore utilisables : plafond du groupe de contrôle (v1 ou v2) moins son usage, sinon MemAvailable."""
     try:
         for ligne in open('/proc/self/cgroup'):
-            n, _, chemin = ligne.strip().split(':', 2)
-            for lim, use in ((f'/sys/fs/cgroup/memory{chemin}/memory.limit_in_bytes', f'/sys/fs/cgroup/memory{chemin}/memory.usage_in_bytes'),
-                             (f'/sys/fs/cgroup{chemin}/memory.max', f'/sys/fs/cgroup{chemin}/memory.current')):
-                if ('memory' in n.split(',') or n == '0') and os.path.isfile(lim) and os.path.isfile(use):
+            hid, ctrl, chemin = ligne.strip().split(':', 2)   # « 4:memory:/… » (v1) ou « 0::/… » (v2)
+            if 'memory' in ctrl.split(','): cand = ((f'/sys/fs/cgroup/memory{chemin}/memory.limit_in_bytes', f'/sys/fs/cgroup/memory{chemin}/memory.usage_in_bytes'),)
+            elif hid == '0' and not ctrl: cand = ((f'/sys/fs/cgroup{chemin}/memory.max', f'/sys/fs/cgroup{chemin}/memory.current'),)
+            else: continue
+            for lim, use in cand:
+                if os.path.isfile(lim) and os.path.isfile(use):
                     l = open(lim).read().strip()
                     if l.isdigit() and int(l) < 1 << 50: return int(l) - int(open(use).read())
     except (OSError, ValueError): pass
@@ -54,6 +58,9 @@ def marge_memoire():
 def nb_processus(demande=None):
     n = int(demande or os.environ.get('ASSEMBLE_PROCS', os.cpu_count() or 4)); m = marge_memoire()
     if m is None: return max(1, n)
+    try:
+        import camera_v1; m -= camera_v1.croissance_lit()
+    except Exception: pass
     k = max(1, min(n, int((m - MARGE_PROCS) // PAR_PROCESSUS)))
     if k < n: print(f'processus de rendu : {k} au lieu de {n} (marge mémoire {m / 1e9:.1f} Go)', flush=True)
     return k
