@@ -31,12 +31,29 @@ GESTES = {   # geste → (pose de départ sur la planche, consigne de mouvement)
     'colere':   (1, 'gets angry, frowns, waves the arms, talks loudly'),
     'mentir':   (3, 'smiles too much, eyes darting left and right, nervous laugh, scratches the head'),
 }
-CONSIGNE = ("3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright green background, "
+CONSIGNE = ("3D animated cartoon character, Pixar style, the same character exactly, full body, plain bright {fond} background, "
             "static camera, smooth natural motion: the character {geste}.")
+FONDS = {'vert': ('green', (0, 255, 0)), 'bleu': ('blue', (255, 71, 0))}   # nom dans la consigne, couleur BGR de la toile
+
+
+def fond_de(qui):
+    t = json.load(open(TROUPE, encoding='utf-8')) if os.path.isfile(TROUPE) else {}
+    return t.get('fonds', {}).get(qui, 'vert')
+
+
+def masque_fond(im):
+    """Masque du fond d'une planche : vert validé sur les planches V1 (teinte 35–85) ; sinon la teinte lue sur le bord de l'image
+    (fond bleu des personnages habillés de vert, 21/10/2026), à ±18."""
+    import cv2, numpy as np
+    hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
+    bord = np.concatenate([hsv[:6].reshape(-1, 3), hsv[-6:].reshape(-1, 3), hsv[:, :6].reshape(-1, 3), hsv[:, -6:].reshape(-1, 3)])
+    h0 = float(np.median(bord[:, 0]))
+    teinte = ((hsv[..., 0] > 35) & (hsv[..., 0] < 85)) if 35 < h0 < 85 else (np.abs(hsv[..., 0].astype(int) - h0) < 18)
+    return teinte & (hsv[..., 1] > 120) & (hsv[..., 2] > 80), ('vert' if 35 < h0 < 85 else 'bleu')
 
 
 def taches(qui=None):
-    return [{'id': f'{p}--{g}', 'personnage': p, 'geste': g, 'pose': po, 'prompt': CONSIGNE.format(geste=c)}
+    return [{'id': f'{p}--{g}', 'personnage': p, 'geste': g, 'pose': po, 'prompt': CONSIGNE.format(geste=c, fond=FONDS[fond_de(p)][0])}
             for p in (qui or personnages()) for g, (po, c) in GESTES.items()]
 
 
@@ -48,8 +65,7 @@ def boites(planche):
     parfois 4 : Grand-père Ndiaye, sans haussement d'épaules) prête sa 4e pose au haussement et au rire ; en dessous de
     3 poses lisibles, repli historique : 5 parts égales."""
     import cv2, numpy as np
-    im = cv2.imread(planche); H, W = im.shape[:2]; hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
-    vert = (hsv[..., 0] > 35) & (hsv[..., 0] < 85) & (hsv[..., 1] > 120) & (hsv[..., 2] > 80)
+    im = cv2.imread(planche); H, W = im.shape[:2]; vert, _ = masque_fond(im)
     m = cv2.morphologyEx((~vert).astype(np.uint8), cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
     n, lab, st, _ = cv2.connectedComponentsWithStats(m)
     blocs = sorted((int(st[i, 0]), int(st[i, 0] + st[i, 2])) for i in range(1, n) if st[i, 3] >= 0.4 * H)
@@ -58,7 +74,7 @@ def boites(planche):
         unite = float(np.median([l for l in larg if l < 1.6 * mini]))
         poses_ = []
         for (a, b) in blocs:
-            k = max(1, int(round((b - a) / unite)))
+            k = max(1, int((b - a) / unite + 0.3))   # 2 poses collées ≈ 2 largeurs ; bras grands ouverts ≤ 1,65 (Patriarche) : 1 pose
             poses_ += [(a + (b - a) * j // k, a + (b - a) * (j + 1) // k) for j in range(k)]
     else:
         poses_ = []
@@ -71,8 +87,8 @@ def boites(planche):
 def poses(planche, dossier):
     """Les 5 poses d'une planche (dans l'ordre des gestes), sur fond vert, au format vertical de Wan (384×640)."""
     import cv2, numpy as np
-    im = cv2.imread(planche); hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV); vert_bgr = (0, 255, 0); W = im.shape[1]
-    vert = (hsv[..., 0] > 35) & (hsv[..., 0] < 85) & (hsv[..., 1] > 120) & (hsv[..., 2] > 80)
+    im = cv2.imread(planche); W = im.shape[1]
+    vert, fond = masque_fond(im); vert_bgr = FONDS[fond][1]   # la toile de Wan reprend la couleur du fond de la planche
     segs, carte = boites(planche)
     os.makedirs(dossier, exist_ok=True); faites = []
     for k, (a, b) in enumerate(segs):

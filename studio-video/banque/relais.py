@@ -5,7 +5,8 @@
 #     écartée et signalée (à redessiner), jamais animée. (Exiger 5 silhouettes séparées écartait les planches V1 elles-mêmes :
 #     Baye 1, Coumba 3, leurs poses se touchent ; banque.poses les coupe alors en 5 parts égales, clips réussis — mesuré le 20/10.)
 #  3. la scelle avec la clé publique de la fabrique dans images/troupe/<personnage>-planche.msb (les machines l'ouvrent en mémoire) ;
-#  4. inscrit le personnage dans banque/troupe.json et écrit dans banque/demandes/demande.json les SEULS clips qui manquent
+#     Une planche dont la version est plus basse que celle de la bible (image à refaire, bible.REFAIRE) n'est pas relayée.
+#  4. inscrit le personnage dans banque/troupe.json (avec son fond, vert ou bleu) et écrit dans banque/demandes/demande.json les SEULS clips qui manquent
 #     (ceux déjà présents sur une branche banque-sortie-* ne sont jamais refaits).
 #   python3 relais.py CLE_CLAUDE.priv.pem CLE_FABRIQUE.pub.pem DOSSIER_DE_TRAVAIL   → résumé JSON (acceptés, écartés, clips demandés)
 import json, os, subprocess, sys
@@ -52,20 +53,27 @@ def main(priv_claude, pub_fabrique, travail):
     from cryptography.hazmat.primitives import serialization
     os.makedirs(travail, exist_ok=True)
     priv = serialization.load_pem_private_key(open(priv_claude, 'rb').read(), None); pub = coffre._pub(pub_fabrique)
-    taches = {t['id']: t for t in json.load(open(os.path.join(ICI, '..', 'images', 'bible', 'taches.json'), encoding='utf-8'))}
+    sys.path.insert(0, os.path.join(ICI, '..', 'images')); import bible
+    taches = {t['id']: t for t in bible.taches()}   # versions et fonds à jour (une planche périmée n'est jamais relayée)
     troupe = json.load(open(banque.TROUPE, encoding='utf-8')) if os.path.isfile(banque.TROUPE) else {'personnages': list(banque.V1), 'noms': {}}
     acceptes, ecartes = [], {}
     for br in branches('bible-sortie-'):
-        for f in fichiers(br):
+        noms = fichiers(br)
+        mes = json.loads(_git('show', f'origin/{br}:mesure.json', text=True).stdout or '{}').get('taches', []) if 'mesure.json' in noms else []
+        version = {e['tache']: e.get('version', 1) for e in mes if e.get('ok')}
+        for f in noms:
             if not (f.startswith('perso-') and f.endswith('.msb')): continue
             nom = f[len('perso-'):-4]
             if nom in troupe['personnages']: continue
+            if version.get(f[:-4], 1) < taches.get(f[:-4], {}).get('version', 1):
+                ecartes[nom] = {'raison': 'version périmée, planche à refaire'}; continue
             png = os.path.join(travail, nom + '.png')
             open(png, 'wb').write(coffre.ouvre_octets(_git('show', f'origin/{br}:{f}').stdout, priv))
             ok, mesure = controle(png, travail)
             if not ok: ecartes[nom] = mesure; continue
             open(os.path.join(ICI, '..', 'images', 'troupe', f'{nom}-planche.msb'), 'wb').write(coffre.scelle_octets(open(png, 'rb').read(), pub))
             troupe['personnages'].append(nom); troupe['noms'][nom] = taches.get(f'perso-{nom}', {}).get('nom', nom.upper()); acceptes.append(nom)
+            if taches.get(f'perso-{nom}', {}).get('fond') == 'bleu': troupe.setdefault('fonds', {})[nom] = 'bleu'
     json.dump(troupe, open(banque.TROUPE, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     faits = {f[:-4] for br in branches('banque-sortie-') for f in fichiers(br) if f.endswith('.msb')}
     demande = [t for t in banque.taches() if t['id'] not in faits]
