@@ -98,3 +98,4 @@
 [1581 s] 24 clips · === mademoiselle-rosine--hausser (at_runtime)   |=========================>                        | 2/4 - 133.34s/it[K · mémoire libre 13776 Mo
 [1702 s] 24 clips · === mademoiselle-rosine--hausser (at_runtime)   |=====================================>            | 3/4 - 133.18s/it[K · mémoire libre 13776 Mo
 [122 s] 25 clips · === salif-le-parisien--colere (at_runtime)  · mémoire libre 13769 Mo
+[244 s] 25 clips · === salif-le-parisien--colere (at_runtime)   |============>                                     | 1/4 - 135.82s/it[K · mémoire libre 13768 Mo
