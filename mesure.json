@@ -35,6 +35,13 @@
    "lora": "at_runtime",
    "secondes": 361,
    "memoire_max_go": 11.03
+  },
+  {
+   "clip": "la-go-leopard--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 356,
+   "memoire_max_go": 11.26
   }
  ],
  "run": "39528414471"
