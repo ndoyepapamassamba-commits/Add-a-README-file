@@ -21,7 +21,7 @@
 #    (16 → 24 i/s sans image répétée une fois sur deux).
 # Rendu image par image en numpy (positions au sous-pixel : la caméra ne saute jamais d'un pixel entier), puis ffmpeg pour le
 # fond, les titres et le son (assemble.segment).
-import math, os, subprocess, sys
+import json, math, os, subprocess, sys
 import numpy as np, cv2
 
 ICI = os.path.dirname(os.path.abspath(__file__))
@@ -294,8 +294,81 @@ def despill(F, plein=False):
     return F
 
 
-LIT_VERSION = 4   # 2 : reflet vert ôté partout sur les personnages tournés sur fond vert ; 3 : gain de tête étalonné (lacet_banque v4) ;
-#                   4 : reflet vert retiré en proportion de son excès (despill)
+_MAINS = []
+
+
+def _zones_mains(mov, F):
+    """boîtes des mains de chaque image du clip (MediaPipe HandLandmarker, Apache-2.0, déjà dans le cache des modèles) : [[x0, y0,
+    x1, y1], …] par image, en cache à côté du clip (<clip>.mains.json) ; une image où le flou cache la main reprend celles de
+    ses voisines (±2), élargies."""
+    f = mov[:-4] + '.mains.json'
+    if os.path.isfile(f):
+        d = json.load(open(f))
+        if len(d) == len(F): return d
+    if not _MAINS or _MAINS[0][1] != os.getpid():
+        import mediapipe as mp
+        from mediapipe.tasks.python import vision, BaseOptions
+        Mo = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/hand_landmarker.task'
+        _MAINS[:] = [((mp, vision.HandLandmarker.create_from_options(vision.HandLandmarkerOptions(base_options=BaseOptions(model_asset_path=Mo),
+                      num_hands=2, min_hand_detection_confidence=0.2, min_hand_presence_confidence=0.2))), os.getpid())]
+    mp, det = _MAINS[0][0]; B = []
+    for im in F:
+        a = im[..., 3:] / 255.0; rgb = np.ascontiguousarray(np.clip(im[..., :3] * a + 200 * (1 - a), 0, 255).astype(np.uint8)); h, w = rgb.shape[:2]
+        r = det.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)); bs = []
+        for lm in r.hand_landmarks:
+            xs = [p.x * w for p in lm]; ys = [p.y * h for p in lm]; m = 0.35 * max(max(xs) - min(xs), max(ys) - min(ys), 12)
+            bs.append([round(min(xs) - m), round(min(ys) - m), round(max(xs) + m), round(max(ys) + m)])
+        B.append(bs)
+    lus = [i for i, b in enumerate(B) if b]; C_ = lambda b: ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2)
+    for i in range(len(B)):   # image où le flou cache la main : sa boîte suit la main entre l'image lue d'avant et celle d'après
+        if B[i]: continue
+        p = max((k for k in lus if k < i), default=None); q = min((k for k in lus if k > i), default=None); z = []
+        if p is not None and q is not None and q - p <= 6:
+            u = (i - p) / (q - p)
+            for b in B[p]:
+                c = min(B[q], key=lambda e: math.dist(C_(b), C_(e))); z.append([round(x + (y - x) * u) + (-18 if k < 2 else 18) for k, (x, y) in enumerate(zip(b[:4], c[:4]))] + [1])
+        for k in (p, q):
+            if k is not None and abs(k - i) <= 2: z += [[b[0] - 24, b[1] - 24, b[2] + 24, b[3] + 24, 1] for b in B[k] if len(b) == 4]
+        B[i] = z
+    tmp = f'{f}.{os.getpid()}'; json.dump(B, open(tmp, 'w')); os.replace(tmp, f)
+    return B
+
+
+def mains_vertes(F, mov):
+    """MAINS OLIVE (21/10/2026, épisode banque 1 v10/v11 : mains de l'Agent Doumbia et de Tiékoro vert-kaki à 40,5, 44,7 et
+    46,9 s, là où tombent les sautes restantes). Le fond vert s'est mêlé au dessin des mains (dès la planche, puis dans le flou
+    des gestes : 128, 124, 56 — rouge ≈ vert ≫ bleu) ; le dé-débordement ne peut pas les séparer d'un vrai jaune. Dans la zone
+    des mains détectées (_zones_mains), les pixels plus verts que la peau du personnage reprennent la couleur de sa peau
+    (médiane a*, b* de ses masques de peau, peau.py), clarté gardée ; un objet tenu qui n'est pas vert (téléphone, carnet)
+    garde sa couleur, et rien n'est touché hors des mains."""
+    import peau
+    try:
+        M = peau.masques(mov, F); Z = _zones_mains(mov, F)
+    except Exception as e:
+        print(f'  mains non reteintes ({os.path.basename(mov)}) : {e}', file=sys.stderr); return F
+    sk = M > 0.5
+    if sk.sum() < 200: return F
+    lab0 = [cv2.cvtColor(np.ascontiguousarray(f[..., :3] / 255.0).astype(np.float32), cv2.COLOR_RGB2LAB) for f in F]
+    a_s = float(np.median(np.concatenate([l[..., 1][m] for l, m in zip(lab0, sk)]))); b_s = float(np.median(np.concatenate([l[..., 2][m] for l, m in zip(lab0, sk)])))
+    out = F.copy(); h, w = F.shape[1:3]
+    for i, (lab, zs) in enumerate(zip(lab0, Z)):
+        if not zs: continue
+        zone = np.zeros((h, w), bool)
+        for b in zs: zone[max(0, b[1]):max(0, b[3]), max(0, b[0]):max(0, b[2])] = True
+        olive = (F[i, ..., 3] > 64) & (lab[..., 1] < a_s - 4) & (lab[..., 2] > 5) & (lab[..., 0] < 80)
+        # toute la tache olive reliée à une main (avant-bras compris), jamais plus de 6 % de l'image (un vêtement entier)
+        k, lb, st, _ = cv2.connectedComponentsWithStats(olive.astype(np.uint8), connectivity=8)
+        garde = [j for j in range(1, k) if st[j, 4] <= 0.06 * h * w and (zone & (lb == j)).sum() >= 10]
+        cible = np.isin(lb, garde) if garde else np.zeros((h, w), bool)
+        if not cible.any(): continue
+        wgt = cv2.GaussianBlur(cible.astype(np.float32), (0, 0), 1.2)[..., None]
+        nl = np.dstack([lab[..., 0], np.full((h, w), a_s, np.float32), np.full((h, w), b_s, np.float32)])
+        out[i, ..., :3] = F[i, ..., :3] * (1 - wgt) + cv2.cvtColor(nl, cv2.COLOR_LAB2RGB) * 255 * wgt
+    return out
+
+
+LIT_VERSION = 5   # 2 : reflet vert ôté partout sur les personnages tournés sur fond vert ; 3 : gain de tête étalonné (lacet_banque v4) ;
+#                   4 : reflet vert retiré en proportion de son excès (despill) ; 5 : mains olive des gestes rapides reteintes
 # les versions du champ de tête (lacet_banque.VERSION) et du teint (peau.VERSION) entrent aussi dans la clé : un clip préparé
 # avec un ancien champ n'est jamais relu (21/10/2026, lacet_banque v5)
 LIT_PLAFOND = float(os.environ.get('LIT_PLAFOND_GO', '4')) * (1 << 30)   # cache en mémoire partagée : plus vieux effacés au-delà
@@ -364,6 +437,7 @@ def _prepare_clip(mov, w, h, flip, gains, tete, sens):
     except Exception:
         plein = False
     F = despill(F, plein)
+    if plein: F = mains_vertes(F, mov)
     F = np.stack([cv2.resize(f, (w, h), interpolation=cv2.INTER_AREA if w < W0 else cv2.INTER_CUBIC) for f in F])
     if flip: F = F[:, :, ::-1]
     F[..., :3] *= np.array(gains, np.float32)

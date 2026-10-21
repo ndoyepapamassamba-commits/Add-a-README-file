@@ -22,17 +22,19 @@ def _ease(u):
     u = min(1.0, max(0.0, u)); return u * u * (3 - 2 * u)
 
 
-def _visages(img_bgr):
-    """boîtes (x0, y0, x1, y1) des visages de l'image : peau du visage du segmenteur MediaPipe (classe 3, peau.py)."""
+def _visages(img_bgr, corps=False):
+    """boîtes (x0, y0, x1, y1) des visages de l'image : peau du visage du segmenteur MediaPipe (classe 3, peau.py) ; avec
+    corps=True, aussi le masque des personnes entières (toutes classes sauf le fond)."""
     import peau
     mp, seg = peau._seg(); rgb = np.ascontiguousarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
-    m = cv2.resize(np.squeeze(seg.segment(mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)).category_mask.numpy_view()),
-                   (img_bgr.shape[1], img_bgr.shape[0]), interpolation=cv2.INTER_NEAREST) == 3
+    c = cv2.resize(np.squeeze(seg.segment(mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)).category_mask.numpy_view()),
+                   (img_bgr.shape[1], img_bgr.shape[0]), interpolation=cv2.INTER_NEAREST); m = c == 3
     k, _, st, _ = cv2.connectedComponentsWithStats(m.astype(np.uint8))
-    return [(x, y, x + w, y + h) for x, y, w, h, a in st[1:] if a > 0.004 * m.size]
+    v = [(x, y, x + w, y + h) for x, y, w, h, a in st[1:] if a > 0.004 * m.size]
+    return (v, c > 0) if corps else v
 
 
-def _place_carte(titre, visages):
+def _place_carte(titre, visages, corps=None):
     """(centre x, centre y de l'émoji, haut du titre, taille de base) qui couvre le moins de visage — tourne.place_carte
     (v34 : l'émoji couvrait le visage de Coumba, le titre la tête de Petit Mamadou), mêmes positions candidates."""
     from PIL import ImageFont
@@ -51,16 +53,24 @@ def _place_carte(titre, visages):
             mx, my = 0.15 * (v[2] - v[0]), 0.15 * (v[3] - v[1])
             tot += max(0.0, min(r[2], v[2] + mx) - max(r[0], v[0] - mx)) * max(0.0, min(r[3], v[3] + my) - max(r[1], v[1] - my))
         return tot
+    def sur_corps(e, base):   # part de l'émoji et des deux petits émojis posée sur un corps (masque des personnes)
+        if corps is None: return 0.0
+        R = base * 0.5; tot = 0.0
+        for cx, cy, r in ((e[0], e[1], 0.62 * base), (e[0] - 1.7 * R, e[1] + 0.55 * R, 0.25 * base), (e[0] + 1.7 * R, e[1] + 0.55 * R, 0.25 * base)):
+            x0, y0, x1, y1 = [int(round(v)) for v in (cx - r, cy - r, cx + r, cy + r)]
+            z = corps[max(0, y0):max(0, y1), max(0, x0):max(0, x1)]; tot += float(z.mean()) if z.size else 0.0
+        return round(tot / 3, 2)
     best = None
     for base in (210, 170, 140):
         sz = 1.32 * base
         for k_, (ex, ey, ty) in enumerate(((CW / 2, 145, 290), (CW * 0.27, 30 + sz / 2, CH - th - 14), (CW * 0.73, 30 + sz / 2, CH - th - 14),
                                          (CW * 0.27, CH - 14 - sz / 2, 18), (CW * 0.73, CH - 14 - sz / 2, 18), (CW / 2, CH - 14 - sz / 2, 18))):
             ex = min(CW - sz / 2 - 4, max(sz / 2 + 4, ex))
-            cle = (couvre((ex - sz / 2, ey - sz / 2, ex + sz / 2, ey + sz / 2)) + couvre((30, ty - 6, CW - 30, ty + th)), 210 - base, k_)
+            cle = (couvre((ex - sz / 2, ey - sz / 2, ex + sz / 2, ey + sz / 2)) + couvre((30, ty - 6, CW - 30, ty + th)),
+                   sur_corps((ex, ey), base), 210 - base, k_)
             if best is None or cle < best[0]: best = (cle, (ex, ey, ty, base))
-        if best[0][0] == 0: break
-    return best[1]
+        if best[0][0] == 0 and best[0][1] == 0: break
+    return best[1] + (best[0][1],)
 
 
 def plan_sketch(S, lignes, t0, t1, decor, banque):
@@ -156,9 +166,10 @@ def rend(episode, version, cle, cache):
         im = cv2.imread(f) if os.path.isfile(f) else cv2.imread(os.path.join(D, 'clip', f'f{min(faites, key=lambda x: abs(x - i)):05d}.jpg'))
         if c is not None:
             titre = next((x.get('titre', '') for x in H['sketchs'] if x['id'] == c.get('apres')), '').upper()
-            if c['t0'] not in places: places[c['t0']] = _place_carte(titre, _visages(im))
+            if c['t0'] not in places: places[c['t0']] = _place_carte(titre, *_visages(im, corps=True))
             t = i / FPS; k = _ease((t - (c['t0'] - 0.05)) / 0.15)
-            cal = cartes_fx.carte(CW, CH, t - c['t0'], titre, ids.index(c['apres']) + 1 if c.get('apres') in ids else 1, len(ids), places[c['t0']]).astype(np.float32)
+            pl = places[c['t0']]   # (x, y, titre, taille, part sur un corps) : entrée douce si la carte touche un personnage
+            cal = cartes_fx.carte(CW, CH, t - c['t0'], titre, ids.index(c['apres']) + 1 if c.get('apres') in ids else 1, len(ids), pl[:4], doux=pl[4] > 0.05).astype(np.float32)
             a = cal[..., 3:] / 255.0; im = im.astype(np.float32) * (1 - 0.35 * k) * (1 - a) + cal[..., 2::-1] * a
         cv2.imwrite(f, np.clip(im, 0, 255).astype(np.uint8), [cv2.IMWRITE_JPEG_QUALITY, 94])
     for f in os.listdir(os.path.join(D, 'clip')):   # rien au-delà de la durée de la bande son

@@ -992,6 +992,20 @@ try:
 except Exception as e:
     echecs.append(f'entre deux images : {e}')
 
+# 21/10/2026 — v11 : 3 à-coups de suite sous la 1re carte (rebond élastique de l'émoji posé sur les corps) ; mains olive
+try:
+    sys.path.insert(0, os.path.join(ICI, 'moteur-troupe')); import cartes_fx as _cf36, rendu_banque as _rb36, camera_v1 as _cv36
+    _e36 = [_cf36._entree_douce(u) for u in np.arange(0, 0.7, 0.05)]
+    _src36 = open(_rb36.__file__, encoding='utf-8').read()
+    if not (all(b >= a for a, b in zip(_e36, _e36[1:])) and max(_e36) <= 1.0) or 'doux=pl[4]' not in _src36 or 'corps=True' not in _src36:
+        echecs.append('cartes : émoji encore élastique sur un personnage (entrée douce absente)')
+    _ok36 = 'def mains_vertes' in open(_cv36.__file__, encoding='utf-8').read() and 'mains_vertes(F, mov)' in open(_cv36.__file__, encoding='utf-8').read()
+    if not _ok36: echecs.append('mains olive : correction absente de la préparation des clips')
+    if _cv36.LIT_VERSION < 5: echecs.append('mains olive : version des clips préparés non relevée (ancien cache relu)')
+    print('cartes : entrée douce sans rebond sur un personnage ; mains olive reteintes à la peau (zones MediaPipe) : OK')
+except Exception as e:
+    echecs.append(f'cartes / mains : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

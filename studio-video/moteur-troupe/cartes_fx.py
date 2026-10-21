@@ -118,11 +118,19 @@ def _etoile(dr, x, y, r, a, coul):
     dr.polygon(pts, fill=coul + (int(255 * a),))
 
 
-def carte(W, H, u, titre, rang, total, place, nom_emoji=None):
-    """calque RGBA (H × W × 4, uint8) de la carte à l'instant u (s depuis le début de la carte)."""
+def _entree_douce(u):
+    """échelle sans rebond : 0 → 1 en 0,3 s (sortie en cubique), pour une carte posée sur un personnage."""
+    return 0.0 if u <= 0 else 1 - (1 - min(1.0, u / 0.3)) ** 3
+
+
+def carte(W, H, u, titre, rang, total, place, nom_emoji=None, doux=False):
+    """calque RGBA (H × W × 4, uint8) de la carte à l'instant u (s depuis le début de la carte). doux (21/10/2026, épisode
+    banque 1 v11 : 3 à-coups de suite sous la 1re carte) : posée en partie sur un personnage, l'émoji entre sans rebond
+    élastique ni balancement et les petits émojis ne dansent pas — grossir, rétrécir, regrossir sur un corps fait repartir
+    son mouvement en sens inverse à chaque image (la V1 posait les siennes sur le décor)."""
     ex, ey, ty, base = place
     im = Image.new('RGBA', (W, H), (0, 0, 0, 0)); dr = ImageDraw.Draw(im)
-    s = _pop(u); R = base * 0.5
+    s = _entree_douce(u) if doux else _pop(u); R = base * 0.5
     # 1. soleil de rayons fins qui tourne (16 rayons alternés cyan / rose), halo doré léger
     if s > 0:
         Rr = R * 2.0 * min(1.0, s); ang0 = u * 0.8
@@ -134,7 +142,7 @@ def carte(W, H, u, titre, rang, total, place, nom_emoji=None):
         rr = R * 1.18 * min(1.0, s); dr.ellipse((ex - rr, ey - rr, ex + rr, ey + rr), fill=OR + (55,))
     # 2. émoji principal ANIMÉ (pop élastique, léger balancement amorti)
     if s > 0:
-        ang = 6.0 * math.sin(2 * math.pi * 1.6 * u) * math.exp(-1.1 * u)
+        ang = 0.0 if doux else 6.0 * math.sin(2 * math.pi * 1.6 * u) * math.exp(-1.1 * u)
         d = max(8, int(base * s)); e = _image_emoji(nom_emoji or PRINCIPAUX[(rang - 1) % len(PRINCIPAUX)], d, u)
         if abs(ang) > 0.3: e = e.rotate(ang, resample=Image.BICUBIC, expand=True)
         im.alpha_composite(e, (int(ex - e.width / 2), int(ey - e.height / 2)))
@@ -148,7 +156,7 @@ def carte(W, H, u, titre, rang, total, place, nom_emoji=None):
         v = min(1.0, max(0.0, (u - 0.12 - 0.08 * j) / 0.3)); v = 1 - (1 - v) ** 3
         if v <= 0: continue
         d2 = int(base * 0.42); e2 = _image_emoji(nom, d2, u + 0.3 * j).rotate(cote * 12, resample=Image.BICUBIC, expand=True)
-        x2 = ex + cote * (R * 1.7) * v + cote * (1 - v) * W * 0.6; y2 = ey + R * 0.55 + 6 * math.sin(2 * math.pi * 1.8 * u + j)
+        x2 = ex + cote * (R * 1.7) * v + cote * (1 - v) * W * 0.6; y2 = ey + R * 0.55 + (0 if doux else 6 * math.sin(2 * math.pi * 1.8 * u + j))
         if v >= 1: x2 = min(max(x2, e2.width / 2 + 6), W - e2.width / 2 - 6)   # jamais coupé par le bord du cadre
         im.alpha_composite(e2, (int(x2 - e2.width / 2), int(y2 - e2.height / 2)))
     # 5. compteur + ruban incliné du titre
