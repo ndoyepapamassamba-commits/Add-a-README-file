@@ -238,6 +238,8 @@ def image_composee(k):
 # BOUCLE SANS COUPURE (18/10/2026, « que mes vidéos passent en boucle partout ») : TikTok relance la vidéo d'elle-même ;
 # un revisionnage est un signal fort. Les BOUCLE_S dernières secondes se fondent dans la toute première image (l'accroche),
 # si bien que la relance ne montre aucune coupure : contrôle « boucle_sans_coupure » (dernière ≈ première image).
+# 21/10/2026 (épisode 4 v4) : un fondu de 0,2 s faisait passer les « sautes » de la mesure V1 de 17 à 12, mais la porte E du
+# juge unique y voyait 3 sauts (« à corriger ») — 0,5 s gardé, le juge passe avant la mesure de comparaison
 BOUCLE_S = float(os.environ.get('BOUCLE_S', 0.5)); _PREMIERE = []
 def une_image(k):
     im = image_composee(k); u = (k / FPS - (len(frames) / FPS - BOUCLE_S)) / BOUCLE_S if BOUCLE_S > 0 else -1
