@@ -70,3 +70,4 @@
 [122 s] 6 images · === fiche-agent-bakary  · mémoire libre 6636 Mo
 [244 s] 6 images · === fiche-agent-bakary  · mémoire libre 6616 Mo
 [365 s] 6 images · === fiche-agent-bakary   |============>                                     | 1/4 - 215.25s/it[K · mémoire libre 6607 Mo
+[487 s] 6 images · === fiche-agent-bakary   |============>                                     | 1/4 - 215.25s/it[K · mémoire libre 6602 Mo
