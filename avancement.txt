@@ -89,3 +89,4 @@
 [1827 s] 27 clips · === le-banquier--parler@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13750 Mo
 [1949 s] 27 clips · === le-banquier--parler@2 (at_runtime)   |============>                                     | 1/4 - 134.14s/it[K · mémoire libre 13743 Mo
 [2070 s] 27 clips · === le-banquier--parler@2 (at_runtime)   |=========================>                        | 2/4 - 133.51s/it[K · mémoire libre 13752 Mo
+[2192 s] 27 clips · === le-banquier--parler@2 (at_runtime)   |=====================================>            | 3/4 - 133.33s/it[K · mémoire libre 13757 Mo
