@@ -49,6 +49,13 @@
    "lora": "at_runtime",
    "secondes": 301,
    "memoire_max_go": 11.27
+  },
+  {
+   "clip": "adjoua--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 302,
+   "memoire_max_go": 11.27
   }
  ],
  "run": "39528414471"
