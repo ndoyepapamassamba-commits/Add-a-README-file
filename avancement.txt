@@ -67,3 +67,4 @@
 [123 s] 11 images · === fiche-general-zongo  · mémoire libre 6681 Mo
 [245 s] 11 images · === fiche-general-zongo  · mémoire libre 6676 Mo
 [123 s] 11 images · === fiche-general-zongo  · mémoire libre 6643 Mo
+[244 s] 11 images · === fiche-general-zongo   |============>                                     | 1/4 - 173.09s/it[K · mémoire libre 6626 Mo
