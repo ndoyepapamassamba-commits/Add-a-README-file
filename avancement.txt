@@ -75,3 +75,4 @@
 [367 s] 21 clips · === le-tonton--ecouter@2 (at_runtime)   |=========================>                        | 2/4 - 134.69s/it[K · mémoire libre 13774 Mo
 [488 s] 21 clips · === le-tonton--ecouter@2 (at_runtime)   |=====================================>            | 3/4 - 133.77s/it[K · mémoire libre 13770 Mo
 [609 s] 22 clips · === maman-brigitte--rire@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14568 Mo
+[731 s] 22 clips · === maman-brigitte--rire@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13793 Mo
