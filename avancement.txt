@@ -1,2 +1,3 @@
 [122 s] 4 clips · === la-lyceenne--montrer (at_runtime)  · mémoire libre 13797 Mo
 [243 s] 4 clips · === la-lyceenne--montrer (at_runtime)   |============>                                     | 1/4 - 136.47s/it[K · mémoire libre 13783 Mo
+[364 s] 4 clips · === la-lyceenne--montrer (at_runtime)   |=========================>                        | 2/4 - 134.01s/it[K · mémoire libre 13774 Mo
