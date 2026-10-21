@@ -53,3 +53,4 @@
 [123 s] 18 clips · === la-go-leopard--rire@2 (at_runtime)  · mémoire libre 13761 Mo
 [244 s] 18 clips · === la-go-leopard--rire@2 (at_runtime)   |============>                                     | 1/4 - 135.74s/it[K · mémoire libre 13755 Mo
 [365 s] 18 clips · === la-go-leopard--rire@2 (at_runtime)   |=========================>                        | 2/4 - 134.90s/it[K · mémoire libre 13753 Mo
+[487 s] 18 clips · === la-go-leopard--rire@2 (at_runtime)   |=====================================>            | 3/4 - 134.15s/it[K · mémoire libre 13763 Mo
