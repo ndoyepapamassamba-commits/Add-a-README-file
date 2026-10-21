@@ -16,3 +16,4 @@
 [243 s] 2 images · === maison-mecano-issa-cour-large-jour   |============>                                     | 1/4 - 158.44s/it[K · mémoire libre 6958 Mo
 [364 s] 2 images · === maison-mecano-issa-cour-large-jour   |=========================>                        | 2/4 - 157.52s/it[K · mémoire libre 6977 Mo
 [486 s] 2 images · === maison-mecano-issa-cour-large-jour   |=========================>                        | 2/4 - 157.52s/it[K · mémoire libre 6977 Mo
+[607 s] 2 images · === maison-mecano-issa-cour-large-jour   |=====================================>            | 3/4 - 157.19s/it[K · mémoire libre 6969 Mo
