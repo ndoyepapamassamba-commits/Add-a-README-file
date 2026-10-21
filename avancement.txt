@@ -6,3 +6,4 @@
 [730 s] 5 clips · === la-future-maman--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13784 Mo
 [852 s] 5 clips · === la-future-maman--ecouter (at_runtime)   |============>                                     | 1/4 - 135.63s/it[K · mémoire libre 13774 Mo
 [973 s] 5 clips · === la-future-maman--ecouter (at_runtime)   |=========================>                        | 2/4 - 134.19s/it[K · mémoire libre 13758 Mo
+[1094 s] 5 clips · === la-future-maman--ecouter (at_runtime)   |=====================================>            | 3/4 - 134.47s/it[K · mémoire libre 13758 Mo
