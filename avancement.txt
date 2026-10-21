@@ -64,3 +64,4 @@
 [366 s] 25 clips · === maman-brigitte--colere@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13773 Mo
 [488 s] 25 clips · === maman-brigitte--colere@2 (at_runtime)   |=========================>                        | 2/4 - 71.85s/it[K · mémoire libre 13779 Mo
 [609 s] 25 clips · === maman-brigitte--colere@2 (at_runtime)   |=====================================>            | 3/4 - 72.63s/it[K · mémoire libre 13772 Mo
+[730 s] 26 clips · === le-frimeur--montrer@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13778 Mo

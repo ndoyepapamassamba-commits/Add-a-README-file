@@ -175,6 +175,13 @@
    "lora": "at_runtime",
    "secondes": 323,
    "memoire_max_go": 11.09
+  },
+  {
+   "clip": "maman-brigitte--colere@2",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 324,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39585702697"
