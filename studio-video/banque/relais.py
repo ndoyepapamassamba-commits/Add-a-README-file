@@ -31,10 +31,9 @@ def fichiers(br):
 
 
 def controle(planche, dossier):
-    """Fond vert franc, 1 à 8 silhouettes en pied."""
+    """Fond franc (vert, ou bleu pour les personnages habillés de vert : banque.masque_fond, 21/10), 1 à 8 silhouettes en pied."""
     import cv2, numpy as np
-    im = cv2.imread(planche); hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
-    vert = (hsv[..., 0] > 35) & (hsv[..., 0] < 85) & (hsv[..., 1] > 120) & (hsv[..., 2] > 80)
+    im = cv2.imread(planche); vert, _ = banque.masque_fond(im)
     col = (~vert).sum(0) > 3; segs, x, W = [], 0, len(col)
     while x < W:
         if col[x]:
@@ -45,7 +44,7 @@ def controle(planche, dossier):
     segs = [s for s in segs if s[1] - s[0] > 25]
     hauts = [int(np.ptp(np.nonzero((~vert)[:, a:b].sum(1) > 2)[0])) for a, b in segs] if segs else []
     ok = bool(1 <= len(segs) <= 8 and min(hauts) >= 0.5 * im.shape[0] and vert.mean() >= 0.30)
-    return ok, {'silhouettes': len(segs), 'fond_vert': round(float(vert.mean()), 3),
+    return ok, {'silhouettes': len(segs), 'fond': round(float(vert.mean()), 3),
                 'hauteur_min': round(min(hauts) / im.shape[0], 3) if hauts else 0}
 
 

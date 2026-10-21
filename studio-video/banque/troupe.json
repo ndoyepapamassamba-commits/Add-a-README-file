@@ -25,7 +25,12 @@
   "monsieur-diarra",
   "le-tonton",
   "mamie-bintou",
-  "madame-coumba"
+  "madame-coumba",
+  "tata-prisca",
+  "agent-bakary",
+  "maman-brigitte",
+  "petite-khadija",
+  "agent-gora"
  ],
  "noms": {
   "le-patriarche": "LE PATRIARCHE",
@@ -46,6 +51,15 @@
   "monsieur-diarra": "MONSIEUR DIARRA",
   "le-tonton": "LE TONTON",
   "mamie-bintou": "MAMIE BINTOU",
-  "madame-coumba": "MADAME COUMBA"
+  "madame-coumba": "MADAME COUMBA",
+  "tata-prisca": "TATA PRISCA",
+  "agent-bakary": "AGENT BAKARY",
+  "maman-brigitte": "MAMAN BRIGITTE",
+  "petite-khadija": "PETITE KHADIJA",
+  "agent-gora": "AGENT GORA"
+ },
+ "fonds": {
+  "agent-bakary": "bleu",
+  "maman-brigitte": "bleu"
  }
 }

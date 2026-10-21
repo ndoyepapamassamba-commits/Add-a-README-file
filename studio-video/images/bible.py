@@ -86,6 +86,9 @@ PLANCHE = ('Character model sheet of the character shown in image 1, keeping exa
 def texte_dessinable(t):
     """Une fiche texte sans ce que le générateur dessinerait à tort : répliques citées, « en couronne » pris au mot."""
     t = re.sub(r'«[^»]*»|"[^"]*"', '', t or '')
+    # 21/10 03:30 : « maillot numéro 23 » → « JECKY 23 » écrit sur la fiche de face mais pas sur les poses (« no text ») :
+    # l'inscription apparaîtrait et disparaîtrait d'un geste à l'autre ; aucun numéro ni inscription sur une tenue
+    t = re.sub(r'\s*(?:numéro|n°)\s*\d+', '', t)
     return re.sub(r'\s+', ' ', t.replace('en couronne', 'noué haut sur la tête')).strip()
 
 
@@ -121,7 +124,7 @@ REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2,
            # 21/10 01:36, planches déjà acceptées relues avec ce défaut en tête : rire de Koffi (lunettes, visage) sur la dernière pose
            # (Djecky, Général Zongo, Mécano Issa, Monsieur Diarra, Tiékoro), Le Frimeur sosie de Koffi, rire de Baye (Grand-père
            # Ndiaye, Tonton Dieng)
-           'perso-djecky': 2, 'perso-general-zongo': 2, 'perso-mecano-issa': 2, 'perso-monsieur-diarra': 2, 'perso-tiekoro': 2,
+           'perso-djecky': 3, 'perso-general-zongo': 2, 'perso-mecano-issa': 2, 'perso-monsieur-diarra': 2, 'perso-tiekoro': 2,
            'perso-le-frimeur': 2, 'perso-grand-pere-ndiaye': 2, 'perso-tonton-dieng': 2}
 # Les corrections sont regroupées en UNE passe : pousser bible/taches.json redémarre les 20 machines (chacune ne perd que l'image
 # en cours ; la répartition des tâches entre machines ne bouge pas tant que l'ordre de la liste est gardé — vérifié à chaque passe).
