@@ -18,3 +18,4 @@
 [2183 s] 7 clips · === tantie-awa-sarr--parler (at_runtime)   |=====================================>            | 3/4 - 133.46s/it[K · mémoire libre 13758 Mo
 [2305 s] 7 clips · === tantie-awa-sarr--parler (at_runtime)   |=====================================>            | 3/4 - 133.46s/it[K · mémoire libre 13770 Mo
 [2426 s] 8 clips · === aliou--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13759 Mo
+[2547 s] 8 clips · === aliou--hausser (at_runtime)   |============>                                     | 1/4 - 134.27s/it[K · mémoire libre 13754 Mo
