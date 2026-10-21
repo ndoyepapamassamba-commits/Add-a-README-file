@@ -48,3 +48,4 @@
 [4733 s] 4 images · === perso-mamie-bintou   |=====================================>            | 3/4 - 398.85s/it[K · mémoire libre 6279 Mo
 [4855 s] 4 images · === perso-mamie-bintou   |==================================================| 4/4 - 398.16s/it[K · mémoire libre 3011 Mo
 [4976 s] 5 images · === perso-maman-brigitte   |==================================================| 4/4 - 398.16s/it[K · mémoire libre 6685 Mo
+[5098 s] 5 images · === perso-maman-brigitte   |==================================================| 4/4 - 398.16s/it[K · mémoire libre 6313 Mo
