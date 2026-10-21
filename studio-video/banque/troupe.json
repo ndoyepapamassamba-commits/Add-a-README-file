@@ -30,7 +30,10 @@
   "agent-bakary",
   "maman-brigitte",
   "petite-khadija",
-  "agent-gora"
+  "agent-gora",
+  "sur-awa",
+  "madame-konan",
+  "tonton-dieng"
  ],
  "noms": {
   "le-patriarche": "LE PATRIARCHE",
@@ -56,7 +59,10 @@
   "agent-bakary": "AGENT BAKARY",
   "maman-brigitte": "MAMAN BRIGITTE",
   "petite-khadija": "PETITE KHADIJA",
-  "agent-gora": "AGENT GORA"
+  "agent-gora": "AGENT GORA",
+  "sur-awa": "SŒUR AWA",
+  "madame-konan": "MADAME KONAN",
+  "tonton-dieng": "TONTON DIENG"
  },
  "fonds": {
   "agent-bakary": "bleu",
