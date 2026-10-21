@@ -56,6 +56,13 @@
    "lora": "at_runtime",
    "secondes": 302,
    "memoire_max_go": 11.27
+  },
+  {
+   "clip": "professeur-samba--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 302,
+   "memoire_max_go": 11.25
   }
  ],
  "run": "39528414471"
