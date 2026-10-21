@@ -22,3 +22,4 @@
 [1457 s] 3 images · === perso-tata-prisca   |=====================================>            | 3/4 - 212.64s/it[K · mémoire libre 6291 Mo
 [1579 s] 3 images · === perso-tata-prisca   |=====================================>            | 3/4 - 212.64s/it[K · mémoire libre 6283 Mo
 [1700 s] 3 images · === perso-tata-prisca   |==================================================| 4/4 - 216.78s/it[K · mémoire libre 12624 Mo
+[1821 s] 4 images · === perso-la-lyceenne   |==================================================| 4/4 - 216.78s/it[K · mémoire libre 6326 Mo
