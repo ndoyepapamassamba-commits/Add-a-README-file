@@ -22,3 +22,4 @@
 [2670 s] 8 clips · === professeur-samba--colere (at_runtime)   |============>                                     | 1/4 - 136.05s/it[K · mémoire libre 13669 Mo
 [2791 s] 8 clips · === professeur-samba--colere (at_runtime)   |=========================>                        | 2/4 - 135.49s/it[K · mémoire libre 13665 Mo
 [2912 s] 8 clips · === professeur-samba--colere (at_runtime)   |=====================================>            | 3/4 - 135.43s/it[K · mémoire libre 13666 Mo
+[3034 s] 8 clips · === professeur-samba--colere (at_runtime)   |=====================================>            | 3/4 - 135.43s/it[K · mémoire libre 13666 Mo
