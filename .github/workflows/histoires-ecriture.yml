@@ -95,7 +95,9 @@ jobs:
           # couches à fenêtre glissante de 128 jetons ; sans cache SWA complet, le serveur ne peut reprendre une consigne déjà lue
           # que jusqu'au début du message (points de reprise : début de message, fin de consigne), donc relisait ≈ 4 300 jetons à
           # chaque brouillon. Avec --swa-full, tout le début commun (89 % de la consigne, fixe d'un lieu à l'autre) vient du cache.
-          case ${{ matrix.modele }} in gptoss20loc|gptoss20hyb) EXTRA="--jinja --swa-full" ;; *) EXTRA= ;; esac
+          # 21/10 07:50 : mémoire des consignes en RAM bornée à 2 Go (8 Go par défaut, common.h l. 642) — le modèle en occupe ≈ 12
+          # sur 16 ; ≈ 37 Mo par consigne de 1 500 jetons, soit une cinquantaine gardées (juge, duels, réparations, lieux)
+          case ${{ matrix.modele }} in gptoss20loc|gptoss20hyb) EXTRA="--jinja --swa-full --cache-ram 2048" ;; *) EXTRA= ;; esac
           lance() { $LS -m $RUNNER_TEMP/m/modele.gguf -c $CTX -np $NP -t 4 --host 127.0.0.1 --port 8080 $EXTRA "$@" > $RUNNER_TEMP/serveur.log 2>&1 & echo $! > $RUNNER_TEMP/serveur.pid; }
           lance -fa on -ctk q8_0 -ctv q8_0; sleep 15
           kill -0 $(cat $RUNNER_TEMP/serveur.pid) 2>/dev/null || { tail -5 $RUNNER_TEMP/serveur.log; echo "repli sans flash attention"; lance -ctk q8_0; }

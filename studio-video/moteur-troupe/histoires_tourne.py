@@ -128,6 +128,17 @@ def main(modele, part, parts, minutes, sortie, pub_claude):
         if dr: H.DROLE_MIN = min(dr)
         stats['drole_v17'] = dr; stats['choc_v17'] = [n['choc'] for n in nv if n]
         journal(f"porte V17 : drôle {dr} → au moins {H.DROLE_MIN}/4 pour aller au plancher"); ecrit()
+    # calibrage du juge à chaque tour, sur une seule machine (21/10 : la consigne du juge a changé d'ordre) — mêmes épreuves que
+    # juge_calibre.py : V17 contre elle-même → 0,5 ; V17 contre sa version sans chute → 0,625 au calibrage d'origine
+    if str(part) == os.environ.get('HISTOIRES_CALIBRE_PART', '0'):
+        import juge_calibre
+        c = {'meme': [], 'avec_sans_chute': []}
+        for v in H.V17:
+            for cle, b in (('meme', v), ('avec_sans_chute', juge_calibre.sans_chute(v))):
+                x = H._essai(lambda: H.duel(v, b))
+                if x is not None: c[cle].append(x)
+        stats['calibrage'] = {k: round(sum(x) / len(x), 3) if x else None for k, x in c.items()}
+        journal(f"calibrage du juge : {stats['calibrage']} (attendu 0,5 et ≈ 0,625)"); ecrit()
     # registre commun des chutes (histoires.deja_ailleurs) : clé tirée de la clé privée de la fabrique, jamais écrite nulle part
     H.CLE_EMPREINTE = cle_des_chutes(); stats['registre_commun'] = bool(H.CLE_EMPREINTE)
     mes_chutes = os.path.join(sortie, f'chutes-{modele}-{part}.json')

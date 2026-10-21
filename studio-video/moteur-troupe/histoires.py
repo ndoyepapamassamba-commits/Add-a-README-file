@@ -459,10 +459,13 @@ def _juge_llm(state, questions):
         else:
             lignes.append(f'"{k}" : un objet {{' + ', '.join(f'"{c}": probabilité' for c in q['criteria']) + '}} dont la somme vaut 1 — '
                           + q['instructions'] + ' ' + ' | '.join(f'{c} = {d}' for c, d in q['criteria'].items()))
+    # 21/10/2026 07:50 : les questions (68 % de la consigne, fixes) AVANT le texte jugé — llama-server ne reprend du cache que le
+    # début commun (server-context.cpp l. 1788-1836 ; mémoire de consignes de 8 Go par défaut, common.h l. 642) : la porte V17
+    # du tour 14 lisait 395 jetons par appel du juge pour 94 repris (l'en-tête seul)
     prompt = ("Tu es le jury le plus exigeant d'un festival d'humour d'Abidjan : tu connais par cœur les meilleurs sketchs "
               "d'Afrikatoon, de Ladjagaï et de « la blague du jour », et tu ne ris jamais par politesse. Note honnêtement.\n\n"
-              + '\n\n'.join(f'`{k}` :\n{v}' for k, v in state.items())
-              + "\n\nRéponds UNIQUEMENT par un objet JSON avec ces clés :\n" + '\n'.join(lignes))
+              "Tu réponds UNIQUEMENT par un objet JSON avec ces clés :\n" + '\n'.join(lignes) + "\n\nVoici ce que tu notes.\n\n"
+              + '\n\n'.join(f'`{k}` :\n{v}' for k, v in state.items()))
     J = _json(llm(prompt, temp=0.2, juge=True)) or {}
     out = {}
     for k, q in questions.items():

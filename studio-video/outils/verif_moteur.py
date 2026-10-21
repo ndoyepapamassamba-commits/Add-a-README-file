@@ -661,6 +661,22 @@ try:
 except Exception as e:
     echecs.append(f'registre commun des chutes : {e}')
 
+# consigne du juge reprise du cache (21/10/2026 07:50) : questions fixes AVANT le texte noté — deux sketchs différents notés avec
+# les mêmes questions partagent au moins 70 % de la consigne (llama-server ne reprend que le début commun)
+try:
+    import os as _os25
+    _pr25 = []; _sv25 = _h14.llm
+    _h14.llm = lambda p, temp=1.0, juge=False: (_pr25.append(p), '{"drole": 1, "chute": 0.5, "choc": 1, "clair": 0.5, "mechant": 0, '
+                                                '"ivoirien": 0.5, "mieux": {"A": 0.5, "B": 0.5}}')[1]
+    try: _h14.juge(_h14.V17[0]); _h14.juge(_h14.V17[1])
+    finally: _h14.llm = _sv25
+    _q25 = [p for p in _pr25 if '"drole"' in p]
+    _c25 = len(_os25.path.commonprefix(_q25)) / max(len(p) for p in _q25)
+    if len(_q25) != 2 or _c25 < 0.7: echecs.append(f'consigne du juge : début commun {_c25:.0%} (70 % au moins)')
+    print(f'consigne du juge : début commun à deux sketchs {_c25:.0%} (questions avant le texte) : OK')
+except Exception as e:
+    echecs.append(f'consigne du juge : {e}')
+
 # pas deux fois le même geste (21/10/2026) : départ du clip d'écoute propre à chaque vidéo, continu d'une réplique à l'autre
 try:
     import assemble as _as15
