@@ -49,3 +49,4 @@
 [4858 s] 5 images · === perso-la-future-maman   |==================================================| 4/4 - 401.14s/it[K · mémoire libre 3005 Mo
 [4979 s] 6 images · === decor-ceremonie-coin-jour   |==================================================| 4/4 - 401.14s/it[K · mémoire libre 7051 Mo
 [5101 s] 6 images · === decor-ceremonie-coin-jour   |============>                                     | 1/4 - 163.92s/it[K · mémoire libre 7037 Mo
+[5222 s] 6 images · === decor-ceremonie-coin-jour   |============>                                     | 1/4 - 163.92s/it[K · mémoire libre 7033 Mo
