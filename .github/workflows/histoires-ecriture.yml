@@ -30,6 +30,8 @@ jobs:
       # planchers 0,33 à 0,49, 0 accepté) ; Small 24B et Ministral 14B n'ont rendu aucun lieu en 40 min. GPT-OSS hébergé (2 sketchs
       # acceptés sur 4 machines en 32 min — 811 s et 1 586 s —, 0 refus) prend les machines laissées par la banque (finie : 138 clips
       # sur 138) et la bible (4 parts).
+      # 06:55 : porte « drôle » calibrée sur la V17 par le juge de chaque machine au départ (6 appels) : sous la note du moins drôle
+      # des sketchs publiés, pas de plancher (6 appels épargnés) et pas d'acceptation (2e sketch accepté : drôle 1,5/4, incohérent).
       matrix:
         modele: [gptoss20loc]
         part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]

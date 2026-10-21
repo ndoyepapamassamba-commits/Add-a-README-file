@@ -568,6 +568,27 @@ try:
 except Exception as e:
     echecs.append(f'nom d’un absent : {e}')
 
+# porte « drôle » (21/10/2026) : sous la note du moins drôle des sketchs publiés, le brouillon ne va pas au plancher V17 (6 appels
+# du juge épargnés) ; au-dessus, il y va
+try:
+    import tempfile as _tf21
+    _sv21 = {k: getattr(_h14, k) for k in ('llm', 'verifie', 'juge', 'plancher_v17', 'DROLE_MIN')}; _pl21 = []
+    _h21 = {'titre': 't', 'repliques': [{'qui': 'A', 'texte': 'x', 'role': 'chute'}]}
+    _h14.llm = lambda *a, **k: '{}'; _h14.verifie = lambda t, *a, **k: (dict(_h21), [])
+    _h14.juge = lambda h: {'note': 0.4, 'drole': 1.5, 'choc': 1.0, 'chute': 0.5, 'ivoirien': 0.5, 'clair': 0.5, 'mechant': 0.0}
+    _h14.plancher_v17 = lambda h: _pl21.append(1) or 0.4
+    try:
+        _L21 = next(iter(_h14.LIEUX))
+        with _tf21.TemporaryDirectory() as _d21:
+            _h14.DROLE_MIN = 2.0; _h14.une(_d21, _L21, K=1, tours_max=1, journal=lambda t: None)
+            _n_sous = len(_pl21); _h14.DROLE_MIN = 1.0; _h14.une(_d21, _L21, K=1, tours_max=1, journal=lambda t: None)
+    finally:
+        for _k21, _v21 in _sv21.items(): setattr(_h14, _k21, _v21)
+    if _n_sous != 0 or len(_pl21) != 1: echecs.append(f'porte drôle : plancher joué {_n_sous} fois sous la porte, {len(_pl21) - _n_sous} au-dessus')
+    print('porte drôle : brouillon sous la note de la V17 arrêté avant le plancher, au-dessus jugé : OK')
+except Exception as e:
+    echecs.append(f'porte drôle : {e}')
+
 # pas deux fois le même geste (21/10/2026) : départ du clip d'écoute propre à chaque vidéo, continu d'une réplique à l'autre
 try:
     import assemble as _as15

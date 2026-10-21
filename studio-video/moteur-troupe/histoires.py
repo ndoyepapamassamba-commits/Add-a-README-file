@@ -115,6 +115,11 @@ def fiche(nom):
 # doit faire AU MOINS autant rire qu'eux (duel du juge, dans les deux ordres) ; leurs chutes sont interdites (pas de copie).
 V17 = json.load(open(os.path.join(ICI, 'plancher_v17.json'), encoding='utf-8'))
 SEUIL_V17 = 0.5
+# 21/10/2026 — porte « drôle » avant le plancher V17 : les 2 sketchs acceptés sur les machines notés drôle 2,0 et 1,5 sur 4, le
+# 2e (choc 1/4, chute incompréhensible) a pourtant passé le plancher (0,528). DROLE_MIN = note « drôle » du moins drôle des
+# trois sketchs publiés de la V17, mesurée par le même juge au départ de chaque machine (histoires_tourne) ; 0 = pas de porte.
+# Le plancher (6 appels du juge) n'est plus joué pour un brouillon sous la porte.
+DROLE_MIN = 0.0
 
 FORMATS = {'blague': {'n': (2, 4), 'duree': '5 à 9 secondes', 'rappel': False},
            'sketch': {'n': (6, 10), 'duree': '15 à 25 secondes', 'rappel': True}}
@@ -518,6 +523,11 @@ def une(dossier, lieu, recap='', K=3, tours_max=4, seuil=0.6, journal=print, fmt
             journal(f'  juge injoignable ({len(bons)} brouillon(s) conforme(s) non jugé(s))'); continue   # « méchant ou vulgaire »
         if not cands: faiblesses = 'jugé méchant ou vulgaire'; continue
         note, h, n = cands[0]
+        if fmt == 'sketch' and n['drole'] < DROLE_MIN:
+            journal(f"  tour {tour + 1} : meilleur brouillon « {h.get('titre')} » drôle {n['drole']}/4 sous la porte V17 ({DROLE_MIN}/4)")
+            R['refus'] += 1; ecrit_registre(dossier, R)
+            faiblesses = (f"le jury le trouve peu drôle ({n['drole']}/4, choc final {n['choc']}/4) : il faut au moins {DROLE_MIN}/4, "
+                          "comme les sketchs publiés ; rends la chute plus inattendue et plus claire, prépare-la par une fausse piste"); continue
         p_ = duel(h, champ) if champ else 1.0
         journal(f"  tour {tour + 1} : meilleur brouillon « {h.get('titre')} » note {note} (drôle {n['drole']}/4, choc {n['choc']}/4), duel contre le champion {p_}")
         pv = plancher_v17(h) if p_ >= seuil and fmt == 'sketch' else None

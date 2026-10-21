@@ -84,6 +84,12 @@ def main(modele, part, parts, minutes, sortie, pub_claude):
         json.dump(s, open(os.path.join(sortie, f'mesure-{modele}-{part}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
         open(os.path.join(sortie, f'journal-{modele}-{part}.msb'), 'wb').write(coffre.scelle_octets('\n'.join(lignes).encode(), pub))
 
+    # porte « drôle » (histoires.DROLE_MIN) : le juge de la machine note d'abord les trois sketchs publiés de la V17
+    if os.environ.get('HISTOIRES_PORTE_V17', '1') == '1':
+        nv = [H._essai(lambda v=v: H.juge(v)) for v in H.V17]; dr = [n['drole'] for n in nv if n]
+        if dr: H.DROLE_MIN = min(dr)
+        stats['drole_v17'] = dr; stats['choc_v17'] = [n['choc'] for n in nv if n]
+        journal(f"porte V17 : drôle {dr} → au moins {H.DROLE_MIN}/4 pour aller au plancher"); ecrit()
     L = lieux_de_la_part(part, parts); k = 0
     while L and time.time() + MARGE < fin:
         lieu, acteurs = L[k % len(L)]
