@@ -111,3 +111,4 @@
 [365 s] 27 clips · === patron-sery--colere (at_runtime)   |=========================>                        | 2/4 - 135.31s/it[K · mémoire libre 13764 Mo
 [486 s] 27 clips · === patron-sery--colere (at_runtime)   |=====================================>            | 3/4 - 135.26s/it[K · mémoire libre 13761 Mo
 [123 s] 28 clips · === le-tonton--colere@2 (at_runtime)  · mémoire libre 13805 Mo
+[244 s] 28 clips · === le-tonton--colere@2 (at_runtime)   |============>                                     | 1/4 - 133.90s/it[K · mémoire libre 13783 Mo
