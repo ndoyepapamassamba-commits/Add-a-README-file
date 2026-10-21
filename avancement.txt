@@ -15,3 +15,4 @@
 [729 s] 2 images · === maison-la-voisine-cour-large-jour   |==================================================| 4/4 - 157.25s/it[K · mémoire libre 11565 Mo
 [850 s] 2 images · === maison-la-voisine-cour-large-jour   |==================================================| 4/4 - 157.25s/it[K · mémoire libre 7026 Mo
 [971 s] 2 images · === maison-la-voisine-cour-large-jour   |============>                                     | 1/4 - 160.61s/it[K · mémoire libre 7004 Mo
+[1093 s] 2 images · === maison-la-voisine-cour-large-jour   |=========================>                        | 2/4 - 156.89s/it[K · mémoire libre 6996 Mo
