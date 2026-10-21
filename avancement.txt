@@ -12,3 +12,4 @@
 [364 s] 1 images · === decor-cuisine-large-jour   |=========================>                        | 2/4 - 158.12s/it[K · mémoire libre 6997 Mo
 [486 s] 1 images · === decor-cuisine-large-jour   |=========================>                        | 2/4 - 158.12s/it[K · mémoire libre 7000 Mo
 [607 s] 1 images · === decor-cuisine-large-jour   |=====================================>            | 3/4 - 157.66s/it[K · mémoire libre 7000 Mo
+[728 s] 2 images · === maison-sur-awa-salon-large-jour   |==================================================| 4/4 - 157.70s/it[K · mémoire libre 11569 Mo
