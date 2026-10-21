@@ -4,7 +4,7 @@
  "appels_scenariste": 60,
  "secondes_scenariste": 17867.34689760208,
  "echecs_scenariste": 0,
- "appels_juge": 80,
+ "appels_juge": 86,
  "echecs_juge": 0,
  "brouillons_refuses_controle": 5,
  "planchers_v17": [
@@ -13,7 +13,8 @@
   0.395,
   0.435,
   0.4,
-  0.46
+  0.46,
+  0.558
  ],
  "notes": [
   0.344,
@@ -24,7 +25,7 @@
   0.403,
   0.539
  ],
- "acceptes": 2,
+ "acceptes": 3,
  "lieux": [
   {
    "lieu": "Maquis",
@@ -45,6 +46,11 @@
    "lieu": "Maquis",
    "accepte": false,
    "secondes": 2337
+  },
+  {
+   "lieu": "Maquis",
+   "accepte": true,
+   "secondes": 2272
   }
  ],
  "drole_v17": [
@@ -208,14 +214,14 @@
    "jetons_par_s": 4.6
   },
   "juge": {
-   "appels": 81,
+   "appels": 87,
    "tronques": 0,
-   "lus_jetons": 395,
-   "cache_jetons": 148,
-   "lecture_s": 36.7,
-   "ecriture_jetons": 79,
-   "ecriture_s": 19.9,
-   "jetons_par_s": 4.0
+   "lus_jetons": 396,
+   "cache_jetons": 147,
+   "lecture_s": 36.6,
+   "ecriture_jetons": 78,
+   "ecriture_s": 20.2,
+   "jetons_par_s": 3.9
   }
  }
 }
