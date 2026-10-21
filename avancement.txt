@@ -82,3 +82,4 @@
 [2553 s] 9 images · === perso-tiekoro   |==================================================| 4/4 - 391.72s/it[K · mémoire libre 6812 Mo
 [2674 s] 9 images · === fiche-la-voisine   |==================================================| 4/4 - 391.72s/it[K · mémoire libre 11592 Mo
 [2796 s] 9 images · === fiche-la-voisine   |==================================================| 4/4 - 391.72s/it[K · mémoire libre 6745 Mo
+[2917 s] 9 images · === fiche-la-voisine   |============>                                     | 1/4 - 212.17s/it[K · mémoire libre 6720 Mo
