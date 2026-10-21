@@ -88,3 +88,4 @@
 [2917 s] 12 images · === perso-grand-pere-ndiaye   |=====================================>            | 3/4 - 457.66s/it[K · mémoire libre 6160 Mo
 [3038 s] 12 images · === perso-grand-pere-ndiaye   |==================================================| 4/4 - 458.34s/it[K · mémoire libre 5190 Mo
 [3160 s] 12 images · === fiche-mademoiselle-rosine   |==================================================| 4/4 - 458.34s/it[K · mémoire libre 7048 Mo
+[3282 s] 12 images · === fiche-mademoiselle-rosine   |==================================================| 4/4 - 458.34s/it[K · mémoire libre 6767 Mo
