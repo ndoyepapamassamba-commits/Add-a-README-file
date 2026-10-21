@@ -97,6 +97,29 @@ def bornes_calmes(m, N):
     return (c[1], c[2])
 
 
+def temps_coutures(m, N):
+    """carte du temps du clip (N positions croissantes de 0 à N-1) : les transitions où le corps saute plus que ses deux
+    voisines (pic local, rapport > 1,15) prennent plus de temps (jusqu'à ×2), les autres un peu moins — même durée totale.
+    COUTURES DU VAE DE WAN (21/10/2026, épisode banque 1 v14 : sautes 15,7 par minute, la V1 11,2 ; les grappes de 40,4 et
+    46,9 s sont le geste du clip « parler » de l'Agent Doumbia) : le VAE de Wan 2.2 comprime le temps par 4 et code la première
+    image à part (Wan, 2025) — nos clips de 33 images = 1 + 4 × 8. Mesuré sur les 33 clips de la banque : à chaque couture
+    (transitions 4→5, 8→9 … et 0→1) le corps bouge 1,33 fois plus que ses voisines en médiane (1re image : 1,61), contre 1,09
+    ailleurs ; en plein geste, la main y saute. Jouée plus lentement, la couture s'étale sur plus d'images interpolées.
+    None si le mouvement n'est pas lu."""
+    if m is None or len(m) != N or N < 4: return None
+    m = np.asarray(m, float); w = np.ones(N - 1)
+    for i in range(N - 1):
+        v = [m[j] for j in (i - 1, i + 1) if 0 <= j < N - 1]
+        r = m[i] / max(1e-3, float(np.mean(v)))
+        if r > 1.15 and m[i] >= max(v): w[i] = min(2.0, r)
+    C = np.concatenate([[0.0], np.cumsum(w)]); return C * (N - 1) / C[-1]
+
+
+def au_temps(p, T):
+    """position uniforme p → indice d'image du clip (carte temps_coutures T ; T None : p)."""
+    return p if T is None else np.interp(p, T, np.arange(len(T), dtype=float))
+
+
 def aller_retour(N, m=None):
     """aller-retour du clip qui RALENTIT avant chaque retournement (21/10/2026 : le retournement sec à pleine vitesse était un
     à-coup mesuré, 2,3 par minute contre 0,8 sur la V1) : les deux dernières images de chaque bout sont tenues un peu.
@@ -172,7 +195,8 @@ def ordre(q, e, fps, poids=None, m=None, impose=True):
         x = k * FPS_CLIP / fps; i = pos[k]; a, b = Q[i], Q[min(i + 1, len(Q) - 1)]
         return a + (x - i) * (b - a) if abs(b - a) == 1 else float(a)
     R = [round(exacte(k), 3) for k in range(K)]
-    qr = np.interp(R, np.arange(N), q); lo, hi = np.percentile(q, 10), np.percentile(q, 90); ech = max(hi - lo, 1e-4)
+    qr = np.interp(au_temps(np.array(R), temps_coutures(m, N)), np.arange(N), q)   # la bouche montrée, après la carte du temps
+    lo, hi = np.percentile(q, 10), np.percentile(q, 90); ech = max(hi - lo, 1e-4)
     cible = lo + e * (hi - lo)
     cout = ((qr[None, :] - cible[:, None]) / ech) ** 2                   # n × K
     if poids is not None: cout = cout * np.asarray(poids, float)[:, None]

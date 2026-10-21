@@ -223,6 +223,12 @@ def _programme(P, k, nom, gains, cache):
     if cle not in cache: cache[cle] = camera_v1.lit_clip(mov, w, h, flip, gains[nom], sens=sens)
     F = cache[cle]; px = (1 - pieds['x']) if flip else pieds['x']
     pr = {'F': F, 'x': int(round(a.get('x', 0.5) * BW - px * w)), 'y': int(round(a.get('sol', 0.97) * BH - pieds['y'] * h)), 'mov': mov, 'sens': sens}
+    pr['pied'] = (px * w, pieds['y'] * h); pr['parle'] = nom == r.get('qui')                     # corps vivant (camera_v1.vie_corps)
+    pr['phase'] = (sum(map(ord, nom)) % 97) / 97 * 2 * np.pi
+    try:   # coutures du VAE de Wan jouées plus lentement (levres_banque.temps_coutures)
+        import levres_banque as LB; pr['temps'] = LB.temps_coutures(LB.mouvement(mov[:-4] + '.mp4'), len(F))
+    except Exception:
+        pr['temps'] = None
     if duo:
         try:
             idx = _ordre_plan(P, s_, nom, mov, len(F))
@@ -332,9 +338,10 @@ def vise(P, k, nom):
 
 
 def _image_acteur(pr, t, i):
-    import camera_v1
-    if pr.get('idx'): return camera_v1.image_a(pr['F'], float(pr['idx'][min(i, len(pr['idx']) - 1)]))
-    return camera_v1.image_a(pr['F'], camera_v1.position_douce(t - pr['t_dep'], len(pr['F']), boucle=pr.get('boucle'), bornes=pr.get('bornes')))
+    import camera_v1, levres_banque as LB
+    if pr.get('idx'): p = float(pr['idx'][min(i, len(pr['idx']) - 1)])
+    else: p = camera_v1.position_douce(t - pr['t_dep'], len(pr['F']), boucle=pr.get('boucle'), bornes=pr.get('bornes'))
+    return camera_v1.image_a(pr['F'], float(LB.au_temps(p, pr.get('temps'))))
 
 
 def bande_v1(P, k, gains, ecrit):
@@ -365,6 +372,7 @@ def bande_v1(P, k, gains, ecrit):
         for nm in noms:
             pr = prog[nm]; im = _image_acteur(pr, t, i)
             if nm in avant and i < FONDU: a_ = camera_v1.ease((i + 1) / (FONDU + 1)); im = im * a_ + avant[nm] * (1 - a_)
+            im = camera_v1.vie_corps(im, t, pr)
             camera_v1.colle(cv, im, pr['x'], pr['y'])
             if occ[nm][0] is not None:   # ce qui est devant lui dans le décor repasse par-dessus (à sa parallaxe)
                 mo = cv2.remap(occ[nm][0], mx, my, cv2.INTER_LINEAR)[..., None]; cv = cv * (1 - mo) + dec * mo

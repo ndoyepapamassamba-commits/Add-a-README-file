@@ -603,6 +603,28 @@ def image_a(F, p):
     return w0 * (1 - a) + w1 * a
 
 
+# CORPS VIVANT (21/10/2026, épisode banque 1 v14 : part du corps qui bouge 0,153 et vitesse du jeu 2,7 px/s contre 0,172 et
+# 3,1 pour la V1). Joué une fois, le geste laisse l'acteur dans une pose tenue presque immobile, alors qu'un humain debout ne
+# l'est jamais : il oscille sur ses chevilles (balancement postural de 0,5 à 1°, entre 0,1 et 0,5 Hz) et respire (12 à 20
+# cycles par minute). Le principe d'animation de l'attente (« idle ») : un balancement de poids autour des PIEDS (qui restent
+# plantés) en deux sinusoïdes lentes, plus ample quand l'acteur parle, et le souffle (le corps s'allonge de 0,4 %, ancré aux
+# pieds). Doux et continu : aucun retournement brusque (à-coups) ni saute.
+VIE_CORPS = os.environ.get('VIE_CORPS', '1') == '1'
+VIE_DEG = (0.65, 0.45)     # amplitude du balancement (degrés) : parle, écoute
+
+
+def vie_corps(im, t, pr):
+    """image RGBA de l'acteur (float) balancée sur ses pieds et qui respire à l'instant t ; pr : programme (pied, phase, parle)."""
+    if not VIE_CORPS or pr.get('pied') is None: return im
+    ph = pr.get('phase', 0.0); A = VIE_DEG[0] if pr.get('parle') else VIE_DEG[1]
+    ang = A * (0.65 * math.sin(2 * math.pi * 0.23 * t + ph) + 0.35 * math.sin(2 * math.pi * 0.41 * t + 2.1 * ph))
+    sy = 1.0 + 0.004 * math.sin(2 * math.pi * 0.27 * t + 0.7 * ph)
+    fx, fy = pr['pied']; c, si = math.cos(math.radians(ang)), math.sin(math.radians(ang))
+    A = np.array([[c, si * sy], [-si, c * sy]], np.float32)            # rotation × souffle vertical, autour des pieds F
+    M = np.hstack([A, (np.array([fx, fy], np.float32) - A @ np.array([fx, fy], np.float32))[:, None]])
+    return cv2.warpAffine(np.asarray(im, np.float32), M, (im.shape[1], im.shape[0]), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+
+
 def colle(canvas, im, x, y):
     """pose l'image RGBA im (float) sur canvas (float RGB) en (x, y) entiers, bornée au cadre."""
     H, W = canvas.shape[:2]; h, w = im.shape[:2]
