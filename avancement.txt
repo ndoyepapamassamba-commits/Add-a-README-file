@@ -75,3 +75,4 @@
 [1579 s] 7 images · === perso-sur-awa   |=====================================>            | 3/4 - 242.32s/it[K · mémoire libre 6194 Mo
 [1700 s] 7 images · === fiche-le-banquier   |==================================================| 4/4 - 241.90s/it[K · mémoire libre 7017 Mo
 [1822 s] 7 images · === fiche-le-banquier   |============>                                     | 1/4 - 133.56s/it[K · mémoire libre 6741 Mo
+[1944 s] 7 images · === fiche-le-banquier   |=========================>                        | 2/4 - 123.11s/it[K · mémoire libre 6731 Mo
