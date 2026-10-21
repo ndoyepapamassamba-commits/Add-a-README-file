@@ -77,6 +77,13 @@
    "lora": "at_runtime",
    "secondes": 167,
    "memoire_max_go": 10.95
+  },
+  {
+   "clip": "monsieur-diarra--colere",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 168,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39536335050"
