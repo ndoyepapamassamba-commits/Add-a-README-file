@@ -47,3 +47,4 @@
 [732 s] 16 clips · === maitre-coulibaly--mentir (at_runtime)   |============>                                     | 1/4 - 67.14s/it[K · mémoire libre 13806 Mo
 [853 s] 16 clips · === maitre-coulibaly--mentir (at_runtime)   |=====================================>            | 3/4 - 66.10s/it[K · mémoire libre 13811 Mo
 [975 s] 17 clips · === grand-pere-ndiaye--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13774 Mo
+[1096 s] 17 clips · === grand-pere-ndiaye--parler (at_runtime)   |=========================>                        | 2/4 - 65.22s/it[K · mémoire libre 13768 Mo
