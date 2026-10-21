@@ -52,3 +52,4 @@
 [5222 s] 6 images · === decor-hopital-champ-jour   |=====================================>            | 3/4 - 126.39s/it[K · mémoire libre 6975 Mo
 [5344 s] 6 images · === decor-hopital-champ-jour   |==================================================| 4/4 - 130.27s/it[K · mémoire libre 5771 Mo
 [5465 s] 7 images · === decor-eglise-coin-jour   |==================================================| 4/4 - 130.27s/it[K · mémoire libre 6971 Mo
+[5586 s] 7 images · === decor-eglise-coin-jour   |============>                                     | 1/4 - 127.35s/it[K · mémoire libre 6973 Mo
