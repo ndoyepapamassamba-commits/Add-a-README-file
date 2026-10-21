@@ -161,6 +161,13 @@
    "lora": "at_runtime",
    "secondes": 579,
    "memoire_max_go": 11.16
+  },
+  {
+   "clip": "docteur-sylla--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 577,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39550232510"
