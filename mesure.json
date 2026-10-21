@@ -63,6 +63,13 @@
    "lora": "at_runtime",
    "secondes": 302,
    "memoire_max_go": 11.25
+  },
+  {
+   "clip": "aminata--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 302,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39528414471"
