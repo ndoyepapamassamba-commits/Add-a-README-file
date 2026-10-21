@@ -1,3 +1,4 @@
 [122 s] 4 clips · === le-patriarche--parler (at_runtime)  · mémoire libre 13781 Mo
 [244 s] 4 clips · === le-patriarche--parler (at_runtime)   |============>                                     | 1/4 - 136.49s/it[K · mémoire libre 13768 Mo
 [365 s] 4 clips · === le-patriarche--parler (at_runtime)   |=========================>                        | 2/4 - 134.08s/it[K · mémoire libre 13759 Mo
+[486 s] 4 clips · === le-patriarche--parler (at_runtime)   |=====================================>            | 3/4 - 134.22s/it[K · mémoire libre 13759 Mo
