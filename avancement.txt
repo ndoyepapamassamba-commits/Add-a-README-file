@@ -97,3 +97,4 @@
 [5945 s] 7 images · === fiche-salif-le-parisien   |==================================================| 4/4 - 441.88s/it[K · mémoire libre 8091 Mo
 [6066 s] 7 images · === fiche-salif-le-parisien   |==================================================| 4/4 - 441.88s/it[K · mémoire libre 6746 Mo
 [6187 s] 7 images · === fiche-salif-le-parisien   |============>                                     | 1/4 - 240.78s/it[K · mémoire libre 6737 Mo
+[6308 s] 7 images · === fiche-salif-le-parisien   |============>                                     | 1/4 - 240.78s/it[K · mémoire libre 6735 Mo
