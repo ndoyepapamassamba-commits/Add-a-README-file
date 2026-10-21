@@ -45,3 +45,4 @@
 [4251 s] 9 images · === decor-rue-coin-jour   |==================================================| 4/4 - 82.07s/it[K · mémoire libre 7028 Mo
 [4373 s] 9 images · === decor-rue-coin-jour   |============>                                     | 1/4 - 90.30s/it[K · mémoire libre 7025 Mo
 [4494 s] 9 images · === decor-rue-coin-jour   |=====================================>            | 3/4 - 87.59s/it[K · mémoire libre 7029 Mo
+[4615 s] 10 images · === maison-mecano-issa-cour-champ-jour   |==================================================| 4/4 - 88.12s/it[K · mémoire libre 7043 Mo
