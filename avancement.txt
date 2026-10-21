@@ -61,3 +61,4 @@
 [5465 s] 9 images · === decor-rue-contrechamp-jour   |=====================================>            | 3/4 - 110.15s/it[K · mémoire libre 6971 Mo
 [5586 s] 10 images · === maison-sur-awa-chambre-champ-jour   |==================================================| 4/4 - 109.74s/it[K · mémoire libre 6971 Mo
 [5708 s] 10 images · === maison-sur-awa-chambre-champ-jour   |============>                                     | 1/4 - 110.63s/it[K · mémoire libre 6966 Mo
+[5829 s] 10 images · === maison-sur-awa-chambre-champ-jour   |=========================>                        | 2/4 - 109.62s/it[K · mémoire libre 6967 Mo
