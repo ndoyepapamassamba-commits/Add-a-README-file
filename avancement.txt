@@ -78,3 +78,4 @@
 [3039 s] 6 images · === perso-petite-khadija   |==================================================| 4/4 - 460.17s/it[K · mémoire libre 5216 Mo
 [3160 s] 6 images · === fiche-boubacar   |==================================================| 4/4 - 460.17s/it[K · mémoire libre 7021 Mo
 [3282 s] 6 images · === fiche-boubacar   |==================================================| 4/4 - 460.17s/it[K · mémoire libre 6748 Mo
+[3404 s] 6 images · === fiche-boubacar   |============>                                     | 1/4 - 251.16s/it[K · mémoire libre 6748 Mo
