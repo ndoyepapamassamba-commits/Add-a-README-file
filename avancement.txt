@@ -52,3 +52,4 @@
 [2308 s] 14 clips · === mecano-issa--mentir (at_runtime)   |=====================================>            | 3/4 - 134.48s/it[K · mémoire libre 13773 Mo
 [2429 s] 15 clips · === fatou--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13792 Mo
 [2551 s] 15 clips · === fatou--mentir (at_runtime)   |============>                                     | 1/4 - 133.94s/it[K · mémoire libre 13783 Mo
+[2672 s] 15 clips · === fatou--mentir (at_runtime)   |=========================>                        | 2/4 - 133.87s/it[K · mémoire libre 13783 Mo
