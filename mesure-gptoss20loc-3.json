@@ -14,24 +14,24 @@
  "drole_v17": [
   1.5,
   1.5,
-  2.0
+  1.5
  ],
  "choc_v17": [
   1.0,
   1.0,
-  1.5
+  0.8
  ],
  "secondes_par_brouillon": 0.0,
  "temps": {
   "juge": {
    "appels": 6,
    "tronques": 0,
-   "lus_jetons": 388,
-   "cache_jetons": 101,
-   "lecture_s": 38.8,
-   "ecriture_jetons": 90,
-   "ecriture_s": 20.9,
-   "jetons_par_s": 4.3
+   "lus_jetons": 395,
+   "cache_jetons": 94,
+   "lecture_s": 38.5,
+   "ecriture_jetons": 78,
+   "ecriture_s": 17.3,
+   "jetons_par_s": 4.5
   }
  }
 }
