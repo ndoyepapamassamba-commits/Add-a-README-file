@@ -10,3 +10,4 @@
 [1217 s] 1 images · === decor-rue-large-jour   |=====================================>            | 3/4 - 155.83s/it[K · mémoire libre 7028 Mo
 [1338 s] 1 images · === decor-rue-large-jour   |=====================================>            | 3/4 - 155.83s/it[K · mémoire libre 7004 Mo
 [1459 s] 2 images · === maison-mecano-issa-salon-large-jour   |==================================================| 4/4 - 155.80s/it[K · mémoire libre 7214 Mo
+[1581 s] 2 images · === maison-mecano-issa-salon-large-jour   |==================================================| 4/4 - 155.80s/it[K · mémoire libre 7059 Mo
