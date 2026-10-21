@@ -182,7 +182,14 @@
    "lora": "at_runtime",
    "secondes": 583,
    "memoire_max_go": 11.03
+  },
+  {
+   "clip": "le-banquier--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 304,
+   "memoire_max_go": 11.04
   }
  ],
- "run": "39550232510"
+ "run": "39559117299"
 }
