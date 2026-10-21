@@ -40,3 +40,4 @@
 [3644 s] 7 images · === decor-pharmacie-contrechamp-jour   |=========================>                        | 2/4 - 84.21s/it[K · mémoire libre 7035 Mo
 [3765 s] 7 images · === decor-pharmacie-contrechamp-jour   |=====================================>            | 3/4 - 84.06s/it[K · mémoire libre 7037 Mo
 [3886 s] 8 images · === decor-atelier-de-couture-champ-jour   |==================================================| 4/4 - 84.61s/it[K · mémoire libre 7035 Mo
+[4008 s] 8 images · === decor-atelier-de-couture-champ-jour   |=========================>                        | 2/4 - 82.31s/it[K · mémoire libre 7043 Mo
