@@ -45,3 +45,4 @@
 [4372 s] 5 images · === perso-la-future-maman   |=========================>                        | 2/4 - 398.74s/it[K · mémoire libre 6284 Mo
 [4494 s] 5 images · === perso-la-future-maman   |=====================================>            | 3/4 - 399.01s/it[K · mémoire libre 6279 Mo
 [4615 s] 5 images · === perso-la-future-maman   |=====================================>            | 3/4 - 399.01s/it[K · mémoire libre 6261 Mo
+[4736 s] 5 images · === perso-la-future-maman   |=====================================>            | 3/4 - 399.01s/it[K · mémoire libre 6274 Mo
