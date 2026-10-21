@@ -34,3 +34,4 @@
 [1699 s] 11 clips · === fatou--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13750 Mo
 [1820 s] 11 clips · === fatou--rire (at_runtime)   |============>                                     | 1/4 - 125.92s/it[K · mémoire libre 13777 Mo
 [1942 s] 11 clips · === fatou--rire (at_runtime)   |=========================>                        | 2/4 - 128.58s/it[K · mémoire libre 13769 Mo
+[123 s] 11 clips · === fatou--rire (at_runtime)  · mémoire libre 13775 Mo
