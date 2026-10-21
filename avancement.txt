@@ -30,3 +30,4 @@
 [2670 s] 10 clips · === le-frimeur--mentir (at_runtime)   |=========================>                        | 2/4 - 133.20s/it[K · mémoire libre 13785 Mo
 [2792 s] 10 clips · === le-frimeur--mentir (at_runtime)   |=====================================>            | 3/4 - 133.72s/it[K · mémoire libre 13776 Mo
 [122 s] 10 clips · === le-frimeur--mentir (at_runtime)   |============>                                     | 1/4 - 68.58s/it[K · mémoire libre 13766 Mo
+[244 s] 10 clips · === le-frimeur--mentir (at_runtime)   |=====================================>            | 3/4 - 67.86s/it[K · mémoire libre 13759 Mo
