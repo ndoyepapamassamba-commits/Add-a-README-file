@@ -1,6 +1,6 @@
 # MACHINE À HISTOIRES (17/10/2026) — « écrire des histoires à l'infini, les unes plus drôles que les autres », en français
 # ivoirien, avec la troupe, dans les lieux déjà préparés (le moteur les anime aussitôt).
-#   python3 histoires.py ecris <dossier> [n=1] [lieu]       → n histoires CHAMPIONNES de plus dans <dossier>/ (registre.json)
+#   python3 histoires.py ecris <dossier> [n=1] [lieu | « Lieu:NOM,NOM »] → n histoires CHAMPIONNES de plus dans <dossier>/ (registre.json)
 #   python3 histoires.py episode <dossier> <sortie.json> [id …] → épisode de 60 s (3 sketchs, 3 lieux) au format histoire.json
 #   python3 histoires.py juge <histoire.json>                 → notes de JEV de chaque sketch d'une histoire existante
 # 1. MATIÈRE : bible_comique.json (exporte_bible.ts : règles mesurées sur vos TikTok, mécaniques, interjections, 10 histoires
@@ -29,6 +29,26 @@ LOCAL_GGUF = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/mass
 LIEUX = {'cour': {'nom': 'la cour de la concession Ndiaye', 'acteurs': ['BAYE NDIAYE', 'MAMAN NOUNOU', 'PETIT MAMADOU']},
          'maquis': {'nom': 'un maquis du quartier (table, boissons, addition)', 'acteurs': ['KOFFI', 'COUMBA']},
          'chambre': {'nom': 'la chambre-salon de Modou', 'acteurs': ['TANTIE AWA', 'MODOU']}}
+
+
+def distribution(lieu, acteurs):
+    """21/10/2026 — « Tu te focalises trop sur 7 personnages alors qu'on doit tourner 10 000 » : un sketch peut se jouer dans
+    n'importe quel lieu de la bible V1 (images/bible.py : 30 lieux dessinés) avec n'importe quels personnages de la troupe animés
+    dans la banque (banque/troupe.json), plus seulement les 3 lieux et 7 personnages de la V1. → clé de LIEUX (une, controle)."""
+    cle = re.sub(r'[^a-z0-9]+', '-', unicodedata.normalize('NFKD', f"{lieu} {' '.join(acteurs)}").encode('ascii', 'ignore').decode().lower()).strip('-')
+    LIEUX[cle] = {'nom': f"{lieu} (Abidjan)", 'acteurs': [a.upper() for a in acteurs], 'lieu_bible': lieu}
+    return cle
+
+
+def distributions(disponibles):
+    """lieu → personnages disponibles qui le fréquentent (champ « lieux » de leur fiche) ; seuls les lieux à 2 personnages ou plus."""
+    par_lieu = {}
+    for p in BIBLE['personnages']:
+        if p['name'] in disponibles:
+            for l in p.get('lieux', []): par_lieu.setdefault(l, []).append(p['name'])
+    return {l: n for l, n in par_lieu.items() if len(n) >= 2}
+
+
 JEUX = ['accuse', 'innocent', 'malice', 'panique', 'choc', 'marchande', 'soupcon', 'frime', 'rire', 'camera', 'neutre']
 
 # Parler ivoirien populaire, FAMILIAL (sens tirés du Wiktionnaire, annexe « Liste de mots nouchis » ; mots crus écartés).
@@ -207,6 +227,18 @@ def llm(prompt, temp=1.0):
 
 
 # ── contrôles ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+def noms_exacts(h, lieu):
+    """21/10/2026 — le scénariste écrit « Aya », « Moussa » ou « Professeur Samba » pour PETITE AYA, PETIT MOUSSA, PROFESSEUR
+    SAMBA (brouillons refusés « hors du lieu ») : chaque nom est ramené au personnage du lieu qui le contient, sans accents ni casse."""
+    def n(t): return ' '.join(mots(t))
+    acteurs = LIEUX[lieu]['acteurs']
+    for r in h.get('repliques') or []:
+        q = n(r.get('qui', ''))
+        cand = [a for a in acteurs if n(a) == q] or [a for a in acteurs if q and (q in n(a) or n(a) in q)]
+        if len(cand) == 1: r['qui'] = cand[0]
+    return h
+
+
 def controle(h, lieu, deja=(), fmt='sketch'):
     """défauts objectifs d'un brouillon (liste vide = conforme)."""
     d = []; R = h.get('repliques') or []; F = FORMATS[fmt]; n0, n1 = F['n'][0], F['n'][1] + 1
@@ -359,7 +391,7 @@ def une(dossier, lieu, recap='', K=3, tours_max=4, seuil=0.6, journal=print, fmt
         for t in textes:
             h = _json(t) if t else None
             if not h or not h.get('repliques'): continue
-            d = controle(h, lieu, deja, fmt)
+            d = controle(noms_exacts(h, lieu), lieu, deja, fmt)
             if d: journal(f"  brouillon refusé : {'; '.join(d)}"); faiblesses = '; '.join(d); continue
             bons.append(h)
         if not bons: continue
@@ -382,7 +414,7 @@ def une(dossier, lieu, recap='', K=3, tours_max=4, seuil=0.6, journal=print, fmt
             ch = next(r['texte'] for r in h['repliques'] if r.get('role') == 'chute' or r.get('chute'))
             for r in h['repliques']:
                 if r.get('role') == 'chute': r['chute'] = True
-            h.update(id=i, lieu=lieu, image=lieu, format=fmt, acteurs=sorted({r['qui'] for r in h['repliques']}, key=LIEUX[lieu]['acteurs'].index))
+            h.update(id=i, lieu=lieu, image=lieu, format=fmt, lieu_bible=LIEUX[lieu].get('lieu_bible'), acteurs=sorted({r['qui'] for r in h['repliques']}, key=LIEUX[lieu]['acteurs'].index))
             json.dump(h, open(f'{dossier}/{i}.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
             R['acceptees'].append({'id': i, 'titre': h.get('titre'), 'lieu': lieu, 'mecanique': h.get('mecanique'), 'chute': ch, 'notes': n,
                                    'duel': p_, 'contre': champ['id'] if champ else None, 'date': time.strftime('%d/%m/%Y %H:%M')})
@@ -438,6 +470,8 @@ if __name__ == '__main__':
     cmd = sys.argv[1]
     if cmd == 'ecris':
         d = sys.argv[2]; n = int(sys.argv[3]) if len(sys.argv) > 3 else 1; lieux = [sys.argv[4]] if len(sys.argv) > 4 else list(LIEUX)
+        # « Lieu:NOM 1,NOM 2,… » : distribution libre (toute la troupe, tous les lieux de la bible)
+        lieux = [distribution(l.split(':')[0], l.split(':', 1)[1].split(',')) if ':' in l else l for l in lieux]
         os.makedirs(d, exist_ok=True); recap = open(os.environ['HISTOIRES_RECAP'], encoding='utf-8').read() if os.environ.get('HISTOIRES_RECAP') else ''
         fmt = os.environ.get('HISTOIRES_FORMAT', 'sketch')
         for k in range(n):

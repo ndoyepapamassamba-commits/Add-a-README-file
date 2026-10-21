@@ -14,9 +14,29 @@ import numpy as np, pyloudnorm as pyln
 CACHE = os.path.expanduser(os.environ.get('AMBIANCE_CACHE', '~/.cache/massamba-models/ambiance'))
 URL = 'https://assets.mixkit.co/active_storage/sfx/{i}/{i}-preview.mp3'
 SONS = {'oiseaux': [17, 2472], 'vent': [2658], 'poules': [1772, 1769], 'coq': [2462, 2470],
-        'resto': [444, 366], 'grill': [123], 'verres': [154, 2936]}
+        'resto': [444, 366], 'grill': [123], 'verres': [154, 2936],
+        # 21/10/2026 — toute la troupe joue dans les 30 lieux de la bible V1 : un fond réel par lieu (catégories Mixkit lues ce jour :
+        # children, city, crowd, nature, church, beach ; même licence que ci-dessus)
+        'ecole': [2254], 'ville': [2465, 2929], 'circulation': [2930, 2931], 'gare': [2708], 'foule': [364, 368],
+        'vagues': [1185, 1193], 'port': [1208], 'cloche': [628], 'enfants': [448]}
 LIEUX = {'Cour': dict(lit=['oiseaux', 'vent'], silences=['poules'], ouverture=['coq']),
-         'Maquis': dict(lit=['resto', 'grill'], silences=['verres'], ouverture=[])}
+         'Maquis': dict(lit=['resto', 'grill'], silences=['verres'], ouverture=[]),
+         'Village': dict(lit=['oiseaux', 'vent'], silences=['poules'], ouverture=['coq']),
+         'École': dict(lit=['ecole'], silences=[], ouverture=[]),
+         'Terrain de foot': dict(lit=['enfants', 'vent'], silences=[], ouverture=[]),
+         'Marché': dict(lit=['foule', 'circulation'], silences=[], ouverture=[]),
+         'Rue': dict(lit=['ville', 'circulation'], silences=[], ouverture=[]),
+         'Chantier': dict(lit=['ville', 'circulation'], silences=[], ouverture=[]),
+         'Garage': dict(lit=['ville', 'circulation'], silences=[], ouverture=[]),
+         'Taxi': dict(lit=['circulation'], silences=[], ouverture=[]),
+         'Gare routière': dict(lit=['gare', 'foule'], silences=[], ouverture=[]),
+         'Cérémonie': dict(lit=['foule'], silences=[], ouverture=[]),
+         'Plage': dict(lit=['vagues'], silences=[], ouverture=[]),
+         'Lagune': dict(lit=['port'], silences=[], ouverture=[]),
+         'Église': dict(lit=[], silences=[], ouverture=['cloche'])}
+for _l in ('Bureau', 'Hôpital', 'Salon', 'Salon de coiffure', 'Pharmacie', 'Banque', 'Commissariat', 'Boutique', 'Atelier de couture',
+           'Cyber-café', 'Douane', 'Tribunal', 'Cuisine', 'Chambre', 'Mosquée'):
+    LIEUX.setdefault(_l, dict(lit=['ville'], silences=[], ouverture=[]))   # intérieur : la ville, loin, par la fenêtre
 SOUS_VOIX_DB, DUCK_DB = 22.0, 7.0
 
 
