@@ -51,8 +51,8 @@ def plan_sketch(S, lignes, t0, t1, decor, banque):
 def _tache(a):
     """une réplique d'un sketch → ses images JPEG (numérotées sur toute la vidéo)."""
     P, k, gains, dossier = a
-    import assemble
-    assemble.FPS = FPS; i = [P['repliques'][k]['_i0']]
+    import assemble, camera_v1
+    assemble.FPS = FPS; camera_v1.SORTIE = (CW, CH); i = [P['repliques'][k]['_i0']]   # réglages du parent (processus neuf)
     def ecrit(img):
         cv2.imwrite(os.path.join(dossier, 'clip', f'f{i[0]:05d}.jpg'), cv2.cvtColor(img, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 94]); i[0] += 1
     assemble.bande_v1(P, k, gains, ecrit)
@@ -75,18 +75,26 @@ def rend(episode, version, cle, cache):
         _, manque = usine_scene.clips(acteurs, priv, os.path.join(cache, 'clips'))
         if manque: raise SystemExit(f'gestes pas encore tournés pour : {", ".join(manque)}')
         decor = usine_scene.decor(lieu, priv, os.path.join(cache, 'decors'))
-        P = plan_sketch(HS, lignes, S['t0'], S['t1'], decor, os.path.join(cache, 'clips'))
+        # SCÈNE SOUS LA CARTE (21/10/2026, comme tourne.carte_sur_scene) : la réaction après la chute continue de jouer sous la
+        # carte qui suit le sketch (« LE CHOC », titre suivant) au lieu d'une image figée — dans la V1, l'arrière-plan bouge
+        # aussi sous les cartes (mesuré seconde par seconde : 0,50 à 1,0 aux cartes ; épisode banque 1 : image fixe)
+        fin = max([c['t1'] for c in T.get('cartes', []) if abs(c['t0'] - S['t1']) < 0.05] + [S['t1']])
+        P = plan_sketch(HS, lignes, S['t0'], fin, decor, os.path.join(cache, 'clips'))
         gains, inf = assemble.prepare(P, tmp); info[S['id']] = {'lieu': lieu, 'decor': os.path.basename(decor), 'plans': inf.get('plans')}
         taches += [(P, k, gains, D) for k in range(len(P['repliques']))]
-    with ProcessPoolExecutor(int(os.environ.get('ASSEMBLE_PROCS', os.cpu_count() or 4))) as ex: list(ex.map(_tache, taches))
+    # processus NEUFS (spawn) : le parent a déjà ouvert MediaPipe (sens dessiné des personnages, assemble.sens_du_corps) ; des
+    # enfants clonés (fork) en héritent l'état sans ses fils et se bloquent au premier visage à lire (v2 : 2 191 images sur 2 400)
+    import multiprocessing
+    with ProcessPoolExecutor(int(os.environ.get('ASSEMBLE_PROCS', os.cpu_count() or 4)), mp_context=multiprocessing.get_context('spawn')) as ex:
+        list(ex.map(_tache, taches))
     # avant le 1er sketch et pendant les cartes entre sketchs : l'image la plus proche, assombrie comme une carte de la V1
     # (tourne.carte_sur_scene : l'image continue sous l'émoji et le titre posés par compose.py)
     faites = sorted(int(f[1:6]) for f in os.listdir(os.path.join(D, 'clip')) if f.startswith('f'))
     for i in range(n):
-        f = os.path.join(D, 'clip', f'f{i:05d}.jpg')
-        if os.path.isfile(f): continue
-        j = min(faites, key=lambda x: abs(x - i)); im = cv2.imread(os.path.join(D, 'clip', f'f{j:05d}.jpg'))
-        cv2.imwrite(f, (im * (0.65 if any(c['t0'] <= i / FPS < c['t1'] for c in T.get('cartes', [])) else 1.0)).astype(np.uint8), [cv2.IMWRITE_JPEG_QUALITY, 94])
+        f = os.path.join(D, 'clip', f'f{i:05d}.jpg'); carte = any(c['t0'] <= i / FPS < c['t1'] for c in T.get('cartes', []))
+        if os.path.isfile(f) and not carte: continue
+        im = cv2.imread(f) if os.path.isfile(f) else cv2.imread(os.path.join(D, 'clip', f'f{min(faites, key=lambda x: abs(x - i)):05d}.jpg'))
+        cv2.imwrite(f, (im * (0.65 if carte else 1.0)).astype(np.uint8), [cv2.IMWRITE_JPEG_QUALITY, 94])
     for f in os.listdir(os.path.join(D, 'clip')):   # rien au-delà de la durée de la bande son
         if f.startswith('f') and int(f[1:6]) >= n: os.remove(os.path.join(D, 'clip', f))
     json.dump({'images': n, 'fps': FPS, 'banque': True, 'grammaire': 'V1 (camera_v1.py)', 'sketchs': info,

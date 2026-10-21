@@ -881,6 +881,22 @@ try:
 except Exception as e:
     echecs.append(f'regards V1 : {e}')
 
+# 21/10/2026 14:30 — épisode banque 1 v2 bloqué à 2 191 images sur 2 400 : les processus de rendu, clonés (fork) d'un parent qui
+# avait ouvert MediaPipe, attendaient un fil interne disparu. Rendu en processus neufs (spawn), détecteurs recréés par processus ;
+# la réaction après la chute continue de jouer sous la carte suivante (comme tourne.carte_sur_scene) au lieu d'une image figée
+try:
+    import inspect as _in32, rendu_banque as _rb32, visage_mesure as _vm32
+    if "get_context('spawn')" not in _in32.getsource(_rb32.rend) or "get_context('spawn')" not in _in32.getsource(_as31.assemble):
+        echecs.append('rendu banque : processus de rendu clonés (fork) — blocage MediaPipe')
+    if 'camera_v1.SORTIE' not in _in32.getsource(_rb32._tache): echecs.append('rendu banque : format de sortie non transmis aux processus neufs')
+    _vm32._FL[:] = [('mp', 'fl-hérité', -1)]
+    if _vm32._fl()[1] == 'fl-hérité': echecs.append('rendu banque : détecteur de visages hérité réutilisé dans un autre processus')
+    _src32 = _in32.getsource(_rb32.rend)
+    if "c['t0'] - S['t1']" not in _src32 or 'carte' not in _src32: echecs.append('rendu banque : scène figée sous les cartes')
+    print('rendu banque : processus neufs (spawn), détecteurs par processus, scène qui continue sous les cartes : OK')
+except Exception as e:
+    echecs.append(f'rendu banque : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

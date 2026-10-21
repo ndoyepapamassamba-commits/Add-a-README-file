@@ -408,7 +408,8 @@ def assemble(plan, sortie):
         gains, info = prepare(P, d)
         if RENDU_V1:   # caméra, parallaxe, décor vivant et gestes de la V1 publiée (camera_v1.py), répliques en parallèle
             from concurrent.futures import ProcessPoolExecutor
-            with ProcessPoolExecutor(int(os.environ.get('ASSEMBLE_PROCS', os.cpu_count() or 4))) as ex:
+            import multiprocessing   # processus neufs : MediaPipe déjà ouvert ici (sens_du_corps), un fork se bloquerait
+            with ProcessPoolExecutor(int(os.environ.get('ASSEMBLE_PROCS', os.cpu_count() or 4)), mp_context=multiprocessing.get_context('spawn')) as ex:
                 segs = list(ex.map(_segment_v1_tache, [(P, r, k, d, gains) for k, r in enumerate(P['repliques'])]))
         else:
             segs = [segment(P, r, k, d, gains) for k, r in enumerate(P['repliques'])]

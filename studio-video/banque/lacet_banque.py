@@ -64,6 +64,7 @@ def gain(C, sens=1.0):
 def _lu(rgba):
     """lacet du visage (degrés, + : vers la droite de l'image) lu comme niveau_v1 : haut de l'image agrandi, FaceLandmarker."""
     import niveau_v1 as N
+    if _OUT.get('pid') != os.getpid(): _OUT.clear(); _OUT['pid'] = os.getpid()   # un détecteur par processus (fork)
     if '_N' not in _OUT: _OUT['_N'] = N._outils()
     mp, _, fl = _OUT['_N']; t = _sur_gris(rgba)[:int(rgba.shape[0] * 0.45)]
     return N._lacet(mp, fl, cv2.cvtColor(cv2.resize(t, (384, int(384 * t.shape[0] / t.shape[1]))), cv2.COLOR_RGB2BGR))

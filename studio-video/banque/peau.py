@@ -18,13 +18,14 @@ _SEG = []
 
 
 def _seg():
+    if _SEG and _SEG[0][2] != os.getpid(): _SEG.clear()   # un segmenteur par processus (hérité d'un fork : bloqué)
     if not _SEG:
         import mediapipe as mp
         from mediapipe.tasks.python import vision, BaseOptions
         C = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/'
         _SEG.append((mp, vision.ImageSegmenter.create_from_options(vision.ImageSegmenterOptions(
-            base_options=BaseOptions(model_asset_path=C + 'selfie_multiclass_256x256.tflite'), output_category_mask=True))))
-    return _SEG[0]
+            base_options=BaseOptions(model_asset_path=C + 'selfie_multiclass_256x256.tflite'), output_category_mask=True)), os.getpid()))
+    return _SEG[0][:2]
 
 
 def masques(mov, F):

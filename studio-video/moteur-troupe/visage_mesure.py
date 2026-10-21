@@ -12,16 +12,20 @@ _FL = []
 
 
 def _fl():
+    # SÛR APRÈS FORK (21/10/2026) : un détecteur hérité du processus parent (rendu_banque : le parent lit le sens dessiné des
+    # personnages, puis lance les processus de rendu) attend un fil interne MediaPipe qui n'existe plus dans l'enfant —
+    # épisode banque 1 v2 bloqué à 2 191 images sur 2 400. Un détecteur par processus.
+    if _FL and _FL[0][2] != os.getpid(): _FL.clear()
     if not _FL:
         import mediapipe as mp
         from mediapipe.tasks.python import vision, BaseOptions
         m = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/face_landmarker.task'
         _FL.append((mp, vision.FaceLandmarker.create_from_options(vision.FaceLandmarkerOptions(
             base_options=BaseOptions(model_asset_path=m), num_faces=1, min_face_detection_confidence=0.2,
-            output_face_blendshapes=True, running_mode=vision.RunningMode.IMAGE))))
+            output_face_blendshapes=True, running_mode=vision.RunningMode.IMAGE)), os.getpid()))
         import atexit
         atexit.register(_FL[0][1].close)   # fermé avant l'arrêt de l'interpréteur (sinon TypeError dans le destructeur MediaPipe)
-    return _FL[0]
+    return _FL[0][:2]
 
 
 def mesure(im):
