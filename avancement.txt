@@ -14,3 +14,4 @@
 [608 s] 2 images · === maison-baye-ndiaye-chambre-large-jour   |=====================================>            | 3/4 - 158.86s/it[K · mémoire libre 6943 Mo
 [729 s] 3 images · === maison-fatou-chambre-large-jour   |==================================================| 4/4 - 157.80s/it[K · mémoire libre 11562 Mo
 [851 s] 3 images · === maison-fatou-chambre-large-jour   |==================================================| 4/4 - 157.80s/it[K · mémoire libre 6959 Mo
+[973 s] 3 images · === maison-fatou-chambre-large-jour   |============>                                     | 1/4 - 160.93s/it[K · mémoire libre 6947 Mo
