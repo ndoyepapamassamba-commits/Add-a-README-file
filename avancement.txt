@@ -24,3 +24,4 @@
 [1821 s] 3 images · === perso-sur-awa   |==================================================| 4/4 - 156.60s/it[K · mémoire libre 6306 Mo
 [1942 s] 3 images · === perso-sur-awa   |============>                                     | 1/4 - 402.45s/it[K · mémoire libre 6305 Mo
 [2064 s] 3 images · === perso-sur-awa   |============>                                     | 1/4 - 402.45s/it[K · mémoire libre 6296 Mo
+[2185 s] 3 images · === perso-sur-awa   |============>                                     | 1/4 - 402.45s/it[K · mémoire libre 6273 Mo
