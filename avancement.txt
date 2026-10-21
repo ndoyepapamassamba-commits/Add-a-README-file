@@ -73,3 +73,4 @@
 [122 s] 21 clips · === patron-sery--choc (at_runtime)  · mémoire libre 13767 Mo
 [244 s] 21 clips · === patron-sery--choc (at_runtime)   |============>                                     | 1/4 - 134.00s/it[K · mémoire libre 13776 Mo
 [365 s] 21 clips · === patron-sery--choc (at_runtime)   |=========================>                        | 2/4 - 133.63s/it[K · mémoire libre 13770 Mo
+[486 s] 21 clips · === patron-sery--choc (at_runtime)   |=====================================>            | 3/4 - 133.50s/it[K · mémoire libre 13764 Mo
