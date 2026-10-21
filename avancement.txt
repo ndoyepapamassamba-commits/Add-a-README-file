@@ -56,3 +56,4 @@
 [5705 s] 6 images · === decor-plage-coin-jour   |==================================================| 4/4 - 156.85s/it[K · mémoire libre 7026 Mo
 [5826 s] 6 images · === decor-plage-coin-jour   |============>                                     | 1/4 - 161.15s/it[K · mémoire libre 7016 Mo
 [5947 s] 6 images · === decor-plage-coin-jour   |=========================>                        | 2/4 - 156.90s/it[K · mémoire libre 7016 Mo
+[6068 s] 6 images · === decor-plage-coin-jour   |=====================================>            | 3/4 - 156.79s/it[K · mémoire libre 7008 Mo
