@@ -28,7 +28,14 @@
    "lora": "at_runtime",
    "secondes": 319,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "le-patriarche--montrer",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 172,
+   "memoire_max_go": 10.92
   }
  ],
- "run": "39510605985"
+ "run": "39528414471"
 }
