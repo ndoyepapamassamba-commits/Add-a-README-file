@@ -17,7 +17,9 @@ BIBLIO = os.path.realpath(os.path.expanduser(os.environ.get('MASSAMBA_BIBLIO', '
 LIENS = ('prep', 'fiches', 'emoji', 'scenes', 'ltas.json', 'registre-repliques.json', 'voix-mls.json')
 LIEU_DOSSIER = {'maquis': 'prep/maquis', 'cour': 'prep/cour', 'chambre': 'prep/chambre'}
 BANQUES = ('fabrique/histoires/reserve-cour.json',)   # sketchs écrits et contrôlés, prêts à tourner (en plus des épisodes)
-REGLAGES = {'cam_px': 3.0, 'rig': 1, 'entites': {'cour': 2}, 'nuages': 0.0, 'betes_peintes': 0}
+# 21/10/2026 (épisode 4, mesures contre la V1) : plan_s 5 → 4 (13 → 15 plans, 12,5 → 14,4 plans/min contre 13,6 pour la V1,
+# plan médian 4,4 s ≥ 3,04) ; décor 1 → 1,3 (part de l'arrière-plan qui bouge 0,143 contre 0,161 pour la V1 avec les plans à deux)
+REGLAGES = {'cam_px': 3.0, 'rig': 1, 'entites': {'cour': 2}, 'nuages': 0.0, 'betes_peintes': 0, 'plan_s': 4.0, 'decor': 1.3}
 
 
 def _py(*a, env=None, log=None, cwd=None):

@@ -44,7 +44,26 @@ def construit(biblio, site, cles):
                                               'portes', 'a_publier', 'livree', 'publiee', 'sketchs', 'motifs')}
                    | {'taille_mo': (x.get('version_tel') or {}).get('taille_mo'), 'ssim': (x.get('version_tel') or {}).get('ssim'), 'ordre': k + 1,
                       'video': v if i in en_ligne else None, 'affiche': a if i in en_ligne else None, 'archive': archives.get(i)})
-    corps = json.dumps({'maj': coffre_maj(), 'config': {k_: C[k_] for k_ in ('cadence', 'creneaux', 'fuseau', 'fenetre_videos')}, 'videos': cat},
+    # 21/10/2026 — « tout le sketch, tout le script, tous les personnages et scènes doivent être disponibles dans le HTML » :
+    # la troupe (scènes préparées, personnages, âge, activité) et le débit mesuré de la fabrique (serie_v1.etat) voyagent
+    # avec le catalogue, scellés comme lui
+    troupe, prod = [], None
+    try:
+        fi = json.load(open(os.path.join(ICI, '..', 'blender', 'film', 'characters.json'), encoding='utf-8'))
+        P = os.path.join(biblio, 'prep')
+        for n in sorted(os.listdir(P)) if os.path.isdir(P) else []:
+            f = os.path.join(P, n, 'scene.json')
+            if not os.path.isfile(f) or not os.path.isdir(os.path.join(P, n, 'expressions')): continue
+            A = [a['nom'] for a in json.load(open(f)).get('acteurs', [])]
+            troupe.append({'scene': n, 'lieu': ((fi.get(A[0]) or {}).get('lieux') or [n])[0] if A else n,
+                           'acteurs': [{'nom': a, 'age': (fi.get(a) or {}).get('age'), 'activite': (fi.get(a) or {}).get('activite')} for a in A]})
+        if os.path.isfile(os.path.join(biblio, 'serie-v1', 'journal.jsonl')):
+            os.environ['MASSAMBA_BIBLIO'] = biblio; sys.path.insert(0, os.path.join(ICI, '..', 'moteur-troupe'))
+            import serie_v1; prod = serie_v1.etat(); prod.pop('scenes_pretes', None)
+    except Exception as e:
+        print('troupe / débit :', e)
+    corps = json.dumps({'maj': coffre_maj(), 'config': {k_: C[k_] for k_ in ('cadence', 'creneaux', 'fuseau', 'fenetre_videos')}, 'videos': cat,
+                        'troupe': troupe, 'production': prod},
                        ensure_ascii=False).encode()
     open(os.path.join(site, 'catalogue.msb'), 'wb').write(coffre.scelle_octets(corps, pub))
     json.dump(archives, open(os.path.join(site, 'archives.json'), 'w'), indent=1)

@@ -65,6 +65,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 .coche input{width:20px;height:20px;accent-color:var(--menthe);margin:0}
 .alerte{font-size:13px;border-radius:8px;padding:7px 10px}
 .legende{font-size:13px;color:var(--doux);white-space:pre-line;max-height:4.6em;overflow:hidden}
+.script{font-size:13px;border-top:1px solid var(--trait);padding-top:6px}.script summary{cursor:pointer;font-weight:700}
+.script h4{margin:8px 0 2px;font-size:13px}.script .qui{font-weight:700}.script .chute{font-weight:800;color:var(--accent,#ffd23f)}
+.script p{margin:2px 0}.troupe{display:grid;gap:8px}.troupe .scene{border:1px solid var(--trait);border-radius:10px;padding:8px}
 .boite{background:var(--carte);border:1px solid var(--trait);border-radius:14px;padding:16px;display:grid;gap:12px}
 .vide{border:1px dashed var(--trait);border-radius:14px;padding:22px;color:var(--doux)}
 .message{font-size:13px;color:var(--doux);min-height:1.2em}
@@ -118,6 +121,14 @@ input,select{font:inherit;font-size:15px;padding:8px 10px;border-radius:8px;bord
         <section class="boite" aria-labelledby="t-prod">
           <h2 id="t-prod">Production en cours</h2>
           <div class="releve" id="prod">Aucune production en cours.</div>
+        </section>
+        <section class="boite" aria-labelledby="t-debit">
+          <h2 id="t-debit">Débit de la fabrique</h2>
+          <div class="releve" id="debit">Mesure après le premier épisode.</div>
+        </section>
+        <section class="boite" aria-labelledby="t-troupe">
+          <h2 id="t-troupe">Troupe et scènes</h2>
+          <div class="troupe" id="troupe">—</div>
         </section>
         <section class="boite" aria-labelledby="t-pilote">
           <h2 id="t-pilote">Production</h2>
@@ -194,7 +205,7 @@ const statut = (v) => S.local.publiee[v.id] ? "publiee" : (S.local.statut[v.id] 
 function carte(v) {
   const s = statut(v), d = document.createElement("article"); d.className = "video" + (s === "doublon" ? " doublon" : "");
   d.innerHTML = `<div class="cadre"><img alt="">${s === "pret" && v.creneau ? `<span class="creneau">${heure(v.creneau)}</span>` : ""}${v.video ? `<button class="lire" data-a="lire">▶ Regarder</button>` : ""}</div>
-    <div class="corps"><div class="titre"></div><div class="ligne etat"></div><div class="info"></div><div class="legende"></div>
+    <div class="corps"><div class="titre"></div><div class="ligne etat"></div><div class="info"></div><div class="legende"></div><details class="script"><summary>Le script des 3 sketchs</summary><div class="sk"></div></details>
       <label class="coche"><input type="checkbox" data-a="publiee"> Déjà publiée</label>
       <div class="ligne">${v.video ? `<button class="fort" data-a="garde">Télécharger${v.taille_mo ? ` (${String(v.taille_mo).replace(".", ",")} Mo)` : ""}</button>` : `<a class="bouton" href="${depot.gh}/releases/tag/fabrique-archives" target="_blank" rel="noopener">Dans les archives</a>`}<button data-a="copie">Copier la légende</button></div>
       <div class="ligne act">${s === "doublon" ? `<button data-a="garder">Garder quand même</button>` : s === "pret" ? `<button data-a="doublon">Signaler un doublon</button>` : ""}</div>
@@ -207,6 +218,11 @@ function carte(v) {
   if (v.doublon_de && v.ressemblance != null) { const a = document.createElement("div"); a.className = "alerte " + (s === "doublon" ? "ko" : "att"); a.textContent = `${s === "doublon" ? "Doublon de" : "Proche de"} « ${v.doublon_de} » : ${Math.round(v.ressemblance * 100)} % d'images jumelles.`; d.querySelector(".info").append(a); }
   if (s === "a_corriger" && v.motifs && v.motifs.length) { const a = document.createElement("div"); a.className = "alerte ko"; a.textContent = "À corriger : " + v.motifs.join(" ; "); d.querySelector(".info").append(a); }
   d.querySelector(".legende").textContent = v.legende || "";
+  const sk = d.querySelector(".sk"); (v.sketchs || []).forEach((x, j) => {
+    const h = document.createElement("h4"); h.textContent = `${j + 1}. ${x.titre || ""} — ${x.lieu || x.scene || ""} (${(x.acteurs || []).join(", ")})`; sk.append(h);
+    (x.repliques || []).forEach((r) => { const l = document.createElement("p"); const q = document.createElement("span"); q.className = "qui"; q.textContent = r.qui + " : ";
+      const t = document.createElement("span"); t.textContent = r.texte; if (r.chute) t.className = "chute"; l.append(q, t); sk.append(l); }); });
+  if (!(v.sketchs || []).length) d.querySelector(".script").hidden = true;
   const box = d.querySelector('input[data-a="publiee"]'); box.checked = s === "publiee";
   const msg = d.querySelector(".message"), img = d.querySelector("img");
   if (v.affiche) blobDe(v.affiche, "image/jpeg").then((u) => (img.src = u)).catch(() => { img.alt = "affiche indisponible"; });   // 24 cartes par page : ≈ 70 Ko chacune
@@ -243,6 +259,18 @@ function rendre() {
   pub.forEach((v) => sel.append(new Option(v.titre || v.id, v.id))); if ([...sel.options].some((o) => o.value === g)) sel.value = g;
   rendreTaux();
 }
+function rendreTroupe() {
+  const P = S.cat.production, z = $("debit");
+  if (P && P.episodes) { z.textContent = ""; [[`${P.episodes}`, "épisodes fabriqués"], [`${String(P.minutes_par_episode).replace(".", ",")} min`, "par épisode (mesuré)"],
+      [`${String(P.episodes_par_jour_par_machine).replace(".", ",")}`, "épisodes par jour et par machine"], [`${P.reserve ? P.reserve.episodes_possibles : "—"}`, "épisodes encore possibles avec la réserve de sketchs"]]
+    .forEach(([a, b]) => { const s = document.createElement("span"); const g = document.createElement("b"); g.textContent = a; s.append(g, " " + b); z.append(s); }); }
+  const T = $("troupe"); T.replaceChildren(); (S.cat.troupe || []).forEach((sc) => { const d = document.createElement("div"); d.className = "scene";
+    const h = document.createElement("b"); h.textContent = sc.lieu || sc.scene; d.append(h);
+    (sc.acteurs || []).forEach((a) => { const p = document.createElement("div"); p.textContent = `${a.nom}${a.age ? ", " + a.age + " ans" : ""} — ${a.activite || ""}`; d.append(p); });
+    T.append(d); });
+  if (!(S.cat.troupe || []).length) T.textContent = "La troupe s'affiche avec la première livraison.";
+}
+
 function rendreTaux() {
   const id = $("c-video").value, r = S.local.releves.filter((x) => x.video === id).sort((a, b) => b.quand.localeCompare(a.quand))[0], t = $("taux");
   if (!r) { t.textContent = id ? "Pas encore de chiffres pour cette vidéo." : ""; return; }
@@ -275,7 +303,7 @@ async function demarre(phrase) {
   $("porte").hidden = true; $("app").hidden = false;
   $("l-produire").href = `${depot.gh}/actions/workflows/fabrique.yml`; $("l-reglages").href = `${depot.gh}/blob/HEAD/studio-video/fabrique/config.json`; $("l-archives").href = `${depot.gh}/releases/tag/fabrique-archives`;
   $("pilote-info").innerHTML = `<span>Cadence <b>${S.cat.config.cadence}</b> par jour</span><span>Créneaux <b>${S.cat.config.creneaux.join(" · ")}</b></span><span>En ligne <b>${S.cat.config.fenetre_videos}</b> vidéos</span>`;
-  rendre(); lireProd(); setInterval(lireProd, 60000);
+  rendre(); rendreTroupe(); lireProd(); setInterval(lireProd, 60000);
 }
 
 $("porte").addEventListener("submit", async (e) => {
