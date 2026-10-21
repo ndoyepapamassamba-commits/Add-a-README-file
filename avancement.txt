@@ -28,3 +28,4 @@
 [1334 s] 9 clips · === mecano-issa--choc (at_runtime)   |============>                                     | 1/4 - 133.89s/it[K · mémoire libre 13783 Mo
 [1455 s] 9 clips · === mecano-issa--choc (at_runtime)   |=========================>                        | 2/4 - 133.35s/it[K · mémoire libre 13771 Mo
 [1577 s] 9 clips · === mecano-issa--choc (at_runtime)   |=========================>                        | 2/4 - 133.35s/it[K · mémoire libre 13771 Mo
+[1698 s] 9 clips · === mecano-issa--choc (at_runtime)   |=====================================>            | 3/4 - 133.29s/it[K · mémoire libre 13774 Mo
