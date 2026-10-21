@@ -5,3 +5,4 @@
 [608 s] 5 clips · === la-go-leopard--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14587 Mo
 [730 s] 5 clips · === la-go-leopard--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13818 Mo
 [851 s] 5 clips · === la-go-leopard--choc (at_runtime)   |============>                                     | 1/4 - 134.72s/it[K · mémoire libre 13815 Mo
+[973 s] 5 clips · === la-go-leopard--choc (at_runtime)   |=========================>                        | 2/4 - 133.81s/it[K · mémoire libre 13788 Mo
