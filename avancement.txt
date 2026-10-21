@@ -24,3 +24,4 @@
 [1215 s] 9 clips · === madame-konan--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13803 Mo
 [122 s] 9 clips · === petite-khadija--mentir (at_runtime)   |=========================>                        | 2/4 - 39.28s/it[K · mémoire libre 13800 Mo
 [244 s] 10 clips · === tonton-dieng--hausser (at_runtime)   |============>                                     | 1/4 - 41.38s/it[K · mémoire libre 13806 Mo
+[366 s] 10 clips · === tonton-dieng--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14641 Mo
