@@ -50,3 +50,4 @@
 [485 s] 13 clips · === dj-kevin--montrer (at_runtime)   |=====================================>            | 3/4 - 134.88s/it[K · mémoire libre 13787 Mo
 [607 s] 14 clips · === boubacar--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14597 Mo
 [728 s] 14 clips · === boubacar--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13814 Mo
+[850 s] 14 clips · === boubacar--colere (at_runtime)   |============>                                     | 1/4 - 135.76s/it[K · mémoire libre 13807 Mo
