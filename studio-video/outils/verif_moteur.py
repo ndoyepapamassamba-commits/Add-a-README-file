@@ -976,6 +976,22 @@ try:
 except Exception as e:
     echecs.append(f'cartes (recul) : {e}')
 
+# 21/10/2026 — clip à 16 i/s rendu à 30 : image tenue puis saut de deux (1 échantillon sur 15) et fondu qui dédoublait les
+# mains rapides ; position exacte dans le clip (levres_banque.ordre) et interpolation par flux optique (camera_v1.image_a)
+try:
+    import camera_v1 as _cv35, levres_banque as _lb35
+    _t35 = cv2.GaussianBlur(np.random.default_rng(0).uniform(0, 255, (24, 24, 3)).astype(np.float32), (0, 0), 1.5)
+    _F35 = np.zeros((2, 64, 96, 4), np.uint8); _F35[0, 20:44, 20:44, :3] = _t35; _F35[1, 20:44, 32:56, :3] = _t35
+    _F35[0, 20:44, 20:44, 3] = 255; _F35[1, 20:44, 32:56, 3] = 255
+    _x35 = np.where(_cv35.image_a(_F35, 0.5)[..., 3].max(0) > 200)[0]
+    _o35 = _lb35.ordre(np.random.default_rng(1).uniform(0, 1, 33), (np.sin(np.arange(60) * 0.7) > 0).astype(float), 30)
+    if not (len(_x35) and abs(_x35.min() - 26) <= 2 and abs(_x35.max() - 49) <= 2) or all(float(x).is_integer() for x in _o35):
+        echecs.append(f'entre deux images : objet mal placé ({_x35.min() if len(_x35) else None}…) ou positions entières seulement')
+    else:
+        print(f'entre deux images : objet interpolé à mi-chemin (x {_x35.min()} → {_x35.max()}, attendu 26 → 49), positions exactes dans le clip : OK')
+except Exception as e:
+    echecs.append(f'entre deux images : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

@@ -390,9 +390,32 @@ def position_douce(t, n, fps_clip=16.0, dep=0.0, boucle=None):
     return (n - 1) * (1 - math.cos(math.pi * v)) / 2
 
 
+_FLUX = {}
+
+
+def _flux(F, i):
+    """flux optique DIS (OpenCV, BSD) entre les images i et i+1 du clip préparé, dans les deux sens, gardé (96 paires au plus)."""
+    cle = (getattr(F, 'filename', None) or id(F), F.shape, i)
+    if cle not in _FLUX:
+        if len(_FLUX) >= 96: _FLUX.pop(next(iter(_FLUX)))
+        gris = lambda f: cv2.cvtColor(np.clip(f[..., :3] * (f[..., 3:] / 255.0) + 128.0 * (1 - f[..., 3:] / 255.0), 0, 255).astype(np.uint8), cv2.COLOR_RGB2GRAY)
+        a, b = gris(np.asarray(F[i], np.float32)), gris(np.asarray(F[i + 1], np.float32)); dis = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM)
+        _FLUX[cle] = (dis.calc(a, b, None), dis.calc(b, a, None))
+    return _FLUX[cle]
+
+
 def image_a(F, p):
+    """image du clip à la position p (fractionnaire). ENTRE DEUX IMAGES (21/10/2026, épisode banque 1 v9) : le fondu enchaîné
+    des deux images voisines dédoublait les mains dans les gestes rapides ; chacune est désormais déplacée vers l'instant voulu
+    le long du flux optique puis mêlées au prorata (même méthode que fluide.retime_flux, Baker et al. 2011)."""
     i = int(math.floor(p)); a = p - i; j = min(i + 1, len(F) - 1); fi = np.asarray(F[i], np.float32)
-    return fi if a < 1e-3 else fi * (1 - a) + np.asarray(F[j], np.float32) * a
+    if a < 0.04 or j == i: return fi
+    if a > 0.96: return np.asarray(F[j], np.float32)
+    F01, F10 = _flux(F, i); h, w = fi.shape[:2]
+    gx, gy = np.meshgrid(np.arange(w, dtype=np.float32), np.arange(h, dtype=np.float32))
+    w0 = cv2.remap(fi, gx - a * F01[..., 0], gy - a * F01[..., 1], cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+    w1 = cv2.remap(np.asarray(F[j], np.float32), gx - (1 - a) * F10[..., 0], gy - (1 - a) * F10[..., 1], cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+    return w0 * (1 - a) + w1 * a
 
 
 def colle(canvas, im, x, y):

@@ -144,15 +144,22 @@ def ordre(q, e, fps, poids=None, m=None, impose=True):
     l'escamotent ou le retiennent sont pénalisés (CORPS)."""
     N = len(q); n = len(e); bc = boucle(m, N)
     Q = parcours(N, bc, int(3.5 * n * FPS_CLIP / fps) + 2 * N) if bc else aller_retour(N)
-    K = max(1, round(len(Q) * fps / FPS_CLIP)); pos = [min(len(Q) - 1, int(k * FPS_CLIP / fps)) for k in range(K)]; R = [Q[p] for p in pos]
-    qr = q[R]; lo, hi = np.percentile(q, 10), np.percentile(q, 90); ech = max(hi - lo, 1e-4)
+    K = max(1, round(len(Q) * fps / FPS_CLIP)); pos = [min(len(Q) - 1, int(k * FPS_CLIP / fps)) for k in range(K)]
+    # POSITION EXACTE (21/10/2026, épisode banque 1 v9) : le clip à 16 images/s passait à 30 en tenant une image puis en sautant,
+    # et une image d'échantillon sur 15 avançait de deux images du clip — en plein geste rapide, une saute. Chaque image de
+    # sortie montre maintenant l'instant exact du clip (fractionnaire), rendu par interpolation de flux (camera_v1.image_a)
+    def exacte(k):
+        x = k * FPS_CLIP / fps; i = pos[k]; a, b = Q[i], Q[min(i + 1, len(Q) - 1)]
+        return a + (x - i) * (b - a) if abs(b - a) == 1 else float(a)
+    R = [round(exacte(k), 3) for k in range(K)]
+    qr = np.interp(R, np.arange(N), q); lo, hi = np.percentile(q, 10), np.percentile(q, 90); ech = max(hi - lo, 1e-4)
     cible = lo + e * (hi - lo)
     cout = ((qr[None, :] - cible[:, None]) / ech) ** 2                   # n × K
     if poids is not None: cout = cout * np.asarray(poids, float)[:, None]
     pen = dict(PENALITE)
     if m is not None and len(m) == N and CORPS > 0:
         a = np.array(R); b = np.roll(a, -1)
-        mR = np.where(a == b, 0.0, np.asarray(m, float)[np.minimum(a, b)])   # mouvement de R[k] à R[k+1]
+        mR = np.where(a == b, 0.0, np.asarray(m, float)[np.floor(np.minimum(a, b)).astype(int)] * np.abs(a - b))   # de R[k] à R[k+1]
         ech = max(float(np.percentile(mR[mR > 0], 90)) if (mR > 0).any() else 0.0, 1e-3)
         sup = {0: np.roll(mR, 1), 1: np.zeros(K), 2: np.roll(mR, 2), 3: np.roll(mR, 2) + np.roll(mR, 3)}   # escamoté / retenu
         pen = {d: p + CORPS * (sup[d] / ech) ** 2 for d, p in PENALITE.items()}
@@ -182,7 +189,7 @@ def ordre_mesure(q, e, fps):
     N = len(q); Q = aller_retour(N)
     avant = [Q[int(t * FPS_CLIP / fps) % len(Q)] for t in range(len(e))]
     apres = ordre(q, e, fps)
-    c = lambda s: float(np.corrcoef(q[s], e)[0, 1]) if np.std(q[s]) > 0 and np.std(e) > 0 else 0.0
+    c = lambda s: (lambda v: float(np.corrcoef(v, e)[0, 1]) if np.std(v) > 0 and np.std(e) > 0 else 0.0)(np.interp(s, np.arange(N), q))
     return round(c(avant), 3), round(c(apres), 3), apres
 
 
@@ -209,6 +216,6 @@ def liste_concat(mov, mp4, wav, dur, fps, chemin_liste):
     if q is None or len(q) != len(ims): return None
     n = max(1, int(round(dur * fps))); e = enveloppe(wav, n, fps); s = ordre(q, e, fps, m=mouvement(mp4), impose=impose(mov))
     with open(chemin_liste, 'w') as f:
-        for i in s: f.write(f"file '{ims[i]}'\nduration {1 / fps:.6f}\n")
-        f.write(f"file '{ims[s[-1]]}'\n")   # le démultiplexeur concat ignore la durée de la dernière entrée
+        for i in s: f.write(f"file '{ims[int(round(i))]}'\nduration {1 / fps:.6f}\n")
+        f.write(f"file '{ims[int(round(s[-1]))]}'\n")   # le démultiplexeur concat ignore la durée de la dernière entrée
     return chemin_liste
