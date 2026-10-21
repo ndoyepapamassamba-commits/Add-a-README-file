@@ -67,3 +67,4 @@
 [6067 s] 6 images · === decor-bureau-coin-jour   |==================================================| 4/4 - 398.07s/it[K · mémoire libre 7043 Mo
 [123 s] 6 images · === fiche-agent-bakary  · mémoire libre 6733 Mo
 [245 s] 6 images · === fiche-agent-bakary  · mémoire libre 6703 Mo
+[122 s] 6 images · === fiche-agent-bakary  · mémoire libre 6636 Mo
