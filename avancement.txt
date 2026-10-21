@@ -63,3 +63,4 @@
 [1214 s] 20 clips · === mademoiselle-rosine--montrer (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13148 Mo
 [123 s] 21 clips · === salif-le-parisien--hausser (at_runtime)  · mémoire libre 13766 Mo
 [245 s] 21 clips · === salif-le-parisien--hausser (at_runtime)   |============>                                     | 1/4 - 134.60s/it[K · mémoire libre 13752 Mo
+[366 s] 21 clips · === salif-le-parisien--hausser (at_runtime)   |=========================>                        | 2/4 - 134.10s/it[K · mémoire libre 13761 Mo
