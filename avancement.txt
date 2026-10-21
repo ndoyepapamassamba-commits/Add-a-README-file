@@ -85,3 +85,4 @@
 [366 s] 27 clips · === le-banquier--montrer (at_runtime)   |=====================================>            | 3/4 - 97.39s/it[K · mémoire libre 13784 Mo
 [487 s] 28 clips · === djecky--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13832 Mo
 [609 s] 28 clips · === djecky--colere (at_runtime)   |============>                                     | 1/4 - 97.92s/it[K · mémoire libre 13829 Mo
+[730 s] 28 clips · === djecky--colere (at_runtime)   |=========================>                        | 2/4 - 97.32s/it[K · mémoire libre 13828 Mo
