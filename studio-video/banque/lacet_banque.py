@@ -17,7 +17,7 @@ ANGLE = float(os.environ.get('LACET_BANQUE', '20'))   # degrés vers le partenai
 # le champ lissé de 20° amplifié ×1,6 : 8,8 à 13,1° et 9,9 à 13,4°, tête entière tournée, coiffure intacte (×2,2 tord l'afro)
 GAIN = float(os.environ.get('LACET_GAIN', '1.0'))   # VERSION 5 : gain par défaut du champ gaussien (1,6 pour le polynôme)
 T = 128                                               # grille du champ (carré du visage)
-VERSION = 5   # 2 : orientation déjà dessinée gardée (gain) ; 3 : un champ par côté (le champ retourné ne tournait vers la gauche que de 5°)
+VERSION = 6   # 2 : orientation déjà dessinée gardée (gain) ; 3 : un champ par côté (le champ retourné ne tournait vers la gauche que de 5°) ; 6 : marge de 4°
 # 4 : gain ÉTALONNÉ par personnage et par côté (21/10/2026, épisode banque 1 : regards 0,167 contre 0,846 pour la V1). Mesuré
 # comme niveau_v1 (FaceLandmarker, lacet lu sur la tête agrandie) : un même gain donne +8,2° à Tiékoro et +15,5° à Patron Séry,
 # −5,5° à Mamie Bintou et −11,9° à Tata Prisca ; le gain qui tourne le plus est gardé (1,2 à 2,0 ; au-delà la coiffure se tord).
@@ -31,6 +31,11 @@ VERSION = 5   # 2 : orientation déjà dessinée gardée (gain) ; 3 : un champ p
 GAINS = (0.8, 1.0, 1.25)
 SIGMA = float(os.environ.get('LACET_SIGMA', '4'))     # lissage du champ (pixels de la grille T)
 CIBLE = 12.0
+# MARGE (21/10/2026, épisode banque 1 v20 : regards 0,968 → 0,857, la V1 0,846) : étalonné à 12° sur la 1re image du clip, le
+# Patron Sery (dessiné presque de face, 3,4°) recevait le gain 0,8 (−14,5°) ; en plein jeu sa tête ne tournait plus que de 5
+# à 11° — sous le seuil de 8° de la mesure, une seconde sur trois au maquis. Le gain retenu est désormais le plus petit qui
+# atteint CIBLE + MARGE (16°), dans les gains déjà jugés sans torsion (≤ 1,25).
+MARGE = 4.0
 
 
 def _fl():
@@ -101,7 +106,7 @@ def etalonne(F0, boite, F, Fg, w):
     n0 = _lu(F0) or 0.0; res = {}
     for cote, Fc, sg in (('gd', F, 1.0), ('gg', Fg, -1.0)):
         mes = [(sg * (v - n0), g, v) for g in GAINS for v in [_lu(_tourne_une(F0, boite, Fc, w, g))] if v is not None]
-        ok = [m for m in mes if m[0] >= CIBLE]; ch = min(ok, key=lambda m: m[1]) if ok else (max(mes) if mes else None)
+        ok = [m for m in mes if m[0] >= CIBLE + MARGE]; ch = min(ok, key=lambda m: m[1]) if ok else (max(mes) if mes else None)
         res[cote] = ch[1] if ch else 1.0; res['l' + cote[1]] = round(ch[2], 1) if ch else None
     return res
 

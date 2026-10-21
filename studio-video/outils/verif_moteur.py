@@ -1106,6 +1106,16 @@ try:
 except Exception as e:
     echecs.append(f'corps vivant : {e}')
 
+# 21/10/2026 — v20 : regards 0,968 → 0,857 (V1 0,846) ; tête du Patron Sery étalonnée sans marge (12° sur la 1re image)
+try:
+    import lacet_banque as _lt42, inspect as _in42
+    if not (getattr(_lt42, 'MARGE', 0) >= 3 and 'CIBLE + MARGE' in _in42.getsource(_lt42.etalonne) and _lt42.VERSION >= 6):
+        echecs.append('regards : étalonnage de la tête sans marge (ou ancienne version des champs relue)')
+    else:
+        print(f'regards : tête étalonnée à {_lt42.CIBLE + _lt42.MARGE:.0f}° (12° de la V1 + marge), champs version {_lt42.VERSION} : OK')
+except Exception as e:
+    echecs.append(f'regards (marge) : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')
