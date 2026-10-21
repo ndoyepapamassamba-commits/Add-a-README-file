@@ -34,3 +34,4 @@
 [2311 s] 4 images · === perso-agent-doumbia   |==================================================| 4/4 - 151.87s/it[K · mémoire libre 6310 Mo
 [2432 s] 4 images · === perso-agent-doumbia   |============>                                     | 1/4 - 378.85s/it[K · mémoire libre 6301 Mo
 [2554 s] 4 images · === perso-agent-doumbia   |============>                                     | 1/4 - 378.85s/it[K · mémoire libre 6291 Mo
+[2675 s] 4 images · === perso-agent-doumbia   |============>                                     | 1/4 - 378.85s/it[K · mémoire libre 6305 Mo
