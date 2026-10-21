@@ -61,3 +61,4 @@
 [5955 s] 8 images · === decor-mosquee-champ-jour   |=========================>                        | 2/4 - 133.86s/it[K · mémoire libre 7020 Mo
 [6076 s] 8 images · === decor-mosquee-champ-jour   |=====================================>            | 3/4 - 133.95s/it[K · mémoire libre 7020 Mo
 [124 s] 8 images · === fiche-le-tonton  · mémoire libre 6687 Mo
+[245 s] 8 images · === fiche-le-tonton  · mémoire libre 6676 Mo
