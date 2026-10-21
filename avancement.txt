@@ -60,3 +60,4 @@
 [1337 s] 18 clips · === mademoiselle-rosine--ecouter (at_runtime)   |============>                                     | 1/4 - 134.39s/it[K · mémoire libre 13772 Mo
 [1458 s] 18 clips · === mademoiselle-rosine--ecouter (at_runtime)   |============>                                     | 1/4 - 134.39s/it[K · mémoire libre 13750 Mo
 [1579 s] 18 clips · === mademoiselle-rosine--ecouter (at_runtime)   |=========================>                        | 2/4 - 134.39s/it[K · mémoire libre 13752 Mo
+[1701 s] 18 clips · === mademoiselle-rosine--ecouter (at_runtime)   |=====================================>            | 3/4 - 133.86s/it[K · mémoire libre 13751 Mo
