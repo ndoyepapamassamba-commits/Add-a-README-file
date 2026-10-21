@@ -115,3 +115,4 @@
 [366 s] 28 clips · === le-tonton--colere@2 (at_runtime)   |=========================>                        | 2/4 - 133.27s/it[K · mémoire libre 13776 Mo
 [488 s] 28 clips · === le-tonton--colere@2 (at_runtime)   |=====================================>            | 3/4 - 132.97s/it[K · mémoire libre 13776 Mo
 [609 s] 29 clips · === agent-gora--montrer@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14586 Mo
+[731 s] 29 clips · === agent-gora--montrer@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13828 Mo
