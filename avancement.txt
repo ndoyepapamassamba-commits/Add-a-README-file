@@ -57,3 +57,4 @@
 [5467 s] 11 images · === decor-cour-contrechamp-nuit   |==================================================| 4/4 - 86.88s/it[K · mémoire libre 6666 Mo
 [5588 s] 12 images · === decor-bureau-contrechamp-nuit   |============>                                     | 1/4 - 90.11s/it[K · mémoire libre 7038 Mo
 [5710 s] 12 images · === decor-bureau-contrechamp-nuit   |=========================>                        | 2/4 - 86.45s/it[K · mémoire libre 7034 Mo
+[5831 s] 12 images · === decor-bureau-contrechamp-nuit   |=====================================>            | 3/4 - 85.70s/it[K · mémoire libre 7034 Mo
