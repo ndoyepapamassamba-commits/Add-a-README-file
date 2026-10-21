@@ -52,8 +52,14 @@ def masque_fond(im):
     return teinte & (hsv[..., 1] > 120) & (hsv[..., 2] > 80), ('vert' if 35 < h0 < 85 else 'bleu')
 
 
+# 21/10/2026 03:05 — clips tournés depuis une découpe fautive (moitiés de personnage : La Go Léopard sur ses 5 poses, Chef Traoré
+# sur les 2 dernières) : refaits sous une version plus haute (« <personnage>--<geste>@2 »), les anciens clips gardés (aucune vidéo
+# supprimée) ; l'assemblage prend la version la plus haute.
+VERSIONS = {'la-go-leopard': 2, 'chef-traore': 2}
+
+
 def taches(qui=None):
-    return [{'id': f'{p}--{g}', 'personnage': p, 'geste': g, 'pose': po, 'prompt': CONSIGNE.format(geste=c, fond=FONDS[fond_de(p)][0])}
+    return [{'id': f'{p}--{g}' + (f'@{VERSIONS[p]}' if VERSIONS.get(p, 1) > 1 else ''), 'personnage': p, 'geste': g, 'pose': po, 'prompt': CONSIGNE.format(geste=c, fond=FONDS[fond_de(p)][0])}
             for p in (qui or personnages()) for g, (po, c) in GESTES.items()]
 
 
@@ -68,13 +74,23 @@ def boites(planche):
     im = cv2.imread(planche); H, W = im.shape[:2]; vert, _ = masque_fond(im)
     m = cv2.morphologyEx((~vert).astype(np.uint8), cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
     n, lab, st, _ = cv2.connectedComponentsWithStats(m)
-    blocs = sorted((int(st[i, 0]), int(st[i, 0] + st[i, 2])) for i in range(1, n) if st[i, 3] >= 0.4 * H)
+    ids = [i for i in range(1, n) if st[i, 3] >= 0.4 * H]
+    if ids:   # 21/10 03:00 — sac posé au sol avec une jambe (La Go Léopard) : un bloc bien plus court que les silhouettes n'est pas une pose
+        hmax = max(st[i, 3] for i in ids); ids = [i for i in ids if st[i, 3] >= 0.6 * hmax]
+    ids = sorted(ids, key=lambda i: st[i, 0])
+    blocs = [(int(st[i, 0]), int(st[i, 0] + st[i, 2])) for i in ids]
     if blocs:
         larg = [b - a for a, b in blocs]; mini = min(larg)
         unite = float(np.median([l for l in larg if l < 1.6 * mini]))
         poses_ = []
-        for (a, b) in blocs:
+        for i, (a, b) in zip(ids, blocs):
             k = max(1, int((b - a) / unite + 0.3))   # 2 poses collées ≈ 2 largeurs ; bras grands ouverts ≤ 1,65 (Patriarche) : 1 pose
+            # 21/10 03:00 — une pose seule aux bras grands ouverts (Le Tonton redessiné : 3 poses, coupées en 5 moitiés) n'a qu'UNE
+            # tête : le bloc n'est coupé que si la bande du haut (20 % de sa hauteur) montre autant de têtes (largeur ≥ 7 % de la
+            # hauteur ; une main levée est plus étroite). Une main au niveau de la tête peut compter double : le minimum des deux.
+            y0, hh = int(st[i, 1]), int(st[i, 3]); bande = (lab[y0:y0 + int(0.2 * hh), a:b] == i).any(0)
+            tetes = sum(1 for r in np.split(bande, np.flatnonzero(np.diff(bande.astype(np.int8))) + 1) if r.all() and len(r) >= 0.07 * hh)
+            k = max(1, min(k, tetes))
             poses_ += [(a + (b - a) * j // k, a + (b - a) * (j + 1) // k) for j in range(k)]
     else:
         poses_ = []

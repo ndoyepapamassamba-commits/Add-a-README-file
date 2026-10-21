@@ -21,7 +21,11 @@
   "aliou",
   "chef-traore",
   "aminata",
-  "petit-ibrahima"
+  "petit-ibrahima",
+  "monsieur-diarra",
+  "le-tonton",
+  "mamie-bintou",
+  "madame-coumba"
  ],
  "noms": {
   "le-patriarche": "LE PATRIARCHE",
@@ -38,6 +42,10 @@
   "aliou": "ALIOU",
   "chef-traore": "CHEF TRAORÉ",
   "aminata": "AMINATA",
-  "petit-ibrahima": "PETIT IBRAHIMA"
+  "petit-ibrahima": "PETIT IBRAHIMA",
+  "monsieur-diarra": "MONSIEUR DIARRA",
+  "le-tonton": "LE TONTON",
+  "mamie-bintou": "MAMIE BINTOU",
+  "madame-coumba": "MADAME COUMBA"
  }
 }

@@ -31,9 +31,11 @@ def _clip(banque, perso, geste):
     """Clip détouré (.mov ARGB) du geste, détouré à la première demande ; repli sur parler, écouter, puis un autre geste."""
     import detoure
     import glob
-    autres = sorted(os.path.basename(x)[len(perso) + 2:-4] for x in glob.glob(os.path.join(banque, f'{perso}--*.mp4')))
+    def version(x): return int(x.rsplit('@', 1)[1][:-4]) if '@' in os.path.basename(x) else 1
+    autres = sorted({os.path.basename(x)[len(perso) + 2:-4].split('@')[0] for x in glob.glob(os.path.join(banque, f'{perso}--*.mp4'))})
     for g in (geste, 'parler', 'ecouter', *autres):   # en dernier recours, un autre geste du même personnage
-        f = os.path.join(banque, f'{perso}--{g}.mp4')
+        vs = glob.glob(os.path.join(banque, f'{perso}--{g}.mp4')) + glob.glob(os.path.join(banque, f'{perso}--{g}@*.mp4'))
+        f = max(vs, key=version) if vs else ''   # clip refait (banque.VERSIONS) : la version la plus haute
         if os.path.isfile(f):
             mov = f[:-4] + '.mov'
             if not os.path.isfile(mov) or not os.path.isfile(f[:-4] + '.pieds.json'): detoure.detoure(f)
