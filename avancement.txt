@@ -27,3 +27,4 @@
 [3276 s] 9 clips · === aminata--colere (at_runtime)   |=========================>                        | 2/4 - 134.23s/it[K · mémoire libre 13736 Mo
 [3398 s] 9 clips · === aminata--colere (at_runtime)   |=====================================>            | 3/4 - 134.89s/it[K · mémoire libre 13748 Mo
 [124 s] 10 clips · === chef-traore--hausser@2 (at_runtime)   |============>                                     | 1/4 - 68.50s/it[K · mémoire libre 13764 Mo
+[245 s] 10 clips · === chef-traore--hausser@2 (at_runtime)   |=====================================>            | 3/4 - 67.76s/it[K · mémoire libre 13771 Mo
