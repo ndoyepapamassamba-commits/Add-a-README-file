@@ -70,3 +70,4 @@
 [974 s] 20 clips · === coach-diabate--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13733 Mo
 [1096 s] 20 clips · === coach-diabate--ecouter (at_runtime)   |=========================>                        | 2/4 - 67.52s/it[K · mémoire libre 13739 Mo
 [123 s] 21 clips · === le-banquier--choc (at_runtime)   |============>                                     | 1/4 - 59.58s/it[K · mémoire libre 13752 Mo
+[245 s] 21 clips · === le-banquier--choc (at_runtime)   |=====================================>            | 3/4 - 59.31s/it[K · mémoire libre 13773 Mo
