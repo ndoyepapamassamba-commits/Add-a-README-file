@@ -33,3 +33,4 @@
 [610 s] 11 clips · === mamie-bintou--ecouter (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 10468 Mo
 [731 s] 12 clips · === tata-prisca--colere (at_runtime)   |============>                                     | 1/4 - 68.59s/it[K · mémoire libre 13763 Mo
 [123 s] 12 clips · === le-tonton--ecouter (at_runtime)   |=========================>                        | 2/4 - 39.33s/it[K · mémoire libre 13794 Mo
+[245 s] 13 clips · === tata-prisca--colere (at_runtime)   |============>                                     | 1/4 - 41.09s/it[K · mémoire libre 13832 Mo
