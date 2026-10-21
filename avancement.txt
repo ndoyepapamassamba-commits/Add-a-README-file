@@ -19,3 +19,4 @@
 [2307 s] 7 clips · === imam-karim--rire (at_runtime)   |=====================================>            | 3/4 - 134.27s/it[K · mémoire libre 13794 Mo
 [2428 s] 8 clips · === professeur-samba--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13783 Mo
 [2550 s] 8 clips · === professeur-samba--ecouter (at_runtime)   |============>                                     | 1/4 - 135.03s/it[K · mémoire libre 13776 Mo
+[2671 s] 8 clips · === professeur-samba--ecouter (at_runtime)   |=========================>                        | 2/4 - 134.73s/it[K · mémoire libre 13772 Mo
