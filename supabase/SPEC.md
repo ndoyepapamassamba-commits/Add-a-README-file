@@ -37,6 +37,7 @@ supabase/
   migrations/20261018000003_stage.sql    product check accepts 'stage'                                — backend
   migrations/20261018000004_premium.sql  product check accepts all five products                      — backend
   migrations/20261018000005_autopay.sql  unique manual amounts + phone detections (see "Autopay")    — backend
+  migrations/20261021000006_course.sql   Teranga Pro course pq_essentiel (see "Formation")             — backend
   functions/api/
     index.ts                      Deno.serve(createReloadingApp(…)): env over tcv.settings, reloaded ≤ every 60 s — backend
     dev.ts                        local server: real app + MemoryStore + FakeWave + serves ../../../cv  — backend
@@ -55,6 +56,10 @@ supabase/
     lib/generator/stage.ts, stage_banks.ts      Pack Stage (see "Pack Stage")           — generator
     lib/generator/premium.ts, banks_premium.ts  CV Premium (see "CV Premium")           — generator
     lib/validate_stage.ts, lib/autopay.ts                                              — backend
+    lib/course.ts, course_catalog.ts, course_files.ts, validate_course.ts, order_access.ts (see "Formation") — backend
+    dev_course.ts                 course asset tree loader for dev.ts and the tests (never bundled) — backend
+    tests/fixtures/course/        PUBLIC lorem course fixture (no course content)       — backend
+scripts/course-sql.mjs            course asset tree → upload SQL statements (output outside the repo) — backend
     lib/redact.ts                 redactDocument()                                     — generator
     lib/llm.ts                    optional OpenRouter rewriter (makeEnhancer)          — generator
     tests/*.test.ts               deno tests (each owner writes tests for their modules)
@@ -373,10 +378,12 @@ customer or API data**. `config.js` sets
 
 ## Migrations and deployment
 
-Applied in file-name order, idempotent (the PGlite contract tests run `001`, `003`, `004`, `005`; `002` needs
+Applied in file-name order, idempotent (the PGlite contract tests run `001`, `003`, `004`, `005`, `006`; `002` needs
 pg_cron/pg_net): `001` schema, `002` cron jobs, `003` product check with `'stage'`, `004` product check with all
 five products, `005` autopay columns/functions and new definitions of `tcv.order_json`, `tcv_insert_order`,
-`tcv_purge`, `tcv_stats` (every column and block of `001` kept). The live project already ran `001` and `002`.
+`tcv_purge`, `tcv_stats` (every column and block of `001` kept), `006` the course (see "Formation": products
+`pq_essentiel` + reserved `pq_complet`/`imf_kit`, column `buyer`, four tables, new definitions of the same four
+functions with every field/block of `005` kept). The live project already ran `001` and `002`.
 **Rule:** the deployment tool asks for an interactive confirmation before any SQL containing the keyword that
 removes rows, so no migration from `003` on may contain that word (in any case, comments included): personal data
 is erased with UPDATEs only (`tests/backend_migrations.test.ts` checks it, and that `003`→`005` keep the rows of a
@@ -453,7 +460,9 @@ Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disa
   call records event `phone:<sha256(normalised text|minute)>` of type `phone.notification` (the admin
   heartbeat; payload `{text}` only for incoming money) → already recorded → `{ok:true, duplicate:true}`.
   Match among `listOpenManualOrders(now − 48 h)` with a `manual_amount`: exact, else a single order created
-  in the last 2 h with `manual_amount < amount ≤ amount_catalogue + 100`; several → none. Matched →
+  in the last 2 h with `manual_amount < amount ≤ amount_catalogue + 100`; several → none. **High ticket:** an
+  order whose catalogue price is ≥ `HIGH_TICKET_MIN_AMOUNT` (10 000 F, e.g. the 25 000 F course) never near-matches:
+  only its exact unique amount unlocks it (a round 25 000 F family transfer, 24 990 F… → `matched: null`). Matched →
   `recordPaymentDetection` and, with auto-confirm, `markPaid(manual, paidAmount = amount received)`.
   → `{ ok:true, matched: id|null, amount, paid }`. The text is never logged.
 * **`POST /payments/confirm`** `{ o, c }`, `c = confirmToken(ADMIN_KEY, o)` = first 32 hex of
@@ -474,3 +483,54 @@ Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disa
   `payment_detected_text`; `tcv_assign_manual_amount`, `tcv_list_open_manual_orders`, `tcv_record_payment_detection`
   (service role only). The notification text is purged with the order; the dedupe event loses its payload after
   30 days (row kept).
+
+## Formation (product `pq_essentiel`, Teranga Pro) — backend
+
+Paid access to private course content (« Power Query pour le reporting bancaire », édition Essentiel). Full
+contract: the course addendum kept with the private build kit; this section is the public summary. **The repository
+is public: course content (modules, workbooks, data, quiz and its key) is never committed** — it lives in
+`tcv.course_assets`, uploaded with plain SQL. The test/dev fixture `tests/fixtures/course/` is lorem ipsum.
+
+* **Catalogue** (`lib/course_catalog.ts`, re-exported by `lib/course.ts`): `COURSE_PRODUCTS = ["pq_essentiel"]`
+  (also exported by `pricing.ts`; `PRODUCTS` stays the five document products, so the document path keeps refusing
+  course ids), reserved `pq_complet`, `imf_kit` (database only). Settings `PRICE_PQ_ESSENTIEL` (default 25 000) and
+  `PQ_SALES_OPEN` (default false; `true/1/yes/oui/on` open sales), env over `tcv.settings` like every setting.
+  `GET /config` adds `courses: { pq_essentiel: { price, open } }` (`prices` unchanged).
+* **`POST /orders`** with a course product (after the honeypot): closed → 403 `sales_closed`; same two rate limits as
+  documents; `validateCourseOrder` (`buyer.fullName` 2–80 letters/spaces/'’.-, optional e-mail lower-cased, optional
+  phone of any country via `normalizeIntlPhone`, `acceptCgv: true`) → 400 `fields`; row with `buyer`
+  (`CourseBuyer` + `acceptedAt`, `cgvVersion`), `input`/`document` null, status `preview` → 201 `{ order }` (no
+  preview). Wave `successUrl` of a course order = `${returnBase}/lecture.html?o=…&t=…`. `GET /orders/:id` of a course
+  order → `{ order, buyer: { fullName }, course, receipt? }` (`receipt` once paid: amount = `paid_amount`, seller
+  « Vendeur : particulier — reçu de paiement, pas une facture »). Purged course order → 410 with the course message.
+* **Reader** `GET /orders/:id/course?t=`: unpaid / not a course / wrong token → the same 404 as an unknown order;
+  manifest, every module fragment, quiz and key must load and validate (`parseManifest`, `parseQuiz`, `parseQuizKey`)
+  else 503 `course_unavailable` (asset name logged, never content). Text assets are memoised per `Deps` (≤ 60 s).
+  The quiz key is never serialised.
+* **Downloads** `GET /orders/:id/files/:name?t=`: `name` must be a `manifest.files[].name`; 30 per order per 24 h
+  (`course-dl:<id>`); `.xlsx` → every `{{LICENCE}}` in `xl/**/*.xml` replaced by the XML-escaped « Licence personnelle
+  — {fullName} — {orderId} », `.zip` → `LICENCE.txt` (BOM, CRLF) added/replaced (`lib/course_files.ts`, npm:fflate);
+  `fileResponse` (attachment, `no-store, private`, `nosniff`, CORS + `Access-Control-Expose-Headers`).
+* **Quiz** `POST /orders/:id/quiz { t, answers, publicListing }`: 10 attempts per order per 24 h; score =
+  round(100 × correct / total); ≥ 70 % → attempt stored with the attestation code = first 12 hex of
+  HMAC-SHA256(ADMIN_KEY, "attest:" + orderId), made once per order (reused after a key rotation; no ADMIN_KEY on a
+  first pass → 503 `quiz_unavailable`). `GET /attestations/:code` (60 per IP per hour) → `{ code, fullName, course,
+  date, kind: "Attestation de suivi — non diplômante" }` only when the latest pass has `publicListing` true.
+* **Leads** `POST /leads { email? | whatsapp?, consent: true, source }`: honeypot, 5 per IP per hour, 2 000 per day,
+  stored with `LEAD_CONSENT_TEXT`; never logged nor returned (admin sees counts).
+* **Admin** `GET /admin/stats`: `stats.funnel.{last30,allTime}` (per product: orders, checkouts, paid, revenue),
+  `stats.leads { total, last30, active }`, `stats.quizPasses { total, last30 }`, top-level `course { salesOpen, price,
+  content, version, modules }`; `health` unchanged.
+* **Database** (`20261021000006_course.sql`): `tcv.orders.buyer`, `tcv.course_assets`, `tcv.course_upload_chunks`,
+  `tcv.leads`, `tcv.quiz_attempts` (RLS, service role only); Store functions `tcv_course_asset`, `tcv_insert_lead`,
+  `tcv_insert_quiz_attempt`, `tcv_quiz_progress`, `tcv_find_attestation`; SQL-only upload functions
+  `tcv_course_upload_chunk`, `tcv_course_upload_commit`, `tcv_course_put_asset`, `tcv_course_asset_list`.
+  `tcv_purge`: paid course orders erased 730 days after payment (other paid orders still follow `p_paid_before`),
+  leads lose email/WhatsApp/ip hash after 365 days, uncommitted upload chunks lose their content after 2 days —
+  UPDATE only.
+* **Upload runbook**: `node scripts/course-sql.mjs <assetsRoot> <outDir>` (outDir outside the repository, refused
+  otherwise) writes `NNNN-*.sql` (one statement ≤ 200 000 bytes each, manifest last), `verify.sql` and
+  `expected.json`; run the statements in order with `execute_sql` on project `seegnylaubuularegmku`, then
+  `verify.sql`, and compare with `expected.json`.
+* **dev.ts** serves `/formation/` (from `formation/`), `/cv/` and `/cv/config.js`; sells the course by default
+  (`PQ_SALES_OPEN=false` shows the closed page) with the lorem fixture, or the tree in `COURSE_ASSETS_DIR`.

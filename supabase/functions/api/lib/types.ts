@@ -1,7 +1,14 @@
 // Shared contract for the Teranga CV backend. Every module imports from here.
-// Changing a type here changes the API contract with the frontend (cv/*.js) — keep in sync with SPEC.md.
+// Changing a type here changes the API contract with the frontend (cv/*.js, formation/js/*.js) — keep in sync with
+// SPEC.md (course: /tmp/claude-0/tcv-scratch/SPEC_COURSE.md until merged into SPEC.md).
 
-export type Product = "cv" | "lettre" | "pack" | "stage" | "premium";
+/** Products that generate a document (CV, letters). Unchanged by the course. */
+export type DocumentProduct = "cv" | "lettre" | "pack" | "stage" | "premium";
+/** Teranga Pro courses on sale. No document, no preview: paid access to private content (tcv.course_assets). */
+export type CourseProduct = "pq_essentiel";
+/** Accepted by the database check constraint for later courses, never sold by this version (not a Product). */
+export type ReservedCourseProduct = "pq_complet" | "imf_kit";
+export type Product = DocumentProduct | CourseProduct;
 export type InternshipType = "academique" | "fin_etudes" | "vacances" | "perfectionnement";
 export type SendChannel = "email" | "whatsapp" | "depot";
 export type SkillLevel = "Expert" | "Avancé" | "Bon" | "Notions";
@@ -175,8 +182,9 @@ export interface OrderRow {
   amount: number; // XOF, integer
   currency: "XOF";
   status: OrderStatus;
-  input: OrderInput | null; // nulled when purged
-  document: Document | null; // nulled when purged
+  input: OrderInput | null; // nulled when purged; always null for course products
+  document: Document | null; // nulled when purged; always null for course products
+  buyer: CourseBuyer | null; // course products only (null for document products); nulled when purged
   checkout_session_id: string | null;
   wave_launch_url: string | null;
   checkout_expires_at: string | null; // ISO
@@ -211,6 +219,15 @@ export interface PayoutRow {
   updated_at: string;
 }
 
+/** One product line of the admin funnel. Cohort = orders created in the window, whatever happened next. */
+export interface FunnelRow {
+  product: string; // Product, or a reserved course id should one ever appear
+  orders: number; // orders created
+  checkouts: number; // of which reached the payment step (status checkout, awaiting_manual or paid)
+  paid: number; // of which paid
+  revenue: number; // XOF, sum of paid_amount of the paid ones
+}
+
 export interface Stats {
   today: { orders: number; paid: number; revenue: number };
   yesterday: { orders: number; paid: number; revenue: number };
@@ -218,8 +235,142 @@ export interface Stats {
   last30: { orders: number; paid: number; revenue: number };
   allTime: { paid: number; revenue: number };
   pendingPayout: number; // XOF of paid wave orders not yet included in a payout
-  recentOrders: Array<Pick<OrderRow, "id" | "product" | "amount" | "status" | "payment_method" | "manual_payer_phone" | "created_at" | "paid_at">>;
+  recentOrders: Array<
+    Pick<
+      OrderRow,
+      | "id"
+      | "product"
+      | "amount"
+      | "status"
+      | "payment_method"
+      | "manual_payer_phone"
+      | "manual_amount"
+      | "payment_detected_at"
+      | "created_at"
+      | "paid_at"
+    >
+  >;
   payouts: PayoutRow[];
+  /** Per product, sorted by product id; products without orders in the window are absent. last30 = created ≥ day − 29. */
+  funnel: { last30: FunnelRow[]; allTime: FunnelRow[] };
+  /** Counts only, never contact data. active = contact fields not yet erased (12-month retention). */
+  leads: { total: number; last30: number; active: number };
+  /** Distinct orders with at least one passed quiz attempt (all time / attempt in the last 30 days). */
+  quizPasses: { total: number; last30: number };
+}
+
+// ------------------------------------------------------------------------------------------------
+// Teranga Pro courses (product "pq_essentiel"). See SPEC_COURSE.md.
+// ------------------------------------------------------------------------------------------------
+
+/** Stored in tcv.orders.buyer for course orders (validated + cleaned by validate_course.ts). */
+export interface CourseBuyer {
+  fullName: string; // 2–80 chars, letters/spaces/'’.- only; printed on the files' licence, the reader and the attestation
+  email?: string; // ≤ 80, lower-cased
+  phone?: string; // as typed after cleanup (any country, 8–15 digits), never forced through normalizeSnMobile
+  acceptCgv: true; // the buyer ticked « J'accepte les conditions générales de vente »
+  acceptedAt: string; // ISO, server time of the order
+  cgvVersion: string; // COURSE_CGV_VERSION, e.g. "2026-10-21"
+}
+
+/** A private content file, as read from tcv.course_assets through public.tcv_course_asset(name). */
+export interface CourseAsset {
+  name: string; // "pq_essentiel/manifest.json", "pq_essentiel/modules/module-01.html", "pq_essentiel/files/module-1.xlsx"…
+  mime: string;
+  bytes: Uint8Array;
+  sha256: string; // hex of bytes
+  updatedAt: string; // ISO
+}
+
+/** pq_essentiel/manifest.json (schema 1), produced by the content kit. The API trusts only what it lists. */
+export interface CourseManifest {
+  schema: 1;
+  id: CourseProduct;
+  title: string; // "Power Query pour le reporting bancaire"
+  subtitle: string; // "Automatisez vos états mensuels sous Excel — édition UEMOA"
+  edition: string; // "Essentiel"
+  version: string; // "1.0"
+  updatedAt: string; // "2026-10-21" (YYYY-MM-DD)
+  modules: Array<{
+    n: number; // 1..8, unique, ascending
+    id: string; // "module-01"
+    title: string;
+    minutes: number; // indicative reading + exercise time
+    objectives: string[];
+    html: string; // asset name of the fragment: "pq_essentiel/modules/module-01.html"
+    files: string[]; // names of manifest.files entries used by this module
+  }>;
+  files: Array<{
+    name: string; // download name, /^[a-z0-9][a-z0-9-]{0,60}\.(xlsx|zip)$/: "module-1.xlsx", "donnees-module-1.zip"
+    label: string; // « Classeur d'exercices — module 1 »
+    module: number | null; // module number, null for course-wide files
+    asset: string; // "pq_essentiel/files/module-1.xlsx"
+    size: number; // bytes of the stored asset (shown to the buyer)
+  }>;
+  quiz: {
+    questions: string; // asset name: "pq_essentiel/quiz.json" (CourseQuiz)
+    key: string; // asset name: "pq_essentiel/quiz-key.json" (CourseQuizKey) — NEVER sent to a client
+    passPercent: number; // 70
+  };
+}
+
+/** pq_essentiel/quiz.json — the part a paid buyer receives. */
+export interface CourseQuiz {
+  schema: 1;
+  questions: Array<{ id: string; text: string; choices: string[]; module?: number }>; // id /^q\d{2}$/, 4 choices
+}
+
+/** pq_essentiel/quiz-key.json — 0-based index of the right choice per question id. Server-side only. */
+export interface CourseQuizKey {
+  schema: 1;
+  answers: Record<string, number>;
+}
+
+/** tcv.leads row ("Prévenez-moi de l'ouverture"). Contact fields are nulled 12 months after created_at. */
+export interface LeadRow {
+  id: string; // "LD-" + 8 Crockford base32 chars
+  email: string | null;
+  whatsapp: string | null; // "+" and digits, or digits only, as typed after cleanup (8–15 digits)
+  consent_text: string; // LEAD_CONSENT_TEXT shown next to the checkbox, stored verbatim
+  source: string; // /^[a-z0-9-]{1,40}$/: "formation-index", "formation-gratuit"…
+  product: CourseProduct; // course the person wants to hear about
+  ip_hash: string | null;
+  created_at: string; // ISO
+  purged_at: string | null;
+}
+
+/** tcv.quiz_attempts row. Only passed attempts (score ≥ passPercent) are stored. */
+export interface QuizAttemptRow {
+  id: string; // "QA-" + 10 Crockford base32 chars
+  order_id: string;
+  score: number; // integer percent 0..100 = round(100 × correct / total)
+  correct: number;
+  total: number;
+  passed: boolean; // true for every stored row
+  public_listing: boolean; // the buyer agreed to appear on the public verification page
+  attestation_code: string; // 12 lower-case hex; the same for every attempt of an order
+  created_at: string; // ISO
+}
+
+/** Summary of an order's passed attempts (Store.getQuizProgress). The most recent pass sets code and listing. */
+export interface QuizProgress {
+  firstPassedAt: string; // date printed on the attestation
+  lastPassedAt: string;
+  bestScore: number;
+  lastScore: number;
+  code: string;
+  publicListing: boolean;
+  passes: number;
+}
+
+/** What Store.findAttestation returns for a code (null when unknown or when the order was purged). */
+export interface AttestationRecord {
+  code: string;
+  orderId: string;
+  product: string;
+  fullName: string;
+  passedAt: string; // first pass, ISO
+  publicListing: boolean; // of the most recent pass; the API answers 404 when false
 }
 
 /** Persistence port. SupabaseStore (prod) and MemoryStore (tests) implement it. All methods are atomic. */
@@ -275,8 +426,11 @@ export interface Store {
   listUnsettledPayouts(): Promise<PayoutRow[]>;
   /**
    * Erase personal data in place: unpaid orders older than unpaidBeforeIso, paid orders older than paidBeforeIso
-   * (input, document, payer phone, notification text, ip hash → null; purged_at = now). Events older than 30 days
-   * lose their payload. Rows are never removed. Returns the number of orders purged.
+   * (input, document, buyer, payer phone, notification text, ip hash → null; purged_at = now). Paid COURSE orders
+   * (pq_essentiel, pq_complet, imf_kit) ignore paidBeforeIso: they are purged COURSE_RETENTION_DAYS (730) after payment.
+   * Events older than 30 days lose their payload. Leads older than LEAD_RETENTION_DAYS (365) lose email, whatsapp and
+   * ip_hash (purged_at = now). Uncommitted upload chunks older than 2 days lose their content. Rows are never
+   * removed. Returns the number of orders purged.
    */
   purge(unpaidBeforeIso: string, paidBeforeIso: string, nowIso: string): Promise<number>;
   stats(nowIso: string): Promise<Stats>;
@@ -292,6 +446,18 @@ export interface Store {
   recordPaymentDetection(id: string, text: string, nowIso: string): Promise<void>;
   /** Key/value settings from tcv.settings (same keys as the env vars). MemoryStore returns what it was seeded with. */
   getSettings(): Promise<Record<string, string>>;
+
+  // --- Teranga Pro courses (20261021000006_course.sql) -------------------------------------------
+  /** A private course file by its asset name, or null. Uploads go through SQL only (tcv_course_upload_*). */
+  getCourseAsset(name: string): Promise<CourseAsset | null>;
+  /** Stores a lead (no dedupe: the HTTP layer rate-limits by IP). */
+  insertLead(row: LeadRow): Promise<void>;
+  /** Stores a passed quiz attempt. */
+  recordQuizAttempt(row: QuizAttemptRow): Promise<void>;
+  /** Summary of the order's passed attempts, or null when it never passed. */
+  getQuizProgress(orderId: string): Promise<QuizProgress | null>;
+  /** The attestation behind a code (whatever its listing choice), or null when unknown / purged order. */
+  findAttestation(code: string): Promise<AttestationRecord | null>;
 }
 
 export interface WaveCheckoutSession {
@@ -361,8 +527,11 @@ export interface Config {
   adminKey: string | null;
   cronSecret: string | null;
   allowedReturnPrefixes: string[]; // success/error URLs must start with one of these (https only)
-  prices: Record<Product, number>; // prices.stage = Pack Stage for 1 company (PRICE_STAGE, default 1500); prices.premium = PRICE_PREMIUM, default 5000
+  prices: Record<DocumentProduct, number>; // prices.stage = Pack Stage for 1 company (PRICE_STAGE, default 1500); prices.premium = PRICE_PREMIUM, default 5000
   stageMultiPrice: number; // Pack Stage for 2–5 companies (PRICE_STAGE_MULTI, default 2500)
+  /** Course prices, kept apart so GET /config `prices` stays byte-identical: pq_essentiel = PRICE_PQ_ESSENTIEL, default 25000. */
+  coursePrices: Record<CourseProduct, number>;
+  pqSalesOpen: boolean; // PQ_SALES_OPEN (default false; "true"/"1"/"yes"/"oui"/"on" open it): POST /orders for pq_essentiel → 403 sales_closed when false
   openrouterApiKey: string | null;
   llmModel: string;
   previewRateLimitPerHour: number; // default 12
@@ -376,4 +545,99 @@ export interface Deps {
   now: () => Date;
   /** Optional LLM rewriter; returns null on any failure (never throws). */
   enhance?: (doc: Document, input: OrderInput, product: Product) => Promise<Document | null>;
+}
+
+// ------------------------------------------------------------------------------------------------
+// Course API payloads (JSON bodies; the front-end in formation/js/*.js relies on these exact field names)
+// ------------------------------------------------------------------------------------------------
+
+/** PublicOrder, as built by publicOrder() in app.ts (unchanged). */
+export interface PublicOrder {
+  id: string;
+  product: Product;
+  template: Template; // meaningless for course orders (always "classique")
+  amount: number; // catalogue price (25000 for pq_essentiel)
+  currency: "XOF";
+  status: OrderStatus;
+  paymentMethod: PaymentMethod | null;
+  paidAt: string | null;
+  createdAt: string;
+}
+
+/** POST /orders body for a course. */
+export interface CourseOrderRequest {
+  product: CourseProduct;
+  buyer: { fullName: string; email?: string; phone?: string };
+  acceptCgv: true;
+  website?: ""; // honeypot
+}
+
+/** GET /config → courses. */
+export interface PublicCourseConfig {
+  price: number; // XOF
+  open: boolean; // PQ_SALES_OPEN
+}
+
+/** GET /orders/:id → receipt (course orders, only once paid). */
+export interface CourseReceipt {
+  number: string; // = order id
+  paidAt: string; // ISO
+  amount: number; // XOF actually recorded (paid_amount, e.g. 24987), falls back to the catalogue price
+  currency: "XOF";
+  paymentMethod: PaymentMethod;
+  label: string; // COURSE_CATALOG[product].label
+  buyerName: string;
+  seller: string; // RECEIPT_SELLER_TEXT: "Vendeur : particulier — reçu de paiement, pas une facture" (NBSP before ":")
+}
+
+/** GET /orders/:id for a course order (document products keep { order, document?, preview? }). */
+export interface CourseOrderView {
+  order: PublicOrder;
+  buyer: { fullName: string };
+  course: { id: CourseProduct; title: string; edition: string };
+  receipt?: CourseReceipt;
+}
+
+/** GET /orders/:id/course (paid course orders only). */
+export interface CourseView {
+  course: { id: CourseProduct; title: string; subtitle: string; edition: string; version: string; updatedAt: string };
+  buyer: { fullName: string };
+  order: { id: string; paidAt: string | null };
+  modules: Array<{ id: string; n: number; title: string; minutes: number; objectives: string[]; files: string[]; html: string }>;
+  files: Array<{ name: string; label: string; size: number; module: number | null }>;
+  quiz: { passPercent: number; questions: Array<{ id: string; text: string; choices: string[] }> };
+  attestation?: { code: string; passedAt: string; score: number; publicListing: boolean };
+}
+
+/** POST /orders/:id/quiz body and response. */
+export interface QuizRequest {
+  t: string;
+  answers: Record<string, number | null>; // question id → 0-based choice index
+  publicListing: boolean;
+}
+export interface QuizResult {
+  score: number; // percent
+  correct: number;
+  total: number;
+  passPercent: number;
+  passed: boolean;
+  code: string | null; // attestation code when passed
+}
+
+/** GET /attestations/:code (public, only when the buyer opted in). */
+export interface PublicAttestation {
+  code: string;
+  fullName: string;
+  course: string; // COURSE_CATALOG[product].label
+  date: string; // YYYY-MM-DD of the first pass
+  kind: string; // "Attestation de suivi — non diplômante"
+}
+
+/** POST /leads body. */
+export interface LeadRequest {
+  email?: string;
+  whatsapp?: string;
+  consent: true;
+  source: string;
+  website?: ""; // honeypot
 }

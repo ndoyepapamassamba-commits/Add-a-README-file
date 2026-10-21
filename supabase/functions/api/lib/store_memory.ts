@@ -2,9 +2,24 @@
 // Methods are async without awaiting anything: each one runs to completion in a single tick (hence atomic)
 // and a thrown error surfaces as a rejected promise, like the SQL stores.
 // deno-lint-ignore-file require-await
-import type { OrderRow, OrderStatus, PayoutRow, PayoutStatus, Stats, Store } from "./types.ts";
+import type {
+  AttestationRecord,
+  CourseAsset,
+  FunnelRow,
+  LeadRow,
+  OrderRow,
+  OrderStatus,
+  PayoutRow,
+  PayoutStatus,
+  QuizAttemptRow,
+  QuizProgress,
+  Stats,
+  Store,
+} from "./types.ts";
 import { computePayoutAmount } from "./payout.ts";
 import { PHONE_EVENT_TYPE } from "./autopay.ts";
+import { ALL_COURSE_IDS, COURSE_RETENTION_DAYS, LEAD_RETENTION_DAYS } from "./course_catalog.ts";
+import { sha256Bytes } from "./ids.ts";
 
 export const ORDER_PATCH_KEYS: ReadonlySet<string> = new Set([
   "template",
@@ -29,6 +44,11 @@ export const EVENT_RETENTION_DAYS = 30;
 const DAY_MS = 86_400_000;
 
 const ms = (iso: string) => Date.parse(iso);
+const iso = (t: number | string) => new Date(t).toISOString();
+
+/** Same checks as the tcv.course_assets columns. */
+export const COURSE_ASSET_NAME_RE = /^[a-z0-9_]+\/[a-z0-9][a-z0-9._\/-]{0,150}$/;
+const ATTESTATION_CODE_RE = /^[0-9a-f]{12}$/;
 
 interface Bucket {
   windowStart: number;
@@ -40,6 +60,9 @@ export class MemoryStore implements Store {
   readonly payouts = new Map<string, PayoutRow>();
   readonly events = new Map<string, { type: string; ref: string | null; payload: unknown; createdAt: string }>();
   readonly rateLimits = new Map<string, Bucket>();
+  readonly courseAssets = new Map<string, CourseAsset>();
+  readonly leads = new Map<string, LeadRow>();
+  readonly quizAttempts: QuizAttemptRow[] = [];
   settings: Record<string, string>;
 
   constructor(seed: { settings?: Record<string, string> } = {}) {
@@ -174,16 +197,20 @@ export class MemoryStore implements Store {
     const unpaidBefore = ms(unpaidBeforeIso);
     const paidBefore = ms(paidBeforeIso);
     const now = ms(nowIso);
+    const courseBefore = now - COURSE_RETENTION_DAYS * DAY_MS;
     let count = 0;
     for (const o of this.orders.values()) {
       if (o.purged_at !== null) continue;
+      // Paid course orders stay readable for their whole access period, whatever paidBeforeIso says.
+      const paidLimit = ALL_COURSE_IDS.includes(o.product) ? courseBefore : paidBefore;
       const expired = o.status === "paid"
-        ? ms(o.paid_at ?? o.created_at) < paidBefore
+        ? ms(o.paid_at ?? o.created_at) < paidLimit
         : ms(o.created_at) < unpaidBefore;
       if (!expired) continue;
       Object.assign(o, {
         input: null,
         document: null,
+        buyer: null,
         manual_payer_phone: null,
         payment_detected_text: null,
         ip_hash: null,
@@ -194,6 +221,11 @@ export class MemoryStore implements Store {
     // Like tcv_purge: old events keep their id (duplicate detection) but lose their payload; rate-limit
     // buckets (hashed key + counter) are left alone.
     for (const e of this.events.values()) if (ms(e.createdAt) < now - EVENT_RETENTION_DAYS * DAY_MS) e.payload = null;
+    for (const l of this.leads.values()) {
+      if (l.purged_at === null && ms(l.created_at) < now - LEAD_RETENTION_DAYS * DAY_MS) {
+        Object.assign(l, { email: null, whatsapp: null, ip_hash: null, purged_at: iso(now) });
+      }
+    }
     return count;
   }
 
@@ -232,6 +264,20 @@ export class MemoryStore implements Store {
         paid_at: o.paid_at,
       })),
       payouts: [...this.payouts.values()].sort((a, b) => b.day.localeCompare(a.day)).slice(0, RECENT_PAYOUTS_LIMIT),
+      funnel: { last30: funnelRows(orders, d0 - 29 * DAY_MS), allTime: funnelRows(orders, null) },
+      leads: (() => {
+        const leads = [...this.leads.values()];
+        return {
+          total: leads.length,
+          last30: leads.filter((l) => ms(l.created_at) >= d0 - 29 * DAY_MS).length,
+          active: leads.filter((l) => l.purged_at === null).length,
+        };
+      })(),
+      quizPasses: (() => {
+        const passed = this.quizAttempts.filter((q) => q.passed);
+        const distinct = (rows: QuizAttemptRow[]) => new Set(rows.map((q) => q.order_id)).size;
+        return { total: distinct(passed), last30: distinct(passed.filter((q) => ms(q.created_at) >= d0 - 29 * DAY_MS)) };
+      })(),
     };
     const phoneTimes = [...this.events.values()].filter((e) => e.type === PHONE_EVENT_TYPE).map((e) => e.createdAt).sort();
     return structuredClone({ ...stats, lastPhoneNotificationAt: phoneTimes.at(-1) ?? null });
@@ -273,6 +319,73 @@ export class MemoryStore implements Store {
     return { ...this.settings };
   }
 
+  // --- Teranga Pro courses -----------------------------------------------------------------------
+
+  /** MemoryStore-only seeding (tests, dev.ts): the SQL side uploads through tcv_course_upload_* instead. */
+  async putCourseAsset(name: string, mime: string, bytes: Uint8Array): Promise<CourseAsset> {
+    if (!COURSE_ASSET_NAME_RE.test(name) || name.includes("..")) throw new Error(`invalid course asset name ${name}`);
+    if (mime.length < 3 || mime.length > 120) throw new Error(`invalid mime for ${name}`);
+    const asset: CourseAsset = { name, mime, bytes: bytes.slice(), sha256: await sha256Bytes(bytes), updatedAt: iso(Date.now()) };
+    this.courseAssets.set(name, asset);
+    return { ...asset, bytes: asset.bytes.slice() };
+  }
+
+  async getCourseAsset(name: string): Promise<CourseAsset | null> {
+    const a = this.courseAssets.get(name);
+    return a ? { ...a, bytes: a.bytes.slice() } : null;
+  }
+
+  async insertLead(row: LeadRow): Promise<void> {
+    if (this.leads.has(row.id)) throw new Error(`duplicate lead id ${row.id}`);
+    if (row.purged_at === null && row.email === null && row.whatsapp === null) throw new Error("lead without contact");
+    this.leads.set(row.id, structuredClone({ ...row, product: row.product ?? "pq_essentiel", created_at: iso(row.created_at) }));
+  }
+
+  async recordQuizAttempt(row: QuizAttemptRow): Promise<void> {
+    if (this.quizAttempts.some((q) => q.id === row.id)) throw new Error(`duplicate quiz attempt id ${row.id}`);
+    if (!this.orders.has(row.order_id)) throw new Error(`quiz attempt for unknown order ${row.order_id}`);
+    if (!Number.isInteger(row.score) || row.score < 0 || row.score > 100 || row.total <= 0 || row.correct < 0) {
+      throw new Error("invalid quiz attempt score");
+    }
+    if (row.attestation_code !== null && !ATTESTATION_CODE_RE.test(row.attestation_code)) {
+      throw new Error("invalid attestation code");
+    }
+    this.quizAttempts.push(structuredClone({ ...row, created_at: iso(row.created_at) }));
+  }
+
+  async getQuizProgress(orderId: string): Promise<QuizProgress | null> {
+    const passes = this.quizAttempts.filter((q) => q.order_id === orderId && q.passed);
+    if (!passes.length) return null;
+    const latest = [...passes].sort(byAttemptDesc)[0];
+    const times = passes.map((q) => ms(q.created_at));
+    return {
+      firstPassedAt: iso(Math.min(...times)),
+      lastPassedAt: iso(Math.max(...times)),
+      bestScore: Math.max(...passes.map((q) => q.score)),
+      lastScore: latest.score,
+      code: latest.attestation_code,
+      publicListing: latest.public_listing,
+      passes: passes.length,
+    };
+  }
+
+  async findAttestation(code: string): Promise<AttestationRecord | null> {
+    const hit = this.quizAttempts.find((q) => q.passed && q.attestation_code === code);
+    if (!hit) return null;
+    const order = this.orders.get(hit.order_id);
+    if (!order || order.purged_at !== null || !order.buyer) return null;
+    const passes = this.quizAttempts.filter((q) => q.order_id === hit.order_id && q.passed);
+    const latest = [...passes].sort(byAttemptDesc)[0];
+    return {
+      code,
+      orderId: order.id,
+      product: order.product,
+      fullName: order.buyer.fullName,
+      passedAt: iso(Math.min(...passes.map((q) => ms(q.created_at)))),
+      publicListing: latest.public_listing,
+    };
+  }
+
   private assertUniqueSession(orderId: string, sessionId: string | null): void {
     if (sessionId === null) return;
     for (const o of this.orders.values()) {
@@ -286,6 +399,28 @@ export class MemoryStore implements Store {
 /** A manual order still waiting for its transfer (same filter as tcv_list_open_manual_orders). */
 function isOpenManual(o: OrderRow): boolean {
   return (o.status === "checkout" || o.status === "awaiting_manual") && o.payment_method === null;
+}
+
+/** Most recent attempt first: max created_at, then max id (same rule as tcv_quiz_progress). */
+function byAttemptDesc(a: QuizAttemptRow, b: QuizAttemptRow): number {
+  return ms(b.created_at) - ms(a.created_at) || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0);
+}
+
+/** Funnel per product over the orders created since `from` (null = all time), sorted by product (tcv.funnel_rows). */
+function funnelRows(orders: OrderRow[], from: number | null): FunnelRow[] {
+  const rows = new Map<string, FunnelRow>();
+  for (const o of orders) {
+    if (from !== null && ms(o.created_at) < from) continue;
+    const r = rows.get(o.product) ?? { product: o.product, orders: 0, checkouts: 0, paid: 0, revenue: 0 };
+    r.orders += 1;
+    if (o.status === "checkout" || o.status === "awaiting_manual" || o.status === "paid") r.checkouts += 1;
+    if (o.status === "paid") {
+      r.paid += 1;
+      r.revenue += o.paid_amount ?? 0;
+    }
+    rows.set(o.product, r);
+  }
+  return [...rows.values()].sort((a, b) => (a.product < b.product ? -1 : a.product > b.product ? 1 : 0));
 }
 
 function byCreatedDesc(a: OrderRow, b: OrderRow): number {

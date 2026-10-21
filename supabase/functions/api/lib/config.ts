@@ -105,6 +105,8 @@ export function loadConfig(envGet: EnvGet, settings: Record<string, string> = {}
       premium: int(get, "PRICE_PREMIUM", 5000, 1),
     },
     stageMultiPrice: int(get, "PRICE_STAGE_MULTI", 2500, 1),
+    coursePrices: { pq_essentiel: int(get, "PRICE_PQ_ESSENTIEL", 25000, 1) },
+    pqSalesOpen: /^(true|1|yes|oui|on)$/i.test(get("PQ_SALES_OPEN") ?? ""),
     openrouterApiKey: get("OPENROUTER_API_KEY"),
     llmModel: get("LLM_MODEL") ?? DEFAULT_LLM_MODEL,
     previewRateLimitPerHour: int(get, "PREVIEW_RATE_LIMIT_PER_HOUR", 12, 1),

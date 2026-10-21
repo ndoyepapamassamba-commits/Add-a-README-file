@@ -1,6 +1,16 @@
 // Store over the public.tcv_* SQL functions. RpcStore maps Store methods to function calls; SqlStore runs
 // them through a plain query function (PGlite in tests), SupabaseStore through supabase.rpc().
-import type { OrderRow, PayoutRow, Stats, Store } from "./types.ts";
+import type {
+  AttestationRecord,
+  CourseAsset,
+  LeadRow,
+  OrderRow,
+  PayoutRow,
+  QuizAttemptRow,
+  QuizProgress,
+  Stats,
+  Store,
+} from "./types.ts";
 
 export type ArgType = "text" | "integer" | "double precision" | "jsonb" | "timestamptz" | "date";
 
@@ -41,7 +51,24 @@ export const RPC_SIGNATURES: Record<string, ReadonlyArray<readonly [string, ArgT
   tcv_assign_manual_amount: [["p_id", "text"], ["p_base", "integer"], ["p_max_offset", "integer"], ["p_since", "timestamptz"]],
   tcv_list_open_manual_orders: [["p_since", "timestamptz"]],
   tcv_record_payment_detection: [["p_id", "text"], ["p_text", "text"], ["p_now", "timestamptz"]],
+  // 20261021000006_course.sql (the upload functions tcv_course_upload_* / put_asset / asset_list are SQL-only)
+  tcv_course_asset: [["p_name", "text"]],
+  tcv_insert_lead: [["p_row", "jsonb"]],
+  tcv_insert_quiz_attempt: [["p_row", "jsonb"]],
+  tcv_quiz_progress: [["p_order_id", "text"]],
+  tcv_find_attestation: [["p_code", "text"]],
 };
+
+/**
+ * public.tcv_* functions the API never calls: the course content upload, run as plain SQL by the lead
+ * (`scripts/course-sql.mjs` output through the Supabase MCP `execute_sql`). Service role only, like the others.
+ */
+export const SQL_ONLY_FUNCTIONS: readonly string[] = [
+  "tcv_course_upload_chunk",
+  "tcv_course_upload_commit",
+  "tcv_course_put_asset",
+  "tcv_course_asset_list",
+];
 
 /** Calls `public.<fn>` with named arguments and returns its JSON result (null for SQL NULL / void). */
 export type Rpc = (fn: string, args: Record<string, unknown>) => Promise<unknown>;
@@ -60,6 +87,14 @@ function toPayout(v: unknown): PayoutRow {
 
 function toOrder(v: unknown): OrderRow {
   return v as OrderRow;
+}
+
+/** base64 (line breaks tolerated) → bytes. */
+export function base64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64.replace(/\s+/g, ""));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
 }
 
 export class RpcStore implements Store {
@@ -174,6 +209,32 @@ export class RpcStore implements Store {
 
   async recordPaymentDetection(id: string, text: string, nowIso: string): Promise<void> {
     await this.call("tcv_record_payment_detection", { p_id: id, p_text: text, p_now: nowIso });
+  }
+
+  async getCourseAsset(name: string): Promise<CourseAsset | null> {
+    const r = (await this.call("tcv_course_asset", { p_name: name })) as
+      | { name: string; mime: string; sha256: string; updated_at: string; base64: string }
+      | null;
+    if (!r) return null;
+    return { name: r.name, mime: r.mime, sha256: r.sha256, updatedAt: r.updated_at, bytes: base64ToBytes(r.base64) };
+  }
+
+  async insertLead(row: LeadRow): Promise<void> {
+    await this.call("tcv_insert_lead", { p_row: jsonPatch(row) });
+  }
+
+  async recordQuizAttempt(row: QuizAttemptRow): Promise<void> {
+    await this.call("tcv_insert_quiz_attempt", { p_row: jsonPatch(row) });
+  }
+
+  async getQuizProgress(orderId: string): Promise<QuizProgress | null> {
+    const r = await this.call("tcv_quiz_progress", { p_order_id: orderId });
+    return r ? (r as QuizProgress) : null;
+  }
+
+  async findAttestation(code: string): Promise<AttestationRecord | null> {
+    const r = await this.call("tcv_find_attestation", { p_code: code });
+    return r ? (r as AttestationRecord) : null;
   }
 }
 

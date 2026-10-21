@@ -195,6 +195,7 @@ export function orderRow(overrides: Partial<OrderRow> = {}): OrderRow {
     status: "preview",
     input: orderData("pack") as unknown as OrderRow["input"],
     document: { cv: null, lettre: null },
+    buyer: null,
     checkout_session_id: null,
     wave_launch_url: null,
     checkout_expires_at: null,

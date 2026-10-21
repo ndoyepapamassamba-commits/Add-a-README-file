@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "id": "pq_essentiel",
+  "title": "Power Query pour le reporting bancaire",
+  "subtitle": "Automatisez vos états mensuels sous Excel — édition UEMOA",
+  "edition": "Essentiel",
+  "version": "0.0-test",
+  "updatedAt": "2026-10-21",
+  "modules": [
+    {
+      "n": 1,
+      "id": "module-01",
+      "title": "Module test 1 — Lorem ipsum",
+      "minutes": 20,
+      "objectives": [
+        "Lorem ipsum dolor sit amet",
+        "Consectetur adipiscing elit"
+      ],
+      "html": "pq_essentiel/modules/module-01.html",
+      "files": [
+        "module-1.xlsx",
+        "donnees-module-1.zip"
+      ]
+    },
+    {
+      "n": 2,
+      "id": "module-02",
+      "title": "Module test 2 — Dolor sit amet",
+      "minutes": 15,
+      "objectives": [
+        "Sed do eiusmod tempor"
+      ],
+      "html": "pq_essentiel/modules/module-02.html",
+      "files": []
+    }
+  ],
+  "files": [
+    {
+      "name": "module-1.xlsx",
+      "label": "Classeur d'exercices — module 1 (test)",
+      "module": 1,
+      "asset": "pq_essentiel/files/module-1.xlsx",
+      "size": 2808
+    },
+    {
+      "name": "donnees-module-1.zip",
+      "label": "Données du module 1 (test)",
+      "module": 1,
+      "asset": "pq_essentiel/files/donnees-module-1.zip",
+      "size": 310
+    }
+  ],
+  "quiz": {
+    "questions": "pq_essentiel/quiz.json",
+    "key": "pq_essentiel/quiz-key.json",
+    "passPercent": 70
+  }
+}

@@ -1,6 +1,6 @@
 // HTTP API of the `api` Edge Function: createApp(deps) => (req) => Response. Routes follow SPEC.md.
 import { WaveError } from "./types.ts";
-import type { Config, Deps, Document, OrderRow, Stats, Store, WaveCheckoutSession } from "./types.ts";
+import type { Config, Deps, Document, OrderRow, PublicOrder, Stats, Store, WaveCheckoutSession } from "./types.ts";
 import {
   bearerToken,
   clientIp,
@@ -15,7 +15,7 @@ import {
 } from "./http.ts";
 import { constantTimeEqual, hashIp, newAccessToken, newOrderId, ORDER_ID_RE, sha256Hex } from "./ids.ts";
 import { formatSnMobile, normalizeSnMobile } from "./phone.ts";
-import { isTemplate, orderPrice } from "./pricing.ts";
+import { isCourseProduct, isTemplate, orderPrice } from "./pricing.ts";
 import { normalizeReturnBase, validateOrderRequest } from "./validate.ts";
 import { verifySharedSecret, verifyWaveSignature, withDeadline } from "./wave.ts";
 import { loadConfig, SETTINGS_TTL_MS } from "./config.ts";
@@ -25,8 +25,21 @@ import { runDaily } from "./payout.ts";
 import { generateDocument } from "./generator/index.ts";
 import { redactDocument } from "./redact.ts";
 import { formatFcfa, handlePaymentConfirm, handlePaymentNotify, prepareManualCheckout } from "./autopay.ts";
+import { hitOrderRateLimits, ipPepper, loadCustomerOrder, notFound, publicOrder } from "./order_access.ts";
+import {
+  courseAdminStatus,
+  courseOrderView,
+  createCourseOrder,
+  createLead,
+  downloadCourseFile,
+  getAttestation,
+  getCourse,
+  publicCourses,
+  submitQuiz,
+} from "./course.ts";
 
-export const GLOBAL_DAILY_PREVIEW_LIMIT = 5000;
+export { GLOBAL_DAILY_PREVIEW_LIMIT } from "./order_access.ts";
+export { publicOrder };
 export const CHECKOUT_REUSE_MARGIN_MS = 2 * 60_000;
 export const CHECKOUT_DEFAULT_TTL_MS = 30 * 60_000;
 export const WEBHOOK_REFETCH_TIMEOUT_MS = 3_000;
@@ -36,49 +49,13 @@ export const WAVE_SYNC_PER_MINUTE = 30;
 
 type Handler = (deps: Deps, req: Request, params: string[]) => Promise<Response>;
 
-const notFound = () => new HttpError(404, "not_found", "Commande introuvable.");
 const unauthorized = () => new HttpError(401, "unauthorized", "Accès refusé.");
 
-export function publicOrder(o: OrderRow) {
-  return {
-    id: o.id,
-    product: o.product,
-    template: o.template,
-    amount: o.amount,
-    currency: o.currency,
-    status: o.status,
-    paymentMethod: o.payment_method,
-    paidAt: o.paid_at,
-    createdAt: o.created_at,
-  };
-}
-
-function orderView(o: OrderRow): { order: ReturnType<typeof publicOrder>; document?: Document; preview?: Document } {
+function orderView(o: OrderRow): { order: PublicOrder; document?: Document; preview?: Document } {
   if (!o.document) return { order: publicOrder(o) };
   return o.status === "paid"
     ? { order: publicOrder(o), document: o.document }
     : { order: publicOrder(o), preview: redactDocument(o.document) };
-}
-
-/** Rate-limit buckets and stored ip_hash use a peppered hash; prefer a private value as pepper. */
-function ipPepper(deps: Deps): string {
-  return deps.config.cronSecret ?? deps.config.adminKey ?? "teranga-cv";
-}
-
-/** Customer access: unknown id and wrong token are both 404 (no enumeration); purged orders are 410. */
-async function loadCustomerOrder(deps: Deps, id: string, token: unknown): Promise<OrderRow> {
-  const hash = await sha256Hex(typeof token === "string" ? token : "");
-  if (typeof token !== "string" || !token || !ORDER_ID_RE.test(id)) throw notFound();
-  const order = await deps.store.getOrder(id);
-  if (!order || !constantTimeEqual(hash, order.access_token_hash)) throw notFound();
-  if (order.purged_at) {
-    throw new HttpError(
-      410,
-      "purged",
-      "Ce document a été supprimé : nous effaçons les données 3 jours après l'aperçu sans paiement, 30 jours après un paiement.",
-    );
-  }
-  return order;
 }
 
 /**
@@ -123,6 +100,7 @@ const publicConfig: Handler = (deps) => {
       manualWaveNumber: c.manualWaveNumber ? formatSnMobile(c.manualWaveNumber) : null,
       ownerWhatsapp: c.ownerWhatsapp,
     },
+    courses: publicCourses(deps),
   }));
 };
 
@@ -132,15 +110,12 @@ const createOrder: Handler = async (deps, req) => {
   if (website !== undefined && website !== null && !(typeof website === "string" && website.trim() === "")) {
     throw new HttpError(400, "validation", "Votre demande n'a pas pu être traitée.");
   }
+  // Courses (Teranga Pro) have their own path: no document, no preview (course.ts).
+  if (isCourseProduct(body.product)) return createCourseOrder(deps, req, body);
   const now = deps.now();
   const nowIso = now.toISOString();
   const ipHash = await hashIp(clientIp(req), ipPepper(deps));
-  const limited = () => new HttpError(429, "rate_limited", "Trop de demandes. Réessayez dans un moment.");
-  if (!(await deps.store.hitRateLimit(`preview:${ipHash}`, 3600, deps.config.previewRateLimitPerHour, nowIso))) {
-    throw limited();
-  }
-  const globalKey = `preview:global:${nowIso.slice(0, 10)}`;
-  if (!(await deps.store.hitRateLimit(globalKey, 86400, GLOBAL_DAILY_PREVIEW_LIMIT, nowIso))) throw limited();
+  await hitOrderRateLimits(deps, ipHash, nowIso);
 
   const v = validateOrderRequest(body);
   if (!v.ok) throw new HttpError(400, "validation", "Certains champs sont à corriger.", v.fields);
@@ -165,6 +140,7 @@ const createOrder: Handler = async (deps, req) => {
     status: "preview",
     input: v.data,
     document,
+    buyer: null,
     checkout_session_id: null,
     wave_launch_url: null,
     checkout_expires_at: null,
@@ -190,7 +166,7 @@ const getOrder: Handler = async (deps, req, [id]) => {
   if (order.status === "checkout" && await refreshFromWave(deps, order, ORDER_REFRESH_TIMEOUT_MS)) {
     order = (await deps.store.getOrder(id)) ?? order;
   }
-  return json(200, orderView(order));
+  return json(200, isCourseProduct(order.product) ? courseOrderView(order) : orderView(order));
 };
 
 const changeTemplate: Handler = async (deps, req, [id]) => {
@@ -231,13 +207,15 @@ const checkout: Handler = async (deps, req, [id]) => {
       if (reusable) return json(200, { mode: "wave", launchUrl: order.wave_launch_url });
     }
 
+    // A course order comes back to its reader (formation/lecture.html), a document to its result page.
+    const successPage = isCourseProduct(order.product) ? "lecture.html" : "resultat.html";
     let session: WaveCheckoutSession;
     try {
       session = await deps.wave.createCheckoutSession({
         amount: order.amount,
         currency: "XOF",
         clientReference: order.id,
-        successUrl: `${returnBase}/resultat.html?o=${order.id}&t=${encodeURIComponent(token)}`,
+        successUrl: `${returnBase}/${successPage}?o=${order.id}&t=${encodeURIComponent(token)}`,
         errorUrl: `${returnBase}/index.html?o=${order.id}&t=${encodeURIComponent(token)}&paiement=echec`,
       });
     } catch (err) {
@@ -388,6 +366,7 @@ const adminStats: Handler = async (deps, req) => {
         : null,
       lastPhoneNotificationAt,
     },
+    course: await courseAdminStatus(deps),
   });
 };
 
@@ -420,6 +399,12 @@ const ROUTES: Array<[method: string, pattern: RegExp, handler: Handler]> = [
   ["POST", /^\/admin\/orders\/([^/]+)\/unlock$/, adminUnlock],
   ["POST", /^\/payments\/notify$/, handlePaymentNotify],
   ["POST", /^\/payments\/confirm$/, handlePaymentConfirm],
+  // Teranga Pro courses (course.ts)
+  ["GET", /^\/orders\/([^/]+)\/course$/, getCourse],
+  ["GET", /^\/orders\/([^/]+)\/files\/([^/]+)$/, downloadCourseFile],
+  ["POST", /^\/orders\/([^/]+)\/quiz$/, submitQuiz],
+  ["GET", /^\/attestations\/([^/]+)$/, getAttestation],
+  ["POST", /^\/leads$/, createLead],
 ];
 
 function decodeSegment(segment: string): string {
