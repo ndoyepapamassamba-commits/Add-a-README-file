@@ -27,3 +27,4 @@
 [1461 s] 3 images · === maison-fatou-salon-large-jour   |==================================================| 4/4 - 146.68s/it[K · mémoire libre 7048 Mo
 [1582 s] 3 images · === maison-fatou-salon-large-jour   |============>                                     | 1/4 - 152.48s/it[K · mémoire libre 7047 Mo
 [1704 s] 3 images · === maison-fatou-salon-large-jour   |=========================>                        | 2/4 - 146.04s/it[K · mémoire libre 7036 Mo
+[1825 s] 3 images · === maison-fatou-salon-large-jour   |=====================================>            | 3/4 - 147.03s/it[K · mémoire libre 7049 Mo
