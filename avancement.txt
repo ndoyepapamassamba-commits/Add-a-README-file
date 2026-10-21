@@ -68,3 +68,4 @@
 [972 s] 19 clips · === dj-kevin--rire (at_runtime)   |=========================>                        | 2/4 - 133.65s/it[K · mémoire libre 13784 Mo
 [1093 s] 19 clips · === dj-kevin--rire (at_runtime)   |=====================================>            | 3/4 - 133.44s/it[K · mémoire libre 13788 Mo
 [125 s] 20 clips · === patron-sery--ecouter (at_runtime)   |============>                                     | 1/4 - 96.78s/it[K · mémoire libre 13749 Mo
+[246 s] 20 clips · === patron-sery--ecouter (at_runtime)   |=========================>                        | 2/4 - 96.25s/it[K · mémoire libre 13747 Mo
