@@ -22,3 +22,4 @@
 [973 s] 8 clips · === petite-khadija--hausser (at_runtime)   |=========================>                        | 2/4 - 133.96s/it[K · mémoire libre 13799 Mo
 [1094 s] 8 clips · === petite-khadija--hausser (at_runtime)   |=====================================>            | 3/4 - 133.97s/it[K · mémoire libre 13807 Mo
 [1215 s] 9 clips · === madame-konan--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13803 Mo
+[122 s] 9 clips · === petite-khadija--mentir (at_runtime)   |=========================>                        | 2/4 - 39.28s/it[K · mémoire libre 13800 Mo
