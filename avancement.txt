@@ -44,3 +44,4 @@
 [122 s] 20 clips · === le-banquier--parler (at_runtime)  · mémoire libre 13791 Mo
 [244 s] 20 clips · === le-banquier--parler (at_runtime)   |============>                                     | 1/4 - 135.94s/it[K · mémoire libre 13773 Mo
 [365 s] 20 clips · === le-banquier--parler (at_runtime)   |=========================>                        | 2/4 - 135.68s/it[K · mémoire libre 13777 Mo
+[486 s] 20 clips · === le-banquier--parler (at_runtime)   |=====================================>            | 3/4 - 135.28s/it[K · mémoire libre 13778 Mo
