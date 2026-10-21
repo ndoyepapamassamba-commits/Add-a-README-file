@@ -31,3 +31,4 @@
 [2308 s] 4 images · === perso-aliou   |=========================>                        | 2/4 - 227.43s/it[K · mémoire libre 6294 Mo
 [2429 s] 4 images · === perso-aliou   |=========================>                        | 2/4 - 227.43s/it[K · mémoire libre 6300 Mo
 [2551 s] 4 images · === perso-aliou   |=====================================>            | 3/4 - 222.26s/it[K · mémoire libre 6300 Mo
+[2672 s] 4 images · === perso-aliou   |=====================================>            | 3/4 - 222.26s/it[K · mémoire libre 6299 Mo
