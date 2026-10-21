@@ -90,3 +90,4 @@
 [123 s] 25 clips · === salif-le-parisien--parler (at_runtime)   |=========================>                        | 2/4 - 40.55s/it[K · mémoire libre 13775 Mo
 [244 s] 26 clips · === dj-kevin--hausser (at_runtime)   |============>                                     | 1/4 - 41.46s/it[K · mémoire libre 13758 Mo
 [122 s] 27 clips · === patron-sery--parler (at_runtime)   |============>                                     | 1/4 - 68.14s/it[K · mémoire libre 13766 Mo
+[244 s] 27 clips · === patron-sery--parler (at_runtime)   |=====================================>            | 3/4 - 67.79s/it[K · mémoire libre 13769 Mo
