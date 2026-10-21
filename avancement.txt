@@ -82,3 +82,4 @@
 [732 s] 23 clips · === maman-brigitte--mentir@2 (at_runtime)   |=========================>                        | 2/4 - 96.63s/it[K · mémoire libre 13779 Mo
 [853 s] 23 clips · === maman-brigitte--mentir@2 (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13176 Mo
 [975 s] 24 clips · === le-frimeur--choc@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13777 Mo
+[1097 s] 24 clips · === le-frimeur--choc@2 (at_runtime)   |=========================>                        | 2/4 - 95.91s/it[K · mémoire libre 13771 Mo
