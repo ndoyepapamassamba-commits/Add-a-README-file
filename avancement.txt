@@ -56,3 +56,4 @@
 [5096 s] 6 images · === decor-ecole-champ-jour   |============>                                     | 1/4 - 160.13s/it[K · mémoire libre 7053 Mo
 [5217 s] 6 images · === decor-ecole-champ-jour   |=========================>                        | 2/4 - 156.76s/it[K · mémoire libre 7043 Mo
 [5339 s] 6 images · === decor-ecole-champ-jour   |=========================>                        | 2/4 - 156.76s/it[K · mémoire libre 7035 Mo
+[5460 s] 6 images · === decor-ecole-champ-jour   |=====================================>            | 3/4 - 156.48s/it[K · mémoire libre 7026 Mo
