@@ -1,0 +1,6 @@
+214.05.180.608 I slot print_timing: id  3 | task 53310 | prompt eval time =    6631.09 ms /   134 tokens (   49.49 ms per token,    20.21 tokens per second)
+214.05.180.670 I slot print_timing: id  3 | task 53310 |        eval time =   40029.72 ms /   107 tokens (  377.64 ms per token,     2.65 tokens per second)
+214.45.374.440 I slot print_timing: id  3 | task 53397 | prompt eval time =    6784.85 ms /   139 tokens (   48.81 ms per token,    20.49 tokens per second)
+214.45.374.450 I slot print_timing: id  3 | task 53397 |        eval time =   33399.07 ms /    51 tokens (  667.98 ms per token,     1.50 tokens per second)
+214.46.750.166 I slot print_timing: id  2 | task 53421 | prompt eval time =   26338.45 ms /   567 tokens (   46.45 ms per token,    21.53 tokens per second)
+214.46.750.236 I slot print_timing: id  2 | task 53421 |        eval time =    8433.00 ms /    65 tokens (  131.77 ms per token,     7.59 tokens per second)
