@@ -71,3 +71,4 @@
 [972 s] 20 clips · === dj-kevin--mentir (at_runtime)   |=========================>                        | 2/4 - 133.73s/it[K · mémoire libre 13801 Mo
 [1093 s] 20 clips · === dj-kevin--mentir (at_runtime)   |=====================================>            | 3/4 - 133.56s/it[K · mémoire libre 13794 Mo
 [122 s] 21 clips · === patron-sery--choc (at_runtime)  · mémoire libre 13767 Mo
+[244 s] 21 clips · === patron-sery--choc (at_runtime)   |============>                                     | 1/4 - 134.00s/it[K · mémoire libre 13776 Mo
