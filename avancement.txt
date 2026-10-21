@@ -11,3 +11,4 @@
 [122 s] 6 clips · === tata-prisca--hausser (at_runtime)  · mémoire libre 13775 Mo
 [244 s] 6 clips · === tata-prisca--hausser (at_runtime)   |============>                                     | 1/4 - 134.96s/it[K · mémoire libre 13763 Mo
 [365 s] 6 clips · === tata-prisca--hausser (at_runtime)   |=========================>                        | 2/4 - 134.32s/it[K · mémoire libre 13777 Mo
+[486 s] 6 clips · === tata-prisca--hausser (at_runtime)   |=====================================>            | 3/4 - 134.35s/it[K · mémoire libre 13769 Mo
