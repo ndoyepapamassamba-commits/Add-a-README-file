@@ -7,3 +7,4 @@
 [851 s] 8 clips · === aliou--parler (at_runtime)   |=========================>                        | 2/4 - 39.58s/it[K · mémoire libre 13797 Mo
 [973 s] 9 clips · === aminata--hausser (at_runtime)   |============>                                     | 1/4 - 40.74s/it[K · mémoire libre 13786 Mo
 [123 s] 10 clips · === chef-traore--parler@2 (at_runtime)  · mémoire libre 13776 Mo
+[244 s] 10 clips · === chef-traore--parler@2 (at_runtime)   |============>                                     | 1/4 - 134.83s/it[K · mémoire libre 13763 Mo
