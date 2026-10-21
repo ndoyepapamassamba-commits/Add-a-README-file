@@ -110,3 +110,4 @@
 [4978 s] 8 images · === perso-fatou   |=====================================>            | 3/4 - 377.76s/it[K · mémoire libre 6141 Mo
 [5099 s] 8 images · === perso-fatou   |=====================================>            | 3/4 - 377.76s/it[K · mémoire libre 6133 Mo
 [5221 s] 8 images · === perso-fatou   |=====================================>            | 3/4 - 377.76s/it[K · mémoire libre 6132 Mo
+[5342 s] 8 images · === perso-fatou   |==================================================| 4/4 - 393.51s/it[K · mémoire libre 5160 Mo
