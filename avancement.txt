@@ -22,3 +22,4 @@
 [1216 s] 2 images · === perso-grand-pere-ndiaye   |=====================================>            | 3/4 - 222.72s/it[K · mémoire libre 6265 Mo
 [1337 s] 2 images · === perso-grand-pere-ndiaye   |==================================================| 4/4 - 219.86s/it[K · mémoire libre 5187 Mo
 [1459 s] 3 images · === perso-imam-karim   |==================================================| 4/4 - 219.86s/it[K · mémoire libre 6336 Mo
+[1581 s] 3 images · === perso-imam-karim   |==================================================| 4/4 - 219.86s/it[K · mémoire libre 6320 Mo
