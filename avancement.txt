@@ -63,3 +63,4 @@
 [1335 s] 20 clips · === maitre-kone--hausser (at_runtime)   |============>                                     | 1/4 - 133.94s/it[K · mémoire libre 13723 Mo
 [1457 s] 20 clips · === maitre-kone--hausser (at_runtime)   |============>                                     | 1/4 - 133.94s/it[K · mémoire libre 13730 Mo
 [1578 s] 20 clips · === maitre-kone--hausser (at_runtime)   |=========================>                        | 2/4 - 133.52s/it[K · mémoire libre 13729 Mo
+[1699 s] 20 clips · === maitre-kone--hausser (at_runtime)   |=====================================>            | 3/4 - 133.49s/it[K · mémoire libre 13729 Mo
