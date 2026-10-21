@@ -1,12 +1,12 @@
 {
  "modele": "gptoss20loc",
  "part": 3,
- "appels_scenariste": 81,
- "secondes_scenariste": 15736.715335607529,
+ "appels_scenariste": 85,
+ "secondes_scenariste": 16123.897342205048,
  "echecs_scenariste": 0,
- "appels_juge": 72,
+ "appels_juge": 74,
  "echecs_juge": 0,
- "brouillons_refuses_controle": 8,
+ "brouillons_refuses_controle": 10,
  "planchers_v17": [
   0.425,
   0.48,
@@ -47,6 +47,11 @@
    "lieu": "Douane",
    "accepte": false,
    "secondes": 1579
+  },
+  {
+   "lieu": "Douane",
+   "accepte": false,
+   "secondes": 2012
   }
  ],
  "drole_v17": [
@@ -60,7 +65,7 @@
   1.5
  ],
  "registre_commun": true,
- "chutes_registre_commun": 16,
+ "chutes_registre_commun": 20,
  "reparations": [
   [
    1,
@@ -241,30 +246,34 @@
   [
    5,
    3
+  ],
+  [
+   3,
+   2
   ]
  ],
  "brouillons_illisibles": 7,
  "doublons_autres_machines": 0,
- "secondes_par_brouillon": 194.3,
+ "secondes_par_brouillon": 189.7,
  "temps": {
   "scenariste": {
-   "appels": 81,
+   "appels": 85,
    "tronques": 0,
-   "lus_jetons": 542,
-   "cache_jetons": 1569,
-   "lecture_s": 49.1,
-   "ecriture_jetons": 761,
-   "ecriture_s": 136.0,
+   "lus_jetons": 528,
+   "cache_jetons": 1624,
+   "lecture_s": 47.8,
+   "ecriture_jetons": 744,
+   "ecriture_s": 132.9,
    "jetons_par_s": 5.6
   },
   "juge": {
-   "appels": 73,
+   "appels": 75,
    "tronques": 0,
-   "lus_jetons": 370,
-   "cache_jetons": 156,
-   "lecture_s": 29.3,
+   "lus_jetons": 373,
+   "cache_jetons": 152,
+   "lecture_s": 29.8,
    "ecriture_jetons": 82,
-   "ecriture_s": 16.8,
+   "ecriture_s": 16.7,
    "jetons_par_s": 4.9
   }
  }
