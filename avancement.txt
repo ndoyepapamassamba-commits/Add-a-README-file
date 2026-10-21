@@ -26,3 +26,4 @@
 [1703 s] 4 images · === perso-petit-moussa   |============>                                     | 1/4 - 356.69s/it[K · mémoire libre 6294 Mo
 [1824 s] 4 images · === perso-petit-moussa   |============>                                     | 1/4 - 356.69s/it[K · mémoire libre 6294 Mo
 [1945 s] 4 images · === perso-petit-moussa   |============>                                     | 1/4 - 356.69s/it[K · mémoire libre 6286 Mo
+[2067 s] 4 images · === perso-petit-moussa   |=========================>                        | 2/4 - 349.93s/it[K · mémoire libre 6284 Mo
