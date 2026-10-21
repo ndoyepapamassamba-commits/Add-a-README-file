@@ -92,3 +92,4 @@
 [1459 s] 26 clips · === mademoiselle-rosine--parler@2 (at_runtime)   |============>                                     | 1/4 - 134.28s/it[K · mémoire libre 13760 Mo
 [1580 s] 26 clips · === mademoiselle-rosine--parler@2 (at_runtime)   |=========================>                        | 2/4 - 133.75s/it[K · mémoire libre 13769 Mo
 [1702 s] 26 clips · === mademoiselle-rosine--parler@2 (at_runtime)   |=====================================>            | 3/4 - 133.69s/it[K · mémoire libre 13775 Mo
+[1823 s] 27 clips · === dj-kevin--hausser@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13734 Mo
