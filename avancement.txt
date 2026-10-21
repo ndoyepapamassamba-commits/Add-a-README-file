@@ -36,3 +36,4 @@
 [2430 s] 4 images · === perso-le-patriarche   |=========================>                        | 2/4 - 276.57s/it[K · mémoire libre 6268 Mo
 [2551 s] 4 images · === perso-le-patriarche   |=========================>                        | 2/4 - 276.57s/it[K · mémoire libre 6267 Mo
 [2672 s] 4 images · === perso-le-patriarche   |=====================================>            | 3/4 - 276.99s/it[K · mémoire libre 6270 Mo
+[2794 s] 4 images · === perso-le-patriarche   |=====================================>            | 3/4 - 276.99s/it[K · mémoire libre 6248 Mo
