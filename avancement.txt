@@ -58,3 +58,4 @@
 [123 s] 23 clips · === patron-sery--montrer (at_runtime)  · mémoire libre 13773 Mo
 [245 s] 23 clips · === patron-sery--montrer (at_runtime)   |============>                                     | 1/4 - 135.37s/it[K · mémoire libre 13772 Mo
 [366 s] 23 clips · === patron-sery--montrer (at_runtime)   |=========================>                        | 2/4 - 135.24s/it[K · mémoire libre 13768 Mo
+[487 s] 23 clips · === patron-sery--montrer (at_runtime)   |=====================================>            | 3/4 - 135.48s/it[K · mémoire libre 13771 Mo
