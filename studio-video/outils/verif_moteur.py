@@ -486,6 +486,46 @@ try:
 except Exception as e:
     echecs.append(f'synchro labiale : {e}')
 
+# réparer au lieu de jeter (21/10/2026) : un brouillon refusé pour la forme revient au scénariste avec ses défauts exacts
+try:
+    import histoires as _h12
+    _bon12 = {'titre': 't', 'repliques': [{'qui': 'KOFFI', 'texte': "Coumba, ce soir c'est moi qui paie, dêh !", 'jeu': 'frime'},
+              {'qui': 'COUMBA', 'texte': 'Toi ? Ehhh Dieu, depuis quand, hein ?', 'jeu': 'soupcon'},
+              {'qui': 'KOFFI', 'texte': 'Depuis que ton porte-monnaie est sur la table.', 'jeu': 'malice'},
+              {'qui': 'COUMBA', 'texte': 'Mon porte-monnaie ? Koffi, rends-moi ça !', 'jeu': 'choc'},
+              {'qui': 'KOFFI', 'texte': "Doucement, c'est le patron qui encaisse.", 'jeu': 'frime'},
+              {'qui': 'COUMBA', 'texte': 'Quel patron ? Tu es fauché !', 'jeu': 'accuse'},
+              {'qui': 'KOFFI', 'texte': 'Ce soir, le patron paie avec toi.', 'jeu': 'rire', 'role': 'chute'}]}
+    _mal12 = json.loads(json.dumps(_bon12)); _mal12['repliques'][-1]['texte'] = 'Ce soir, mon frère, le patron paie vraiment avec ton argent à toi.'
+    _vus12 = []; _orig12 = _h12.llm
+    _h12.llm = lambda p, temp=1.0, juge=False: (_vus12.append(p), json.dumps(_bon12))[1]
+    try:
+        _hh12, _d12 = _h12.verifie(json.dumps(_mal12), 'maquis', [], 'sketch', lambda t: None)
+        _hx12, _dx12 = _h12.verifie(json.dumps(_bon12), 'maquis', ['Ce soir, le patron paie avec toi.'], 'sketch', lambda t: None)
+    finally: _h12.llm = _orig12
+    if _d12 or len(_vus12) != 1 or 'mots :' not in _vus12[0]: echecs.append(f'réparation des brouillons : {_d12}, {len(_vus12)} appel(s)')
+    if _dx12 != ['chute déjà utilisée'] or len(_vus12) != 1: echecs.append('réparation des brouillons : une chute déjà utilisée a été « réparée »')
+    print('réparation des brouillons : défauts de forme réparés en 1 appel, chute déjà utilisée laissée au brouillon neuf : OK')
+except Exception as e:
+    echecs.append(f'réparation des brouillons : {e}')
+
+# voix et raccords (21/10/2026) : hommes sur la voix source complète (gilles-low sans « ̃ » : 66 % des mots compris),
+# « garçon » reconnu comme enfant, voix toutes distinctes ; répliques en images entières, son PCM jusqu'au seul encodage AAC
+try:
+    import voix as _v13, itertools as _it13, inspect as _ins13, assemble as _as13
+    _hommes13 = [k for k, v in _v13._toutes_distinctes().items() if v[5] < 0.95]
+    if not _hommes13 or any(_v13.CAST[k][0] != 'fr_FR-siwis-medium' for k in _hommes13): echecs.append('voix : homme hors de la voix source complète')
+    if _v13._naturelle('PETIT IBRAHIMA')[5] <= 1.05: echecs.append('voix : « garçon » de 9 ans traité en homme')
+    _tous13 = list(_v13._toutes_distinctes().values()) + list(_v13.CAST_CALIBRE.values())
+    _pp13 = sum(1 for a, b in _it13.combinations(_tous13, 2) if a[0] == b[0] and _v13._distance(a, b) < 1.0)
+    if _pp13: echecs.append(f'voix : {_pp13} paires presque identiques')
+    if any(abs(_as13.en_images(d) * _as13.FPS - round(_as13.en_images(d) * _as13.FPS)) > 1e-9 for d in (0.01, 1.234, 3.3333, 7.91)):
+        echecs.append('raccords : durée de réplique hors images entières')
+    if 'pcm_s16le' not in _ins13.getsource(_as13.segment): echecs.append('raccords : son des segments encodé avant la concaténation')
+    print(f'voix et raccords : {len(_hommes13)} hommes sur siwis, Petit Ibrahima enfant, 0 paire proche, répliques en images entières : OK')
+except Exception as e:
+    echecs.append(f'voix et raccords : {e}')
+
 # niveau de la V1 (20/10/2026) : la vidéo 2 (figures collées, animation 20,4 % < 24,3 %) doit être arrêtée par le contrôle
 try:
     sys.path.insert(0, os.path.join(ICI, 'moteur-troupe')); import niveau_v1 as _nv9

@@ -56,11 +56,21 @@ def _fiche(nom):
 def _naturelle(nom):
     f = _fiche(nom)
     if not f.get('genre'): raise KeyError(f'{nom} : ni dans le tableau des voix, ni dans les fiches de la troupe')
-    g, age = f['genre'], int(f.get('age') or 35); enfant = g in ('fille', 'garcon', 'enfant') and age < 13
+    # « garçon » (cédille) dans la bible du casting : Petit Ibrahima, 9 ans, recevait une voix d'homme (21/10/2026)
+    g, age = f['genre'].replace('ç', 'c'), int(f.get('age') or 35); enfant = g in ('fille', 'garcon', 'enfant') and age < 13
     femme = g in ('femme', 'fille') or enfant
     f0 = f.get('f0') or ((275 if enfant else 205 if age < 55 else 192) if femme else (128 if age < 30 else 120 if age < 55 else 112)) * min(1.1, max(0.92, f.get('pitch', 1.0)))
-    return ('fr_FR-siwis-medium' if femme else 'fr_FR-gilles-low', None, round(float(f0)), 1.30 if enfant else 1.35 if femme else 1.50, 0.85,
-            1.16 if enfant else 1.0)
+    return ('fr_FR-siwis-medium', None, round(float(f0)), 1.30 if enfant else 1.35 if femme else 1.50, 0.85,
+            1.16 if enfant else 1.0 if femme else TIMBRE_HOMME)
+
+
+# VOIX D'HOMME LISIBLES (21/10/2026, « 10 000 vidéos » : un défaut de voix se répète sur chaque réplique d'homme) — gilles-low
+# (16 kHz, table sans le « ̃ » nasal : piper/phoneme_ids.py l. 194-197 saute ce phonème en silence) n'est compris par Whisper
+# qu'à 66,2 % des mots (14 répliques, dont « Le cahier dans la tête » : « vend » → « va », « Tonton » → « J'entends ») ; la même
+# voix source que les femmes (siwis, table complète) posée à hauteur d'homme par WORLD, formants resserrés ×0,84 : 81,2 %
+# (116 Hz médians contre 119). Les 7 voix calibrées (Baye, Modou, Koffi…) ne changent pas. Greffe suivante : voix clonées
+# d'Afrique de l'Ouest (Qwen3-TTS + OpenSLR 57, 92 % mesuré le 17/10) sur les machines de la banque.
+TIMBRE_HOMME = 0.84
 
 
 # VOIX DISTINCTES (20/10/2026, toute la troupe dans le moteur) : calculées seulement depuis le genre et l'âge, les 54 voix
@@ -68,7 +78,7 @@ def _naturelle(nom):
 # timbre et même étendue ; 5 hommes à 141 Hz). Chaque personnage reçoit la voix la plus proche de sa voix naturelle qui reste à
 # distance ≥ 1 de toutes les voix déjà attribuées sur la même source, dans l'ordre : les 7 calibrés (inchangés), puis la bible.
 # Distance : écart de hauteur en unités de 6 % (≈ 1 demi-ton), de timbre (formants WORLD) en unités de 0,04, d'étendue en 0,2.
-# Bornes de jeu : hauteur ×0,88 à ×1,14 de la naturelle, timbre 0,90 à 1,10 (enfants 1,10 à 1,22).
+# Bornes de jeu : hauteur ×0,88 à ×1,14 de la naturelle, timbre 0,90 à 1,10 (enfants 1,10 à 1,22 ; hommes 0,72 à 0,88, voix siwis resserrée).
 D_HAUTEUR, D_TIMBRE, D_ETENDUE = 0.06, 0.04, 0.2
 
 
@@ -88,7 +98,7 @@ def _toutes_distinctes():
         if nom in CAST_CALIBRE: continue
         try: n = _naturelle(nom)
         except KeyError: continue
-        enfant = n[5] > 1.05; t0, t1 = (1.10, 1.22) if enfant else (0.90, 1.10)
+        enfant = n[5] > 1.05; t0, t1 = (1.10, 1.22) if enfant else (0.72, 0.88) if n[5] < 0.95 else (0.90, 1.10)   # hommes : siwis resserrée (0,92 : 72,5 % des mots compris, 0,76-0,84 : 81,2 %)
         cands = sorted(((m, round(t, 2)) for m in np.arange(0.88, 1.1401, 0.02) for t in np.arange(t0, t1 + 1e-6, 0.02)),
                        key=lambda c: abs(np.log(c[0])) / D_HAUTEUR + abs(c[1] - n[5]) / D_TIMBRE)
         choix = n
@@ -115,7 +125,7 @@ class _Table(dict):
 
 CAST_CALIBRE = dict(CAST)   # les 7 voix mesurées et réglées à la main (v27–v36)
 CAST = _Table(CAST, cast_de)
-DEBIT = _Table(DEBIT, lambda nom: 5.6 if _naturelle(nom)[5] > 1.0 else 5.4 if _naturelle(nom)[0].startswith('fr_FR-siwis') else 6.1)
+DEBIT = _Table(DEBIT, lambda nom: 5.6 if _naturelle(nom)[5] > 1.0 else 6.1 if _naturelle(nom)[5] < 0.95 else 5.4)   # enfant, homme, femme
 SYL = re.compile(r'[aeiouyéèêëàâîïôûœ]+', re.I)
 MOTEUR = os.environ.get('VOIX_MOTEUR', 'piper')
 REFS_DIR = os.path.expanduser(os.environ.get('VOIX_REFS', '~/.cache/massamba-models/voix-refs'))

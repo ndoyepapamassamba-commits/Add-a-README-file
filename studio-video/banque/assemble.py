@@ -150,10 +150,11 @@ def segment(P, r, k, dossier, gains):
                  f"fontcolor=white:borderw=5:bordercolor=black:line_spacing=10:x=(w-tw)/2:y={BY + BH + 125}[c3]"); c = 'c3'
     voix = r.get('voix')
     entrees += (['-i', voix] if voix else ['-f', 'lavfi', '-t', str(dur), '-i', 'anullsrc=r=48000:cl=stereo'])
-    sortie = os.path.join(dossier, f'seg{k:03d}.mp4')
+    sortie = os.path.join(dossier, f'seg{k:03d}.mov')   # son PCM : concaténation exacte (voir RACCORDS EXACTS)
     subprocess.run(['ffmpeg', '-v', 'error', '-y', *entrees, '-filter_complex', ';'.join(f), '-map', f'[{c}]',
                     '-map', f'{i}:a', '-af', 'apad', '-t', str(dur), '-r', str(FPS), '-c:v', 'libx264', '-preset', 'veryfast',
-                    '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-ar', '48000', '-ac', '2', sortie], check=True)
+                    '-crf', '20', '-pix_fmt', 'yuv420p', '-video_track_timescale', str(FPS * 512), '-c:a', 'pcm_s16le',
+                    '-ar', '48000', '-ac', '2', sortie], check=True)
     return sortie
 
 
@@ -178,6 +179,11 @@ def ambiance(P, brut, sortie, d):
                    check=True)   # sonie des plateformes courtes (−14 LUFS)
 
 
+def en_images(d):
+    """durée ramenée à un nombre entier d'images (voir RACCORDS EXACTS dans assemble)."""
+    return max(1, round(float(d) * FPS)) / FPS
+
+
 def assemble(plan, sortie):
     P = json.load(open(plan, encoding='utf-8')); t0 = time.time()
     for r in P['repliques']:   # durée = voix + respiration avant la réplique suivante
@@ -185,6 +191,12 @@ def assemble(plan, sortie):
             p = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', r['voix']],
                                capture_output=True, text=True, check=True)
             r['duree'] = round(float(p.stdout) + P.get('respiration', 0.35), 2)
+    # RACCORDS EXACTS (21/10/2026, « Le cahier dans la tête » mesuré) : durées libres + AAC par segment → 8 raccords d'une image
+    # sautée (écart 50-60 ms au lieu de 41,7) et le son 0,31 s en avance à la fin (26,90 s de son pour 26,59 s d'image : chaque
+    # segment AAC ajoute sa trame d'amorce), la synchro des lèvres glissait d'une réplique à l'autre. Chaque réplique dure
+    # désormais un nombre entier d'images, et le son des segments reste en PCM (2 000 échantillons exacts par image à 48 kHz)
+    # jusqu'à un SEUL encodage AAC de toute la scène.
+    for r in P['repliques']: r['duree'] = en_images(r['duree'])
     gains = {}
     with tempfile.TemporaryDirectory() as d:
         dp, seg = couches(P['decor']); P['_occultants'] = {}; info = {}
@@ -197,9 +209,11 @@ def assemble(plan, sortie):
             P['_occultants'][nom] = (fo if part > 0 else None, prof); info[nom] = {'profondeur': round(prof, 3), 'cache': round(part, 4)}
         segs = [segment(P, r, k, d, gains) for k, r in enumerate(P['repliques'])]
         liste = os.path.join(d, 'liste.txt'); open(liste, 'w').write(''.join(f"file '{s}'\n" for s in segs))
-        brut = os.path.join(d, 'brut.mp4') if P.get('lieu') else sortie
-        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', liste, '-c', 'copy',
-                        '-movflags', '+faststart', brut], check=True)
+        brut = os.path.join(d, 'brut.mov')
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', liste, '-c', 'copy', brut], check=True)
+        if not P.get('lieu'):   # sans ambiance : le seul encodage AAC de la scène
+            subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', brut, '-c:v', 'copy', '-c:a', 'aac', '-ar', '48000', '-ac', '2',
+                            '-movflags', '+faststart', sortie], check=True)
         if P.get('lieu'): ambiance(P, brut, sortie, d)
     duree = sum(float(r['duree']) for r in P['repliques'])
     return {'video': sortie, 'duree_s': round(duree, 1), 'assemblage_s': round(time.time() - t0, 1),

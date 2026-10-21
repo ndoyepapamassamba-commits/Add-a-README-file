@@ -120,7 +120,9 @@ REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2,
            'perso-yaya-lapprenti': 2, 'perso-maitre-coulibaly': 2, 'perso-le-banquier': 3, 'perso-le-tonton': 2,
            'perso-mamie-bintou': 2, 'perso-madame-konan': 2,
            # 21/10 01:35, lot 5 : veste de Koffi (DJ Kevin, Boubacar), comptoir collé aux poses (Patron Séry)
-           'perso-dj-kevin': 3, 'perso-boubacar': 2, 'perso-patron-sery': 2,
+           'perso-dj-kevin': 3, 'perso-boubacar': 3, 'perso-patron-sery': 2,
+           # 21/10 04:25 : Boubacar v2 en lunettes noires sur la fiche, lunettes claires sur les poses, alors que sa fiche n'en dit
+           # rien (lunettes de Koffi, l'image de style) → « sans lunettes » quand la fiche n'en porte pas (sans_lunettes)
            # 21/10 01:36, planches déjà acceptées relues avec ce défaut en tête : rire de Koffi (lunettes, visage) sur la dernière pose
            # (Djecky, Général Zongo, Mécano Issa, Monsieur Diarra, Tiékoro), Le Frimeur sosie de Koffi, rire de Baye (Grand-père
            # Ndiaye, Tonton Dieng)
@@ -134,6 +136,12 @@ REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2,
 # vidéo ne les montre) attend derrière la bible sur les 20 machines du compte. Les décors secondaires (autres vues, nuit,
 # ambiances : rang 3 et plus) passent à la passe suivante ; chaque machine rend sa place dès ses personnages et ses maisons
 # de jour faits. Remettre à False (et pousser bible/taches.json) pour les tourner.
+def sans_lunettes(p):
+    """« pas de lunettes » quand ni l'apparence ni la tenue n'en parlent : l'image de style (Koffi) en porte, et le modèle les
+    recopiait, différentes d'une image à l'autre (Boubacar v2 : noires sur la fiche, claires sur les poses)."""
+    return '' if re.search(r'lunette', f"{p.get('apparence') or ''} {p.get('tenue') or ''}", re.I) else ' No glasses, no sunglasses.'
+
+
 def traits_physiques(apparence):
     """traits du visage et du corps à garder d'une pose à l'autre (moustache, lunettes, barbe, coiffure…), sans les expressions
     ni les gestes de la fiche (« sourire suffisant, poing serré ») qui contrediraient les poses de la planche."""
@@ -186,10 +194,10 @@ def taches():
                   'ref_px': 448 * 768,   # la fiche entière, sans réduction : c'est l'identité à garder
                   'fiche': {'w': 448, 'h': 768, 'refs': [ref_style(p) + '-neutre.msb'], 'ref_px': 448 * 768,
                             'prompt': FICHE.format(nom=nom.title(), apparence=texte_dessinable(p.get('apparence')),
-                                                   tenue=texte_dessinable(p.get('tenue')), fond=fond)},
+                                                   tenue=texte_dessinable(p.get('tenue')), fond=fond) + sans_lunettes(p)},
                   # 21/10 04:00 : la fine moustache du Banquier (sa fiche la dit) disparaissait des poses ; « same face » ne suffit
                   # pas pour un détail fin → les traits de la fiche sont rappelés à la planche
-                  'prompt': PLANCHE.format(poses=POSES.format(fond=fond)) + (f" Keep these features in every pose: {traits_physiques(p.get('apparence'))}" if traits_physiques(p.get('apparence')) else ''),
+                  'prompt': PLANCHE.format(poses=POSES.format(fond=fond)) + (f" Keep these features in every pose: {traits_physiques(p.get('apparence'))}" if traits_physiques(p.get('apparence')) else '') + sans_lunettes(p),
                   **({'fond': 'bleu'} if nom in FOND_BLEU else {})})
     lieux_joues = {r['lieu'] for r in M['figures_du_quartier']} | {l for j in M['journee'] for l in j['lieux']}
     for lieu, desc in LIEUX.items():

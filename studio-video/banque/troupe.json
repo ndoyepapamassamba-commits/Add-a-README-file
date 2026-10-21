@@ -40,7 +40,9 @@
   "mecano-issa",
   "tiekoro",
   "grand-pere-ndiaye",
-  "fatou"
+  "fatou",
+  "sorciere-mama-dede",
+  "le-frimeur"
  ],
  "noms": {
   "le-patriarche": "LE PATRIARCHE",
@@ -76,7 +78,9 @@
   "mecano-issa": "MÉCANO ISSA",
   "tiekoro": "TIÉKORO",
   "grand-pere-ndiaye": "GRAND-PÈRE NDIAYE",
-  "fatou": "FATOU"
+  "fatou": "FATOU",
+  "sorciere-mama-dede": "SORCIÈRE MAMA DÉDÉ",
+  "le-frimeur": "LE FRIMEUR"
  },
  "fonds": {
   "agent-bakary": "bleu",

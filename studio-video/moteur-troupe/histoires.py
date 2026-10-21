@@ -282,6 +282,50 @@ def controle(h, lieu, deja=(), fmt='sketch'):
 def _norm(t): return ' '.join(mots(t))
 
 
+# RÉPARER AU LIEU DE JETER (21/10/2026) — duel des scénaristes sur les machines GitHub : 11 brouillons du scénariste actuel sur 11
+# jetés par les contrôles ci-dessus avant le juge, pour des défauts de forme (chute de 9 ou 10 mots au lieu de 8, mot de l'accroche
+# non repris, trop peu de parler ivoirien), chacun ayant coûté 2 à 4 min d'écriture. Méthode publiée Self-Refine (Madaan et al.,
+# NeurIPS 2023 ; code Apache-2.0 : retour précis → réécriture ciblée), réécrite ici : le brouillon revient au même scénariste avec
+# la liste exacte de ses défauts, à corriger en changeant le moins de mots possible (réponse courte) ; seule une chute déjà
+# utilisée impose un brouillon neuf.
+REPARATIONS = int(os.environ.get('HISTOIRES_REPARATIONS', '2'))
+IRREPARABLES = ('chute déjà utilisée',)
+
+
+def reparation(h, d, lieu, fmt='sketch'):
+    F = FORMATS[fmt]; R = h.get('repliques') or []; acc = R[0].get('texte', '') if R else ''
+    exemples = ['hein', 'dêh', 'Ehhh Dieu', 'on dit quoi', "c'est gâté", 'mon frère', 'vieux père', 'y a pas drap', 'ça va aller'] + list(LEXIQUE)[:10]
+    rappel = f" et reprend un mot de plus de 3 lettres de la première réplique (« {acc} »)" if F['rappel'] else ''
+    # chute trop longue : le modèle la recopie sans la raccourcir (essai du 21/10 : 2 brouillons sur 4 bloqués à 10-11 mots) ;
+    # on lui montre la phrase et son compte, et l'on demande de couper les mots d'appui, pas le mot drôle
+    ch = next((r.get('texte', '') for r in R if r.get('role') == 'chute' or r.get('chute')), '')
+    longue = (f"\nLa chute actuelle fait {len(mots(ch))} mots : « {ch} ». Réécris-la en 8 mots AU PLUS (compte-les un par un) : "
+              "enlève les mots d'appui, garde le mot drôle à la fin.") if ch and len(mots(ch)) > 8 else ''
+    return (f"Voici {'un sketch' if fmt == 'sketch' else 'une blague'} comique en français ivoirien, au format JSON. Il est refusé pour "
+            "ces défauts précis :\n" + '\n'.join('- ' + x for x in d) + longue + "\n\nCorrige SEULEMENT ces défauts en changeant le moins de "
+            "mots possible : même histoire, même ordre, mêmes personnages, même idée de chute.\nÀ respecter : "
+            f"de {F['n'][0]} à {F['n'][1]} répliques ; chaque réplique de 14 mots au plus ; la chute (role \"chute\") fait 8 mots au "
+            f"plus{rappel} ; 2 à 4 marques du parler ivoirien, par exemple : {', '.join(exemples)} ; personnages permis : "
+            f"{', '.join(LIEUX[lieu]['acteurs'])} ; jamais de wolof, rien de vulgaire.\n\n{json.dumps(h, ensure_ascii=False)}\n\n"
+            "Réponds UNIQUEMENT par l'objet JSON complet corrigé, au même format.")
+
+
+def verifie(t, lieu, deja=(), fmt='sketch', journal=print):
+    """brouillon brut → (sketch, défauts restants) après au plus REPARATIONS réparations ciblées ; (None, None) si illisible."""
+    h = _json(t) if t else None
+    if not h or not h.get('repliques'): return None, None
+    d = controle(noms_exacts(h, lieu), lieu, deja, fmt)
+    for k in range(REPARATIONS):
+        if not d or any(x in IRREPARABLES for x in d): break
+        h2 = _json(_essai(lambda: llm(reparation(h, d, lieu, fmt), temp=0.4)) or '')
+        if not h2 or not h2.get('repliques'): break
+        d2 = controle(noms_exacts(h2, lieu), lieu, deja, fmt)
+        journal(f"  réparation {k + 1} : {len(d)} défaut(s) → {len(d2)}" + (f" ({'; '.join(d2)})" if d2 else ''))
+        if len(d2) > len(d): break   # réparation qui abîme : on garde le brouillon d'avant
+        h, d = h2, d2
+    return h, d
+
+
 # ── juge JEV ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 def _juge_llm(state, questions):
     """JUGE COMIQUE GRATUIT (20/10/2026) : JEV est coupé (consigne du 18/10) et le juge local n'a aucune voie pour noter un texte
@@ -400,10 +444,10 @@ def une(dossier, lieu, recap='', K=3, tours_max=4, seuil=0.6, journal=print, fmt
             textes = list(p.map(lambda _: _essai(lambda: llm(consignes(lieu, champ, deja, faiblesses, recap, fmt))), range(K)))
         journal(f'  tour {tour + 1} : {sum(1 for t in textes if t)} brouillon(s) reçu(s)')
         bons = []
-        for t in textes:
-            h = _json(t) if t else None
-            if not h or not h.get('repliques'): continue
-            d = controle(noms_exacts(h, lieu), lieu, deja, fmt)
+        with ThreadPoolExecutor(2) as p:   # réparations ciblées des brouillons refusés pour la forme (voir verifie)
+            verifies = list(p.map(lambda t: verifie(t, lieu, deja, fmt, journal), textes))
+        for h, d in verifies:
+            if h is None: continue
             if d: journal(f"  brouillon refusé : {'; '.join(d)}"); faiblesses = '; '.join(d); continue
             bons.append(h)
         if not bons: continue
