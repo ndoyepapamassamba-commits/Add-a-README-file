@@ -77,7 +77,14 @@
    "lora": "at_runtime",
    "secondes": 584,
    "memoire_max_go": 11.12
+  },
+  {
+   "clip": "mamie-bintou--choc",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 584,
+   "memoire_max_go": 11.14
   }
  ],
- "run": "39536335050"
+ "run": "39545665602"
 }
