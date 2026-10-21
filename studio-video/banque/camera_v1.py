@@ -270,15 +270,20 @@ def despill(F, plein=False):
     """liseré vert du détourage (vu sur les gros plans de la grammaire V1 : oreilles, cou, mains) : le vert ne dépasse plus le
     plus fort du rouge et du bleu (suppression de débordement classique) — sur la bande du bord de la découpe, ou partout
     (plein) pour un personnage tourné sur fond VERT : il n'a rien de vert à lui (les personnages habillés de vert sont tournés
-    sur fond bleu, bible.FOND_BLEU), tout vert qui dépasse est un reflet du fond (vu sur les mains de Le Frimeur)."""
+    sur fond bleu, bible.FOND_BLEU), tout vert qui dépasse est un reflet du fond (vu sur les mains de Le Frimeur).
+    EN PROPORTION (21/10/2026, épisode banque 1 v9 : mains de l'Agent Doumbia OLIVE dans les gestes rapides, 40,9 s et 46,4 s) :
+    plafonner le vert au rouge laisse une peau brune mêlée de vert jaune-olive (110, 130, 40 → 110, 110, 40). Le vert est
+    ramené d'autant SOUS le plus fort du rouge et du bleu qu'il le dépassait (→ 110, 90, 40 : brun), sans descendre sous le
+    plus faible ; ce qui n'avait pas plus de vert que de rouge et de bleu (jaunes, insignes, peau) n'est pas touché."""
     for i in range(len(F)):
         a = F[i, ..., 3]; zone = (a > 0) if plein else (cv2.erode((a > 250).astype(np.uint8), np.ones((7, 7), np.uint8)) == 0) & (a > 0)
-        r, g, b = F[i, ..., 0], F[i, ..., 1], F[i, ..., 2]; m = zone & (g > np.maximum(r, b))
-        g[m] = np.maximum(r, b)[m]
+        r, g, b = F[i, ..., 0], F[i, ..., 1], F[i, ..., 2]; hi = np.maximum(r, b); m = zone & (g > hi)
+        g[m] = np.maximum(np.minimum(r, b), 2 * hi - g)[m]
     return F
 
 
-LIT_VERSION = 3   # 2 : reflet vert ôté partout sur les personnages tournés sur fond vert ; 3 : gain de tête étalonné (lacet_banque v4)
+LIT_VERSION = 4   # 2 : reflet vert ôté partout sur les personnages tournés sur fond vert ; 3 : gain de tête étalonné (lacet_banque v4) ;
+#                   4 : reflet vert retiré en proportion de son excès (despill)
 # les versions du champ de tête (lacet_banque.VERSION) et du teint (peau.VERSION) entrent aussi dans la clé : un clip préparé
 # avec un ancien champ n'est jamais relu (21/10/2026, lacet_banque v5)
 LIT_PLAFOND = float(os.environ.get('LIT_PLAFOND_GO', '4')) * (1 << 30)   # cache en mémoire partagée : plus vieux effacés au-delà
@@ -358,9 +363,16 @@ def haut_du_clip(F):
     return float(ys[0]) / F.shape[1] if len(ys) else 0.05
 
 
-def position_douce(t, n, fps_clip=16.0, dep=0.0):
+def position_douce(t, n, fps_clip=16.0, dep=0.0, boucle=None):
     """position (fractionnaire) dans le clip : aller-retour à temps en cosinus — vitesse nulle aux deux bouts, plus de
-    retournement sec ; même vitesse moyenne que le clip."""
+    retournement sec ; même vitesse moyenne que le clip. boucle = (g0, c0) (levres_banque.boucle, 21/10/2026) : le clip est
+    joué une fois en entier, geste compris, puis l'aller-retour en cosinus ne parcourt que la pose tenue c0 … n-1 — jamais
+    plus le geste à l'envers."""
+    if boucle:
+        u = t + dep; T1 = (n - 1) / fps_clip
+        if u < T1: return max(0.0, u * fps_clip)
+        L = n - 1 - boucle[1]; ph = ((u - T1) / max(L / fps_clip, 1e-3)) % 2.0; v = ph if ph <= 1 else 2 - ph
+        return (n - 1) - L * (1 - math.cos(math.pi * v)) / 2
     T = (n - 1) / fps_clip; ph = ((t + dep) / T) % 2.0
     v = ph if ph <= 1 else 2 - ph
     return (n - 1) * (1 - math.cos(math.pi * v)) / 2

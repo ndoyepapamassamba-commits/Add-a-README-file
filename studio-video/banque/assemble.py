@@ -240,6 +240,11 @@ def _programme(P, k, nom, gains, cache):
         while j > 0 and not (nom == R[j - 1].get('qui') and R[j - 1].get('voix')) and _clip(P['banque'], nom, geste(R[j - 1]))[0] == mov \
                 and vise(P, j - 1, nom) == cible: j -= 1
         pr['t_dep'] = R[j]['_t0'] - (depart(P.get('titre', ''), nom, 0.0, mov) if j == 0 else 0.0)
+        try:   # geste joué une fois puis boucle sur la pose tenue (levres_banque.boucle) — l'écoute ne rejoue plus le geste à l'envers
+            import levres_banque as LB
+            pr['boucle'] = LB.boucle(LB.mouvement(mov[:-4] + '.mp4'), len(F))
+        except Exception:
+            pr['boucle'] = None
     return pr
 
 
@@ -301,7 +306,7 @@ def _ordre_plan(P, s, nom, mov, n_images):
     # à l'écoute, la bouche n'est qu'à peine tenue fermée (poids 0,15) : v4, poids plein — le corps s'arrêtait sur les images
     # bouche fermée (part du corps qui bouge 0,184 → 0,165)
     w = np.concatenate([np.full(n, 1.0 if p else ECOUTE_POIDS) for n, p in zip(ns, parle)])
-    o = LB.ordre(q, e, FPS, w, m=LB.mouvement(mov[:-4] + '.mp4')); out, a = {}, 0
+    o = LB.ordre(q, e, FPS, w, m=LB.mouvement(mov[:-4] + '.mp4'), impose=LB.impose(mov)); out, a = {}, 0
     for j, n in zip(ks, ns): out[j] = o[a:a + n]; a += n
     return out
 
@@ -328,7 +333,7 @@ def vise(P, k, nom):
 def _image_acteur(pr, t, i):
     import camera_v1
     if pr.get('idx'): return np.asarray(pr['F'][pr['idx'][min(i, len(pr['idx']) - 1)]], np.float32)
-    return camera_v1.image_a(pr['F'], camera_v1.position_douce(t - pr['t_dep'], len(pr['F'])))
+    return camera_v1.image_a(pr['F'], camera_v1.position_douce(t - pr['t_dep'], len(pr['F']), boucle=pr.get('boucle')))
 
 
 def bande_v1(P, k, gains, ecrit):

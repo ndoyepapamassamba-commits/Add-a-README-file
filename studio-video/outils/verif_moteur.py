@@ -936,23 +936,30 @@ try:
 except Exception as e:
     echecs.append(f'rendu banque : {e}')
 
-# 21/10/2026 18:30 — épisode banque 1 v8 : 9 sautes dans les scènes (V1 : 0), des mains qui apparaissent d'une image à l'autre ;
-# la synchro labiale accélérait le clip (×2, ×3) en plein geste. Chaque pas paie le mouvement du corps qu'il escamote
+# 21/10/2026 18:30 — épisode banque 1 v8 : 9 sautes dans les scènes (V1 : 0). v9 (pénalité du corps, LEVRES_CORPS) : pire
+# (sautes 17,2 → 20,2) — vue image par image, la cause est l'aller-retour qui rejoue chaque geste À L'ENVERS (main qui redescend
+# par le chemin de la montée) ; 17 clips de la banque sur 19 : départ calme, geste rapide, pose tenue. Geste joué une fois puis
+# boucle sur la pose (levres_banque.boucle / parcours, camera_v1.position_douce), reflet vert retiré en proportion (despill)
 try:
-    import levres_banque as _lb33
-    _rng33 = np.random.default_rng(3); _q33 = _rng33.uniform(0, 1, 48); _e33 = (np.sin(np.arange(150) * 0.9) > 0).astype(float)
-    _sv33 = _lb33.CORPS; _n33 = {}
-    try:
-        for _c33 in (0.0, 1.0):
-            _lb33.CORPS = _c33; _s33 = np.array(_lb33.ordre(_q33, _e33, 30, m=np.ones(48))); _n33[_c33] = int((np.abs(np.diff(_s33)) >= 2).sum())
-    finally: _lb33.CORPS = _sv33
-    if _lb33.CORPS <= 0 or not (_n33[1.0] < _n33[0.0] and _n33[1.0] <= 1):
-        echecs.append(f'synchro labiale : le corps saute encore pendant les gestes (sauts {_n33})')
-    if 'm=LB.mouvement' not in open(os.path.join(os.path.dirname(_lb33.__file__), 'assemble.py'), encoding='utf-8').read():
-        echecs.append('synchro labiale : plan à deux sans mouvement du corps')
-    print(f"synchro labiale : mouvement du corps escamoté pénalisé (sauts {_n33[0.0]} → {_n33[1.0]} sur un clip d'essai) : OK")
+    import levres_banque as _lb33, camera_v1 as _cv33
+    _m33 = np.array([1.0] * 8 + [4.0] * 12 + [0.8] * 13); _q33 = np.random.default_rng(3).uniform(0, 1, 33)
+    _bc33 = _lb33.boucle(_m33, 33)
+    if _bc33 != (8, 20): echecs.append(f'synchro labiale : geste et pose tenue mal lus ({_bc33}, attendu (8, 20))')
+    _e33 = (np.sin(np.arange(150) * 0.9) > 0).astype(float); _o33 = np.array(_lb33.ordre(_q33, _e33, 30, m=_m33)); _d33 = np.diff(_o33)
+    _ret33 = int(((_d33 < 0) & (_o33[1:] < 20)).sum()); _vite33 = int(((_d33 >= 2) & (_o33[1:] >= 8) & (_o33[1:] < 20)).sum())
+    _pd33 = [_cv33.position_douce(t, 33, boucle=_bc33) for t in np.arange(2.1, 12, 0.1)]
+    if _ret33 or _vite33 or min(_pd33) < 20 - 1e-6:
+        echecs.append(f'synchro labiale : geste rejoué à l\'envers ou accéléré (retours {_ret33}, sauts {_vite33}, écoute min {min(_pd33):.1f})')
+    if _lb33.CORPS != 0: echecs.append('synchro labiale : pénalité du corps active par défaut (mesurée nuisible en v9)')
+    _F33 = np.zeros((1, 2, 2, 4), np.float32); _F33[..., 3] = 255; _F33[0, 0, 0, :3] = (110, 130, 40); _F33[0, 0, 1, :3] = (230, 200, 40)
+    _F33 = _cv33.despill(_F33, True)
+    if not (_F33[0, 0, 0, 1] <= 95 and tuple(_F33[0, 0, 1, :3]) == (230, 200, 40)):
+        echecs.append(f'reflet vert : main olive non ramenée au brun ou jaune touché ({_F33[0, 0, :, :3].tolist()})')
+    if "boucle=pr.get('boucle')" not in open(os.path.join(os.path.dirname(_lb33.__file__), 'assemble.py'), encoding='utf-8').read():
+        echecs.append('synchro labiale : l\'écoute rejoue encore le geste à l\'envers (assemble sans boucle)')
+    print(f"synchro labiale : geste joué une fois puis pose tenue {_bc33}, 0 retour, 0 accélération dans le geste ; main olive → brune : OK")
 except Exception as e:
-    echecs.append(f'synchro labiale (corps) : {e}')
+    echecs.append(f'synchro labiale (geste) : {e}')
 
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
