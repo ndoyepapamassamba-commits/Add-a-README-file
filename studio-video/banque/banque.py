@@ -84,28 +84,42 @@ def boites(planche):
     return poses_, carte
 
 
-def poses(planche, dossier):
-    """Les 5 poses d'une planche (dans l'ordre des gestes), sur fond vert, au format vertical de Wan (384×640)."""
+def _decoupe(im, vert, a, b, vert_bgr):
+    """une pose (colonnes a..b) recadrée sur sa grande silhouette, posée sur la toile verticale de Wan (384×640)."""
     import cv2, numpy as np
-    im = cv2.imread(planche); W = im.shape[1]
+    W = im.shape[1]
+    c = im[:, max(0, a - 12):min(W, b + 12)].copy()
+    v = vert[:, max(0, a - 12):min(W, b + 12)]          # bouts des poses voisines : seule la grande silhouette reste
+    n, lab, st, _ = cv2.connectedComponentsWithStats((~v).astype(np.uint8))
+    if n > 1:
+        gros = 1 + int(np.argmax(st[1:, cv2.CC_STAT_AREA])); garde = np.isin(lab, [i for i in range(1, n) if st[i, cv2.CC_STAT_AREA] > 0.15 * st[gros, cv2.CC_STAT_AREA]])
+        c[~garde] = vert_bgr
+        ys, xs = np.where(garde); c = c[max(0, ys.min() - 8):ys.max() + 8, max(0, xs.min() - 8):xs.max() + 8]
+    h, w = c.shape[:2]
+    r = min(600 / h, 360 / w); c = cv2.resize(c, (int(w * r), int(h * r)), interpolation=cv2.INTER_AREA)
+    toile = np.full((640, 384, 3), vert_bgr, np.uint8); h, w = c.shape[:2]
+    y0, x0 = 640 - h - 20, (384 - w) // 2; toile[y0:y0 + h, x0:x0 + w] = c
+    return toile
+
+
+def poses(planche, dossier, fiche=None):
+    """Les 5 poses d'une planche (dans l'ordre des gestes), sur fond vert, au format vertical de Wan (384×640).
+    21/10/2026 — personnages dessinés en deux étapes (bible.py) : leur FICHE de face est la pose neutre (parler, écouter) ; la
+    planche, qui en dessine parfois moins de 5 et sans pose neutre (Mamie Bintou : pointer, choc, bras ouverts), donne les autres."""
+    import cv2
+    im = cv2.imread(planche)
     vert, fond = masque_fond(im); vert_bgr = FONDS[fond][1]   # la toile de Wan reprend la couleur du fond de la planche
     segs, carte = boites(planche)
-    os.makedirs(dossier, exist_ok=True); faites = []
-    for k, (a, b) in enumerate(segs):
-        c = im[:, max(0, a - 12):min(W, b + 12)].copy()
-        v = vert[:, max(0, a - 12):min(W, b + 12)]          # bouts des poses voisines : seule la grande silhouette reste
-        n, lab, st, _ = cv2.connectedComponentsWithStats((~v).astype(np.uint8))
-        if n > 1:
-            gros = 1 + int(np.argmax(st[1:, cv2.CC_STAT_AREA])); garde = np.isin(lab, [i for i in range(1, n) if st[i, cv2.CC_STAT_AREA] > 0.15 * st[gros, cv2.CC_STAT_AREA]])
-            c[~garde] = vert_bgr
-            ys, xs = np.where(garde); c = c[max(0, ys.min() - 8):ys.max() + 8, max(0, xs.min() - 8):xs.max() + 8]
-        h, w = c.shape[:2]
-        r = min(600 / h, 360 / w); c = cv2.resize(c, (int(w * r), int(h * r)), interpolation=cv2.INTER_AREA)
-        toile = np.full((640, 384, 3), vert_bgr, np.uint8); h, w = c.shape[:2]
-        y0, x0 = 640 - h - 20, (384 - w) // 2; toile[y0:y0 + h, x0:x0 + w] = c
-        f = os.path.join(dossier, f'pose{k}.png'); cv2.imwrite(f, toile); faites.append(f)
+    os.makedirs(dossier, exist_ok=True)
+    toiles = [_decoupe(im, vert, a, b, vert_bgr) for a, b in segs]
+    if fiche and len(segs) < 5:
+        f = cv2.imread(fiche); vf, _ = masque_fond(f)
+        toiles = [_decoupe(f, vf, 0, f.shape[1], vert_bgr)] + toiles
+        n = len(toiles); carte = list(range(5)) if n >= 5 else [0, 1, 2, n - 1, n - 1] if n == 4 else [0, 1, 2, 2, 2]
+    faites = []
+    for k, t in enumerate(toiles):
+        f = os.path.join(dossier, f'pose{k}.png'); cv2.imwrite(f, t); faites.append(f)
     return [faites[carte[g]] for g in range(5)]
-
 
 if __name__ == '__main__':
     a = sys.argv[1:]

@@ -34,7 +34,10 @@ def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude):
         if p not in poses:   # planche ouverte en mémoire de la machine, poses découpées une fois par personnage
             pl = os.path.join(clair, p + '.jpg')
             open(pl, 'wb').write(coffre.ouvre_octets(open(os.path.join(ICI, '..', 'images', 'troupe', p + '-planche.msb'), 'rb').read(), priv))
-            poses[p] = banque.poses(pl, os.path.join(clair, p))
+            fi = os.path.join(ICI, '..', 'images', 'troupe', p + '-fiche.msb'); fj = None   # fiche de face (bible en deux étapes)
+            if os.path.isfile(fi):
+                fj = os.path.join(clair, p + '-fiche.png'); open(fj, 'wb').write(coffre.ouvre_octets(open(fi, 'rb').read(), priv))
+            poses[p] = banque.poses(pl, os.path.join(clair, p), fj)
         avi = os.path.join(clair, t['id'] + '.avi'); mp4 = os.path.join(clair, t['id'] + '.mp4'); t0 = time.time(); mode = None
         for mode in ('at_runtime',):   # 20/10 22:46 : « immediately » échoue au chargement sur les poids GGUF (repli constaté sur les 14 machines)
             cmd = ['/usr/bin/time', '-v', '-o', os.path.join(clair, 'time.txt'), binaire, '-M', 'vid_gen',

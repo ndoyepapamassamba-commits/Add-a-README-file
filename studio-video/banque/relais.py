@@ -72,6 +72,9 @@ def main(priv_claude, pub_fabrique, travail):
             ok, mesure = controle(png, travail)
             if not ok: ecartes[nom] = mesure; continue
             open(os.path.join(ICI, '..', 'images', 'troupe', f'{nom}-planche.msb'), 'wb').write(coffre.scelle_octets(open(png, 'rb').read(), pub))
+            if f'fiche-{nom}.msb' in noms:   # 21/10 : fiche de face (bible en deux étapes) = pose neutre de la banque
+                fiche = coffre.ouvre_octets(_git('show', f'origin/{br}:fiche-{nom}.msb').stdout, priv)
+                open(os.path.join(ICI, '..', 'images', 'troupe', f'{nom}-fiche.msb'), 'wb').write(coffre.scelle_octets(fiche, pub))
             troupe['personnages'].append(nom); troupe['noms'][nom] = taches.get(f'perso-{nom}', {}).get('nom', nom.upper()); acceptes.append(nom)
             if taches.get(f'perso-{nom}', {}).get('fond') == 'bleu': troupe.setdefault('fonds', {})[nom] = 'bleu'
     json.dump(troupe, open(banque.TROUPE, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
