@@ -85,6 +85,18 @@
    "h": 448,
    "memoire_max_go": 9.48,
    "run": "39517651050"
+  },
+  {
+   "tache": "decor-eglise-coin-jour",
+   "version": 1,
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 597,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.48,
+   "run": "39517651050"
   }
  ]
 }
