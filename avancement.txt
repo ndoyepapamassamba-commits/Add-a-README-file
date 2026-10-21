@@ -50,3 +50,4 @@
 [4373 s] 5 images · === decor-cour-coin-jour   |============>                                     | 1/4 - 161.67s/it[K · mémoire libre 7019 Mo
 [4495 s] 5 images · === decor-cour-coin-jour   |============>                                     | 1/4 - 161.67s/it[K · mémoire libre 7014 Mo
 [4617 s] 5 images · === decor-cour-coin-jour   |=========================>                        | 2/4 - 157.35s/it[K · mémoire libre 7008 Mo
+[4738 s] 5 images · === decor-cour-coin-jour   |=====================================>            | 3/4 - 157.14s/it[K · mémoire libre 7008 Mo
