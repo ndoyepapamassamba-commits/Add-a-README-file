@@ -147,6 +147,13 @@
    "lora": "at_runtime",
    "secondes": 414,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "coach-diabate--colere",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 416,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39550232510"
