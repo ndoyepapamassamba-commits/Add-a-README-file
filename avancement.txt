@@ -36,3 +36,4 @@
 [1338 s] 14 clips · === sur-awa--rire (at_runtime)   |============>                                     | 1/4 - 90.52s/it[K · mémoire libre 13785 Mo
 [1460 s] 14 clips · === sur-awa--rire (at_runtime)   |=========================>                        | 2/4 - 91.63s/it[K · mémoire libre 13781 Mo
 [122 s] 14 clips · === mamie-bintou--choc (at_runtime)  · mémoire libre 13775 Mo
+[244 s] 14 clips · === mamie-bintou--choc (at_runtime)   |============>                                     | 1/4 - 136.17s/it[K · mémoire libre 13766 Mo
