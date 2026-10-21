@@ -44,3 +44,4 @@
 [3887 s] 7 images · === decor-tribunal-contrechamp-jour   |=====================================>            | 3/4 - 82.81s/it[K · mémoire libre 7046 Mo
 [4009 s] 8 images · === decor-commissariat-champ-jour   |==================================================| 4/4 - 83.28s/it[K · mémoire libre 7031 Mo
 [4131 s] 8 images · === decor-commissariat-champ-jour   |=========================>                        | 2/4 - 87.57s/it[K · mémoire libre 7030 Mo
+[4252 s] 8 images · === decor-commissariat-champ-jour   |=====================================>            | 3/4 - 88.15s/it[K · mémoire libre 7036 Mo
