@@ -44,3 +44,4 @@
 [366 s] 15 clips · === madame-konan--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13793 Mo
 [488 s] 15 clips · === madame-konan--colere (at_runtime)   |=========================>                        | 2/4 - 65.47s/it[K · mémoire libre 13775 Mo
 [610 s] 16 clips · === maitre-coulibaly--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14539 Mo
+[732 s] 16 clips · === maitre-coulibaly--mentir (at_runtime)   |============>                                     | 1/4 - 67.14s/it[K · mémoire libre 13806 Mo
