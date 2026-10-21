@@ -19,3 +19,4 @@
 [243 s] 2 images · === maison-sur-awa-cour-large-jour   |============>                                     | 1/4 - 158.85s/it[K · mémoire libre 7011 Mo
 [364 s] 2 images · === maison-sur-awa-cour-large-jour   |=========================>                        | 2/4 - 157.95s/it[K · mémoire libre 6989 Mo
 [485 s] 2 images · === maison-sur-awa-cour-large-jour   |=========================>                        | 2/4 - 157.95s/it[K · mémoire libre 6989 Mo
+[607 s] 2 images · === maison-sur-awa-cour-large-jour   |=====================================>            | 3/4 - 157.88s/it[K · mémoire libre 6988 Mo
