@@ -189,7 +189,14 @@
    "lora": "at_runtime",
    "secondes": 178,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "patron-sery--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 303,
+   "memoire_max_go": 11.1
   }
  ],
- "run": "39559117299"
+ "run": "39564581444"
 }
