@@ -82,3 +82,4 @@
 [730 s] 9 images · === fiche-le-tonton   |=========================>                        | 2/4 - 248.24s/it[K · mémoire libre 6670 Mo
 [851 s] 9 images · === fiche-le-tonton   |=====================================>            | 3/4 - 247.54s/it[K · mémoire libre 6669 Mo
 [973 s] 9 images · === fiche-le-tonton   |=====================================>            | 3/4 - 247.54s/it[K · mémoire libre 6681 Mo
+[1094 s] 9 images · === perso-le-tonton   |==================================================| 4/4 - 247.63s/it[K · mémoire libre 13641 Mo
