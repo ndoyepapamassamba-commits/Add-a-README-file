@@ -85,3 +85,4 @@
 [1458 s] 25 clips · === mademoiselle-rosine--rire (at_runtime)   |============>                                     | 1/4 - 135.20s/it[K · mémoire libre 13776 Mo
 [1579 s] 25 clips · === mademoiselle-rosine--rire (at_runtime)   |=========================>                        | 2/4 - 134.86s/it[K · mémoire libre 13771 Mo
 [1701 s] 25 clips · === mademoiselle-rosine--rire (at_runtime)   |=====================================>            | 3/4 - 135.05s/it[K · mémoire libre 13769 Mo
+[123 s] 26 clips · === salif-le-parisien--mentir (at_runtime)  · mémoire libre 13758 Mo
