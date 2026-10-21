@@ -15,3 +15,4 @@
 [729 s] 3 images · === maison-fatou-chambre-large-jour   |==================================================| 4/4 - 157.80s/it[K · mémoire libre 11562 Mo
 [851 s] 3 images · === maison-fatou-chambre-large-jour   |==================================================| 4/4 - 157.80s/it[K · mémoire libre 6959 Mo
 [973 s] 3 images · === maison-fatou-chambre-large-jour   |============>                                     | 1/4 - 160.93s/it[K · mémoire libre 6947 Mo
+[1094 s] 3 images · === maison-fatou-chambre-large-jour   |=========================>                        | 2/4 - 156.85s/it[K · mémoire libre 6948 Mo
