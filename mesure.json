@@ -35,6 +35,13 @@
    "lora": "at_runtime",
    "secondes": 584,
    "memoire_max_go": 10.95
+  },
+  {
+   "clip": "agent-doumbia--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 581,
+   "memoire_max_go": 11.25
   }
  ],
  "run": "39528414471"
