@@ -104,3 +104,4 @@
 [124 s] 7 images · === fiche-boubacar  · mémoire libre 6742 Mo
 [246 s] 7 images · === fiche-boubacar  · mémoire libre 6725 Mo
 [368 s] 7 images · === fiche-boubacar   |============>                                     | 1/4 - 206.04s/it[K · mémoire libre 6721 Mo
+[489 s] 7 images · === fiche-boubacar   |=========================>                        | 2/4 - 204.12s/it[K · mémoire libre 6720 Mo
