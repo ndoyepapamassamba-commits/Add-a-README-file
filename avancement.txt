@@ -155,3 +155,4 @@
 [123 s] 8 images · === fiche-patron-sery  · mémoire libre 6646 Mo
 [244 s] 8 images · === fiche-patron-sery   |============>                                     | 1/4 - 124.92s/it[K · mémoire libre 6643 Mo
 [366 s] 8 images · === fiche-patron-sery   |=========================>                        | 2/4 - 124.14s/it[K · mémoire libre 6642 Mo
+[487 s] 8 images · === fiche-patron-sery   |=====================================>            | 3/4 - 123.91s/it[K · mémoire libre 6684 Mo
