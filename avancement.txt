@@ -4,3 +4,4 @@
 [486 s] 5 clips · === agent-doumbia--mentir (at_runtime)   |=========================>                        | 2/4 - 68.70s/it[K · mémoire libre 13797 Mo
 [607 s] 5 clips · === agent-doumbia--mentir (at_runtime)   |=====================================>            | 3/4 - 68.45s/it[K · mémoire libre 13788 Mo
 [728 s] 6 clips · === petit-moussa--choc (at_runtime)   |============>                                     | 1/4 - 69.10s/it[K · mémoire libre 13757 Mo
+[850 s] 6 clips · === petit-moussa--choc (at_runtime)   |=====================================>            | 3/4 - 68.37s/it[K · mémoire libre 13760 Mo
