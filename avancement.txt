@@ -51,3 +51,4 @@
 [1094 s] 18 clips · === tonton-dieng--ecouter (at_runtime)   |=====================================>            | 3/4 - 133.37s/it[K · mémoire libre 13756 Mo
 [1215 s] 19 clips · === general-zongo--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13745 Mo
 [1337 s] 19 clips · === general-zongo--choc (at_runtime)   |============>                                     | 1/4 - 133.67s/it[K · mémoire libre 13760 Mo
+[1459 s] 19 clips · === general-zongo--choc (at_runtime)   |=========================>                        | 2/4 - 133.23s/it[K · mémoire libre 13756 Mo
