@@ -17,6 +17,7 @@
 import json, os, re, sys, time, uuid, base64, unicodedata, urllib.request
 import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 BIBLE = json.load(open(os.path.join(ICI, 'bible_comique.json'), encoding='utf-8'))
@@ -267,7 +268,7 @@ def controle(h, lieu, deja=(), fmt='sketch'):
         if len(mots(c)) > 8: d.append(f'chute de {len(mots(c))} mots (8 au plus)')
         acc = {w for w in mots(R[0]['texte']) if len(w) > 3}
         if F['rappel'] and not acc & {w for w in mots(c) if len(w) > 3}: d.append("la chute ne reprend aucun mot de l'accroche (pas de rappel)")
-        if any(_norm(c) == _norm(x) for x in deja): d.append('chute déjà utilisée')
+        if any(ressemblance(c, x) >= SEUIL_DOUBLON for x in deja): d.append('chute déjà utilisée')
     tout = ' '.join(r.get('texte', '') for r in R)
     if len(_contient(tout, MARQUES)) < (1 if fmt == 'blague' else 2): d.append('pas assez de marques du parler ivoirien')
     w = _contient(tout, WOLOF)
@@ -280,6 +281,21 @@ def controle(h, lieu, deja=(), fmt='sketch'):
 
 
 def _norm(t): return ' '.join(mots(t))
+
+
+# QUASI-DOUBLONS (21/10/2026) — à 10 000 sketchs, l'égalité exacte laissait passer la même chute reformulée (« Mon djê ? Dans la
+# sauce grée ! » après « Dans la sauce grée, mon djê ! »). Ressemblance de Jaccard sur les trigrammes de caractères, sans dépendance
+# sur les machines : 7 chutes réelles distinctes (V17 + registres) ≤ 0,18 entre elles ; 5 reformulations écrites pour l'essai ≥ 0,72.
+SEUIL_DOUBLON = 0.5
+
+
+@lru_cache(maxsize=None)
+def _trigrammes(t):
+    s = f' {_norm(t)} '; return frozenset(s[i:i + 3] for i in range(len(s) - 2))
+
+
+def ressemblance(a, b):
+    A, B = _trigrammes(a), _trigrammes(b); return len(A & B) / max(1, len(A | B))
 
 
 # RÉPARER AU LIEU DE JETER (21/10/2026) — duel des scénaristes sur les machines GitHub : 11 brouillons du scénariste actuel sur 11

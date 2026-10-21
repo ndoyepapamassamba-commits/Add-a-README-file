@@ -509,6 +509,16 @@ try:
 except Exception as e:
     echecs.append(f'réparation des brouillons : {e}')
 
+# quasi-doublons de chute (21/10/2026) : à 10 000 sketchs, la même chute reformulée doit être refusée, deux chutes différentes non
+try:
+    import histoires as _h14
+    _dj14 = ['Dans la sauce grée, mon djê !', 'Le quartier te dit merci, Tantie !']
+    if _h14.ressemblance('Mon djê ? Dans la sauce grée !', _dj14[0]) < _h14.SEUIL_DOUBLON: echecs.append('quasi-doublons : reformulation non vue')
+    if max(_h14.ressemblance('Sourd aux dettes, pas aux barres !', x) for x in _dj14) >= _h14.SEUIL_DOUBLON: echecs.append('quasi-doublons : chute neuve refusée')
+    print('quasi-doublons de chute : reformulation refusée, chute neuve acceptée : OK')
+except Exception as e:
+    echecs.append(f'quasi-doublons : {e}')
+
 # voix et raccords (21/10/2026) : hommes sur la voix source complète (gilles-low sans « ̃ » : 66 % des mots compris),
 # « garçon » reconnu comme enfant, voix toutes distinctes ; répliques en images entières, son PCM jusqu'au seul encodage AAC
 try:
