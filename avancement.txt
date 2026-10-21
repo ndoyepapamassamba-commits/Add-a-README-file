@@ -17,3 +17,4 @@
 [1093 s] 7 clips · === tonton-dieng--mentir (at_runtime)   |=====================================>            | 3/4 - 133.99s/it[K · mémoire libre 13816 Mo
 [1214 s] 8 clips · === mecano-issa--montrer (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13801 Mo
 [1336 s] 8 clips · === mecano-issa--montrer (at_runtime)   |============>                                     | 1/4 - 134.70s/it[K · mémoire libre 13797 Mo
+[1457 s] 8 clips · === mecano-issa--montrer (at_runtime)   |============>                                     | 1/4 - 134.70s/it[K · mémoire libre 13776 Mo
