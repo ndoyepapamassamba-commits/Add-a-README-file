@@ -7,3 +7,4 @@
 [853 s] 4 clips · === chef-traore--choc (at_runtime)   |=========================>                        | 2/4 - 41.09s/it[K · mémoire libre 13695 Mo
 [974 s] 5 clips · === petit-ibrahima--mentir (at_runtime)   |============>                                     | 1/4 - 40.84s/it[K · mémoire libre 13796 Mo
 [122 s] 6 clips · === monsieur-diarra--rire (at_runtime)  · mémoire libre 13778 Mo
+[243 s] 6 clips · === monsieur-diarra--rire (at_runtime)   |============>                                     | 1/4 - 136.82s/it[K · mémoire libre 13774 Mo
