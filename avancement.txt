@@ -48,3 +48,4 @@
 [488 s] 23 clips · === djecky--ecouter (at_runtime)   |=========================>                        | 2/4 - 68.53s/it[K · mémoire libre 13800 Mo
 [609 s] 23 clips · === djecky--ecouter (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13914 Mo
 [122 s] 24 clips · === patron-sery--rire (at_runtime)   |============>                                     | 1/4 - 69.06s/it[K · mémoire libre 13750 Mo
+[243 s] 24 clips · === patron-sery--rire (at_runtime)   |=====================================>            | 3/4 - 68.45s/it[K · mémoire libre 13762 Mo
