@@ -42,3 +42,4 @@
 [3158 s] 5 images · === decor-marche-coin-jour   |============>                                     | 1/4 - 114.49s/it[K · mémoire libre 7008 Mo
 [3280 s] 5 images · === decor-marche-coin-jour   |=========================>                        | 2/4 - 109.98s/it[K · mémoire libre 7008 Mo
 [3401 s] 5 images · === decor-marche-coin-jour   |=====================================>            | 3/4 - 109.38s/it[K · mémoire libre 7000 Mo
+[3522 s] 6 images · === decor-salon-contrechamp-jour   |==================================================| 4/4 - 109.35s/it[K · mémoire libre 11572 Mo
