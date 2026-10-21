@@ -64,3 +64,4 @@
 [5702 s] 5 images · === perso-coach-diabate   |=====================================>            | 3/4 - 396.99s/it[K · mémoire libre 6279 Mo
 [5824 s] 5 images · === perso-coach-diabate   |==================================================| 4/4 - 398.07s/it[K · mémoire libre 6838 Mo
 [5945 s] 6 images · === decor-bureau-coin-jour   |==================================================| 4/4 - 398.07s/it[K · mémoire libre 7207 Mo
+[6067 s] 6 images · === decor-bureau-coin-jour   |==================================================| 4/4 - 398.07s/it[K · mémoire libre 7043 Mo
