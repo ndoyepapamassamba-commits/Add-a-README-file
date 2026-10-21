@@ -11,3 +11,4 @@
 [1337 s] 6 clips · === petit-moussa--mentir (at_runtime)   |============>                                     | 1/4 - 134.31s/it[K · mémoire libre 13789 Mo
 [1458 s] 6 clips · === petit-moussa--mentir (at_runtime)   |============>                                     | 1/4 - 134.31s/it[K · mémoire libre 13786 Mo
 [1580 s] 6 clips · === petit-moussa--mentir (at_runtime)   |=========================>                        | 2/4 - 133.57s/it[K · mémoire libre 13785 Mo
+[1701 s] 6 clips · === petit-moussa--mentir (at_runtime)   |=====================================>            | 3/4 - 133.46s/it[K · mémoire libre 13788 Mo
