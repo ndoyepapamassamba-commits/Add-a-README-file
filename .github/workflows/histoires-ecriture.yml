@@ -97,7 +97,10 @@ jobs:
           if [ "${{ matrix.modele }}" != gptoss20 ]; then
             export HISTOIRES_URL=http://127.0.0.1:8080/v1/chat/completions HISTOIRES_DELAI=1800 HISTOIRES_MAX_JETONS=1500 HISTOIRES_TEMP=0.7
             # GPT-OSS raisonne avant d'écrire : le raisonnement compte dans les jetons, et sa température conseillée est 1,0
-            if [ "${{ matrix.modele }}" = gptoss20loc ]; then export HISTOIRES_MAX_JETONS=4000 HISTOIRES_TEMP=1.0; fi
+            # 21/10 04:57 : le juge hébergé (même modèle) reproduit le calibrage — V17 contre elle-même 0,5 / 0,5 / 0,5, V17 contre sa
+            # version sans chute 0,625 / 0,625 / 0,65 (Pollinations : 0,5 et 0,625), 0 échec, 48 s par duel — alors que Pollinations
+            # ne répond plus au juge depuis les machines GitHub : un seul modèle, un seul serveur, scénariste ET juge, sans service extérieur
+            if [ "${{ matrix.modele }}" = gptoss20loc ]; then export HISTOIRES_MAX_JETONS=4000 HISTOIRES_TEMP=1.0 HISTOIRES_JUGE_URL=$HISTOIRES_URL HISTOIRES_JUGE_DELAI=900; fi
           fi
           if [ "${{ matrix.modele }}" = gptoss20loc ] && [ "${{ matrix.part }}" = 0 ]; then   # le même modèle, juge sans quota ?
             HISTOIRES_JUGE_URL=$HISTOIRES_URL HISTOIRES_JUGE_DELAI=900 timeout 2400 python3 studio-video/moteur-troupe/juge_calibre.py $O/calibrage-juge.json || true
