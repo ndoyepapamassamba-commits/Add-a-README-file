@@ -115,3 +115,4 @@
 [5948 s] 10 images · === fiche-yaya-lapprenti   |=========================>                        | 2/4 - 204.20s/it[K · mémoire libre 6726 Mo
 [6069 s] 10 images · === fiche-yaya-lapprenti   |=====================================>            | 3/4 - 204.15s/it[K · mémoire libre 6724 Mo
 [6191 s] 10 images · === fiche-yaya-lapprenti   |==================================================| 4/4 - 204.20s/it[K · mémoire libre 5783 Mo
+[6312 s] 11 images · === perso-yaya-lapprenti   |==================================================| 4/4 - 204.20s/it[K · mémoire libre 6616 Mo
