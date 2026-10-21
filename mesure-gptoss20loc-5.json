@@ -1,12 +1,12 @@
 {
  "modele": "gptoss20loc",
  "part": 5,
- "appels_scenariste": 45,
- "secondes_scenariste": 14285.84306383133,
+ "appels_scenariste": 48,
+ "secondes_scenariste": 15058.057782411575,
  "echecs_scenariste": 0,
  "appels_juge": 62,
  "echecs_juge": 0,
- "brouillons_refuses_controle": 3,
+ "brouillons_refuses_controle": 5,
  "planchers_v17": [
   0.508,
   0.613,
@@ -37,6 +37,11 @@
    "lieu": "Maquis",
    "accepte": false,
    "secondes": 3360
+  },
+  {
+   "lieu": "Maquis",
+   "accepte": false,
+   "secondes": 2337
   }
  ],
  "drole_v17": [
@@ -147,21 +152,33 @@
   [
    4,
    3
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   3,
+   2
   ]
  ],
  "doublons_autres_machines": 0,
  "brouillons_illisibles": 3,
- "secondes_par_brouillon": 317.5,
+ "secondes_par_brouillon": 313.7,
  "temps": {
   "scenariste": {
-   "appels": 45,
+   "appels": 48,
    "tronques": 0,
    "lus_jetons": 751,
-   "cache_jetons": 1591,
-   "lecture_s": 91.9,
-   "ecriture_jetons": 937,
-   "ecriture_s": 213.1,
-   "jetons_par_s": 4.4
+   "cache_jetons": 1495,
+   "lecture_s": 92.2,
+   "ecriture_jetons": 938,
+   "ecriture_s": 208.8,
+   "jetons_par_s": 4.5
   },
   "juge": {
    "appels": 63,
