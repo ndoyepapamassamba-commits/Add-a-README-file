@@ -60,3 +60,4 @@
 [122 s] 8 images · === fiche-tiekoro  · mémoire libre 6682 Mo
 [243 s] 8 images · === fiche-tiekoro  · mémoire libre 6659 Mo
 [123 s] 8 images · === fiche-tiekoro  · mémoire libre 6668 Mo
+[245 s] 8 images · === fiche-tiekoro  · mémoire libre 6658 Mo
