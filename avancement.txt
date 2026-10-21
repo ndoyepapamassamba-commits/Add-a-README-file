@@ -1,3 +1,4 @@
 [123 s] 4 clips · === le-patriarche--mentir (at_runtime)  · mémoire libre 13809 Mo
 [244 s] 4 clips · === le-patriarche--mentir (at_runtime)   |============>                                     | 1/4 - 135.01s/it[K · mémoire libre 13796 Mo
 [366 s] 4 clips · === le-patriarche--mentir (at_runtime)   |=========================>                        | 2/4 - 133.94s/it[K · mémoire libre 13787 Mo
+[487 s] 4 clips · === le-patriarche--mentir (at_runtime)   |=====================================>            | 3/4 - 134.24s/it[K · mémoire libre 13788 Mo
