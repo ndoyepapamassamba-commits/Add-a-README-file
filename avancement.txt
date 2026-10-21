@@ -21,3 +21,4 @@
 [123 s] 6 clips · === chef-traore--mentir@2 (at_runtime)  · mémoire libre 13764 Mo
 [244 s] 6 clips · === chef-traore--mentir@2 (at_runtime)   |============>                                     | 1/4 - 136.07s/it[K · mémoire libre 13757 Mo
 [365 s] 6 clips · === chef-traore--mentir@2 (at_runtime)   |=========================>                        | 2/4 - 135.61s/it[K · mémoire libre 13757 Mo
+[486 s] 6 clips · === chef-traore--mentir@2 (at_runtime)   |=====================================>            | 3/4 - 135.11s/it[K · mémoire libre 13759 Mo
