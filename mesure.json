@@ -140,6 +140,13 @@
    "lora": "at_runtime",
    "secondes": 180,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "mademoiselle-rosine--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 177,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39550232510"
