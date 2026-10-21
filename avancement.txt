@@ -86,3 +86,4 @@
 [2429 s] 9 images · === perso-monsieur-diarra   |=====================================>            | 3/4 - 388.71s/it[K · mémoire libre 6168 Mo
 [2550 s] 9 images · === perso-monsieur-diarra   |==================================================| 4/4 - 392.19s/it[K · mémoire libre 7233 Mo
 [2671 s] 9 images · === fiche-maitre-kone   |==================================================| 4/4 - 392.19s/it[K · mémoire libre 11594 Mo
+[2793 s] 9 images · === fiche-maitre-kone   |==================================================| 4/4 - 392.19s/it[K · mémoire libre 6742 Mo
