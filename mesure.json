@@ -98,7 +98,14 @@
    "lora": "at_runtime",
    "secondes": 579,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "dj-kevin--choc",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 585,
+   "memoire_max_go": 11.09
   }
  ],
- "run": "39550232510"
+ "run": "39559117299"
 }
