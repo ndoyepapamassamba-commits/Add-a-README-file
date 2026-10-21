@@ -1,2 +1,3 @@
 [123 s] 4 clips · === la-lyceenne--rire (at_runtime)  · mémoire libre 13779 Mo
 [244 s] 4 clips · === la-lyceenne--rire (at_runtime)   |============>                                     | 1/4 - 135.79s/it[K · mémoire libre 13771 Mo
+[365 s] 4 clips · === la-lyceenne--rire (at_runtime)   |=========================>                        | 2/4 - 134.63s/it[K · mémoire libre 13767 Mo
