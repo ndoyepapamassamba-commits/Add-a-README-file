@@ -1,2 +1,3 @@
 [122 s] 4 clips · === le-patriarche--colere (at_runtime)  · mémoire libre 13807 Mo
 [243 s] 4 clips · === le-patriarche--colere (at_runtime)   |============>                                     | 1/4 - 144.77s/it[K · mémoire libre 13790 Mo
+[364 s] 4 clips · === le-patriarche--colere (at_runtime)   |=========================>                        | 2/4 - 143.59s/it[K · mémoire libre 13782 Mo
