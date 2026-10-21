@@ -60,3 +60,4 @@
 [851 s] 16 clips · === le-frimeur--rire (at_runtime)   |=========================>                        | 2/4 - 39.30s/it[K · mémoire libre 13813 Mo
 [972 s] 17 clips · === la-voisine--ecouter (at_runtime)   |============>                                     | 1/4 - 40.34s/it[K · mémoire libre 13810 Mo
 [1094 s] 18 clips · === coach-diabate--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14017 Mo
+[1215 s] 18 clips · === coach-diabate--rire (at_runtime)   |=====================================>            | 3/4 - 40.72s/it[K · mémoire libre 13800 Mo
