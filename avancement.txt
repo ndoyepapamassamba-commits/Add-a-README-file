@@ -17,3 +17,4 @@
 [850 s] 3 images · === perso-tata-prisca   |==================================================| 4/4 - 83.14s/it[K · mémoire libre 6297 Mo
 [972 s] 3 images · === perso-tata-prisca   |==================================================| 4/4 - 83.14s/it[K · mémoire libre 6293 Mo
 [1093 s] 3 images · === perso-tata-prisca   |============>                                     | 1/4 - 219.11s/it[K · mémoire libre 6286 Mo
+[1215 s] 3 images · === perso-tata-prisca   |============>                                     | 1/4 - 219.11s/it[K · mémoire libre 6285 Mo
