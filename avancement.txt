@@ -32,3 +32,4 @@
 [2792 s] 3 images · === perso-sur-awa   |=====================================>            | 3/4 - 397.12s/it[K · mémoire libre 6257 Mo
 [2913 s] 3 images · === perso-sur-awa   |=====================================>            | 3/4 - 397.12s/it[K · mémoire libre 6257 Mo
 [3034 s] 3 images · === perso-sur-awa   |=====================================>            | 3/4 - 397.12s/it[K · mémoire libre 6257 Mo
+[3156 s] 4 images · === perso-le-banquier   |==================================================| 4/4 - 395.83s/it[K · mémoire libre 11570 Mo
