@@ -322,6 +322,11 @@ def controle(h, lieu, deja=(), fmt='sketch'):
     hors = sorted({w for r in R for w in apostrophes(r.get('texte', '')) if w in absents})
     if hors: d.append(f"{', '.join(w.title() for w in hors)} n'est pas dans la scène : chaque réplique s'adresse à un personnage présent "
                       f"({', '.join(sorted(acteurs))})")
+    # 21/10/2026 (« Le petit malin du maquis », 3e sketch accepté) : Petit Ibrahima dit les deux dernières répliques — la consigne
+    # l'interdit (« deux répliques de suite jamais du même personnage ») mais rien ne le vérifiait ; à l'écran, le même parle deux fois
+    if fmt == 'sketch':
+        de_suite = sorted({R[i].get('qui') for i in range(1, len(R)) if R[i].get('qui') == R[i - 1].get('qui')})
+        if de_suite: d.append(f"{', '.join(de_suite)} parle deux fois de suite : alterne les personnages à chaque réplique")
     longues = [r['texte'] for r in R if len(mots(r.get('texte', ''))) > 14]
     if longues: d.append(f'{len(longues)} réplique(s) de plus de 14 mots')
     ch = [r for r in R if r.get('role') == 'chute' or r.get('chute')]

@@ -565,6 +565,15 @@ try:
         if any("n'est pas dans la scène" in x for x in _h14.controle(_v20, '_v20')): echecs.append(f"nom d’un absent : fausse alerte sur « {_v20['titre']} »")
     _h14.LIEUX.pop('_v20', None)
     print('nom d’un absent : « Koffi, … » sans Koffi refusé, avec Koffi accepté, 0 fausse alerte sur la V17 : OK')
+    # deux répliques de suite du même personnage (21/10/2026, « Le petit malin du maquis ») : défaut ; alternance : aucun
+    _h14.LIEUX['_essai20b'] = {'nom': 'x', 'acteurs': ['LA GO LÉOPARD', 'MAÎTRE COULIBALY']}
+    _r20b = lambda qs: {'titre': 't', 'repliques': [{'qui': q, 'texte': 'Moi ?', 'jeu': 'choc'} for q in qs]}
+    if not any('deux fois de suite' in x for x in _h14.controle(_r20b(['LA GO LÉOPARD', 'MAÎTRE COULIBALY', 'MAÎTRE COULIBALY']), '_essai20b')):
+        echecs.append('deux répliques de suite du même personnage non vues')
+    if any('deux fois de suite' in x for x in _h14.controle(_r20b(['LA GO LÉOPARD', 'MAÎTRE COULIBALY', 'LA GO LÉOPARD']), '_essai20b')):
+        echecs.append('alternance des personnages refusée à tort')
+    del _h14.LIEUX['_essai20b']
+    print('deux répliques de suite du même personnage : refusées, alternance acceptée : OK')
 except Exception as e:
     echecs.append(f'nom d’un absent : {e}')
 
