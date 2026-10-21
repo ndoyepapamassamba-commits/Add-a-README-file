@@ -24,3 +24,4 @@
 [124 s] 13 clips · === maman-brigitte--parler (at_runtime)   |============>                                     | 1/4 - 94.05s/it[K · mémoire libre 13756 Mo
 [245 s] 13 clips · === maman-brigitte--parler (at_runtime)   |=========================>                        | 2/4 - 92.55s/it[K · mémoire libre 13736 Mo
 [366 s] 13 clips · === maman-brigitte--parler (at_runtime)   |=====================================>            | 3/4 - 92.98s/it[K · mémoire libre 13752 Mo
+[488 s] 14 clips · === madame-konan--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13790 Mo

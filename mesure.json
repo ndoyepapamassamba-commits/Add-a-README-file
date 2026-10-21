@@ -91,7 +91,14 @@
    "lora": "at_runtime",
    "secondes": 579,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "maman-brigitte--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 417,
+   "memoire_max_go": 11.13
   }
  ],
- "run": "39543580560"
+ "run": "39545665602"
 }
