@@ -2,3 +2,4 @@
 [243 s] 1 clips · === la-future-maman--rire (at_runtime)   |============>                                     | 1/4 - 39.97s/it[K · mémoire libre 13779 Mo
 [365 s] 2 clips · === imam-karim--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14543 Mo
 [487 s] 2 clips · === imam-karim--ecouter (at_runtime)   |=====================================>            | 3/4 - 38.95s/it[K · mémoire libre 13767 Mo
+[608 s] 3 clips · === tantie-awa-sarr--rire (at_runtime)   |============>                                     | 1/4 - 39.75s/it[K · mémoire libre 13829 Mo
