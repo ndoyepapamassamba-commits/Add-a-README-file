@@ -1,0 +1,27 @@
+{
+ "modele": "gptoss20hyb",
+ "part": 1,
+ "appels_scenariste": 5,
+ "secondes_scenariste": 326.81385707855225,
+ "echecs_scenariste": 8,
+ "appels_juge": 0,
+ "echecs_juge": 0,
+ "brouillons_refuses_controle": 1,
+ "planchers_v17": [],
+ "notes": [],
+ "acceptes": 0,
+ "lieux": [
+  {
+   "lieu": "Cour",
+   "accepte": false,
+   "secondes": 400
+  },
+  {
+   "lieu": "Douane",
+   "accepte": false,
+   "secondes": 78
+  }
+ ],
+ "brouillons_illisibles": 4,
+ "secondes_par_brouillon": 65.4
+}
