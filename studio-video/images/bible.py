@@ -115,7 +115,9 @@ REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2,
            # 21/10 01:30, lot 4 : la pose de rire (ou toute la tenue) reprise de la planche de référence (Yaya, Maître Coulibaly,
            # Banquier, Tonton, Mamie Bintou), bulle « Refusé ! » (Banquier), voiture (Yaya), couronne et caisse (Madame Konan)
            'perso-yaya-lapprenti': 2, 'perso-maitre-coulibaly': 2, 'perso-le-banquier': 2, 'perso-le-tonton': 2,
-           'perso-mamie-bintou': 2, 'perso-madame-konan': 2}
+           'perso-mamie-bintou': 2, 'perso-madame-konan': 2,
+           # 21/10 01:40, lot 5 : veste de Koffi (DJ Kevin, Boubacar), comptoir collé aux poses (Patron Séry)
+           'perso-dj-kevin': 2, 'perso-boubacar': 2, 'perso-patron-sery': 2}
 # Les corrections sont regroupées en UNE passe : pousser bible/taches.json redémarre les 20 machines (chacune ne perd que l'image
 # en cours ; la répartition des tâches entre machines ne bouge pas tant que l'ordre de la liste est gardé — vérifié à chaque passe).
 
