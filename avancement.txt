@@ -8,3 +8,4 @@
 [973 s] 5 clips · === petit-ibrahima--rire (at_runtime)   |============>                                     | 1/4 - 40.47s/it[K · mémoire libre 13814 Mo
 [122 s] 6 clips · === agent-gora--rire (at_runtime)  · mémoire libre 13797 Mo
 [243 s] 6 clips · === agent-gora--rire (at_runtime)   |============>                                     | 1/4 - 134.23s/it[K · mémoire libre 13784 Mo
+[365 s] 6 clips · === agent-gora--rire (at_runtime)   |=========================>                        | 2/4 - 133.59s/it[K · mémoire libre 13783 Mo
