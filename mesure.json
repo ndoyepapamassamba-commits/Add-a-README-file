@@ -14,6 +14,13 @@
    "lora": "at_runtime",
    "secondes": 586,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "imam-karim--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 585,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39528414471"
