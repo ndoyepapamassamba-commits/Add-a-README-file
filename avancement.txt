@@ -54,3 +54,4 @@
 [2551 s] 15 clips · === fatou--mentir (at_runtime)   |============>                                     | 1/4 - 133.94s/it[K · mémoire libre 13783 Mo
 [2672 s] 15 clips · === fatou--mentir (at_runtime)   |=========================>                        | 2/4 - 133.87s/it[K · mémoire libre 13783 Mo
 [2794 s] 15 clips · === fatou--mentir (at_runtime)   |=====================================>            | 3/4 - 133.50s/it[K · mémoire libre 13781 Mo
+[123 s] 15 clips · === fatou--mentir (at_runtime)   |=========================>                        | 2/4 - 39.27s/it[K · mémoire libre 13776 Mo
