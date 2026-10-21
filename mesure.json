@@ -56,6 +56,13 @@
    "lora": "at_runtime",
    "secondes": 404,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "professeur-samba--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 396,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39528414471"
