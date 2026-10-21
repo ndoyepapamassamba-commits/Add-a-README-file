@@ -71,3 +71,4 @@
 [850 s] 25 clips · === boubacar--parler (at_runtime)   |============>                                     | 1/4 - 134.52s/it[K · mémoire libre 13811 Mo
 [972 s] 25 clips · === boubacar--parler (at_runtime)   |=========================>                        | 2/4 - 133.72s/it[K · mémoire libre 13803 Mo
 [1093 s] 25 clips · === boubacar--parler (at_runtime)   |=====================================>            | 3/4 - 133.74s/it[K · mémoire libre 13803 Mo
+[124 s] 26 clips · === madame-coumba--hausser@2 (at_runtime)   |=========================>                        | 2/4 - 38.43s/it[K · mémoire libre 13778 Mo
