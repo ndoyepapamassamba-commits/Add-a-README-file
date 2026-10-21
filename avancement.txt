@@ -15,3 +15,4 @@
 [1822 s] 7 clips · === adjoua--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13788 Mo
 [1944 s] 7 clips · === adjoua--choc (at_runtime)   |============>                                     | 1/4 - 134.67s/it[K · mémoire libre 13789 Mo
 [2065 s] 7 clips · === adjoua--choc (at_runtime)   |=========================>                        | 2/4 - 133.73s/it[K · mémoire libre 13784 Mo
+[2187 s] 7 clips · === adjoua--choc (at_runtime)   |=====================================>            | 3/4 - 133.19s/it[K · mémoire libre 13789 Mo
