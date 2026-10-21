@@ -10,6 +10,9 @@ import json, os, subprocess, sys, time
 ICI = os.path.dirname(os.path.abspath(__file__)); DEPOT = os.path.abspath(os.path.join(ICI, '..', '..'))
 sys.path.insert(0, ICI); sys.path.insert(0, os.path.join(ICI, '..', 'fabrique')); sys.path.insert(0, os.path.join(ICI, '..', 'images'))
 VUES = ('champ-jour', 'large-jour')   # la vue rapprochée d'abord (scène 2 du 21/10 : personnages plus lisibles)
+# lieux dessinés de l'intérieur où des acteurs en pied ne tiennent pas debout (21/10 03:45 : Aliou et Agent Doumbia debout entre
+# les sièges du taxi) → la scène se joue dans un décor où l'on se tient debout
+DECOR_DU_LIEU = {'Taxi': 'Rue'}
 
 
 def _git(*a, **k):
@@ -73,7 +76,7 @@ def tourne(sketch, cle, cache, dossier, sortie):
     from cryptography.hazmat.primitives import serialization
     import scene, assemble
     priv = serialization.load_pem_private_key(open(cle, 'rb').read(), None)
-    h = json.load(open(sketch, encoding='utf-8')); lieu = h.get('lieu_bible') or h.get('lieu')
+    h = json.load(open(sketch, encoding='utf-8')); lieu = h.get('lieu_bible') or h.get('lieu'); lieu = DECOR_DU_LIEU.get(lieu, lieu)
     acteurs = sorted({scene.slug(r['qui']) for r in h['repliques']}); T = {}; t0 = time.time()
     n, manque = clips(acteurs, priv, os.path.join(cache, 'clips'))
     if manque: raise SystemExit(f'gestes pas encore tournés pour : {", ".join(manque)}')
