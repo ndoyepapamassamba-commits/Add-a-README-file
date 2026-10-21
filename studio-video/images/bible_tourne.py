@@ -58,6 +58,8 @@ def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude, minute
                 j.write(f"=== {t['id']}{' (tuiles)' if tuiles else ''}\n"); j.flush()
                 rc = subprocess.run(['/usr/bin/time', '-v', '-o', tps] + cmd, stdout=j, stderr=subprocess.STDOUT).returncode
             if rc == 0 and os.path.isfile(out): break
+        if rc in (132, -4):   # instruction illégale : moteur compilé pour un autre processeur — on s'arrête sans griller la part
+            print(json.dumps({'arret': 'instruction illégale (moteur d\'un autre processeur)', 'tache': t['id']}), flush=True); sys.exit(3)
         ok = rc == 0 and os.path.isfile(out)
         if ok:   # écrit sous un autre nom puis renommé : la boucle de poussée ne voit jamais une image à moitié écrite
             open(os.path.join(sortie, t['id'] + '.msb.part'), 'wb').write(coffre.scelle_octets(open(out, 'rb').read(), pub))

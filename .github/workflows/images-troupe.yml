@@ -30,7 +30,9 @@ jobs:
       - name: Processeur de la machine (le moteur compilé lui est propre)
         id: cpu
         run: |
-          echo "cle=sdcpp-${SD_CPP:0:12}-$(lscpu | sed -n 's/^Model name: *//p' | tr -c 'A-Za-z0-9' '-')" >> $GITHUB_OUTPUT
+          echo "cle=sdcpp-${SD_CPP:0:12}-$(lscpu | sed -n 's/^Model name: *//p' | tr -c 'A-Za-z0-9' '-')-$(grep -m1 '^flags' /proc/cpuinfo | md5sum | cut -c1-8)" >> $GITHUB_OUTPUT
+          # 21/10 00:20 : même nom de processeur, jeux d'instructions différents → moteur en cache « instruction illégale »
+          # (code 132, part 1 de la bible) ; la clé prend aussi l'empreinte des instructions du processeur
       - uses: actions/cache@v4
         id: cache
         with: { path: ~/sdbin, key: '${{ steps.cpu.outputs.cle }}' }

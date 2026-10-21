@@ -47,6 +47,8 @@ def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude):
                 j.write(f"=== {t['id']} ({mode})\n"); j.flush()
                 rc = subprocess.run(cmd, stdout=j, stderr=subprocess.STDOUT).returncode
             if rc == 0 and os.path.isfile(avi): break
+        if rc in (132, -4):   # instruction illégale (moteur en cache compilé pour un autre processeur) : arrêt sans griller la part
+            print(json.dumps({'arret': 'instruction illégale', 'clip': t['id']}), flush=True); sys.exit(3)
         ok = rc == 0 and os.path.isfile(avi)
         if ok:
             subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', avi, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '16', mp4])
