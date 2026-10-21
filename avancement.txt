@@ -21,3 +21,4 @@
 [1093 s] 3 images · === perso-tantie-awa-sarr   |==================================================| 4/4 - 156.37s/it[K · mémoire libre 6267 Mo
 [1214 s] 3 images · === perso-tantie-awa-sarr   |============>                                     | 1/4 - 399.11s/it[K · mémoire libre 6263 Mo
 [1336 s] 3 images · === perso-tantie-awa-sarr   |============>                                     | 1/4 - 399.11s/it[K · mémoire libre 6263 Mo
+[1457 s] 3 images · === perso-tantie-awa-sarr   |============>                                     | 1/4 - 399.11s/it[K · mémoire libre 6256 Mo
