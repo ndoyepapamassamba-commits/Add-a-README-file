@@ -1,0 +1,36 @@
+{
+ "modele": "gptoss20hyb",
+ "part": 0,
+ "appels_scenariste": 6,
+ "secondes_scenariste": 194.40606999397278,
+ "echecs_scenariste": 4,
+ "appels_juge": 8,
+ "echecs_juge": 0,
+ "brouillons_refuses_controle": 2,
+ "planchers_v17": [
+  0.333
+ ],
+ "notes": [
+  0.293
+ ],
+ "acceptes": 0,
+ "lieux": [
+  {
+   "lieu": "Bureau",
+   "accepte": false,
+   "secondes": 440
+  }
+ ],
+ "reparations": [
+  [
+   3,
+   1
+  ],
+  [
+   1,
+   0
+  ]
+ ],
+ "brouillons_illisibles": 1,
+ "secondes_par_brouillon": 32.4
+}
