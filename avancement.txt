@@ -56,3 +56,4 @@
 [487 s] 22 clips · === madame-coumba--parler@2 (at_runtime)   |=====================================>            | 3/4 - 133.98s/it[K · mémoire libre 13773 Mo
 [609 s] 23 clips · === agent-gora--hausser@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14584 Mo
 [731 s] 23 clips · === agent-gora--hausser@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13809 Mo
+[852 s] 23 clips · === agent-gora--hausser@2 (at_runtime)   |============>                                     | 1/4 - 135.24s/it[K · mémoire libre 13806 Mo
