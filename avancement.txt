@@ -62,3 +62,4 @@
 [1579 s] 18 clips · === mademoiselle-rosine--ecouter (at_runtime)   |=========================>                        | 2/4 - 134.39s/it[K · mémoire libre 13752 Mo
 [1701 s] 18 clips · === mademoiselle-rosine--ecouter (at_runtime)   |=====================================>            | 3/4 - 133.86s/it[K · mémoire libre 13751 Mo
 [122 s] 19 clips · === salif-le-parisien--choc (at_runtime)  · mémoire libre 13754 Mo
+[243 s] 19 clips · === salif-le-parisien--choc (at_runtime)   |============>                                     | 1/4 - 133.74s/it[K · mémoire libre 13756 Mo
