@@ -473,6 +473,19 @@ try:
 except Exception as e:
     echecs.append(f'scénariste ouvert : {e}')
 
+# synchro labiale par choix d'images (21/10/2026) : la bouche montrée suit la voix, sans saut de plus de 3 images
+try:
+    sys.path.insert(0, os.path.join(ICI, 'banque')); import levres_banque as _lb11
+    _q11 = 0.05 + 0.05 * np.sin(np.arange(33) / 33 * 2 * np.pi * 2)            # clip : bouche qui s'ouvre et se ferme deux fois
+    _e11 = (np.sin(np.arange(72) / 24 * 2 * np.pi * 2.2) > 0.3).astype(float)  # voix : syllabes à 2,2 Hz pendant 3 s
+    _a11, _b11, _s11 = _lb11.ordre_mesure(_q11, _e11, 24)
+    if _b11 < 0.35 or _b11 < _a11 + 0.2: echecs.append(f'synchro labiale : corrélation {_a11} → {_b11}')
+    if max(abs(_s11[i] - _s11[i - 1]) for i in range(1, len(_s11))) > 3 and max(_s11) - min(_s11) < 30:
+        echecs.append('synchro labiale : saut d\'image de plus de 3')
+    print(f'synchro labiale : corrélation lèvres/voix {_a11} → {_b11} : OK')
+except Exception as e:
+    echecs.append(f'synchro labiale : {e}')
+
 # niveau de la V1 (20/10/2026) : la vidéo 2 (figures collées, animation 20,4 % < 24,3 %) doit être arrêtée par le contrôle
 try:
     sys.path.insert(0, os.path.join(ICI, 'moteur-troupe')); import niveau_v1 as _nv9

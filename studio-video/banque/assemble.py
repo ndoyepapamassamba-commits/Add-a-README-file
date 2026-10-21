@@ -114,14 +114,26 @@ def segment(P, r, k, dossier, gains):
     dernier = 'f0'; i = 1; occ = P.get('_occultants', {})
     for nom, a in sorted(acteurs.items(), key=lambda kv: occ.get(kv[0], (None, 0))[1]):   # du plus loin au plus proche
         geste = r.get('geste', 'parler') if nom == r.get('qui') else r.get('reagit', {}).get(nom, 'ecouter')
-        mov, pieds = _clip(P['banque'], nom, geste); entrees += ['-i', mov]
+        mov, pieds = _clip(P['banque'], nom, geste)
         h = int(BH * a.get('taille', 0.95)); w = int(h * 384 / 640) // 2 * 2
         flip = ',hflip' if a.get('regarde', 'droite') == 'gauche' else ''
         gr, gv, gb = gains[nom]; px = (1 - pieds['x']) if flip else pieds['x']
-        # aller-retour (le clip joué puis renversé) : boucle sans saut, quelle que soit la durée de la réplique
-        f.append(f'[{i}:v]fps={FPS},format=rgba,split[a{i}][b{i}];[b{i}]reverse[r{i}];[a{i}][r{i}]concat=n=2:v=1:a=0,'
-                 f'loop=-1:size=9999,trim=duration={dur},setpts=PTS-STARTPTS,scale={w}:{h},'
-                 f'colorchannelmixer=rr={gr:.3f}:gg={gv:.3f}:bb={gb:.3f}{flip}[p{i}]')
+        liste = None
+        if nom == r.get('qui') and r.get('voix') and os.environ.get('LEVRES_BANQUE', '1') == '1':
+            try:   # 21/10 : celui qui parle — images du clip choisies pour que la bouche suive la voix (levres_banque.py)
+                import levres_banque
+                liste = levres_banque.liste_concat(mov, mov[:-4] + '.mp4', r['voix'], dur, FPS, os.path.join(dossier, f'levres{k:03d}-{nom}.txt'))
+            except Exception as e:
+                print(f'  synchro labiale non appliquée ({nom}) : {e}', file=sys.stderr)
+        if liste:
+            entrees += ['-f', 'concat', '-safe', '0', '-i', liste]
+            f.append(f'[{i}:v]fps={FPS},format=rgba,trim=duration={dur},setpts=PTS-STARTPTS,scale={w}:{h},'
+                     f'colorchannelmixer=rr={gr:.3f}:gg={gv:.3f}:bb={gb:.3f}{flip}[p{i}]')
+        else:   # aller-retour (le clip joué puis renversé) : boucle sans saut, quelle que soit la durée de la réplique
+            entrees += ['-i', mov]
+            f.append(f'[{i}:v]fps={FPS},format=rgba,split[a{i}][b{i}];[b{i}]reverse[r{i}];[a{i}][r{i}]concat=n=2:v=1:a=0,'
+                     f'loop=-1:size=9999,trim=duration={dur},setpts=PTS-STARTPTS,scale={w}:{h},'
+                     f'colorchannelmixer=rr={gr:.3f}:gg={gv:.3f}:bb={gb:.3f}{flip}[p{i}]')
         x = int(a.get('x', 0.5) * BW - px * w); y = int(a.get('sol', 0.97) * BH - pieds['y'] * h)   # pieds sur la ligne de sol
         f.append(f'[{dernier}][p{i}]overlay=x={x}:y={y}:shortest=0[f{i}]'); dernier = f'f{i}'; i += 1
         if occ.get(nom) and occ[nom][0]:   # ce qui est devant lui dans le décor (table, chaise, comptoir) repasse par-dessus
