@@ -38,3 +38,4 @@
 [3161 s] 4 images · === perso-mademoiselle-rosine   |=====================================>            | 3/4 - 220.62s/it[K · mémoire libre 6285 Mo
 [3282 s] 4 images · === perso-mademoiselle-rosine   |==================================================| 4/4 - 222.81s/it[K · mémoire libre 7369 Mo
 [3404 s] 5 images · === decor-taxi-coin-jour   |==================================================| 4/4 - 222.81s/it[K · mémoire libre 7052 Mo
+[3526 s] 5 images · === decor-taxi-coin-jour   |============>                                     | 1/4 - 92.13s/it[K · mémoire libre 7041 Mo
