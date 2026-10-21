@@ -62,6 +62,19 @@
    "h": 720,
    "memoire_max_go": 12.37,
    "run": "39517651050"
+  },
+  {
+   "tache": "perso-petite-khadija",
+   "version": 2,
+   "type": "personnage",
+   "etapes": 2,
+   "ok": true,
+   "code": 0,
+   "secondes": 3077,
+   "w": 1280,
+   "h": 720,
+   "memoire_max_go": 12.35,
+   "run": "39529293602"
   }
  ]
 }
