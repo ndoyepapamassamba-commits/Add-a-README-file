@@ -70,7 +70,14 @@
    "lora": "at_runtime",
    "secondes": 578,
    "memoire_max_go": 11.27
+  },
+  {
+   "clip": "chef-traore--colere@2",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 582,
+   "memoire_max_go": 10.72
   }
  ],
- "run": "39528414471"
+ "run": "39537354097"
 }
