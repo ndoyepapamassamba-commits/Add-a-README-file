@@ -49,7 +49,14 @@
    "lora": "at_runtime",
    "secondes": 590,
    "memoire_max_go": 11.11
+  },
+  {
+   "clip": "monsieur-diarra--ecouter",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 580,
+   "memoire_max_go": 11.1
   }
  ],
- "run": "39536335050"
+ "run": "39537354097"
 }
