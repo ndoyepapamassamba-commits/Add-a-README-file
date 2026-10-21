@@ -85,3 +85,4 @@
 [2917 s] 9 images · === fiche-la-voisine   |============>                                     | 1/4 - 212.17s/it[K · mémoire libre 6720 Mo
 [3039 s] 9 images · === fiche-la-voisine   |============>                                     | 1/4 - 212.17s/it[K · mémoire libre 6720 Mo
 [3160 s] 9 images · === fiche-la-voisine   |=========================>                        | 2/4 - 206.49s/it[K · mémoire libre 6720 Mo
+[3282 s] 9 images · === fiche-la-voisine   |=========================>                        | 2/4 - 206.49s/it[K · mémoire libre 6720 Mo
