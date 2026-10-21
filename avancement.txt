@@ -4,3 +4,4 @@
 [487 s] 0 images · === decor-salon-large-jour   |=========================>                        | 2/4 - 156.53s/it[K · mémoire libre 6948 Mo
 [609 s] 0 images · === decor-salon-large-jour   |=====================================>            | 3/4 - 156.34s/it[K · mémoire libre 6950 Mo
 [730 s] 1 images · === decor-rue-large-jour   |==================================================| 4/4 - 156.19s/it[K · mémoire libre 11546 Mo
+[852 s] 1 images · === decor-rue-large-jour   |==================================================| 4/4 - 156.19s/it[K · mémoire libre 7009 Mo
