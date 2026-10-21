@@ -39,3 +39,4 @@
 [3280 s] 6 images · === decor-village-coin-jour   |============>                                     | 1/4 - 92.21s/it[K · mémoire libre 7046 Mo
 [3401 s] 6 images · === decor-village-coin-jour   |=========================>                        | 2/4 - 87.31s/it[K · mémoire libre 7052 Mo
 [3523 s] 6 images · === decor-village-coin-jour   |=====================================>            | 3/4 - 86.99s/it[K · mémoire libre 7048 Mo
+[3644 s] 7 images · === decor-tribunal-contrechamp-jour   |==================================================| 4/4 - 85.90s/it[K · mémoire libre 7041 Mo
