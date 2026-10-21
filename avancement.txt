@@ -66,3 +66,4 @@
 [123 s] 18 clips · === fatou--montrer (at_runtime)   |============>                                     | 1/4 - 93.49s/it[K · mémoire libre 13755 Mo
 [244 s] 18 clips · === fatou--montrer (at_runtime)   |=========================>                        | 2/4 - 92.89s/it[K · mémoire libre 13758 Mo
 [366 s] 18 clips · === fatou--montrer (at_runtime)   |=====================================>            | 3/4 - 92.34s/it[K · mémoire libre 13756 Mo
+[488 s] 19 clips · === le-frimeur--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13804 Mo
