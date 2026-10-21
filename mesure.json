@@ -154,6 +154,13 @@
    "lora": "at_runtime",
    "secondes": 269,
    "memoire_max_go": 10.81
+  },
+  {
+   "clip": "djecky--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 270,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39559117299"
