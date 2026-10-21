@@ -14,3 +14,4 @@
 [123 s] 11 clips · === mamie-bintou--parler (at_runtime)  · mémoire libre 13763 Mo
 [244 s] 11 clips · === mamie-bintou--parler (at_runtime)   |============>                                     | 1/4 - 134.44s/it[K · mémoire libre 13753 Mo
 [366 s] 11 clips · === mamie-bintou--parler (at_runtime)   |=========================>                        | 2/4 - 134.11s/it[K · mémoire libre 13752 Mo
+[487 s] 11 clips · === mamie-bintou--parler (at_runtime)   |=====================================>            | 3/4 - 133.91s/it[K · mémoire libre 13764 Mo
