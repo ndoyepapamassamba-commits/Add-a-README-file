@@ -1,0 +1,43 @@
+{
+ "personnages": [
+  "koffi",
+  "coumba",
+  "baye-ndiaye",
+  "maman-nounou",
+  "petit-mamadou",
+  "tantie-awa",
+  "modou",
+  "le-patriarche",
+  "la-lyceenne",
+  "agent-doumbia",
+  "la-go-leopard",
+  "la-future-maman",
+  "petit-moussa",
+  "petite-aya",
+  "imam-karim",
+  "adjoua",
+  "tantie-awa-sarr",
+  "professeur-samba",
+  "aliou",
+  "chef-traore",
+  "aminata",
+  "petit-ibrahima"
+ ],
+ "noms": {
+  "le-patriarche": "LE PATRIARCHE",
+  "la-lyceenne": "LA LYCÉENNE",
+  "agent-doumbia": "AGENT DOUMBIA",
+  "la-go-leopard": "LA GO LÉOPARD",
+  "la-future-maman": "LA FUTURE MAMAN",
+  "petit-moussa": "PETIT MOUSSA",
+  "petite-aya": "PETITE AYA",
+  "imam-karim": "IMAM KARIM",
+  "adjoua": "ADJOUA",
+  "tantie-awa-sarr": "TANTIE AWA SARR",
+  "professeur-samba": "PROFESSEUR SAMBA",
+  "aliou": "ALIOU",
+  "chef-traore": "CHEF TRAORÉ",
+  "aminata": "AMINATA",
+  "petit-ibrahima": "PETIT IBRAHIMA"
+ }
+}

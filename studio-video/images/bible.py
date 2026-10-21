@@ -116,9 +116,9 @@ REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2,
            # Banquier, Tonton, Mamie Bintou), bulle « Refusé ! » (Banquier), voiture (Yaya), couronne et caisse (Madame Konan)
            'perso-yaya-lapprenti': 2, 'perso-maitre-coulibaly': 2, 'perso-le-banquier': 2, 'perso-le-tonton': 2,
            'perso-mamie-bintou': 2, 'perso-madame-konan': 2,
-           # 21/10 01:40, lot 5 : veste de Koffi (DJ Kevin, Boubacar), comptoir collé aux poses (Patron Séry)
+           # 21/10 01:35, lot 5 : veste de Koffi (DJ Kevin, Boubacar), comptoir collé aux poses (Patron Séry)
            'perso-dj-kevin': 2, 'perso-boubacar': 2, 'perso-patron-sery': 2,
-           # 21/10 01:45, planches déjà acceptées relues avec ce défaut en tête : rire de Koffi (lunettes, visage) sur la dernière pose
+           # 21/10 01:36, planches déjà acceptées relues avec ce défaut en tête : rire de Koffi (lunettes, visage) sur la dernière pose
            # (Djecky, Général Zongo, Mécano Issa, Monsieur Diarra, Tiékoro), Le Frimeur sosie de Koffi, rire de Baye (Grand-père
            # Ndiaye, Tonton Dieng)
            'perso-djecky': 2, 'perso-general-zongo': 2, 'perso-mecano-issa': 2, 'perso-monsieur-diarra': 2, 'perso-tiekoro': 2,
