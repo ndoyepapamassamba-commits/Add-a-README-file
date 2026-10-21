@@ -73,3 +73,4 @@
 [1093 s] 25 clips · === boubacar--parler (at_runtime)   |=====================================>            | 3/4 - 133.74s/it[K · mémoire libre 13803 Mo
 [124 s] 26 clips · === madame-coumba--hausser@2 (at_runtime)   |=========================>                        | 2/4 - 38.43s/it[K · mémoire libre 13778 Mo
 [245 s] 27 clips · === mecano-issa--parler@2 (at_runtime)   |============>                                     | 1/4 - 38.69s/it[K · mémoire libre 13734 Mo
+[367 s] 28 clips · === la-voisine--hausser@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13758 Mo
