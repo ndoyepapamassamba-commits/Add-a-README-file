@@ -26,3 +26,4 @@
 [3154 s] 9 clips · === petit-ibrahima--parler (at_runtime)   |============>                                     | 1/4 - 133.93s/it[K · mémoire libre 13707 Mo
 [3276 s] 9 clips · === petit-ibrahima--parler (at_runtime)   |=========================>                        | 2/4 - 133.24s/it[K · mémoire libre 13717 Mo
 [3397 s] 9 clips · === petit-ibrahima--parler (at_runtime)   |=====================================>            | 3/4 - 133.54s/it[K · mémoire libre 13713 Mo
+[121 s] 10 clips · === chef-traore--colere@2 (at_runtime)  · mémoire libre 13764 Mo
