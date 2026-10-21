@@ -9,3 +9,4 @@
 [1094 s] 5 clips · === agent-doumbia--rire (at_runtime)   |=====================================>            | 3/4 - 133.42s/it[K · mémoire libre 13786 Mo
 [1215 s] 6 clips · === petit-moussa--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13809 Mo
 [1336 s] 6 clips · === petit-moussa--ecouter (at_runtime)   |============>                                     | 1/4 - 134.59s/it[K · mémoire libre 13795 Mo
+[1458 s] 6 clips · === petit-moussa--ecouter (at_runtime)   |============>                                     | 1/4 - 134.59s/it[K · mémoire libre 13790 Mo
