@@ -65,3 +65,4 @@
 [607 s] 6 images · === fiche-madame-konan   |=========================>                        | 2/4 - 237.06s/it[K · mémoire libre 6710 Mo
 [728 s] 6 images · === fiche-madame-konan   |=========================>                        | 2/4 - 237.06s/it[K · mémoire libre 6702 Mo
 [850 s] 6 images · === fiche-madame-konan   |=====================================>            | 3/4 - 235.80s/it[K · mémoire libre 6694 Mo
+[971 s] 6 images · === fiche-madame-konan   |=====================================>            | 3/4 - 235.80s/it[K · mémoire libre 6687 Mo
