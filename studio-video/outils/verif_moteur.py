@@ -890,12 +890,13 @@ try:
     _F32 = np.zeros((128, 128, 2), np.float32); _F32[54:74, 54:74, 0] = 6.0
     if _lb32.VERSION < 5 or float(cv2.GaussianBlur(_F32, (0, 0), _lb32.SIGMA)[64, 64, 0]) < 3.0:
         echecs.append('regards V1 : champ de tête encore lissé en polynôme (rotation effacée)')
-    # gain étalonné : le plus petit qui atteint la cible, sinon celui qui tourne le plus
+    # gain étalonné : le plus petit qui atteint la cible + la marge (16°), sinon celui qui tourne le plus — simulé : à droite
+    # 14,4 / 18 / 22,5° pour les gains 0,8 / 1 / 1,25 (→ 1, et non 0,8 qui n'atteint que 12° + 2,4) ; à gauche jamais 16° (→ 1,25)
     _sv32 = (_lb32._tourne_une, _lb32._lu)
     _lb32._tourne_une = lambda F0, b, Fc, w, g: Fc * g; _lb32._lu = lambda x: float(x) * 15.0
-    try: _et32 = _lb32.etalonne(0.0, None, 1.0, -0.5, None)
+    try: _et32 = _lb32.etalonne(0.0, None, 1.2, -0.5, None)
     finally: _lb32._tourne_une, _lb32._lu = _sv32
-    if (_et32['gd'], _et32['gg']) != (min(_lb32.GAINS), max(_lb32.GAINS)): echecs.append(f'regards V1 : gain étalonné {_et32}')
+    if (_et32['gd'], _et32['gg']) != (1.0, max(_lb32.GAINS)): echecs.append(f'regards V1 : gain étalonné {_et32}')
     # sens du corps par plan : dans un plan à deux, vers le partenaire, même si la moyenne des autres est de l'autre côté
     _A32 = {'a': {'x': 0.15}, 'b': {'x': 0.5}, 'c': {'x': 0.7}}
     _P32 = {'acteurs': _A32, 'banque': '/x', 'repliques': [{'qui': 'b', '_t0': 0.0, 'duree': 5.0, 'reagit': {}}],
@@ -907,7 +908,7 @@ try:
     if _sp32 != ('gauche', 'droite'): echecs.append(f'regards V1 : sens du corps non choisi par plan {_sp32}')
     if list(_sc32.places(['u', 'v']).values()) != [0.33, 0.67]: echecs.append('regards V1 : deux acteurs pas à distance de conversation')
     if 'lacet_banque.VERSION' not in _in32.getsource(_cv32.lit_clip): echecs.append('regards V1 : clips préparés avec un ancien champ relus')
-    print(f"regards V1 (2) : champ gaussien σ {_lb32.SIGMA}, gain minimal à {_lb32.CIBLE}°, sens du corps par plan, acteurs à 0,33 / 0,67, cache lié au champ : OK")
+    print(f"regards V1 (2) : champ gaussien σ {_lb32.SIGMA}, gain minimal à {_lb32.CIBLE + _lb32.MARGE:.0f}°, sens du corps par plan, acteurs à 0,33 / 0,67, cache lié au champ : OK")
 except Exception as e:
     echecs.append(f'regards V1 (2) : {e}')
 
