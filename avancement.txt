@@ -73,3 +73,4 @@
 [124 s] 21 clips · === le-tonton--ecouter@2 (at_runtime)  · mémoire libre 13777 Mo
 [245 s] 21 clips · === le-tonton--ecouter@2 (at_runtime)   |============>                                     | 1/4 - 135.06s/it[K · mémoire libre 13768 Mo
 [367 s] 21 clips · === le-tonton--ecouter@2 (at_runtime)   |=========================>                        | 2/4 - 134.69s/it[K · mémoire libre 13774 Mo
+[488 s] 21 clips · === le-tonton--ecouter@2 (at_runtime)   |=====================================>            | 3/4 - 133.77s/it[K · mémoire libre 13770 Mo
