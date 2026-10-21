@@ -1,99 +1,37 @@
 {
  "modele": "gptoss20loc",
  "part": 2,
- "appels_scenariste": 16,
- "secondes_scenariste": 5327.313624858856,
+ "appels_scenariste": 0,
+ "secondes_scenariste": 0.0,
  "echecs_scenariste": 0,
- "appels_juge": 18,
+ "appels_juge": 6,
  "echecs_juge": 0,
- "brouillons_refuses_controle": 3,
- "planchers_v17": [
-  0.422
- ],
- "notes": [
-  0.423
- ],
+ "brouillons_refuses_controle": 0,
+ "planchers_v17": [],
+ "notes": [],
  "acceptes": 0,
- "lieux": [
-  {
-   "lieu": "Cérémonie",
-   "accepte": false,
-   "secondes": 3263
-  }
- ],
+ "lieux": [],
  "drole_v17": [
-  1.0,
   1.5,
-  1.5
+  2.0,
+  0.5
  ],
  "choc_v17": [
   1.0,
   1.5,
-  0.5
+  0.3
  ],
- "reparations": [
-  [
-   2,
-   0
-  ],
-  [
-   2,
-   1
-  ],
-  [
-   1,
-   0
-  ],
-  [
-   1,
-   0
-  ],
-  [
-   1,
-   1
-  ],
-  [
-   4,
-   4
-  ],
-  [
-   1,
-   1
-  ],
-  [
-   3,
-   2
-  ],
-  [
-   4,
-   4
-  ],
-  [
-   2,
-   1
-  ]
- ],
- "secondes_par_brouillon": 333.0,
+ "secondes_par_brouillon": 0.0,
  "temps": {
-  "scenariste": {
-   "appels": 16,
-   "tronques": 0,
-   "lus_jetons": 1023,
-   "cache_jetons": 1020,
-   "lecture_s": 115.2,
-   "ecriture_jetons": 909,
-   "ecriture_s": 195.3,
-   "jetons_par_s": 4.7
-  },
   "juge": {
-   "appels": 18,
+   "appels": 6,
    "tronques": 0,
-   "lus_jetons": 382,
-   "cache_jetons": 120,
-   "lecture_s": 33.8,
-   "ecriture_jetons": 79,
-   "ecriture_s": 19.5,
-   "jetons_par_s": 4.0
+   "lus_jetons": 245,
+   "cache_jetons": 250,
+   "lecture_s": 21.5,
+   "ecriture_jetons": 70,
+   "ecriture_s": 19.7,
+   "jetons_par_s": 3.5
   }
  }
 }
