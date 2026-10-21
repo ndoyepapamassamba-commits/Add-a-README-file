@@ -36,3 +36,4 @@
 [2674 s] 4 images · === perso-aminata   |==================================================| 4/4 - 397.01s/it[K · mémoire libre 6312 Mo
 [2795 s] 4 images · === perso-aminata   |==================================================| 4/4 - 397.01s/it[K · mémoire libre 6284 Mo
 [2917 s] 4 images · === perso-aminata   |============>                                     | 1/4 - 403.84s/it[K · mémoire libre 6282 Mo
+[3038 s] 4 images · === perso-aminata   |============>                                     | 1/4 - 403.84s/it[K · mémoire libre 6277 Mo
