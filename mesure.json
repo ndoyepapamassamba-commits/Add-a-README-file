@@ -28,7 +28,14 @@
    "lora": "at_runtime",
    "secondes": 267,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "la-lyceenne--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 185,
+   "memoire_max_go": 11.03
   }
  ],
- "run": "39510605985"
+ "run": "39528414471"
 }
