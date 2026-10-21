@@ -84,6 +84,13 @@
    "lora": "at_runtime",
    "secondes": 305,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "coach-diabate--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 302,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39550232510"
