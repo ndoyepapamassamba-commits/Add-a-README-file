@@ -127,3 +127,4 @@
 [1823 s] 31 clips · === le-banquier--montrer@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13800 Mo
 [1945 s] 31 clips · === le-banquier--montrer@2 (at_runtime)   |============>                                     | 1/4 - 134.25s/it[K · mémoire libre 13783 Mo
 [2066 s] 31 clips · === le-banquier--montrer@2 (at_runtime)   |=========================>                        | 2/4 - 133.69s/it[K · mémoire libre 13785 Mo
+[2188 s] 31 clips · === le-banquier--montrer@2 (at_runtime)   |=====================================>            | 3/4 - 133.55s/it[K · mémoire libre 13777 Mo
