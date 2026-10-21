@@ -97,3 +97,4 @@
 [122 s] 28 clips · === patron-sery--mentir (at_runtime)  · mémoire libre 13766 Mo
 [244 s] 28 clips · === patron-sery--mentir (at_runtime)   |============>                                     | 1/4 - 134.68s/it[K · mémoire libre 13753 Mo
 [365 s] 28 clips · === patron-sery--mentir (at_runtime)   |=========================>                        | 2/4 - 134.04s/it[K · mémoire libre 13771 Mo
+[486 s] 28 clips · === patron-sery--mentir (at_runtime)   |=====================================>            | 3/4 - 133.89s/it[K · mémoire libre 13771 Mo
