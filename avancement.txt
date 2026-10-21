@@ -38,3 +38,4 @@
 [2672 s] 4 images · === perso-le-patriarche   |=====================================>            | 3/4 - 276.99s/it[K · mémoire libre 6270 Mo
 [2794 s] 4 images · === perso-le-patriarche   |=====================================>            | 3/4 - 276.99s/it[K · mémoire libre 6248 Mo
 [2915 s] 4 images · === perso-le-patriarche   |==================================================| 4/4 - 275.49s/it[K · mémoire libre 6815 Mo
+[3036 s] 5 images · === decor-marche-coin-jour   |==================================================| 4/4 - 275.49s/it[K · mémoire libre 7164 Mo
