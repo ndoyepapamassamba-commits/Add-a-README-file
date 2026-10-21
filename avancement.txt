@@ -45,3 +45,4 @@
 [4012 s] 6 images · === decor-salon-de-coiffure-contrechamp-jour   |=========================>                        | 2/4 - 87.35s/it[K · mémoire libre 7054 Mo
 [4133 s] 7 images · === decor-terrain-de-foot-champ-jour   |==================================================| 4/4 - 87.54s/it[K · mémoire libre 14593 Mo
 [4255 s] 7 images · === decor-terrain-de-foot-champ-jour   |============>                                     | 1/4 - 88.11s/it[K · mémoire libre 7050 Mo
+[4376 s] 7 images · === decor-terrain-de-foot-champ-jour   |=========================>                        | 2/4 - 89.92s/it[K · mémoire libre 7041 Mo
