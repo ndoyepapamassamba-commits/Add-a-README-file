@@ -28,7 +28,14 @@
    "lora": "at_runtime",
    "secondes": 592,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "le-patriarche--choc",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 312,
+   "memoire_max_go": 10.83
   }
  ],
- "run": "39510605985"
+ "run": "39528414471"
 }
