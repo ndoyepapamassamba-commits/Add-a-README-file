@@ -37,7 +37,10 @@ def plan(h, decor, banque, dossier, lieu=None):
     acteurs = {}
     for nom, x in places(noms).items():
         age = bible.age_de(fiches.get(nom, {}))
-        acteurs[slug(nom)] = {'x': round(float(x), 3), 'sol': 0.97, 'taille': 0.64 if age < 13 else 0.9, 'regarde': 'droite'}
+        # 21/10 03:50 : le geste « montrer » des planches pointe vers la droite de l'image ; un acteur placé à droite est
+        # retourné pour viser ses partenaires au lieu de pointer hors du cadre
+        acteurs[slug(nom)] = {'x': round(float(x), 3), 'sol': 0.97, 'taille': 0.64 if age < 13 else 0.9,
+                              'regarde': 'gauche' if x > 0.5 else 'droite'}
     R = []
     for k, r in enumerate(h['repliques']):
         y, _ = voix.synth(r['qui'], r['texte']); f = os.path.join(dossier, f'r{k}.wav'); wavfile.write(f, voix.SR, y)
