@@ -96,6 +96,19 @@
    "h": 448,
    "memoire_max_go": 9.48,
    "run": "39517651050"
+  },
+  {
+   "tache": "perso-monsieur-diarra",
+   "version": 2,
+   "type": "personnage",
+   "etapes": 2,
+   "ok": true,
+   "code": 0,
+   "secondes": 2631,
+   "w": 1280,
+   "h": 720,
+   "memoire_max_go": 12.35,
+   "run": "39529293602"
   }
  ]
 }
