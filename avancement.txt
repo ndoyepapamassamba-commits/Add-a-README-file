@@ -11,3 +11,4 @@
 [1334 s] 6 clips · === petite-aya--hausser (at_runtime)   |============>                                     | 1/4 - 134.09s/it[K · mémoire libre 13777 Mo
 [1456 s] 6 clips · === petite-aya--hausser (at_runtime)   |============>                                     | 1/4 - 134.09s/it[K · mémoire libre 13772 Mo
 [1577 s] 6 clips · === petite-aya--hausser (at_runtime)   |=========================>                        | 2/4 - 133.33s/it[K · mémoire libre 13764 Mo
+[1698 s] 6 clips · === petite-aya--hausser (at_runtime)   |=====================================>            | 3/4 - 133.50s/it[K · mémoire libre 13767 Mo
