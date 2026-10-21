@@ -63,3 +63,4 @@
 [1215 s] 18 clips · === coach-diabate--rire (at_runtime)   |=====================================>            | 3/4 - 40.72s/it[K · mémoire libre 13800 Mo
 [124 s] 19 clips · === le-banquier--mentir (at_runtime)   |============>                                     | 1/4 - 67.95s/it[K · mémoire libre 13759 Mo
 [245 s] 19 clips · === le-banquier--mentir (at_runtime)   |=====================================>            | 3/4 - 67.87s/it[K · mémoire libre 13770 Mo
+[367 s] 20 clips · === boubacar--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13797 Mo

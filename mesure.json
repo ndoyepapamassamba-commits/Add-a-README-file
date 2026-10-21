@@ -133,7 +133,14 @@
    "lora": "at_runtime",
    "secondes": 183,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "le-banquier--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 303,
+   "memoire_max_go": 11.14
   }
  ],
- "run": "39545665602"
+ "run": "39559117299"
 }
