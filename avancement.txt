@@ -14,3 +14,4 @@
 [1703 s] 4 clips · === aliou--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13755 Mo
 [1824 s] 4 clips · === aliou--mentir (at_runtime)   |============>                                     | 1/4 - 91.17s/it[K · mémoire libre 13760 Mo
 [1946 s] 4 clips · === aliou--mentir (at_runtime)   |=====================================>            | 3/4 - 91.07s/it[K · mémoire libre 13756 Mo
+[2067 s] 5 clips · === petit-ibrahima--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13890 Mo
