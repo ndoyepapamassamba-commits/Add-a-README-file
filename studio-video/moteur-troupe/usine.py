@@ -115,7 +115,7 @@ def tourne(d, v):
     etape('ambiance', f'{ICI}/ambiance.py', 'timeline.json', 'voix/mix-musique.wav', 'voix/mix-ambiance.wav')
     lieux = ','.join(sorted({os.path.basename(os.path.normpath(x)) for x in json.load(open(f'{d}/montage.json'))['scenes'].values()}))
     etape('visages', f'{ICI}/fume_visages.py', 'prep', f'{d}/{v}-visages.jpg', lieux)   # seulement les lieux tournés
-    etape('tournage', f'{ICI}/tourne.py', 'montage.json', D, e={'ETIREMENT': '1', 'TOURNE_PROCS': str(os.cpu_count() or 4)})
+    etape('tournage', f'{ICI}/tourne.py', 'montage.json', D, e={'ETIREMENT': '1', 'TOURNE_PROCS': os.environ.get('TOURNE_PROCS', str(os.cpu_count() or 4))})
     # FLOU DE BOUGÉ PHYSIQUE (18/10/2026, « au niveau de Pixar ») : obturateur 180° le long du flux optique, raccords du
     # moteur respectés, images nettes gardées dans clip-net (fluidite.flou_bouge) ; USINE_FLOU=0 pour s'en passer
     if os.environ.get('USINE_FLOU', '1') == '1':
@@ -151,7 +151,7 @@ def marionnettes(d, v, moteur='tourne_marionnettes.py', e_tournage=None):
     etape('bouches', f'{ICI}/levres.py', 'timeline.json')
     etape('rires', f'{ICI}/musique.py', 'timeline.json', 'voix/mix.wav', 'voix/mix-musique.wav')
     etape('ambiance', f'{ICI}/ambiance.py', 'timeline.json', 'voix/mix-musique.wav', 'voix/mix-ambiance.wav')
-    etape('tournage', f'{ICI}/{moteur}', D, e=dict({'TOURNE_PROCS': str(os.cpu_count() or 4)}, **(e_tournage or {})))
+    etape('tournage', f'{ICI}/{moteur}', D, e=dict({'TOURNE_PROCS': os.environ.get('TOURNE_PROCS', str(os.cpu_count() or 4))}, **(e_tournage or {})))
     etape('montage', f'{ICI}/compose.py', D, f'{D}/film.mp4')
     etape('planche', f'{ICI}/planche_repliques.py', f'{D}/film.mp4', 'timeline.json', f'{D}/planche.jpg')
     t1 = time.time(); exporte(f'{D}/film.mp4', f'{D}/tiktok-1080x1920.mp4'); T['export'] = round(time.time() - t1, 1)
@@ -231,7 +231,7 @@ def eclair(d, v):
         except Exception as ex: T['son'] = 'erreur : ' + str(ex)[:200]   # jamais muet : la porte N sera « non jugée »
     fil = threading.Thread(target=son_garde); fil.start()
     etape('tournage', f'{ICI}/tourne.py', 'montage.json', D, e={'ETIREMENT': '1', 'TOURNE_SANS_RENDU': '1', 'FILM_FPS': '30',
-                                                                 'TOURNE_PROCS': str(os.cpu_count() or 4)})
+                                                                 'TOURNE_PROCS': os.environ.get('TOURNE_PROCS', str(os.cpu_count() or 4))})
     fil.join()
     try: T['portes'] = _py(f'{ICI}/qualite.py', D, f'{D}/film.mp4', 'montage.json', env={'QUALITE_ECLAIR': '1'}, log=log, cwd=d)[0]
     except RuntimeError as ex: T['portes'] = 'erreur : ' + str(ex)[:200]
