@@ -36,3 +36,4 @@
 [609 s] 11 clips · === la-voisine--choc (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 10492 Mo
 [730 s] 12 clips · === coach-diabate--mentir (at_runtime)   |============>                                     | 1/4 - 68.78s/it[K · mémoire libre 13750 Mo
 [852 s] 12 clips · === coach-diabate--mentir (at_runtime)   |=====================================>            | 3/4 - 67.73s/it[K · mémoire libre 13760 Mo
+[121 s] 13 clips · === dj-kevin--ecouter (at_runtime)  · mémoire libre 13769 Mo
