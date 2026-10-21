@@ -26,3 +26,4 @@
 [122 s] 7 clips · === monsieur-diarra--ecouter (at_runtime)  · mémoire libre 13794 Mo
 [243 s] 7 clips · === monsieur-diarra--ecouter (at_runtime)   |============>                                     | 1/4 - 133.66s/it[K · mémoire libre 13774 Mo
 [365 s] 7 clips · === monsieur-diarra--ecouter (at_runtime)   |=========================>                        | 2/4 - 133.32s/it[K · mémoire libre 13787 Mo
+[486 s] 7 clips · === monsieur-diarra--ecouter (at_runtime)   |=====================================>            | 3/4 - 133.05s/it[K · mémoire libre 13792 Mo
