@@ -17,3 +17,4 @@
 [608 s] 2 images · === maison-sur-awa-chambre-large-jour   |=========================>                        | 2/4 - 88.70s/it[K · mémoire libre 7009 Mo
 [729 s] 2 images · === maison-sur-awa-chambre-large-jour   |=====================================>            | 3/4 - 88.26s/it[K · mémoire libre 7007 Mo
 [850 s] 3 images · === perso-madame-coumba   |==================================================| 4/4 - 88.45s/it[K · mémoire libre 6703 Mo
+[972 s] 3 images · === perso-madame-coumba   |==================================================| 4/4 - 88.45s/it[K · mémoire libre 6296 Mo
