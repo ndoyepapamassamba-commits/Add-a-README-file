@@ -27,3 +27,4 @@
 [2187 s] 3 images · === perso-tiekoro   |=========================>                        | 2/4 - 335.51s/it[K · mémoire libre 6251 Mo
 [2308 s] 3 images · === perso-tiekoro   |=====================================>            | 3/4 - 328.73s/it[K · mémoire libre 6251 Mo
 [2430 s] 3 images · === perso-tiekoro   |=====================================>            | 3/4 - 328.73s/it[K · mémoire libre 6256 Mo
+[2551 s] 3 images · === perso-tiekoro   |=====================================>            | 3/4 - 328.73s/it[K · mémoire libre 6255 Mo
