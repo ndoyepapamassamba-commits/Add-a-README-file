@@ -44,3 +44,4 @@
 [488 s] 12 clips · === la-voisine--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13790 Mo
 [609 s] 12 clips · === la-voisine--hausser (at_runtime)   |============>                                     | 1/4 - 92.59s/it[K · mémoire libre 13775 Mo
 [731 s] 12 clips · === la-voisine--hausser (at_runtime)   |=====================================>            | 3/4 - 90.33s/it[K · mémoire libre 13768 Mo
+[121 s] 13 clips · === dj-kevin--montrer (at_runtime)  · mémoire libre 13793 Mo
