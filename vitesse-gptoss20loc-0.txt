@@ -1,0 +1,6 @@
+231.14.892.107 I slot print_timing: id  3 | task 44701 | prompt eval time =    8402.08 ms /   134 tokens (   62.70 ms per token,    15.95 tokens per second)
+231.14.892.171 I slot print_timing: id  3 | task 44701 |        eval time =   45090.98 ms /    78 tokens (  585.60 ms per token,     1.71 tokens per second)
+232.08.455.871 I slot print_timing: id  2 | task 44783 | prompt eval time =   32889.38 ms /   553 tokens (   59.47 ms per token,    16.81 tokens per second)
+232.08.455.941 I slot print_timing: id  2 | task 44783 |        eval time =   11987.72 ms /    72 tokens (  168.84 ms per token,     5.92 tokens per second)
+232.10.135.257 I slot print_timing: id  3 | task 44778 | prompt eval time =    8677.71 ms /   139 tokens (   62.43 ms per token,    16.02 tokens per second)
+232.10.135.317 I slot print_timing: id  3 | task 44778 |        eval time =   46560.50 ms /    90 tokens (  523.15 ms per token,     1.91 tokens per second)
