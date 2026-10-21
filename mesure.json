@@ -147,7 +147,14 @@
    "lora": "at_runtime",
    "secondes": 311,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "madame-konan--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 583,
+   "memoire_max_go": 11.13
   }
  ],
- "run": "39543580560"
+ "run": "39545665602"
 }
