@@ -47,3 +47,4 @@
 [4254 s] 5 images · === perso-le-tonton   |==================================================| 4/4 - 348.14s/it[K · mémoire libre 5423 Mo
 [4375 s] 6 images · === decor-maquis-coin-jour   |==================================================| 4/4 - 348.14s/it[K · mémoire libre 7190 Mo
 [4497 s] 6 images · === decor-maquis-coin-jour   |============>                                     | 1/4 - 140.11s/it[K · mémoire libre 7051 Mo
+[4619 s] 6 images · === decor-maquis-coin-jour   |============>                                     | 1/4 - 140.11s/it[K · mémoire libre 7026 Mo
