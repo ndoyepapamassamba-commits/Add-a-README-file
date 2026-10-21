@@ -1,0 +1,13 @@
+{
+ "part": 14,
+ "clips": [
+  {
+   "clip": "la-lyceenne--colere",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 186,
+   "memoire_max_go": 10.94
+  }
+ ],
+ "run": "39528414471"
+}
