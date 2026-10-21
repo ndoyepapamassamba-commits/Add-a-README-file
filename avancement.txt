@@ -69,3 +69,4 @@
 [609 s] 11 images · === fiche-grand-pere-ndiaye   |=========================>                        | 2/4 - 250.61s/it[K · mémoire libre 6692 Mo
 [731 s] 11 images · === fiche-grand-pere-ndiaye   |=========================>                        | 2/4 - 250.61s/it[K · mémoire libre 6692 Mo
 [852 s] 11 images · === fiche-grand-pere-ndiaye   |=====================================>            | 3/4 - 250.33s/it[K · mémoire libre 6692 Mo
+[974 s] 11 images · === fiche-grand-pere-ndiaye   |=====================================>            | 3/4 - 250.33s/it[K · mémoire libre 6688 Mo
