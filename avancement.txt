@@ -49,3 +49,4 @@
 [4008 s] 7 images · === decor-pharmacie-champ-jour   |==================================================| 4/4 - 109.55s/it[K · mémoire libre 12646 Mo
 [4130 s] 7 images · === decor-pharmacie-champ-jour   |==================================================| 4/4 - 109.55s/it[K · mémoire libre 6993 Mo
 [4251 s] 7 images · === decor-pharmacie-champ-jour   |=========================>                        | 2/4 - 109.59s/it[K · mémoire libre 6992 Mo
+[4372 s] 7 images · === decor-pharmacie-champ-jour   |=====================================>            | 3/4 - 109.60s/it[K · mémoire libre 6983 Mo
