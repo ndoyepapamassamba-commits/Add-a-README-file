@@ -39,3 +39,4 @@
 [2189 s] 17 clips · === tiekoro--parler (at_runtime)   |=====================================>            | 3/4 - 133.86s/it[K · mémoire libre 13796 Mo
 [2311 s] 17 clips · === tiekoro--parler (at_runtime)   |=====================================>            | 3/4 - 133.86s/it[K · mémoire libre 13790 Mo
 [2432 s] 18 clips · === sorciere-mama-dede--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13798 Mo
+[2554 s] 18 clips · === sorciere-mama-dede--parler (at_runtime)   |============>                                     | 1/4 - 134.29s/it[K · mémoire libre 13802 Mo
