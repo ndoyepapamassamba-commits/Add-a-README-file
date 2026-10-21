@@ -46,3 +46,4 @@
 [4488 s] 4 images · === perso-madame-konan   |=====================================>            | 3/4 - 394.82s/it[K · mémoire libre 6265 Mo
 [4610 s] 4 images · === perso-madame-konan   |=====================================>            | 3/4 - 394.82s/it[K · mémoire libre 6263 Mo
 [4731 s] 4 images · === perso-madame-konan   |=====================================>            | 3/4 - 394.82s/it[K · mémoire libre 6265 Mo
+[4852 s] 5 images · === decor-taxi-champ-jour   |==================================================| 4/4 - 394.83s/it[K · mémoire libre 11600 Mo

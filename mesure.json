@@ -49,6 +49,18 @@
    "h": 720,
    "memoire_max_go": 12.36,
    "run": "39517651050"
+  },
+  {
+   "tache": "perso-madame-konan",
+   "version": 1,
+   "type": "personnage",
+   "ok": true,
+   "code": 0,
+   "secondes": 1716,
+   "w": 1280,
+   "h": 720,
+   "memoire_max_go": 12.36,
+   "run": "39517651050"
   }
  ]
 }
