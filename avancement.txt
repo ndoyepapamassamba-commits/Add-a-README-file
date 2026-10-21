@@ -33,3 +33,4 @@
 [244 s] 10 clips · === la-go-leopard--parler@2 (at_runtime)   |============>                                     | 1/4 - 135.39s/it[K · mémoire libre 13776 Mo
 [365 s] 10 clips · === la-go-leopard--parler@2 (at_runtime)   |=========================>                        | 2/4 - 135.27s/it[K · mémoire libre 13772 Mo
 [487 s] 10 clips · === la-go-leopard--parler@2 (at_runtime)   |=====================================>            | 3/4 - 134.92s/it[K · mémoire libre 13767 Mo
+[608 s] 11 clips · === madame-coumba--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14554 Mo
