@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ma formation — Teranga Pro</title>
+<meta name="robots" content="noindex, nofollow">
+<!-- This URL carries the personal access token (?o=…&t=…): never sent to another site. -->
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#0B2545">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="formation.css">
+<script src="../cv/config.js" defer></script>
+<script src="js/core.js" defer></script>
+<script src="js/safe-html.js" defer></script>
+<script src="js/pay.js" defer></script>
+<script src="js/reader.js" defer></script>
+</head>
+<body class="reader-page">
+<a class="skip" href="#content">Aller au contenu</a>
+
+<header class="rd-header">
+  <div class="rd-header-in">
+    <button type="button" class="rd-menu" id="rd-menu" aria-controls="rd-side" aria-expanded="false" hidden><span class="bars" aria-hidden="true"></span>Sommaire</button>
+    <a class="brand" href="index.html" aria-label="Teranga Pro, page de la formation">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+      <span class="brand-name">Teranga<span>Pro</span></span>
+    </a>
+    <p class="rd-licence" id="rd-licence" hidden>Licence de <strong id="rd-buyer"></strong></p>
+  </div>
+</header>
+
+<noscript><div class="rd-state"><div class="state-card"><h1>Activez JavaScript</h1><p>La formation s'affiche avec JavaScript activé dans votre navigateur.</p></div></div></noscript>
+<div class="rd-state" id="rd-state" role="region" aria-live="polite" aria-label="État de l'accès"></div>
+
+<div class="rd-layout" id="rd-layout" hidden>
+  <nav class="rd-side" id="rd-side" aria-label="Sommaire de la formation">
+    <div class="rd-side-head">
+      <p class="rd-side-title" id="rd-side-title"></p>
+      <button type="button" class="rd-close" id="rd-close" aria-label="Fermer le sommaire"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="progress">
+      <div class="progress-track" id="rd-progress" role="progressbar" aria-label="Modules lus" aria-valuemin="0" aria-valuenow="0" aria-valuemax="8"><div class="progress-bar" id="rd-progress-bar"></div></div>
+      <p class="progress-text" id="rd-progress-text"></p>
+    </div>
+    <h2>Modules</h2>
+    <ol class="rd-toc" id="rd-toc"></ol>
+    <h2>Ressources</h2>
+    <ul class="rd-links">
+      <li><a href="#fichiers" data-section="fichiers"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v11m0 0l-4-4m4 4l4-4M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Fichiers à télécharger</span></a></li>
+      <li><a href="#quiz" data-section="quiz"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12.3l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Quiz et attestation</span></a></li>
+      <li><a href="recu.html" id="rd-receipt"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z M9 8h6M9 12h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span><span>Reçu de paiement</span></a></li>
+    </ul>
+    <div class="rd-keep">
+      <h2>Garder mon accès</h2>
+      <div id="rd-whatsapp-slot"></div>
+    </div>
+  </nav>
+  <div class="rd-scrim" id="rd-scrim" aria-hidden="true"></div>
+
+  <main class="rd-main" id="content" tabindex="-1">
+    <!-- On paper (@page margin 0, so the browser prints no URL carrying the token), the repeated thead/tfoot give
+         every page its top and bottom space and the licence line. On screen the table is plain blocks. -->
+    <table class="print-frame" role="presentation">
+      <thead class="print-only"><tr><td><div class="print-space-top"></div></td></tr></thead>
+      <tfoot class="print-only"><tr><td><div class="print-space-bottom"><p class="print-line" id="print-line"></p></div></td></tr></tfoot>
+      <tbody><tr><td>
+        <div class="rd-course">
+          <p class="eyebrow">Teranga Pro <span class="dot" aria-hidden="true">·</span> Formation</p>
+          <h1 id="rd-course-title">Power Query pour le reporting bancaire</h1>
+          <p id="rd-course-sub"></p>
+          <p class="small" id="rd-course-meta"></p>
+        </div>
+        <div id="rd-sections"></div>
+      </td></tr></tbody>
+    </table>
+  </main>
+</div>
+
+<footer class="rd-footer" id="rd-footer" hidden><p id="rd-footer-licence"></p></footer>
+<div class="print-mark" aria-hidden="true"><p class="print-diag" id="print-diag"></p></div>
+</body>
+</html>

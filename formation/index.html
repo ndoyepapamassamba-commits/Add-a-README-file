@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Power Query pour le reporting bancaire — formation Excel, édition UEMOA | Teranga Pro</title>
+<meta name="description" content="Automatisez vos états mensuels sous Excel avec Power Query&nbsp;: imports CSV, nettoyage, correspondance comptes → postes, ancienneté des impayés, rapprochement balance ↔ encours et contrôles. Formation en ligne, édition UEMOA, données 100&nbsp;% fictives.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#0B2545">
+<!-- ?o=…&t=… (payment retry) carries the order token: other sites only ever get the origin. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_SN">
+<meta property="og:site_name" content="Teranga Pro">
+<meta property="og:title" content="Power Query pour le reporting bancaire — édition UEMOA">
+<meta property="og:description" content="Automatisez vos états mensuels sous Excel&nbsp;: imports, nettoyage, correspondances, impayés, rapprochements et contrôles en un clic.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="formation.css">
+<script src="../cv/config.js" defer></script>
+<script src="js/core.js" defer></script>
+<script src="js/pay.js" defer></script>
+<script src="js/lead.js" defer></script>
+<script src="js/sales.js" defer></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Course",
+  "name": "Power Query pour le reporting bancaire",
+  "description": "Automatisez vos états mensuels sous Excel avec Power Query — édition UEMOA\u00a0: importer les extractions, nettoyer et typer, table de correspondance comptes → postes, ancienneté des impayés, indicateurs de qualité du portefeuille, rapprochement balance ↔ encours, contrôles de cohérence.",
+  "provider": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "inLanguage": "fr",
+  "hasCourseInstance": { "@type": "CourseInstance", "courseMode": "online" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Faut-il déjà connaître Power Query\u00a0?", "acceptedAnswer": { "@type": "Answer", "text": "Non. Une utilisation courante d'Excel suffit (tableaux, filtres, formules simples). La formation part des bases de Power Query et n'exige aucune connaissance en programmation." } },
+    { "@type": "Question", "name": "Les données utilisées sont-elles réelles\u00a0?", "acceptedAnswer": { "@type": "Answer", "text": "Non. Toutes les données sont fictives, générées pour la formation autour d'un établissement imaginaire, la «\u00a0Banque Fictive de l'Ouest (BFO)\u00a0». Les tables de correspondance sont des exemples pédagogiques, pas des états réglementaires officiels." } },
+    { "@type": "Question", "name": "Est-ce une formation officielle ou diplômante\u00a0?", "acceptedAnswer": { "@type": "Answer", "text": "Non. Après le quiz final, vous obtenez une attestation de suivi non diplômante. Ce n'est ni un diplôme ni une certification, et Teranga Pro n'est affilié à aucune banque ni à aucune autorité." } },
+    { "@type": "Question", "name": "Comment se passe le paiement\u00a0?", "acceptedAnswer": { "@type": "Answer", "text": "Par Wave Sénégal. Après votre commande, la page vous indique un montant exact à envoyer\u00a0: ce montant unique permet de reconnaître votre transfert et d'ouvrir votre accès. Autres pays\u00a0: bientôt." } },
+    { "@type": "Question", "name": "Combien de temps dure l'accès\u00a0?", "acceptedAnswer": { "@type": "Answer", "text": "L'accès en ligne dure 24 mois et le contenu est mis à jour pendant 12 mois. Les classeurs et les données se téléchargent et restent à vous." } },
+    { "@type": "Question", "name": "Fonctionne-t-elle sur Mac\u00a0?", "acceptedAnswer": { "@type": "Answer", "text": "Oui avec Excel pour Microsoft 365 à jour. Selon Microsoft, Power Query n'est pas disponible dans Excel 2016 et Excel 2019 pour Mac. Les exercices suivent l'interface Windows." } },
+    { "@type": "Question", "name": "Puis-je être remboursé\u00a0?", "acceptedAnswer": { "@type": "Answer", "text": "Il s'agit d'un contenu numérique\u00a0: il n'est pas remboursable une fois l'accès ouvert ou un fichier téléchargé, sauf si l'accès n'est pas ouvert dans les 48 heures suivant un paiement prouvé. Voir les conditions générales de vente." } }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="tp-header">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Teranga Pro, accueil de la formation">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+      <span class="brand-name">Teranga<span>Pro</span></span>
+    </a>
+    <nav class="tp-nav" aria-label="Navigation principale">
+      <a class="nav-hide-sm" href="#programme">Programme</a>
+      <a class="nav-gratuit" href="gratuit.html">Module gratuit</a>
+      <a href="#my-courses" id="my-courses-link" hidden>Mes formations</a>
+    </nav>
+  </div>
+</header>
+
+<div class="notice-bar" id="pay-failed" role="alert" hidden>
+  <div class="wrap">
+    <p>Le paiement n'a pas abouti. Vous pouvez réessayer.</p>
+    <button type="button" class="btn btn-navy btn-small" id="pay-retry"><span class="btn-label">Réessayer le paiement</span></button>
+    <p class="form-status" id="pay-failed-error"></p>
+  </div>
+</div>
+
+<section class="my-courses" id="my-courses" aria-labelledby="my-courses-title" hidden>
+  <div class="wrap">
+    <h2 id="my-courses-title">Mes formations sur ce téléphone</h2>
+    <ul id="my-courses-list"></ul>
+  </div>
+</section>
+
+<main id="main">
+  <noscript><div class="wrap"><p class="banner banner-warn">Activez JavaScript dans votre navigateur pour vous inscrire et lire la formation.</p></div></noscript>
+
+  <!-- ================= Hero ================= -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <div class="hero-text">
+        <p class="eyebrow">Formation en ligne <span class="dot" aria-hidden="true">·</span> Édition UEMOA <span class="dot" aria-hidden="true">·</span> Version Essentiel</p>
+        <h1 id="hero-title">Power Query pour le reporting bancaire</h1>
+        <p class="hero-sub">Automatisez vos états mensuels sous Excel — édition UEMOA</p>
+        <p class="hero-lede">Chaque fin de mois, les mêmes extractions à copier, retraiter et rapprocher à la main. Apprenez à confier ces étapes à Power Query une fois pour toutes, puis à tout actualiser en un clic quand arrivent les fichiers du mois suivant.</p>
+        <p class="hero-price"><span class="label">Prix de lancement&nbsp;:</span> <strong data-course-price>25&nbsp;000&nbsp;FCFA</strong></p>
+        <div class="hero-cta">
+          <a class="btn btn-light btn-lg" href="#tarif" data-when="closed"><span class="btn-label">Être prévenu(e) de l'ouverture</span></a>
+          <a class="btn btn-light btn-lg" href="#tarif" data-when="open" hidden><span class="btn-label">Acheter la formation</span></a>
+          <a class="btn btn-on-navy btn-lg" href="gratuit.html"><span class="btn-label">Lire le module gratuit</span></a>
+        </div>
+        <ul class="hero-facts">
+          <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>8 modules illustrés</li>
+          <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Classeurs d'exercices corrigés</li>
+          <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Données 100&nbsp;% fictives</li>
+        </ul>
+      </div>
+      <div class="hero-visual">
+        <svg viewBox="0 0 520 440" role="img" aria-label="Schéma&nbsp;: des extractions CSV mensuelles passent par des étapes Power Query enregistrées, puis alimentent un état mensuel contrôlé, actualisé en un clic.">
+          <defs>
+            <linearGradient id="hv-card" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#EEF3F8"/></linearGradient>
+            <linearGradient id="hv-bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0B7A72"/><stop offset="1" stop-color="#13A89E"/></linearGradient>
+            <marker id="hv-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#6FD6CC"/></marker>
+          </defs>
+          <g font-family="-apple-system, 'Segoe UI', Roboto, Inter, Arial, sans-serif">
+            <!-- monthly extracts -->
+            <g>
+              <rect x="10" y="26" width="178" height="58" rx="11" fill="url(#hv-card)"/>
+              <path d="M26 40h15l7 7v23H26z" fill="#E6F4F2"/><path d="M41 40v7h7" fill="#BFE3DE"/>
+              <text x="58" y="51" font-size="12" font-weight="700" fill="#0B2545">balance_09.csv</text>
+              <text x="58" y="68" font-size="10.5" fill="#5A6472">Balance générale</text>
+              <rect x="10" y="98" width="178" height="58" rx="11" fill="url(#hv-card)"/>
+              <path d="M26 112h15l7 7v23H26z" fill="#E6F4F2"/><path d="M41 112v7h7" fill="#BFE3DE"/>
+              <text x="58" y="123" font-size="12" font-weight="700" fill="#0B2545">encours_09.csv</text>
+              <text x="58" y="140" font-size="10.5" fill="#5A6472">Portefeuille de crédits</text>
+              <rect x="10" y="170" width="178" height="58" rx="11" fill="url(#hv-card)"/>
+              <path d="M26 184h15l7 7v23H26z" fill="#E6F4F2"/><path d="M41 184v7h7" fill="#BFE3DE"/>
+              <text x="58" y="195" font-size="12" font-weight="700" fill="#0B2545">postes.csv</text>
+              <text x="58" y="212" font-size="10.5" fill="#5A6472">Table de correspondance</text>
+            </g>
+            <path d="M190 55 C 206 55, 206 110, 220 118" fill="none" stroke="#6FD6CC" stroke-width="1.6" marker-end="url(#hv-arrow)"/>
+            <path d="M190 127 L 220 127" fill="none" stroke="#6FD6CC" stroke-width="1.6" marker-end="url(#hv-arrow)"/>
+            <path d="M190 199 C 206 199, 206 144, 220 136" fill="none" stroke="#6FD6CC" stroke-width="1.6" marker-end="url(#hv-arrow)"/>
+            <!-- recorded steps -->
+            <rect x="226" y="14" width="284" height="236" rx="14" fill="#0F2D52" stroke="#2A4D78"/>
+            <text x="246" y="44" font-size="13.5" font-weight="700" fill="#FFFFFF">Étapes enregistrées</text>
+            <text x="246" y="62" font-size="10.5" fill="#AEBBCD">rejouées à chaque actualisation</text>
+            <line x1="246" y1="76" x2="490" y2="76" stroke="#2A4D78"/>
+            <g font-size="11.5" fill="#E8EEF6">
+              <circle cx="256" cy="98" r="8" fill="#13A89E"/><path d="M252 98.4l2.6 2.6 5-5.4" fill="none" stroke="#0B2545" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="274" y="102">Combiner les fichiers du mois</text>
+              <circle cx="256" cy="130" r="8" fill="#13A89E"/><path d="M252 130.4l2.6 2.6 5-5.4" fill="none" stroke="#0B2545" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="274" y="134">Typer dates et montants (fr-FR)</text>
+              <circle cx="256" cy="162" r="8" fill="#13A89E"/><path d="M252 162.4l2.6 2.6 5-5.4" fill="none" stroke="#0B2545" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="274" y="166">Fusionner comptes → postes</text>
+              <circle cx="256" cy="194" r="8" fill="#13A89E"/><path d="M252 194.4l2.6 2.6 5-5.4" fill="none" stroke="#0B2545" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="274" y="198">Calculer les jours de retard</text>
+              <circle cx="256" cy="226" r="8" fill="none" stroke="#6FD6CC" stroke-width="1.6"/>
+              <text x="274" y="230">Regrouper par tranche et agence</text>
+            </g>
+            <!-- one click -->
+            <rect x="10" y="252" width="178" height="40" rx="20" fill="#13345E" stroke="#13A89E" stroke-width="1.4"/>
+            <path d="M38 266a8 8 0 1 0 2.4 5.7" fill="none" stroke="#6FD6CC" stroke-width="2" stroke-linecap="round"/><path d="M33.5 262.5l5.2 3.4-4.4 4.2" fill="none" stroke="#6FD6CC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="56" y="277" font-size="12.5" font-weight="700" fill="#FFFFFF">Actualiser tout</text>
+            <path d="M368 252 L 368 284" fill="none" stroke="#6FD6CC" stroke-width="1.6" marker-end="url(#hv-arrow)"/>
+            <!-- monthly report -->
+            <rect x="96" y="292" width="414" height="138" rx="14" fill="url(#hv-card)"/>
+            <text x="116" y="320" font-size="12.5" font-weight="700" fill="#0B2545">État mensuel · encours par tranche de retard</text>
+            <rect x="398" y="331" width="96" height="24" rx="12" fill="#E6F4F2"/>
+            <path d="M409 343.4l3 3 6-6.4" fill="none" stroke="#0B7A72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="424" y="347.5" font-size="10.5" font-weight="700" fill="#0B7A72">Contrôles OK</text>
+            <g font-size="10.5" fill="#5A6472">
+              <text x="116" y="352">Sain</text><rect x="188" y="342" width="190" height="12" rx="6" fill="url(#hv-bar)"/>
+              <text x="116" y="372">1 – 30 j</text><rect x="188" y="362" width="104" height="12" rx="6" fill="url(#hv-bar)" opacity=".85"/>
+              <text x="116" y="392">31 – 90 j</text><rect x="188" y="382" width="58" height="12" rx="6" fill="#C98A2A" opacity=".8"/>
+              <text x="116" y="412">&gt; 90 j</text><rect x="188" y="402" width="32" height="12" rx="6" fill="#A3261B" opacity=".75"/>
+            </g>
+            <line x1="398" y1="368" x2="494" y2="368" stroke="#E3E0D8"/>
+            <text x="398" y="388" font-size="10" fill="#5A6472">Balance ↔ encours</text>
+            <text x="398" y="406" font-size="10.5" font-weight="700" fill="#0B2545">Écarts listés</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Problem ================= -->
+  <section class="sec" aria-labelledby="pb-title">
+    <div class="wrap grid-2 problem-grid">
+      <div class="sec-head">
+        <p class="kicker">Le constat</p>
+        <h2 id="pb-title">Le reporting mensuel refait à la main, mois après mois</h2>
+        <p>Extractions du système d'information, balance générale, portefeuille de crédits&nbsp;: les fichiers changent chaque mois, mais le travail reste le même. Copier, coller, corriger les formats, recalculer, rapprocher… et vérifier encore, parce qu'une erreur de copier-coller se voit rarement tout de suite.</p>
+        <p>Power Query enregistre chacune de ces étapes. Le mois suivant, vous déposez les nouveaux fichiers et vous actualisez&nbsp;: les mêmes traitements sont rejoués, à l'identique, et vos contrôles vous signalent ce qui ne colle pas.</p>
+      </div>
+      <div class="compare">
+        <div class="card compare-before">
+          <h3>Chaque mois, à la main</h3>
+          <ul class="marks marks-x">
+            <li>Copier-coller des extractions d'un classeur à l'autre</li>
+            <li>Dates et montants «&nbsp;1&nbsp;234&nbsp;567,50&nbsp;» à retraiter</li>
+            <li>Tranches de retard recalculées formule par formule</li>
+            <li>Rapprochement balance ↔ encours fait à l'œil</li>
+            <li>Un fichier que seule une personne sait refaire</li>
+          </ul>
+        </div>
+        <div class="card compare-after">
+          <h3>Avec Power Query</h3>
+          <ul class="marks marks-v">
+            <li>Un dossier de fichiers mensuels combinés automatiquement</li>
+            <li>Formats français reconnus une fois pour toutes</li>
+            <li>Tranches et regroupements recalculés à l'actualisation</li>
+            <li>Écarts listés avec un seuil de tolérance</li>
+            <li>Des étapes lisibles, documentées, transmissibles</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Outcomes ================= -->
+  <section class="sec sec-alt" aria-labelledby="out-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="kicker">Ce que vous saurez faire</p>
+        <h2 id="out-title">Des compétences directement utiles à votre clôture mensuelle</h2>
+      </div>
+      <ul class="outcomes">
+        <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v11m0 0l-4-4m4 4l4-4M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><strong>Importer proprement vos extractions</strong><span>CSV au point-virgule, encodages, dates jj/mm/aaaa, montants à la française, dossiers de fichiers mensuels.</span></div></li>
+        <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><strong>Nettoyer et typer sans formule</strong><span>Espaces, doublons, valeurs manquantes, codes agence, colonnes conditionnelles et erreurs courantes.</span></div></li>
+        <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 7H6a3 3 0 0 0 0 6h3m6-6h3a3 3 0 0 1 0 6h-3m-7-3h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><strong>Relier comptes et postes</strong><span>Fusionner une table de correspondance par préfixe de compte et repérer les comptes non mappés.</span></div></li>
+        <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 10h16M9 3v4m6-4v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><strong>Suivre l'ancienneté des impayés</strong><span>Jours de retard, tranches, regroupements par agence et par produit, actualisés chaque mois.</span></div></li>
+        <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4v16M5 8h14M5 8l-2 6h4zm14 0l-2 6h4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><strong>Rapprocher balance et encours</strong><span>Comparer le comptable et l'extra-comptable, calculer les écarts et produire la liste à justifier.</span></div></li>
+        <li><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><strong>Contrôler avant de diffuser</strong><span>Totaux, signes, variations anormales, tableau de contrôle et checklist mensuelle.</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= Programme ================= -->
+  <section class="sec" id="programme" aria-labelledby="prog-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="kicker">Programme</p>
+        <h2 id="prog-title">8 modules, du premier import au contrôle final</h2>
+        <p>Chaque module associe un texte illustré de schémas, un classeur d'exercices, des données fictives, le code M complet de la solution et les résultats attendus pour vous vérifier vous-même.</p>
+      </div>
+      <ol class="toc">
+        <li class="toc-free">
+          <span class="toc-num" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#E6F4F2"/><path d="M11 13.5c3-1.3 6-1.3 9 .6 3-1.9 6-1.9 9-.6v13c-3-1.3-6-1.3-9 .6-3-1.9-6-1.9-9-.6zM20 14.1v13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
+          <div class="toc-main">
+            <h3><span class="sr-only">Module gratuit&nbsp;: </span>Calculer l'ancienneté des impayés avec Power Query</h3>
+            <p>Un extrait en accès libre, sur un petit jeu de données fictives, pour juger de la méthode avant de vous inscrire. <a href="gratuit.html">Lire le module gratuit</a></p>
+          </div>
+          <div class="toc-meta"><span class="chip chip-teal">Accès libre</span></div>
+        </li>
+        <li>
+          <span class="toc-num" aria-hidden="true">01</span>
+          <div class="toc-main">
+            <h3><span class="sr-only">Module 1&nbsp;: </span>Pourquoi Power Query pour le reporting bancaire</h3>
+            <p>Requêtes, étapes appliquées et actualisation&nbsp;; versions d'Excel concernées&nbsp;; organiser un classeur de reporting qui se met à jour.</p>
+          </div>
+          <div class="toc-meta"><span class="chip" data-module-minutes="1"></span></div>
+        </li>
+        <li>
+          <span class="toc-num" aria-hidden="true">02</span>
+          <div class="toc-main">
+            <h3><span class="sr-only">Module 2&nbsp;: </span>Importer les extractions</h3>
+            <p>CSV au séparateur point-virgule, encodage, dates jj/mm/aaaa, montants «&nbsp;1&nbsp;234&nbsp;567,50&nbsp;» avec la culture fr-FR, dossier de fichiers mensuels combinés, paramètre «&nbsp;date d'arrêté&nbsp;».</p>
+          </div>
+          <div class="toc-meta"><span class="chip" data-module-minutes="2"></span></div>
+        </li>
+        <li>
+          <span class="toc-num" aria-hidden="true">03</span>
+          <div class="toc-main">
+            <h3><span class="sr-only">Module 3&nbsp;: </span>Nettoyer et typer</h3>
+            <p>Types de données, espaces parasites, doublons, valeurs manquantes, codes agence, colonnes conditionnelles et erreurs fréquentes, sur une extraction volontairement «&nbsp;sale&nbsp;».</p>
+          </div>
+          <div class="toc-meta"><span class="chip" data-module-minutes="3"></span></div>
+        </li>
+        <li>
+          <span class="toc-num" aria-hidden="true">04</span>
+          <div class="toc-main">
+            <h3><span class="sr-only">Module 4&nbsp;: </span>Table de correspondance comptes <span class="sym">→</span> postes</h3>
+            <p>Fusion de requêtes, préfixes de comptes et contrôle des comptes non mappés, avec une table d'exemple pédagogique (pas un état réglementaire officiel).</p>
+          </div>
+          <div class="toc-meta"><span class="chip" data-module-minutes="4"></span></div>
+        </li>
+        <li>
+          <span class="toc-num" aria-hidden="true">05</span>
+          <div class="toc-main">
+            <h3><span class="sr-only">Module 5&nbsp;: </span>Ancienneté des impayés</h3>
+            <p>Jours de retard, tranches, colonnes calculées et regroupements par tranche, par agence et par produit.</p>
+          </div>
+          <div class="toc-meta"><span class="chip" data-module-minutes="5"></span></div>
+        </li>
+        <li>
+          <span class="toc-num" aria-hidden="true">06</span>
+          <div class="toc-main">
+            <h3><span class="sr-only">Module 6&nbsp;: </span>Indicateurs de qualité du portefeuille</h3>
+            <p>Créances en souffrance pour les banques, PAR30 et PAR90 pour la microfinance&nbsp;: deux logiques distinctes, expliquées séparément avec leurs sources publiques.</p>
+          </div>
+          <div class="toc-meta"><span class="chip" data-module-minutes="6"></span></div>
+        </li>
+        <li>
+          <span class="toc-num" aria-hidden="true">07</span>
+          <div class="toc-main">
+            <h3><span class="sr-only">Module 7&nbsp;: </span>Rapprochement balance <span class="sym">↔</span> encours</h3>
+            <p>Comptable et extra-comptable, calcul des écarts, seuil de tolérance et liste des écarts à justifier.</p>
+          </div>
+          <div class="toc-meta"><span class="chip" data-module-minutes="7"></span></div>
+        </li>
+        <li>
+          <span class="toc-num" aria-hidden="true">08</span>
+          <div class="toc-main">
+            <h3><span class="sr-only">Module 8&nbsp;: </span>Contrôles de cohérence et actualisation en un clic</h3>
+            <p>Contrôles automatiques (totaux, signes, variations anormales), tableau de contrôle, documentation et checklist mensuelle.</p>
+          </div>
+          <div class="toc-meta"><span class="chip" data-module-minutes="8"></span></div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ================= Audience ================= -->
+  <section class="sec sec-alt" aria-labelledby="aud-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="kicker">Pour qui</p>
+        <h2 id="aud-title">Pensée pour les métiers du chiffre de la zone UEMOA</h2>
+      </div>
+      <div class="audience">
+        <div class="card"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 9l9-5 9 5M5 10v8m4.7-8v8m4.6-8v8M19 10v8M3 20h18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><h3>Banques et établissements financiers</h3><p>Équipes qui produisent chaque mois des états à partir d'extractions du système d'information.</p></div></div>
+        <div class="card"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20V10m6 10V4m6 16v-7m4 7H2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><h3>Analystes et contrôleurs</h3><p>Risque, reporting, contrôle de gestion, audit&nbsp;: tous ceux qui retraitent, rapprochent et contrôlent des fichiers.</p></div></div>
+        <div class="card"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5zM6 11v5c3 2.5 9 2.5 12 0v-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><h3>Étudiants en master banque-finance</h3><p>Pour arriver en stage ou en poste avec une méthode de travail déjà pratiquée sur des cas réalistes.</p></div></div>
+      </div>
+      <div class="card not-for">
+        <h3>Ce n'est pas pour vous si…</h3>
+        <ul class="marks marks-x">
+          <li>vous cherchez un cours en vidéo ou un accompagnement individuel&nbsp;;</li>
+          <li>vous attendez des états réglementaires officiels prêts à l'emploi&nbsp;: les tables fournies sont des exemples pédagogiques&nbsp;;</li>
+          <li>vous voulez un diplôme ou une certification&nbsp;: l'attestation délivrée est une attestation de suivi, non diplômante.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Included & requirements ================= -->
+  <section class="sec" aria-labelledby="inc-title">
+    <div class="wrap grid-2">
+      <div>
+        <div class="sec-head sec-head-tight">
+          <p class="kicker">Ce qui est inclus</p>
+          <h2 id="inc-title">Tout pour pratiquer, rien à installer en plus</h2>
+        </div>
+        <ul class="included">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h10l4 4v12H5z M15 4v4h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span><strong>8 modules illustrés</strong> de texte et de schémas, à lire sur téléphone ou sur ordinateur, et à imprimer.</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4 10h16M10 4v16" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span><strong>Des classeurs d'exercices</strong> Excel, marqués à votre nom.</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.8" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5 6v12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8V6M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span><strong>Des données fictives</strong> en CSV (établissement imaginaire «&nbsp;Banque Fictive de l'Ouest&nbsp;»), plusieurs arrêtés mensuels.</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5m8-10l5 5-5 5M14 4l-4 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span><strong>Le code M complet</strong> de chaque solution et les résultats attendus pour vous auto-vérifier.</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 12.3l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span><strong>Un quiz final</strong> à choix multiple et l'«&nbsp;Attestation de suivi — non diplômante&nbsp;», vérifiable en ligne si vous le souhaitez.</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Prérequis et conditions</h3>
+        <dl class="reqs">
+          <div><dt>Excel 2016 ou plus récent, ou Microsoft 365, sous Windows ou Mac</dt><dd>Sur Mac, Power Query demande Excel pour Microsoft 365 à jour&nbsp;: selon Microsoft, il n'est pas disponible dans Excel 2016 et 2019 pour Mac. Les exercices suivent l'interface Windows. <a href="https://support.microsoft.com/fr-fr/office/%C3%A0-propos-de-power-query-dans-excel-7104fbee-9e62-4cb9-a02e-5bfb1a6c536a" rel="noopener">Documentation Microsoft</a></dd></div>
+          <div><dt>Niveau</dt><dd>Une utilisation courante d'Excel suffit. Aucune connaissance de Power Query ni de programmation.</dd></div>
+          <div><dt>Pas d'assistance individuelle</dt><dd>Le contenu se suit en autonomie&nbsp;: chaque exercice donne la solution et les résultats attendus.</dd></div>
+          <div><dt>Accès en ligne pendant 24 mois</dt><dd>Mises à jour du contenu pendant 12 mois. Les fichiers téléchargés restent à vous.</dd></div>
+          <div><dt>Paiement par Wave Sénégal — autres pays&nbsp;: bientôt</dt><dd>Sans compte à créer&nbsp;: votre accès se garde sur votre téléphone et sur votre WhatsApp.</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Pricing ================= -->
+  <section class="sec sec-alt" id="tarif" aria-labelledby="tarif-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="kicker">Tarif</p>
+        <h2 id="tarif-title">Un seul paiement, accès pendant 24 mois</h2>
+      </div>
+      <div class="pricing">
+        <div class="price-card">
+          <div class="price-top">
+            <span class="label">Prix de lancement</span>
+            <p class="status-pill status-soon" data-when="closed">Ouverture prochaine</p>
+            <p class="status-pill status-open" data-when="open" hidden>Inscriptions ouvertes</p>
+          </div>
+          <p class="price-amount" data-course-price>25&nbsp;000&nbsp;FCFA</p>
+          <p class="price-sub">Formation «&nbsp;Power Query pour le reporting bancaire&nbsp;» — édition Essentiel. Paiement unique, sans abonnement.</p>
+          <hr class="divider">
+
+          <div data-when="closed" data-lead>
+            <h3>Soyez prévenu(e) de l'ouverture</h3>
+            <p>Les inscriptions ne sont pas encore ouvertes. Laissez un e-mail ou un numéro WhatsApp pour être prévenu(e) dès l'ouverture.</p>
+            <p class="banner banner-warn" id="closed-note" role="status" hidden></p>
+            <form class="lead-form" data-lead-form data-source="formation-index" novalidate>
+              <div class="field">
+                <label for="lead-email">E-mail</label>
+                <input type="email" id="lead-email" name="email" autocomplete="email" inputmode="email" maxlength="80" placeholder="prenom.nom@exemple.com" aria-describedby="lead-email-error lead-contact-error">
+                <p class="field-error" id="lead-email-error" data-error="email"></p>
+              </div>
+              <div class="field">
+                <label for="lead-whatsapp">Ou numéro WhatsApp</label>
+                <input type="tel" id="lead-whatsapp" name="whatsapp" autocomplete="tel" inputmode="tel" maxlength="22" placeholder="+221 77 123 45 67" aria-describedby="lead-whatsapp-error lead-contact-error">
+                <p class="field-error" id="lead-whatsapp-error" data-error="whatsapp"></p>
+              </div>
+              <p class="field-error" id="lead-contact-error" data-error="contact"></p>
+              <div class="check">
+                <input type="checkbox" id="lead-consent" name="consent" aria-describedby="lead-consent-error">
+                <label for="lead-consent">J'accepte d'être prévenu(e) par e-mail ou WhatsApp de l'ouverture de la formation et de la publication de nouveaux contenus gratuits. Mes coordonnées ne servent qu'à cela, ne sont jamais revendues et sont effacées au plus tard 12 mois après mon inscription.</label>
+              </div>
+              <p class="field-error" id="lead-consent-error" data-error="consent"></p>
+              <div class="hp" aria-hidden="true"><label for="lead-website">Ne pas remplir</label><input type="text" id="lead-website" name="website" tabindex="-1" autocomplete="off"></div>
+              <button type="submit" class="btn btn-primary btn-lg btn-block"><span class="btn-label">Me prévenir de l'ouverture</span></button>
+              <p class="form-status" role="alert"></p>
+              <p class="form-fine">Détails dans la <a href="confidentialite.html">politique de confidentialité</a>.</p>
+            </form>
+            <div class="lead-done" data-lead-done hidden>
+              <p data-lead-done-title><strong>Vous serez prévenu(e).</strong></p>
+              <p>Merci. Vous recevrez un message à l'ouverture des inscriptions. Vous pouvez demander l'effacement de vos coordonnées à tout moment.</p>
+              <button type="button" class="btn-link" data-lead-again>Inscrire un autre contact</button>
+            </div>
+          </div>
+
+          <div data-when="open" hidden>
+            <div id="buy-intro">
+              <h3>Recevoir mon accès</h3>
+              <p>Votre nom figure sur vos fichiers et sur votre attestation. L'e-mail et le téléphone sont facultatifs.</p>
+            </div>
+            <form id="buy-form" novalidate>
+              <div class="field">
+                <label for="buy-fullName">Prénom et nom</label>
+                <input type="text" id="buy-fullName" name="fullName" autocomplete="name" maxlength="80" required aria-describedby="buy-fullName-error">
+                <p class="field-error" id="buy-fullName-error"></p>
+              </div>
+              <div class="field">
+                <label for="buy-email">E-mail <span class="opt">(facultatif)</span></label>
+                <input type="email" id="buy-email" name="email" autocomplete="email" inputmode="email" maxlength="80" aria-describedby="buy-email-error">
+                <p class="field-error" id="buy-email-error"></p>
+              </div>
+              <div class="field">
+                <label for="buy-phone">Téléphone <span class="opt">(facultatif, tout pays)</span></label>
+                <input type="tel" id="buy-phone" name="phone" autocomplete="tel" inputmode="tel" maxlength="22" placeholder="+221 77 123 45 67" aria-describedby="buy-phone-error">
+                <p class="field-error" id="buy-phone-error"></p>
+              </div>
+              <div class="check">
+                <input type="checkbox" id="buy-acceptCgv" name="acceptCgv" aria-describedby="buy-acceptCgv-error">
+                <label for="buy-acceptCgv">J'accepte les <a href="cgv.html">conditions générales de vente</a>. Je comprends qu'un contenu numérique n'est pas remboursable une fois l'accès ouvert, sauf si l'accès n'est pas livré.</label>
+              </div>
+              <p class="field-error" id="buy-acceptCgv-error"></p>
+              <div class="hp" aria-hidden="true"><label for="buy-website">Ne pas remplir</label><input type="text" id="buy-website" name="website" tabindex="-1" autocomplete="off"></div>
+              <button type="submit" class="btn btn-primary btn-lg btn-block" id="buy-submit"><span class="btn-label">Acheter la formation — <span data-course-price>25&nbsp;000&nbsp;FCFA</span></span></button>
+              <p class="form-status" id="buy-error" role="alert"></p>
+              <p class="form-status form-info" id="buy-status" role="status"></p>
+              <p class="form-fine">Paiement par Wave Sénégal — autres pays&nbsp;: bientôt. Le montant exact à envoyer s'affiche à l'étape suivante.</p>
+            </form>
+          </div>
+
+          <div id="checkout" class="checkout" hidden></div>
+          <p class="banner banner-info" id="pay-return" hidden>Vous revenez de Wave&nbsp;? <a id="pay-return-link" href="lecture.html">Ouvrir ma formation</a></p>
+        </div>
+
+        <aside class="pay-steps-card" aria-labelledby="steps-title">
+          <h3 id="steps-title">Comment se passe l'inscription</h3>
+          <ol class="steps">
+            <li><strong>Vous indiquez votre nom</strong><span>Il figure sur vos classeurs et sur votre attestation.</span></li>
+            <li><strong>Vous envoyez le montant exact par Wave</strong><span>Un montant unique, au franc près, qui permet de reconnaître votre transfert.</span></li>
+            <li><strong>Votre accès s'ouvre</strong><span>Dès que le transfert est reconnu. Gardez votre lien personnel sur votre WhatsApp.</span></li>
+          </ol>
+          <p>Pas de compte à créer. Les frais de transfert Wave sont à votre charge.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FAQ ================= -->
+  <section class="sec" id="faq" aria-labelledby="faq-title">
+    <div class="wrap faq-grid">
+      <div class="sec-head">
+        <p class="kicker">Questions fréquentes</p>
+        <h2 id="faq-title">Avant de vous inscrire</h2>
+        <p>Une autre question&nbsp;? Lisez d'abord le <a href="gratuit.html">module gratuit</a>&nbsp;: il montre exactement la méthode et le niveau de détail.</p>
+      </div>
+      <div class="faq">
+        <details><summary>Faut-il déjà connaître Power Query&nbsp;?</summary><div class="answer"><p>Non. Une utilisation courante d'Excel suffit (tableaux, filtres, formules simples). La formation part des bases de Power Query et n'exige aucune connaissance en programmation.</p></div></details>
+        <details><summary>Les données utilisées sont-elles réelles&nbsp;?</summary><div class="answer"><p>Non. Toutes les données sont fictives, générées pour la formation autour d'un établissement imaginaire, la «&nbsp;Banque Fictive de l'Ouest (BFO)&nbsp;». Les tables de correspondance sont des exemples pédagogiques, pas des états réglementaires officiels.</p></div></details>
+        <details><summary>Est-ce une formation officielle ou diplômante&nbsp;?</summary><div class="answer"><p>Non. Après le quiz final, vous obtenez une attestation de suivi non diplômante. Ce n'est ni un diplôme ni une certification, et Teranga Pro n'est affilié à aucune banque ni à aucune autorité.</p></div></details>
+        <details><summary>Comment se passe le paiement&nbsp;?</summary><div class="answer"><p>Par Wave Sénégal. Après votre commande, la page vous indique un montant exact à envoyer&nbsp;: ce montant unique permet de reconnaître votre transfert et d'ouvrir votre accès. Autres pays&nbsp;: bientôt.</p></div></details>
+        <details><summary>Combien de temps dure l'accès&nbsp;?</summary><div class="answer"><p>L'accès en ligne dure 24 mois et le contenu est mis à jour pendant 12 mois. Les classeurs et les données se téléchargent et restent à vous.</p></div></details>
+        <details><summary>Fonctionne-t-elle sur Mac&nbsp;?</summary><div class="answer"><p>Oui avec Excel pour Microsoft 365 à jour. Selon Microsoft, Power Query n'est pas disponible dans Excel 2016 et Excel 2019 pour Mac. Les exercices suivent l'interface Windows.</p></div></details>
+        <details><summary>Puis-je partager la formation avec un collègue&nbsp;?</summary><div class="answer"><p>Non&nbsp;: la licence est personnelle. Vos classeurs et votre espace de lecture portent votre nom. Pour une équipe, chaque personne s'inscrit à son nom.</p></div></details>
+        <details><summary>J'ai perdu mon lien d'accès</summary><div class="answer"><p>Sur le téléphone utilisé pour l'achat, il apparaît en haut de cette page («&nbsp;Mes formations&nbsp;»). Dans la formation, le bouton «&nbsp;Envoyer ce lien sur mon WhatsApp&nbsp;» vous permet de le garder. Sinon, contactez le vendeur avec votre référence de commande.</p></div></details>
+        <details><summary>Puis-je afficher ou masquer mon attestation en ligne&nbsp;?</summary><div class="answer"><p>Oui. Au moment du quiz, vous choisissez d'afficher ou non votre attestation sur la page publique de vérification (nom, formation, date). Pour changer d'avis, repassez le quiz avec l'autre choix&nbsp;: c'est la dernière réussite qui compte.</p></div></details>
+        <details><summary>Puis-je être remboursé&nbsp;?</summary><div class="answer"><p>Il s'agit d'un contenu numérique&nbsp;: il n'est pas remboursable une fois l'accès ouvert ou un fichier téléchargé, sauf si l'accès n'est pas ouvert dans les 48 heures suivant un paiement prouvé. Voir les <a href="cgv.html">conditions générales de vente</a>.</p></div></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Author ================= -->
+  <section class="sec sec-alt" aria-labelledby="author-title">
+    <div class="wrap">
+      <div class="author">
+        <svg viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="27" fill="#0B2545"/><path d="M14.5 18h14M21.5 18v20.5" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/><path d="M32 38.5V18h5.2a5.4 5.4 0 0 1 0 10.8H32" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="14.5" y="42.5" width="27" height="2.4" rx="1.2" fill="#13A89E"/></svg>
+        <div>
+          <h2 id="author-title" class="who">Conçu par un praticien du reporting bancaire en Afrique de l'Ouest</h2>
+          <p>Une méthode issue de la pratique quotidienne des clôtures mensuelles, transposée sur des données entièrement fictives. Les références réglementaires citées sont des textes publics, avec leur lien.</p>
+          <p class="muted small">Teranga Pro n'est affilié à aucune banque, à la BCEAO ni à la Commission bancaire de l'UMOA. Aucun résultat professionnel ni gain n'est garanti.</p>
+        </div>
+      </div>
+      <div class="cta-band cta-after-author">
+        <div>
+          <h2>Commencez par le module gratuit</h2>
+          <p>Calculer l'ancienneté des impayés avec Power Query, pas à pas, sur un petit jeu de données.</p>
+        </div>
+        <a class="btn btn-light btn-lg" href="gratuit.html"><span class="btn-label">Lire le module gratuit</span><span class="arrow" aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="tp-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="index.html" aria-label="Teranga Pro, accueil de la formation">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+          <span class="brand-name">Teranga<span>Pro</span></span>
+        </a>
+        <p>Formations pratiques pour les métiers du chiffre en Afrique de l'Ouest. Données d'exercice 100&nbsp;% fictives.</p>
+      </div>
+      <div>
+        <h2>Formation</h2>
+        <ul>
+          <li><a href="#programme">Programme</a></li>
+          <li><a href="gratuit.html">Module gratuit</a></li>
+          <li><a href="attestation.html">Vérifier une attestation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Informations</h2>
+        <ul>
+          <li><a href="cgv.html">Conditions générales de vente</a></li>
+          <li><a href="confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="footer-note">© 2026 Teranga Pro · Vendeur&nbsp;: particulier résidant au Sénégal.</p>
+  </div>
+</footer>
+</body>
+</html>
