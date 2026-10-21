@@ -46,3 +46,4 @@
 [1580 s] 13 clips · === maitre-kone--rire (at_runtime)   |=========================>                        | 2/4 - 134.85s/it[K · mémoire libre 13782 Mo
 [1701 s] 13 clips · === maitre-kone--rire (at_runtime)   |=====================================>            | 3/4 - 134.28s/it[K · mémoire libre 13786 Mo
 [1822 s] 14 clips · === mecano-issa--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13787 Mo
+[1944 s] 14 clips · === mecano-issa--mentir (at_runtime)   |============>                                     | 1/4 - 134.56s/it[K · mémoire libre 13774 Mo
