@@ -42,3 +42,4 @@
 [4003 s] 4 images · === perso-madame-konan   |=========================>                        | 2/4 - 395.06s/it[K · mémoire libre 6271 Mo
 [4125 s] 4 images · === perso-madame-konan   |=========================>                        | 2/4 - 395.06s/it[K · mémoire libre 6262 Mo
 [4246 s] 4 images · === perso-madame-konan   |=========================>                        | 2/4 - 395.06s/it[K · mémoire libre 6261 Mo
+[4367 s] 4 images · === perso-madame-konan   |=====================================>            | 3/4 - 394.82s/it[K · mémoire libre 6265 Mo
