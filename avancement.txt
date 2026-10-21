@@ -24,3 +24,4 @@
 [852 s] 12 clips · === agent-bakary--rire (at_runtime)   |============>                                     | 1/4 - 135.56s/it[K · mémoire libre 13760 Mo
 [973 s] 12 clips · === agent-bakary--rire (at_runtime)   |=========================>                        | 2/4 - 133.87s/it[K · mémoire libre 13768 Mo
 [1094 s] 12 clips · === agent-bakary--rire (at_runtime)   |=====================================>            | 3/4 - 133.83s/it[K · mémoire libre 13773 Mo
+[123 s] 12 clips · === agent-bakary--montrer (at_runtime)  · mémoire libre 13777 Mo
