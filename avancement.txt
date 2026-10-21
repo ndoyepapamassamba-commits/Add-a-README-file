@@ -27,3 +27,4 @@
 [1337 s] 3 images · === perso-general-zongo   |=========================>                        | 2/4 - 276.46s/it[K · mémoire libre 6227 Mo
 [1458 s] 3 images · === perso-general-zongo   |=====================================>            | 3/4 - 275.34s/it[K · mémoire libre 6227 Mo
 [1580 s] 3 images · === perso-general-zongo   |=====================================>            | 3/4 - 275.34s/it[K · mémoire libre 6227 Mo
+[1701 s] 3 images · === perso-general-zongo   |==================================================| 4/4 - 274.98s/it[K · mémoire libre 5155 Mo
