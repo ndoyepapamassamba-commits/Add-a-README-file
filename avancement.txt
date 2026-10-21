@@ -49,3 +49,4 @@
 [4737 s] 10 images · === maison-mecano-issa-cour-champ-jour   |============>                                     | 1/4 - 88.30s/it[K · mémoire libre 7032 Mo
 [4858 s] 10 images · === maison-mecano-issa-cour-champ-jour   |=====================================>            | 3/4 - 85.19s/it[K · mémoire libre 7039 Mo
 [4980 s] 11 images · === decor-ceremonie-large-nuit   |==================================================| 4/4 - 84.08s/it[K · mémoire libre 7306 Mo
+[5101 s] 11 images · === decor-ceremonie-large-nuit   |============>                                     | 1/4 - 90.02s/it[K · mémoire libre 7052 Mo
