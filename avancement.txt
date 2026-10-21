@@ -56,3 +56,4 @@
 [5580 s] 6 images · === decor-salon-champ-jour   |==================================================| 4/4 - 156.76s/it[K · mémoire libre 11577 Mo
 [5702 s] 6 images · === decor-salon-champ-jour   |==================================================| 4/4 - 156.76s/it[K · mémoire libre 7052 Mo
 [5823 s] 6 images · === decor-salon-champ-jour   |============>                                     | 1/4 - 161.19s/it[K · mémoire libre 7042 Mo
+[5944 s] 6 images · === decor-salon-champ-jour   |=========================>                        | 2/4 - 156.68s/it[K · mémoire libre 7034 Mo
