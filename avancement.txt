@@ -102,3 +102,4 @@
 [1097 s] 31 clips · === mademoiselle-rosine--hausser@2 (at_runtime)   |=========================>                        | 2/4 - 67.93s/it[K · mémoire libre 13767 Mo
 [1219 s] 31 clips · === mademoiselle-rosine--hausser@2 (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 10458 Mo
 [1340 s] 32 clips · === patron-sery--parler@2 (at_runtime)   |============>                                     | 1/4 - 68.46s/it[K · mémoire libre 13759 Mo
+[1462 s] 32 clips · === patron-sery--parler@2 (at_runtime)   |=====================================>            | 3/4 - 68.33s/it[K · mémoire libre 13767 Mo
