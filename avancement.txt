@@ -48,3 +48,4 @@
 [122 s] 15 clips · === maman-brigitte--ecouter@2 (at_runtime)  · mémoire libre 13758 Mo
 [244 s] 15 clips · === maman-brigitte--ecouter@2 (at_runtime)   |============>                                     | 1/4 - 134.21s/it[K · mémoire libre 13759 Mo
 [365 s] 15 clips · === maman-brigitte--ecouter@2 (at_runtime)   |=========================>                        | 2/4 - 133.39s/it[K · mémoire libre 13759 Mo
+[486 s] 15 clips · === maman-brigitte--ecouter@2 (at_runtime)   |=====================================>            | 3/4 - 133.32s/it[K · mémoire libre 13751 Mo
