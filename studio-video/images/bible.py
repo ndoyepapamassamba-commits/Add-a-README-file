@@ -60,7 +60,8 @@ STYLE = "Pixar-style 3D animated film background in exactly the same rendering s
 # 20/10/2026 23:20 — premier montage depuis la banque : sur le maquis vide, aucun sol libre (tables et chaises au premier plan), les
 # acteurs debout semblaient posés sur les chaises. Chaque décor garde désormais un sol dégagé au premier plan, caméra à hauteur d'homme.
 SOL_LIBRE = 'eye-level camera, wide open empty ground in the middle foreground'   # sans nommer de personnage (sinon le modèle en dessine)
-POSES = 'five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing'
+POSES = ('five poses side by side on a plain flat bright green background (nothing else behind them: no wall, no curtain, no furniture, '
+         'no object on the ground): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing')
 
 
 def slug(t):
@@ -75,7 +76,11 @@ PIECES = {'cour': 'its courtyard', 'cuisine': 'its outdoor kitchen',
 # Version de chaque image : une image refaite (prompt corrigé, défaut vu) prend la version suivante ; bible_tourne.py ne refait
 # que les images dont la version a changé. 20/10 23:50 : personne à l'accueil (hôpital), spectateurs (terrain de foot),
 # drapeau étranger (douane) ; chambres et salons des maisons (dehors).
-REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2, 'decor-douane-large-jour': 2}
+REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2, 'decor-douane-large-jour': 2,
+           # 21/10 00:35, lu sur les 10 premières planches : mur et rideau derrière Madame Coumba (sa fiche la dit « derrière un
+           # rideau »), tresses sur la 5e pose de Tata Prisca (afro sur les 4 autres) → fond vert seul, même coiffure partout
+           'perso-madame-coumba': 2, 'perso-tata-prisca': 2}
+# Les corrections sont regroupées et poussées en UNE passe à la fin de la bible : pousser bible/taches.json redémarre les 20 machines.
 
 
 GENRES = json.load(open(os.path.join(ICI, '..', 'blender', 'film', 'characters.json'), encoding='utf-8'))
@@ -118,7 +123,7 @@ def taches():
                   'prompt': (f"Character model sheet in exactly the same 3D animated style, realistic proportions, face design and "
                              f"rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, {nom.title()}: "
                              f"{p.get('apparence', '')} Outfit: {p.get('tenue', '')} Attitude: {p.get('posture', '')} "
-                             f"Drawn {POSES}. Same face and outfit in every pose, no text.")})
+                             f"Drawn {POSES}. Same face, same hairstyle and same outfit in every pose, no text.")})
     lieux_joues = {r['lieu'] for r in M['figures_du_quartier']} | {l for j in M['journee'] for l in j['lieux']}
     for lieu, desc in LIEUX.items():
         for v, vd in VUES.items():
