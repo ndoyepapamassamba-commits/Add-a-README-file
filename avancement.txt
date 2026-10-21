@@ -2,3 +2,4 @@
 [244 s] 4 clips · === le-patriarche--rire (at_runtime)   |=========================>                        | 2/4 - 84.27s/it[K · mémoire libre 13792 Mo
 [365 s] 4 clips · === le-patriarche--rire (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13901 Mo
 [486 s] 5 clips · === la-go-leopard--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13808 Mo
+[608 s] 5 clips · === la-go-leopard--ecouter (at_runtime)   |=========================>                        | 2/4 - 88.82s/it[K · mémoire libre 13802 Mo
