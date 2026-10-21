@@ -27,3 +27,4 @@
 [3281 s] 9 clips · === petit-ibrahima--ecouter (at_runtime)   |=========================>                        | 2/4 - 133.87s/it[K · mémoire libre 13700 Mo
 [3402 s] 9 clips · === petit-ibrahima--ecouter (at_runtime)   |=====================================>            | 3/4 - 133.38s/it[K · mémoire libre 13708 Mo
 [123 s] 10 clips · === le-tonton--parler (at_runtime)   |============>                                     | 1/4 - 81.07s/it[K · mémoire libre 13753 Mo
+[244 s] 10 clips · === le-tonton--parler (at_runtime)   |=========================>                        | 2/4 - 80.04s/it[K · mémoire libre 13748 Mo
