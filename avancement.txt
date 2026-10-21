@@ -20,3 +20,4 @@
 [1337 s] 3 images · === maison-fatou-chambre-large-jour   |=====================================>            | 3/4 - 156.90s/it[K · mémoire libre 6966 Mo
 [1458 s] 4 images · === perso-mecano-issa   |==================================================| 4/4 - 157.41s/it[K · mémoire libre 8732 Mo
 [1579 s] 4 images · === perso-mecano-issa   |==================================================| 4/4 - 157.41s/it[K · mémoire libre 6320 Mo
+[1701 s] 4 images · === perso-mecano-issa   |==================================================| 4/4 - 157.41s/it[K · mémoire libre 6309 Mo
