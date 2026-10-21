@@ -39,3 +39,4 @@
 [3282 s] 5 images · === perso-le-tonton   |============>                                     | 1/4 - 354.31s/it[K · mémoire libre 6278 Mo
 [3403 s] 5 images · === perso-le-tonton   |============>                                     | 1/4 - 354.31s/it[K · mémoire libre 6277 Mo
 [3525 s] 5 images · === perso-le-tonton   |=========================>                        | 2/4 - 349.17s/it[K · mémoire libre 6277 Mo
+[3646 s] 5 images · === perso-le-tonton   |=========================>                        | 2/4 - 349.17s/it[K · mémoire libre 6277 Mo
