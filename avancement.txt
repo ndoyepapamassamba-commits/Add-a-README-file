@@ -22,3 +22,4 @@
 [2671 s] 8 clips · === professeur-samba--ecouter (at_runtime)   |=========================>                        | 2/4 - 134.73s/it[K · mémoire libre 13772 Mo
 [2793 s] 8 clips · === professeur-samba--ecouter (at_runtime)   |=====================================>            | 3/4 - 135.11s/it[K · mémoire libre 13772 Mo
 [2914 s] 8 clips · === professeur-samba--ecouter (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13178 Mo
+[3035 s] 9 clips · === chef-traore--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13659 Mo
