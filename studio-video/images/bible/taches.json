@@ -660,10 +660,18 @@
   "nom": "TONTON DIENG",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "baye-ndiaye-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Tonton Dieng: Homme élancé à petit ventre, barbe grise de trois jours, visage rieur aux pattes d’oie, grand sourire de conteur. Outfit: Casquette plate beige, chemise ouverte à fleurs rouges et jaunes sur un débardeur blanc, pantalon beige, montre dorée, sandales. Attitude: Penché vers son public, index pointé vers l’horizon où se trouvent ses « villas », il rit avant la chute de sa propre histoire. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "baye-ndiaye-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Tonton Dieng: Homme élancé à petit ventre, barbe grise de trois jours, visage rieur aux pattes d’oie, grand sourire de conteur. Outfit: Casquette plate beige, chemise ouverte à fleurs rouges et jaunes sur un débardeur blanc, pantalon beige, montre dorée, sandales. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-grand-pere-ndiaye",
@@ -671,10 +679,18 @@
   "nom": "GRAND-PÈRE NDIAYE",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "baye-ndiaye-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Grand-Père Ndiaye: Vieil homme sec, longue barbe blanche, visage ridé et hilare, yeux plissés, main en cornet derrière l’oreille. Outfit: Calotte crème brodée d’or, grand boubou bleu roi brodé d’or, canne en bois, sandales. Attitude: Appuyé sur sa canne, penché vers celui qui parle, index levé pour répondre à une question qu’on n’a pas posée. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "baye-ndiaye-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Grand-Père Ndiaye: Vieil homme sec, longue barbe blanche, visage ridé et hilare, yeux plissés, main en cornet derrière l’oreille. Outfit: Calotte crème brodée d’or, grand boubou bleu roi brodé d’or, canne en bois, sandales. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-monsieur-diarra",
@@ -682,10 +698,18 @@
   "nom": "MONSIEUR DIARRA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Monsieur Diarra: Homme mince et nerveux, fine moustache et petit bouc, petits yeux qui calculent, front plissé. Outfit: Calotte crème, chemise beige à manches longues sous un gilet sans manches, calculatrice et dossiers sous le bras. Attitude: Penché sur sa calculatrice, il tape les chiffres à chaque phrase et lève l’index pour corriger le total. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Monsieur Diarra: Homme mince et nerveux, fine moustache et petit bouc, petits yeux qui calculent, front plissé. Outfit: Calotte crème, chemise beige à manches longues sous un gilet sans manches, calculatrice et dossiers sous le bras. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-maitre-coulibaly",
@@ -693,10 +717,19 @@
   "nom": "MAÎTRE COULIBALY",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "maman-nounou-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Maître Coulibaly: Femme élégante au visage fin, regard sévère sous un sourcil levé, sourire professionnel, créoles dorées. Outfit: Foulard wax bleu, jaune et rouge noué en couronne, robe d’avocate noire à jabot blanc, dossier rouge et livres sous le bras, escarpins noirs. Attitude: Index levé comme pour une objection, dossier serré contre la poitrine, elle tourne autour de son interlocuteur. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "maman-nounou-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Maître Coulibaly: Femme élégante au visage fin, regard sévère sous un sourcil levé, sourire professionnel, créoles dorées. Outfit: Foulard wax bleu, jaune et rouge noué noué haut sur la tête, robe d’avocate noire à jabot blanc, dossier rouge et livres sous le bras, escarpins noirs. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-agent-bakary",
@@ -704,10 +737,20 @@
   "nom": "AGENT BAKARY",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Agent Bakary: Homme carré, barbe courte, yeux plissés de soupçon, mâchoire serrée, sourire en coin quand il trouve quelque chose. Outfit: Casquette verte de douane, uniforme vert à épaulettes et écussons, ceinturon noir avec étui, talkie-walkie, rangers noires, passeport à la main. Attitude: Droit comme une barrière, un passeport dans une main, l’autre tendue paume ouverte ; il fouille du regard avant de fouiller la valise. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Agent Bakary: Homme carré, barbe courte, yeux plissés de soupçon, mâchoire serrée, sourire en coin quand il trouve quelque chose. Outfit: Casquette verte de douane, uniforme vert à épaulettes et écussons, ceinturon noir avec étui, talkie-walkie, rangers noires, passeport à la main. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright blue background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright blue background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "fond": "bleu",
+  "version": 2
  },
  {
   "id": "perso-tantie-awa-sarr",
@@ -715,10 +758,18 @@
   "nom": "TANTIE AWA SARR",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "maman-nounou-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Tantie Awa Sarr: Femme ronde, joues rebondies, grand rire ouvert, yeux plissés de plaisir, créoles dorées. Outfit: Foulard wax rouge et orange, robe pagne rouge et jaune à fleurs, grand tablier noir à poche pleine de billets, cuillère en bois levée, marmite noire à la main. Attitude: Cuillère brandie comme un sceptre, marmite sur la hanche ; elle goûte, rit, et sert avant qu’on ait commandé. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "maman-nounou-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Tantie Awa Sarr: Femme ronde, joues rebondies, grand rire ouvert, yeux plissés de plaisir, créoles dorées. Outfit: Foulard wax rouge et orange, robe pagne rouge et jaune à fleurs, grand tablier noir à poche pleine de billets, cuillère en bois levée, marmite noire à la main. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-professeur-samba",
@@ -726,10 +777,18 @@
   "nom": "PROFESSEUR SAMBA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "baye-ndiaye-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Professeur Samba: Homme mince et anguleux, lunettes rondes, fine moustache et bouc, regard de celui qui sait, sourire satisfait. Outfit: Calotte brodée violette, grand boubou violet brodé d’or, journal plié sous le bras, tasse de café à la main, sandales. Attitude: Journal sous le bras, tasse levée comme un argument, il parle en regardant au-dessus des lunettes. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "baye-ndiaye-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Professeur Samba: Homme mince et anguleux, lunettes rondes, fine moustache et bouc, regard de celui qui sait, sourire satisfait. Outfit: Calotte brodée violette, grand boubou violet brodé d’or, journal plié sous le bras, tasse de café à la main, sandales. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-madame-coumba",
@@ -737,10 +796,19 @@
   "nom": "MADAME COUMBA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "maman-nounou-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Madame Coumba: Femme ronde aux yeux mi-clos de conspiratrice, sourire en coin, doigt sur les lèvres. Outfit: Foulard et robe wax assortis à fleurs bleues et orange, boucles d’oreilles dorées. Attitude: Penchée par-dessus le mur ou derrière un rideau, une main en écran, l’autre sur la bouche. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "maman-nounou-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Madame Coumba: Femme ronde aux yeux mi-clos de conspiratrice, sourire en coin, doigt sur les lèvres. Outfit: Foulard et robe wax assortis à fleurs bleues et orange, boucles d’oreilles dorées. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-djecky",
@@ -748,10 +816,18 @@
   "nom": "DJECKY",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Djecky: Jeune homme athlétique, petit bouc, sourire crâneur, yeux pétillants. Outfit: Casquette noire à l’envers, maillot de basket rouge numéro 23, short rouge, baskets montantes rouge, blanc et noir, chaîne dorée, ballon de basket sous le bras. Attitude: Ballon calé contre la hanche, doigt pointé vers la caméra, il sautille sur place même à l’arrêt. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Djecky: Jeune homme athlétique, petit bouc, sourire crâneur, yeux pétillants. Outfit: Casquette noire à l’envers, maillot de basket rouge numéro 23, short rouge, baskets montantes rouge, blanc et noir, chaîne dorée, ballon de basket sous le bras. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-petit-ibrahima",
@@ -759,10 +835,18 @@
   "nom": "PETIT IBRAHIMA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "petit-mamadou-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Petit Ibrahima: Petit garçon aux cheveux courts et bouclés, grands yeux brillants, sourire fier. Outfit: Chemise blanche d’écolier, cravate bleu marine, short bleu marine, chaussettes blanches, chaussures noires cirées, sac à dos, cahier bleu à fusée serré contre lui. Attitude: Droit comme un i, cahier contre la poitrine, il lève la main avant même la question. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "petit-mamadou-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Petit Ibrahima: Petit garçon aux cheveux courts et bouclés, grands yeux brillants, sourire fier. Outfit: Chemise blanche d’écolier, cravate bleu marine, short bleu marine, chaussettes blanches, chaussures noires cirées, sac à dos, cahier bleu à fusée serré contre lui. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-petite-khadija",
@@ -770,10 +854,19 @@
   "nom": "PETITE KHADIJA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "petit-mamadou-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Petite Khadija: Petite fille aux deux couettes afro nouées de nœuds roses, grands yeux rêveurs, sourire timide. Outfit: Robe rose à petites fleurs, baskets roses, nounours brun serré dans les bras. Attitude: Nounours contre la joue, tête penchée, elle tire la manche des adultes pour poser une question. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "petit-mamadou-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Petite Khadija: Petite fille aux deux couettes afro nouées de nœuds roses, grands yeux rêveurs, sourire timide. Outfit: Robe rose à petites fleurs, baskets roses, nounours brun serré dans les bras. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-agent-gora",
@@ -781,10 +874,19 @@
   "nom": "AGENT GORA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Agent Gora: Homme trapu et costaud, barbe courte, clin d’œil complice, pouce levé. Outfit: Casquette bleu marine « SÉCURITÉ », chemise bleu clair de vigile, lampe torche et trousseau de clés à la ceinture. Attitude: Adossé à la porte de la banque, bras croisés, il lève un pouce ou une lampe torche selon l’humeur. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Agent Gora: Homme trapu et costaud, barbe courte, clin d’œil complice, pouce levé. Outfit: Casquette bleu marine , chemise bleu clair de vigile, lampe torche et trousseau de clés à la ceinture. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-general-zongo",
@@ -792,10 +894,18 @@
   "nom": "GÉNÉRAL ZONGO",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Général Zongo: Homme costaud à barbe courte, grand sourire surexcité, yeux grands ouverts. Outfit: Casque de chantier jaune, gilet orange haute visibilité sur une chemise en jean, jean bleu, chaussures de sécurité marron, plans roulés sous le bras. Attitude: Index pointé vers le ciel comme vers un futur immeuble, plans sous le bras, il parle fort comme sur un chantier bruyant. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Général Zongo: Homme costaud à barbe courte, grand sourire surexcité, yeux grands ouverts. Outfit: Casque de chantier jaune, gilet orange haute visibilité sur une chemise en jean, jean bleu, chaussures de sécurité marron, plans roulés sous le bras. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-tata-prisca",
@@ -803,10 +913,19 @@
   "nom": "TATA PRISCA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "coumba-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Tata Prisca: Femme pulpeuse à la grande coupe afro volumineuse, sourire de commère gourmande, créoles dorées. Outfit: Bandeau rose dans l’afro, haut noir, tablier rose aux poches pleines de peignes, ciseaux et pinces, legging noir, baskets roses, sèche-cheveux et peigne à la main. Attitude: Sèche-cheveux braqué comme un micro, hanche cassée, elle se penche pour chuchoter puis éclate de rire. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "coumba-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Tata Prisca: Femme pulpeuse à la grande coupe afro volumineuse, sourire de commère gourmande, créoles dorées. Outfit: Bandeau rose dans l’afro, haut noir, tablier rose aux poches pleines de peignes, ciseaux et pinces, legging noir, baskets roses, sèche-cheveux et peigne à la main. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-agent-doumbia",
@@ -814,10 +933,18 @@
   "nom": "AGENT DOUMBIA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Agent Doumbia: Homme à barbe courte, regard en biais, sourire d’arrangement, front qui transpire sous la casquette. Outfit: Casquette de police bleu marine à insigne, chemise bleu clair à écussons, pantalon bleu marine, ceinturon noir avec étui, carnet et stylo à la main. Attitude: Carnet ouvert, stylo suspendu, il attend qu’on « comprenne » ; il regarde à droite et à gauche avant de baisser la voix. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Agent Doumbia: Homme à barbe courte, regard en biais, sourire d’arrangement, front qui transpire sous la casquette. Outfit: Casquette de police bleu marine à insigne, chemise bleu clair à écussons, pantalon bleu marine, ceinturon noir avec étui, carnet et stylo à la main. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-mecano-issa",
@@ -825,10 +952,18 @@
   "nom": "MÉCANO ISSA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Mécano Issa: Homme élancé, visage taché de cambouis, sourire sûr de lui, sourcils levés. Outfit: Casquette bleue à l’envers, combinaison de travail bleue tachée de graisse, clé à molette à la main, chiffon dans la poche, bottes de travail. Attitude: Clé à molette sur l’épaule, il tapote le capot comme un médecin ausculte, puis claque des doigts. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Mécano Issa: Homme élancé, visage taché de cambouis, sourire sûr de lui, sourcils levés. Outfit: Casquette bleue à l’envers, combinaison de travail bleue tachée de graisse, clé à molette à la main, chiffon dans la poche, bottes de travail. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-sur-awa",
@@ -836,10 +971,19 @@
   "nom": "SŒUR AWA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "coumba-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Sœur Awa: Femme au visage doux et ferme, chignon tressé, sourire bienveillant qui devient sévère en une seconde. Outfit: Uniforme d’infirmière rose et blanc (tunique rose à col et poches blancs, pantalon rose), stéthoscope au cou, chaussures blanches, tablette bleue à la main. Attitude: Tablette contre la hanche, stylo derrière l’oreille ; elle pose une main apaisante puis pointe le règlement. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "coumba-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Sœur Awa: Femme au visage doux et ferme, chignon tressé, sourire bienveillant qui devient sévère en une seconde. Outfit: Uniforme d’infirmière rose et blanc (tunique rose à col et poches blancs, pantalon rose), stéthoscope au cou, chaussures blanches, tablette bleue à la main. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-tiekoro",
@@ -847,10 +991,18 @@
   "nom": "TIÉKORO",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Tiékoro: Jeune homme nerveux, sourire de vendeur, yeux qui roulent pour convaincre. Outfit: Casquette rouge à l’envers, blouson rouge sur tee-shirt blanc, casque audio autour du cou, appareil photo en bandoulière, téléphone rose et perche à selfie, jean noir, baskets rouges. Attitude: Téléphone brandi d’une main, perche à selfie de l’autre, il se déhanche comme dans une publicité. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Tiékoro: Jeune homme nerveux, sourire de vendeur, yeux qui roulent pour convaincre. Outfit: Casquette rouge à l’envers, blouson rouge sur tee-shirt blanc, casque audio autour du cou, appareil photo en bandoulière, téléphone rose et perche à selfie, jean noir, baskets rouges. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-petit-moussa",
@@ -858,10 +1010,18 @@
   "nom": "PETIT MOUSSA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "petit-mamadou-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Petit Moussa: Petit garçon fluet, cheveux ras, grand sourire espiègle, yeux vifs. Outfit: Chemise blanche d’écolier, cravate bleue, short bleu marine, chaussettes blanches, chaussures noires, sac à dos, cahier violet. Attitude: Toujours sur le point de courir, un pied en avant ; il cache quelque chose derrière son dos. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "petit-mamadou-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Petit Moussa: Petit garçon fluet, cheveux ras, grand sourire espiègle, yeux vifs. Outfit: Chemise blanche d’écolier, cravate bleue, short bleu marine, chaussettes blanches, chaussures noires, sac à dos, cahier violet. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-petite-aya",
@@ -869,10 +1029,18 @@
   "nom": "PETITE AYA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "petit-mamadou-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Petite Aya: Toute petite fille aux deux couettes afro à nœuds roses, joues rondes, immenses yeux curieux. Outfit: Robe rose à fleurs, baskets roses, sac à dos violet, nounours dans les bras. Attitude: Serrant son nounours, elle se dresse sur la pointe des pieds pour voir ce que font les grands. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "petit-mamadou-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Petite Aya: Toute petite fille aux deux couettes afro à nœuds roses, joues rondes, immenses yeux curieux. Outfit: Robe rose à fleurs, baskets roses, sac à dos violet, nounours dans les bras. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-sorciere-mama-dede",
@@ -880,10 +1048,19 @@
   "nom": "SORCIÈRE MAMA DÉDÉ",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "maman-nounou-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Sorcière Mama Dédé: Vieille femme au regard mystérieux, clin d’œil complice, sourire énigmatique. Outfit: Foulard et robe wax multicolores, nombreux colliers de perles, herbes séchées et calebasse de « potion » à la main. Attitude: Penchée sur sa calebasse, elle souffle sur les herbes et parle en chuchotant comme un secret. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "maman-nounou-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Sorcière Mama Dédé: Vieille femme au regard mystérieux, clin d’œil complice, sourire énigmatique. Outfit: Foulard et robe wax multicolores, nombreux colliers de perles, herbes séchées et calebasse de à la main. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-imam-karim",
@@ -891,10 +1068,18 @@
   "nom": "IMAM KARIM",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "baye-ndiaye-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Imam Karim: Homme posé, barbe courte et soignée, visage serein, sourire calme et sage. Outfit: Calotte blanche brodée, grand boubou crème avec une étole brodée d’or, sandales. Attitude: Paumes ouvertes vers le ciel quand il explique, voix basse qui fait taire les cris. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "baye-ndiaye-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Imam Karim: Homme posé, barbe courte et soignée, visage serein, sourire calme et sage. Outfit: Calotte blanche brodée, grand boubou crème avec une étole brodée d’or, sandales. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-maitre-kone",
@@ -902,10 +1087,19 @@
   "nom": "MAÎTRE KONÉ",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "baye-ndiaye-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Maître Koné: Homme mince et raide, lunettes rectangulaires, cheveux ras qui se dégarnissent, sourcils froncés de correcteur. Outfit: Veste de costume marron, chemise blanche, cravate rouge, pantalon marron, chaussures marron, cahier sous le bras, stylo rouge levé. Attitude: Stylo rouge brandi, menton haut ; il corrige l’air autour de lui et tape sur le cahier pour chaque faute. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "baye-ndiaye-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Maître Koné: Homme mince et raide, lunettes rectangulaires, cheveux ras qui se dégarnissent, sourcils froncés de correcteur. Outfit: Veste de costume marron, chemise blanche, cravate rouge, pantalon marron, chaussures marron, cahier sous le bras, stylo rouge levé. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-docteur-sylla",
@@ -913,10 +1107,18 @@
   "nom": "DOCTEUR SYLLA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Docteur Sylla: Homme rond de visage, lunettes, barbe courte, sourire gourmand qui s’élargit devant un portefeuille. Outfit: Blouse blanche sur chemise bleue et cravate bleue, pantalon bleu marine, chaussures noires, stéthoscope autour du cou, facture à la main. Attitude: Main au menton, il « réfléchit » au prix ; bras croisés quand on discute la facture. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Docteur Sylla: Homme rond de visage, lunettes, barbe courte, sourire gourmand qui s’élargit devant un portefeuille. Outfit: Blouse blanche sur chemise bleue et cravate bleue, pantalon bleu marine, chaussures noires, stéthoscope autour du cou, facture à la main. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-fatou",
@@ -924,10 +1126,19 @@
   "nom": "FATOU",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "maman-nounou-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Fatou: Femme ronde aux yeux brillants d’excitation, bouche ouverte de commère ravie. Outfit: Robe et foulard wax à tournesols violet et jaune, créoles dorées, téléphone sur perche à selfie. Attitude: Perche tendue vers l’action, elle commente à voix basse puis crie « Abonnez-vous ! ». Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "maman-nounou-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Fatou: Femme ronde aux yeux brillants d’excitation, bouche ouverte de commère ravie. Outfit: Robe et foulard wax à tournesols violet et jaune, créoles dorées, téléphone sur perche à selfie. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-adjoua",
@@ -935,10 +1146,18 @@
   "nom": "ADJOUA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "coumba-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Adjoua: Jeune femme pulpeuse aux longs cheveux lisses, moue boudeuse, regard de chiot, créoles dorées. Outfit: Robe rose moulante fendue, sac à main rose, sandales à talons, téléphone rose levé en selfie. Attitude: Téléphone levé, hanche cassée, elle bat des cils puis tend la main paume ouverte. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "coumba-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Adjoua: Jeune femme pulpeuse aux longs cheveux lisses, moue boudeuse, regard de chiot, créoles dorées. Outfit: Robe rose moulante fendue, sac à main rose, sandales à talons, téléphone rose levé en selfie. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-mamie-bintou",
@@ -946,10 +1165,19 @@
   "nom": "MAMIE BINTOU",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "maman-nounou-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Mamie Bintou: Vieille dame ronde aux lunettes rouges, grand sourire espiègle, yeux qui pétillent derrière les verres. Outfit: Foulard et robe wax assortis à tournesols bleus et jaunes, boucles d’oreilles dorées, sandales. Attitude: Mains jointes sur le ventre puis main en écran pour chuchoter… très fort. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "maman-nounou-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Mamie Bintou: Vieille dame ronde aux lunettes rouges, grand sourire espiègle, yeux qui pétillent derrière les verres. Outfit: Foulard et robe wax assortis à tournesols bleus et jaunes, boucles d’oreilles dorées, sandales. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-aliou",
@@ -957,10 +1185,18 @@
   "nom": "ALIOU",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Aliou: Homme jovial à petite barbe, grand rire, yeux rieurs, bras toujours en mouvement. Outfit: Casquette « TAXI » jaune et bleue, chemise à fleurs bleues et jaunes, jean, chaussures de marche marron. Attitude: Accoudé à la portière, un doigt pointé vers la route ou vers le ciel pour une maxime. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Aliou: Homme jovial à petite barbe, grand rire, yeux rieurs, bras toujours en mouvement. Outfit: Casquette jaune et bleue, chemise à fleurs bleues et jaunes, jean, chaussures de marche marron. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-chef-traore",
@@ -968,10 +1204,18 @@
   "nom": "CHEF TRAORÉ",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "baye-ndiaye-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Chef Traoré: Homme rond et majestueux, grande barbe blanche, lunettes, moue pompeuse, sourire de dignitaire. Outfit: Haute calotte brodée rouge et or, grand boubou bordeaux brodé d’or, colliers de corail et d’or, sceptre doré à la main, sandales. Attitude: Sceptre planté au sol, ventre en avant, main levée pour imposer le silence qu’il rompt lui-même. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "baye-ndiaye-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Chef Traoré: Homme rond et majestueux, grande barbe blanche, lunettes, moue pompeuse, sourire de dignitaire. Outfit: Haute calotte brodée rouge et or, grand boubou bordeaux brodé d’or, colliers de corail et d’or, sceptre doré à la main, sandales. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-aminata",
@@ -979,10 +1223,18 @@
   "nom": "AMINATA",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "coumba-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Aminata: Adolescente fine aux très longues tresses, moue de selfie, sourcils parfaits, créoles dorées. Outfit: Crop top noir, jean bleu clair déchiré aux genoux, baskets roses, téléphone rose, signe de paix. Attitude: Signe de paix, tête penchée, téléphone à bout de bras ; elle ne regarde personne en face, seulement l’écran. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "coumba-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Aminata: Adolescente fine aux très longues tresses, moue de selfie, sourcils parfaits, créoles dorées. Outfit: Crop top noir, jean bleu clair déchiré aux genoux, baskets roses, téléphone rose, signe de paix. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-boubacar",
@@ -990,10 +1242,18 @@
   "nom": "BOUBACAR",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Boubacar: Homme très rond au gros ventre, barbe courte, visage béat de gourmand, joues pleines. Outfit: Calotte jaune brodée, grand boubou jaune brodé d’or avec pantalon assorti, sandales noires, une cuisse de poulet à la main. Attitude: Une main sur le ventre, l’autre qui porte le poulet à la bouche ; il rit les yeux fermés. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Boubacar: Homme très rond au gros ventre, barbe courte, visage béat de gourmand, joues pleines. Outfit: Calotte jaune brodée, grand boubou jaune brodé d’or avec pantalon assorti, sandales noires, une cuisse de poulet à la main. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-le-frimeur",
@@ -1001,10 +1261,18 @@
   "nom": "LE FRIMEUR",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Le Frimeur: Jeune homme svelte aux cheveux courts torsadés, sourire crâneur, sourcil levé. Outfit: Chemise baroque noir et or ouverte sur un tee-shirt noir, chaîne dorée, jean noir déchiré, baskets noir et or. Attitude: Index pointé vers la caméra, une main dans la poche, petit pas de danse à chaque phrase. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Le Frimeur: Jeune homme svelte aux cheveux courts torsadés, sourire crâneur, sourcil levé. Outfit: Chemise baroque noir et or ouverte sur un tee-shirt noir, chaîne dorée, jean noir déchiré, baskets noir et or. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-le-patriarche",
@@ -1012,10 +1280,18 @@
   "nom": "LE PATRIARCHE",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "baye-ndiaye-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Le Patriarche: Très vieil homme voûté, longue barbe blanche, visage creusé, rire édenté éclatant. Outfit: Calotte blanche brodée de bleu, long boubou crème, canne en bois, sandales brunes. Attitude: Courbé sur sa canne, il rit avant tout le monde et tape le sol pour ponctuer ses souvenirs. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "baye-ndiaye-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Le Patriarche: Très vieil homme voûté, longue barbe blanche, visage creusé, rire édenté éclatant. Outfit: Calotte blanche brodée de bleu, long boubou crème, canne en bois, sandales brunes. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-la-lyceenne",
@@ -1023,10 +1299,18 @@
   "nom": "LA LYCÉENNE",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "coumba-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, La Lycéenne: Adolescente fine aux longues tresses en queue de cheval, sourire sûr de lui, grands yeux vifs. Outfit: Chemise blanche d’uniforme, jupe plissée bleu marine, chaussettes blanches, chaussures noires, sac à dos, cahiers bleus serrés contre elle. Attitude: Cahiers contre la poitrine, menton levé, elle corrige en souriant et part avant la réplique. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "coumba-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — La Lycéenne: Adolescente fine aux longues tresses en queue de cheval, sourire sûr de lui, grands yeux vifs. Outfit: Chemise blanche d’uniforme, jupe plissée bleu marine, chaussettes blanches, chaussures noires, sac à dos, cahiers bleus serrés contre elle. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-la-go-leopard",
@@ -1034,10 +1318,18 @@
   "nom": "LA GO LÉOPARD",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "coumba-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, La Go Léopard: Jeune femme glamour et pulpeuse, longs cheveux ondulés, sourire charmeur, regard qui évalue. Outfit: Robe imprimé léopard fendue haut, sandales dorées à talons, sac noir à la main, bijoux dorés. Attitude: Main sur la joue, petit rire, hanche cassée ; elle jette un coup d’œil aux chaussures avant le visage. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "coumba-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — La Go Léopard: Jeune femme glamour et pulpeuse, longs cheveux ondulés, sourire charmeur, regard qui évalue. Outfit: Robe imprimé léopard fendue haut, sandales dorées à talons, sac noir à la main, bijoux dorés. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-la-future-maman",
@@ -1045,10 +1337,18 @@
   "nom": "LA FUTURE MAMAN",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "coumba-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, La Future Maman: Femme enceinte au ventre bien rond, visage doux et rayonnant, sourire tendre qui devient exigeant. Outfit: Foulard wax orange et or, longue robe wax orange et jaune à fleurs, boucles et collier dorés, sandales, mains sur le ventre. Attitude: Mains posées sur le ventre, elle se cambre en soupirant puis pointe le doigt vers ce qu’elle veut. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "coumba-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — La Future Maman: Femme enceinte au ventre bien rond, visage doux et rayonnant, sourire tendre qui devient exigeant. Outfit: Foulard wax orange et or, longue robe wax orange et jaune à fleurs, boucles et collier dorés, sandales, mains sur le ventre. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-le-banquier",
@@ -1056,10 +1356,19 @@
   "nom": "LE BANQUIER",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Le Banquier: Homme chauve, lunettes rondes, fine moustache, sourire suffisant, poing serré de triomphe. Outfit: Costume noir, chemise blanche, cravate noire, chaussures noires vernies, ordinateur portable sous le bras. Attitude: Ordinateur serré contre lui comme un coffre, il lève le poing « Refusé ! » avec joie. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Le Banquier: Homme chauve, lunettes rondes, fine moustache, sourire suffisant, poing serré de triomphe. Outfit: Costume noir, chemise blanche, cravate noire, chaussures noires vernies, ordinateur portable sous le bras. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-la-voisine",
@@ -1067,10 +1376,19 @@
   "nom": "LA VOISINE",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "coumba-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, La Voisine: Femme pulpeuse au ventre rond, vanilles naturelles, grande bouche ouverte, sourcils furieux. Outfit: Bandeau rouge, longue robe rose sans manches, tongs. Attitude: Debout sur le seuil, mains sur les hanches puis bras tendus vers le ciel ; elle crie avant d’ouvrir la porte. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "coumba-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — La Voisine: Femme pulpeuse au ventre rond, vanilles naturelles, grande bouche ouverte, sourcils furieux. Outfit: Bandeau rouge, longue robe rose sans manches, tongs. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-le-tonton",
@@ -1078,10 +1396,19 @@
   "nom": "LE TONTON",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Le Tonton: Homme dégingandé au ventre rond, front dégarni, long visage et menton proéminent, yeux endormis. Outfit: Polo bleu à manches longues, pantalon bleu marine, grosses chaussures, une bouteille verte dans chaque main. Attitude: Bras ballants avec une bouteille dans chaque main, il avance d’un pas lent et recule de deux quand sa femme crie. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Le Tonton: Homme dégingandé au ventre rond, front dégarni, long visage et menton proéminent, yeux endormis. Outfit: Polo bleu à manches longues, pantalon bleu marine, grosses chaussures, une bouteille verte dans chaque main. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-madame-konan",
@@ -1089,10 +1416,19 @@
   "nom": "MADAME KONAN",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "maman-nounou-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Madame Konan: Femme imposante au port de reine, lunettes en demi-lune sur le nez, regard qui pèse chaque cotisation. Outfit: Grand boubou bazin violet brodé, foulard assorti en couronne, gros cahier de comptes et caisse métallique cadenassée. Attitude: Assise bien droite derrière la caisse, une main posée dessus comme sur un trésor, l’autre qui tourne les pages du cahier. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "maman-nounou-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Madame Konan: Femme imposante au port de reine, lunettes en demi-lune sur le nez, regard qui pèse chaque cotisation. Outfit: Grand boubou bazin violet brodé, foulard assorti noué haut sur la tête, gros cahier de comptes et caisse métallique cadenassée. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-patron-sery",
@@ -1100,10 +1436,18 @@
   "nom": "PATRON SÉRY",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "baye-ndiaye-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Patron Séry: Homme corpulent au crâne rasé, grosse moustache, serviette sur l’épaule, sourire commercial. Outfit: Chemise à carreaux ouverte sur un débardeur, pantalon de toile, sandales, ardoise et craie à la main. Attitude: Derrière son comptoir, ardoise brandie, il sert d’une main et note les dettes de l’autre. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "baye-ndiaye-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Patron Séry: Homme corpulent au crâne rasé, grosse moustache, serviette sur l’épaule, sourire commercial. Outfit: Chemise à carreaux ouverte sur un débardeur, pantalon de toile, sandales, ardoise et craie à la main. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-mademoiselle-rosine",
@@ -1111,10 +1455,19 @@
   "nom": "MADEMOISELLE ROSINE",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "coumba-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Mademoiselle Rosine: Jeune femme impeccable, chignon serré, lunettes à monture fine, regard blasé, ongles vernis rouges. Outfit: Tailleur bleu marine, chemisier blanc, badge de la mairie, tampon et pile de formulaires. Attitude: Derrière son guichet, tampon levé, elle tourne lentement les pages sans lever les yeux. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "coumba-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Mademoiselle Rosine: Jeune femme impeccable, chignon serré, lunettes à monture fine, regard blasé, ongles vernis rouges. Outfit: Tailleur bleu marine, chemisier blanc, badge de la mairie, tampon et pile de formulaires. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-yaya-lapprenti",
@@ -1122,10 +1475,19 @@
   "nom": "YAYA L’APPRENTI",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Yaya L’Apprenti: Jeune homme sec et nerveux, voix cassée à force de crier, sourire rapide, toujours essoufflé. Outfit: Maillot de foot délavé, short, claquettes, liasse de billets froissés entre les doigts, sifflet autour du cou. Attitude: Accroché à la portière du gbaka, un bras dehors, il crie les destinations en tapant sur la carrosserie. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Yaya L’Apprenti: Jeune homme sec et nerveux, voix cassée à force de crier, sourire rapide, toujours essoufflé. Outfit: Maillot de foot délavé, short, claquettes, liasse de billets froissés entre les doigts, sifflet autour du cou. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "version": 2
  },
  {
   "id": "perso-salif-le-parisien",
@@ -1133,10 +1495,18 @@
   "nom": "SALIF LE PARISIEN",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Salif Le Parisien: Homme élancé à la barbe taillée au millimètre, lunettes de soleil sur le front, sourire supérieur. Outfit: Doudoune légère malgré la chaleur, écharpe, jean slim, baskets blanches immaculées, valise à roulettes et sacoche. Attitude: Main sur la valise, il s’évente en soupirant contre la chaleur et parle avec un accent parisien forcé. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Salif Le Parisien: Homme élancé à la barbe taillée au millimètre, lunettes de soleil sur le front, sourire supérieur. Outfit: Doudoune légère malgré la chaleur, écharpe, jean slim, baskets blanches immaculées, valise à roulettes et sacoche. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-coach-diabate",
@@ -1144,10 +1514,20 @@
   "nom": "COACH DIABATÉ",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "baye-ndiaye-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Coach Diabaté: Homme trapu aux mollets d’ancien footballeur, visage expressif qui passe du rire à la tragédie, sifflet à la bouche. Outfit: Survêtement orange et vert, casquette, sifflet, chronomètre au cou, plaquette tactique. Attitude: Sifflet aux lèvres, bras levés au ciel, il vit chaque passe comme une finale. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "baye-ndiaye-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Coach Diabaté: Homme trapu aux mollets d’ancien footballeur, visage expressif qui passe du rire à la tragédie, sifflet à la bouche. Outfit: Survêtement orange et vert, casquette, sifflet, chronomètre au cou, plaquette tactique. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright blue background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright blue background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "fond": "bleu",
+  "version": 2
  },
  {
   "id": "perso-dj-kevin",
@@ -1155,10 +1535,18 @@
   "nom": "DJ KÉVIN",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "koffi-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Dj Kévin: Jeune homme maigre, lunettes de soleil fluo, petite crête décolorée, sourire de showman. Outfit: Chemise à paillettes, casque énorme autour du cou, micro sans fil, platine portable. Attitude: Un doigt sur le casque, l’autre bras levé, il crie les dédicaces dans le micro. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "koffi-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Dj Kévin: Jeune homme maigre, lunettes de soleil fluo, petite crête décolorée, sourire de showman. Outfit: Chemise à paillettes, casque énorme autour du cou, micro sans fil, platine portable. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright green background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright green background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text."
  },
  {
   "id": "perso-maman-brigitte",
@@ -1166,10 +1554,20 @@
   "nom": "MAMAN BRIGITTE",
   "w": 1280,
   "h": 720,
-  "refs": [
-   "maman-nounou-planche.msb"
-  ],
-  "prompt": "Character model sheet in exactly the same 3D animated style, realistic proportions, face design and rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, Maman Brigitte: Femme robuste aux bras puissants, visage rond et volontaire, sourire commercial redoutable. Outfit: Pagne wax vert et jaune, foulard noué serré, tablier blanc, bassine d’attiéké sur la tête ou sur l’étal. Attitude: Bassine sur la tête sans les mains, elle interpelle les clients de sa voisine d’étal. Drawn five poses side by side on a plain bright green background: neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face and outfit in every pose, no text."
+  "refs": [],
+  "ref_px": 344064,
+  "fiche": {
+   "w": 448,
+   "h": 768,
+   "refs": [
+    "maman-nounou-planche-neutre.msb"
+   ],
+   "ref_px": 344064,
+   "prompt": "Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — Maman Brigitte: Femme robuste aux bras puissants, visage rond et volontaire, sourire commercial redoutable. Outfit: Pagne wax vert et jaune, foulard noué serré, tablier blanc, bassine d’attiéké sur la tête ou sur l’étal. Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat bright blue background with nothing else (no wall, no floor line, no object, no text)."
+  },
+  "prompt": "Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. Drawn five poses side by side of this ONE character only (no other person), on a plain flat bright blue background (nothing else behind them: no wall, no door, no curtain, no furniture, no object on the ground, no text, no speech bubble): neutral standing, pointing, shocked with hands on cheeks, shrugging with open hands, laughing. Same face, same hairstyle and same outfit in every pose, no text.",
+  "fond": "bleu",
+  "version": 2
  },
  {
   "id": "decor-cour-champ-jour",

@@ -26,6 +26,29 @@ def _ref(nom):
     raise FileNotFoundError(nom)
 
 
+def dessine(binaire, M, spec, chemins, out, journal, tps, nom):
+    """Une image FLUX.2 klein ; secours : décodage par tuiles si la mémoire manque. → code de retour."""
+    rc = None
+    for tuiles in ([], ['--vae-tiling']):
+        cmd = [binaire] + [a.format(M=M) for a in KLEIN] + [
+            '-p', spec['prompt'], '-W', str(spec['w']), '-H', str(spec['h']), '--seed', str(spec.get('graine', 42)), '-t', '4',
+            '--ref-image-args', f"vae_input_max_pixels={spec.get('ref_px', spec['w'] * spec['h'] // 4)}", '-o', out, '-v'] + tuiles
+        for r in chemins: cmd += ['-r', r]
+        with open(journal, 'a') as j:
+            j.write(f"=== {nom}{' (tuiles)' if tuiles else ''}\n"); j.flush()
+            rc = subprocess.run(['/usr/bin/time', '-v', '-o', tps] + cmd, stdout=j, stderr=subprocess.STDOUT).returncode
+        if rc == 0 and os.path.isfile(out): break
+    if rc in (132, -4):   # instruction illégale : moteur compilé pour un autre processeur — on s'arrête sans griller la part
+        print(json.dumps({'arret': 'instruction illégale (moteur d\'un autre processeur)', 'tache': nom}), flush=True); sys.exit(3)
+    return rc
+
+
+def scelle(png, sortie, nom, pub):
+    """écrit sous un autre nom puis renommé : la boucle de poussée ne voit jamais une image à moitié écrite"""
+    open(os.path.join(sortie, nom + '.msb.part'), 'wb').write(coffre.scelle_octets(open(png, 'rb').read(), pub))
+    os.replace(os.path.join(sortie, nom + '.msb.part'), os.path.join(sortie, nom + '.msb'))
+
+
 def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude, minutes='320'):
     T = [t for i, t in enumerate(json.load(open(taches, encoding='utf-8'))) if i % int(nb) == int(part)]
     fin = time.time() + float(minutes) * 60
@@ -44,29 +67,23 @@ def main(taches, part, nb, M, sortie, binaire, priv_fabrique, pub_claude, minute
         if t['id'] in faits: continue
         if time.time() + duree.get(t['type'], 0) > fin:
             print(json.dumps({'arret': 'temps de la machine', 'reste': sum(x['id'] not in faits for x in T)}), flush=True); break
-        for r in t['refs']:
+        for r in t['refs'] + t.get('fiche', {}).get('refs', []):
             if r not in refs:   # référence ouverte sur la machine seulement, jamais poussée en clair
                 refs[r] = os.path.join(clair, r[:-4] + '.img')
                 open(refs[r], 'wb').write(coffre.ouvre_octets(open(_ref(r), 'rb').read(), priv))
-        out = os.path.join(clair, t['id'] + '.png'); tps = os.path.join(clair, 'time.txt'); t0 = time.time(); rc = None
-        for tuiles in ([], ['--vae-tiling']):   # secours : décodage par tuiles si la mémoire manque
-            cmd = [binaire] + [a.format(M=M) for a in KLEIN] + [
-                '-p', t['prompt'], '-W', str(t['w']), '-H', str(t['h']), '--seed', str(t.get('graine', 42)), '-t', '4',
-                '--ref-image-args', f"vae_input_max_pixels={t['w'] * t['h'] // 4}", '-o', out, '-v'] + tuiles
-            for r in t['refs']: cmd += ['-r', refs[r]]
-            with open(journal, 'a') as j:
-                j.write(f"=== {t['id']}{' (tuiles)' if tuiles else ''}\n"); j.flush()
-                rc = subprocess.run(['/usr/bin/time', '-v', '-o', tps] + cmd, stdout=j, stderr=subprocess.STDOUT).returncode
-            if rc == 0 and os.path.isfile(out): break
-        if rc in (132, -4):   # instruction illégale : moteur compilé pour un autre processeur — on s'arrête sans griller la part
-            print(json.dumps({'arret': 'instruction illégale (moteur d\'un autre processeur)', 'tache': t['id']}), flush=True); sys.exit(3)
+        out = os.path.join(clair, t['id'] + '.png'); tps = os.path.join(clair, 'time.txt'); t0 = time.time(); rc = 0
+        chemins = [refs[r] for r in t['refs']]
+        if t.get('fiche'):   # 21/10 : 1re étape, le personnage seul de face (sa fiche), puis la planche d'après elle seule
+            nf = 'fiche-' + t['id'].split('-', 1)[1]; fiche = os.path.join(clair, nf + '.png')
+            rc = dessine(binaire, M, t['fiche'], [refs[r] for r in t['fiche']['refs']], fiche, journal, tps, nf)
+            if rc == 0 and os.path.isfile(fiche): chemins.append(fiche); scelle(fiche, sortie, nf, pub)
+            else: rc = rc or 1
+        if rc == 0: rc = dessine(binaire, M, t, chemins, out, journal, tps, t['id'])
         ok = rc == 0 and os.path.isfile(out)
-        if ok:   # écrit sous un autre nom puis renommé : la boucle de poussée ne voit jamais une image à moitié écrite
-            open(os.path.join(sortie, t['id'] + '.msb.part'), 'wb').write(coffre.scelle_octets(open(out, 'rb').read(), pub))
-            os.replace(os.path.join(sortie, t['id'] + '.msb.part'), os.path.join(sortie, t['id'] + '.msb')); os.remove(out); faits.add(t['id'])
+        if ok: scelle(out, sortie, t['id'], pub); os.remove(out); faits.add(t['id'])
         s = round(time.time() - t0); duree[t['type']] = max(duree.get(t['type'], 0), s)
         rss = re.search(r'Maximum resident set size \(kbytes\): (\d+)', open(tps).read()) if os.path.isfile(tps) else None
-        res.append({'tache': t['id'], 'version': t.get('version', 1), 'type': t['type'], 'ok': ok, 'code': rc, 'secondes': s, 'w': t['w'], 'h': t['h'],
+        res.append({'tache': t['id'], 'version': t.get('version', 1), 'type': t['type'], 'etapes': 2 if t.get('fiche') else 1, 'ok': ok, 'code': rc, 'secondes': s, 'w': t['w'], 'h': t['h'],
                     'memoire_max_go': round(int(rss.group(1)) / 1e6, 2) if rss else None, 'run': os.environ.get('GITHUB_RUN_ID')})
         print(json.dumps(res[-1], ensure_ascii=False), flush=True)
         json.dump({'part': int(part), 'modele': 'FLUX.2 klein 4B (Apache-2.0)', 'sd_cpp': os.environ.get('SD_CPP'), 'taches': res},

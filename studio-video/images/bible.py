@@ -66,6 +66,27 @@ POSES = ('five poses side by side of this ONE character only (no other person), 
 # 21/10 00:55 — Agent Bakary dessiné en uniforme vert sur fond vert : indétourable. Les personnages habillés surtout de vert sont
 # dessinés (et animés, banque.py) sur fond BLEU ; tous les autres restent sur le vert validé.
 FOND_BLEU = {'AGENT BAKARY', 'MAMAN BRIGITTE', 'COACH DIABATÉ'}
+# 21/10 01:30, lot 4 lu à côté des planches V1 : la pose « rire » de la planche de RÉFÉRENCE déteint sur le nouveau personnage
+# (Banquier, Yaya, Tonton rient avec la coupe, les lunettes ou la chemise de Koffi ; Mamie Bintou porte la robe et le tablier de
+# Maman Nounou). Remède en DEUX ÉTAPES (planche de personnage des studios : un dessin de face validé, puis les poses d'après lui) :
+#   1. FICHE : le personnage seul, debout, de face, 448×768, avec pour référence de style la seule pose NEUTRE de la planche V1
+#      (images/troupe/<planche>-neutre.msb : plus de pose de rire à recopier) ;
+#   2. PLANCHE : les 5 poses avec sa propre fiche comme SEULE référence (aucune autre identité dans l'image 1).
+# Fiches texte nettoyées : les répliques entre guillemets (« Refusé ! ») devenaient des bulles de texte, « noué en couronne »
+# une vraie couronne, la posture (« assise derrière la caisse ») du mobilier : seules l'apparence et la tenue sont dessinées.
+FICHE = ('Full-body character design in exactly the same 3D animated style, realistic proportions, face design and rendering as '
+         'image 1 (same Ivorian comedy series), but a NEW character who is not the person of image 1 — {nom}: {apparence} Outfit: '
+         '{tenue} Standing in a relaxed neutral pose, front view, the whole body visible from head to shoes, alone on a plain flat '
+         'bright {fond} background with nothing else (no wall, no floor line, no object, no text).')
+PLANCHE = ('Character model sheet of the character shown in image 1, keeping exactly the same person: same face, same skin tone, same '
+           'body shape, same hairstyle, same outfit, same shoes and same accessories, in the same 3D animated style and rendering. '
+           'Drawn {poses}. Same face, same hairstyle and same outfit in every pose, no text.')
+
+
+def texte_dessinable(t):
+    """Une fiche texte sans ce que le générateur dessinerait à tort : répliques citées, « en couronne » pris au mot."""
+    t = re.sub(r'«[^»]*»|"[^"]*"', '', t or '')
+    return re.sub(r'\s+', ' ', t.replace('en couronne', 'noué haut sur la tête')).strip()
 
 
 def slug(t):
@@ -90,8 +111,13 @@ REFAIRE = {'decor-hopital-large-jour': 2, 'decor-terrain-de-foot-large-jour': 2,
            'perso-maman-brigitte': 2, 'perso-coach-diabate': 2,
            # 21/10 01:05, lot 3 : second visage (Maître Koné), portes (La Voisine), jarre flottante (Sorcière Mama Dédé), bulle de
            # texte (Fatou), autre enfant sur la 5e pose (Petite Khadija) → un seul personnage, ni texte, ni porte
-           'perso-maitre-kone': 2, 'perso-la-voisine': 2, 'perso-sorciere-mama-dede': 2, 'perso-fatou': 2, 'perso-petite-khadija': 2}
-# Les corrections sont regroupées et poussées en UNE passe à la fin de la bible : pousser bible/taches.json redémarre les 20 machines.
+           'perso-maitre-kone': 2, 'perso-la-voisine': 2, 'perso-sorciere-mama-dede': 2, 'perso-fatou': 2, 'perso-petite-khadija': 2,
+           # 21/10 01:30, lot 4 : la pose de rire (ou toute la tenue) reprise de la planche de référence (Yaya, Maître Coulibaly,
+           # Banquier, Tonton, Mamie Bintou), bulle « Refusé ! » (Banquier), voiture (Yaya), couronne et caisse (Madame Konan)
+           'perso-yaya-lapprenti': 2, 'perso-maitre-coulibaly': 2, 'perso-le-banquier': 2, 'perso-le-tonton': 2,
+           'perso-mamie-bintou': 2, 'perso-madame-konan': 2}
+# Les corrections sont regroupées en UNE passe : pousser bible/taches.json redémarre les 20 machines (chacune ne perd que l'image
+# en cours ; la répartition des tâches entre machines ne bouge pas tant que l'ordre de la liste est gardé — vérifié à chaque passe).
 
 
 GENRES = json.load(open(os.path.join(ICI, '..', 'blender', 'film', 'characters.json'), encoding='utf-8'))
@@ -129,13 +155,13 @@ def taches():
     for p in B['personnages']:
         nom = p['name']
         if nom in V1: continue
-        T.append({'id': 'perso-' + slug(nom), 'type': 'personnage', 'nom': nom, 'w': 1280, 'h': 720,
-                  'refs': [ref_style(p) + '.msb'],
-                  'prompt': (f"Character model sheet in exactly the same 3D animated style, realistic proportions, face design and "
-                             f"rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, {nom.title()}: "
-                             f"{p.get('apparence', '')} Outfit: {p.get('tenue', '')} Attitude: {p.get('posture', '')} "
-                             f"Drawn {POSES.format(fond='blue' if nom in FOND_BLEU else 'green')}. Same face, same hairstyle and same outfit in every "
-                             f"pose, no text."), **({'fond': 'bleu'} if nom in FOND_BLEU else {})})
+        fond = 'blue' if nom in FOND_BLEU else 'green'
+        T.append({'id': 'perso-' + slug(nom), 'type': 'personnage', 'nom': nom, 'w': 1280, 'h': 720, 'refs': [],
+                  'ref_px': 448 * 768,   # la fiche entière, sans réduction : c'est l'identité à garder
+                  'fiche': {'w': 448, 'h': 768, 'refs': [ref_style(p) + '-neutre.msb'], 'ref_px': 448 * 768,
+                            'prompt': FICHE.format(nom=nom.title(), apparence=texte_dessinable(p.get('apparence')),
+                                                   tenue=texte_dessinable(p.get('tenue')), fond=fond)},
+                  'prompt': PLANCHE.format(poses=POSES.format(fond=fond)), **({'fond': 'bleu'} if nom in FOND_BLEU else {})})
     lieux_joues = {r['lieu'] for r in M['figures_du_quartier']} | {l for j in M['journee'] for l in j['lieux']}
     for lieu, desc in LIEUX.items():
         for v, vd in VUES.items():
