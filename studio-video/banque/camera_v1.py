@@ -310,7 +310,17 @@ def volutes(Vv, base, t):
     return np.clip(out, 0, 255, out=out)
 
 
-def prepare_decor(img, d, seg, pieds, graine=5, cache=None):
+def de_jour(nom, clarte=None):
+    """décor de jour ? lu sur son nom dans la bible (« -jour », « -nuit », « -soir », « -aube »), sinon sur sa clarté moyenne
+    (> 110 : le seuil de decor_vivant). JOUR PAR LE NOM (21/10/2026) : le maquis de jour, à 108,9 de clarté, perdait l'ombre
+    des feuilles et l'amplitude ×6 de ses couches vivantes."""
+    b = os.path.basename(nom or '').lower()
+    if '-jour' in b: return True
+    if any(x in b for x in ('-nuit', '-soir', '-aube', '-crepuscule')): return False
+    return clarte is not None and clarte > 110
+
+
+def prepare_decor(img, d, seg, pieds, graine=5, cache=None, nom=None):
     """tout ce qui ne change pas d'une image à l'autre : plaque, facteur de parallaxe, couches vivantes, ciel et ombres.
     DÉCOR DE LA V1 (21/10/2026, épisode banque 1 : arrière-plan qui bouge 0,09 contre 0,161 pour la V1) : feuillages, linge et
     auvents, ampoules et bêtes sont animés par les textures de mouvement de la V1 elle-même (moteur-troupe/decor_vivant.py,
@@ -337,7 +347,7 @@ def prepare_decor(img, d, seg, pieds, graine=5, cache=None):
             V['dv'] = DV.prepare(dv, im8, (), jev=False, cartes=cartes); sol = DV.soleil(im8)
             V['panache'] = DV.panache(V['dv'], im8) is not None   # pied, largeur et couleur de la fumée peinte
             if DECOR_TEXTE and 'fumee' in T: V['volutes'] = prepare_volutes(im8, T['fumee'])
-            V['ampl'] = (6.0 if sol is not None and sol[1] > 110 else 1.0) * W / 1080
+            V['ampl'] = (6.0 if de_jour(nom, sol[1] if sol is not None else None) else 1.0) * W / 1080
         except Exception as e:
             print(f'  décor de la V1 non préparé : {e}', file=sys.stderr); V['dv'] = None
     for classes, ampl, freq, vertical in (((EAU, 0.9, 1.3, 1.0),) if V['dv'] is not None else ((FEUILLAGE, 2.6, 0.55, 0.35), (TISSU, 2.2, 0.42, 0.25), (EAU, 0.9, 1.3, 1.0))):
@@ -353,7 +363,7 @@ def prepare_decor(img, d, seg, pieds, graine=5, cache=None):
         try:
             import decor_vivant as DV; sol_ = DV.soleil(np.clip(img, 0, 255).astype(np.uint8))
         except Exception: pass
-        surf = np.isin(seg, SURFACES) if (SURFACES_V1 and sol_ is not None and sol_[1] > 110) else (np.zeros(seg.shape, bool) if SURFACES_V1 else None)
+        surf = np.isin(seg, SURFACES) if (SURFACES_V1 and sol_ is not None and de_jour(nom, sol_[1])) else (np.zeros(seg.shape, bool) if SURFACES_V1 else None)
         V['fond'] = vie_fond.prepare(img.astype(np.float32), d, (), graine=11, surfaces=surf)
         V['fond']['vent'] = VENT_BANQUE
         V['fond']['ciel'] = V['fond']['ciel'] | (seg == 2)
@@ -616,7 +626,7 @@ def image_a(F, p):
 # plantés) en deux sinusoïdes lentes, plus ample quand l'acteur parle, et le souffle (le corps s'allonge de 0,4 %, ancré aux
 # pieds). Doux et continu : aucun retournement brusque (à-coups) ni saute.
 VIE_CORPS = os.environ.get('VIE_CORPS', '1') == '1'
-VIE_DEG = (0.65, 0.45)     # amplitude du balancement (degrés) : parle, écoute
+VIE_DEG = (0.8, 0.55)      # amplitude du balancement (degrés) : parle, écoute (v16-v17 à 0,65 et 0,45 : corps 0,167, vitesse 3,1 = V1)
 
 
 def vie_corps(im, t, pr):

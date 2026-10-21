@@ -196,7 +196,7 @@ def _decor_v1(P):
     if P['decor'] not in _DECOR_V1:
         from PIL import Image
         dp, sg = couches(P['decor']); img = np.asarray(Image.open(P['decor']).convert('RGB').resize((BW, BH), Image.LANCZOS))
-        _DECOR_V1[P['decor']] = camera_v1.prepare_decor(img, dp, sg, [p for _, p in P['_occ_v1'].values()])
+        _DECOR_V1[P['decor']] = camera_v1.prepare_decor(img, dp, sg, [p for _, p in P['_occ_v1'].values()], nom=P['decor'])
     return _DECOR_V1[P['decor']]
 
 

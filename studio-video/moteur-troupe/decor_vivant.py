@@ -260,7 +260,9 @@ _SOLEIL = {}
 
 def soleil(plaque):
     """zones ensoleillées de la plaque (où des ombres de feuilles peuvent passer), 0..1, mise en cache par plaque."""
-    k = id(plaque)
+    # clé = le contenu (21/10/2026 : clé id(plaque) — une image temporaire libérée prête son adresse à la suivante, et le
+    # salon, le maquis et le taxi de la banque recevaient la même clarté 108,9)
+    k = (plaque.shape, hash(np.ascontiguousarray(plaque[::13, ::13]).tobytes()))
     if k not in _SOLEIL:
         lum = cv2.cvtColor(np.clip(plaque, 0, 255).astype(np.uint8), cv2.COLOR_RGB2GRAY).astype(np.float32)
         lo, hi = np.percentile(lum, 45), np.percentile(lum, 85)
