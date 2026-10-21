@@ -42,3 +42,4 @@
 [3033 s] 4 images · === perso-fatou   |============>                                     | 1/4 - 405.64s/it[K · mémoire libre 6290 Mo
 [3155 s] 4 images · === perso-fatou   |============>                                     | 1/4 - 405.64s/it[K · mémoire libre 6284 Mo
 [3276 s] 4 images · === perso-fatou   |============>                                     | 1/4 - 405.64s/it[K · mémoire libre 6293 Mo
+[3397 s] 4 images · === perso-fatou   |=========================>                        | 2/4 - 397.62s/it[K · mémoire libre 6300 Mo
