@@ -1,0 +1,19 @@
+{
+ "part": 8,
+ "modele": "FLUX.2 klein 4B (Apache-2.0)",
+ "sd_cpp": "0518b34374761cb82aeda5ad3c2f0686fdad2cec",
+ "taches": [
+  {
+   "tache": "decor-salon-large-jour",
+   "version": 1,
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 691,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.47,
+   "run": "39517651050"
+  }
+ ]
+}
