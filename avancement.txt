@@ -7,3 +7,4 @@
 [852 s] 4 clips · === chef-traore--montrer (at_runtime)   |=====================================>            | 3/4 - 38.55s/it[K · mémoire libre 13785 Mo
 [973 s] 5 clips · === petit-ibrahima--colere (at_runtime)   |=========================>                        | 2/4 - 38.56s/it[K · mémoire libre 13788 Mo
 [123 s] 6 clips · === mamie-bintou--hausser (at_runtime)   |============>                                     | 1/4 - 96.02s/it[K · mémoire libre 13761 Mo
+[122 s] 6 clips · === tata-prisca--choc (at_runtime)  · mémoire libre 13787 Mo
