@@ -121,6 +121,18 @@
    "h": 448,
    "memoire_max_go": 9.47,
    "run": "39517651050"
+  },
+  {
+   "tache": "maison-professeur-samba-salon-champ-jour",
+   "version": 2,
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 383,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.47,
+   "run": "39517651050"
   }
  ]
 }
