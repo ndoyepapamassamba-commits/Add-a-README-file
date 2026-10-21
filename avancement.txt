@@ -17,3 +17,4 @@
 [364 s] 2 images · === maison-professeur-samba-salon-large-jour   |=========================>                        | 2/4 - 121.41s/it[K · mémoire libre 6954 Mo
 [486 s] 2 images · === maison-professeur-samba-salon-large-jour   |=====================================>            | 3/4 - 121.35s/it[K · mémoire libre 6956 Mo
 [607 s] 3 images · === perso-monsieur-diarra   |==================================================| 4/4 - 120.60s/it[K · mémoire libre 6940 Mo
+[729 s] 3 images · === perso-monsieur-diarra   |==================================================| 4/4 - 120.60s/it[K · mémoire libre 6255 Mo
