@@ -77,6 +77,13 @@
    "lora": "at_runtime",
    "secondes": 304,
    "memoire_max_go": 11.11
+  },
+  {
+   "clip": "la-voisine--choc",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 305,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39550232510"
