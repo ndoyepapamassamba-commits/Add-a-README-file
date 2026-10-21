@@ -80,3 +80,4 @@
 [851 s] 24 clips · === docteur-sylla--ecouter (at_runtime)   |============>                                     | 1/4 - 135.11s/it[K · mémoire libre 13793 Mo
 [972 s] 24 clips · === docteur-sylla--ecouter (at_runtime)   |=========================>                        | 2/4 - 134.51s/it[K · mémoire libre 13791 Mo
 [1094 s] 24 clips · === docteur-sylla--ecouter (at_runtime)   |=====================================>            | 3/4 - 134.14s/it[K · mémoire libre 13792 Mo
+[1215 s] 25 clips · === mademoiselle-rosine--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13775 Mo
