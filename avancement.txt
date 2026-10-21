@@ -11,3 +11,4 @@
 [243 s] 1 images · === maison-general-zongo-chambre-large-jour   |============>                                     | 1/4 - 157.56s/it[K · mémoire libre 6954 Mo
 [364 s] 1 images · === maison-general-zongo-chambre-large-jour   |=========================>                        | 2/4 - 156.59s/it[K · mémoire libre 6944 Mo
 [485 s] 1 images · === maison-general-zongo-chambre-large-jour   |=========================>                        | 2/4 - 156.59s/it[K · mémoire libre 6954 Mo
+[607 s] 1 images · === maison-general-zongo-chambre-large-jour   |=====================================>            | 3/4 - 156.40s/it[K · mémoire libre 6957 Mo
