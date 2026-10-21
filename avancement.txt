@@ -114,3 +114,4 @@
 [610 s] 7 images · === fiche-dj-kevin   |=========================>                        | 2/4 - 207.06s/it[K · mémoire libre 6685 Mo
 [732 s] 7 images · === fiche-dj-kevin   |=====================================>            | 3/4 - 205.68s/it[K · mémoire libre 6684 Mo
 [853 s] 7 images · === fiche-dj-kevin   |=====================================>            | 3/4 - 205.68s/it[K · mémoire libre 6682 Mo
+[975 s] 7 images · === perso-dj-kevin   |==================================================| 4/4 - 205.68s/it[K · mémoire libre 10736 Mo
