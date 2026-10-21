@@ -12,3 +12,4 @@
 [1457 s] 6 clips · === petit-moussa--colere (at_runtime)   |============>                                     | 1/4 - 143.78s/it[K · mémoire libre 13773 Mo
 [1578 s] 6 clips · === petit-moussa--colere (at_runtime)   |=========================>                        | 2/4 - 146.26s/it[K · mémoire libre 13757 Mo
 [1700 s] 6 clips · === petit-moussa--colere (at_runtime)   |=========================>                        | 2/4 - 146.26s/it[K · mémoire libre 13769 Mo
+[1821 s] 6 clips · === petit-moussa--colere (at_runtime)   |=====================================>            | 3/4 - 146.93s/it[K · mémoire libre 13773 Mo
