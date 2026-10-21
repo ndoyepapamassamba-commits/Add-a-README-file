@@ -1285,6 +1285,42 @@ try:
 except Exception as e:
     echecs.append(f'objet tenu, vote, écart : {e}')
 
+# 21/10/2026 — fabrique au moteur de la V1, sans Claude (« si demain je ne suis pas autonome avec tout bouclé avec les 10000
+# vidéos j'arrêterai ») : série V1 (réserve de sketchs × scènes préparées), air du plan à deux resserré par paliers avant le
+# champ-contrechamp (épisode 4 : salon 18 → 13 plans, plan médian 2,33 → 4,51 s), dépendances relevées par traçage
+try:
+    _t53 = open(os.path.join(ICI, 'moteur-troupe', 'tourne.py'), encoding='utf-8').read()
+    _a53 = open(os.path.join(ICI, 'moteur-troupe', 'autopilot.py'), encoding='utf-8').read()
+    _q53 = open(os.path.join(ICI, 'fabrique', 'requirements.txt'), encoding='utf-8').read()
+    _c53 = json.load(open(os.path.join(ICI, 'fabrique', 'config.json'), encoding='utf-8'))
+    import tempfile as _tf53
+    with _tf53.TemporaryDirectory() as _d53:
+        os.environ['MASSAMBA_BIBLIO'] = _d53
+        for _n53, _ac53 in (('salon', ['A', 'B']), ('marche', ['C', 'D']), ('gbaka', ['E', 'F'])):
+            os.makedirs(os.path.join(_d53, 'prep', _n53), exist_ok=True)
+            json.dump({'acteurs': [{'nom': x, 'slug': x.lower()} for x in _ac53]}, open(os.path.join(_d53, 'prep', _n53, 'scene.json'), 'w'))
+            for x in _ac53:
+                os.makedirs(os.path.join(_d53, 'prep', _n53, 'expressions', x.lower()), exist_ok=True)
+                open(os.path.join(_d53, 'prep', _n53, 'expressions', x.lower(), 'meta.json'), 'w').write('{}')
+        os.makedirs(os.path.join(_d53, 'stock'))
+        _sk53 = [{'id': f'{n}-{k}', 'image': n, 'acteurs': a, 'titre': 'T', 'repliques': [{'qui': a[0], 'texte': 'Les tresses aussi sont en route.', 'chute': True}]}
+                 for n, a in (('salon', ['A', 'B']), ('marche', ['C', 'D']), ('gbaka', ['E', 'F'])) for k in range(2)]
+        json.dump({'sketchs': _sk53}, open(os.path.join(_d53, 'stock', 'sketchs.json'), 'w'))
+        sys.modules.pop('serie_v1', None); import serie_v1 as _s53
+        _ch53 = _s53.choisit(3, graine=1); _e53 = _s53.etat(); _m53 = _s53.mots_chute(_sk53[0])
+    os.environ.pop('MASSAMBA_BIBLIO', None)
+    if 'AIRS_DUO' not in _t53 or 'DUO_AIR.get((id(S), tuple(sorted(who)))' not in _t53 or 'for air in sorted(' not in _t53:
+        echecs.append('plan à deux : air resserré par paliers absent (retour au champ-contrechamp systématique)')
+    elif len({x['image'] for x in _ch53}) != 3 or _e53['reserve']['episodes_possibles'] != 2 or _m53 != ['TRESSES', 'ROUTE']:
+        echecs.append(f"série V1 : choix ou réserve faux ({[x['id'] for x in _ch53]}, {_e53['reserve']}, {_m53})")
+    elif _c53.get('moteur') != 'v1' or "config().get('moteur') == 'v1'" not in _a53 or 'serie_v1.un_episode' not in _a53:
+        echecs.append('fabrique : la journée ne passe pas par la série V1')
+    elif not all(x in _q53 for x in ('moderngl', 'scenedetect', 'skia-python', 'pyloudnorm', 'piper-tts')):
+        echecs.append('fabrique : dépendances de la chaîne V1 incomplètes (requirements.txt)')
+    else: print(f"série V1 (3 scènes différentes par épisode, mots de chute {_m53}), plan à deux par paliers, fabrique au moteur V1 : OK")
+except Exception as e:
+    echecs.append(f'série V1 : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

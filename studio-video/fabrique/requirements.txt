@@ -1,15 +1,23 @@
-# paquets du moteur de la troupe pour la fabrique GitHub (versions mesurées sur la machine de production le 20/10/2026)
+# paquets du moteur de la V1 pour la fabrique GitHub — relevés le 21/10/2026 par traçage (strace) d'un épisode complet sans
+# cache (épisode 4 v3) puis de ses portes ; versions de la machine de production
 numpy==2.4.6
 scipy==1.17.1
-opencv-python-headless
+opencv-python-headless==5.0.0.93
 mediapipe==1.1.0
 onnxruntime==1.31.0
+onnx==1.23.2
 diskcache==5.6.3
 ImageHash==4.3.2
 librosa==0.11.0
 soundfile==0.14.0
 pyworld==0.3.4
-piper-tts
+pyloudnorm==0.2.0
+piper-tts==1.8.0
 pillow==12.3.0
+matplotlib==3.11.2
+moderngl==5.12.0
+glcontext==3.1.0
+skia-python==87.6
+scenedetect==0.7.2
 faster-whisper==1.1.0
 cryptography

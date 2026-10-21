@@ -167,6 +167,21 @@ def prochains_castings(k):
 
 
 def jour(n=None, journal=print):
+    # MOTEUR DE LA V1 (21/10/2026, « si demain je ne suis pas autonome avec tout bouclé avec les 10000 vidéos j'arrêterai » ;
+    # « fabriqué d'avance à ma disposition ») : config.json « moteur »: « v1 » → la machine fabrique d'avance, sans s'arrêter
+    # à la cadence, autant d'épisodes que son temps le permet (FABRIQUE_MINUTES), avec la réserve de sketchs et les scènes
+    # préparées de la troupe neuve (serie_v1.py) ; l'ancienne série (54 personnages de l'ancienne troupe) n'est plus jouée
+    if config().get('moteur') == 'v1':
+        import serie_v1
+        t0 = time.time(); lim = float(os.environ.get('FABRIQUE_MINUTES', '300')) * 60; faits = []
+        while True:
+            moy = (serie_v1.etat()['minutes_par_episode'] or 20) * 60
+            if time.time() - t0 + 1.2 * moy > lim: journal('temps de la machine bientôt écoulé : arrêt propre'); break
+            if len(serie_v1.choisit(3)) < 3: journal('réserve de sketchs épuisée pour les scènes prêtes'); break
+            F = serie_v1.un_episode(journal); faits.append(F and F['id'])
+            if F is None and len([x for x in faits[-3:] if x is None]) == 3: journal('trois échecs techniques de suite : arrêt'); break
+        r = serie_v1.etat(); r['minutes'] = round((time.time() - t0) / 60, 1); r['faits'] = faits
+        journal(json.dumps(r, ensure_ascii=False)); return r
     n = int(n or os.environ.get('FABRIQUE_CADENCE') or config()['cadence'])   # 1 à 6 vidéos par jour (config.json)
     t0 = time.time(); F = serie.file()
     pret = len(reserve()); en_file = sum(1 for e in F.values() if e['etape'] not in ('termine',) and len(e['erreurs']) < 3)

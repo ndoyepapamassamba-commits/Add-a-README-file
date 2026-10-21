@@ -10,5 +10,6 @@
  ],
  "fuseau": "Africa/Abidjan",
  "fenetre_videos": 30,
- "note": "Réglages de la fabrique : vidéos par jour (1 à 6), heures de publication (heure d'Abidjan = UTC), nombre de vidéos gardées en ligne dans l'application (30 ≈ 5 jours à 6 par jour ; les plus anciennes passent dans les archives GitHub)."
+ "note": "Réglages de la fabrique : vidéos par jour (1 à 6), heures de publication (heure d'Abidjan = UTC), nombre de vidéos gardées en ligne dans l'application (30 ≈ 5 jours à 6 par jour ; les plus anciennes passent dans les archives GitHub). « moteur » : « v1 » = moteur de la V1 publiée, troupe neuve, réserve de sketchs (serie_v1.py), production d'avance sans plafond de cadence.",
+ "moteur": "v1"
 }

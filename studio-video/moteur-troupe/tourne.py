@@ -761,6 +761,7 @@ def ombre_nuage(S, t):
     g = 1.0 - REG['nuages'] * np.exp(-0.5 * (d / sig) ** 2)
     return cv2.resize(g.astype(np.float32), (W, H), interpolation=cv2.INTER_LINEAR)
 # ── découpage : un plan par réplique (coupe au changement de locuteur) ──
+DUO_AIR = {}   # air du plan à deux retenu par bouche_lisible (paliers AIRS_DUO), par scène et par paire
 def crop_for(S, kind, who=None):
     W, H = S['W'], S['H']; asp = CW / CH
     if kind.startswith('ouvre-'): kind = kind[6:]   # plan d'ouverture : son cadre d'arrivée est celui de l'échange
@@ -780,7 +781,7 @@ def crop_for(S, kind, who=None):
         vh = [A['a']['visage']['box'][3] - A['a']['visage']['box'][1] for A in As if A['a'].get('visage')]
         hp = 2.5 * 2 * sh
         if vh: hp = max(MOYEN_MIN, min(hp, min(vh) * CH / (REG.get('duo_visage', 1.15) * VISAGE_MIN)))
-        w = max((x1 - x0) * REG.get('duo_air', 1.3), hp * asp); h = w / asp
+        w = max((x1 - x0) * DUO_AIR.get((id(S), tuple(sorted(who))), REG.get('duo_air', 1.3)), hp * asp); h = w / asp
         if h > H: h = H; w = h * asp
         return ((x0 + x1) / 2, y0 + 0.40 * h, w, h)
     A = S['acts'][who]; cx, cy = A['head'][0], A['head'][1] + 1.1 * A['sh']
@@ -940,13 +941,22 @@ VISAGE_MIN = float(os.environ.get('VISAGE_MIN', 72)); MOYEN_MIN = float(os.envir
 def taille_visage(S, nom, c):
     """hauteur du VISAGE (front → menton, sans cheveux ni marge) dans l'image finale, en pixels."""
     v = S['acts'][nom]['a'].get('visage'); return 0.0 if not v else (v['box'][3] - v['box'][1]) * CH / c[3]
+# AIR DU PLAN À DEUX ADAPTÉ (21/10/2026, épisode 4 : salon, nez à 1,07 cadre vertical l'un de l'autre) : avec 1,3 d'air les
+# visages tombaient à 66 px (< VISAGE_MIN) et tout le salon passait en champ-contrechamp — 18 plans, plan médian 2,33 s contre
+# ≥ 3,04 pour la V1 (porte F du juge unique). On resserre l'air par paliers (1,3 → 1,2 → 1,1) tant que les deux bouches restent
+# lisibles, avant de couper à chaque réplique : salon à 1,1 → visages 78 px, 13 plans, plan médian 4,5 s (essai sans rendu)
+AIRS_DUO = tuple(float(x) for x in os.environ.get('TOURNE_AIRS_DUO', '1.3,1.2,1.1').split(','))
 def bouche_lisible(sid, qui):
-    """le plan à deux de `qui` montre-t-il chaque visage assez grand pour lire la bouche ?"""
+    """le plan à deux de `qui` montre-t-il chaque visage assez grand pour lire la bouche ? (air resserré par paliers)"""
     if sid not in SC: return True
-    S = SC[sid]; c = faces_ok(S, clamp_crop(S, crop_for(S, 'duo', qui)), qui[0])
-    px_ = min(taille_visage(S, n, c) for n in qui if n in S['acts'])
-    if os.environ.get('TOURNE_DEBUG_DUO'): print('duo', sid, qui, round(px_, 1), [round(v) for v in c], flush=True)
-    return px_ >= VISAGE_MIN
+    S = SC[sid]; k = (id(S), tuple(sorted(qui)))
+    for air in sorted({min(a_, REG.get('duo_air', 1.3)) for a_ in AIRS_DUO}, reverse=True):
+        DUO_AIR[k] = air
+        c = faces_ok(S, clamp_crop(S, crop_for(S, 'duo', qui)), qui[0])
+        px_ = min(taille_visage(S, n, c) for n in qui if n in S['acts'])
+        if os.environ.get('TOURNE_DEBUG_DUO'): print('duo', sid, qui, air, round(px_, 1), [round(v) for v in c], flush=True)
+        if px_ >= VISAGE_MIN: return True
+    DUO_AIR.pop(k, None); return False
 def echanges(Ls, plan_s):
     """RYTHME DE VOS TIKTOK : les répliques d'un même échange dans un seul plan (~plan_s secondes) ; la chute garde son plan."""
     G, cur = [], []

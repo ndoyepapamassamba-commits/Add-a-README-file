@@ -82,7 +82,7 @@ def vote_choix(chuteurs, titres):
     on vote pour le sketch (mot de son titre) et non plus pour le personnage → (question à l'écran, choix, début de légende)."""
     noms = [nom_court(n) for n in chuteurs]
     if len(set(noms)) == len(noms) or len(titres) != len(noms): return 'QUI EST LE PLUS MALIN ?', noms, 'Le plus malin'
-    return 'QUEL SKETCH EST LE MEILLEUR ?', [mot_titre(t) for t in titres], 'Le meilleur sketch'
+    return 'TON SKETCH PRÉFÉRÉ ?', [mot_titre(t) for t in titres], 'Ton sketch préféré'
 
 
 def nom_court(n):
@@ -264,7 +264,12 @@ class Habillage:
         if k not in self._cache:
             h = self.H - self.y1; im = Image.new('RGBA', (self.W, h), (0, 0, 0, 0)); dr = ImageDraw.Draw(im)
             cx = (self.sg + self.sd) / 2; larg = self.sd - self.sg
-            _texte_double(dr, (cx, 44), self.vote_question, police(34), couleur=JAUNE, dec=2, ancre='mm')
+            # 21/10/2026 (épisode 4 v2) : « QUEL SKETCH EST LE MEILLEUR ? » à 34 px débordait du cadre (« UEL … MEILLEUR ? ») :
+            # la question prend la plus grande taille qui tient dans la largeur utile, comme la ligne des choix
+            for sq in (34, 31, 28, 25, 22):
+                fq = police(sq)
+                if fq.getlength(self.vote_question) + 6 <= larg: break
+            _texte_double(dr, (cx, 44), self.vote_question, fq, couleur=JAUNE, dec=2, ancre='mm')
             choix = '   '.join(f'{i + 1} {n}' for i, n in enumerate(self.vote_noms))
             for sz in (30, 27, 24, 21, 18):
                 f = police(sz, b'Bold')
