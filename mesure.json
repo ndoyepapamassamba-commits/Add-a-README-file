@@ -77,6 +77,13 @@
    "lora": "at_runtime",
    "secondes": 184,
    "memoire_max_go": 11.03
+  },
+  {
+   "clip": "le-tonton--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 182,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39537354097"
