@@ -7,6 +7,13 @@
    "lora": "at_runtime",
    "secondes": 186,
    "memoire_max_go": 10.94
+  },
+  {
+   "clip": "la-future-maman--montrer",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 185,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39528414471"
