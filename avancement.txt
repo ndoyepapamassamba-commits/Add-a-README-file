@@ -57,3 +57,4 @@
 [5469 s] 7 images · === decor-hopital-contrechamp-jour   |=====================================>            | 3/4 - 133.54s/it[K · mémoire libre 7020 Mo
 [5590 s] 8 images · === decor-mosquee-champ-jour   |==================================================| 4/4 - 133.57s/it[K · mémoire libre 7169 Mo
 [5712 s] 8 images · === decor-mosquee-champ-jour   |============>                                     | 1/4 - 135.14s/it[K · mémoire libre 7016 Mo
+[5834 s] 8 images · === decor-mosquee-champ-jour   |============>                                     | 1/4 - 135.14s/it[K · mémoire libre 7020 Mo
