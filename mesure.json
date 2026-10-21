@@ -133,6 +133,13 @@
    "lora": "at_runtime",
    "secondes": 302,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "docteur-sylla--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 300,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39550232510"
