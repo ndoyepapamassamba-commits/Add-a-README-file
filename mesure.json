@@ -84,6 +84,13 @@
    "lora": "at_runtime",
    "secondes": 405,
    "memoire_max_go": 10.77
+  },
+  {
+   "clip": "la-voisine--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 403,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39550232510"
