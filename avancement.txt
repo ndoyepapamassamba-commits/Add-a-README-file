@@ -75,3 +75,4 @@
 [125 s] 24 clips · === le-tonton--hausser@2 (at_runtime)  · mémoire libre 13763 Mo
 [246 s] 24 clips · === le-tonton--hausser@2 (at_runtime)   |============>                                     | 1/4 - 134.20s/it[K · mémoire libre 13768 Mo
 [368 s] 24 clips · === le-tonton--hausser@2 (at_runtime)   |=========================>                        | 2/4 - 133.47s/it[K · mémoire libre 13773 Mo
+[490 s] 24 clips · === le-tonton--hausser@2 (at_runtime)   |=====================================>            | 3/4 - 133.22s/it[K · mémoire libre 13777 Mo
