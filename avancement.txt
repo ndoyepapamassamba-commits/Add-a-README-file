@@ -45,3 +45,4 @@
 [5469 s] 4 images · === perso-boubacar   |==================================================| 4/4 - 392.79s/it[K · mémoire libre 2981 Mo
 [5590 s] 5 images · === decor-marche-champ-jour   |==================================================| 4/4 - 392.79s/it[K · mémoire libre 7015 Mo
 [5712 s] 5 images · === decor-marche-champ-jour   |============>                                     | 1/4 - 159.96s/it[K · mémoire libre 7002 Mo
+[5834 s] 5 images · === decor-marche-champ-jour   |============>                                     | 1/4 - 159.96s/it[K · mémoire libre 7049 Mo
