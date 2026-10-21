@@ -53,3 +53,4 @@
 [4976 s] 5 images · === perso-dj-kevin   |=========================>                        | 2/4 - 395.31s/it[K · mémoire libre 6268 Mo
 [5097 s] 5 images · === perso-dj-kevin   |=========================>                        | 2/4 - 395.31s/it[K · mémoire libre 6259 Mo
 [5219 s] 5 images · === perso-dj-kevin   |=========================>                        | 2/4 - 395.31s/it[K · mémoire libre 6267 Mo
+[5340 s] 5 images · === perso-dj-kevin   |=========================>                        | 2/4 - 395.31s/it[K · mémoire libre 6267 Mo
