@@ -63,3 +63,4 @@
 [5952 s] 7 images · === decor-gare-routiere-champ-jour   |=========================>                        | 2/4 - 157.57s/it[K · mémoire libre 7021 Mo
 [6073 s] 7 images · === decor-gare-routiere-champ-jour   |=========================>                        | 2/4 - 157.57s/it[K · mémoire libre 7022 Mo
 [123 s] 7 images · === decor-gare-routiere-champ-jour  · mémoire libre 6989 Mo
+[245 s] 7 images · === decor-gare-routiere-champ-jour   |============>                                     | 1/4 - 161.37s/it[K · mémoire libre 6974 Mo
