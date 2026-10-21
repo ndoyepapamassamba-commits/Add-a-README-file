@@ -217,6 +217,13 @@
    "lora": "at_runtime",
    "secondes": 181,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "dj-kevin--ecouter@2",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 181,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39585702697"
