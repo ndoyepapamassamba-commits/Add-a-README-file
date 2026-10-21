@@ -28,3 +28,4 @@
 [853 s] 15 clips · === sur-awa--hausser (at_runtime)   |============>                                     | 1/4 - 135.65s/it[K · mémoire libre 13810 Mo
 [974 s] 15 clips · === sur-awa--hausser (at_runtime)   |=========================>                        | 2/4 - 133.79s/it[K · mémoire libre 13809 Mo
 [1095 s] 15 clips · === sur-awa--hausser (at_runtime)   |=====================================>            | 3/4 - 133.63s/it[K · mémoire libre 13805 Mo
+[1217 s] 16 clips · === maitre-kone--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13786 Mo

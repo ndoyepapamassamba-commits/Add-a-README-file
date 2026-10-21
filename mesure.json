@@ -105,6 +105,13 @@
    "lora": "at_runtime",
    "secondes": 583,
    "memoire_max_go": 10.84
+  },
+  {
+   "clip": "sur-awa--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 583,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39545665602"
