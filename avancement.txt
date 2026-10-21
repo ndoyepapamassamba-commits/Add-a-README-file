@@ -43,3 +43,4 @@
 [1459 s] 12 clips · === maman-brigitte--parler (at_runtime)   |============>                                     | 1/4 - 135.35s/it[K · mémoire libre 13752 Mo
 [123 s] 12 clips · === la-go-leopard--hausser@2 (at_runtime)   |=========================>                        | 2/4 - 38.89s/it[K · mémoire libre 13777 Mo
 [244 s] 13 clips · === agent-bakary--parler (at_runtime)   |============>                                     | 1/4 - 41.17s/it[K · mémoire libre 13777 Mo
+[366 s] 14 clips · === agent-gora--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14310 Mo
