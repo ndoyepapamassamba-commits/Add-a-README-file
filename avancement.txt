@@ -44,3 +44,4 @@
 [1337 s] 13 clips · === maitre-kone--rire (at_runtime)   |============>                                     | 1/4 - 135.44s/it[K · mémoire libre 13794 Mo
 [1458 s] 13 clips · === maitre-kone--rire (at_runtime)   |============>                                     | 1/4 - 135.44s/it[K · mémoire libre 13790 Mo
 [1580 s] 13 clips · === maitre-kone--rire (at_runtime)   |=========================>                        | 2/4 - 134.85s/it[K · mémoire libre 13782 Mo
+[1701 s] 13 clips · === maitre-kone--rire (at_runtime)   |=====================================>            | 3/4 - 134.28s/it[K · mémoire libre 13786 Mo
