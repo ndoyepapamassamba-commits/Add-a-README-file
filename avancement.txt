@@ -49,3 +49,4 @@
 [4731 s] 4 images · === perso-le-frimeur   |=====================================>            | 3/4 - 397.20s/it[K · mémoire libre 6273 Mo
 [4852 s] 5 images · === decor-marche-contrechamp-jour   |==================================================| 4/4 - 397.16s/it[K · mémoire libre 12407 Mo
 [4974 s] 5 images · === decor-marche-contrechamp-jour   |==================================================| 4/4 - 397.16s/it[K · mémoire libre 7044 Mo
+[5095 s] 5 images · === decor-marche-contrechamp-jour   |============>                                     | 1/4 - 161.12s/it[K · mémoire libre 7032 Mo
