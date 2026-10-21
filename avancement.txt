@@ -9,3 +9,4 @@
 [1093 s] 5 clips · === agent-doumbia--hausser (at_runtime)   |=====================================>            | 3/4 - 134.02s/it[K · mémoire libre 13757 Mo
 [1214 s] 6 clips · === petit-moussa--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13736 Mo
 [1336 s] 6 clips · === petit-moussa--parler (at_runtime)   |============>                                     | 1/4 - 134.84s/it[K · mémoire libre 13746 Mo
+[1457 s] 6 clips · === petit-moussa--parler (at_runtime)   |============>                                     | 1/4 - 134.84s/it[K · mémoire libre 13748 Mo
