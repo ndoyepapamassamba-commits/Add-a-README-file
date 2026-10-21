@@ -56,3 +56,4 @@
 [123 s] 15 clips · === maman-brigitte--montrer@2 (at_runtime)   |=========================>                        | 2/4 - 40.46s/it[K · mémoire libre 13797 Mo
 [244 s] 16 clips · === mecano-issa--colere@2 (at_runtime)   |============>                                     | 1/4 - 41.35s/it[K · mémoire libre 13811 Mo
 [366 s] 16 clips · === mecano-issa--colere@2 (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 10504 Mo
+[487 s] 17 clips · === mademoiselle-rosine--montrer@2 (at_runtime)   |=========================>                        | 2/4 - 40.84s/it[K · mémoire libre 13819 Mo
