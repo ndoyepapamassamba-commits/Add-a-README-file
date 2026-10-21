@@ -38,3 +38,4 @@
 [122 s] 14 clips · === agent-bakary--choc (at_runtime)  · mémoire libre 13774 Mo
 [244 s] 14 clips · === agent-bakary--choc (at_runtime)   |============>                                     | 1/4 - 135.45s/it[K · mémoire libre 13761 Mo
 [365 s] 14 clips · === agent-bakary--choc (at_runtime)   |=========================>                        | 2/4 - 134.82s/it[K · mémoire libre 13756 Mo
+[486 s] 14 clips · === agent-bakary--choc (at_runtime)   |=====================================>            | 3/4 - 134.72s/it[K · mémoire libre 13755 Mo
