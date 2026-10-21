@@ -67,3 +67,4 @@
 [609 s] 7 images · === perso-sur-awa   |==================================================| 4/4 - 132.07s/it[K · mémoire libre 11551 Mo
 [730 s] 7 images · === perso-sur-awa   |==================================================| 4/4 - 132.07s/it[K · mémoire libre 6171 Mo
 [851 s] 7 images · === perso-sur-awa   |==================================================| 4/4 - 132.07s/it[K · mémoire libre 6158 Mo
+[973 s] 7 images · === perso-sur-awa   |============>                                     | 1/4 - 249.82s/it[K · mémoire libre 6145 Mo
