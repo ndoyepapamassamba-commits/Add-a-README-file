@@ -30,3 +30,4 @@
 [728 s] 14 clips · === agent-bakary--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13788 Mo
 [850 s] 14 clips · === agent-bakary--mentir (at_runtime)   |============>                                     | 1/4 - 135.06s/it[K · mémoire libre 13774 Mo
 [971 s] 14 clips · === agent-bakary--mentir (at_runtime)   |=========================>                        | 2/4 - 134.20s/it[K · mémoire libre 13765 Mo
+[1092 s] 14 clips · === agent-bakary--mentir (at_runtime)   |=====================================>            | 3/4 - 134.07s/it[K · mémoire libre 13767 Mo
