@@ -52,3 +52,4 @@
 [1340 s] 18 clips · === sorciere-mama-dede--mentir (at_runtime)   |============>                                     | 1/4 - 68.24s/it[K · mémoire libre 13768 Mo
 [1461 s] 18 clips · === sorciere-mama-dede--mentir (at_runtime)   |=====================================>            | 3/4 - 66.64s/it[K · mémoire libre 13780 Mo
 [1582 s] 19 clips · === docteur-sylla--choc (at_runtime)   |============>                                     | 1/4 - 61.27s/it[K · mémoire libre 13774 Mo
+[1704 s] 19 clips · === docteur-sylla--choc (at_runtime)   |=====================================>            | 3/4 - 61.90s/it[K · mémoire libre 13769 Mo
