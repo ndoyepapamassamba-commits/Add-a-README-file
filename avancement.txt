@@ -35,3 +35,4 @@
 [730 s] 11 clips · === tata-prisca--mentir (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13169 Mo
 [851 s] 12 clips · === petite-khadija--choc (at_runtime)   |============>                                     | 1/4 - 84.38s/it[K · mémoire libre 13758 Mo
 [973 s] 12 clips · === petite-khadija--choc (at_runtime)   |=========================>                        | 2/4 - 82.63s/it[K · mémoire libre 13730 Mo
+[1094 s] 12 clips · === petite-khadija--choc (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 13937 Mo
