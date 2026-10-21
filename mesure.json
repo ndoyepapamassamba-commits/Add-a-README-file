@@ -77,6 +77,13 @@
    "lora": "at_runtime",
    "secondes": 304,
    "memoire_max_go": 11.03
+  },
+  {
+   "clip": "mamie-bintou--ecouter",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 303,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39537354097"
