@@ -41,3 +41,4 @@
 [122 s] 14 clips · === madame-coumba--rire (at_runtime)  · mémoire libre 13761 Mo
 [243 s] 14 clips · === madame-coumba--rire (at_runtime)   |============>                                     | 1/4 - 128.47s/it[K · mémoire libre 13766 Mo
 [365 s] 14 clips · === madame-coumba--rire (at_runtime)   |=========================>                        | 2/4 - 126.83s/it[K · mémoire libre 13761 Mo
+[486 s] 14 clips · === madame-coumba--rire (at_runtime)   |=====================================>            | 3/4 - 126.54s/it[K · mémoire libre 13763 Mo
