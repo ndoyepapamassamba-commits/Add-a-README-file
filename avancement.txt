@@ -39,3 +39,4 @@
 [1336 s] 12 clips · === agent-bakary--rire (at_runtime)   |============>                                     | 1/4 - 135.04s/it[K · mémoire libre 13773 Mo
 [1457 s] 12 clips · === agent-bakary--rire (at_runtime)   |============>                                     | 1/4 - 135.04s/it[K · mémoire libre 13739 Mo
 [122 s] 12 clips · === le-tonton--mentir (at_runtime)   |=========================>                        | 2/4 - 38.63s/it[K · mémoire libre 13789 Mo
+[244 s] 13 clips · === maman-brigitte--ecouter (at_runtime)   |============>                                     | 1/4 - 39.00s/it[K · mémoire libre 13803 Mo
