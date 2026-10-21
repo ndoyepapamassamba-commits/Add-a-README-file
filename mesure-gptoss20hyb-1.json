@@ -1,14 +1,18 @@
 {
  "modele": "gptoss20hyb",
  "part": 1,
- "appels_scenariste": 13,
- "secondes_scenariste": 482.5466113090515,
- "echecs_scenariste": 20,
- "appels_juge": 0,
+ "appels_scenariste": 16,
+ "secondes_scenariste": 806.9023067951202,
+ "echecs_scenariste": 24,
+ "appels_juge": 8,
  "echecs_juge": 0,
  "brouillons_refuses_controle": 7,
- "planchers_v17": [],
- "notes": [],
+ "planchers_v17": [
+  0.453
+ ],
+ "notes": [
+  0.271
+ ],
  "acceptes": 0,
  "lieux": [
   {
@@ -30,9 +34,14 @@
    "lieu": "Plage",
    "accepte": false,
    "secondes": 200
+  },
+  {
+   "lieu": "Salon de coiffure",
+   "accepte": false,
+   "secondes": 645
   }
  ],
- "brouillons_illisibles": 4,
+ "brouillons_illisibles": 5,
  "reparations": [
   [
    2,
@@ -41,7 +50,11 @@
   [
    2,
    1
+  ],
+  [
+   2,
+   0
   ]
  ],
- "secondes_par_brouillon": 37.1
+ "secondes_par_brouillon": 50.4
 }
