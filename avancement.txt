@@ -122,3 +122,4 @@
 [1459 s] 8 images · === perso-agent-gora   |============>                                     | 1/4 - 357.12s/it[K · mémoire libre 6176 Mo
 [1581 s] 8 images · === perso-agent-gora   |============>                                     | 1/4 - 357.12s/it[K · mémoire libre 6175 Mo
 [1702 s] 8 images · === perso-agent-gora   |=========================>                        | 2/4 - 345.68s/it[K · mémoire libre 6172 Mo
+[1823 s] 8 images · === perso-agent-gora   |=========================>                        | 2/4 - 345.68s/it[K · mémoire libre 6172 Mo
