@@ -21,6 +21,13 @@
    "lora": "at_runtime",
    "secondes": 585,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "tantie-awa-sarr--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 586,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39528414471"
