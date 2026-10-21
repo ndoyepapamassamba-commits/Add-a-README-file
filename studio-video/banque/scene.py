@@ -22,9 +22,13 @@ def slug(t):
 
 
 def places(noms):
-    """x de chaque acteur : 2 → 0,27 / 0,73 ; 3 → 0,2 / 0,5 / 0,8 ; au-delà, régulier."""
+    """x de chaque acteur : 2 → 0,33 / 0,67 ; 3 → 0,2 / 0,5 / 0,8 ; au-delà, régulier.
+    DISTANCE DE CONVERSATION (21/10/2026, épisode banque 1 v5) : à 0,27 / 0,73, le plan à deux devait couvrir 46 % de la
+    largeur entre les deux acteurs — personnages petits (place 0,345 contre 0,366 pour la V1), visage de Tiékoro jamais lu
+    pendant 11 s de plan à deux (regards non mesurables). À 0,33 / 0,67, les corps (0,26 de la largeur chacun) ne se touchent
+    pas et le plan à deux est 1,2 fois plus serré."""
     n = len(noms)
-    xs = [0.5] if n == 1 else [0.27, 0.73] if n == 2 else list(np.linspace(0.2, 0.8, n))
+    xs = [0.5] if n == 1 else [0.33, 0.67] if n == 2 else list(np.linspace(0.2, 0.8, n))
     return dict(zip(noms, xs))
 
 

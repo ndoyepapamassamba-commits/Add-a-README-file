@@ -279,6 +279,8 @@ def despill(F, plein=False):
 
 
 LIT_VERSION = 3   # 2 : reflet vert ôté partout sur les personnages tournés sur fond vert ; 3 : gain de tête étalonné (lacet_banque v4)
+# les versions du champ de tête (lacet_banque.VERSION) et du teint (peau.VERSION) entrent aussi dans la clé : un clip préparé
+# avec un ancien champ n'est jamais relu (21/10/2026, lacet_banque v5)
 LIT_PLAFOND = float(os.environ.get('LIT_PLAFOND_GO', '4')) * (1 << 30)   # cache en mémoire partagée : plus vieux effacés au-delà
 
 
@@ -313,8 +315,8 @@ def lit_clip(mov, w, h, flip, gains, tete=True, sens=1.0):
     lumière du décor. MÉMOIRE (21/10/2026, épisode de 3 sketchs : un processus de rendu tué) : chaque variante préparée est
     gardée en octets (.lit-*.npy, _dossier_lit) et ouverte en lecture à la demande — 16 fois moins de mémoire qu'en
     flottants, et calculée une fois pour toutes les répliques et tous les épisodes."""
-    import hashlib
-    cle = f"{os.path.basename(mov)}|{os.path.getmtime(mov):.0f}|{w}x{h}|{int(bool(flip))}|{float(sens):+.3f}|{tuple(round(float(g), 3) for g in gains)}|{int(bool(tete))}|{LIT_VERSION}"
+    import hashlib, lacet_banque, peau
+    cle = f"{os.path.basename(mov)}|{os.path.getmtime(mov):.0f}|{w}x{h}|{int(bool(flip))}|{float(sens):+.3f}|{tuple(round(float(g), 3) for g in gains)}|{int(bool(tete))}|{LIT_VERSION}.{lacet_banque.VERSION}.{lacet_banque.SIGMA}.{peau.VERSION}"
     d = _dossier_lit(mov); f = os.path.join(d, f"{os.path.basename(mov)[:-4]}.lit-{hashlib.sha1(cle.encode()).hexdigest()[:12]}.npy")
     if os.path.isfile(f): return np.load(f, mmap_mode='r')
     F = _prepare_clip(mov, w, h, flip, gains, tete, sens)

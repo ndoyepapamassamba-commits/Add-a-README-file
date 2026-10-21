@@ -60,13 +60,16 @@ def aller_retour(N):
     return aller + retour
 
 
-def ordre(q, e, fps):
-    """indices d'images du clip (aller-retour) pour chaque image de sortie, la bouche suivant l'enveloppe e."""
+def ordre(q, e, fps, poids=None):
+    """indices d'images du clip (aller-retour) pour chaque image de sortie, la bouche suivant l'enveloppe e. poids (par image
+    de sortie, 21/10/2026) : force de la contrainte de bouche — faible quand l'acteur écoute (le corps garde sa vitesse
+    normale au lieu de s'arrêter sur les images bouche fermée)."""
     N = len(q); Q = aller_retour(N)
     K = max(1, round(len(Q) * fps / FPS_CLIP)); R = [Q[min(len(Q) - 1, int(k * FPS_CLIP / fps))] for k in range(K)]
     qr = q[R]; lo, hi = np.percentile(q, 10), np.percentile(q, 90); ech = max(hi - lo, 1e-4)
     cible = lo + e * (hi - lo); n = len(e)
     cout = ((qr[None, :] - cible[:, None]) / ech) ** 2                   # n × K
+    if poids is not None: cout = cout * np.asarray(poids, float)[:, None]
     D = cout[0].copy(); arr = np.zeros((n, K), int)
     for t in range(1, n):
         best = np.full(K, np.inf); arg = np.zeros(K, int)

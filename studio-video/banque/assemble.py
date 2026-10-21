@@ -206,8 +206,15 @@ def _programme(P, k, nom, gains, cache):
     import camera_v1
     R = P['repliques']; r = R[k]; a = P['acteurs'][nom]
     geste = lambda rr: rr.get('geste', 'parler') if nom == rr.get('qui') else rr.get('reagit', {}).get(nom, 'ecouter')
+    # UN GESTE PAR PLAN À DEUX (21/10/2026, épisode banque 1 v3 : sautes 12 → 22,5 par minute) : dans un plan à deux, chaque
+    # changement de parleur faisait passer l'acteur d'un clip à l'autre (« écouter » → « parler ») à l'écran, en fondu — une
+    # saute ; avant, la coupe le cachait. Il garde désormais le clip « parler » tout le plan, la bouche suivant sa voix quand il
+    # parle et fermée quand il écoute, ordre des images calculé d'un seul tenant sur le plan (levres_banque.ordre)
+    s_ = _plan_de(P, r)
+    duo = bool(s_ and s_.get('sorte') == 'duo' and nom in s_['garde'] and UN_GESTE_PAR_DUO)
+    if duo: geste = lambda rr: 'parler'
     mov, pieds = _clip(P['banque'], nom, geste(r))
-    h = int(BH * a.get('taille', 0.95)); w = int(h * 384 / 640) // 2 * 2; flip = a.get('regarde', 'droite') == 'gauche'
+    h = int(BH * a.get('taille', 0.95)); w = int(h * 384 / 640) // 2 * 2; flip = sens_au_plan(P, k, nom) == 'gauche'
     # REGARDS (21/10/2026) : la tête se tourne vers celui qui parle ; celui qui parle, vers celui à qui il parle (« a » du
     # sketch, sinon le parleur précédent, sinon le plus proche) ; après la chute, tous vers son auteur. Le corps garde son sens.
     cible = vise(P, k, nom); d_ = (1.0 if P['acteurs'][cible]['x'] > a['x'] else -1.0) if cible else (-1.0 if flip else 1.0)
@@ -216,7 +223,13 @@ def _programme(P, k, nom, gains, cache):
     if cle not in cache: cache[cle] = camera_v1.lit_clip(mov, w, h, flip, gains[nom], sens=sens)
     F = cache[cle]; px = (1 - pieds['x']) if flip else pieds['x']
     pr = {'F': F, 'x': int(round(a.get('x', 0.5) * BW - px * w)), 'y': int(round(a.get('sol', 0.97) * BH - pieds['y'] * h)), 'mov': mov, 'sens': sens}
-    if nom == r.get('qui') and r.get('voix') and os.environ.get('LEVRES_BANQUE', '1') == '1':
+    if duo:
+        try:
+            idx = _ordre_plan(P, s_, nom, mov, len(F))
+            if idx: pr['idx'] = idx[k]; pr['continu'] = True
+        except Exception as e:
+            print(f'  plan à deux sans ordre continu ({nom}) : {e}', file=sys.stderr)
+    if not pr.get('idx') and nom == r.get('qui') and r.get('voix') and os.environ.get('LEVRES_BANQUE', '1') == '1':
         try:
             import levres_banque
             pr['idx'] = levres_banque.ordre_voix(mov, mov[:-4] + '.mp4', r['voix'], float(r['duree']), FPS, len(F))
@@ -233,13 +246,14 @@ def _programme(P, k, nom, gains, cache):
 PEINT_TROIS_QUARTS = 12.0   # degrés (lacet_banque.lacet_peint) au-delà desquels le visage est dessiné de trois quarts
 
 
-def sens_du_corps(P, nom):
+def sens_du_corps(P, nom, cible=None):
     """'droite' (clip tel quel) ou 'gauche' (miroir). SENS DU CORPS (21/10/2026, épisode banque 1, regards 0,167 contre 0,846) :
     un personnage dessiné de trois quarts ne tourne pas la tête de l'autre côté — lus comme niveau_v1, Modou +28°, Agent Doumbia
     +26°, Adjoua +20°, Coumba +19°, et encore +11 à +22° tournés vers la gauche au gain 1,6 : seul le miroir le fait regarder
     les autres. Le miroir suit donc le sens dessiné (lacet_banque.champ) et la place des autres acteurs ; un visage de face
     garde la règle de la place (les autres à gauche : miroir)."""
     a = P['acteurs'][nom]; xs = [b.get('x', 0.5) for n, b in P['acteurs'].items() if n != nom]
+    if cible in P['acteurs'] and cible != nom: xs = [P['acteurs'][cible].get('x', 0.5)]   # celui qu'il regarde (sens_au_plan)
     veut = (1.0 if float(np.mean(xs)) >= a.get('x', 0.5) else -1.0) if xs else (1.0 if a.get('x', 0.5) <= 0.5 else -1.0)
     try:
         import lacet_banque as LB
@@ -250,13 +264,55 @@ def sens_du_corps(P, nom):
     return 'droite' if veut > 0 else 'gauche'
 
 
+def sens_au_plan(P, k, nom):
+    """sens du corps de `nom` pendant la réplique k. SENS DU CORPS PAR PLAN (21/10/2026, épisode banque 1 v5, regards 0,048) :
+    choisi une fois par sketch d'après la moyenne des autres, il laissait, dans le salon à cinq, Coumba (dessinée de trois
+    quarts vers la droite) regarder hors champ pendant le plan à deux avec Adjoua, à sa gauche. Il est choisi à chaque plan,
+    vers celui que l'acteur regarde au début du plan (son partenaire dans un plan à deux, assemble.vise), et ne change jamais
+    au milieu d'un plan : la coupe cache le retournement, comme quelqu'un qui se tourne vers celui qui lui parle."""
+    s = _plan_de(P, P['repliques'][k])
+    if s is None: return P['acteurs'][nom].get('regarde', 'droite')
+    cache = P.setdefault('_sens_plan', {}); cle = f"{s['t0']:.3f}|{nom}"
+    if cle not in cache:
+        k0 = next((j for j, rr in enumerate(P['repliques']) if s['t0'] - 1e-6 <= rr['_t0'] < s['t1'] - 1e-6), k)
+        cache[cle] = sens_du_corps(P, nom, vise(P, k0, nom))
+    return cache[cle]
+
+
+UN_GESTE_PAR_DUO = os.environ.get('UN_GESTE_PAR_DUO', '1') == '1'
+ECOUTE_POIDS = float(os.environ.get('ECOUTE_POIDS', '0.15'))
+
+
+def _plan_de(P, r):
+    """plan de la grammaire V1 qui contient la réplique r (None hors rendu V1)."""
+    return next((x for x in P.get('_plans') or [] if x['t0'] - 1e-6 <= r['_t0'] < x['t1'] - 1e-6), None) if '_t0' in r else None
+
+
+def _ordre_plan(P, s, nom, mov, n_images):
+    """{k: indices d'images du clip pour la réplique k} sur tout le plan s, d'un seul tenant : la bouche de `nom` suit sa voix
+    quand il parle, se ferme quand il écoute (enveloppe nulle) ; None si l'ouverture des lèvres n'est pas mesurable."""
+    import levres_banque as LB
+    q = LB.ouverture(mov[:-4] + '.mp4')
+    if q is None or len(q) != n_images: return None
+    ks = [j for j, rr in enumerate(P['repliques']) if s['t0'] - 1e-6 <= rr['_t0'] < s['t1'] - 1e-6]
+    ns = [max(1, round(float(P['repliques'][j]['duree']) * FPS)) for j in ks]
+    parle = [P['repliques'][j].get('qui') == nom and bool(P['repliques'][j].get('voix')) for j in ks]
+    e = np.concatenate([LB.enveloppe(P['repliques'][j]['voix'], n, FPS) if p else np.zeros(n) for j, n, p in zip(ks, ns, parle)])
+    # à l'écoute, la bouche n'est qu'à peine tenue fermée (poids 0,15) : v4, poids plein — le corps s'arrêtait sur les images
+    # bouche fermée (part du corps qui bouge 0,184 → 0,165)
+    w = np.concatenate([np.full(n, 1.0 if p else ECOUTE_POIDS) for n, p in zip(ns, parle)])
+    o = LB.ordre(q, e, FPS, w); out, a = {}, 0
+    for j, n in zip(ks, ns): out[j] = o[a:a + n]; a += n
+    return out
+
+
 def vise(P, k, nom):
     """acteur que regarde `nom` pendant la réplique k."""
     R = P['repliques']; r = R[k]; autres = [n for n in P['acteurs'] if n != nom]
     if not autres: return None
     # PLAN À DEUX (21/10/2026) : deux personnages montrés ensemble se regardent — sinon, dans une scène à cinq, le plan à deux
     # de deux parleurs voisins les montrait tournés tous deux vers un troisième hors champ (lacets +16,8 et +17,1 mesurés)
-    s = next((x for x in P.get('_plans') or [] if x['t0'] - 1e-6 <= r['_t0'] < x['t1'] - 1e-6), None) if '_t0' in r else None
+    s = _plan_de(P, r)
     if s and s.get('sorte') == 'duo' and len(s['garde']) == 2 and nom in s['garde'] and (not r.get('qui') or r['qui'] in s['garde']):
         return next(n for n in s['garde'] if n != nom)
     if not r.get('qui'):   # réaction après la chute : vers l'auteur de la chute (lui, vers celui qui encaisse le plus près)
@@ -287,7 +343,8 @@ def bande_v1(P, k, gains, ecrit):
     if k > 0 and abs(s['t0'] - r['_t0']) > 1e-6:
         for nm in noms:
             pp = _programme(P, k - 1, nm, gains, cache)
-            if pp['mov'] != prog[nm]['mov'] or pp['sens'] != prog[nm]['sens'] or pp.get('idx') or prog[nm].get('idx'):
+            if (pp['mov'] != prog[nm]['mov'] or pp['sens'] != prog[nm]['sens'] or pp.get('idx') or prog[nm].get('idx')) \
+                    and not (pp.get('continu') and prog[nm].get('continu') and pp['mov'] == prog[nm]['mov'] and pp['sens'] == prog[nm]['sens']):
                 n0 = max(1, round(float(P['repliques'][k - 1]['duree']) * FPS))
                 avant[nm] = _image_acteur(pp, r['_t0'] - 1 / FPS, n0 - 1)
     vis = (max(s['c0'][0] - s['c0'][2] / 2, s['c1'][0] - s['c1'][2] / 2), max(s['c0'][1] - s['c0'][3] / 2, s['c1'][1] - s['c1'][3] / 2),

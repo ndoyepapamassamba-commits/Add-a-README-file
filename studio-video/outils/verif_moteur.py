@@ -881,6 +881,36 @@ try:
 except Exception as e:
     echecs.append(f'regards V1 : {e}')
 
+# 21/10/2026 16:00 — épisode banque 1 v5 : regards 0,048 contre 0,846 pour la V1. Trois causes communes à toute la banque :
+# champ de tête lissé en polynôme (Patron Séry, dessiné de face, lu à −2°), sens du corps fixé par sketch (dans le salon à
+# cinq, Coumba regardait hors champ pendant le plan à deux), deux acteurs trop écartés (visage de Tiékoro jamais lu).
+try:
+    import camera_v1 as _cv32, assemble as _as32, lacet_banque as _lb32, scene as _sc32, inspect as _in32
+    # champ gaussien : un glissement local (le nez entre les yeux) survit au lissage ; le polynôme de la v4 l'effaçait
+    _F32 = np.zeros((128, 128, 2), np.float32); _F32[54:74, 54:74, 0] = 6.0
+    if _lb32.VERSION < 5 or float(cv2.GaussianBlur(_F32, (0, 0), _lb32.SIGMA)[64, 64, 0]) < 3.0:
+        echecs.append('regards V1 : champ de tête encore lissé en polynôme (rotation effacée)')
+    # gain étalonné : le plus petit qui atteint la cible, sinon celui qui tourne le plus
+    _sv32 = (_lb32._tourne_une, _lb32._lu)
+    _lb32._tourne_une = lambda F0, b, Fc, w, g: Fc * g; _lb32._lu = lambda x: float(x) * 15.0
+    try: _et32 = _lb32.etalonne(0.0, None, 1.0, -0.5, None)
+    finally: _lb32._tourne_une, _lb32._lu = _sv32
+    if (_et32['gd'], _et32['gg']) != (min(_lb32.GAINS), max(_lb32.GAINS)): echecs.append(f'regards V1 : gain étalonné {_et32}')
+    # sens du corps par plan : dans un plan à deux, vers le partenaire, même si la moyenne des autres est de l'autre côté
+    _A32 = {'a': {'x': 0.15}, 'b': {'x': 0.5}, 'c': {'x': 0.7}}
+    _P32 = {'acteurs': _A32, 'banque': '/x', 'repliques': [{'qui': 'b', '_t0': 0.0, 'duree': 5.0, 'reagit': {}}],
+            '_plans': [{'t0': 0.0, 't1': 5.0, 'sorte': 'duo', 'garde': ['b', 'c']}]}
+    _sv32 = (_as32._clip, _lb32.champ)
+    _as32._clip = lambda b, n, g: (f'/x/{n}--ecouter.mov', {}); _lb32.champ = lambda p, ec, F0=None: {'peint': 25.0}
+    try: _sp32 = (_as32.sens_du_corps(_P32, 'b'), _as32.sens_au_plan(_P32, 0, 'b'))
+    finally: _as32._clip, _lb32.champ = _sv32
+    if _sp32 != ('gauche', 'droite'): echecs.append(f'regards V1 : sens du corps non choisi par plan {_sp32}')
+    if list(_sc32.places(['u', 'v']).values()) != [0.33, 0.67]: echecs.append('regards V1 : deux acteurs pas à distance de conversation')
+    if 'lacet_banque.VERSION' not in _in32.getsource(_cv32.lit_clip): echecs.append('regards V1 : clips préparés avec un ancien champ relus')
+    print(f"regards V1 (2) : champ gaussien σ {_lb32.SIGMA}, gain minimal à {_lb32.CIBLE}°, sens du corps par plan, acteurs à 0,33 / 0,67, cache lié au champ : OK")
+except Exception as e:
+    echecs.append(f'regards V1 (2) : {e}')
+
 # 21/10/2026 14:30 — épisode banque 1 v2 bloqué à 2 191 images sur 2 400 : les processus de rendu, clonés (fork) d'un parent qui
 # avait ouvert MediaPipe, attendaient un fil interne disparu. Rendu en processus neufs (spawn), détecteurs recréés par processus ;
 # la réaction après la chute continue de jouer sous la carte suivante (comme tourne.carte_sur_scene) au lieu d'une image figée

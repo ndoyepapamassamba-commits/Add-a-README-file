@@ -15,13 +15,22 @@ ANGLE = float(os.environ.get('LACET_BANQUE', '20'))   # degrés vers le partenai
 # GAIN mesuré le 21/10/2026 (lacet lu par FaceLandmarker comme niveau_v1) : à 20° rendus, Le Frimeur 0,4 → 6,6°, Tata Prisca
 # −0,2 → 6,7° — sous le seuil des regards (8°) ; rendre 30 ou 38° n'aide pas (le flux du rendu se brouille : 5,5° et 4,4°) ;
 # le champ lissé de 20° amplifié ×1,6 : 8,8 à 13,1° et 9,9 à 13,4°, tête entière tournée, coiffure intacte (×2,2 tord l'afro)
-GAIN = float(os.environ.get('LACET_GAIN', '1.6'))
+GAIN = float(os.environ.get('LACET_GAIN', '1.0'))   # VERSION 5 : gain par défaut du champ gaussien (1,6 pour le polynôme)
 T = 128                                               # grille du champ (carré du visage)
-VERSION = 4   # 2 : orientation déjà dessinée gardée (gain) ; 3 : un champ par côté (le champ retourné ne tournait vers la gauche que de 5°)
+VERSION = 5   # 2 : orientation déjà dessinée gardée (gain) ; 3 : un champ par côté (le champ retourné ne tournait vers la gauche que de 5°)
 # 4 : gain ÉTALONNÉ par personnage et par côté (21/10/2026, épisode banque 1 : regards 0,167 contre 0,846 pour la V1). Mesuré
 # comme niveau_v1 (FaceLandmarker, lacet lu sur la tête agrandie) : un même gain donne +8,2° à Tiékoro et +15,5° à Patron Séry,
 # −5,5° à Mamie Bintou et −11,9° à Tata Prisca ; le gain qui tourne le plus est gardé (1,2 à 2,0 ; au-delà la coiffure se tord).
-GAINS = (1.2, 1.6, 2.0)
+# 5 : champ lissé en GAUSSIEN, plus en polynôme (21/10/2026, épisode banque 1 v4-v5 : regards 0,087 puis 0,048 ; Patron Séry,
+# dessiné de face, lu à −2° dans le film). Mesuré sur la 1re image de son clip, lacet lu comme niveau_v1 : rendu LivePortrait
+# direct ±25° → ±23° lus (mais 6,5 s par image : impossible à l'échelle de la banque) ; champ du rendu ±20° lissé en polynôme
+# de degré 3 → −4,9 / +5,4° (le polynôme, ajusté sur toute la tête, efface le glissement du nez entre les yeux) ; degré 5 →
+# ±12° ; gaussien σ 4 (grille 128) → −15,5 / +16,9° (Tata Prisca −13,6 / +12,0°) sans torsion visible (planche de
+# comparaison à ±18 et ±25°) ; σ 2 ou ±30° : joue et bouche tordues. Gain étalonné : le plus PETIT qui atteint
+# CIBLE (12°, bas de la V1), sinon celui qui tourne le plus — au-delà, le visage se tord.
+GAINS = (0.8, 1.0, 1.25)
+SIGMA = float(os.environ.get('LACET_SIGMA', '4'))     # lissage du champ (pixels de la grille T)
+CIBLE = 12.0
 
 
 def _fl():
@@ -86,18 +95,20 @@ def _tourne_une(F0, boite, Fc, w, g):
 
 
 def etalonne(F0, boite, F, Fg, w):
-    """(gain vers la droite, gain vers la gauche, lacets obtenus) : pour chaque côté, le gain de GAINS qui tourne le plus la tête
-    lue (le lacet neutre en référence) ; GAIN si le visage n'est plus lu."""
+    """(gain vers la droite, gain vers la gauche, lacets obtenus) : pour chaque côté, le plus petit gain de GAINS dont la tête
+    lue tourne d'au moins CIBLE degrés (le lacet neutre en référence), sinon celui qui la tourne le plus ; 1 si le visage n'est
+    plus lu."""
     n0 = _lu(F0) or 0.0; res = {}
     for cote, Fc, sg in (('gd', F, 1.0), ('gg', Fg, -1.0)):
         mes = [(sg * (v - n0), g, v) for g in GAINS for v in [_lu(_tourne_une(F0, boite, Fc, w, g))] if v is not None]
-        res[cote] = max(mes)[1] if mes else GAIN; res['l' + cote[1]] = round(max(mes)[2], 1) if mes else None
+        ok = [m for m in mes if m[0] >= CIBLE]; ch = min(ok, key=lambda m: m[1]) if ok else (max(mes) if mes else None)
+        res[cote] = ch[1] if ch else 1.0; res['l' + cote[1]] = round(ch[2], 1) if ch else None
     return res
 
 
 def champ(perso, mov, F0=None):
     """champ de rotation de la tête du personnage (+ANGLE : vers la droite de l'image), en cache à côté de ses clips."""
-    f = os.path.join(os.path.dirname(mov), f'{perso}.lacet.npz'); cle = json.dumps([VERSION, ANGLE, T, os.path.basename(mov)])
+    f = os.path.join(os.path.dirname(mov), f'{perso}.lacet.npz'); cle = json.dumps([VERSION, ANGLE, T, SIGMA, os.path.basename(mov)])
     if os.path.isfile(f):
         z = np.load(f)
         if str(z['cle']) == cle: return {'F': z['F'].astype(np.float32), 'Fg': z['Fg'].astype(np.float32), 'w': z['w'].astype(np.float32),
@@ -113,11 +124,13 @@ def champ(perso, mov, F0=None):
     rend = lambda a: E._gris(cv2.resize(src.rendu(E._commande({}, 0), dpose=(0.0, a, 0.0)), (T, T), interpolation=cv2.INTER_AREA))
     m, w = _poids(); n0 = rend(0.0); mm = m > 0.5
     essai = dis.calc(rend(-12.0), n0, None); signe = -1.0 if float(essai[..., 0][mm].mean()) < 0 else 1.0   # sens mesuré (expressions_lp.lacets)
-    F = E._lisse_flux(dis.calc(rend(signe * ANGLE), n0, None), w); Fg = E._lisse_flux(dis.calc(rend(-signe * ANGLE), n0, None), w)
+    lisse = lambda Fl: cv2.GaussianBlur(Fl, (0, 0), SIGMA)   # VERSION 5 : plus de polynôme (voir GAINS)
+    F = lisse(dis.calc(rend(signe * ANGLE), n0, None)); Fg = lisse(dis.calc(rend(-signe * ANGLE), n0, None))
     lp = lacet_peint(v3); et = etalonne(F0, LP.recadre(None, v3), F, Fg, w)
     tmp = f'{f}.{os.getpid()}.npz'   # écriture atomique : les répliques sont rendues en parallèle
     np.savez_compressed(tmp, cle=np.array(cle), F=F.astype(np.float16), Fg=Fg.astype(np.float16), w=w.astype(np.float16), peint=np.array(lp),
-                        gd=np.array(et['gd']), gg=np.array(et['gg']))
+                        gd=np.array(et['gd']), gg=np.array(et['gg']), ld=np.array(et['ld'] if et['ld'] is not None else np.nan),
+                        lg=np.array(et['lg'] if et['lg'] is not None else np.nan))
     os.replace(tmp, f)
     return {'F': F, 'Fg': Fg, 'w': w, 'peint': lp, 'gd': et['gd'], 'gg': et['gg']}
 
