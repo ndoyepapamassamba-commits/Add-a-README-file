@@ -161,6 +161,13 @@
    "lora": "at_runtime",
    "secondes": 310,
    "memoire_max_go": 11.09
+  },
+  {
+   "clip": "djecky--ecouter",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 312,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39559117299"
