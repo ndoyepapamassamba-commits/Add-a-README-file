@@ -66,3 +66,4 @@
 [1946 s] 24 clips · === le-frimeur--parler (at_runtime)   |============>                                     | 1/4 - 134.62s/it[K · mémoire libre 13801 Mo
 [2067 s] 24 clips · === le-frimeur--parler (at_runtime)   |=========================>                        | 2/4 - 134.11s/it[K · mémoire libre 13793 Mo
 [2189 s] 24 clips · === le-frimeur--parler (at_runtime)   |=====================================>            | 3/4 - 134.14s/it[K · mémoire libre 13788 Mo
+[2311 s] 24 clips · === le-frimeur--parler (at_runtime)   |=====================================>            | 3/4 - 134.14s/it[K · mémoire libre 13792 Mo
