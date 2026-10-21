@@ -1251,6 +1251,17 @@ try:
 except Exception as e:
     echecs.append(f'scène générée : {e}')
 
+# 21/10/2026 — voie rapide des visages (EXPRESSIONS_JUGE=0) : sans juge, la recette du parrain (déjà jugée sur le visage
+# préparé le plus proche) est prise avant la recette de base ; avec juge (défaut), la recherche reste inchangée
+try:
+    _t51 = open(os.path.join(ICI, 'moteur-troupe', 'expressions_lp.py'), encoding='utf-8').read()
+    _p51 = open(os.path.join(ICI, 'moteur-troupe', 'prepare_expressions.py'), encoding='utf-8').read()
+    if "elif not juger and not meme and e != 'neutre' and (parrain or {}).get(e):" not in _t51 or "os.environ.get('EXPRESSIONS_JUGE', '1') == '0'" not in _p51:
+        echecs.append('visages : voie rapide (recettes du parrain sans juge) absente')
+    else: print('visages : voie rapide sur demande (EXPRESSIONS_JUGE=0, recettes du parrain), juge par défaut : OK')
+except Exception as e:
+    echecs.append(f'visages (voie rapide) : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

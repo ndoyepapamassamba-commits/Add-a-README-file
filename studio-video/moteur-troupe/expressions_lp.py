@@ -359,6 +359,11 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
         sn = S0 != tuple(SS) and any(abs(x_.get('hausser', 0.0)) > 1e-4 for x_ in (EMO[e], v_rec.get(e) or {}))
         meme = vieux.get(e) == EMO[e] and e in v_rec and not sn; c = v_rec[e] if meme else dict(EMO[e]); fait0 = None
         if meme and e in v_jev: meta['jev'][e] = v_jev[e]
+        # VOIE RAPIDE (21/10/2026, « je veux au moins publier avant de me coucher ») : sans juge, la recette du parrain (déjà
+        # jugée sur le visage préparé le plus proche) plutôt que la recette de base ; la recherche par le juge local essayait
+        # jusqu'à 5 recettes par émotion (≈ 5 min par émotion à 4 personnages en parallèle)
+        elif not juger and not meme and e != 'neutre' and (parrain or {}).get(e):
+            c = dict(parrain[e]); meta['jev'][e] = {'parrain': True, 'non_jugee': True}
         elif juger and e != 'neutre':
             try:
                 if base is None:   # défaut du neutre à la bouche peinte, comme les recettes : moyenne de deux avis (±0,03 par requête)

@@ -82,7 +82,8 @@ for a in S['acteurs']:
     if not RDE and os.environ.get('EXPRESSIONS_PARRAIN', '1') != '0' and not os.path.isfile(f"{d}/expressions/{a['slug']}/meta.json"):
         par, prov = parrain(d, a['nom'])
         if par: print(a['nom'], ': recettes parrainées par', prov, flush=True)
-    t0 = time.time(); meta = XL.bibliotheque(img, np.load(f3), f"{d}/expressions/{a['slug']}", journal=lambda m: print(a['nom'], m.strip(), flush=True) if 'garde' in m else None, alpha=al, parrain=par)
+    t0 = time.time(); meta = XL.bibliotheque(img, np.load(f3), f"{d}/expressions/{a['slug']}", journal=lambda m: print(a['nom'], m.strip(), flush=True) if 'garde' in m else None, alpha=al, parrain=par,
+                         juge=None if os.environ.get('EXPRESSIONS_JUGE', '1') == '0' else 'jev')   # EXPRESSIONS_JUGE=0 : voie rapide, recettes du parrain
     J = meta['jev']; autre = [e for e in meta['emotions'] if e != 'neutre' and meta['recettes'][e] != XL.EMO[e]]
     print(a['nom'], len(meta['emotions']), 'émotions ×', len(meta['bouche']), 'bouches,', round(time.time() - t0), 's ; lisibilité',
           {e: J[e]['lisible'] for e in meta['emotions'] if 'lisible' in J.get(e, {})}, '; recette changée :', autre, flush=True)
