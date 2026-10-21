@@ -24,3 +24,4 @@
 [1096 s] 2 images · === maison-baye-ndiaye-salon-large-jour   |=========================>                        | 2/4 - 146.53s/it[K · mémoire libre 6960 Mo
 [1218 s] 2 images · === maison-baye-ndiaye-salon-large-jour   |=====================================>            | 3/4 - 146.47s/it[K · mémoire libre 6976 Mo
 [1339 s] 3 images · === maison-fatou-salon-large-jour   |==================================================| 4/4 - 146.68s/it[K · mémoire libre 11553 Mo
+[1461 s] 3 images · === maison-fatou-salon-large-jour   |==================================================| 4/4 - 146.68s/it[K · mémoire libre 7048 Mo
