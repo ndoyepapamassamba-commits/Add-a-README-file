@@ -53,3 +53,4 @@
 [4983 s] 7 images · === decor-hopital-contrechamp-jour   |==================================================| 4/4 - 133.81s/it[K · mémoire libre 7182 Mo
 [5105 s] 7 images · === decor-hopital-contrechamp-jour   |============>                                     | 1/4 - 140.66s/it[K · mémoire libre 7021 Mo
 [5226 s] 7 images · === decor-hopital-contrechamp-jour   |============>                                     | 1/4 - 140.66s/it[K · mémoire libre 7017 Mo
+[5347 s] 7 images · === decor-hopital-contrechamp-jour   |=========================>                        | 2/4 - 134.25s/it[K · mémoire libre 7011 Mo
