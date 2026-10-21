@@ -56,6 +56,13 @@
    "lora": "at_runtime",
    "secondes": 578,
    "memoire_max_go": 11.27
+  },
+  {
+   "clip": "aliou--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 580,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39528414471"
