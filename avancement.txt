@@ -64,3 +64,4 @@
 [5829 s] 10 images · === maison-sur-awa-chambre-champ-jour   |=========================>                        | 2/4 - 109.62s/it[K · mémoire libre 6967 Mo
 [5950 s] 10 images · === maison-sur-awa-chambre-champ-jour   |=====================================>            | 3/4 - 109.76s/it[K · mémoire libre 6970 Mo
 [6072 s] 11 images · === decor-marche-coin-nuit   |==================================================| 4/4 - 109.69s/it[K · mémoire libre 7138 Mo
+[123 s] 11 images · === fiche-general-zongo  · mémoire libre 6681 Mo
