@@ -61,3 +61,4 @@
 [5708 s] 8 images · === decor-terrain-de-foot-contrechamp-jour   |==================================================| 4/4 - 119.68s/it[K · mémoire libre 7121 Mo
 [5829 s] 8 images · === decor-terrain-de-foot-contrechamp-jour   |============>                                     | 1/4 - 122.53s/it[K · mémoire libre 6960 Mo
 [5951 s] 8 images · === decor-terrain-de-foot-contrechamp-jour   |=========================>                        | 2/4 - 121.10s/it[K · mémoire libre 6967 Mo
+[122 s] 8 images · === fiche-monsieur-diarra  · mémoire libre 6727 Mo
