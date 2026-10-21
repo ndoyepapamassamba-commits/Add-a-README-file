@@ -58,3 +58,4 @@
 [5344 s] 7 images · === decor-salon-de-coiffure-coin-jour   |============>                                     | 1/4 - 122.97s/it[K · mémoire libre 6953 Mo
 [5465 s] 7 images · === decor-salon-de-coiffure-coin-jour   |=========================>                        | 2/4 - 119.15s/it[K · mémoire libre 6953 Mo
 [5587 s] 7 images · === decor-salon-de-coiffure-coin-jour   |=====================================>            | 3/4 - 121.06s/it[K · mémoire libre 6953 Mo
+[5708 s] 8 images · === decor-terrain-de-foot-contrechamp-jour   |==================================================| 4/4 - 119.68s/it[K · mémoire libre 7121 Mo
