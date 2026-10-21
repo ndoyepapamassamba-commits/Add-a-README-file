@@ -46,3 +46,4 @@
 [4133 s] 7 images · === decor-terrain-de-foot-champ-jour   |==================================================| 4/4 - 87.54s/it[K · mémoire libre 14593 Mo
 [4255 s] 7 images · === decor-terrain-de-foot-champ-jour   |============>                                     | 1/4 - 88.11s/it[K · mémoire libre 7050 Mo
 [4376 s] 7 images · === decor-terrain-de-foot-champ-jour   |=========================>                        | 2/4 - 89.92s/it[K · mémoire libre 7041 Mo
+[4498 s] 7 images · === decor-terrain-de-foot-champ-jour   |=====================================>            | 3/4 - 89.85s/it[K · mémoire libre 7033 Mo
