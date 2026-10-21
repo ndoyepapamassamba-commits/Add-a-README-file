@@ -18,3 +18,4 @@
 [121 s] 7 clips · === agent-gora--colere (at_runtime)  · mémoire libre 13790 Mo
 [243 s] 7 clips · === agent-gora--colere (at_runtime)   |============>                                     | 1/4 - 134.23s/it[K · mémoire libre 13790 Mo
 [364 s] 7 clips · === agent-gora--colere (at_runtime)   |=========================>                        | 2/4 - 133.78s/it[K · mémoire libre 13786 Mo
+[485 s] 7 clips · === agent-gora--colere (at_runtime)   |=====================================>            | 3/4 - 133.58s/it[K · mémoire libre 13780 Mo
