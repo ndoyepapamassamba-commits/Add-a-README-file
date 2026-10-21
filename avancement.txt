@@ -71,3 +71,4 @@
 [1457 s] 18 clips · === mademoiselle-rosine--choc@2 (at_runtime)   |============>                                     | 1/4 - 134.32s/it[K · mémoire libre 13747 Mo
 [1579 s] 18 clips · === mademoiselle-rosine--choc@2 (at_runtime)   |=========================>                        | 2/4 - 133.81s/it[K · mémoire libre 13747 Mo
 [1700 s] 18 clips · === mademoiselle-rosine--choc@2 (at_runtime)   |=====================================>            | 3/4 - 133.65s/it[K · mémoire libre 13739 Mo
+[1822 s] 19 clips · === dj-kevin--mentir@2 (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13775 Mo

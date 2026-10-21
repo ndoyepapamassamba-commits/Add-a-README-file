@@ -126,6 +126,13 @@
    "lora": "at_runtime",
    "secondes": 581,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "mademoiselle-rosine--choc@2",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 581,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39585702697"
