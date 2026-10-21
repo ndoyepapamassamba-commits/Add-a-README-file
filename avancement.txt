@@ -27,3 +27,4 @@
 [2065 s] 4 images · === perso-la-lyceenne   |============>                                     | 1/4 - 218.80s/it[K · mémoire libre 6296 Mo
 [2186 s] 4 images · === perso-la-lyceenne   |=========================>                        | 2/4 - 214.02s/it[K · mémoire libre 6294 Mo
 [2308 s] 4 images · === perso-la-lyceenne   |=========================>                        | 2/4 - 214.02s/it[K · mémoire libre 6285 Mo
+[2429 s] 4 images · === perso-la-lyceenne   |=====================================>            | 3/4 - 218.75s/it[K · mémoire libre 6284 Mo
