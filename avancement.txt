@@ -10,3 +10,4 @@
 [122 s] 2 images · === maison-baye-ndiaye-chambre-large-jour  · mémoire libre 6964 Mo
 [244 s] 2 images · === maison-baye-ndiaye-chambre-large-jour   |============>                                     | 1/4 - 158.87s/it[K · mémoire libre 6940 Mo
 [365 s] 2 images · === maison-baye-ndiaye-chambre-large-jour   |=========================>                        | 2/4 - 157.24s/it[K · mémoire libre 6946 Mo
+[487 s] 2 images · === maison-baye-ndiaye-chambre-large-jour   |=========================>                        | 2/4 - 157.24s/it[K · mémoire libre 6939 Mo
