@@ -126,6 +126,13 @@
    "lora": "at_runtime",
    "secondes": 302,
    "memoire_max_go": 11.12
+  },
+  {
+   "clip": "le-frimeur--ecouter",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 302,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39550232510"
