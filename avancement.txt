@@ -36,3 +36,4 @@
 [2916 s] 5 images · === decor-cour-champ-jour   |============>                                     | 1/4 - 94.88s/it[K · mémoire libre 7044 Mo
 [3037 s] 5 images · === decor-cour-champ-jour   |=========================>                        | 2/4 - 89.77s/it[K · mémoire libre 7048 Mo
 [3158 s] 6 images · === decor-village-coin-jour   |==================================================| 4/4 - 89.13s/it[K · mémoire libre 15067 Mo
+[3280 s] 6 images · === decor-village-coin-jour   |============>                                     | 1/4 - 92.21s/it[K · mémoire libre 7046 Mo
