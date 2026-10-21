@@ -168,7 +168,14 @@
    "lora": "at_runtime",
    "secondes": 312,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "patron-sery--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 308,
+   "memoire_max_go": 11.11
   }
  ],
- "run": "39559117299"
+ "run": "39564581444"
 }
