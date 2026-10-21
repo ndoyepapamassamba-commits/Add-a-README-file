@@ -15,3 +15,4 @@
 [1821 s] 6 clips · === petit-moussa--colere (at_runtime)   |=====================================>            | 3/4 - 146.93s/it[K · mémoire libre 13773 Mo
 [1942 s] 7 clips · === adjoua--montrer (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13761 Mo
 [2063 s] 7 clips · === adjoua--montrer (at_runtime)   |============>                                     | 1/4 - 136.09s/it[K · mémoire libre 13746 Mo
+[2185 s] 7 clips · === adjoua--montrer (at_runtime)   |=========================>                        | 2/4 - 135.48s/it[K · mémoire libre 13755 Mo
