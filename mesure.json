@@ -1,0 +1,13 @@
+{
+ "part": 18,
+ "clips": [
+  {
+   "clip": "agent-doumbia--montrer",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 176,
+   "memoire_max_go": 11.01
+  }
+ ],
+ "run": "39528414471"
+}
