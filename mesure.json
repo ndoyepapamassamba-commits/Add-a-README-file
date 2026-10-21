@@ -91,6 +91,13 @@
    "lora": "at_runtime",
    "secondes": 180,
    "memoire_max_go": 11.06
+  },
+  {
+   "clip": "tata-prisca--colere",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 180,
+   "memoire_max_go": 11.28
   }
  ],
  "run": "39541116258"
