@@ -16,3 +16,4 @@
 [850 s] 2 images · === maison-la-voisine-chambre-large-jour   |==================================================| 4/4 - 156.31s/it[K · mémoire libre 6941 Mo
 [971 s] 2 images · === maison-la-voisine-chambre-large-jour   |============>                                     | 1/4 - 159.67s/it[K · mémoire libre 6929 Mo
 [1092 s] 2 images · === maison-la-voisine-chambre-large-jour   |=========================>                        | 2/4 - 156.52s/it[K · mémoire libre 6934 Mo
+[1213 s] 2 images · === maison-la-voisine-chambre-large-jour   |=====================================>            | 3/4 - 156.47s/it[K · mémoire libre 6934 Mo
