@@ -126,7 +126,14 @@
    "lora": "at_runtime",
    "secondes": 175,
    "memoire_max_go": 11.28
+  },
+  {
+   "clip": "salif-le-parisien--ecouter",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 583,
+   "memoire_max_go": 11.11
   }
  ],
- "run": "39550232510"
+ "run": "39559117299"
 }
