@@ -9,3 +9,4 @@
 [1094 s] 5 clips · === la-go-leopard--choc (at_runtime)   |=====================================>            | 3/4 - 134.06s/it[K · mémoire libre 13801 Mo
 [1215 s] 6 clips · === petit-moussa--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13813 Mo
 [1337 s] 6 clips · === petit-moussa--mentir (at_runtime)   |============>                                     | 1/4 - 134.31s/it[K · mémoire libre 13789 Mo
+[1458 s] 6 clips · === petit-moussa--mentir (at_runtime)   |============>                                     | 1/4 - 134.31s/it[K · mémoire libre 13786 Mo
