@@ -133,6 +133,7 @@ def rend(episode, version, cle, cache):
         if j == len(T['sketchs']) - 1: fin = max(fin, T['total'])
         t0 = min(deja, S['t0']); deja = fin
         P = plan_sketch(HS, lignes, t0, fin, decor, os.path.join(cache, 'clips'))
+        P['_carte_t0'] = next((c['t0'] for c in T.get('cartes', []) if abs(c['t0'] - S['t1']) < 0.05), None)   # recul de caméra
         gains, inf = assemble.prepare(P, tmp); info[S['id']] = {'lieu': lieu, 'decor': os.path.basename(decor), 'plans': inf.get('plans')}
         taches += [(P, k, gains, D) for k in range(len(P['repliques']))]
     # processus NEUFS (spawn) : le parent a déjà ouvert MediaPipe (sens dessiné des personnages, assemble.sens_du_corps) ; des

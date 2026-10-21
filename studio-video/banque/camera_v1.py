@@ -127,7 +127,8 @@ def plans(P, B, BW, BH):
         if not r.get('qui'):   # réaction après la chute : gros plan de celui qui encaisse
             ch = R[chute]['qui'] if chute is not None else None
             re_ = r.get('reagit', {}); cible = next((n for n, g in re_.items() if g == 'choc' and n != ch), next((n for n in re_ if n != ch), ch))
-            cur = None; S.append({'t0': t0, 't1': t1, 'sorte': 'gros', 'garde': [cible] if cible else [], 'k': [k]}); continue
+            cur = None; S.append({'t0': t0, 't1': t1, 'sorte': 'gros', 'garde': [cible] if cible else [], 'k': [k],
+                                  'deux': [n for n in dict.fromkeys([cible, ch]) if n]}); continue
         # « dépasser la V1 » : la V1 tient ses plans à deux 5 s et plus (plan_s) ; les TikTok de l'utilisateur coupent ≈ 11 fois
         # par minute (cadre.py). Coupe à chaque changement de parleur dès que le plan a duré COUPE_S, champ-contrechamp sur
         # celui qui parle (plan moyen), le plan à deux réservé à l'ouverture et aux échanges rapides
@@ -157,6 +158,15 @@ def plans(P, B, BW, BH):
         s['c0'] = cadre(B, s['garde'], s['sorte'], BW, BH, s.get('cote', 0.0))
         s['cs'] = cadre(B, list(B), 'large', BW, BH) if i == 0 else None
         mouvement(s, B, BW, BH, i)
+        # RECUL AVANT LA CARTE (21/10/2026, épisode banque 1 v9 : 4 à-coups, dont 2 sous les cartes) : la carte de fin de sketch
+        # se posait sur le gros plan de la réaction — plus aucune place hors du visage, et le personnage n'était plus reconnu
+        # sous l'émoji (part de l'image lue comme personne 0,45 → 0,04 ; sur un plan à deux 0,25 → 0,16). La V1 pose ses cartes
+        # sur un plan moyen. La caméra recule donc vers le plan à deux (l'auteur de la chute et celui qui encaisse) dans les
+        # 0,6 s qui précèdent la carte, en zoom d'objectif comme le coup de zoom de la chute
+        tc = P.get('_carte_t0')
+        if s.get('deux') and tc is not None and s['t0'] < tc < s['t1'] + 1e-6:
+            cz = cadre(B, s['deux'], 'duo' if len(s['deux']) > 1 else 'moyen', BW, BH)
+            if tetes_ok(B, cz, s['deux']): s['tz'], s['cz'] = max(s['t0'], tc - 0.45), cz
         if s['sorte'] == 'serre':
             s['tw'] = s['t0'] + 0.55 * (s['t1'] - s['t0'])
             cx, cy, w, h = s['c1']; hb = B[s['garde'][0]]['tete']; cp = _borne(((cx + (hb[0] + hb[2]) / 2) / 2, (cy + (hb[1] + hb[3]) / 2) / 2, w / REG['zoom_chute'], h / REG['zoom_chute']), BW, BH)
@@ -188,6 +198,8 @@ def cadre_t(s, t):
         ref = [a + (b - a) * v for a, b in zip(s['cs'], s['c0'])]; c = [a + (b - a) * v for a, b in zip(s['cs'], c)]
     if s.get('tw') is not None and t >= s['tw']:   # coup de zoom de la chute : zoom d'objectif, sans parallaxe
         v = ease((t - s['tw']) / max(0.05, REG['whip_s'])); c = [a + (b - a) * v for a, b in zip(c, s['cp'])]
+    if s.get('tz') is not None and t >= s['tz']:   # recul avant la carte de fin de sketch
+        v = ease((t - s['tz']) / 0.6); c = [a + (b - a) * v for a, b in zip(c, s['cz'])]
     return c, ref
 
 

@@ -961,6 +961,21 @@ try:
 except Exception as e:
     echecs.append(f'synchro labiale (geste) : {e}')
 
+# 21/10/2026 — à-coups sous les cartes : la carte se posait sur le gros plan de la réaction (personnage plus reconnu sous
+# l'émoji : 0,45 → 0,04 de l'image) ; la caméra recule vers le plan à deux avant la carte, comme la V1 (plan moyen sous ses cartes)
+try:
+    import camera_v1 as _cv34
+    _s34 = {'t0': 0.0, 't1': 3.0, 'c0': (100.0, 100.0, 60.0, 80.0), 'c1': (100.0, 100.0, 60.0, 80.0), 'cs': None, 'tz': 1.55, 'cz': (110.0, 120.0, 150.0, 200.0)}
+    _a34 = _cv34.cadre_t(_s34, 1.5)[0][2]; _b34 = _cv34.cadre_t(_s34, 2.3)[0][2]
+    _src34 = open(os.path.join(os.path.dirname(_cv34.__file__), 'camera_v1.py'), encoding='utf-8').read()
+    _rb34 = open(os.path.join(os.path.dirname(_cv34.__file__), 'rendu_banque.py'), encoding='utf-8').read()
+    if not (_a34 == 60.0 and _b34 > 140) or "P.get('_carte_t0')" not in _src34 or "P['_carte_t0']" not in _rb34:
+        echecs.append(f'cartes : pas de recul de caméra avant la carte de fin de sketch (largeur {_a34} → {_b34})')
+    else:
+        print(f'cartes : la caméra recule du gros plan au plan à deux avant la carte (largeur {_a34:.0f} → {_b34:.0f}) : OK')
+except Exception as e:
+    echecs.append(f'cartes (recul) : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')
