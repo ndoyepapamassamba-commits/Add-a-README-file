@@ -21,3 +21,4 @@
 [1334 s] 2 images · === maison-mecano-issa-chambre-large-jour   |=====================================>            | 3/4 - 156.65s/it[K · mémoire libre 7003 Mo
 [1456 s] 3 images · === perso-agent-gora   |==================================================| 4/4 - 156.75s/it[K · mémoire libre 7000 Mo
 [1578 s] 3 images · === perso-agent-gora   |==================================================| 4/4 - 156.75s/it[K · mémoire libre 6317 Mo
+[1699 s] 3 images · === perso-agent-gora   |==================================================| 4/4 - 156.75s/it[K · mémoire libre 6306 Mo
