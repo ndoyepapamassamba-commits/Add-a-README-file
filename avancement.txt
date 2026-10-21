@@ -23,3 +23,4 @@
 [2790 s] 8 clips · === aliou--hausser (at_runtime)   |=====================================>            | 3/4 - 134.35s/it[K · mémoire libre 13758 Mo
 [2911 s] 9 clips · === petit-ibrahima--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14435 Mo
 [3033 s] 9 clips · === petit-ibrahima--parler (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13699 Mo
+[3154 s] 9 clips · === petit-ibrahima--parler (at_runtime)   |============>                                     | 1/4 - 133.93s/it[K · mémoire libre 13707 Mo
