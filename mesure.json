@@ -288,6 +288,18 @@
    "h": 448,
    "memoire_max_go": 9.47,
    "run": "39520776286"
+  },
+  {
+   "tache": "perso-maitre-coulibaly",
+   "version": 1,
+   "type": "personnage",
+   "ok": true,
+   "code": 0,
+   "secondes": 1945,
+   "w": 1280,
+   "h": 720,
+   "memoire_max_go": 12.37,
+   "run": "39520776286"
   }
  ]
 }
