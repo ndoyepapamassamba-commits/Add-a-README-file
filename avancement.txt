@@ -40,3 +40,4 @@
 [3404 s] 5 images · === decor-taxi-coin-jour   |==================================================| 4/4 - 222.81s/it[K · mémoire libre 7052 Mo
 [3526 s] 5 images · === decor-taxi-coin-jour   |============>                                     | 1/4 - 92.13s/it[K · mémoire libre 7041 Mo
 [3647 s] 5 images · === decor-taxi-coin-jour   |=====================================>            | 3/4 - 89.19s/it[K · mémoire libre 7049 Mo
+[3769 s] 6 images · === decor-salon-de-coiffure-contrechamp-jour   |==================================================| 4/4 - 90.04s/it[K · mémoire libre 7203 Mo

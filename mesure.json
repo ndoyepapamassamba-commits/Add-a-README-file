@@ -61,6 +61,18 @@
    "h": 720,
    "memoire_max_go": 12.36,
    "run": "39517651050"
+  },
+  {
+   "tache": "decor-taxi-coin-jour",
+   "version": 1,
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 406,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.47,
+   "run": "39517651050"
   }
  ]
 }
