@@ -124,6 +124,9 @@ def livre(i, D=None, journal=print):
     # 21/10/2026 — « toutes les vidéos devront avoir ou dépasser les mesures de la V1. Même l'humour » : profil complet (corps,
     # taille, décor, regards, à-coups, sautes, plans) contre la V1 publiée, et le plus faible duel des sketchs contre la V1
     pl = [s.get('plancher_v17') for s in (e.get('sketchs') or [])]
+    hj_ = os.path.join(os.path.dirname(D), 'histoire.json')
+    if not pl and os.path.isfile(hj_):   # épisodes de la série V1 (E…) : scores d'humour inscrits par serie_v1.note_humour (22/10/2026)
+        pl = [s.get('plancher_v17') for s in json.load(open(hj_, encoding='utf-8')).get('sketchs', [])]
     F['profil_v1'] = niveau_v1.profil(film)
     nv = [x for x in nv if not x.startswith('animation sous la V1')] + niveau_v1.ecarts(
         F['profil_v1'], humour=min(pl) if pl and None not in pl else None)

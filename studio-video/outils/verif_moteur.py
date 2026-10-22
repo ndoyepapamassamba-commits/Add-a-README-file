@@ -1383,6 +1383,28 @@ try:
 except Exception as e:
     echecs.append(f'profondeur de champ / carte douce : {e}')
 
+# 22/10/2026 — humour contre la V1 jugé à chaque sketch de la fabrique (juge gratuit, question piège d'abord) et lu par la livraison
+try:
+    _hv56 = open(os.path.join(ICI, 'moteur-troupe', 'humour_v1.py'), encoding='utf-8').read()
+    _ap56 = open(os.path.join(ICI, 'moteur-troupe', 'autopilot.py'), encoding='utf-8').read()
+    with tempfile.TemporaryDirectory() as _d56:
+        os.environ['MASSAMBA_BIBLIO'] = _d56; os.makedirs(os.path.join(_d56, 'stock')); os.makedirs(os.path.join(_d56, 'ep'))
+        json.dump({'sketchs': [{'id': 'a'}, {'id': 'b'}]}, open(os.path.join(_d56, 'stock', 'sketchs.json'), 'w'))
+        json.dump({'sketchs': [{'id': 'a'}, {'id': 'b'}]}, open(os.path.join(_d56, 'ep', 'histoire.json'), 'w'))
+        sys.modules.pop('serie_v1', None); import serie_v1 as _s56
+        _s56.note_humour(os.path.join(_d56, 'ep'), {'a': 0.667, 'b': None})
+        _h56 = json.load(open(os.path.join(_d56, 'ep', 'histoire.json'))); _st56 = json.load(open(os.path.join(_d56, 'stock', 'sketchs.json')))
+    os.environ.pop('MASSAMBA_BIBLIO', None); sys.modules.pop('serie_v1', None)
+    if 'juge=True' not in _hv56 or 'juge_fiable' not in _hv56 or 'sans_chute' not in _hv56:
+        echecs.append('humour V1 : juge sans question piège ou hors du juge calibré gratuit')
+    elif _h56['sketchs'][0].get('plancher_v17') != 0.667 or 'plancher_v17' in _h56['sketchs'][1] or _st56['sketchs'][0].get('plancher_v17') != 0.667:
+        echecs.append(f"humour V1 : scores mal inscrits ({_h56}, {_st56})")
+    elif "os.path.join(os.path.dirname(D), 'histoire.json')" not in _ap56:
+        echecs.append("humour V1 : la livraison des épisodes de la série ne lit pas les scores d'humour")
+    else: print('humour contre la V1 (juge gratuit après question piège, scores inscrits et lus par la livraison) : OK')
+except Exception as e:
+    echecs.append(f'humour V1 : {e}')
+
 # 22/10/2026 — état public de la fabrique : les mesures de chaque épisode en clair, jamais un titre, une réplique ou une légende
 try:
     sys.path.insert(0, os.path.join(ICI, 'fabrique')); import vitrine as _vi55, coffre as _co55
