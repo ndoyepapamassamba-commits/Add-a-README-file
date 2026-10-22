@@ -4,7 +4,8 @@
 // POST /payments/notify; the amount alone identifies the order, which is then unlocked. POST /payments/confirm
 // is the owner's one-tap confirmation (link carrying an HMAC of the order id).
 // Privacy: the notification text contains the payer's name and number. It is never logged; it is kept only
-// on the matched order (purged with it) and in the dedupe event (its payload is erased after 30 days).
+// on the matched (or flagged) order (erased 30 days after the detection) and in the dedupe event (payload erased
+// after 30 days).
 import type { Deps, OrderRow } from "./types.ts";
 import { HttpError, json, log, readBodyText, readJsonObject } from "./http.ts";
 import { constantTimeEqual, hmacSha256Hex, ORDER_ID_RE, sha256Hex } from "./ids.ts";
@@ -13,12 +14,21 @@ const HOUR_MS = 3_600_000;
 
 /** Unique amount = catalogue price − k, smallest free k in 1..MANUAL_MAX_OFFSET. */
 export const MANUAL_MAX_OFFSET = 49;
-/** A manual order waits this long for its transfer (amounts are reused afterwards). */
-export const MANUAL_WINDOW_MS = 48 * HOUR_MS;
+/**
+ * An unpaid order holds its unique amount as long as it is not purged (its customer can open it and pay late: the
+ * daily purge takes unpaid orders after 3 days, so up to about 96 h), and in any case for this long after the amount
+ * was last SHOWN (checkout). Nobody else gets the amount meanwhile, so a late transfer can only unlock the order that
+ * asked for it.
+ */
+export const MANUAL_HOLD_MS = 72 * HOUR_MS;
+/** A paid order keeps its amount this long after payment: a replayed notification then matches no other order. */
+export const PAID_HOLD_MS = 48 * HOUR_MS;
 /** A rounded-up transfer (e.g. 1 500 F instead of 1 487 F) matches only an order created this recently… */
 export const NEAR_MATCH_WINDOW_MS = 2 * HOUR_MS;
 /** …and at most this much above its catalogue price. */
 export const NEAR_MATCH_OVERPAY = 100;
+/** Catalogue prices from this amount on unlock on their exact unique amount only (no rounded-up near match). */
+export const HIGH_TICKET_MIN_AMOUNT = 10_000;
 export const NOTIFY_MAX_BYTES = 4 * 1024;
 export const MAX_NOTIFIED_AMOUNT = 10_000_000;
 export const PHONE_EVENT_TYPE = "phone.notification";
@@ -121,36 +131,73 @@ export function parseNotification(text: string): ParsedNotification {
 export type MatchHow = "exact" | "near" | "ambiguous" | "none";
 
 /**
- * The open manual order a received amount belongs to. Only orders that were given a unique amount qualify
- * (a round catalogue price is too common among personal transfers). Exact `manual_amount` first; else a
- * single recent order the customer may have rounded up (manual_amount < amount ≤ price + 100, created in the
- * last 2 h). Several candidates → none: the owner decides.
+ * The open manual order a received amount belongs to, among Store.listHeldManualOrders(). Only orders that were
+ * given a unique amount can match (a round catalogue price is too common among personal transfers). Exact
+ * `manual_amount` first; else a single recent order the customer may have rounded up (manual_amount < amount ≤
+ * price + 100, created in the last 2 h). Several candidates → none: the owner decides.
+ * The near match is also off ("ambiguous", nothing unlocks) while an open order that was asked for the catalogue
+ * price (no free unique amount: manual_amount null) could be the payer — one at the candidate's catalogue price, or
+ * one whose price is at most 100 F below the amount received — so its transfer never unlocks another order.
+ * High-ticket orders (catalogue price `amount` ≥ HIGH_TICKET_MIN_AMOUNT, e.g. a 25 000 F course) never take
+ * part in the near match: only their exact unique amount unlocks them, so a round 25 000 F family transfer, or
+ * any other figure close to the price, unlocks nothing (the owner can still unlock from admin.html).
  */
 export function matchManualOrder(orders: OrderRow[], amount: number, now: Date): { order: OrderRow | null; how: MatchHow } {
-  const withAmount = orders.filter((o) => o.manual_amount !== null && o.status !== "paid");
+  const open = orders.filter((o) => o.status !== "paid");
+  const withAmount = open.filter((o) => o.manual_amount !== null);
   const exact = withAmount.filter((o) => o.manual_amount === amount);
   if (exact.length === 1) return { order: exact[0], how: "exact" };
   if (exact.length > 1) return { order: null, how: "ambiguous" };
   const near = withAmount.filter((o) =>
+    o.amount < HIGH_TICKET_MIN_AMOUNT &&
     now.getTime() - Date.parse(o.created_at) <= NEAR_MATCH_WINDOW_MS &&
     (o.manual_amount as number) < amount && amount <= o.amount + NEAR_MATCH_OVERPAY
   );
-  if (near.length === 1) return { order: near[0], how: "near" };
-  return { order: null, how: near.length > 1 ? "ambiguous" : "none" };
+  if (!near.length) return { order: null, how: "none" };
+  const cataloguePrices = open.filter((o) => o.manual_amount === null && o.checkout_session_id === null).map((o) => o.amount);
+  const mayBeCataloguePayment = cataloguePrices.some((price) =>
+    near.some((o) => o.amount === price) || (price <= amount && amount <= price + NEAR_MATCH_OVERPAY)
+  );
+  if (near.length === 1 && !mayBeCataloguePayment) return { order: near[0], how: "near" };
+  return { order: null, how: "ambiguous" };
+}
+
+/** Cut-offs of the two holds at `now` (Store.holdManualAmount). */
+export function holdCutoffs(now: Date): { unpaidSinceIso: string; paidSinceIso: string } {
+  return {
+    unpaidSinceIso: new Date(now.getTime() - MANUAL_HOLD_MS).toISOString(),
+    paidSinceIso: new Date(now.getTime() - PAID_HOLD_MS).toISOString(),
+  };
+}
+
+export interface ManualCheckout {
+  /** What the customer must send: the unique amount, or the catalogue price when none is free. */
+  exactAmount: number;
+  /** false when no unique amount could be given: the transfer cannot be recognised, the owner checks it. */
+  unique: boolean;
 }
 
 /**
- * Manual checkout: the order enters "checkout" (it is now waiting for a transfer) and gets its unique amount.
- * Falls back to the catalogue price when every offset is taken or the order is older than the waiting window.
+ * Manual checkout: the order enters "checkout" (it is now waiting for a transfer) and gets, or keeps, its unique
+ * amount; showing it again restarts its hold. An amount whose hold ran out is never shown again as is: the order
+ * gets the smallest free amount (often the same one). When every offset is held, the customer is asked for the
+ * catalogue price and `unique` is false: no automatic unlock (the price matches no order, and while this order is
+ * open the near match is off for its price, see matchManualOrder); the owner checks the transfer.
  */
-export async function prepareManualCheckout(deps: Deps, order: OrderRow): Promise<number> {
+export async function prepareManualCheckout(deps: Deps, order: OrderRow): Promise<ManualCheckout> {
   if (order.status === "preview") await deps.store.updateOrder(order.id, { status: "checkout" });
-  if (order.manual_amount !== null) return order.manual_amount;
-  const since = new Date(deps.now().getTime() - MANUAL_WINDOW_MS).toISOString();
-  if (Date.parse(order.created_at) <= Date.parse(since)) return order.amount;
-  const assigned = await deps.store.assignManualAmount(order.id, order.amount, MANUAL_MAX_OFFSET, since);
-  if (assigned === null) log.warn(`manual amount: all ${MANUAL_MAX_OFFSET} amounts below ${order.amount} F are taken, ${order.id} pays the catalogue price`);
-  return assigned ?? order.amount;
+  const now = deps.now();
+  const held = await deps.store.holdManualAmount(order.id, {
+    base: order.amount,
+    maxOffset: MANUAL_MAX_OFFSET,
+    nowIso: now.toISOString(),
+    ...holdCutoffs(now),
+  });
+  if (held === null) {
+    log.warn(`manual amount: all ${MANUAL_MAX_OFFSET} amounts below ${order.amount} F are held, ${order.id} pays the catalogue price (no automatic unlock, near match off for ${order.amount} F)`);
+    return { exactAmount: order.amount, unique: false };
+  }
+  return { exactAmount: held, unique: true };
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -196,6 +243,59 @@ async function readNotification(req: Request): Promise<string> {
   return [title, text].map((s) => s.trim()).filter(Boolean).join(" ");
 }
 
+/** Window of the duplicate check for incoming notifications that carry no balance (6 to 12 hours). */
+export const DEDUPE_BUCKET_MS = 6 * HOUR_MS;
+/** Window of the duplicate check for incoming notifications that carry a balance (15 to 30 days, never longer). */
+export const DEDUPE_BALANCE_BUCKET_MS = 15 * 24 * HOUR_MS;
+/** Marker rows of dedupeKeys (not counted as the phone's heartbeat). */
+export const PHONE_DEDUPE_EVENT_TYPE = "phone.dedupe";
+const BALANCE_RE = /\b(?:solde|balance)\b/;
+
+async function bucketKeys(kind: string, normalized: string, nowMs: number, bucketMs: number) {
+  const bucket = Math.floor(nowMs / bucketMs);
+  return {
+    id: "phone:" + (await sha256Hex(`${kind}|${normalized}|${bucket}`)),
+    next: "phone:" + (await sha256Hex(`${kind}|${normalized}|${bucket + 1}`)),
+  };
+}
+
+/**
+ * Event ids that make a re-delivered notification a duplicate. Incoming money: the text and its time bucket, plus a
+ * marker for the next bucket (`next`, recorded only for a fresh notification) so a replay just after a bucket
+ * boundary is still caught —
+ * - with a balance (« Nouveau solde : 80 000F »): 15-day buckets, so a replay is caught for 15 to 30 days and never
+ *   longer (the same payer, amount and balance can come back for real once the owner emptied his account);
+ * - without a balance: 6-hour buckets (window 6 to 12 hours).
+ * Anything else (heartbeat, own operations): the text and its minute.
+ * A duplicate never unlocks an order; handlePaymentNotify still flags the open order it fits exactly.
+ */
+export async function dedupeKeys(n: ParsedNotification, nowMs: number): Promise<{ id: string; next: string | null }> {
+  if (!n.incoming || n.amount === null) {
+    return { id: "phone:" + (await sha256Hex(`${n.normalized}|${Math.floor(nowMs / 60_000)}`)), next: null };
+  }
+  if (BALANCE_RE.test(n.normalized)) return bucketKeys("15d", n.normalized, nowMs, DEDUPE_BALANCE_BUCKET_MS);
+  return bucketKeys("6h", n.normalized, nowMs, DEDUPE_BUCKET_MS);
+}
+
+/**
+ * A notification already seen is usually a re-delivery, but it may be a genuine second payment (same payer, same
+ * amount, same balance). It never unlocks anything and is never dropped silently: when its amount is exactly the
+ * unique amount of ONE open order, that order is flagged « Paiement détecté » (admin.html) and a warning is logged,
+ * so the owner checks his Wave history and confirms by hand.
+ */
+async function flagDuplicate(deps: Deps, amount: number, text: string, nowIso: string): Promise<{ detected?: string }> {
+  const fits = (await deps.store.listHeldManualOrders()).filter((o) => o.status !== "paid" && o.manual_amount === amount);
+  if (fits.length > 1) {
+    log.warn(`phone notification: a repeated ${amount} F notification fits several open orders, left to the owner`);
+    return {};
+  }
+  const order = fits[0];
+  if (!order || order.payment_detected_text === text) return {}; // nothing open at that amount, or already flagged
+  await deps.store.recordPaymentDetection(order.id, text, nowIso);
+  log.warn(`phone notification: a repeated ${amount} F notification fits open order ${order.id}: flagged, not unlocked (the owner checks it)`);
+  return { detected: order.id };
+}
+
 export async function handlePaymentNotify(deps: Deps, req: Request): Promise<Response> {
   requireHookKey(deps, req);
   const text = await readNotification(req);
@@ -203,19 +303,23 @@ export async function handlePaymentNotify(deps: Deps, req: Request): Promise<Res
   const now = deps.now();
   const nowIso = now.toISOString();
 
-  // Every authenticated call is recorded: it is the "Téléphone relié" heartbeat of the admin page, and the
-  // same notification delivered twice in the same minute is a duplicate. Only incoming money keeps its text.
-  const minute = Math.floor(now.getTime() / 60_000);
-  const eventId = "phone:" + (await sha256Hex(`${n.normalized}|${minute}`));
-  const fresh = await deps.store.recordEvent(eventId, PHONE_EVENT_TYPE, null, n.incoming ? { text } : { ignored: "not_incoming" });
+  // Every authenticated call is recorded: it is the "Téléphone relié" heartbeat of the admin page, and a
+  // notification delivered again (MacroDroid retry, re-posted or updated notification) is a duplicate (dedupeKeys).
+  // Only incoming money keeps its text.
+  const keys = await dedupeKeys(n, now.getTime());
+  const fresh = await deps.store.recordEvent(keys.id, PHONE_EVENT_TYPE, null, n.incoming ? { text } : { ignored: "not_incoming" });
+  if (fresh && keys.next) await deps.store.recordEvent(keys.next, PHONE_DEDUPE_EVENT_TYPE, null, null);
   if (!n.incoming) return json(200, { ok: true, ignored: "not_incoming" });
   if (n.amount === null) return json(200, { ok: true, ignored: "no_amount" });
-  if (!fresh) return json(200, { ok: true, duplicate: true });
+  if (!fresh) return json(200, { ok: true, duplicate: true, ...(await flagDuplicate(deps, n.amount, text, nowIso)) });
 
-  const open = await deps.store.listOpenManualOrders(new Date(now.getTime() - MANUAL_WINDOW_MS).toISOString());
+  const open = await deps.store.listHeldManualOrders();
   const { order, how } = matchManualOrder(open, n.amount, now);
   if (!order) {
-    log.warn(`phone notification: ${n.amount} F ${how === "ambiguous" ? "fits several open orders, left to the owner" : "matches no open order"}`);
+    const why = how === "ambiguous"
+      ? "is ambiguous (it fits several open orders, or may pay an order asked the catalogue price), left to the owner"
+      : "matches no open order";
+    log.warn(`phone notification: ${n.amount} F ${why}`);
     return json(200, { ok: true, matched: null, amount: n.amount, paid: false });
   }
   await deps.store.recordPaymentDetection(order.id, text, nowIso);

@@ -37,6 +37,7 @@ supabase/
   migrations/20261018000003_stage.sql    product check accepts 'stage'                                — backend
   migrations/20261018000004_premium.sql  product check accepts all five products                      — backend
   migrations/20261018000005_autopay.sql  unique manual amounts + phone detections (see "Autopay")    — backend
+  migrations/20261021000006_course.sql   Teranga Pro course pq_essentiel (see "Formation")             — backend
   functions/api/
     index.ts                      Deno.serve(createReloadingApp(…)): env over tcv.settings, reloaded ≤ every 60 s — backend
     dev.ts                        local server: real app + MemoryStore + FakeWave + serves ../../../cv  — backend
@@ -55,6 +56,13 @@ supabase/
     lib/generator/stage.ts, stage_banks.ts      Pack Stage (see "Pack Stage")           — generator
     lib/generator/premium.ts, banks_premium.ts  CV Premium (see "CV Premium")           — generator
     lib/validate_stage.ts, lib/autopay.ts                                              — backend
+    lib/course.ts, course_catalog.ts, course_files.ts, validate_course.ts, order_access.ts (see "Formation") — backend
+    lib/course_upload.ts          PUT/GET /admin/course-assets (private asset upload)  — backend
+    dev_course.ts                 course asset tree loader for dev.ts and the tests (never bundled) — backend
+    tests/fixtures/course/        PUBLIC lorem course fixture (no course content)       — backend
+scripts/course-sql.mjs            course asset tree → upload SQL statements (output outside the repo) — backend
+scripts/course-upload.mjs         course asset tree → PUT /admin/course-assets, then SHA-256 check — backend
+scripts/insert-fragment.mjs       free module fragment → formation/gratuit.html (strict tag balance) — frontend
     lib/redact.ts                 redactDocument()                                     — generator
     lib/llm.ts                    optional OpenRouter rewriter (makeEnhancer)          — generator
     tests/*.test.ts               deno tests (each owner writes tests for their modules)
@@ -237,8 +245,10 @@ events older than 30 days keep their row but lose their payload; rate_limits are
 UPDATE only, see "Migrations"), `tcv_stats(p_now) → jsonb` (`Stats`; day boundaries in UTC),
 `tcv_get_settings() → jsonb` (object of all key → value).
 Autopay (`20261018000005_autopay.sql`): columns `manual_amount`, `payment_detected_at`, `payment_detected_text`
-(cleared by `tcv_purge`), `tcv_assign_manual_amount(p_id, p_base, p_max_offset, p_since) → int|null`,
-`tcv_list_open_manual_orders(p_since) → jsonb array`, `tcv_record_payment_detection(p_id, p_text, p_now)`.
+(cleared by `tcv_purge`), `tcv_record_payment_detection(p_id, p_text, p_now)`; `20261022000007_autopay_hold.sql`:
+column `manual_amount_at`, `tcv_hold_manual_amount(p_id, p_base, p_max_offset, p_now, p_unpaid_since, p_paid_since)
+→ int|null`, `tcv_list_held_manual_orders() → jsonb array` (000005's `tcv_assign_manual_amount` and
+`tcv_list_open_manual_orders` stay for the function deployed before 000007; the API no longer calls them).
 `revoke all on function … from public, anon, authenticated; grant execute … to service_role;`
 (tests create those roles in PGlite if missing). Prefix-free, idempotent migrations (`create … if not exists`,
 `create or replace function`).
@@ -373,10 +383,12 @@ customer or API data**. `config.js` sets
 
 ## Migrations and deployment
 
-Applied in file-name order, idempotent (the PGlite contract tests run `001`, `003`, `004`, `005`; `002` needs
+Applied in file-name order, idempotent (the PGlite contract tests run `001`, `003`, `004`, `005`, `006`; `002` needs
 pg_cron/pg_net): `001` schema, `002` cron jobs, `003` product check with `'stage'`, `004` product check with all
 five products, `005` autopay columns/functions and new definitions of `tcv.order_json`, `tcv_insert_order`,
-`tcv_purge`, `tcv_stats` (every column and block of `001` kept). The live project already ran `001` and `002`.
+`tcv_purge`, `tcv_stats` (every column and block of `001` kept), `006` the course (see "Formation": products
+`pq_essentiel` + reserved `pq_complet`/`imf_kit`, column `buyer`, four tables, new definitions of the same four
+functions with every field/block of `005` kept). The live project already ran `001` and `002`.
 **Rule:** the deployment tool asks for an interactive confirmation before any SQL containing the keyword that
 removes rows, so no migration from `003` on may contain that word (in any case, comments included): personal data
 is erased with UPDATEs only (`tests/backend_migrations.test.ts` checks it, and that `003`→`005` keep the rows of a
@@ -435,12 +447,21 @@ For experienced professionals: a two-page A4 "Prestige" CV plus a self-contained
 Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disabled) and `MANUAL_AUTO_CONFIRM`
 (default true; `false`/`0`/`no`/`non`/`off` → detections are only flagged). Owner guide: `MACRODROID.md`.
 
-* **Unique amount.** Manual checkout moves a `preview` order to `checkout` and calls
-  `store.assignManualAmount(id, amount, 49, now − 48 h)`: `manual_amount = amount − k`, smallest free k among
-  unpaid checkout/awaiting_manual orders created in the last 48 h (advisory lock + `FOR UPDATE` in SQL; no
-  index, amounts repeat after 48 h). All taken (or order older than 48 h) → catalogue price, logged. The
-  manual response adds `exactAmount`, `exactAmountFormatted` ("1 487 FCFA") and `autoUnlock`
-  (`PHONE_HOOK_KEY` set and auto-confirm on); `amount` stays the catalogue price. `manual-paid` is optional
+* **Unique amount, held from the moment it is shown** (review of 22/10/2026). Manual checkout moves a `preview`
+  order to `checkout` and calls `store.holdManualAmount(id, { base: amount, maxOffset: 49, nowIso, unpaidSinceIso:
+  now − 72 h, paidSinceIso: now − 48 h })` (advisory lock + `FOR UPDATE` in SQL). An amount is HELD by an unpaid
+  manual order as long as the order is not purged (its customer can still open it and pay late; the daily purge takes
+  unpaid orders 3 days after creation, so up to about 96 h), and in any case for `MANUAL_HOLD_MS` = 72 h after it was
+  last SHOWN (`manual_amount_at`, rows of 000005: `created_at`); and by a paid order for `PAID_HOLD_MS` = 48 h after
+  payment (a re-delivered notification then matches nobody). Still held by the order → same amount,
+  `manual_amount_at = now`; hold over → its previous amount if nobody holds it, else the smallest free `amount − k`:
+  an expired amount is never shown again as is. None free → `manual_amount` cleared, catalogue price, logged, and
+  `autoUnlock: false`: the price matches no order and, while this order is open, the near match is off for its price
+  (below); the page says the owner checks the transfer. Capacity: cv and lettre share the 49 amounts below 1 000 F,
+  each open order keeping its own until its purge — about 15 checkouts a day at that price before customers are asked
+  the catalogue price (logged « pays the catalogue price »). The manual response adds `exactAmount`,
+  `exactAmountFormatted` ("1 487 FCFA") and `autoUnlock` (a unique amount, `PHONE_HOOK_KEY` set and auto-confirm
+  on); `amount` stays the catalogue price. `manual-paid` is optional
   and `payerPhone` may be empty (a non-empty invalid number is still 400). Admin unlock and confirm record
   `manual_amount ?? amount`.
 * **`POST /payments/notify`** — key in `?k=` or `x-hook-key` (constant time; unset → 503 `hook_disabled`,
@@ -450,10 +471,21 @@ Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disa
   "retrait", "dépôt", English equivalents) → else `{ok:true, ignored:"not_incoming"}`. Amount = number with
   thousand separators (space, NBSP, ".", ",") followed by F/FCFA/F CFA/CFA/XOF (or preceded by it), skipping
   balances/fees, preferring the first after the keyword → else `{ignored:"no_amount"}`. Every authenticated
-  call records event `phone:<sha256(normalised text|minute)>` of type `phone.notification` (the admin
-  heartbeat; payload `{text}` only for incoming money) → already recorded → `{ok:true, duplicate:true}`.
-  Match among `listOpenManualOrders(now − 48 h)` with a `manual_amount`: exact, else a single order created
-  in the last 2 h with `manual_amount < amount ≤ amount_catalogue + 100`; several → none. Matched →
+  call records an event of type `phone.notification` (the admin heartbeat; payload `{text}` only for incoming money)
+  whose id makes a re-delivered notification a duplicate (`dedupeKeys`): incoming money → the normalised text and
+  its time bucket, plus a `phone.dedupe` marker for the next bucket, so replays are caught for 15 to 30 days when the
+  text carries a balance ("Nouveau solde", 15-day buckets) and 6 to 12 h otherwise (6-hour buckets) — never longer;
+  anything else → the text and its minute. Already recorded → `{ok:true, duplicate:true}`, never unlocked, but never
+  dropped silently either: a repeated text may be a real second payment (same payer, amount and balance once the
+  owner emptied his account), so when its amount is exactly the unique amount of ONE open order, that order gets
+  `recordPaymentDetection` (admin.html: « Paiement détecté »), a warning is logged and the answer adds `detected: id`.
+  Match among `listHeldManualOrders()` (unpaid, not purged; with a `manual_amount`, or asked the catalogue price:
+  `manual_amount` null and no Wave session): exact, else a single order created in the last 2 h with `manual_amount <
+  amount ≤ amount_catalogue + 100`; several → none. The near match is also off (« ambiguous », nothing unlocks) while
+  an open order asked the catalogue price could be the payer: one at the candidate's price, or one whose price is at
+  most 100 F below the amount received. **High ticket:** an
+  order whose catalogue price is ≥ `HIGH_TICKET_MIN_AMOUNT` (10 000 F, e.g. the 25 000 F course) never near-matches:
+  only its exact unique amount unlocks it (a round 25 000 F family transfer, 24 990 F… → `matched: null`). Matched →
   `recordPaymentDetection` and, with auto-confirm, `markPaid(manual, paidAmount = amount received)`.
   → `{ ok:true, matched: id|null, amount, paid }`. The text is never logged.
 * **`POST /payments/confirm`** `{ o, c }`, `c = confirmToken(ADMIN_KEY, o)` = first 32 hex of
@@ -470,7 +502,100 @@ Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disa
 * **Customer panel**: "Envoyez exactement 1 487 FCFA" with a copy button, why the amount is exact, one line
   "Les frais de transfert Wave sont à votre charge." (Wave charges the sender about 1 %), the number, "J'ai envoyé
   l'argent" → resultat.html polls and unlocks by itself; "Prévenir le vendeur sur WhatsApp" is optional.
-* **Database** (`20261018000005_autopay.sql`): columns `manual_amount`, `payment_detected_at`,
-  `payment_detected_text`; `tcv_assign_manual_amount`, `tcv_list_open_manual_orders`, `tcv_record_payment_detection`
-  (service role only). The notification text is purged with the order; the dedupe event loses its payload after
-  30 days (row kept).
+* **Database** (`20261018000005_autopay.sql`, `20261022000007_autopay_hold.sql`): columns `manual_amount`,
+  `manual_amount_at`, `payment_detected_at`, `payment_detected_text`; `tcv_hold_manual_amount`,
+  `tcv_list_held_manual_orders()`, `tcv_record_payment_detection` (service role only). The notification text and the
+  payer phone are erased 30 days after coalesce(detection, payment, creation), whatever the order — a paid course
+  order stays 730 days — as the privacy pages say; the dedupe event loses its payload after 30 days (row kept).
+* **Switching from 000005 to 000007** (no code change; tell the owner). Under the old 48 h rule an amount could be
+  given to a second order while the first customer could still see it. Both orders then hold it after the switch
+  (until their purge), so a transfer for either is « ambiguous » and nothing unlocks automatically until the older
+  order is purged (at most about 2 days): a few transfers in the first day or two may need a tap in admin.html
+  (no wrong unlock). The dedupe ids change format, so a notification the old function already handled is new again
+  if MacroDroid delivers it again after the switch. Do not roll the Edge Function back once the new bundle has served
+  checkouts: `tcv_assign_manual_amount` (000005) ignores `manual_amount_at` and the paid hold.
+
+## Formation (product `pq_essentiel`, Teranga Pro) — backend
+
+Paid access to private course content (« Power Query pour le reporting bancaire », édition Essentiel). Full
+contract: the course addendum kept with the private build kit; this section is the public summary. **The repository
+is public: course content (modules, workbooks, data, quiz and its key) is never committed** — it lives in
+`tcv.course_assets`, uploaded with plain SQL. The test/dev fixture `tests/fixtures/course/` is lorem ipsum.
+
+* **Catalogue** (`lib/course_catalog.ts`, re-exported by `lib/course.ts`): `COURSE_PRODUCTS = ["pq_essentiel"]`
+  (also exported by `pricing.ts`; `PRODUCTS` stays the five document products, so the document path keeps refusing
+  course ids), reserved `pq_complet`, `imf_kit` (database only). Settings `PRICE_PQ_ESSENTIEL` (default 25 000) and
+  `PQ_SALES_OPEN` (default false; `true/1/yes/oui/on` open sales), env over `tcv.settings` like every setting.
+  `GET /config` adds `courses: { pq_essentiel: { price, open } }` (`prices` unchanged).
+* **`POST /orders`** with a course product (after the honeypot): closed → 403 `sales_closed`; same two rate limits as
+  documents; `validateCourseOrder` (`buyer.fullName` 2–80 letters/spaces/'’.-, optional e-mail lower-cased, optional
+  phone of any country via `normalizeIntlPhone`, `acceptCgv: true`) → 400 `fields`; row with `buyer`
+  (`CourseBuyer` + `acceptedAt`, `cgvVersion`), `input`/`document` null, status `preview` → 201 `{ order }` (no
+  preview). Wave `successUrl` of a course order = `${returnBase}/lecture.html?o=…&t=…`. `GET /orders/:id` of a course
+  order → `{ order, buyer: { fullName }, course, receipt? }` (`receipt` once paid: amount = `paid_amount`, seller
+  « Vendeur : particulier — reçu de paiement, pas une facture »). Purged course order → 410 with the course message.
+* **Reader** `GET /orders/:id/course?t=`: unpaid / not a course / wrong token → the same 404 as an unknown order;
+  manifest, every module fragment, quiz and key must load and validate (`parseManifest`, `parseQuiz`, `parseQuizKey`)
+  else 503 `course_unavailable` (asset name logged, never content). Text assets are memoised per `Deps` (≤ 60 s); a
+  missing asset is not memoised, and a successful upload drops the memo of the instance that received it (the other
+  Edge instances follow within their 60 s settings period). The quiz key is never serialised.
+* **Downloads** `GET /orders/:id/files/:name?t=`: `name` must be a `manifest.files[].name`; 30 per order per 24 h
+  (`course-dl:<id>`); `.xlsx` → every `{{LICENCE}}` in `xl/**/*.xml` replaced by the XML-escaped « Licence personnelle
+  — {fullName} — {orderId} », `.zip` → `LICENCE.txt` (BOM, CRLF) added/replaced (`lib/course_files.ts`, npm:fflate);
+  `fileResponse` (attachment, `no-store, private`, `nosniff`, CORS + `Access-Control-Expose-Headers`).
+* **Quiz** `POST /orders/:id/quiz { t, answers, publicListing }`: 10 attempts per order per 24 h; score =
+  round(100 × correct / total); ≥ 70 % → attempt stored with the attestation code = first 12 hex of
+  HMAC-SHA256(ADMIN_KEY, "attest:" + orderId), made once per order (reused after a key rotation; no ADMIN_KEY on a
+  first pass → 503 `quiz_unavailable`). `GET /attestations/:code` (60 per IP per hour) → `{ code, fullName, course,
+  date, kind: "Attestation de suivi — non diplômante" }` only when the latest pass has `publicListing` true.
+* **Leads** `POST /leads { email? | whatsapp?, consent: true, source }`: honeypot, 5 per IP per hour, 2 000 per day,
+  stored with `LEAD_CONSENT_TEXT`; never logged nor returned (admin sees counts).
+* **Admin** `GET /admin/stats`: `stats.funnel.{last30,allTime}` (per product: orders, checkouts, paid, revenue),
+  `stats.leads { total, last30, active }`, `stats.quizPasses { total, last30 }`, top-level `course { salesOpen, price,
+  content, version, modules, uploadUntil }` (`uploadUntil`: end of the open upload window, ISO, else null; admin.html
+  shows « Envoi du contenu ouvert jusqu'au … »); `health` unchanged.
+* **Database** (`20261021000006_course.sql`): `tcv.orders.buyer`, `tcv.course_assets` (name `<folder>/<path>`:
+  `[A-Za-z0-9._/-]`, no "..", no "//", no trailing "/"), `tcv.course_upload_chunks`, `tcv.leads`, `tcv.quiz_attempts`
+  (RLS, service role only); Store functions `tcv_course_asset`, `tcv_course_asset_list`, `tcv_course_upload_chunk`
+  (≤ 1 000 000 base64 characters), `tcv_course_upload_commit` (checks the SHA-256 of the whole file),
+  `tcv_rate_limit_count`, `tcv_insert_lead`, `tcv_insert_quiz_attempt`, `tcv_quiz_progress`, `tcv_find_attestation`;
+  SQL-only `tcv_course_put_asset`. `tcv_purge`: paid course orders erased 730 days after payment (other paid orders
+  still follow `p_paid_before`), notification text and payer phone of every order 30 days after the detection,
+  leads lose email/WhatsApp/ip hash after 365 days, uncommitted upload chunks lose their content after 2 days —
+  UPDATE only.
+* **Private asset upload** (`lib/course_upload.ts`): `PUT /admin/course-assets/<name>?mime=…` (raw body ≤ 6 MB, name
+  `^(pq_essentiel|_backup)/[A-Za-z0-9._/-]{1,150}$`, no "..", "//" or trailing "/"; empty body, bad name or MIME →
+  400) stores through `tcv_course_upload_chunk` (≤ 720 000 raw bytes = 960 000 base64 characters per RPC call) and
+  `tcv_course_upload_commit`, then reads the listing back and answers `{ ok, asset: { name, mime, size, sha256,
+  updated_at } }` only when size and SHA-256 match (else 502). `GET /admin/course-assets[?prefix=]` → `{ assets }`;
+  `GET /admin/course-assets?validate=1` → `{ course: { valid, problem, version, modules, files, questions } }`: the
+  course loaded exactly like the reader, the quiz and the downloads would, read afresh (no memo), plus every listed
+  download stored with the size the manifest announces; `problem` names the asset (« pq_essentiel/quiz-key.json is
+  invalid »), never content. All three answer EXACTLY like an unknown route (404 « Ressource introuvable. ») unless
+  settings `COURSE_UPLOAD_TOKEN_SHA256` (hex SHA-256 of the token) and `COURSE_UPLOAD_UNTIL` (ISO date in the future,
+  **at most 72 h ahead**: further away the window stays closed, so a forgotten window cannot stay open) are set and
+  the `x-upload-token` header (32 to 512 characters) hashes to that digest (constant time). Make the token with
+  `openssl rand -hex 32` (64 hex characters) and store only its digest (`printf %s "$TOKEN" | sha256sum`). The digest
+  is compared before any store access: a wrong token answers like an unknown route without waiting for the store (its
+  failure is counted in the background, `EdgeRuntime.waitUntil`), a missing or short one touches nothing; 10 wrong
+  tokens from one IP in an hour refuse that IP for the hour, even with the right token. Token and bodies are never
+  logged. `_backup/…` assets are never served: the course routes read only what the manifest lists under
+  `pq_essentiel/`.
+  `COURSE_UPLOAD_TOKEN=… NODE_USE_ENV_PROXY=1 node scripts/course-upload.mjs <dir> [--prefix pq_essentiel|_backup/…]`
+  (or `deno run -A`): with `pq_essentiel`, `<dir>` is the course folder itself (manifest.json, every file it names,
+  no nested `pq_essentiel/`); symbolic links are refused; the token must have 32 characters at least (exit 2
+  otherwise, before any request). It uploads every file, manifest.json last, lists and checks name, size and
+  SHA-256, then calls `?validate=1` and exits 1 when the course does not load; `COURSE_API_BASE` (else
+  `PUBLIC_API_BASE`, else production); https only (http on this machine only); redirects are never followed (a 3xx
+  stops the run: the token and the files never go to another address); prints no secret. **`PQ_SALES_OPEN` stays
+  false until a run ends « OK … cours valide ».** Updating a live course replaces files one by one: for the few
+  seconds of the run the reader may answer 503, so update at a quiet hour and rerun until it ends OK. Close the
+  window afterwards (`COURSE_UPLOAD_UNTIL` in the past, or remove the digest).
+* **Upload runbook**: `node scripts/course-sql.mjs <assetsRoot> <outDir>` (outDir outside the repository, refused
+  otherwise) writes `NNNN-*.sql` (one statement ≤ 200 000 bytes each, manifest last), `verify.sql` and
+  `expected.json`; run the statements in order with `execute_sql` on project `seegnylaubuularegmku`, then
+  `verify.sql`, and compare with `expected.json`.
+* **dev.ts** serves `/formation/` (from `formation/`), `/cv/` and `/cv/config.js`; sells the course by default
+  (`PQ_SALES_OPEN=false` shows the closed page) with the lorem fixture, or the tree in `COURSE_ASSETS_DIR`.
+  `COURSE_UPLOAD_TOKEN_SHA256` and `COURSE_UPLOAD_UNTIL` in its environment open the upload window, for a dry run of
+  `scripts/course-upload.mjs` against `http://localhost:8787/api` (an upload is read at once).

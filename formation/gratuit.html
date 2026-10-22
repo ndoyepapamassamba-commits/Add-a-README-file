@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculer l'ancienneté des impayés avec Power Query | Teranga Pro</title>
+<meta name="description" content="Module gratuit&nbsp;: calculez les jours de retard et la balance âgée des impayés avec Power Query dans Excel, pas à pas, sur 15 prêts fictifs à télécharger.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#0B2545">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/gratuit.html">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="fr_SN">
+<meta property="og:site_name" content="Teranga Pro">
+<meta property="og:title" content="Calculer l'ancienneté des impayés avec Power Query">
+<meta property="og:description" content="Module gratuit, pas à pas&nbsp;: jours de retard, tranches d'ancienneté et balance âgée des impayés dans Excel avec Power Query, sur des données fictives.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/gratuit.html">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="formation.css">
+<script src="js/demo-shim.js" defer></script>
+<script src="../cv/config.js" defer></script>
+<script src="js/core.js" defer></script>
+<script src="js/lead.js" defer></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Calculer l'ancienneté des impayés avec Power Query",
+  "description": "Module gratuit\u00a0: calculer les jours de retard et la balance âgée des impayés avec Power Query dans Excel, pas à pas, sur 15 prêts fictifs à télécharger.",
+  "inLanguage": "fr",
+  "isAccessibleForFree": true,
+  "keywords": "Power Query, Excel, ancienneté des impayés, balance âgée, jours de retard, reporting bancaire, UEMOA",
+  "isPartOf": { "@type": "Course", "name": "Power Query pour le reporting bancaire", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "datePublished": "2026-10-21",
+  "dateModified": "2026-10-21",
+  "image": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg",
+  "mainEntityOfPage": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/gratuit.html",
+  "author": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "publisher": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Pourquoi ne pas calculer les jours de retard avec une formule Excel\u00a0?", "acceptedAnswer": { "@type": "Answer", "text": "C'est possible sur un fichier, une fois. Mais il faut recoller l'extraction chaque mois, étendre les formules au bon nombre de lignes et vérifier que rien n'a été déplacé. Power Query enregistre les étapes et les rejoue sur le nouveau fichier\u00a0: le travail mensuel devient une actualisation." } },
+    { "@type": "Question", "name": "Faut-il compter depuis la première ou la dernière échéance impayée\u00a0?", "acceptedAnswer": { "@type": "Answer", "text": "Depuis la plus ancienne échéance restée impayée\u00a0: c'est elle qui mesure l'ancienneté du retard. Vérifiez avec l'équipe qui produit l'extraction ce que contient exactement la colonne de date, et à quelle date les jours sont comptés (date d'arrêté ou date d'extraction)." } },
+    { "@type": "Question", "name": "Puis-je utiliser d'autres tranches\u00a0?", "acceptedAnswer": { "@type": "Answer", "text": "Oui\u00a0: modifiez les bornes et les libellés de la formule de l'étape\u00a03, en gardant les tranches contiguës (chaque tranche commence au jour qui suit la fin de la précédente). Le découpage retenu pour un état officiel relève des règles de votre établissement et des textes en vigueur." } }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="tp-header">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Teranga Pro, accueil de la formation">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+      <span class="brand-name">Teranga<span>Pro</span></span>
+    </a>
+    <nav class="tp-nav" aria-label="Navigation principale">
+      <a href="index.html">La formation</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="page-head">
+    <div class="wrap">
+      <p class="eyebrow">Module gratuit <span class="dot" aria-hidden="true">·</span> Power Query</p>
+      <h1>Calculer l'ancienneté des impayés avec Power Query</h1>
+      <p>Un extrait en accès libre de la formation «&nbsp;Power Query pour le reporting bancaire&nbsp;»&nbsp;: à partir d'une petite extraction de prêts, calculez les jours de retard à la date d'arrêté et regroupez les impayés par tranche d'ancienneté, sans aucune formule à recopier chaque mois.</p>
+      <p class="meta">Données 100&nbsp;% fictives · Excel 2016 ou plus récent, ou Microsoft 365</p>
+    </div>
+  </div>
+
+  <article class="article">
+    <div class="wrap">
+      <div class="download-box">
+        <span class="file-ext" aria-hidden="true">CSV</span>
+        <p><strong>Le jeu de données de l'exemple</strong><br><span class="muted small">exemple-impayes.csv · 15 prêts · séparateur point-virgule · données fictives</span></p>
+        <a class="btn btn-outline" href="gratuit/exemple-impayes.csv" download><span class="btn-label">Télécharger les données</span></a>
+      </div>
+      <p class="callout-free-origin">Ce module gratuit reprend, sur un petit jeu de données, une partie du <strong>module&nbsp;5</strong> de la formation complète, qui traite la balance âgée sur 3&nbsp;arrêtés mensuels&nbsp;: tranches lues dans un tableau Excel, croisement agence × produit, matrice de transition. <a href="index.html#programme">Voir le programme</a></p>
+
+<!-- GRATUIT:DEBUT -->
+<section class="module module-free" data-module="0">
+<div class="callout-info">
+<p><strong>En 30&nbsp;minutes environ.</strong> Vous partez d'une petite extraction de 15&nbsp;prêts et vous obtenez une <strong>balance âgée des impayés</strong>&nbsp;: les jours de retard de chaque contrat à la date d'arrêté, sa tranche d'ancienneté, puis l'encours et les impayés regroupés par tranche. Le mois suivant, il suffit de remplacer le fichier et de cliquer sur <strong>Données › Actualiser tout</strong>.</p>
+<ul>
+<li>Excel 2016 ou plus récent, ou Microsoft&nbsp;365 (Windows ou Mac).</li>
+<li>Le fichier <a href="gratuit/exemple-impayes.csv" download>exemple-impayes.csv</a> (7&nbsp;colonnes, séparateur point-virgule, encodage UTF-8). Enregistrez-le dans <code>C:\Formation\gratuit\</code>&nbsp;; sur Mac, dans un dossier de votre choix (par exemple <code>/Users/votre-nom/Formation/gratuit/</code>), puis adaptez le chemin dans le code.</li>
+<li>Données 100&nbsp;% fictives&nbsp;: contrats, clients, agences et montants sont inventés.</li>
+</ul>
+</div>
+
+<h2 id="m0-balance-agee">La balance âgée des impayés&nbsp;: ce que l'on construit</h2>
+<p>La balance âgée répartit les prêts selon l'<strong>ancienneté de leur plus ancienne échéance impayée</strong>. Elle répond à la question que posent chaque mois le recouvrement, la direction des risques et le comité de crédit&nbsp;: «&nbsp;combien d'encours est en retard, et depuis combien de temps&nbsp;?&nbsp;». Refaite à la main, avec des filtres et des formules recopiées, elle est longue à produire et facile à fausser&nbsp;: une date lue à l'envers, une borne mal écrite, une ligne oubliée. Avec Power Query, la recette est écrite une fois et rejouée à l'identique à chaque actualisation.</p>
+<p>Trois notions suffisent&nbsp;:</p>
+<ul>
+<li><strong>Date d'arrêté</strong>&nbsp;: la date à laquelle on mesure le retard (ici le 30/09/2026).</li>
+<li><strong>Jours de retard</strong>&nbsp;: date d'arrêté − date du premier impayé, et 0 pour un contrat sans impayé.</li>
+<li><strong>Tranche d'ancienneté</strong>&nbsp;: l'intervalle de jours dans lequel tombe le contrat. Tout l'encours du contrat va dans sa tranche&nbsp;; le montant réellement impayé se présente à côté.</li>
+</ul>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Les tranches utilisées dans cet exemple (exemple pédagogique — pas un état réglementaire officiel)"><table class="data">
+<caption>Les tranches utilisées dans cet exemple (exemple pédagogique — pas un état réglementaire officiel)</caption>
+<thead><tr><th scope="col">Tranche</th><th scope="col">Jours de retard</th><th scope="col">Règle écrite dans Power Query</th></tr></thead>
+<tbody>
+<tr><td>T1 - 0 jour</td><td>0</td><td><code>= 0</code></td></tr>
+<tr><td>T2 - 1 à 30 jours</td><td>de 1 à 30</td><td><code>&lt;= 30</code></td></tr>
+<tr><td>T3 - 31 à 90 jours</td><td>de 31 à 90</td><td><code>&lt;= 90</code></td></tr>
+<tr><td>T4 - 91 à 180 jours</td><td>de 91 à 180</td><td><code>&lt;= 180</code></td></tr>
+<tr><td>T5 - 181 à 360 jours</td><td>de 181 à 360</td><td><code>&lt;= 360</code></td></tr>
+<tr><td>T6 - plus de 360 jours</td><td>361 et plus</td><td>sinon</td></tr>
+</tbody>
+</table></div>
+<p>Le préfixe T1 à T6 n'est pas décoratif&nbsp;: Power Query et Excel trient les textes caractère par caractère, et sans lui «&nbsp;181 à 360&nbsp;» passerait avant «&nbsp;31 à 90&nbsp;». Les bornes de votre propre état se fixent selon les règles de votre établissement.</p>
+<div class="callout-source">
+<p>Pourquoi des bornes à 90 et 180&nbsp;jours&nbsp;? L'<a href="https://cb-umoa.org/sites/default/files/2022-01/INSTRUCTION%20N%C2%B0026-11-2016%20RELATIVE%20A%20LA%20COMPTABILISATION%20ET%20A%20L%27EVALUATION%20DES%20ENGAGEMENTS%20EN%20SOUFFRANCE.pdf" rel="noopener">Instruction BCEAO n°&nbsp;026-11-2016 relative à la comptabilisation et à l'évaluation des engagements en souffrance</a> range notamment parmi les créances douteuses ou litigieuses «&nbsp;les créances dont au moins une échéance est restée impayée depuis plus de quatre-vingt-dix jours&nbsp;» (article&nbsp;8), délai porté à 180&nbsp;jours pour certaines expositions. Des tranches qui s'arrêtent à 90 et 180&nbsp;jours montrent donc d'un coup d'œil les contrats qui approchent ou dépassent ces délais. Le classement d'une créance ne se réduit pas pour autant à son ancienneté&nbsp;: il suit les textes en vigueur et les règles de votre établissement.</p>
+</div>
+
+<h2 id="m0-donnees">Le jeu de données&nbsp;: 15 prêts fictifs à télécharger</h2>
+<p>Le fichier <a href="gratuit/exemple-impayes.csv" download>exemple-impayes.csv</a> contient une ligne par prêt. Les montants y sont écrits sans séparateur de milliers, avec une virgule décimale (<code>1850000,00</code>)&nbsp;; les dates sont au format jj/mm/aaaa&nbsp;; la date du premier impayé est vide quand le prêt est à jour.</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Contenu de exemple-impayes.csv (montants en FCFA, affichés ici avec séparateurs de milliers)"><table class="data">
+<caption>Contenu de exemple-impayes.csv (montants en FCFA, affichés ici avec séparateurs de milliers)</caption>
+<thead><tr><th scope="col">Contrat</th><th scope="col">Client</th><th scope="col">Agence</th><th scope="col">Produit</th><th scope="col">Encours</th><th scope="col">Impayé</th><th scope="col">Date premier impayé</th></tr></thead>
+<tbody>
+<tr><td>EX-001</td><td>CLT-2041</td><td>Agence Flamboyant</td><td>Prêt personnel</td><td class="num">1&nbsp;850&nbsp;000,00</td><td class="num">0,00</td><td>(vide)</td></tr>
+<tr><td>EX-002</td><td>CLT-2042</td><td>Agence Rônier</td><td>Crédit immobilier</td><td class="num">42&nbsp;300&nbsp;000,00</td><td class="num">1&nbsp;275&nbsp;400,00</td><td>31/08/2026</td></tr>
+<tr><td>EX-003</td><td>CLT-2043</td><td>Agence Filao</td><td>Crédit équipement</td><td class="num">18&nbsp;750&nbsp;000,00</td><td class="num">0,00</td><td>(vide)</td></tr>
+<tr><td>EX-004</td><td>CLT-2044</td><td>Agence Flamboyant</td><td>Crédit de trésorerie</td><td class="num">6&nbsp;400&nbsp;000,00</td><td class="num">2&nbsp;980&nbsp;250,50</td><td>18/01/2026</td></tr>
+<tr><td>EX-005</td><td>CLT-2045</td><td>Agence Filao</td><td>Prêt personnel</td><td class="num">960&nbsp;000,00</td><td class="num">48&nbsp;500,00</td><td>04/09/2026</td></tr>
+<tr><td>EX-006</td><td>CLT-2046</td><td>Agence Rônier</td><td>Prêt personnel</td><td class="num">2&nbsp;275&nbsp;000,00</td><td class="num">0,00</td><td>(vide)</td></tr>
+<tr><td>EX-007</td><td>CLT-2047</td><td>Agence Filao</td><td>Crédit équipement</td><td class="num">11&nbsp;600&nbsp;000,00</td><td class="num">1&nbsp;840&nbsp;000,00</td><td>01/07/2026</td></tr>
+<tr><td>EX-008</td><td>CLT-2048</td><td>Agence Rônier</td><td>Prêt personnel</td><td class="num">1&nbsp;320&nbsp;000,00</td><td class="num">1&nbsp;104&nbsp;300,25</td><td>14/06/2025</td></tr>
+<tr><td>EX-009</td><td>CLT-2049</td><td>Agence Flamboyant</td><td>Crédit équipement</td><td class="num">24&nbsp;900&nbsp;000,00</td><td class="num">1&nbsp;530&nbsp;000,00</td><td>30/08/2026</td></tr>
+<tr><td>EX-010</td><td>CLT-2050</td><td>Agence Filao</td><td>Crédit immobilier</td><td class="num">35&nbsp;800&nbsp;000,00</td><td class="num">0,00</td><td>(vide)</td></tr>
+<tr><td>EX-011</td><td>CLT-2051</td><td>Agence Flamboyant</td><td>Prêt personnel</td><td class="num">3&nbsp;150&nbsp;000,00</td><td class="num">612&nbsp;900,00</td><td>12/05/2026</td></tr>
+<tr><td>EX-012</td><td>CLT-2052</td><td>Agence Rônier</td><td>Crédit de trésorerie</td><td class="num">8&nbsp;700&nbsp;000,00</td><td class="num">1&nbsp;965&nbsp;800,00</td><td>02/07/2026</td></tr>
+<tr><td>EX-013</td><td>CLT-2053</td><td>Agence Flamboyant</td><td>Crédit de trésorerie</td><td class="num">5&nbsp;500&nbsp;000,00</td><td class="num">0,00</td><td>(vide)</td></tr>
+<tr><td>EX-014</td><td>CLT-2054</td><td>Agence Filao</td><td>Crédit immobilier</td><td class="num">27&nbsp;450&nbsp;000,00</td><td class="num">4&nbsp;210&nbsp;600,75</td><td>05/10/2025</td></tr>
+<tr><td>EX-015</td><td>CLT-2055</td><td>Agence Rônier</td><td>Crédit équipement</td><td class="num">9&nbsp;850&nbsp;000,00</td><td class="num">742&nbsp;150,00</td><td>07/08/2026</td></tr>
+</tbody>
+</table></div>
+<p><strong>Encours</strong>&nbsp;: capital restant dû du prêt. <strong>Impayé</strong>&nbsp;: échéances échues et non réglées (principal et intérêts). Totaux du fichier&nbsp;: 15&nbsp;contrats, 200&nbsp;805&nbsp;000,00&nbsp;FCFA d'encours et 16&nbsp;309&nbsp;901,50&nbsp;FCFA d'impayés&nbsp;; ce sont les deux chiffres que la balance âgée devra retrouver.</p>
+
+<h2 id="m0-import">Étape 1 — Importer le fichier CSV dans Power Query</h2>
+<ol>
+<li>Dans un nouveau classeur&nbsp;: <strong>Données › Obtenir des données › À partir d'un fichier › À partir d'un fichier texte/CSV</strong>, choisissez <code>exemple-impayes.csv</code>, puis <strong>Importer</strong>.</li>
+<li>Dans la fenêtre d'aperçu, réglez les trois listes&nbsp;: <strong>Origine du fichier</strong> «&nbsp;65001&nbsp;: Unicode (UTF-8)&nbsp;», <strong>Délimiteur</strong> «&nbsp;Point-virgule&nbsp;», <strong>Détection du type de données</strong> «&nbsp;Ne pas détecter les types de données&nbsp;». Cliquez sur <strong>Transformer les données</strong> (et non sur Charger)&nbsp;: l'éditeur Power Query s'ouvre.</li>
+<li>Dans le volet <strong>Paramètres de requête</strong>, à droite, remplacez le nom de la requête par <code>prep_Impayes</code> (zone <strong>Propriétés › Nom</strong>).</li>
+<li>Sélectionnez la colonne <em>Date premier impayé</em>, puis <strong>Transformer › Remplacer les valeurs</strong>&nbsp;: laissez <em>Valeur à rechercher</em> vide, saisissez <code>null</code> dans <em>Remplacer par</em>, OK. Un champ vide d'un CSV arrive comme un texte vide&nbsp;; après ce remplacement, «&nbsp;pas de date&nbsp;» s'écrit <code>null</code>, la valeur que la formule de l'étape&nbsp;2 teste.</li>
+<li>Sélectionnez les colonnes <em>Encours</em> et <em>Impayé</em> (Ctrl + clic), clic droit sur un en-tête › <strong>Modifier le type › Utiliser les paramètres régionaux…</strong> (le libellé varie légèrement selon la version)&nbsp;: <strong>Type de données</strong> «&nbsp;Nombre décimal&nbsp;», <strong>Paramètres régionaux</strong> «&nbsp;Français (France)&nbsp;», OK. Faites de même pour <em>Date premier impayé</em> avec le type «&nbsp;Date&nbsp;».</li>
+<li>Sélectionnez <em>Contrat</em>, <em>Client</em>, <em>Agence</em> et <em>Produit</em>, puis <strong>Transformer › Type de données › Texte</strong>&nbsp;: un code de contrat ou de client ne s'additionne pas.</li>
+</ol>
+<p>Ouvrez <strong>Accueil › Éditeur avancé</strong>&nbsp;: les premières étapes ressemblent à ceci (les noms d'étapes et certaines options, comme <code>Columns = 7</code>, peuvent différer selon la version&nbsp;; le résultat est le même).</p>
+<pre class="m-code">let
+    Source = Csv.Document(File.Contents("C:\Formation\gratuit\exemple-impayes.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.None]),
+    #"En-têtes promus" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+    #"Valeur remplacée" = Table.ReplaceValue(#"En-têtes promus", "", null, Replacer.ReplaceValue, {"Date premier impayé"}),
+    #"Type modifié avec paramètres régionaux" = Table.TransformColumnTypes(#"Valeur remplacée", {{"Encours", type number}, {"Impayé", type number}, {"Date premier impayé", type date}}, "fr-FR"),
+    #"Type modifié" = Table.TransformColumnTypes(#"Type modifié avec paramètres régionaux", {{"Contrat", type text}, {"Client", type text}, {"Agence", type text}, {"Produit", type text}})
+in
+    #"Type modifié"</pre>
+<div class="callout-warning">
+<p><strong>Pourquoi imposer «&nbsp;Français (France)&nbsp;»&nbsp;?</strong> Sans culture explicite, Power Query lit textes, nombres et dates selon les paramètres régionaux du classeur ou de l'ordinateur. Avec une culture anglaise (en-US), <code>04/09/2026</code> devient le 9&nbsp;avril au lieu du 4&nbsp;septembre&nbsp;: le prêt EX-005 passerait de 26 à 174&nbsp;jours de retard, de T2 à T4, <strong>sans aucun message d'erreur</strong>&nbsp;; la virgule de <code>1850000,00</code> serait prise pour un séparateur de milliers et le montant lu cent fois trop grand. Le code <code>"fr-FR"</code>, écrit dans l'étape elle-même, rend le résultat indépendant du poste qui actualise.</p>
+<p>Vos propres extractions écrivent peut-être les milliers avec une espace («&nbsp;1&nbsp;850&nbsp;000,00&nbsp;»)&nbsp;: selon le poste et la version, la conversion directe peut alors échouer. La formation complète consacre un module entier à l'import de ces extractions.</p>
+</div>
+
+<h2 id="m0-jours">Étape 2 — Calculer les jours de retard à la date d'arrêté</h2>
+<p>En M, la différence entre deux dates est une durée, et <code>Duration.Days</code> en extrait le nombre de jours. Pour un prêt sans impayé, la date est <code>null</code>&nbsp;: on renvoie alors 0.</p>
+<ol>
+<li><strong>Ajouter une colonne › Colonne personnalisée</strong>. <em>Nouveau nom de colonne</em>&nbsp;: <code>Jours de retard</code>.</li>
+<li><em>Formule de colonne personnalisée</em>&nbsp;: collez la formule ci-dessous, puis OK. <code>#date(2026, 9, 30)</code> est la date d'arrêté, écrite année, mois, jour.</li>
+<li>Si la boîte de dialogue ne propose pas de type, cliquez sur l'icône à gauche de l'en-tête de la nouvelle colonne › <strong>Nombre entier</strong>.</li>
+</ol>
+<pre class="m-code">if [Date premier impayé] = null then 0
+else Duration.Days(#date(2026, 9, 30) - [Date premier impayé])</pre>
+<p>Vérifiez trois lignes à la main&nbsp;: EX-002 (premier impayé le 31/08/2026) doit afficher 30, EX-009 (30/08/2026) 31, et EX-014 (05/10/2025) 360. L'ancienneté se compte depuis la <strong>plus ancienne</strong> échéance impayée, pas depuis la dernière&nbsp;: c'est ce que contient la colonne <em>Date premier impayé</em>.</p>
+
+<h2 id="m0-tranches">Étape 3 — Classer les impayés par tranche d'ancienneté</h2>
+<p>Une deuxième colonne personnalisée traduit les jours en tranche. Les conditions sont testées de haut en bas&nbsp;: la première vraie l'emporte. Les bornes sont <strong>incluses</strong>&nbsp;: <code>&lt;= 30</code> garde un prêt à exactement 30&nbsp;jours dans T2.</p>
+<ol>
+<li><strong>Ajouter une colonne › Colonne personnalisée</strong>, nom <code>Tranche</code>, avec la formule ci-dessous.</li>
+<li>Donnez à la nouvelle colonne le type <strong>Texte</strong> (icône à gauche de l'en-tête).</li>
+</ol>
+<pre class="m-code">if [Jours de retard] &lt; 0 then "T9 - À vérifier"
+else if [Jours de retard] = 0 then "T1 - 0 jour"
+else if [Jours de retard] &lt;= 30 then "T2 - 1 à 30 jours"
+else if [Jours de retard] &lt;= 90 then "T3 - 31 à 90 jours"
+else if [Jours de retard] &lt;= 180 then "T4 - 91 à 180 jours"
+else if [Jours de retard] &lt;= 360 then "T5 - 181 à 360 jours"
+else "T6 - plus de 360 jours"</pre>
+<p>La première ligne est un garde-fou&nbsp;: un retard négatif (premier impayé postérieur à la date d'arrêté) signale une date d'arrêté ou une extraction à vérifier. Plutôt que de le ranger dans une tranche au hasard, on le rend visible.</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" role="img" aria-label="Échelle des six tranches d'ancienneté. EX-002, à 30 jours, reste dans T2 ; EX-009, à 31 jours, entre dans T3 ; EX-012, à 90 jours, reste dans T3 ; EX-007, à 91 jours, entre dans T4.">
+<title>Où tombent les prêts placés sur une borne</title>
+<rect x="1" y="1" width="718" height="298" rx="12" fill="#F7F7F2" stroke="#CBD5E1"/>
+<text x="20" y="28" font-size="13" font-weight="bold" fill="#0B2545">Arrêté du 30/09/2026 — quatre prêts placés exactement sur une borne</text>
+<text x="20" y="48" font-size="11.5" fill="#52606D">Jours de retard = date d'arrêté − date du premier impayé&nbsp;; chaque borne appartient à la tranche qu'elle ferme.</text>
+<line x1="195" y1="112" x2="195" y2="146" stroke="#0B2545" stroke-width="1.5"/><circle cx="195" cy="146" r="4" fill="#13A89E" stroke="#0B2545"/>
+<text x="188" y="88" text-anchor="end" font-size="12" font-weight="bold" fill="#0B2545">EX-002&nbsp;: 30&nbsp;jours</text>
+<text x="188" y="104" text-anchor="end" font-size="11.5" fill="#1F2933">reste dans T2 (≤ 30)</text>
+<line x1="205" y1="112" x2="205" y2="146" stroke="#0B2545" stroke-width="1.5"/><circle cx="205" cy="146" r="4" fill="#13A89E" stroke="#0B2545"/>
+<text x="212" y="88" font-size="12" font-weight="bold" fill="#0B2545">EX-009&nbsp;: 31&nbsp;jours</text>
+<text x="212" y="104" font-size="11.5" fill="#1F2933">entre dans T3</text>
+<rect x="40" y="150" width="60" height="40" fill="#FFFFFF" stroke="#0B2545"/><text x="70" y="167" text-anchor="middle" font-size="12" font-weight="bold" fill="#0B2545">T1</text><text x="70" y="182" text-anchor="middle" font-size="11" fill="#1F2933">0&nbsp;j</text>
+<rect x="100" y="150" width="100" height="40" fill="#E6F6F4" stroke="#0B2545"/><text x="150" y="167" text-anchor="middle" font-size="12" font-weight="bold" fill="#0B2545">T2</text><text x="150" y="182" text-anchor="middle" font-size="11" fill="#1F2933">1 à 30&nbsp;j</text>
+<rect x="200" y="150" width="140" height="40" fill="#C8ECE8" stroke="#0B2545"/><text x="270" y="167" text-anchor="middle" font-size="12" font-weight="bold" fill="#0B2545">T3</text><text x="270" y="182" text-anchor="middle" font-size="11" fill="#1F2933">31 à 90&nbsp;j</text>
+<rect x="340" y="150" width="120" height="40" fill="#FEF3C7" stroke="#0B2545"/><text x="400" y="167" text-anchor="middle" font-size="12" font-weight="bold" fill="#0B2545">T4</text><text x="400" y="182" text-anchor="middle" font-size="11" fill="#1F2933">91 à 180&nbsp;j</text>
+<rect x="460" y="150" width="130" height="40" fill="#FDE3C2" stroke="#0B2545"/><text x="525" y="167" text-anchor="middle" font-size="12" font-weight="bold" fill="#0B2545">T5</text><text x="525" y="182" text-anchor="middle" font-size="11" fill="#1F2933">181 à 360&nbsp;j</text>
+<rect x="590" y="150" width="90" height="40" fill="#FDE8E8" stroke="#0B2545"/><text x="635" y="167" text-anchor="middle" font-size="12" font-weight="bold" fill="#0B2545">T6</text><text x="635" y="182" text-anchor="middle" font-size="11" fill="#1F2933">&gt; 360&nbsp;j</text>
+<circle cx="335" cy="194" r="4" fill="#13A89E" stroke="#0B2545"/><line x1="335" y1="194" x2="335" y2="216" stroke="#0B2545" stroke-width="1.5"/>
+<text x="328" y="232" text-anchor="end" font-size="12" font-weight="bold" fill="#0B2545">EX-012&nbsp;: 90&nbsp;jours</text>
+<text x="328" y="248" text-anchor="end" font-size="11.5" fill="#1F2933">reste dans T3 (≤ 90)</text>
+<circle cx="345" cy="194" r="4" fill="#13A89E" stroke="#0B2545"/><line x1="345" y1="194" x2="345" y2="216" stroke="#0B2545" stroke-width="1.5"/>
+<text x="352" y="232" font-size="12" font-weight="bold" fill="#0B2545">EX-007&nbsp;: 91&nbsp;jours</text>
+<text x="352" y="248" font-size="11.5" fill="#1F2933">entre dans T4</text>
+<text x="20" y="282" font-size="11.5" fill="#9B1C1C">Avec «&nbsp;&lt; 30&nbsp;» au lieu de «&nbsp;≤ 30&nbsp;», EX-002 passerait en T3 sans aucun message d'erreur.</text>
+</svg>
+<figcaption>Figure 1 — Les bornes des tranches sur l'exemple (échelle non proportionnelle). Les prêts placés exactement sur une borne sont ceux qui révèlent une condition mal écrite&nbsp;: vérifiez-les en premier.</figcaption>
+</figure>
+
+<h2 id="m0-regrouper">Étape 4 — Regrouper l'encours et les impayés par tranche</h2>
+<ol>
+<li>Dans le volet <strong>Requêtes</strong>, à gauche, clic droit sur <code>prep_Impayes</code> › <strong>Référence</strong>. Une nouvelle requête part du résultat de la première&nbsp;; nommez-la <code>out_BalanceAgee</code>.</li>
+<li><strong>Accueil › Regrouper par</strong>, option <strong>Avancé</strong>&nbsp;: regroupement par <em>Tranche</em>. Première agrégation&nbsp;: nouveau nom «&nbsp;Nombre de contrats&nbsp;», opération <em>Compter les lignes</em>. <strong>Ajouter une agrégation</strong>&nbsp;: «&nbsp;Encours&nbsp;», opération <em>Somme</em>, colonne <em>Encours</em>. Encore une&nbsp;: «&nbsp;Impayé&nbsp;», <em>Somme</em> de <em>Impayé</em>. OK.</li>
+<li>Flèche de l'en-tête <em>Tranche</em> › <strong>Tri croissant</strong>.</li>
+<li>La part de chaque tranche dans l'encours demande le total de toutes les tranches&nbsp;: ouvrez <strong>Accueil › Éditeur avancé</strong> et remplacez tout le code de <code>out_BalanceAgee</code> par celui de la section suivante.</li>
+<li><strong>Accueil › Fermer et charger</strong>&nbsp;: Excel crée une feuille par requête, l'une avec le détail des 15&nbsp;prêts, l'autre avec la balance âgée.</li>
+<li>Dans la feuille de la balance âgée, appliquez le format Pourcentage à la colonne <em>Part de l'encours</em>, cliquez dans le tableau, puis, dans l'onglet <strong>Création de tableau</strong>, cochez <strong>Ligne des totaux</strong> («&nbsp;Ligne Total&nbsp;» selon la version) et choisissez <em>Somme</em> dans la liste déroulante sous chaque colonne de chiffres.</li>
+</ol>
+<p>L'étape de regroupement créée par l'interface ressemble à ceci (barre de formule)&nbsp;:</p>
+<pre class="m-code">= Table.Group(Source, {"Tranche"}, {{"Nombre de contrats", each Table.RowCount(_), Int64.Type}, {"Encours", each List.Sum([Encours]), type nullable number}, {"Impayé", each List.Sum([Impayé]), type nullable number}})</pre>
+
+<h2 id="m0-code">Le code M complet des deux requêtes</h2>
+<p>Pour aller plus vite, ou pour comparer avec votre travail&nbsp;: <strong>Données › Obtenir des données › À partir d'autres sources › Requête vide</strong>, puis <strong>Accueil › Éditeur avancé</strong>, collez le code, et donnez à la requête exactement le nom indiqué en commentaire (<code>out_BalanceAgee</code> appelle <code>prep_Impayes</code> par son nom). Créez <code>prep_Impayes</code> en premier.</p>
+<pre class="m-code">// Requête prep_Impayes : un prêt par ligne, avec ses jours de retard et sa tranche
+let
+    // Les deux réglages de l'exemple : le fichier et la date d'arrêté
+    Fichier = "C:\Formation\gratuit\exemple-impayes.csv",
+    DateArrete = #date(2026, 9, 30),
+
+    // 1. Import : point-virgule, UTF-8, aucun type détecté automatiquement
+    Source = Csv.Document(File.Contents(Fichier), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.None]),
+    EnTetes = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+    Vides = Table.ReplaceValue(EnTetes, "", null, Replacer.ReplaceValue, {"Date premier impayé"}),
+    Types = Table.TransformColumnTypes(Vides, {
+        {"Contrat", type text}, {"Client", type text}, {"Agence", type text}, {"Produit", type text},
+        {"Encours", type number}, {"Impayé", type number}, {"Date premier impayé", type date}}, "fr-FR"),
+
+    // 2. Jours de retard à la date d'arrêté (0 si aucun impayé)
+    Jours = Table.AddColumn(Types, "Jours de retard", each
+        if [Date premier impayé] = null then 0
+        else Duration.Days(DateArrete - [Date premier impayé]), Int64.Type),
+
+    // 3. Tranche d'ancienneté : bornes incluses (30 jours dans T2, 31 jours dans T3)
+    Tranches = Table.AddColumn(Jours, "Tranche", each
+        if [Jours de retard] &lt; 0 then "T9 - À vérifier"
+        else if [Jours de retard] = 0 then "T1 - 0 jour"
+        else if [Jours de retard] &lt;= 30 then "T2 - 1 à 30 jours"
+        else if [Jours de retard] &lt;= 90 then "T3 - 31 à 90 jours"
+        else if [Jours de retard] &lt;= 180 then "T4 - 91 à 180 jours"
+        else if [Jours de retard] &lt;= 360 then "T5 - 181 à 360 jours"
+        else "T6 - plus de 360 jours", type text)
+in
+    Tranches</pre>
+<pre class="m-code">// Requête out_BalanceAgee : la balance âgée, une ligne par tranche
+let
+    Source = prep_Impayes,
+    Groupe = Table.Group(Source, {"Tranche"}, {
+        {"Nombre de contrats", each Table.RowCount(_), Int64.Type},
+        {"Encours", each List.Sum([Encours]), type number},
+        {"Impayé", each List.Sum([Impayé]), type number}}),
+    Tri = Table.Sort(Groupe, {{"Tranche", Order.Ascending}}),
+    // Part de l'encours : encours de la tranche / encours total (format Pourcentage à appliquer dans Excel)
+    TotalEncours = List.Sum(Tri[Encours]),
+    Part = Table.AddColumn(Tri, "Part de l'encours", each [Encours] / TotalEncours, type number)
+in
+    Part</pre>
+<p>Si l'actualisation s'arrête sur une erreur «&nbsp;fichier introuvable&nbsp;», corrigez seulement la ligne <code>Fichier</code> (sur Mac, un chemin du type <code>/Users/votre-nom/Formation/gratuit/exemple-impayes.csv</code>).</p>
+
+<h2 id="m0-resultat">Résultat attendu et vérifications</h2>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="out_BalanceAgee — arrêté du 30/09/2026 (montants en FCFA)"><table class="data">
+<caption>out_BalanceAgee — arrêté du 30/09/2026 (montants en FCFA)</caption>
+<thead><tr><th scope="col">Tranche</th><th scope="col">Nombre de contrats</th><th scope="col">Encours</th><th scope="col">Impayé</th><th scope="col">Part de l'encours</th></tr></thead>
+<tbody>
+<tr><td>T1 - 0 jour</td><td class="num">5</td><td class="num">64&nbsp;175&nbsp;000,00</td><td class="num">0,00</td><td class="num">31,96&nbsp;%</td></tr>
+<tr><td>T2 - 1 à 30 jours</td><td class="num">2</td><td class="num">43&nbsp;260&nbsp;000,00</td><td class="num">1&nbsp;323&nbsp;900,00</td><td class="num">21,54&nbsp;%</td></tr>
+<tr><td>T3 - 31 à 90 jours</td><td class="num">3</td><td class="num">43&nbsp;450&nbsp;000,00</td><td class="num">4&nbsp;237&nbsp;950,00</td><td class="num">21,64&nbsp;%</td></tr>
+<tr><td>T4 - 91 à 180 jours</td><td class="num">2</td><td class="num">14&nbsp;750&nbsp;000,00</td><td class="num">2&nbsp;452&nbsp;900,00</td><td class="num">7,35&nbsp;%</td></tr>
+<tr><td>T5 - 181 à 360 jours</td><td class="num">2</td><td class="num">33&nbsp;850&nbsp;000,00</td><td class="num">7&nbsp;190&nbsp;851,25</td><td class="num">16,86&nbsp;%</td></tr>
+<tr><td>T6 - plus de 360 jours</td><td class="num">1</td><td class="num">1&nbsp;320&nbsp;000,00</td><td class="num">1&nbsp;104&nbsp;300,25</td><td class="num">0,66&nbsp;%</td></tr>
+<tr><td><strong>Total</strong></td><td class="num"><strong>15</strong></td><td class="num"><strong>200&nbsp;805&nbsp;000,00</strong></td><td class="num"><strong>16&nbsp;309&nbsp;901,50</strong></td><td class="num"><strong>100,00&nbsp;%</strong></td></tr>
+</tbody>
+</table></div>
+<p>La ligne des totaux retrouve les totaux du fichier&nbsp;: 15&nbsp;contrats, 200&nbsp;805&nbsp;000,00&nbsp;FCFA d'encours, 16&nbsp;309&nbsp;901,50&nbsp;FCFA d'impayés. C'est le premier contrôle à faire&nbsp;: une balance âgée dont le total ne retombe pas sur l'extraction est fausse, quelle que soit la justesse de chaque ligne. Les pourcentages arrondis affichés additionnés à la main donnent 100,01&nbsp;%&nbsp;; la ligne des totaux, calculée sur les valeurs exactes, affiche 100,00&nbsp;%.</p>
+</div>
+<p>Lecture&nbsp;: 5 prêts sur 15 sont à jour et portent 31,96&nbsp;% de l'encours&nbsp;; l'encours à plus de 90&nbsp;jours (T4 à T6) atteint 49&nbsp;920&nbsp;000,00&nbsp;FCFA, soit 24,86&nbsp;% du total, pour 10&nbsp;748&nbsp;051,50&nbsp;FCFA d'impayés réellement en retard sur ces prêts. Un état qui ne montrerait que les impayés sous-estimerait l'exposition&nbsp;; un état qui ne montrerait que l'encours ne dirait pas ce qui reste à recouvrer.</p>
+<p>Pour contrôler le détail, comparez la feuille de <code>prep_Impayes</code> avec ce tableau&nbsp;:</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="prep_Impayes — jours de retard et tranche de chaque prêt au 30/09/2026"><table class="data">
+<caption>prep_Impayes — jours de retard et tranche de chaque prêt au 30/09/2026</caption>
+<thead><tr><th scope="col">Contrat</th><th scope="col">Date premier impayé</th><th scope="col">Jours de retard</th><th scope="col">Tranche</th></tr></thead>
+<tbody>
+<tr><td>EX-001</td><td>(vide)</td><td class="num">0</td><td>T1 - 0 jour</td></tr>
+<tr><td>EX-002</td><td>31/08/2026</td><td class="num">30</td><td>T2 - 1 à 30 jours</td></tr>
+<tr><td>EX-003</td><td>(vide)</td><td class="num">0</td><td>T1 - 0 jour</td></tr>
+<tr><td>EX-004</td><td>18/01/2026</td><td class="num">255</td><td>T5 - 181 à 360 jours</td></tr>
+<tr><td>EX-005</td><td>04/09/2026</td><td class="num">26</td><td>T2 - 1 à 30 jours</td></tr>
+<tr><td>EX-006</td><td>(vide)</td><td class="num">0</td><td>T1 - 0 jour</td></tr>
+<tr><td>EX-007</td><td>01/07/2026</td><td class="num">91</td><td>T4 - 91 à 180 jours</td></tr>
+<tr><td>EX-008</td><td>14/06/2025</td><td class="num">473</td><td>T6 - plus de 360 jours</td></tr>
+<tr><td>EX-009</td><td>30/08/2026</td><td class="num">31</td><td>T3 - 31 à 90 jours</td></tr>
+<tr><td>EX-010</td><td>(vide)</td><td class="num">0</td><td>T1 - 0 jour</td></tr>
+<tr><td>EX-011</td><td>12/05/2026</td><td class="num">141</td><td>T4 - 91 à 180 jours</td></tr>
+<tr><td>EX-012</td><td>02/07/2026</td><td class="num">90</td><td>T3 - 31 à 90 jours</td></tr>
+<tr><td>EX-013</td><td>(vide)</td><td class="num">0</td><td>T1 - 0 jour</td></tr>
+<tr><td>EX-014</td><td>05/10/2025</td><td class="num">360</td><td>T5 - 181 à 360 jours</td></tr>
+<tr><td>EX-015</td><td>07/08/2026</td><td class="num">54</td><td>T3 - 31 à 90 jours</td></tr>
+</tbody>
+</table></div>
+
+<div class="exercise">
+<h3 id="m0-exercice">Exercice — La même balance âgée au 31/10/2026</h3>
+<p>Situation&nbsp;: un mois a passé et aucun de ces prêts n'a été régularisé. Que devient la balance âgée&nbsp;? (Dans la réalité, l'extraction d'octobre contiendrait de nouvelles données&nbsp;: ici, on isole le seul effet de la date d'arrêté.)</p>
+<ol>
+<li>Ouvrez <code>prep_Impayes</code> dans l'éditeur (double-clic sur la requête dans le volet <strong>Requêtes et connexions</strong>), puis <strong>Accueil › Éditeur avancé</strong>.</li>
+<li>Remplacez <code>#date(2026, 9, 30)</code> par <code>#date(2026, 10, 31)</code>, puis <strong>Terminé</strong> et <strong>Accueil › Fermer et charger</strong>.</li>
+<li><strong>Données › Actualiser tout</strong>, puis comparez avec le tableau attendu. Combien de lignes compte la balance âgée, et pourquoi&nbsp;?</li>
+</ol>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="out_BalanceAgee — arrêté du 31/10/2026, situation des prêts inchangée (montants en FCFA)"><table class="data">
+<caption>out_BalanceAgee — arrêté du 31/10/2026, situation des prêts inchangée (montants en FCFA)</caption>
+<thead><tr><th scope="col">Tranche</th><th scope="col">Nombre de contrats</th><th scope="col">Encours</th><th scope="col">Impayé</th><th scope="col">Part de l'encours</th></tr></thead>
+<tbody>
+<tr><td>T1 - 0 jour</td><td class="num">5</td><td class="num">64&nbsp;175&nbsp;000,00</td><td class="num">0,00</td><td class="num">31,96&nbsp;%</td></tr>
+<tr><td>T3 - 31 à 90 jours</td><td class="num">4</td><td class="num">78&nbsp;010&nbsp;000,00</td><td class="num">3&nbsp;596&nbsp;050,00</td><td class="num">38,85&nbsp;%</td></tr>
+<tr><td>T4 - 91 à 180 jours</td><td class="num">3</td><td class="num">23&nbsp;450&nbsp;000,00</td><td class="num">4&nbsp;418&nbsp;700,00</td><td class="num">11,68&nbsp;%</td></tr>
+<tr><td>T5 - 181 à 360 jours</td><td class="num">1</td><td class="num">6&nbsp;400&nbsp;000,00</td><td class="num">2&nbsp;980&nbsp;250,50</td><td class="num">3,19&nbsp;%</td></tr>
+<tr><td>T6 - plus de 360 jours</td><td class="num">2</td><td class="num">28&nbsp;770&nbsp;000,00</td><td class="num">5&nbsp;314&nbsp;901,00</td><td class="num">14,33&nbsp;%</td></tr>
+<tr><td><strong>Total</strong></td><td class="num"><strong>15</strong></td><td class="num"><strong>200&nbsp;805&nbsp;000,00</strong></td><td class="num"><strong>16&nbsp;309&nbsp;901,50</strong></td><td class="num"><strong>100,00&nbsp;%</strong></td></tr>
+</tbody>
+</table></div>
+<p>La balance âgée n'a plus que <strong>5&nbsp;lignes</strong>&nbsp;: la tranche T2 a disparu. Ses deux prêts (EX-002 et EX-005) ont vieilli de 31&nbsp;jours et sont passés en T3, et aucun prêt n'est entré dans la tranche. Les totaux, eux, ne bougent pas. L'encours à plus de 90&nbsp;jours passe de 24,86&nbsp;% à 29,19&nbsp;% du total.</p>
+</div>
+<details class="solution"><summary>Voir la solution</summary>
+<p>Seule la ligne <code>DateArrete</code> change&nbsp;: <code>DateArrete = #date(2026, 10, 31),</code> (ou la date écrite dans la formule de l'étape&nbsp;2, si vous avez construit la requête par l'interface). Chaque prêt en retard gagne 31&nbsp;jours&nbsp;: EX-002 passe de 30 à 61&nbsp;jours (T3), EX-005 de 26 à 57 (T3), EX-012 de 90 à 121 (T4), EX-004 de 255 à 286 (T5, inchangé) et EX-014 de 360 à 391 (T6). <code>Table.Group</code> ne crée une ligne que pour les tranches présentes dans les données&nbsp;: une tranche sans prêt ce mois-là disparaît de l'état. Dans un état mensuel, c'est un piège&nbsp;: les formules et les graphiques qui pointaient sur «&nbsp;la deuxième ligne&nbsp;» se décalent. Remettez ensuite <code>#date(2026, 9, 30)</code>.</p>
+</details>
+</div>
+
+<h2 id="m0-erreurs">Erreurs fréquentes</h2>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Diagnostic rapide"><table class="data">
+<caption>Diagnostic rapide</caption>
+<thead><tr><th scope="col">Ce que vous constatez</th><th scope="col">Cause probable</th><th scope="col">Solution</th></tr></thead>
+<tbody>
+<tr><td>Des jours de retard aberrants, ou des cellules Error dans <em>Date premier impayé</em></td><td>Dates lues avec une culture non française (jour et mois inversés)</td><td>Modifier le type avec les paramètres régionaux «&nbsp;Français (France)&nbsp;» (<code>"fr-FR"</code> dans l'étape)</td></tr>
+<tr><td>Encours cent fois trop grand, ou montants en erreur</td><td>Virgule décimale lue comme séparateur de milliers</td><td>Même correction&nbsp;: culture <code>"fr-FR"</code> dans l'étape de type</td></tr>
+<tr><td>Un prêt à exactement 30, 90, 180 ou 360&nbsp;jours dans la tranche suivante</td><td>Condition <code>&lt;</code> au lieu de <code>&lt;=</code></td><td>Revoir chaque borne&nbsp;; contrôler les prêts placés sur une borne (figure 1)</td></tr>
+<tr><td>Tranches triées dans le désordre</td><td>Libellés sans préfixe d'ordre&nbsp;: «&nbsp;181…&nbsp;» passe avant «&nbsp;31…&nbsp;»</td><td>Garder les préfixes T1 à T6, ou une colonne d'ordre</td></tr>
+<tr><td>Une ligne «&nbsp;T9 - À vérifier&nbsp;»</td><td>Premier impayé postérieur à la date d'arrêté</td><td>Vérifier la date d'arrêté et la date du premier impayé dans l'extraction</td></tr>
+<tr><td>Une tranche absente de la balance âgée</td><td>Aucun prêt dans cette tranche à cette date</td><td>Normal avec <code>Table.Group</code>&nbsp;; à traiter avant de bâtir un état mensuel sur ce tableau</td></tr>
+<tr><td>Le total ne retrouve pas l'encours du fichier</td><td>Lignes filtrées ou perdues en route, ou mauvais fichier</td><td>Comparer le nombre de lignes de <code>prep_Impayes</code> (15) et les totaux du fichier</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="m0-faq">Questions fréquentes</h2>
+<h3 id="m0-faq-formule">Pourquoi ne pas calculer les jours de retard avec une formule Excel&nbsp;?</h3>
+<p>C'est possible sur un fichier, une fois. Mais il faut recoller l'extraction chaque mois, étendre les formules au bon nombre de lignes et vérifier que rien n'a été déplacé. Power Query enregistre les étapes et les rejoue sur le nouveau fichier&nbsp;: le travail mensuel devient une actualisation.</p>
+<h3 id="m0-faq-date">Faut-il compter depuis la première ou la dernière échéance impayée&nbsp;?</h3>
+<p>Depuis la plus ancienne échéance restée impayée&nbsp;: c'est elle qui mesure l'ancienneté du retard. Vérifiez avec l'équipe qui produit l'extraction ce que contient exactement la colonne de date, et à quelle date les jours sont comptés (date d'arrêté ou date d'extraction).</p>
+<h3 id="m0-faq-bornes">Puis-je utiliser d'autres tranches&nbsp;?</h3>
+<p>Oui&nbsp;: modifiez les bornes et les libellés de la formule de l'étape&nbsp;3, en gardant les tranches contiguës (chaque tranche commence au jour qui suit la fin de la précédente). Le découpage retenu pour un état officiel relève des règles de votre établissement et des textes en vigueur.</p>
+
+<h2 id="m0-suite">Aller plus loin avec la formation complète</h2>
+<p>Ce module gratuit montre une technique sur 15&nbsp;prêts. Un vrai reporting mensuel en demande davantage&nbsp;: des tranches lues dans un tableau Excel pour changer de découpage sans toucher au code, des états qui gardent toutes leurs lignes même quand une tranche est vide, la date d'arrêté saisie dans une feuille de paramètres, des croisements par agence et par produit, l'évolution sur plusieurs mois et des contrôles qui arrêtent l'actualisation plutôt que de laisser partir un état faux. C'est l'objet de la formation «&nbsp;<a href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" rel="noopener">Power Query pour le reporting bancaire</a>&nbsp;» (édition UEMOA)&nbsp;: 8&nbsp;modules, de l'import des extractions jusqu'aux contrôles de cohérence, en passant par la correspondance des comptes avec les postes, les indicateurs de qualité du portefeuille et le rapprochement de la balance avec les encours. Chaque exercice s'appuie sur des données fictives couvrant trois arrêtés mensuels, avec la solution complète en code M et les résultats attendus pour vous corriger seul. Un quiz final donne accès à une attestation de suivi (non diplômante).</p>
+
+<h2 id="m0-sources">Sources publiques consultées le 21/10/2026</h2>
+<ul>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/connectors/text-csv" rel="noopener">Connecteur Texte/CSV</a> (origine du fichier, délimiteur, détection des types).</li>
+<li>Microsoft, <a href="https://support.microsoft.com/fr-fr/excel/set-a-locale-or-region-for-data-power-query" rel="noopener">Définir des paramètres régionaux ou une région pour les données (Power Query)</a> et Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/data-types" rel="noopener">Types de données dans Power Query</a>.</li>
+<li>Microsoft, <a href="https://support.microsoft.com/fr-fr/excel/replace-values-power-query" rel="noopener">Remplacer des valeurs (Power Query)</a>.</li>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/add-custom-column" rel="noopener">Ajouter une colonne personnalisée</a> et <a href="https://learn.microsoft.com/fr-fr/power-query/group-by" rel="noopener">Regrouper ou synthétiser des lignes</a>.</li>
+<li>Microsoft Learn, fonctions M <a href="https://learn.microsoft.com/fr-fr/powerquery-m/duration-days" rel="noopener">Duration.Days</a> et <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-transformcolumntypes" rel="noopener">Table.TransformColumnTypes</a>.</li>
+<li>Microsoft, <a href="https://support.microsoft.com/fr-fr/office/totaliser-les-donn%C3%A9es-d-un-tableau-excel-6944378f-a222-4449-93d8-474386b11f20" rel="noopener">Totaliser les données d'un tableau Excel</a> (ligne des totaux).</li>
+<li>BCEAO, Instruction n°&nbsp;026-11-2016 relative à la comptabilisation et à l'évaluation des engagements en souffrance, article&nbsp;8 (document publié sur le site de la Commission Bancaire de l'UMOA).</li>
+</ul>
+<p>Les libellés de l'interface peuvent varier légèrement selon la version d'Excel et sa langue.</p>
+</section>
+<!-- GRATUIT:FIN -->
+
+      <div class="cta-band cta-after-author">
+        <div>
+          <h2>La formation complète, en 8&nbsp;modules</h2>
+          <p>8&nbsp;modules, 51&nbsp;exercices corrigés, environ 13&nbsp;h de travail, des données fictives sur 3&nbsp;arrêtés mensuels, un quiz final et une attestation de suivi (non diplômante). <strong>25&nbsp;000&nbsp;FCFA</strong>, paiement unique.</p>
+        </div>
+        <a class="btn btn-light btn-lg" href="index.html"><span class="btn-label">Découvrir la formation complète</span><span class="arrow" aria-hidden="true">→</span></a>
+      </div>
+
+      <section class="card lead-card" data-lead aria-labelledby="lead-title">
+        <h2 id="lead-title" class="lead-title">Recevoir les prochains contenus gratuits</h2>
+        <p>Laissez un e-mail ou un numéro WhatsApp&nbsp;: vous serez prévenu(e) de l'ouverture de la formation et des nouveaux contenus gratuits.</p>
+        <form class="lead-form" data-lead-form data-source="formation-gratuit" novalidate>
+          <div class="grid-2 lead-fields">
+            <div class="field">
+              <label for="lead-email">E-mail</label>
+              <input type="email" id="lead-email" name="email" autocomplete="email" inputmode="email" maxlength="80" placeholder="prenom.nom@exemple.com" aria-describedby="lead-email-error lead-contact-error">
+              <p class="field-error" id="lead-email-error" data-error="email"></p>
+            </div>
+            <div class="field">
+              <label for="lead-whatsapp">Ou numéro WhatsApp</label>
+              <input type="tel" id="lead-whatsapp" name="whatsapp" autocomplete="tel" inputmode="tel" maxlength="22" placeholder="+221 77 123 45 67" aria-describedby="lead-whatsapp-error lead-contact-error">
+              <p class="field-error" id="lead-whatsapp-error" data-error="whatsapp"></p>
+            </div>
+          </div>
+          <p class="field-error" id="lead-contact-error" data-error="contact"></p>
+          <div class="check">
+            <input type="checkbox" id="lead-consent" name="consent" aria-describedby="lead-consent-error">
+            <label for="lead-consent">J'accepte d'être prévenu(e) par e-mail ou WhatsApp de l'ouverture de la formation et de la publication de nouveaux contenus gratuits. Mes coordonnées ne servent qu'à cela, ne sont jamais revendues et sont effacées au plus tard 12 mois après mon inscription.</label>
+          </div>
+          <p class="field-error" id="lead-consent-error" data-error="consent"></p>
+          <div class="hp" aria-hidden="true"><label for="lead-website">Ne pas remplir</label><input type="text" id="lead-website" name="website" tabindex="-1" autocomplete="off"></div>
+          <button type="submit" class="btn btn-primary btn-lg"><span class="btn-label">Me prévenir</span></button>
+          <p class="form-status" role="alert"></p>
+          <p class="form-fine">Détails dans la <a href="confidentialite.html">politique de confidentialité</a>.</p>
+        </form>
+        <div class="lead-done" data-lead-done hidden>
+          <p data-lead-done-title><strong>Vous serez prévenu(e).</strong></p>
+          <p>Merci. Vous recevrez un message à l'ouverture des inscriptions et à la publication de nouveaux contenus gratuits.</p>
+          <button type="button" class="btn-link" data-lead-again>Inscrire un autre contact</button>
+        </div>
+      </section>
+    </div>
+  </article>
+</main>
+
+<footer class="tp-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="index.html" aria-label="Teranga Pro, accueil de la formation">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+          <span class="brand-name">Teranga<span>Pro</span></span>
+        </a>
+        <p>Conçu par un praticien du reporting bancaire en Afrique de l'Ouest. Données d'exercice 100&nbsp;% fictives&nbsp;; tables de correspondance&nbsp;: exemples pédagogiques, pas des états réglementaires officiels.</p>
+      </div>
+      <div>
+        <h2>Formation</h2>
+        <ul>
+          <li><a href="index.html">Présentation et programme</a></li>
+          <li><a href="attestation.html">Vérifier une attestation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Informations</h2>
+        <ul>
+          <li><a href="cgv.html">Conditions générales de vente</a></li>
+          <li><a href="confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="footer-note">© 2026 Teranga Pro · Vendeur&nbsp;: particulier résidant au Sénégal.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -3,7 +3,7 @@
 import { assert, assertEquals, assertRejects } from "jsr:@std/assert@1.0.13";
 import { MemoryStore } from "../lib/store_memory.ts";
 import { computePayoutAmount } from "../lib/payout.ts";
-import { RPC_SIGNATURES } from "../lib/store_sql.ts";
+import { LEGACY_FUNCTIONS, RPC_SIGNATURES, SQL_ONLY_FUNCTIONS } from "../lib/store_sql.ts";
 import type { OrderRow, Store } from "../lib/types.ts";
 import { insertPaid, orderRow, T0 } from "./fixtures/backend_harness.ts";
 import { openTestDb, sqlStore, supabaseStore } from "./fixtures/backend_pglite.ts";
@@ -449,7 +449,10 @@ Deno.test({
         where n.nspname = 'public' and p.proname like 'tcv\\_%'`,
       [],
     );
-    assertEquals(fns.rows.length, Object.keys(RPC_SIGNATURES).length);
+    // Every Store function, the SQL-only course upload helper and the 000005 functions kept for the old deployment.
+    assertEquals(fns.rows.length, Object.keys(RPC_SIGNATURES).length + SQL_ONLY_FUNCTIONS.length + LEGACY_FUNCTIONS.length);
+    const names = new Set(fns.rows.map((f) => String(f.sig).replace(/\(.*$/, "").replace(/^public\./, "")));
+    for (const fn of [...Object.keys(RPC_SIGNATURES), ...SQL_ONLY_FUNCTIONS, ...LEGACY_FUNCTIONS]) assert(names.has(fn), fn);
     for (const f of fns.rows) {
       assertEquals([f.anon, f.authenticated, f.service_role, f.definer], [false, false, true, true], String(f.sig));
       assertEquals(f.config, 'search_path=""', String(f.sig));
@@ -460,9 +463,13 @@ Deno.test({
       [],
     );
     assertEquals(tables.rows.map((t) => [t.relname, t.relrowsecurity]), [
+      ["course_assets", true],
+      ["course_upload_chunks", true],
       ["events", true],
+      ["leads", true],
       ["orders", true],
       ["payouts", true],
+      ["quiz_attempts", true],
       ["rate_limits", true],
       ["settings", true],
     ]);

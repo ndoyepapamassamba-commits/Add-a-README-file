@@ -13,7 +13,9 @@ const ROLES = `do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin; end if;
 end $$;`;
 
-const PRODUCTS = ["cv", "lettre", "pack", "stage", "premium"] as const;
+const PRODUCTS = ["cv", "lettre", "pack", "stage", "premium", "pq_essentiel"] as const;
+/** Accepted by the product check for later courses, never sold by this version. */
+const RESERVED = ["pq_complet", "imf_kit"] as const;
 const name = (u: URL) => u.pathname.split("/").pop()!;
 
 /** A bare database with the Supabase roles and no migration applied. */
@@ -62,12 +64,16 @@ Deno.test("migrations: the expected files, in order; PGlite runs all of them but
     "20261018000003_stage.sql",
     "20261018000004_premium.sql",
     "20261018000005_autopay.sql",
+    "20261021000006_course.sql",
+    "20261022000007_autopay_hold.sql",
   ]);
   assertEquals((await migrationFiles()).map(name), [
     "20261018000001_schema.sql",
     "20261018000003_stage.sql",
     "20261018000004_premium.sql",
     "20261018000005_autopay.sql",
+    "20261021000006_course.sql",
+    "20261022000007_autopay_hold.sql",
   ]);
 });
 
@@ -91,19 +97,29 @@ Deno.test({
       const store = sqlStore(t);
       for (const product of PRODUCTS) await store.insertOrder(orderRow({ product }));
       await assertRejects(() => store.insertOrder(orderRow({ product: "deluxe" as "cv" })));
+      // Reserved course ids pass the check (raw SQL: the API never creates them), an unknown id does not.
+      for (const product of RESERVED) {
+        await t.query("select public.tcv_insert_order($1::jsonb)", [JSON.stringify(orderRow({ product: product as "cv" }))]);
+      }
+      await assertRejects(() =>
+        t.query("select public.tcv_insert_order($1::jsonb)", [JSON.stringify(orderRow({ product: "deluxe" as "cv" }))])
+      );
 
       // order_json (redefined by 000005) returns every column of the table, no more, no less.
       const keys = await t.query("select array_agg(k order by k) as keys from tcv.orders o, jsonb_object_keys(tcv.order_json(o)) k where o.product = 'cv'", []);
       assertEquals(keys.rows[0].keys, await orderColumns(t));
-      // tcv_stats (redefined by 000005) keeps every block and adds the phone heartbeat.
+      // tcv_stats (redefined by 000005, then 000006) keeps every block, the phone heartbeat and the course blocks.
       const stats = (await t.query("select public.tcv_stats(now()) as s", [])).rows[0].s as Record<string, unknown>;
       assertEquals(Object.keys(stats).sort(), [
         "allTime",
+        "funnel",
         "last30",
         "last7",
         "lastPhoneNotificationAt",
+        "leads",
         "payouts",
         "pendingPayout",
+        "quizPasses",
         "recentOrders",
         "today",
         "yesterday",
@@ -122,7 +138,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "migrations on the live database (000001 already applied, with data): 000003 → 000005 keep every row",
+  name: "migrations on the live database (000001 already applied, with data): 000003 → 000007 keep every row",
   sanitizeOps: false,
   sanitizeResources: false,
   fn: async () => {
@@ -133,8 +149,10 @@ Deno.test({
       const legacy = (over: Record<string, unknown>) => ({
         ...orderRow(),
         manual_amount: undefined,
+        manual_amount_at: undefined,
         payment_detected_at: undefined,
         payment_detected_text: undefined,
+        buyer: undefined,
         ...over,
       });
       const paid = legacy({ id: "TCV-LIVE0001", product: "pack", status: "paid", payment_method: "wave", paid_amount: 1500, paid_at: "2026-10-18T10:00:00.000Z" });
@@ -148,14 +166,19 @@ Deno.test({
       const store = sqlStore(t);
       const got = await store.getOrder(paid.id);
       assertEquals([got?.status, got?.paid_amount, got?.payment_method, got?.product], ["paid", 1500, "wave", "pack"]);
-      assertEquals([got?.manual_amount, got?.payment_detected_at, got?.payment_detected_text], [null, null, null]);
+      assertEquals([got?.manual_amount, got?.manual_amount_at, got?.payment_detected_at, got?.payment_detected_text], [null, null, null, null]);
+      assertEquals([got?.buyer, (await store.getOrder(waiting.id))?.buyer], [null, null], "old rows have no buyer");
       assertEquals((await store.getOrder(waiting.id))?.manual_payer_phone, "+221771234567");
       assertEquals(await store.recordEvent("evt-live", "checkout.session.completed", "cos-live", {}), false, "events kept");
       for (const product of PRODUCTS) await store.insertOrder(orderRow({ product }));
       assertEquals((await store.stats("2026-10-18T12:00:00.000Z")).allTime, { paid: 1, revenue: 1500 });
       // The new autopay functions work on rows created before the migration.
       await store.updateOrder(waiting.id, { status: "checkout" });
-      assertEquals(await store.assignManualAmount(waiting.id, 1000, 49, "2000-01-01T00:00:00.000Z"), 999);
+      const now = "2026-10-18T12:00:00.000Z";
+      const hold = { base: 1000, maxOffset: 49, nowIso: now, unpaidSinceIso: "2000-01-01T00:00:00.000Z", paidSinceIso: now };
+      assertEquals(await store.holdManualAmount(waiting.id, hold), 999);
+      assertEquals((await store.getOrder(waiting.id))?.manual_amount_at, now);
+      assertEquals((await store.listHeldManualOrders()).map((o) => o.id), [waiting.id]);
     } finally {
       await t.close();
     }

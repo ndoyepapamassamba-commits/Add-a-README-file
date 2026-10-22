@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reçu de paiement — Teranga Pro</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#0B2545">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="formation.css">
+<style>@page { size: A4 portrait; margin: 0; }</style>
+<script src="js/demo-shim.js" defer></script>
+<script src="../cv/config.js" defer></script>
+<script src="js/core.js" defer></script>
+<script src="js/recu.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="tp-header">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Teranga Pro, accueil de la formation">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+      <span class="brand-name">Teranga<span>Pro</span></span>
+    </a>
+  </div>
+</header>
+
+<main id="main" class="rc-main">
+  <div class="wrap">
+    <noscript><p class="banner banner-warn">Activez JavaScript pour afficher votre reçu.</p></noscript>
+    <div class="att-state-wrap" id="rc-state" role="region" aria-live="polite" aria-label="Reçu"></div>
+
+    <div class="att-tools no-print" id="rc-tools" hidden>
+      <button type="button" class="btn btn-primary" id="rc-print"><span class="btn-label">Imprimer ou enregistrer en PDF</span></button>
+      <a class="btn btn-ghost" id="rc-back" href="lecture.html"><span class="btn-label">Retour à la formation</span></a>
+    </div>
+
+    <article class="receipt" id="rc-sheet" aria-labelledby="rc-title" hidden>
+      <header class="receipt-head">
+        <div class="brand">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0B2545"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+          <span class="brand-name">Teranga<span>Pro</span></span>
+        </div>
+        <div>
+          <h1 id="rc-title">Reçu de paiement</h1>
+          <p class="receipt-num" id="rc-number"></p>
+        </div>
+      </header>
+      <dl class="receipt-meta">
+        <div><dt>Date du paiement</dt><dd id="rc-date"></dd></div>
+        <div><dt>Client</dt><dd id="rc-buyer"></dd></div>
+      </dl>
+      <table class="receipt-lines">
+        <thead><tr><th scope="col">Désignation</th><th scope="col" class="r">Montant</th></tr></thead>
+        <tbody><tr><td id="rc-label"></td><td class="r" id="rc-line-amount"></td></tr></tbody>
+      </table>
+      <div class="receipt-total"><p id="rc-paid"></p></div>
+      <p class="receipt-method" id="rc-method"></p>
+      <p class="receipt-seller" id="rc-seller"></p>
+      <p class="receipt-auto">Document généré automatiquement.</p>
+    </article>
+  </div>
+</main>
+</body>
+</html>

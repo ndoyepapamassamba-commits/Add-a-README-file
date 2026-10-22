@@ -23,3 +23,20 @@ export function libreOfficePages(docFile, outDir) {
   const pdf = path.join(outDir, path.basename(docFile).replace(/\.doc$/, ".pdf"));
   return pdfPageCount(fs.readFileSync(pdf));
 }
+
+/**
+ * Opens a workbook with LibreOffice headless (converted to PDF, as a buyer without Excel would print it).
+ * Returns true when a non-empty PDF came out, false otherwise, null when LibreOffice is not installed.
+ */
+export function libreOfficeOpens(file, outDir) {
+  fs.mkdirSync(outDir, { recursive: true });
+  const pdf = path.join(outDir, path.basename(file).replace(/\.[^.]+$/, ".pdf"));
+  fs.rmSync(pdf, { force: true });
+  try {
+    execFileSync("soffice", ["--headless", "--convert-to", "pdf", "--outdir", outDir, file], { stdio: "ignore", timeout: 120_000 });
+  } catch (err) {
+    if (err.code === "ENOENT") return null;
+    return false;
+  }
+  return fs.existsSync(pdf) && pdfPageCount(fs.readFileSync(pdf)) >= 1;
+}

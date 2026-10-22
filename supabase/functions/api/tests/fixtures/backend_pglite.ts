@@ -52,7 +52,10 @@ export async function openTestDb(): Promise<TestDb> {
     query,
     migrate,
     reset: async () => {
-      await db.exec("truncate tcv.orders, tcv.payouts, tcv.events, tcv.rate_limits, tcv.settings cascade");
+      await db.exec(
+        "truncate tcv.orders, tcv.payouts, tcv.events, tcv.rate_limits, tcv.settings, tcv.leads, tcv.quiz_attempts, " +
+          "tcv.course_assets, tcv.course_upload_chunks cascade",
+      );
     },
     close: () => db.close(),
   };
