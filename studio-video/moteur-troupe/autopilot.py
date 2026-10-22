@@ -176,11 +176,21 @@ def jour(n=None, journal=print):
     # préparées de la troupe neuve (serie_v1.py) ; l'ancienne série (54 personnages de l'ancienne troupe) n'est plus jouée
     if config().get('moteur') == 'v1':
         import serie_v1
-        t0 = time.time(); lim = float(os.environ.get('FABRIQUE_MINUTES', '300')) * 60; faits = []
+        t0 = time.time(); lim = float(os.environ.get('FABRIQUE_MINUTES', '300')) * 60; faits = []; rechargee = False
         while True:
             moy = (serie_v1.etat()['minutes_par_episode'] or 20) * 60
             if time.time() - t0 + 1.2 * moy > lim: journal('temps de la machine bientôt écoulé : arrêt propre'); break
-            if len(serie_v1.choisit(3)) < 3: journal('réserve de sketchs épuisée pour les scènes prêtes'); break
+            if len(serie_v1.choisit(3)) < 3:
+                # RÉSERVE RECHARGÉE SUR PLACE (22/10/2026, « tout bouclé avec les 10 000 vidéos ») : quand les sketchs libres
+                # manquent, la machine en écrit de neufs pour chaque scène de la troupe neuve (recharge.py : modèle texte du flux,
+                # contrôle ton.py, chutes jamais répétées), une fois par marche ; sinon arrêt propre
+                if not rechargee:
+                    rechargee = True; import recharge
+                    lieux = sorted({s['image'] for s in serie_v1.reserve() if s.get('image') in serie_v1.scenes_pretes()})
+                    n_ = sum(recharge.recharge(sc, 6, journal) for sc in lieux)
+                    journal(f'réserve rechargée : {n_} sketch(s) neuf(s) pour {len(lieux)} scène(s)')
+                    if n_: continue
+                journal('réserve de sketchs épuisée pour les scènes prêtes'); break
             F = serie_v1.un_episode(journal); faits.append(F and F['id'])
             if F is None and len([x for x in faits[-3:] if x is None]) == 3: journal('trois échecs techniques de suite : arrêt'); break
         r = serie_v1.etat(); r['minutes'] = round((time.time() - t0) / 60, 1); r['faits'] = faits

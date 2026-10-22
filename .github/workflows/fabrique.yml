@@ -111,6 +111,10 @@ jobs:
           OMP_NUM_THREADS: '1'
           TOURNE_PROCS: '4'
           GITHUB_TOKEN: ${{ github.token }}
+          # écriture des sketchs neufs (recharge.py) : GitHub Models par le jeton de la tâche (permission models: read), gratuit
+          HISTOIRES_URL: https://models.github.ai/inference/chat/completions
+          HISTOIRES_CLE: ${{ github.token }}
+          HISTOIRES_MODELE: openai/gpt-4.1
         run: |
           cd studio-video/moteur-troupe
           python3 autopilot.py jour 2>&1 | grep -vE "onnxruntime|W0000|I0000|XNNPACK" | tail -300
