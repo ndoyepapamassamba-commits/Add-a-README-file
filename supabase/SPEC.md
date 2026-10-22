@@ -247,7 +247,7 @@ UPDATE only, see "Migrations"), `tcv_stats(p_now) → jsonb` (`Stats`; day bound
 Autopay (`20261018000005_autopay.sql`): columns `manual_amount`, `payment_detected_at`, `payment_detected_text`
 (cleared by `tcv_purge`), `tcv_record_payment_detection(p_id, p_text, p_now)`; `20261022000007_autopay_hold.sql`:
 column `manual_amount_at`, `tcv_hold_manual_amount(p_id, p_base, p_max_offset, p_now, p_unpaid_since, p_paid_since)
-→ int|null`, `tcv_list_held_manual_orders(p_unpaid_since) → jsonb array` (000005's `tcv_assign_manual_amount` and
+→ int|null`, `tcv_list_held_manual_orders() → jsonb array` (000005's `tcv_assign_manual_amount` and
 `tcv_list_open_manual_orders` stay for the function deployed before 000007; the API no longer calls them).
 `revoke all on function … from public, anon, authenticated; grant execute … to service_role;`
 (tests create those roles in PGlite if missing). Prefix-free, idempotent migrations (`create … if not exists`,
@@ -450,12 +450,16 @@ Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disa
 * **Unique amount, held from the moment it is shown** (review of 22/10/2026). Manual checkout moves a `preview`
   order to `checkout` and calls `store.holdManualAmount(id, { base: amount, maxOffset: 49, nowIso, unpaidSinceIso:
   now − 72 h, paidSinceIso: now − 48 h })` (advisory lock + `FOR UPDATE` in SQL). An amount is HELD by an unpaid
-  manual order for `MANUAL_HOLD_MS` = 72 h (the unpaid retention) after it was last SHOWN (`manual_amount_at`, rows
-  of 000005: `created_at`), and by a paid order for `PAID_HOLD_MS` = 48 h after payment (a re-delivered notification
-  then matches nobody). Still held by the order → same amount, `manual_amount_at = now`; hold over → its previous
-  amount if nobody holds it, else the smallest free `amount − k`: an expired amount is never shown again as is.
-  None free → `manual_amount` cleared, catalogue price, logged, and `autoUnlock: false` (a round price never
-  matches: the page says the owner checks the transfer). The manual response adds `exactAmount`,
+  manual order as long as the order is not purged (its customer can still open it and pay late; the daily purge takes
+  unpaid orders 3 days after creation, so up to about 96 h), and in any case for `MANUAL_HOLD_MS` = 72 h after it was
+  last SHOWN (`manual_amount_at`, rows of 000005: `created_at`); and by a paid order for `PAID_HOLD_MS` = 48 h after
+  payment (a re-delivered notification then matches nobody). Still held by the order → same amount,
+  `manual_amount_at = now`; hold over → its previous amount if nobody holds it, else the smallest free `amount − k`:
+  an expired amount is never shown again as is. None free → `manual_amount` cleared, catalogue price, logged, and
+  `autoUnlock: false`: the price matches no order and, while this order is open, the near match is off for its price
+  (below); the page says the owner checks the transfer. Capacity: cv and lettre share the 49 amounts below 1 000 F,
+  each open order keeping its own until its purge — about 15 checkouts a day at that price before customers are asked
+  the catalogue price (logged « pays the catalogue price »). The manual response adds `exactAmount`,
   `exactAmountFormatted` ("1 487 FCFA") and `autoUnlock` (a unique amount, `PHONE_HOOK_KEY` set and auto-confirm
   on); `amount` stays the catalogue price. `manual-paid` is optional
   and `payerPhone` may be empty (a non-empty invalid number is still 400). Admin unlock and confirm record
@@ -468,12 +472,18 @@ Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disa
   thousand separators (space, NBSP, ".", ",") followed by F/FCFA/F CFA/CFA/XOF (or preceded by it), skipping
   balances/fees, preferring the first after the keyword → else `{ignored:"no_amount"}`. Every authenticated
   call records an event of type `phone.notification` (the admin heartbeat; payload `{text}` only for incoming money)
-  whose id makes a re-delivered notification a duplicate (`dedupeKeys`): incoming money with a balance ("Nouveau
-  solde") → `phone:<sha256("text|" + normalised text)>`, forever (a real second transfer shows another balance);
-  other incoming money → the text and its 6-hour bucket, plus a `phone.dedupe` marker for the next bucket (replays
-  caught for 6 to 12 h); anything else → the text and its minute → already recorded → `{ok:true, duplicate:true}`.
-  Match among `listHeldManualOrders(now − 72 h)` (unpaid, not purged, holding a `manual_amount`): exact, else a single order created
-  in the last 2 h with `manual_amount < amount ≤ amount_catalogue + 100`; several → none. **High ticket:** an
+  whose id makes a re-delivered notification a duplicate (`dedupeKeys`): incoming money → the normalised text and
+  its time bucket, plus a `phone.dedupe` marker for the next bucket, so replays are caught for 15 to 30 days when the
+  text carries a balance ("Nouveau solde", 15-day buckets) and 6 to 12 h otherwise (6-hour buckets) — never longer;
+  anything else → the text and its minute. Already recorded → `{ok:true, duplicate:true}`, never unlocked, but never
+  dropped silently either: a repeated text may be a real second payment (same payer, amount and balance once the
+  owner emptied his account), so when its amount is exactly the unique amount of ONE open order, that order gets
+  `recordPaymentDetection` (admin.html: « Paiement détecté »), a warning is logged and the answer adds `detected: id`.
+  Match among `listHeldManualOrders()` (unpaid, not purged; with a `manual_amount`, or asked the catalogue price:
+  `manual_amount` null and no Wave session): exact, else a single order created in the last 2 h with `manual_amount <
+  amount ≤ amount_catalogue + 100`; several → none. The near match is also off (« ambiguous », nothing unlocks) while
+  an open order asked the catalogue price could be the payer: one at the candidate's price, or one whose price is at
+  most 100 F below the amount received. **High ticket:** an
   order whose catalogue price is ≥ `HIGH_TICKET_MIN_AMOUNT` (10 000 F, e.g. the 25 000 F course) never near-matches:
   only its exact unique amount unlocks it (a round 25 000 F family transfer, 24 990 F… → `matched: null`). Matched →
   `recordPaymentDetection` and, with auto-confirm, `markPaid(manual, paidAmount = amount received)`.
@@ -494,9 +504,16 @@ Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disa
   l'argent" → resultat.html polls and unlocks by itself; "Prévenir le vendeur sur WhatsApp" is optional.
 * **Database** (`20261018000005_autopay.sql`, `20261022000007_autopay_hold.sql`): columns `manual_amount`,
   `manual_amount_at`, `payment_detected_at`, `payment_detected_text`; `tcv_hold_manual_amount`,
-  `tcv_list_held_manual_orders`, `tcv_record_payment_detection` (service role only). The notification text and the
-  payer phone are erased 30 days after the detection (or the payment), whatever the order — a paid course order
-  stays 730 days — as the privacy pages say; the dedupe event loses its payload after 30 days (row kept).
+  `tcv_list_held_manual_orders()`, `tcv_record_payment_detection` (service role only). The notification text and the
+  payer phone are erased 30 days after coalesce(detection, payment, creation), whatever the order — a paid course
+  order stays 730 days — as the privacy pages say; the dedupe event loses its payload after 30 days (row kept).
+* **Switching from 000005 to 000007** (no code change; tell the owner). Under the old 48 h rule an amount could be
+  given to a second order while the first customer could still see it. Both orders then hold it after the switch
+  (until their purge), so a transfer for either is « ambiguous » and nothing unlocks automatically until the older
+  order is purged (at most about 2 days): a few transfers in the first day or two may need a tap in admin.html
+  (no wrong unlock). The dedupe ids change format, so a notification the old function already handled is new again
+  if MacroDroid delivers it again after the switch. Do not roll the Edge Function back once the new bundle has served
+  checkouts: `tcv_assign_manual_amount` (000005) ignores `manual_amount_at` and the paid hold.
 
 ## Formation (product `pq_essentiel`, Teranga Pro) — backend
 
@@ -519,8 +536,9 @@ is public: course content (modules, workbooks, data, quiz and its key) is never 
   « Vendeur : particulier — reçu de paiement, pas une facture »). Purged course order → 410 with the course message.
 * **Reader** `GET /orders/:id/course?t=`: unpaid / not a course / wrong token → the same 404 as an unknown order;
   manifest, every module fragment, quiz and key must load and validate (`parseManifest`, `parseQuiz`, `parseQuizKey`)
-  else 503 `course_unavailable` (asset name logged, never content). Text assets are memoised per `Deps` (≤ 60 s).
-  The quiz key is never serialised.
+  else 503 `course_unavailable` (asset name logged, never content). Text assets are memoised per `Deps` (≤ 60 s); a
+  missing asset is not memoised, and a successful upload drops the memo of the instance that received it (the other
+  Edge instances follow within their 60 s settings period). The quiz key is never serialised.
 * **Downloads** `GET /orders/:id/files/:name?t=`: `name` must be a `manifest.files[].name`; 30 per order per 24 h
   (`course-dl:<id>`); `.xlsx` → every `{{LICENCE}}` in `xl/**/*.xml` replaced by the XML-escaped « Licence personnelle
   — {fullName} — {orderId} », `.zip` → `LICENCE.txt` (BOM, CRLF) added/replaced (`lib/course_files.ts`, npm:fflate);
@@ -534,7 +552,8 @@ is public: course content (modules, workbooks, data, quiz and its key) is never 
   stored with `LEAD_CONSENT_TEXT`; never logged nor returned (admin sees counts).
 * **Admin** `GET /admin/stats`: `stats.funnel.{last30,allTime}` (per product: orders, checkouts, paid, revenue),
   `stats.leads { total, last30, active }`, `stats.quizPasses { total, last30 }`, top-level `course { salesOpen, price,
-  content, version, modules }`; `health` unchanged.
+  content, version, modules, uploadUntil }` (`uploadUntil`: end of the open upload window, ISO, else null; admin.html
+  shows « Envoi du contenu ouvert jusqu'au … »); `health` unchanged.
 * **Database** (`20261021000006_course.sql`): `tcv.orders.buyer`, `tcv.course_assets` (name `<folder>/<path>`:
   `[A-Za-z0-9._/-]`, no "..", no "//", no trailing "/"), `tcv.course_upload_chunks`, `tcv.leads`, `tcv.quiz_attempts`
   (RLS, service role only); Store functions `tcv_course_asset`, `tcv_course_asset_list`, `tcv_course_upload_chunk`
@@ -548,19 +567,35 @@ is public: course content (modules, workbooks, data, quiz and its key) is never 
   `^(pq_essentiel|_backup)/[A-Za-z0-9._/-]{1,150}$`, no "..", "//" or trailing "/"; empty body, bad name or MIME →
   400) stores through `tcv_course_upload_chunk` (≤ 720 000 raw bytes = 960 000 base64 characters per RPC call) and
   `tcv_course_upload_commit`, then reads the listing back and answers `{ ok, asset: { name, mime, size, sha256,
-  updated_at } }` only when size and SHA-256 match (else 502). `GET /admin/course-assets[?prefix=]` → `{ assets }`.
-  Both answer EXACTLY like an unknown route (404 « Ressource introuvable. ») unless settings
-  `COURSE_UPLOAD_TOKEN_SHA256` (hex SHA-256 of the token) and `COURSE_UPLOAD_UNTIL` (ISO date in the future) are set
-  and the `x-upload-token` header hashes to that digest (constant time); 10 wrong tokens from one IP in an hour
-  refuse that IP for the hour, even with the right token. Token and bodies are never logged. `_backup/…` assets are
-  never served: the course routes read only what the manifest lists under `pq_essentiel/`.
+  updated_at } }` only when size and SHA-256 match (else 502). `GET /admin/course-assets[?prefix=]` → `{ assets }`;
+  `GET /admin/course-assets?validate=1` → `{ course: { valid, problem, version, modules, files, questions } }`: the
+  course loaded exactly like the reader, the quiz and the downloads would, read afresh (no memo), plus every listed
+  download stored with the size the manifest announces; `problem` names the asset (« pq_essentiel/quiz-key.json is
+  invalid »), never content. All three answer EXACTLY like an unknown route (404 « Ressource introuvable. ») unless
+  settings `COURSE_UPLOAD_TOKEN_SHA256` (hex SHA-256 of the token) and `COURSE_UPLOAD_UNTIL` (ISO date in the future,
+  **at most 72 h ahead**: further away the window stays closed, so a forgotten window cannot stay open) are set and
+  the `x-upload-token` header (32 to 512 characters) hashes to that digest (constant time). Make the token with
+  `openssl rand -hex 32` (64 hex characters) and store only its digest (`printf %s "$TOKEN" | sha256sum`). The digest
+  is compared before any store access: a wrong token answers like an unknown route without waiting for the store (its
+  failure is counted in the background, `EdgeRuntime.waitUntil`), a missing or short one touches nothing; 10 wrong
+  tokens from one IP in an hour refuse that IP for the hour, even with the right token. Token and bodies are never
+  logged. `_backup/…` assets are never served: the course routes read only what the manifest lists under
+  `pq_essentiel/`.
   `COURSE_UPLOAD_TOKEN=… NODE_USE_ENV_PROXY=1 node scripts/course-upload.mjs <dir> [--prefix pq_essentiel|_backup/…]`
-  (or `deno run -A`) uploads every file, manifest.json last, lists and checks name, size and SHA-256 (exit 1 on any
-  mismatch); `COURSE_API_BASE` (else `PUBLIC_API_BASE`, else production); https only (http on this machine only);
-  prints no secret. Close the window afterwards (`COURSE_UPLOAD_UNTIL` in the past, or remove the digest).
+  (or `deno run -A`): with `pq_essentiel`, `<dir>` is the course folder itself (manifest.json, every file it names,
+  no nested `pq_essentiel/`); symbolic links are refused; the token must have 32 characters at least (exit 2
+  otherwise, before any request). It uploads every file, manifest.json last, lists and checks name, size and
+  SHA-256, then calls `?validate=1` and exits 1 when the course does not load; `COURSE_API_BASE` (else
+  `PUBLIC_API_BASE`, else production); https only (http on this machine only); redirects are never followed (a 3xx
+  stops the run: the token and the files never go to another address); prints no secret. **`PQ_SALES_OPEN` stays
+  false until a run ends « OK … cours valide ».** Updating a live course replaces files one by one: for the few
+  seconds of the run the reader may answer 503, so update at a quiet hour and rerun until it ends OK. Close the
+  window afterwards (`COURSE_UPLOAD_UNTIL` in the past, or remove the digest).
 * **Upload runbook**: `node scripts/course-sql.mjs <assetsRoot> <outDir>` (outDir outside the repository, refused
   otherwise) writes `NNNN-*.sql` (one statement ≤ 200 000 bytes each, manifest last), `verify.sql` and
   `expected.json`; run the statements in order with `execute_sql` on project `seegnylaubuularegmku`, then
   `verify.sql`, and compare with `expected.json`.
 * **dev.ts** serves `/formation/` (from `formation/`), `/cv/` and `/cv/config.js`; sells the course by default
   (`PQ_SALES_OPEN=false` shows the closed page) with the lorem fixture, or the tree in `COURSE_ASSETS_DIR`.
+  `COURSE_UPLOAD_TOKEN_SHA256` and `COURSE_UPLOAD_UNTIL` in its environment open the upload window, for a dry run of
+  `scripts/course-upload.mjs` against `http://localhost:8787/api` (an upload is read at once).

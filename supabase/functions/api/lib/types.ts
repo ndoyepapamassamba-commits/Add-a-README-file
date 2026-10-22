@@ -448,7 +448,8 @@ export interface Store {
    * (input, document, buyer, payer phone, notification text, ip hash → null; purged_at = now). Paid COURSE orders
    * (pq_essentiel, pq_complet, imf_kit) ignore paidBeforeIso: they are purged COURSE_RETENTION_DAYS (730) after payment.
    * Whatever the order, the Wave notification text and the payer phone are erased NOTIFICATION_RETENTION_DAYS (30)
-   * after coalesce(payment_detected_at, created_at) (the privacy policy promises 30 days; not counted as a purge).
+   * after coalesce(payment_detected_at, paid_at, created_at) (the privacy policy promises 30 days; not counted as a
+   * purge).
    * Events older than 30 days lose their payload. Leads older than LEAD_RETENTION_DAYS (365) lose email, whatsapp and
    * ip_hash (purged_at = now). Uncommitted upload chunks older than 2 days lose their content. Rows are never
    * removed. Returns the number of orders purged.
@@ -457,9 +458,10 @@ export interface Store {
   stats(nowIso: string): Promise<Stats>;
   /**
    * Atomically give order `id` its unique manual amount for this checkout (autopay.ts, prepareManualCheckout).
-   * An amount is HELD by an order when it is unpaid (status checkout/awaiting_manual, payment_method null) and was
-   * given or shown after `unpaidSinceIso` (coalesce(manual_amount_at, created_at)), or when it is paid with that
-   * amount after `paidSinceIso` (a replayed notification then unlocks nobody else).
+   * An amount is HELD by an order when it is unpaid (status checkout/awaiting_manual, payment_method null) and either
+   * not purged (its customer can still open it and pay late) or given or shown after `unpaidSinceIso`
+   * (coalesce(manual_amount_at, created_at)), or when it is paid with that amount after `paidSinceIso` (a replayed
+   * notification then unlocks nobody else).
    * - order paid → its manual_amount, unchanged;
    * - the order still holds its amount → the same amount, manual_amount_at = nowIso (the hold restarts);
    * - otherwise → its previous amount if no other order holds it, else base − k with the smallest k in 1..maxOffset
@@ -469,10 +471,12 @@ export interface Store {
    */
   holdManualAmount(id: string, p: ManualHoldParams): Promise<number | null>;
   /**
-   * Unpaid manual orders that still hold a unique amount: status checkout/awaiting_manual, payment_method null,
-   * not purged, manual_amount set and coalesce(manual_amount_at, created_at) after unpaidSinceIso. Newest first.
+   * The open manual orders a received transfer may be for: status checkout/awaiting_manual, payment_method null,
+   * not purged, and either holding a unique amount (manual_amount set: an open order that is not purged always holds
+   * it, see holdManualAmount) or asked for the catalogue price because none was free (manual_amount null and no Wave
+   * session: such an order never matches, it only turns the near match off for its price). Newest first.
    */
-  listHeldManualOrders(unpaidSinceIso: string): Promise<OrderRow[]>;
+  listHeldManualOrders(): Promise<OrderRow[]>;
   /** Store the matched notification on the order (does NOT mark it paid). */
   recordPaymentDetection(id: string, text: string, nowIso: string): Promise<void>;
   /** Key/value settings from tcv.settings (same keys as the env vars). MemoryStore returns what it was seeded with. */

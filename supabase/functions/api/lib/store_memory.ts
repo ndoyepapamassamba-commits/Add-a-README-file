@@ -312,7 +312,7 @@ export class MemoryStore implements Store {
     const unpaidSince = ms(p.unpaidSinceIso);
     const paidSince = ms(p.paidSinceIso);
     const now = iso(p.nowIso);
-    if (o.manual_amount !== null && isOpenManual(o) && heldSince(o) > unpaidSince) {
+    if (o.manual_amount !== null && holdsUnpaid(o, unpaidSince)) {
       o.manual_amount_at = now;
       return o.manual_amount;
     }
@@ -337,10 +337,9 @@ export class MemoryStore implements Store {
     return null;
   }
 
-  async listHeldManualOrders(unpaidSinceIso: string): Promise<OrderRow[]> {
-    const since = ms(unpaidSinceIso);
+  async listHeldManualOrders(): Promise<OrderRow[]> {
     const rows = [...this.orders.values()]
-      .filter((o) => isOpenManual(o) && o.purged_at === null && o.manual_amount !== null && heldSince(o) > since)
+      .filter((o) => isOpenManual(o) && o.purged_at === null && (o.manual_amount !== null || o.checkout_session_id === null))
       .sort(byCreatedDesc);
     return structuredClone(rows);
   }
@@ -444,7 +443,7 @@ export class MemoryStore implements Store {
   }
 }
 
-/** A manual order still waiting for its transfer (same filter as tcv_list_held_manual_orders). */
+/** A manual order still waiting for its transfer (the status filter of tcv_list_held_manual_orders). */
 function isOpenManual(o: OrderRow): boolean {
   return (o.status === "checkout" || o.status === "awaiting_manual") && o.payment_method === null;
 }
@@ -454,9 +453,14 @@ function heldSince(o: OrderRow): number {
   return ms(o.manual_amount_at ?? o.created_at);
 }
 
+/** An unpaid manual order holds its amount while it is not purged, and for the hold after its last display. */
+function holdsUnpaid(o: OrderRow, unpaidSince: number): boolean {
+  return isOpenManual(o) && (o.purged_at === null || heldSince(o) > unpaidSince);
+}
+
 /** The order keeps its manual_amount away from other orders (same rule as tcv_hold_manual_amount). */
 function holdsAmount(o: OrderRow, unpaidSince: number, paidSince: number): boolean {
-  if (isOpenManual(o)) return heldSince(o) > unpaidSince;
+  if (isOpenManual(o)) return holdsUnpaid(o, unpaidSince);
   return o.status === "paid" && o.paid_at !== null && ms(o.paid_at) > paidSince;
 }
 

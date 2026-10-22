@@ -208,7 +208,10 @@ export function parseQuizKey(bytes: Uint8Array, quiz: CourseQuiz): CourseQuizKey
 
 const textAssets = new WeakMap<Deps, Map<string, Promise<CourseAsset | null>>>();
 
-/** Manifest, modules, quiz and key: one store read per Deps object. Downloads (files/*) never come from here. */
+/**
+ * Manifest, modules, quiz and key: one store read per Deps object. Downloads (files/*) never come from here. A
+ * missing asset (content still being uploaded) and a failed read are not remembered: the next request reads again.
+ */
 function cachedAsset(deps: Deps, name: string): Promise<CourseAsset | null> {
   let cache = textAssets.get(deps);
   if (!cache) {
@@ -218,28 +221,41 @@ function cachedAsset(deps: Deps, name: string): Promise<CourseAsset | null> {
   const map = cache;
   let pending = map.get(name);
   if (!pending) {
-    pending = deps.store.getCourseAsset(name);
-    map.set(name, pending);
-    // A failed read (database unreachable) is not remembered: the next request tries again.
-    pending.catch(() => {
-      if (map.get(name) === pending) map.delete(name);
-    });
+    const read = deps.store.getCourseAsset(name);
+    pending = read;
+    map.set(name, read);
+    const forget = () => {
+      if (map.get(name) === read) map.delete(name);
+    };
+    read.then((asset) => {
+      if (asset === null) forget();
+    }, forget);
   }
   return pending;
 }
 
+/** Drops the text assets memoised for `deps` (after an upload through PUT /admin/course-assets). */
+export function forgetCourseAssets(deps: Deps): void {
+  textAssets.delete(deps);
+}
+
 interface LoadOptions {
   quiet?: boolean;
+  /** Read every asset from the store, bypassing (and not filling) the memo: the upload validation. */
+  fresh?: boolean;
+  /** Receives « <asset name> is missing|is invalid » for the asset that made the load fail. */
+  onProblem?: (problem: string) => void;
 }
 
 /** Logs the asset name (never its content) and returns the 503 to throw. */
 function missing(name: string, what: string, opts: LoadOptions): HttpError {
   if (!opts.quiet) log.error(`course asset ${name} ${what}`);
+  opts.onProblem?.(`${name} ${what}`);
   return unavailable();
 }
 
 async function readAsset<T>(deps: Deps, name: string, parse: (bytes: Uint8Array) => T | null, opts: LoadOptions): Promise<T> {
-  const asset = await cachedAsset(deps, name);
+  const asset = await (opts.fresh ? deps.store.getCourseAsset(name) : cachedAsset(deps, name));
   if (!asset) throw missing(name, "is missing", opts);
   const parsed = parse(asset.bytes);
   if (parsed === null) throw missing(name, "is invalid", opts);
@@ -575,6 +591,48 @@ export interface CourseAdminStatus {
   content: boolean; // the reader would work: manifest, every module, quiz and key load and validate
   version: string | null;
   modules: number;
+}
+
+/** GET /admin/course-assets?validate=1 (scripts/course-upload.mjs runs it after an upload). */
+export interface CourseValidation {
+  valid: boolean;
+  /** Why the course does not load: « <asset name> is missing|is invalid|has another size than in the manifest ». */
+  problem: string | null;
+  version: string | null;
+  modules: number;
+  files: number;
+  questions: number;
+}
+
+/**
+ * The course exactly as the reader, the quiz and the downloads would load it, read afresh from the store (no memo):
+ * manifest, every module, quiz and key parse and validate, and every download the manifest lists is stored with the
+ * size it announces. Names only, never content.
+ */
+export async function validateCourseContent(deps: Deps, product: CourseProduct): Promise<CourseValidation> {
+  const problems: string[] = [];
+  const invalid = (problem: string): CourseValidation => ({ valid: false, problem, version: null, modules: 0, files: 0, questions: 0 });
+  let course: LoadedCourse;
+  try {
+    course = await loadCourse(deps, product, { quiet: true, fresh: true, onProblem: (p) => problems.push(p) });
+  } catch (err) {
+    if (err instanceof HttpError) return invalid(problems[0] ?? "course unavailable");
+    throw err;
+  }
+  const stored = new Map((await deps.store.listCourseAssets(COURSE_CATALOG[product].assetPrefix)).map((a) => [a.name, a]));
+  for (const f of course.manifest.files) {
+    const asset = stored.get(f.asset);
+    if (!asset) return invalid(`${f.asset} is missing`);
+    if (asset.size !== f.size) return invalid(`${f.asset} has another size than in the manifest (${asset.size} ≠ ${f.size})`);
+  }
+  return {
+    valid: true,
+    problem: null,
+    version: course.manifest.version,
+    modules: course.manifest.modules.length,
+    files: course.manifest.files.length,
+    questions: course.quiz.questions.length,
+  };
 }
 
 export async function courseAdminStatus(deps: Deps): Promise<CourseAdminStatus> {

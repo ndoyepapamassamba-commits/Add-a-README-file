@@ -37,7 +37,7 @@ import {
   publicCourses,
   submitQuiz,
 } from "./course.ts";
-import { listCourseAssetsRoute, putCourseAssetRoute } from "./course_upload.ts";
+import { listCourseAssetsRoute, putCourseAssetRoute, uploadWindowUntil } from "./course_upload.ts";
 
 export { GLOBAL_DAILY_PREVIEW_LIMIT } from "./order_access.ts";
 export { publicOrder };
@@ -240,7 +240,8 @@ const checkout: Handler = async (deps, req, [id]) => {
   const c = deps.config;
   if (c.manualWaveNumber) {
     // A unique amount per order lets the owner's phone recognise the transfer (see autopay.ts). Without one (all
-    // held) the customer sends the catalogue price, which never matches: the page says the owner checks it.
+    // held) the customer sends the catalogue price: it unlocks nothing automatically (while such an order is open,
+    // even the rounded-up near match is off for its price), and the page says the owner checks it.
     const { exactAmount, unique } = await prepareManualCheckout(deps, order);
     return json(200, {
       mode: "manual",
@@ -369,7 +370,8 @@ const adminStats: Handler = async (deps, req) => {
         : null,
       lastPhoneNotificationAt,
     },
-    course: await courseAdminStatus(deps),
+    // uploadUntil: end of the open upload window (course_upload.ts), so the owner sees it and closes it; null = closed.
+    course: { ...(await courseAdminStatus(deps)), uploadUntil: uploadWindowUntil(deps) },
   });
 };
 

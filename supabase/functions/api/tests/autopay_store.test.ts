@@ -57,7 +57,11 @@ const hold = (store: Store, id: string, base = 1500, at = T0, maxOffset = 49) =>
     paidSinceIso: new Date(Date.parse(at) - 48 * 3_600_000).toISOString(),
   });
 const later = (h: number) => new Date(Date.parse(T0) + h * 3_600_000).toISOString();
-const HELD_SINCE = hoursAgo(72);
+/**
+ * The daily purge, at `at`, of the unpaid orders created before `createdBefore` (their customers can no longer open
+ * them): only the 72 h display hold is left to them.
+ */
+const purgeUnpaid = (store: Store, createdBefore: string, at: string) => store.purge(createdBefore, "2000-01-01T00:00:00.000Z", at);
 
 contract("holdManualAmount: smallest free offset, stable, per amount value; showing it again restarts the hold", async (store) => {
   const a = await openOrder(store);
@@ -74,17 +78,33 @@ contract("holdManualAmount: smallest free offset, stable, per amount value; show
 });
 
 contract("holdManualAmount: the hold runs from the last display, not from the order's creation", async (store) => {
-  // Created 70 h ago, shown now: the amount is held for 72 h from now even though the order is old.
+  // Created 70 h ago, shown now: the amount is held for 72 h from now even though the order is old (and purged).
   const old = await openOrder(store, { created_at: hoursAgo(70) });
   assertEquals(await hold(store, old.id), 1499);
+  assertEquals(await purgeUnpaid(store, hoursAgo(69), later(1)), 1);
   assertEquals(await hold(store, (await openOrder(store)).id, 1500, later(71)), 1498, "71 h later 1 499 is still held");
   const c = await openOrder(store);
   assertEquals(await hold(store, c.id, 1500, later(73)), 1499, "73 h after the last display 1 499 is free again");
 });
 
-contract("holdManualAmount: an expired hold is never handed back as is", async (store) => {
-  const a = await openOrder(store);
+contract("holdManualAmount: an open order that is not purged keeps its amount, however long ago it was shown", async (store) => {
+  // The daily purge takes unpaid orders 3 days after their creation: until then the customer may still pay late.
+  const a = await openOrder(store, { created_at: hoursAgo(5) });
   assertEquals(await hold(store, a.id), 1499);
+  const b = await openOrder(store);
+  assertEquals(await hold(store, b.id, 1500, later(90)), 1498, "90 h later A is still open: 1 499 stays A's");
+  assertEquals(await hold(store, a.id, 1500, later(91)), 1499, "A comes back: the same amount");
+  assertEquals(await purgeUnpaid(store, hoursAgo(4), later(92)), 1);
+  const c = await openOrder(store);
+  assertEquals(await hold(store, c.id, 1500, later(92)), 1497, "purged, but shown 1 h ago: still held");
+  const d = await openOrder(store);
+  assertEquals(await hold(store, d.id, 1500, later(164)), 1499, "purged and 73 h after its last display: free");
+});
+
+contract("holdManualAmount: an expired hold is never handed back as is", async (store) => {
+  const a = await openOrder(store, { created_at: hoursAgo(5) });
+  assertEquals(await hold(store, a.id), 1499);
+  assertEquals(await purgeUnpaid(store, hoursAgo(4), later(75)), 1);
   const b = await openOrder(store);
   assertEquals(await hold(store, b.id, 1500, later(80)), 1499, "A's hold ran out: B gets 1 499");
   assertEquals(await hold(store, a.id, 1500, later(81)), 1498, "A comes back: a new amount, never B's");
@@ -124,8 +144,9 @@ contract("holdManualAmount: 49 concurrent orders get 49 distinct amounts, the 50
 });
 
 contract("holdManualAmount: an expired amount that cannot be replaced is cleared", async (store) => {
-  const a = await openOrder(store);
+  const a = await openOrder(store, { created_at: hoursAgo(5) });
   assertEquals(await hold(store, a.id, 1500, T0, 1), 1499);
+  assertEquals(await purgeUnpaid(store, hoursAgo(4), later(72)), 1);
   const b = await openOrder(store);
   assertEquals(await hold(store, b.id, 1500, later(73), 1), 1499, "B takes 1 499 after A's hold");
   assertEquals(await hold(store, a.id, 1500, later(74), 1), null, "no free amount for A");
@@ -133,26 +154,32 @@ contract("holdManualAmount: an expired amount that cannot be replaced is cleared
   assertEquals([row.manual_amount, row.manual_amount_at], [null, null], "A no longer shows (or matches) B's amount");
 });
 
-contract("listHeldManualOrders: unpaid orders still holding their amount, newest first", async (store) => {
+contract("listHeldManualOrders: open manual orders not purged (unique amount, or asked the catalogue price), newest first", async (store) => {
   const a = await openOrder(store, { created_at: hoursAgo(3) });
   const b = await openOrder(store, { status: "awaiting_manual", created_at: hoursAgo(1) });
   await openOrder(store, { status: "preview", created_at: hoursAgo(1), manual_amount: 1490, manual_amount_at: T0 });
+  // Shown 80 h ago and not purged yet: its customer may still pay, it still holds 1 491 (and matches it).
   const stale = await openOrder(store, { created_at: hoursAgo(80), manual_amount: 1491 });
   const purged = await openOrder(store, { created_at: hoursAgo(2), manual_amount: 1492, manual_amount_at: T0, purged_at: T0 });
-  const noAmount = await openOrder(store, { created_at: hoursAgo(2) });
+  // Asked the catalogue price (no free amount): listed, it turns the near match off for its price.
+  const catalogue = await openOrder(store, { created_at: hoursAgo(4) });
+  const wave = await openOrder(store, { created_at: hoursAgo(2), checkout_session_id: "cos-held-test" });
+  const purgedCatalogue = await openOrder(store, { created_at: hoursAgo(5), purged_at: T0 });
   const paid = await openOrder(store, { created_at: hoursAgo(2) });
   assertEquals(await hold(store, a.id), 1499);
   assertEquals(await hold(store, b.id), 1498);
   assertEquals(await hold(store, paid.id), 1497);
   await store.markPaid(paid.id, { method: "manual", paidAmount: 1497, transactionId: null, sessionId: null, paidAt: T0 });
-  const held = await store.listHeldManualOrders(HELD_SINCE);
-  assertEquals(held.map((o) => o.id), [b.id, a.id]);
+  const held = await store.listHeldManualOrders();
+  assertEquals(held.map((o) => o.id), [b.id, a.id, catalogue.id, stale.id]);
   assertEquals([held[0].manual_amount, held[0].manual_amount_at], [1498, T0]);
+  assertEquals([held[2].manual_amount, held[3].manual_amount], [null, 1491]);
   assertEquals(held[0].input !== null, true, "full rows");
-  for (const left of [stale, purged, noAmount]) assert(!held.some((o) => o.id === left.id), left.id);
-  // An old order shown again holds (and matches) again.
-  assertEquals(await hold(store, stale.id), 1491);
-  assertEquals((await store.listHeldManualOrders(HELD_SINCE)).map((o) => o.id), [b.id, a.id, stale.id]);
+  for (const left of [purged, wave, purgedCatalogue, paid]) assert(!held.some((o) => o.id === left.id), left.id);
+  // Its amount stays its own: another order never gets 1 491.
+  const other = await openOrder(store);
+  assertEquals(await hold(store, other.id, 1500, T0, 9), 1496);
+  assertEquals(await hold(store, stale.id), 1491, "shown again: the same amount");
 });
 
 contract("recordPaymentDetection stores the text without marking the order paid", async (store) => {

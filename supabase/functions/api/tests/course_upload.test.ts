@@ -2,7 +2,7 @@
 // per-IP limit on wrong tokens, the size limit, the names, the round trip on the three stores (chunks of at most
 // 1 MB of base64 per RPC call), and the proof that `_backup/…` assets are never served to a buyer.
 import { assert, assertEquals } from "jsr:@std/assert@1.0.13";
-import { MAX_UPLOAD_BYTES, UPLOAD_FAILURES_PER_HOUR } from "../lib/course_upload.ts";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_WINDOW_MS, MIN_UPLOAD_TOKEN_LENGTH, UPLOAD_FAILURES_PER_HOUR } from "../lib/course_upload.ts";
 import { sha256Bytes, sha256Hex } from "../lib/ids.ts";
 import { MemoryStore } from "../lib/store_memory.ts";
 import { COURSE_UPLOAD_CHUNK_BYTES, SqlStore, sqlRpc } from "../lib/store_sql.ts";
@@ -15,9 +15,9 @@ import { envFrom } from "../lib/config.ts";
 import type { Harness } from "./fixtures/backend_harness.ts";
 import { openTestDb, postgrestClient } from "./fixtures/backend_pglite.ts";
 import type { TestDb } from "./fixtures/backend_pglite.ts";
-import { courseHarness, download, encodeJson, fixtureAsset, paidCourseOrder, rawGet } from "./fixtures/course_harness.ts";
+import { courseHarness, download, encodeJson, fixtureAsset, fixtureAssets, paidCourseOrder, rawGet, seedCourseMemory } from "./fixtures/course_harness.ts";
 
-const TOKEN = "tok_Zq8_upload-secret-7f3a91c2d4e6b8a0";
+const TOKEN = "tok_Zq8_upload-secret-7f3a91c2d4e6b8a0"; // 38 characters (production: openssl rand -hex 32)
 const TOKEN_SHA = await sha256Hex(TOKEN);
 const UNTIL = "2026-10-19T00:00:00Z"; // T0 = 2026-10-18T10:00Z: the window is open in the harness
 const UPLOAD_ENV = { COURSE_UPLOAD_TOKEN_SHA256: TOKEN_SHA, COURSE_UPLOAD_UNTIL: UNTIL };
@@ -112,6 +112,78 @@ Deno.test("upload: an expired window, or settings that are not valid, are closed
   assertEquals((await put(upper, "pq_essentiel/x.json", "{}")).status, 200);
 });
 
+Deno.test("upload: COURSE_UPLOAD_UNTIL more than 72 h ahead keeps the window closed (a forgotten window cannot stay open)", async () => {
+  assertEquals(MAX_UPLOAD_WINDOW_MS, 72 * HOUR);
+  const at = (ms: number) => new Date(Date.parse(T0) + ms).toISOString();
+  for (const until of ["9999-12-31", "2027-01-01", at(72 * HOUR + 1000)]) {
+    const h = uploadHarness({ COURSE_UPLOAD_TOKEN_SHA256: TOKEN_SHA, COURSE_UPLOAD_UNTIL: until });
+    await assertLooksUnknown(h, await put(h, "pq_essentiel/x.json", "{}"), until);
+    await assertLooksUnknown(h, await list(h), until);
+    assertEquals((h.store as MemoryStore).rateLimits.size, 0, "a closed window touches nothing");
+  }
+  const h = uploadHarness({ COURSE_UPLOAD_TOKEN_SHA256: TOKEN_SHA, COURSE_UPLOAD_UNTIL: at(72 * HOUR) });
+  assertEquals((await put(h, "pq_essentiel/x.json", "{}")).status, 200, "exactly 72 h ahead");
+  // The admin page shows the open window, so the owner sees it and closes it.
+  const stats = await h.call("GET", "/admin/stats", { headers: { authorization: "Bearer test-admin-key" } });
+  assertEquals(stats.body.course.uploadUntil, at(72 * HOUR));
+  h.clock.set(at(72 * HOUR));
+  assertEquals((await h.call("GET", "/admin/stats", { headers: { authorization: "Bearer test-admin-key" } })).body.course.uploadUntil, null);
+});
+
+Deno.test("upload: a token shorter than 32 characters is refused, even when its digest is configured, and never counted", async () => {
+  assertEquals(MIN_UPLOAD_TOKEN_LENGTH, 32);
+  const short = "a".repeat(31);
+  const h = uploadHarness({ COURSE_UPLOAD_TOKEN_SHA256: await sha256Hex(short), COURSE_UPLOAD_UNTIL: UNTIL });
+  await assertLooksUnknown(h, await put(h, "pq_essentiel/x.json", "{}", { token: short }), "31 characters");
+  await assertLooksUnknown(h, await list(h, { token: short }), "31 characters");
+  const exact = "b".repeat(32);
+  const ok = uploadHarness({ COURSE_UPLOAD_TOKEN_SHA256: await sha256Hex(exact), COURSE_UPLOAD_UNTIL: UNTIL });
+  assertEquals((await put(ok, "pq_essentiel/x.json", "{}", { token: exact })).status, 200, "32 characters");
+  // Missing or short tokens cannot be right: no failure row is written for them.
+  for (const token of [null, "", "wrong", short]) await put(h, "pq_essentiel/x.json", "{}", { token, ip: freshIp() });
+  assertEquals((h.store as MemoryStore).rateLimits.size, 0);
+});
+
+Deno.test("upload: a wrong token answers without waiting for the store (same path as an unknown route)", async () => {
+  let peeks = 0;
+  let hits = 0;
+  let release!: () => void;
+  const gate = new Promise<void>((r) => (release = r));
+  class SlowStore extends MemoryStore {
+    override async peekRateLimit(key: string, windowSeconds: number, nowIso: string) {
+      peeks += 1;
+      return await super.peekRateLimit(key, windowSeconds, nowIso);
+    }
+    override async hitRateLimit(key: string, windowSeconds: number, max: number, nowIso: string) {
+      hits += 1;
+      await gate; // a store that takes forever: the 404 must not wait for it
+      return await super.hitRateLimit(key, windowSeconds, max, nowIso);
+    }
+  }
+  const h = uploadHarness(UPLOAD_ENV, new SlowStore());
+  const deadline = async <T>(p: Promise<T>): Promise<T> => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const late = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error("waited for the store")), 1000);
+    });
+    try {
+      return await Promise.race([p, late]);
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  const wrong = "w".repeat(40);
+  await assertLooksUnknown(h, await deadline(put(h, "pq_essentiel/x.json", "{}", { token: wrong })), "PUT");
+  await assertLooksUnknown(h, await deadline(list(h, { token: wrong })), "GET");
+  assertEquals([peeks, hits], [0, 2], "the failures are counted in the background, nothing is read");
+  for (const token of [null, "short"]) await put(h, "pq_essentiel/x.json", "{}", { token });
+  assertEquals([peeks, hits], [0, 2], "missing and short tokens touch nothing");
+  release();
+  await gate;
+  assertEquals((await put(h, "pq_essentiel/x.json", "{}")).status, 200);
+  assertEquals(peeks, 1, "only the right token reads the failure counter");
+});
+
 Deno.test("upload: a missing, wrong or near-miss token is an unknown route; the right one works (PUT and GET)", async () => {
   const h = uploadHarness();
   // (Leading or trailing spaces are trimmed by the Fetch Headers class itself: not a different token.)
@@ -143,7 +215,8 @@ Deno.test("upload: too many wrong tokens from one IP close the window for that I
   const h = uploadHarness();
   const attacker = "198.51.100.66";
   for (let i = 0; i < UPLOAD_FAILURES_PER_HOUR; i++) {
-    await assertLooksUnknown(h, await put(h, "pq_essentiel/x.json", "{}", { token: `guess-${i}`, ip: attacker }), `guess ${i}`);
+    const guess = `guess-${i}-${"g".repeat(MIN_UPLOAD_TOKEN_LENGTH)}`;
+    await assertLooksUnknown(h, await put(h, "pq_essentiel/x.json", "{}", { token: guess, ip: attacker }), `guess ${i}`);
   }
   await assertLooksUnknown(h, await put(h, "pq_essentiel/x.json", "{}", { ip: attacker }), "right token, blocked IP");
   await assertLooksUnknown(h, await list(h, { ip: attacker }), "list, blocked IP");
@@ -429,6 +502,85 @@ Deno.test("upload: assets under _backup/ are never served; the course routes onl
     assertEquals(dl.status, 503);
     await dl.body?.cancel();
   }
+});
+
+Deno.test("upload: after a successful upload the same app reads the new content (the memo is dropped)", async () => {
+  const h = await courseHarness({ env: UPLOAD_ENV });
+  const o = await paidCourseOrder(h);
+  const path = `/orders/${o.id}/course?t=${encodeURIComponent(o.token)}`;
+  assertEquals((await h.call("GET", path)).body.course.version, "0.0-test");
+  const manifest = JSON.parse(new TextDecoder().decode((await fixtureAsset("pq_essentiel/manifest.json")).bytes));
+  assertEquals((await put(h, "pq_essentiel/manifest.json", encodeJson({ ...manifest, version: "1.1" }), { mime: "application/json" })).status, 200);
+  assertEquals((await h.call("GET", path)).body.course.version, "1.1", "no 60 s of stale content on this instance");
+  // A 1-byte manifest is stored (the route checks bytes, not meaning) and the course is unavailable at once.
+  assertEquals((await put(h, "pq_essentiel/manifest.json", "x", { mime: "application/json" })).status, 200);
+  assertEquals((await h.call("GET", path)).status, 503);
+});
+
+Deno.test("course content: a missing asset is not memoised (an upload in progress is seen as soon as it lands)", async () => {
+  const store = new MemoryStore();
+  const h = await courseHarness({ store, env: UPLOAD_ENV });
+  const o = await paidCourseOrder(h);
+  const path = `/orders/${o.id}/course?t=${encodeURIComponent(o.token)}`;
+  assertEquals((await h.call("GET", path)).status, 503, "no content yet");
+  const admin = { authorization: "Bearer test-admin-key" };
+  assertEquals((await h.call("GET", "/admin/stats", { headers: admin })).body.course.content, false);
+  await seedCourseMemory(store); // straight into the store, as another Edge instance would
+  assertEquals((await h.call("GET", path)).status, 200, "same app, content read again");
+  assertEquals((await h.call("GET", "/admin/stats", { headers: admin })).body.course.content, true);
+});
+
+Deno.test("upload: GET /admin/course-assets?validate=1 loads the course afresh and names what is wrong", async () => {
+  const store = new MemoryStore();
+  const h = uploadHarness(UPLOAD_ENV, store);
+  const validate = async (o: { token?: string | null; ip?: string } = {}) => {
+    const headers: Record<string, string> = { "cf-connecting-ip": o.ip ?? "203.0.113.50" };
+    const token = o.token === undefined ? TOKEN : o.token;
+    if (token !== null) headers["x-upload-token"] = token;
+    const res = await h.app(new Request(`${API}/admin/course-assets?validate=1`, { headers }));
+    return { status: res.status, headers: res.headers, text: await res.text() };
+  };
+  const empty = await validate();
+  assertEquals(JSON.parse(empty.text).course, {
+    valid: false,
+    problem: "pq_essentiel/manifest.json is missing",
+    version: null,
+    modules: 0,
+    files: 0,
+    questions: 0,
+  });
+  await assertLooksUnknown(h, await validate({ token: "w".repeat(40), ip: freshIp() }), "wrong token");
+  await assertLooksUnknown(h, await validate({ token: null, ip: freshIp() }), "no token");
+  const assets = await fixtureAssets();
+  for (const a of assets) assertEquals((await put(h, a.name, a.bytes, { mime: a.mime })).status, 200, a.name);
+  // The app answered course reads meanwhile; the validation never uses the memo.
+  assertEquals(JSON.parse((await validate()).text).course, {
+    valid: true,
+    problem: null,
+    version: "0.0-test",
+    modules: 2,
+    files: 2,
+    questions: 4,
+  });
+  const broken: Array<[string, Uint8Array | string, string]> = [
+    ["pq_essentiel/manifest.json", "x", "pq_essentiel/manifest.json is invalid"],
+    ["pq_essentiel/quiz-key.json", encodeJson({ answers: { q01: 0 } }), "pq_essentiel/quiz-key.json is invalid"],
+    ["pq_essentiel/files/module-1.xlsx", "short", "pq_essentiel/files/module-1.xlsx has another size than in the manifest (5 ≠ 2808)"],
+  ];
+  for (const [name, bytes, problem] of broken) {
+    const original = assets.find((a) => a.name === name)!;
+    assertEquals((await put(h, name, bytes, { mime: original.mime })).status, 200);
+    const got = JSON.parse((await validate()).text).course;
+    assertEquals([got.valid, got.problem], [false, problem], name);
+    assertEquals((await put(h, name, original.bytes, { mime: original.mime })).status, 200);
+    assertEquals(JSON.parse((await validate()).text).course.valid, true, `${name} restored`);
+  }
+  // A download the manifest lists but nobody uploaded.
+  const manifest = JSON.parse(new TextDecoder().decode(assets.find((a) => a.name === "pq_essentiel/manifest.json")!.bytes));
+  manifest.files[0].asset = "pq_essentiel/files/not-uploaded.xlsx";
+  assertEquals((await put(h, "pq_essentiel/manifest.json", encodeJson(manifest), { mime: "application/json" })).status, 200);
+  assertEquals(JSON.parse((await validate()).text).course.problem, "pq_essentiel/files/not-uploaded.xlsx is missing");
+  assert(!JSON.stringify(h.logs).includes("Lorem"), "names only, never content");
 });
 
 /** A new app on the same store and clock: the course text assets are memoised per Deps (one settings period), so a

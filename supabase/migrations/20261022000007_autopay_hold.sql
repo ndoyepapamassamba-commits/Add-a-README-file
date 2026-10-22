@@ -1,4 +1,5 @@
--- Teranga CV autopay, hardened: a unique amount is held from the moment it is SHOWN, not from the order's creation.
+-- Teranga CV autopay, hardened: a unique amount is held from the moment it is SHOWN, not from the order's creation,
+-- and an open order keeps it as long as its customer can open it (until the daily purge).
 -- Applies on top of 000001 … 000006. Idempotent; runs on Supabase Postgres 17 and in PGlite.
 -- Why: with the 000005 rule (amounts held 48 h after the order was created) an amount still shown to a customer could
 -- be handed to another order, and the late transfer unlocked the OTHER order; a paid order freed its amount at once,
@@ -92,13 +93,15 @@ $$;
 -- New Store functions (lib/autopay.ts prepareManualCheckout and handlePaymentNotify)
 -- ---------------------------------------------------------------------------------------------
 
--- An amount is HELD by an order when it is unpaid (checkout / awaiting_manual, payment_method null) and was given or
--- shown after p_unpaid_since (now − 72 h), or when it was paid after p_paid_since (now − 48 h).
+-- An amount is HELD by an order when it is unpaid (checkout / awaiting_manual, payment_method null) and either not
+-- purged (its customer can still open it: the unpaid purge runs once a day, so an order may live up to about 96 h) or
+-- given or shown after p_unpaid_since (now − 72 h); or when it was paid after p_paid_since (now − 48 h).
 -- * paid order → its amount, unchanged;
 -- * the order still holds its amount → the same amount, shown again: manual_amount_at = p_now;
 -- * else its previous amount if nobody holds it, otherwise the smallest free p_base − k (k in 1..p_max_offset);
 --   none free → manual_amount and manual_amount_at become null and the result is null (the customer is asked for the
---   catalogue price, which never matches: the owner checks the transfer).
+--   catalogue price: it unlocks nothing automatically, and while the order is open the near match is off for its
+--   price, see tcv_list_held_manual_orders; the owner checks the transfer).
 -- Every call takes the advisory lock of tcv_assign_manual_amount (both may run while a deployment is in progress):
 -- assignments run one after the other and each sees the amounts committed by the previous ones.
 create or replace function public.tcv_hold_manual_amount(
@@ -120,7 +123,7 @@ begin
   end if;
   if v_order.manual_amount is not null and v_order.status in ('checkout', 'awaiting_manual')
      and v_order.payment_method is null
-     and coalesce(v_order.manual_amount_at, v_order.created_at) > p_unpaid_since then
+     and (v_order.purged_at is null or coalesce(v_order.manual_amount_at, v_order.created_at) > p_unpaid_since) then
     update tcv.orders set manual_amount_at = p_now where id = p_id;
     return v_order.manual_amount;
   end if;
@@ -137,7 +140,7 @@ begin
     where o.id <> p_id
       and o.manual_amount = c.amount
       and ((o.status in ('checkout', 'awaiting_manual') and o.payment_method is null
-            and coalesce(o.manual_amount_at, o.created_at) > p_unpaid_since)
+            and (o.purged_at is null or coalesce(o.manual_amount_at, o.created_at) > p_unpaid_since))
         or (o.status = 'paid' and o.paid_at > p_paid_since))
   )
   order by c.rank
@@ -150,14 +153,17 @@ begin
 end;
 $$;
 
--- Unpaid manual orders that still hold their amount (the only ones a transfer may unlock). Purged orders are left
--- out: their customer can no longer open them (the owner sees the unmatched transfer).
-create or replace function public.tcv_list_held_manual_orders(p_unpaid_since timestamptz) returns jsonb
+-- The open manual orders a received transfer may be for. Purged orders are left out: their customer can no longer
+-- open them (the owner sees the unmatched transfer). Every listed order with a manual_amount holds it (an open order
+-- that is not purged always does, see above): only those can be unlocked. An order asked for the catalogue price
+-- (manual_amount null, no Wave session) is listed too: it never matches, but while it is open a rounded-up transfer
+-- of its price is ambiguous, so the API turns the near match off for that price.
+create or replace function public.tcv_list_held_manual_orders() returns jsonb
 language sql stable security definer set search_path = '' as $$
   select coalesce(jsonb_agg(tcv.order_json(o) order by o.created_at desc, o.id desc), '[]'::jsonb)
   from tcv.orders o
   where o.status in ('checkout', 'awaiting_manual') and o.payment_method is null and o.purged_at is null
-    and o.manual_amount is not null and coalesce(o.manual_amount_at, o.created_at) > p_unpaid_since
+    and (o.manual_amount is not null or o.checkout_session_id is null)
 $$;
 
 -- ---------------------------------------------------------------------------------------------
@@ -166,8 +172,8 @@ $$;
 
 revoke all on function public.tcv_hold_manual_amount(text, integer, integer, timestamptz, timestamptz, timestamptz)
   from public, anon, authenticated;
-revoke all on function public.tcv_list_held_manual_orders(timestamptz) from public, anon, authenticated;
+revoke all on function public.tcv_list_held_manual_orders() from public, anon, authenticated;
 
 grant execute on function public.tcv_hold_manual_amount(text, integer, integer, timestamptz, timestamptz, timestamptz)
   to service_role;
-grant execute on function public.tcv_list_held_manual_orders(timestamptz) to service_role;
+grant execute on function public.tcv_list_held_manual_orders() to service_role;

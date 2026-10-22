@@ -178,7 +178,7 @@ Deno.test({
       const hold = { base: 1000, maxOffset: 49, nowIso: now, unpaidSinceIso: "2000-01-01T00:00:00.000Z", paidSinceIso: now };
       assertEquals(await store.holdManualAmount(waiting.id, hold), 999);
       assertEquals((await store.getOrder(waiting.id))?.manual_amount_at, now);
-      assertEquals((await store.listHeldManualOrders("2000-01-01T00:00:00.000Z")).map((o) => o.id), [waiting.id]);
+      assertEquals((await store.listHeldManualOrders()).map((o) => o.id), [waiting.id]);
     } finally {
       await t.close();
     }

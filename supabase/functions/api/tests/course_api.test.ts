@@ -338,7 +338,7 @@ Deno.test("GET /admin/stats: course status line and the per-product funnel", asy
   await createOrder(h, "cv", nextIp());
   const res = await h.call("GET", "/admin/stats", { headers: admin });
   assertEquals(res.status, 200);
-  assertEquals(res.body.course, { salesOpen: true, price: 25000, content: true, version: "0.0-test", modules: 2 });
+  assertEquals(res.body.course, { salesOpen: true, price: 25000, content: true, version: "0.0-test", modules: 2, uploadUntil: null });
   assertEquals(res.body.stats.funnel.last30, [
     { product: "cv", orders: 1, checkouts: 0, paid: 0, revenue: 0 },
     { product: "pq_essentiel", orders: 2, checkouts: 1, paid: 1, revenue: 24999 },
@@ -357,7 +357,7 @@ Deno.test("GET /admin/stats: course status line and the per-product funnel", asy
     "webhook",
   ].sort(), "health unchanged");
   const empty = await makeHarness().call("GET", "/admin/stats", { headers: admin });
-  assertEquals(empty.body.course, { salesOpen: false, price: 25000, content: false, version: null, modules: 0 });
+  assertEquals(empty.body.course, { salesOpen: false, price: 25000, content: false, version: null, modules: 0, uploadUntil: null });
   assertEquals(empty.body.stats.funnel, { last30: [], allTime: [] });
 });
 

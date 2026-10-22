@@ -3,24 +3,33 @@
 // unless the upload window is open and the request carries the right token:
 //   PUT /admin/course-assets/<name>?mime=<type>   raw body (≤ 6 MB) → creates or replaces tcv.course_assets[name]
 //   GET /admin/course-assets[?prefix=…]           → { assets: [{ name, mime, size, sha256, updated_at }] }
+//   GET /admin/course-assets?validate=1           → { course: CourseValidation } (the course loaded without memo)
 // The window: settings COURSE_UPLOAD_TOKEN_SHA256 (hex sha256 of the token) AND COURSE_UPLOAD_UNTIL (ISO date in the
-// future). The token travels in the x-upload-token header; its sha256 is compared in constant time. Too many wrong
-// tokens from one IP close the window for that IP for an hour (even with the right token). The token and the bodies
-// are never logged nor echoed. Names start with pq_essentiel/ (served to buyers only when the manifest lists them)
-// or _backup/ (never served: the course routes read only manifest-listed pq_essentiel/ assets).
+// future, at most 72 h ahead: a date further away keeps the window CLOSED, so a forgotten window cannot stay open).
+// The token travels in the x-upload-token header; it has 32 to 512 characters (`openssl rand -hex 32`) and its
+// sha256 is compared in constant time BEFORE any store access, so a wrong token answers as fast as an unknown route:
+// its failure is counted without waiting (fire and forget). Too many wrong tokens from one IP close the window for
+// that IP for an hour (checked only once the token is right). The token and the bodies are never logged nor echoed.
+// Names start with pq_essentiel/ (served to buyers only when the manifest lists them) or _backup/ (never served: the
+// course routes read only manifest-listed pq_essentiel/ assets).
 import type { CourseAssetInfo, Deps } from "./types.ts";
 import { clientIp, errorResponse, HttpError, json, log, readBodyBytes } from "./http.ts";
 import { constantTimeEqual, hashIp, sha256Bytes, sha256Hex } from "./ids.ts";
 import { ipPepper } from "./order_access.ts";
+import { forgetCourseAssets, validateCourseContent } from "./course.ts";
 
 export const UPLOAD_ROUTE_PREFIX = "/admin/course-assets";
 export const UPLOAD_TOKEN_HEADER = "x-upload-token";
 /** Raw body of one PUT. */
 export const MAX_UPLOAD_BYTES = 6 * 1024 * 1024;
-/** Wrong or missing tokens per IP per hour before the IP is refused for the rest of the hour. */
+/** Wrong tokens (of a valid length) per IP per hour before the IP is refused for the rest of the hour. */
 export const UPLOAD_FAILURES_PER_HOUR = 10;
 const HOUR_SECONDS = 3600;
+/** Shorter tokens are refused outright (and not counted: they can never be right). `openssl rand -hex 32` → 64. */
+export const MIN_UPLOAD_TOKEN_LENGTH = 32;
 const MAX_TOKEN_LENGTH = 512;
+/** COURSE_UPLOAD_UNTIL further ahead than this keeps the window closed. */
+export const MAX_UPLOAD_WINDOW_MS = 72 * 3600 * 1000;
 
 export const UPLOAD_NAME_RE = /^(pq_essentiel|_backup)\/[A-Za-z0-9._/-]{1,150}$/;
 /** type/subtype with optional parameters: "text/html; charset=utf-8". */
@@ -37,22 +46,51 @@ export function unknownRoute(): Response {
   return errorResponse(404, "not_found", "Ressource introuvable.");
 }
 
+/** Both settings valid and COURSE_UPLOAD_UNTIL in the future, but no more than MAX_UPLOAD_WINDOW_MS ahead. */
 export function uploadWindowOpen(deps: Deps): boolean {
   const { courseUploadTokenSha256: sha, courseUploadUntil: until } = deps.config;
-  return sha !== null && until !== null && deps.now().getTime() < until;
+  if (sha === null || until === null) return false;
+  const left = until - deps.now().getTime();
+  return left > 0 && left <= MAX_UPLOAD_WINDOW_MS;
 }
 
-/** true when the request may upload; every refusal looks like an unknown route to the caller. */
+/** End of the open upload window (ISO), or null when it is closed: shown on the admin page. */
+export function uploadWindowUntil(deps: Deps): string | null {
+  return uploadWindowOpen(deps) ? new Date(deps.config.courseUploadUntil as number).toISOString() : null;
+}
+
+/**
+ * Lets `task` finish after the response without delaying it (EdgeRuntime.waitUntil keeps the Edge isolate alive
+ * for it). Its failure is logged without detail.
+ */
+function inBackground(task: Promise<unknown>): void {
+  const settled = task.catch((err) => log.warn("course upload: failure counter not updated", err instanceof Error ? err.name : "error"));
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+  try {
+    runtime?.waitUntil?.(settled);
+  } catch {
+    // Outside Supabase (tests, dev.ts) the promise simply runs on.
+  }
+}
+
+/**
+ * true when the request may upload; every refusal looks like an unknown route to the caller. A wrong token costs
+ * one sha256 and one HMAC (no store round trip is awaited), a missing or short one nothing at all: a scanner cannot
+ * tell an open window from a closed one, nor from an unknown route.
+ */
 async function authorized(deps: Deps, req: Request): Promise<boolean> {
   if (!uploadWindowOpen(deps)) return false;
+  const token = req.headers.get(UPLOAD_TOKEN_HEADER) ?? "";
+  if (token.length < MIN_UPLOAD_TOKEN_LENGTH || token.length > MAX_TOKEN_LENGTH) return false;
+  const ok = constantTimeEqual(await sha256Hex(token), deps.config.courseUploadTokenSha256 as string);
   const nowIso = deps.now().toISOString();
   const failKey = `upload-fail:${await hashIp(clientIp(req), ipPepper(deps))}`;
-  if ((await deps.store.peekRateLimit(failKey, HOUR_SECONDS, nowIso)) >= UPLOAD_FAILURES_PER_HOUR) return false;
-  const token = req.headers.get(UPLOAD_TOKEN_HEADER) ?? "";
-  const ok = token.length > 0 && token.length <= MAX_TOKEN_LENGTH &&
-    constantTimeEqual(await sha256Hex(token), deps.config.courseUploadTokenSha256 as string);
-  if (!ok) await deps.store.hitRateLimit(failKey, HOUR_SECONDS, UPLOAD_FAILURES_PER_HOUR, nowIso);
-  return ok;
+  if (!ok) {
+    inBackground(deps.store.hitRateLimit(failKey, HOUR_SECONDS, UPLOAD_FAILURES_PER_HOUR, nowIso));
+    return false;
+  }
+  // The right token from an IP that sent too many wrong ones this hour is refused too.
+  return (await deps.store.peekRateLimit(failKey, HOUR_SECONDS, nowIso)) < UPLOAD_FAILURES_PER_HOUR;
 }
 
 /** The asset name as sent, from the raw path (routePath() would drop a trailing slash). */
@@ -95,13 +133,18 @@ export async function putCourseAssetRoute(deps: Deps, req: Request): Promise<Res
     log.error(`course upload ${name}: verification failed after commit`);
     throw new HttpError(502, "upload_mismatch", "La vérification du fichier enregistré a échoué. Réessayez.");
   }
+  // This instance reads the new content at once (dev.ts keeps one Deps for its whole life); the other Edge
+  // instances within their settings period (≤ 60 s).
+  forgetCourseAssets(deps);
   return json(200, { ok: true, asset: listed });
 }
 
-/** GET /admin/course-assets[?prefix=…] */
+/** GET /admin/course-assets[?prefix=…], or ?validate=1: the course as a buyer would load it, read afresh. */
 export async function listCourseAssetsRoute(deps: Deps, req: Request): Promise<Response> {
   if (!(await authorized(deps, req))) return unknownRoute();
-  const prefix = new URL(req.url).searchParams.get("prefix") ?? "";
+  const params = new URL(req.url).searchParams;
+  if (params.get("validate") === "1") return json(200, { course: await validateCourseContent(deps, "pq_essentiel") });
+  const prefix = params.get("prefix") ?? "";
   if (!PREFIX_RE.test(prefix)) throw invalid("prefix", "Préfixe invalide.");
   return json(200, { assets: await deps.store.listCourseAssets(prefix) });
 }

@@ -3,9 +3,10 @@
 // fake owner phone at /fake-phone (manual mode: posts a Wave notification to /api/payments/notify).
 // Run: deno run -A supabase/functions/api/dev.ts
 // Env: PORT (default 8787), DEV_PAYMENT = wave (default) | manual | none, PQ_SALES_OPEN (default true here),
-// COURSE_ASSETS_DIR (private course tree `<dir>/pq_essentiel/…`; default: the public lorem fixture).
+// COURSE_ASSETS_DIR (private course tree `<dir>/pq_essentiel/…`; default: the public lorem fixture),
+// COURSE_UPLOAD_TOKEN_SHA256 + COURSE_UPLOAD_UNTIL (open the upload window of scripts/course-upload.mjs, like the
+// production settings; an upload is read at once: the route forgets the memoised course text).
 import { createApp } from "./lib/app.ts";
-import { holdCutoffs } from "./lib/autopay.ts";
 import { DEFAULT_RETURN_PREFIXES, envFrom, loadConfig } from "./lib/config.ts";
 import { MemoryStore } from "./lib/store_memory.ts";
 import { COURSE_FIXTURE_DIR, loadCourseAssetDir } from "./dev_course.ts";
@@ -59,6 +60,9 @@ export function devConfig(port: number, payment: DevPayment): Config {
     // Dev sells the course by default; PQ_SALES_OPEN=false shows the closed sales page.
     PQ_SALES_OPEN: Deno.env.get("PQ_SALES_OPEN") ?? "true",
     PRICE_PQ_ESSENTIEL: Deno.env.get("PRICE_PQ_ESSENTIEL"),
+    // A dry run of scripts/course-upload.mjs against this server (closed unless both are set, as in production).
+    COURSE_UPLOAD_TOKEN_SHA256: Deno.env.get("COURSE_UPLOAD_TOKEN_SHA256"),
+    COURSE_UPLOAD_UNTIL: Deno.env.get("COURSE_UPLOAD_UNTIL"),
   }));
   // The only place where an http:// return URL is accepted, and where the MacroDroid link of the admin page
   // points at this local server instead of production.
@@ -225,8 +229,9 @@ export function createDevServer(opts: DevServerOptions): DevServer {
     if (fake) return fakeWave(req, decodeURIComponent(fake[1]), fake[2]);
     if (req.method !== "GET" && req.method !== "HEAD") return text(405, "Méthode non autorisée.");
     if (path === "/fake-phone") {
-      const open = await store.listHeldManualOrders(holdCutoffs(new Date()).unpaidSinceIso);
-      return fakePhonePage(open.map((o) => ({ id: o.id, amount: o.manual_amount as number })));
+      // Orders asked for the catalogue price (no free unique amount) show it: their transfer unlocks nothing.
+      const open = await store.listHeldManualOrders();
+      return fakePhonePage(open.map((o) => ({ id: o.id, amount: o.manual_amount ?? o.amount })));
     }
     if (path === "/config.js" || path === "/cv/config.js") {
       const js = `window.TCV_CONFIG = { apiBase: ${JSON.stringify(`${origin}/api`)} };\n`;

@@ -77,7 +77,7 @@ export const RPC_SIGNATURES: Record<string, ReadonlyArray<readonly [string, ArgT
     ["p_unpaid_since", "timestamptz"],
     ["p_paid_since", "timestamptz"],
   ],
-  tcv_list_held_manual_orders: [["p_unpaid_since", "timestamptz"]],
+  tcv_list_held_manual_orders: [],
 };
 
 /**
@@ -246,8 +246,8 @@ export class RpcStore implements Store {
     return r === null || r === undefined ? null : Number(r);
   }
 
-  async listHeldManualOrders(unpaidSinceIso: string): Promise<OrderRow[]> {
-    const r = await this.call("tcv_list_held_manual_orders", { p_unpaid_since: unpaidSinceIso });
+  async listHeldManualOrders(): Promise<OrderRow[]> {
+    const r = await this.call("tcv_list_held_manual_orders");
     return Array.isArray(r) ? r.map(toOrder) : [];
   }
 

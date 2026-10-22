@@ -273,6 +273,9 @@
     }
     fact(course.salesOpen, course.salesOpen ? "Ventes ouvertes" : "Ventes fermées", "Prix : " + fcfa(course.price));
     fact(course.content, course.content ? "Contenu en ligne (version " + course.version + ", " + course.modules + " modules)" : "Contenu manquant");
+    if (course.uploadUntil) {
+      fact(false, "Envoi du contenu ouvert jusqu'au " + TCV.fmt.dateTime(course.uploadUntil), "À refermer dès que l'envoi est terminé.");
+    }
     fact(true, leads.active + " contact(s) en attente de l'ouverture");
     fact(true, passes.total + " attestation(s)");
     var body = TCV.dom.clear($("#funnel-body"));

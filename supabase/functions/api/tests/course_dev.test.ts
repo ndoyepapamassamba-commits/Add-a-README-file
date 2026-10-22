@@ -4,6 +4,7 @@ import { assert, assertEquals, assertMatch } from "jsr:@std/assert@1.0.13";
 import { createDevServer, DEV_PHONE_HOOK_KEY } from "../dev.ts";
 import { COURSE_FIXTURE_DIR, courseMimeFor, loadCourseAssetDir } from "../dev_course.ts";
 import { captureLogs } from "./fixtures/backend_harness.ts";
+import { sha256Hex } from "../lib/ids.ts";
 import { courseOrderBody, FIXTURE_MODULE_TITLES } from "./fixtures/course_harness.ts";
 
 const ORIGIN = "http://localhost:8787";
@@ -92,6 +93,37 @@ Deno.test("dev: the lorem fixture is seeded, sales are open, a course is paid by
   assertEquals(course.body.modules.map((m: { title: string }) => m.title), FIXTURE_MODULE_TITLES);
   assertEquals(course.body.course.version, "0.0-test");
   await Deno.remove(dirs.parent, { recursive: true });
+});
+
+Deno.test("dev: COURSE_UPLOAD_TOKEN_SHA256 / COURSE_UPLOAD_UNTIL open the upload window; an upload is read at once", async () => {
+  const dirs = await siteDirs();
+  const token = "dev-upload-token-0123456789abcdef0123456789";
+  const saved = ["COURSE_UPLOAD_TOKEN_SHA256", "COURSE_UPLOAD_UNTIL"].map((k) => [k, Deno.env.get(k)] as const);
+  const closed = server(dirs);
+  const upload = (dev: ReturnType<typeof server>, name: string, body: string) =>
+    dev.fetchDev(`/api/admin/course-assets/${name}?mime=application/json`, { method: "PUT", headers: { "x-upload-token": token }, body });
+  const shut = await upload(closed, "pq_essentiel/manifest.json", "x");
+  assertEquals(shut.status, 404, "closed unless both are set");
+  await shut.body?.cancel();
+  try {
+    Deno.env.set("COURSE_UPLOAD_TOKEN_SHA256", await sha256Hex(token));
+    Deno.env.set("COURSE_UPLOAD_UNTIL", new Date(Date.now() + 3_600_000).toISOString());
+    const dev = server(dirs);
+    const { id, token: t } = (await dev.fetchJson("/api/orders", post(courseOrderBody()))).body.order;
+    await dev.fetchJson(`/api/orders/${id}/checkout`, post({ t, returnBase: `${ORIGIN}/formation` }));
+    await dev.fetchJson(`/api/payments/notify?k=${DEV_PHONE_HOOK_KEY}`, post({ text: "Vous avez reçu 24 999F de Awa Ndiaye" }));
+    const path = `/api/orders/${id}/course?t=${encodeURIComponent(t)}`;
+    assertEquals((await dev.fetchJson(path)).status, 200, "read (and memoised) once");
+    const put = await upload(dev, "pq_essentiel/manifest.json", "x");
+    assertEquals(put.status, 200);
+    await put.body?.cancel();
+    assertEquals((await dev.fetchJson(path)).status, 503, "the same dev server sees the upload at once");
+    const validation = await dev.fetchJson("/api/admin/course-assets?validate=1", { headers: { "x-upload-token": token } });
+    assertEquals([validation.body.course.valid, validation.body.course.problem], [false, "pq_essentiel/manifest.json is invalid"]);
+  } finally {
+    for (const [k, v] of saved) v === undefined ? Deno.env.delete(k) : Deno.env.set(k, v);
+    await Deno.remove(dirs.parent, { recursive: true });
+  }
 });
 
 Deno.test("dev: Wave mode sends a course buyer back to /formation/lecture.html", async () => {
