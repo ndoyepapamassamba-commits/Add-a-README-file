@@ -125,7 +125,9 @@ jobs:
           PIPER_VOICES: ${{ env.MASSAMBA_MODELS }}/piper/
           JUGE_LOCAL: ${{ env.MASSAMBA_MODELS }}/juge-local
           FABRIQUE_CADENCE: ${{ inputs.videos }}
-          FABRIQUE_MINUTES: '290'
+          # 22/10/2026 : 50 min par marche (et non 290) — la marche suivante part à l'heure suivante ; les épisodes sont scellés et
+          # publiés chaque heure au lieu d'attendre 5 h, et une panne de machine ne perd qu'une heure de travail
+          FABRIQUE_MINUTES: '50'
           OMP_NUM_THREADS: '1'
           TOURNE_PROCS: '4'
           GITHUB_TOKEN: ${{ github.token }}
