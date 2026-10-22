@@ -1,7 +1,8 @@
 // End-to-end flow of Teranga CV on a 360 px phone against the real API (supabase/functions/api/dev.ts:
 // MemoryStore + FakeWave), started here as two child processes (DEV_PAYMENT=wave and DEV_PAYMENT=manual).
 // A–F cover cv / lettre / pack (regression), G–H (products.mjs) the Pack Stage and the CV Premium, I (course.mjs) the
-// Teranga Pro course (formation/: closed sales, manual and Wave purchase, reader, files, quiz, attestation, receipt, demo).
+// Teranga Pro course (formation/: closed sales, manual and Wave purchase, reader, files, quiz, attestation, receipt, demo),
+// J the autopay safeguards (« J'ai envoyé l'argent » before checkout, « Notification répétée » in admin.html).
 // Run: cd e2e && npm install && node flow.mjs      Screenshots and server logs go to $SHOTS_DIR (default: tmp).
 import fs from "node:fs";
 import os from "node:os";
@@ -410,6 +411,80 @@ async function hostileAndPrivate(browser, server) {
   await context.close();
 }
 
+// admin.html, autopay.ts flagDuplicate: a notification already seen that fits an open order.
+const REPEATED_LABEL = "Notification répétée — vérifiez votre historique Wave avant de débloquer";
+// A fictional customer for the API-only order of J (its own IP: the dev limit is 12 orders per hour and per IP).
+const J_HEADERS = { "x-real-ip": "203.0.113.77" };
+const J_CV_INPUT = {
+  identity: { civility: "Mme", firstName: "Coumba", lastName: "Sarr", phone: "77 234 56 78", email: "coumba.sarr@example.com", city: "Thiès", address: "Quartier Escale" },
+  target: { jobTitle: "Assistante administrative", kind: "emploi", sector: "comptabilite", level: "junior" },
+  education: [{ degree: "BTS en gestion", school: "Institut de formation de Thiès", year: "2022" }],
+  experiences: [{ title: "Assistante administrative", company: "Cabinet Faye Conseil", place: "Thiès", start: "2022", end: "2024", missions: "Classement des dossiers clients\nSuivi des factures" }],
+  skills: ["Classement", "Facturation"],
+  it: ["Excel", "Word"],
+  languages: [{ name: "Français", level: "Courant" }],
+  interests: ["Lecture"],
+};
+
+/**
+ * J — manual mode, autopay safeguards. « J'ai envoyé l'argent » before checkout is refused (409 checkout_required,
+ * nothing changes). A notification seen once (it matched no order), delivered again once an open order has its amount,
+ * unlocks nothing: admin.html shows that order « Notification répétée — vérifiez votre historique Wave avant de
+ * débloquer », not « Paiement détecté »; the owner checks his Wave history and unlocks it himself.
+ */
+async function repeatedNotification(browser, server) {
+  const created = await api(server, "POST", "/orders", { body: { product: "cv", template: "classique", website: "", data: J_CV_INPUT }, headers: J_HEADERS });
+  check(created.status === 201 && created.body.order.status === "preview", `J: cv order ${created.body.order?.id} created (preview)`);
+  const order = created.body.order;
+  const early = await api(server, "POST", `/orders/${order.id}/manual-paid`, { body: { t: order.token, payerPhone: "77 234 56 78" } });
+  check(early.status === 409 && early.body.error === "checkout_required" && early.body.message.includes("montant exact"), `J: « J'ai envoyé l'argent » before checkout → 409 checkout_required (${early.body.message})`);
+  check((await api(server, "GET", orderRoute(order))).body.order.status === "preview", "J: the order is still a preview");
+
+  // Every order of this server is in recentOrders: the smallest amount below 1 000 F held by none is the one the
+  // checkout will ask (paid orders keep theirs 48 h, open ones until their purge).
+  const recent = (await api(server, "GET", "/admin/stats", ADMIN_AUTH)).body.stats.recentOrders;
+  const held = new Set(recent.map((r) => r.manual_amount).filter((a) => a !== null));
+  const next = Array.from({ length: 49 }, (_, i) => 999 - i).find((a) => !held.has(a));
+  check(recent.length < 50 && next !== undefined, `J: next free unique amount below 1 000 F is ${next} F (${recent.length} orders so far)`);
+  const text = `Vous avez reçu ${next}F de Coumba Sarr (77 234 56 78). Nouveau solde : 52 ${next}F`;
+  const phone = (body) => api(server, "POST", `/payments/notify?k=${DEV_PHONE_HOOK_KEY}`, { body });
+  const first = await phone({ title: "Wave", text });
+  check(first.status === 200 && first.body.matched === null && first.body.paid === false, `J: a first ${next} F notification matches no order`);
+
+  const checkout = await api(server, "POST", `/orders/${order.id}/checkout`, { body: { t: order.token, returnBase: `${server.site}` } });
+  check(checkout.status === 200 && checkout.body.exactAmount === next, `J: the checkout asks exactly ${next} F (got ${checkout.body.exactAmount})`);
+  const claimed = await api(server, "POST", `/orders/${order.id}/manual-paid`, { body: { t: order.token } });
+  check(claimed.status === 200 && claimed.body.order.status === "awaiting_manual", "J: after checkout « J'ai envoyé l'argent » works (awaiting_manual)");
+
+  const again = await phone({ title: "Wave", text });
+  check(again.body.duplicate === true && again.body.detected === order.id && again.body.matched === undefined, `J: the same notification again is a duplicate flagged on ${order.id}, not matched`);
+  check((await api(server, "GET", orderRoute(order))).body.order.status !== "paid", "J: nothing is unlocked by a repeated notification");
+  const listed = (await api(server, "GET", "/admin/stats", ADMIN_AUTH)).body.stats.recentOrders;
+  const row = listed.find((r) => r.id === order.id);
+  check(row?.payment_detected_repeated === true && !!row.payment_detected_at, "J: GET /admin/stats marks it payment_detected_repeated");
+  const plain = listed.find((r) => r.id !== order.id && r.payment_detected_at && r.payment_detected_repeated === false);
+  check(!!plain, `J: an order detected by a fresh notification (${plain?.id}) is not marked repeated`);
+
+  const { context, admin } = await openAdmin(browser, server, "J admin");
+  const card = admin.locator("#unlock-list .unlock-card", { hasText: order.id });
+  check(norm(await card.locator(".badge-repeated").innerText()) === REPEATED_LABEL, `J: « Paiements à vérifier » card shows « ${REPEATED_LABEL} »`);
+  check(await card.locator(".badge-detected").count() === 0 && !(await card.innerText()).includes("Paiement détecté"), "J: the card does not say « Paiement détecté »");
+  const tableRow = admin.locator("#orders-body tr", { hasText: order.id });
+  check(norm(await tableRow.locator(".badge-repeated").innerText()) === REPEATED_LABEL && await tableRow.locator(".badge-detected").count() === 0, "J: the orders table shows the same « Notification répétée » label");
+  const plainRow = admin.locator("#orders-body tr", { hasText: plain.id });
+  check(norm(await plainRow.locator(".badge-detected").innerText()) === "Paiement détecté" && await plainRow.locator(".badge-repeated").count() === 0, `J: ${plain.id} keeps « Paiement détecté »`);
+  await assertNoHorizontalScroll(admin, "J admin");
+  await card.screenshot({ path: path.join(OUT, "J-admin-repeated-card.png") });
+  await shoot(admin, "J-admin-repeated", { fullPage: true });
+
+  // The owner found the transfer in his Wave history: he unlocks the order himself.
+  admin.once("dialog", (dialog) => dialog.accept());
+  await card.getByRole("button", { name: `Débloquer la commande ${order.id}` }).click();
+  await admin.waitForFunction((id) => document.querySelector("#dash-status").textContent.includes(`${id} débloquée`), order.id);
+  check((await api(server, "GET", orderRoute(order))).body.order.status === "paid", "J: « Débloquer » unlocks it");
+  await context.close();
+}
+
 async function main() {
   fs.mkdirSync(OUT, { recursive: true });
   const started = await Promise.allSettled(
@@ -442,6 +517,8 @@ async function main() {
     await premiumFlows(browser, { wave, manual }, { problems, shoot, out: OUT });
     console.log("# I — Teranga Pro course and its demo mode (course.mjs)");
     await courseFlows(browser, { wave, manual }, { problems, shoot, out: OUT });
+    console.log("# J — « J'ai envoyé l'argent » before checkout, « Notification répétée » in admin.html");
+    await repeatedNotification(browser, manual);
     console.log("# E — console errors on every page");
     check(problems.length === 0, `E: zero console errors, page errors or unexpected requests${problems.length ? `:\n  ${problems.join("\n  ")}` : ""}`);
     console.log(`\nPASS — ${passedCount()} checks`);

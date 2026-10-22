@@ -5,7 +5,8 @@
 // is the owner's one-tap confirmation (link carrying an HMAC of the order id).
 // Privacy: the notification text contains the payer's name and number. It is never logged; it is kept only
 // on the matched (or flagged) order (erased 30 days after the detection) and in the dedupe event (payload erased
-// after 30 days).
+// after 30 days). A notification already seen that is flagged on an open order is stored behind
+// REPEATED_NOTIFICATION_PREFIX, so admin.html tells it apart (« Notification répétée »).
 import type { Deps, OrderRow } from "./types.ts";
 import { HttpError, json, log, readBodyText, readJsonObject } from "./http.ts";
 import { constantTimeEqual, hmacSha256Hex, ORDER_ID_RE, sha256Hex } from "./ids.ts";
@@ -267,7 +268,8 @@ async function bucketKeys(kind: string, normalized: string, nowMs: number, bucke
  *   longer (the same payer, amount and balance can come back for real once the owner emptied his account);
  * - without a balance: 6-hour buckets (window 6 to 12 hours).
  * Anything else (heartbeat, own operations): the text and its minute.
- * A duplicate never unlocks an order; handlePaymentNotify still flags the open order it fits exactly.
+ * A duplicate never unlocks an order; handlePaymentNotify still flags the open order it fits exactly, as a repeated
+ * detection (flagDuplicate).
  */
 export async function dedupeKeys(n: ParsedNotification, nowMs: number): Promise<{ id: string; next: string | null }> {
   if (!n.incoming || n.amount === null) {
@@ -278,10 +280,24 @@ export async function dedupeKeys(n: ParsedNotification, nowMs: number): Promise<
 }
 
 /**
+ * Start of payment_detected_text when the detection comes from a notification already seen (flagDuplicate): the
+ * admin page then shows « Notification répétée — vérifiez votre historique Wave avant de débloquer » instead of
+ * « Paiement détecté » (GET /admin/stats adds payment_detected_repeated). Erased with the text (Store.purge).
+ */
+export const REPEATED_NOTIFICATION_PREFIX = "[notification répétée] ";
+
+/** True when a stored payment_detected_text comes from a repeated notification (REPEATED_NOTIFICATION_PREFIX). */
+export function isRepeatedDetection(text: string | null | undefined): boolean {
+  return typeof text === "string" && text.startsWith(REPEATED_NOTIFICATION_PREFIX);
+}
+
+/**
  * A notification already seen is usually a re-delivery, but it may be a genuine second payment (same payer, same
  * amount, same balance). It never unlocks anything and is never dropped silently: when its amount is exactly the
- * unique amount of ONE open order, that order is flagged « Paiement détecté » (admin.html) and a warning is logged,
- * so the owner checks his Wave history and confirms by hand.
+ * unique amount of ONE open order, that order is flagged as a REPEATED detection (text stored behind
+ * REPEATED_NOTIFICATION_PREFIX; admin.html: « Notification répétée — vérifiez votre historique Wave avant de
+ * débloquer ») and a warning is logged, so the owner checks his Wave history and confirms by hand. An order already
+ * flagged by a fresh notification keeps that detection (the stronger one).
  */
 async function flagDuplicate(deps: Deps, amount: number, text: string, nowIso: string): Promise<{ detected?: string }> {
   const fits = (await deps.store.listHeldManualOrders()).filter((o) => o.status !== "paid" && o.manual_amount === amount);
@@ -290,9 +306,15 @@ async function flagDuplicate(deps: Deps, amount: number, text: string, nowIso: s
     return {};
   }
   const order = fits[0];
-  if (!order || order.payment_detected_text === text) return {}; // nothing open at that amount, or already flagged
-  await deps.store.recordPaymentDetection(order.id, text, nowIso);
-  log.warn(`phone notification: a repeated ${amount} F notification fits open order ${order.id}: flagged, not unlocked (the owner checks it)`);
+  if (!order) return {}; // nothing open at that amount
+  const stored = REPEATED_NOTIFICATION_PREFIX + text;
+  if (order.payment_detected_text === stored) return {}; // already flagged with this notification
+  if (order.payment_detected_text !== null && !isRepeatedDetection(order.payment_detected_text)) {
+    log.warn(`phone notification: a repeated ${amount} F notification fits open order ${order.id}, already flagged by a fresh notification (kept)`);
+    return {};
+  }
+  await deps.store.recordPaymentDetection(order.id, stored, nowIso);
+  log.warn(`phone notification: a repeated ${amount} F notification fits open order ${order.id}: flagged « Notification répétée », not unlocked (the owner checks it)`);
   return { detected: order.id };
 }
 

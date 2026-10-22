@@ -4,7 +4,16 @@ import { assert, assertEquals } from "jsr:@std/assert@1.0.13";
 import { ADMIN_KEY, createOrder, CRON_SECRET, DAY, HOUR, makeHarness, MIN, RETURN_BASE } from "./fixtures/backend_harness.ts";
 import type { Harness, HarnessOptions } from "./fixtures/backend_harness.ts";
 import { MemoryStore } from "../lib/store_memory.ts";
-import { DEDUPE_BALANCE_BUCKET_MS, DEDUPE_BUCKET_MS, dedupeKeys, holdCutoffs, parseNotification } from "../lib/autopay.ts";
+import {
+  DEDUPE_BALANCE_BUCKET_MS,
+  DEDUPE_BUCKET_MS,
+  dedupeKeys,
+  holdCutoffs,
+  isRepeatedDetection,
+  parseNotification,
+  REPEATED_NOTIFICATION_PREFIX,
+} from "../lib/autopay.ts";
+import { openTestDb, supabaseStore } from "./fixtures/backend_pglite.ts";
 
 const HOOK = "test-hook-key";
 const AWA = "Awa Ndiaye";
@@ -221,7 +230,7 @@ Deno.test("dedupe: a replay just after a 6-hour boundary is still a duplicate; h
   assertEquals(DEDUPE_BALANCE_BUCKET_MS, 15 * DAY);
 });
 
-Deno.test("dedupe: a genuine second payment with the same text is flagged « Paiement détecté », never dropped nor unlocked (F-dedupe)", async () => {
+Deno.test("dedupe: a genuine second payment with the same text is flagged « Notification répétée », never dropped nor unlocked (F-dedupe)", async () => {
   const h = manualHarness();
   // Day 1: Awa buys a CV. The owner's balance was 0 (he cashed everything out), so the new balance is 999 F.
   const a = await manualOrder(h, "cv");
@@ -235,17 +244,119 @@ Deno.test("dedupe: a genuine second payment with the same text is flagged « Pai
   const res = await notify(h, { text });
   assertEquals(res.body, { ok: true, duplicate: true, detected: b.id });
   const row = (await h.store.getOrder(b.id))!;
-  assertEquals([row.status, row.payment_detected_at, row.payment_detected_text], ["checkout", h.clock.iso(), text], "flagged, not paid");
-  assert(h.logs.warn.some((l) => l.includes(`fits open order ${b.id}: flagged, not unlocked`)));
+  assertEquals([row.status, row.payment_detected_at, row.payment_detected_text], ["checkout", h.clock.iso(), REPEATED_NOTIFICATION_PREFIX + text], "flagged as repeated, not paid");
+  assert(h.logs.warn.some((l) => l.includes(`fits open order ${b.id}: flagged « Notification répétée », not unlocked`)));
   assert(!h.logs.warn.some((l) => l.includes(AWA)), "the text is never logged");
-  const listed = (await admin(h)).body.stats.recentOrders.find((r: { id: string }) => r.id === b.id);
-  assertEquals(listed.payment_detected_at, h.clock.iso(), "admin.html shows « Paiement détecté »");
+  const res2 = await admin(h);
+  const listed = res2.body.stats.recentOrders.find((r: { id: string }) => r.id === b.id);
+  assertEquals([listed.payment_detected_at, listed.payment_detected_repeated], [h.clock.iso(), true], "admin.html shows « Notification répétée »");
+  assertEquals(res2.body.stats.recentOrders.find((r: { id: string }) => r.id === a.id).payment_detected_repeated, false, "A (paid) stays « Paiement détecté »");
+  assert(!JSON.stringify(res2.body).includes(AWA), "the admin page never receives the notification text");
   // A further re-delivery of the same text adds nothing.
+  const detectedAt = h.clock.iso();
+  h.clock.advance(MIN);
   assertEquals((await notify(h, { text })).body, { ok: true, duplicate: true });
-  // Past 30 days the same text is a new notification again, and matches as usual.
+  assertEquals((await h.store.getOrder(b.id))?.payment_detected_at, detectedAt, "not flagged again");
+  // Past 30 days the same text is a new notification again, and matches as usual (a plain detection again).
   h.clock.advance(31 * DAY);
   const later = await notify(h, { text });
   assertEquals([later.body.matched, later.body.paid], [b.id, true]);
+  assertEquals((await h.store.getOrder(b.id))?.payment_detected_text, text);
+});
+
+Deno.test("dedupe: a repeated notification never replaces a fresh detection (MANUAL_AUTO_CONFIRM=false)", async () => {
+  const h = manualHarness({ MANUAL_AUTO_CONFIRM: "false" });
+  const o = await manualOrder(h);
+  const text = received("1 499");
+  assertEquals((await notify(h, { text })).body, { ok: true, matched: o.id, amount: 1499, paid: false });
+  const detectedAt = h.clock.iso();
+  h.clock.advance(5 * MIN);
+  assertEquals((await notify(h, { text })).body, { ok: true, duplicate: true }, "the re-delivery is only a duplicate");
+  const row = (await h.store.getOrder(o.id))!;
+  assertEquals([row.status, row.payment_detected_at, row.payment_detected_text], ["checkout", detectedAt, text], "the fresh detection is kept");
+  assert(h.logs.warn.some((l) => l.includes(`fits open order ${o.id}, already flagged by a fresh notification (kept)`)));
+  const listed = (await admin(h)).body.stats.recentOrders.find((r: { id: string }) => r.id === o.id);
+  assertEquals([listed.payment_detected_at, listed.payment_detected_repeated], [detectedAt, false], "admin.html: « Paiement détecté »");
+});
+
+Deno.test("dedupe: a repeated flag gives way to a later fresh notification (a plain « Paiement détecté »)", async () => {
+  const h = manualHarness({ MANUAL_AUTO_CONFIRM: "false" });
+  const a = await manualOrder(h, "cv");
+  const text = `Vous avez reçu 999F de ${AWA} (77 123 45 67). Nouveau solde : 999F`;
+  assertEquals((await notify(h, { text })).body.matched, a.id);
+  await h.call("POST", `/admin/orders/${a.id}/unlock`, { headers: { authorization: `Bearer ${ADMIN_KEY}` } });
+  h.clock.advance(72 * HOUR);
+  const b = await manualOrder(h, "lettre");
+  assertEquals(b.exact, 999);
+  assertEquals((await notify(h, { text })).body.detected, b.id);
+  assert(isRepeatedDetection((await h.store.getOrder(b.id))!.payment_detected_text));
+  assertEquals((await admin(h)).body.stats.recentOrders.find((r: { id: string }) => r.id === b.id).payment_detected_repeated, true);
+  // Her real transfer arrives with another balance: a fresh notification, a plain detection (no auto-confirm here).
+  h.clock.advance(MIN);
+  const fresh = `Vous avez reçu 999F de ${AWA} (77 123 45 67). Nouveau solde : 1 998F`;
+  assertEquals((await notify(h, { text: fresh })).body, { ok: true, matched: b.id, amount: 999, paid: false });
+  const row = (await h.store.getOrder(b.id))!;
+  assertEquals([row.payment_detected_at, row.payment_detected_text], [h.clock.iso(), fresh]);
+  assertEquals((await admin(h)).body.stats.recentOrders.find((r: { id: string }) => r.id === b.id).payment_detected_repeated, false);
+});
+
+for (const [label, open] of [
+  ["memory", () => Promise.resolve({ store: new MemoryStore(), close: () => Promise.resolve() })],
+  ["supabase (PGlite)", async () => {
+    const db = await openTestDb();
+    return { store: supabaseStore(db), close: () => db.close() };
+  }],
+] as const) {
+  Deno.test(`[${label}] repeated notification: stored as « [notification répétée] … », listed payment_detected_repeated`, async () => {
+    const { store, close } = await open();
+    try {
+      const h = manualHarness({}, { store });
+      const a = await manualOrder(h, "cv");
+      const text = `Vous avez reçu 999F de ${AWA} (77 123 45 67). Nouveau solde : 999F`;
+      assertEquals((await notify(h, { text })).body.paid, true);
+      h.clock.advance(72 * HOUR);
+      const b = await manualOrder(h, "lettre");
+      const other = await manualOrder(h, "cv");
+      assertEquals([b.exact, other.exact], [999, 998]);
+      assertEquals((await notify(h, { text })).body, { ok: true, duplicate: true, detected: b.id });
+      assertEquals((await h.store.getOrder(b.id))?.payment_detected_text, `[notification répétée] ${text}`);
+      const repeatedFlags = async () =>
+        Object.fromEntries(
+          ((await admin(h)).body.stats.recentOrders as Array<{ id: string; payment_detected_repeated: boolean }>)
+            .map((r) => [r.id, r.payment_detected_repeated]),
+        );
+      assertEquals(await repeatedFlags(), { [a.id]: false, [b.id]: true, [other.id]: false });
+      // The owner checks his Wave history and unlocks B: once paid, the advice no longer applies.
+      const unlock = await h.call("POST", `/admin/orders/${b.id}/unlock`, { headers: { authorization: `Bearer ${ADMIN_KEY}` } });
+      assertEquals(unlock.body, { ok: true, changed: true });
+      assertEquals((await repeatedFlags())[b.id], false);
+      // The daily purge erases the text with the prefix (30 days after the detection).
+      h.clock.advance(31 * DAY);
+      await h.call("POST", "/cron/daily", { headers: { "x-cron-secret": CRON_SECRET } });
+      assertEquals((await h.store.getOrder(b.id))?.payment_detected_text, null);
+    } finally {
+      await close();
+    }
+  });
+}
+
+Deno.test("manual-paid on a preview order is refused, so it never turns the near match off (F-preview)", async () => {
+  const h = manualHarness();
+  const p = await createOrder(h, "lettre", "198.18.0.9"); // never went to checkout
+  const mp = await h.call("POST", `/orders/${p.id}/manual-paid`, { body: { t: p.token } });
+  assertEquals([mp.status, mp.body.error], [409, "checkout_required"]);
+  const row = (await h.store.getOrder(p.id))!;
+  assertEquals([row.status, row.manual_amount, row.manual_payer_phone], ["preview", null, null]);
+  assertEquals((await h.store.listHeldManualOrders()).length, 0);
+  const cv = await manualOrder(h, "cv");
+  const res = await notify(h, "Vous avez reçu 1 000F de Aminata (77 555 66 77). Nouveau solde : 20 000F");
+  assertEquals([res.body.matched, res.body.paid], [cv.id, true], "the rounded-up 1 000 F still unlocks the single fresh CV");
+  // 80 h later the preview order is still not listed: the next rounded-up transfer works too.
+  h.clock.advance(80 * HOUR);
+  const cv2 = await manualOrder(h, "cv");
+  const res2 = await notify(h, "Vous avez reçu 1 000F de Binta (77 555 66 78). Nouveau solde : 21 000F");
+  assertEquals([res2.body.matched, res2.body.paid], [cv2.id, true]);
+  assert(!(await h.store.listHeldManualOrders()).some((o) => o.id === p.id));
 });
 
 Deno.test("manual-paid: the payer phone is optional, a wrong one is still refused", async () => {
@@ -337,7 +448,7 @@ Deno.test("notify: MANUAL_AUTO_CONFIRM=false only flags the order « Paiement d�
   const row = (await h.store.getOrder(o.id))!;
   assertEquals([row.status, row.payment_detected_at], ["checkout", h.clock.iso()]);
   const listed = (await admin(h)).body.stats.recentOrders.find((r: { id: string }) => r.id === o.id);
-  assertEquals([listed.manual_amount, listed.payment_detected_at], [1499, h.clock.iso()]);
+  assertEquals([listed.manual_amount, listed.payment_detected_at, listed.payment_detected_repeated], [1499, h.clock.iso(), false]);
 });
 
 Deno.test("notify: a rounded-up transfer matches the single recent order; not after 2 h; ties pick none", async () => {

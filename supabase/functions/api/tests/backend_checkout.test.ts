@@ -182,6 +182,7 @@ Deno.test("checkout: 503 payment_unavailable when neither Wave nor manual is con
 Deno.test("manual-paid: records the payer phone and waits for the owner", async () => {
   const h = makeHarness({ wave: null, env: { MANUAL_WAVE_NUMBER: "770001122" } });
   const { id, token } = await createOrder(h);
+  assertEquals((await checkout(h, id, token)).status, 200, "the customer saw the transfer instructions first");
   const bad = await h.call("POST", `/orders/${id}/manual-paid`, { body: { t: token, payerPhone: "12345" } });
   assertEquals([bad.status, bad.body.error, Object.keys(bad.body.fields)], [400, "validation", ["payerPhone"]]);
 
@@ -197,6 +198,27 @@ Deno.test("manual-paid: records the payer phone and waits for the owner", async 
   assertEquals(unlock.body.changed, true);
   const again = await h.call("POST", `/orders/${id}/manual-paid`, { body: { t: token, payerPhone: "781112233" } });
   assertEquals([again.status, again.body.order.status], [200, "paid"], "a paid order is never moved back");
+});
+
+Deno.test("manual-paid on an order that never went through checkout → 409 checkout_required, nothing changes", async () => {
+  const h = makeHarness({ wave: null, env: { MANUAL_WAVE_NUMBER: "770001122" } });
+  const { id, token } = await createOrder(h, "lettre");
+  const before = (await h.store.getOrder(id))!;
+  for (const body of [{ t: token }, { t: token, payerPhone: "78 111 22 33" }, { t: token, payerPhone: "12345" }]) {
+    const res = await h.call("POST", `/orders/${id}/manual-paid`, { body });
+    assertEquals([res.status, res.body.error], [409, "checkout_required"]);
+    assertEquals(res.body.message, "Affichez d'abord les instructions de paiement : elles donnent le montant exact à envoyer.");
+  }
+  assertEquals(await h.store.getOrder(id), before, "the order is untouched (still a preview, no payer phone)");
+  assertEquals((await h.store.listHeldManualOrders()).map((o) => o.id), [], "never listed as an order asked the catalogue price");
+  // A wrong token is still a plain 404 (no hint that the order exists).
+  assertEquals((await h.call("POST", `/orders/${id}/manual-paid`, { body: { t: "nope" } })).status, 404);
+  // After checkout the same call works.
+  assertEquals((await checkout(h, id, token)).status, 200);
+  const ok = await h.call("POST", `/orders/${id}/manual-paid`, { body: { t: token } });
+  assertEquals([ok.status, ok.body.order.status], [200, "awaiting_manual"]);
+  const again = await h.call("POST", `/orders/${id}/manual-paid`, { body: { t: token } });
+  assertEquals([again.status, again.body.order.status], [200, "awaiting_manual"], "clicking twice is fine");
 });
 
 Deno.test("manual-paid outside manual mode → 409 not_manual", async () => {
