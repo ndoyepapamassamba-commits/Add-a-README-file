@@ -31,5 +31,13 @@ livrés automatiquement. Spécification complète : `supabase/SPEC.md`. Guide du
 - Site : dossier `cv/`, publié par GitHub Pages depuis la branche `gh-pages`
   (https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/). Publier = pousser un commit
   testé sur `gh-pages`. Ne pas utiliser githack (page d'avertissement devant le site).
+- Teranga Pro (dossier `formation/`, produit `pq_essentiel`, 25 000 FCFA) : formation « Power Query pour le
+  reporting bancaire ». Le dépôt est PUBLIC : le contenu payant (modules, classeurs, clé du quiz) n'y entre jamais ;
+  il est dans la table `tcv.course_assets` (plus une copie de secours `_backup/…tgz`, jamais servie aux acheteurs).
+  Mise à jour du contenu : `scripts/course-upload.mjs` avec un jeton jetable (`openssl rand -hex 32`, son SHA-256 dans
+  `COURSE_UPLOAD_TOKEN_SHA256`, fenêtre `COURSE_UPLOAD_UNTIL` ≤ 72 h, refermée après). Vente ouverte/fermée par
+  `PQ_SALES_OPEN` dans `tcv.settings`. Rien de l'employeur du propriétaire (données, modèles, méthodes), aucune vraie
+  banque citée, ne jamais utiliser les skills `ecobank-*`. Démo sans paiement : `formation/demo.html`.
+  Le propriétaire a confirmé (22/10/2026) que son contrat lui permet cette activité.
 - Référencement : après chaque publication, `node scripts/indexnow.mjs` signale toutes les URL de `cv/sitemap.xml` à IndexNow (Bing, Yandex…) ; la clé publique est dans `cv/ebb4ea75c352a571bd0b205056c2b276.txt`.
 - Tests : `deno test -A supabase/functions/api/tests/` et `cd e2e && node flow.mjs`.
