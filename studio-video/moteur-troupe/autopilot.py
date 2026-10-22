@@ -193,7 +193,8 @@ def jour(n=None, journal=print):
                     n_ = sum(recharge.recharge(sc, 6, journal) for sc in lieux)
                     journal(f'réserve rechargée : {n_} sketch(s) neuf(s) pour {len(lieux)} scène(s)')
                     if n_: continue
-                journal('réserve de sketchs épuisée pour les scènes prêtes'); break
+                journal(f'variété insuffisante : pas 3 sketchs sans personnage ni décor des {serie_v1.FENETRE - 1} épisodes '
+                        f'précédents ({len(serie_v1.scenes_pretes())} duo(s) prêts, {3 * serie_v1.FENETRE} au moins pour produire sans arrêt)'); break
             F = serie_v1.un_episode(journal); faits.append(F and F['id'])
             if F is None and len([x for x in faits[-3:] if x is None]) == 3: journal('trois échecs techniques de suite : arrêt'); break
         r = serie_v1.etat(); r['minutes'] = round((time.time() - t0) / 60, 1); r['faits'] = faits

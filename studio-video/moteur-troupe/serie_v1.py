@@ -86,17 +86,58 @@ def mots_chute(sk):
     return out
 
 
-def choisit(k=3, graine=None):
-    """k sketchs jamais tournés, de scènes prêtes, en variant les scènes (jamais deux fois la même d'affilée si possible)."""
-    pretes = scenes_pretes(); deja = tournes(); rng = random.Random(graine)
+# VARIÉTÉ D'UN ÉPISODE À L'AUTRE (22/10/2026) — « les mêmes personnes se retrouvent dans presque toutes les scènes. Il faut
+# varier les personnages. Et varier les scènes. On ne peut pas avoir deux ou trois vidéos avec les mêmes personnages
+# successifs. » Les 18 premiers épisodes de la fabrique jouaient tous les trois mêmes duos (3 scènes préparées, un sketch de
+# chaque par épisode). Règle dure : un épisode ne reprend AUCUN personnage ni AUCUN décor des FENETRE − 1 épisodes livrés
+# avant lui, et ses sketchs ont des personnages tous différents ; sans assez de duos libres, la machine ne fabrique pas (jamais
+# de répétition pour remplir). Ordre de passage (veille du 22/10/2026, lecture aléatoire de Spotify, 2014, inspirée du
+# tramage : chaque artiste étalé le plus régulièrement possible sur la liste) : la scène qui attend depuis le plus longtemps
+# passe d'abord ; le hasard ne départage que les ex aequo. Production continue : au moins FENETRE × 3 duos prêts.
+FENETRE = 3
+
+
+def episodes_faits():
+    """épisodes livrés, dans l'ordre de livraison : (id, scènes, personnages), lus dans le journal et la réserve."""
+    J = journal(); R = {s['id']: s for s in reserve()}; debut = {}
+    for e in J:
+        if e.get('etape') == 'debut': debut[e.get('id')] = e
+    out = []
+    for e in J:
+        if e.get('etape') != 'fin' or e.get('id') in [o[0] for o in out]: continue
+        d = debut.get(e['id'], {}); sk = [R[x] for x in (d.get('sketchs') or e.get('sketchs', [])) if x in R]
+        out.append((e['id'], set(d.get('scenes') or [s['image'] for s in sk]),
+                    set(d.get('acteurs') or [a for s in sk for a in s['acteurs']])))
+    return out
+
+
+def choisit(k=3, graine=None, faits=None, deja=None):
+    """k sketchs jamais tournés, de scènes prêtes, aux personnages tous différents, sans aucun personnage ni décor des
+    FENETRE − 1 épisodes précédents ; la scène la moins récemment jouée d'abord. Moins de k : pas d'épisode."""
+    pretes = scenes_pretes(); rng = random.Random(graine)
+    faits = episodes_faits() if faits is None else faits; deja = tournes() if deja is None else deja
+    sc_rec, ac_rec = set(), set()
+    for _, sc, ac in (faits[-(FENETRE - 1):] if FENETRE > 1 else []): sc_rec |= sc; ac_rec |= ac
+    dernier = {x: n for n, (_, sc, _) in enumerate(faits) for x in sc}
     libres = [s for s in reserve() if s['id'] not in deja and s.get('image') in pretes
-              and set(s['acteurs']) <= set(pretes[s['image']])]
+              and set(s['acteurs']) <= set(pretes[s['image']]) and s['image'] not in sc_rec and not set(s['acteurs']) & ac_rec]
     rng.shuffle(libres); pris = []
     while len(pris) < k and libres:
-        vues = [s['image'] for s in pris]
-        c = sorted(libres, key=lambda s: (vues.count(s['image']), s['image'] == (vues[-1] if vues else None)))[0]
-        pris.append(c); libres.remove(c)
+        c = min(libres, key=lambda s: dernier.get(s['image'], -1))   # tri stable : le mélange départage les ex aequo
+        pris.append(c)
+        libres = [s for s in libres if s['image'] != c['image'] and not set(s['acteurs']) & set(c['acteurs'])]
     return pris
+
+
+def suite_possible(n_max=50):
+    """nombre d'épisodes fabricables d'affilée avec la réserve et les scènes prêtes, règle de variété comprise (simulation)."""
+    faits = episodes_faits(); deja = set(tournes()); n = 0
+    while n < n_max:
+        p = choisit(3, graine=n, faits=faits, deja=deja)
+        if len(p) < 3: break
+        faits = faits + [(f'sim{n}', {s['image'] for s in p}, {a for s in p for a in s['acteurs']})]
+        deja |= {s['id'] for s in p}; n += 1
+    return n
 
 
 def numero():
@@ -117,9 +158,12 @@ def ecrit(i, sks):
 def un_episode(journal_=print):
     import usine, autopilot
     sks = choisit(3, graine=numero())
-    if len(sks) < 3: journal_(f'réserve épuisée : {len(sks)} sketch(s) jouable(s)'); return None
+    if len(sks) < 3:
+        journal_(f'variété insuffisante : {len(sks)} sketch(s) jouable(s) sans reprendre un personnage ou un décor des '
+                 f'{FENETRE - 1} épisodes précédents'); return None
     i = f'E{numero():05d}'; t0 = time.time(); d = ecrit(i, sks)
-    _note(id=i, etape='debut', sketchs=[s['id'] for s in sks], scenes=[s['image'] for s in sks], t0=_maintenant())
+    _note(id=i, etape='debut', sketchs=[s['id'] for s in sks], scenes=[s['image'] for s in sks],
+          acteurs=sorted({a for s in sks for a in s['acteurs']}), t0=_maintenant())
     # HUMOUR CONTRE LA V1 (22/10/2026, humour_v1.py) : duel de chaque sketch contre la V1 par le juge texte gratuit, pendant le
     # tournage (fil à part : aucune minute ajoutée), inscrit dans histoire.json avant la livraison qui le lit
     # 22/10/2026 : le juge gratuit peut être lent (≈ 45 s par vote) — l'épisode ne l'attend que 2 min après le tournage ; un score
@@ -206,7 +250,8 @@ def etat():
     return {'maj': _maintenant(), 'episodes': len(fins), 'statuts': st, 'echecs_techniques': len(ech),
             'minutes_par_episode': round(moy / 60, 1) if moy else None, 'episodes_par_jour_par_machine': par_jour,
             'jours_pour_10000_une_machine': round(reste / par_jour) if par_jour else None,
-            'reserve': {'sketchs': len(reserve()), 'jouables_libres': len(libres), 'episodes_possibles': len(libres) // 3},
+            'reserve': {'sketchs': len(reserve()), 'jouables_libres': len(libres), 'episodes_possibles': suite_possible()},
+            'variete': {'fenetre_episodes': FENETRE, 'duos_prets': len(pretes), 'duos_pour_produire_sans_arret': 3 * FENETRE},
             'scenes_pretes': pretes}
 
 

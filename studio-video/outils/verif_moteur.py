@@ -1353,7 +1353,7 @@ try:
     _y53 = open(os.path.join(os.path.dirname(ICI), '.github', 'workflows', 'fabrique.yml'), encoding='utf-8').read()
     if 'AIRS_DUO' not in _t53 or 'DUO_AIR.get((id(S), tuple(sorted(who)))' not in _t53 or 'for air in sorted(' not in _t53:
         echecs.append('plan à deux : air resserré par paliers absent (retour au champ-contrechamp systématique)')
-    elif len({x['image'] for x in _ch53}) != 3 or _e53['reserve']['episodes_possibles'] != 2 or _m53 != ['TRESSES', 'ROUTE']:
+    elif len({x['image'] for x in _ch53}) != 3 or _e53['reserve']['episodes_possibles'] != 1 or _m53 != ['TRESSES', 'ROUTE']:
         echecs.append(f"série V1 : choix ou réserve faux ({[x['id'] for x in _ch53]}, {_e53['reserve']}, {_m53})")
     elif _c53.get('moteur') != 'v1' or "config().get('moteur') == 'v1'" not in _a53 or 'serie_v1.un_episode' not in _a53:
         echecs.append('fabrique : la journée ne passe pas par la série V1')
@@ -1368,6 +1368,43 @@ try:
     else: print(f"série V1 (3 scènes différentes par épisode, mots de chute {_m53}, sketchs rendus après échec technique), plan à deux par paliers, fabrique au moteur V1 (libGLESv2, cache) : OK")
 except Exception as e:
     echecs.append(f'série V1 : {e}')
+
+# 22/10/2026 — « on ne peut pas avoir deux ou trois vidéos avec les mêmes personnages successifs » : aucun personnage ni décor
+# des 2 épisodes livrés précédents, personnages tous différents dans un épisode, la scène qui attend le plus d'abord
+try:
+    with tempfile.TemporaryDirectory() as _d57:
+        os.environ['MASSAMBA_BIBLIO'] = _d57
+        _sc57 = {f's{k}': [f'P{k}A', f'P{k}B'] for k in range(9)}; _sc57['x'] = ['P0A', 'Q']   # x partage un personnage avec s0
+        for _n57, _a57 in _sc57.items():
+            for _p57 in _a57:
+                os.makedirs(os.path.join(_d57, 'prep', _n57, 'expressions', _p57.lower()))
+                open(os.path.join(_d57, 'prep', _n57, 'expressions', _p57.lower(), 'meta.json'), 'w').write('{}')
+            json.dump({'acteurs': [{'nom': p, 'slug': p.lower()} for p in _a57]}, open(os.path.join(_d57, 'prep', _n57, 'scene.json'), 'w'))
+        os.makedirs(os.path.join(_d57, 'stock'))
+        json.dump({'sketchs': [{'id': f'{n}-{k}', 'image': n, 'acteurs': a, 'titre': 'T', 'repliques': []} for n, a in _sc57.items() for k in range(2)]},
+                  open(os.path.join(_d57, 'stock', 'sketchs.json'), 'w'))
+        sys.modules.pop('serie_v1', None); import serie_v1 as _s57
+        for _i57, _l57 in (('E00001', ['s0', 's1', 's2']), ('E00002', ['s3', 's4', 's5'])):
+            _s57._note(id=_i57, etape='debut', sketchs=[f'{n}-0' for n in _l57], scenes=_l57, acteurs=[p for n in _l57 for p in _sc57[n]])
+            _s57._note(id=_i57, etape='fin', sketchs=[f'{n}-0' for n in _l57], statut='a_corriger')
+        _ch57 = sorted(x['image'] for x in _s57.choisit(3, graine=7))
+        _f57 = _s57.episodes_faits(); _dj57 = set(_s57.tournes()); _suite57 = []
+        for _k57 in range(20):
+            _p57 = _s57.choisit(3, graine=_k57, faits=_f57, deja=_dj57)
+            if len(_p57) < 3: break
+            _f57 = _f57 + [(f'sim{_k57}', {x['image'] for x in _p57}, {a for x in _p57 for a in x['acteurs']})]
+            _dj57 |= {x['id'] for x in _p57}; _suite57.append(_f57[-1][2])
+        _tout57 = [e[2] for e in _s57.episodes_faits()] + _suite57
+        _viol57 = [k for k in range(1, len(_tout57)) if _tout57[k] & (_tout57[k - 1] | (_tout57[k - 2] if k >= 2 else set()))]
+        _n57 = _s57.suite_possible()
+    os.environ.pop('MASSAMBA_BIBLIO', None); sys.modules.pop('serie_v1', None)
+    if _ch57 != ['s6', 's7', 's8']:
+        echecs.append(f'variété : le choix reprend un personnage ou un décor des 2 épisodes précédents ({_ch57})')
+    elif _viol57 or len(_suite57) != 4 or _n57 != 4:
+        echecs.append(f'variété : suite simulée fautive (personnages repris aux épisodes {_viol57}, {len(_suite57)} épisodes, état {_n57})')
+    else: print(f'variété : aucun personnage ni décor repris sur 3 épisodes voisins ({len(_tout57)} épisodes simulés), scène la plus ancienne d\'abord : OK')
+except Exception as e:
+    echecs.append(f'variété : {e}')
 
 # 22/10/2026 — écarts de E00001 à la V1 : netteté personnage/décor 1,61 (V1 1,88) → profondeur de champ du décor (net au plan des
 # pieds, flou au loin) ; à-coups 5,9/min (V1 0,8), le plus fort sous la carte du sketch 2 posée sur Soumaila → carte douce sur un corps
