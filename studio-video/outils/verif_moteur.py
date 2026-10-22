@@ -1336,7 +1336,15 @@ try:
         json.dump({'sketchs': _sk53}, open(os.path.join(_d53, 'stock', 'sketchs.json'), 'w'))
         sys.modules.pop('serie_v1', None); import serie_v1 as _s53
         _ch53 = _s53.choisit(3, graine=1); _e53 = _s53.etat(); _m53 = _s53.mots_chute(_sk53[0])
+        # 22/10/2026 (marche n° 18) : un épisode en échec technique rend ses sketchs ; « fin » les consomme ; deux échecs écartent
+        _s53._note(id='E00001', etape='debut', sketchs=['salon-0', 'marche-0', 'gbaka-0'])
+        _s53._note(id='E00001', etape='echec', sketchs=['salon-0', 'marche-0', 'gbaka-0'], erreur='libGLESv2')
+        _tr53a = _s53.tournes()
+        _s53._note(id='E00002', etape='fin', sketchs=['salon-1'], statut='a_corriger')
+        _s53._note(id='E00003', etape='echec', sketchs=['salon-0'], erreur='x')
+        _tr53b = _s53.tournes()
     os.environ.pop('MASSAMBA_BIBLIO', None)
+    _y53 = open(os.path.join(os.path.dirname(ICI), '.github', 'workflows', 'fabrique.yml'), encoding='utf-8').read()
     if 'AIRS_DUO' not in _t53 or 'DUO_AIR.get((id(S), tuple(sorted(who)))' not in _t53 or 'for air in sorted(' not in _t53:
         echecs.append('plan à deux : air resserré par paliers absent (retour au champ-contrechamp systématique)')
     elif len({x['image'] for x in _ch53}) != 3 or _e53['reserve']['episodes_possibles'] != 2 or _m53 != ['TRESSES', 'ROUTE']:
@@ -1345,7 +1353,11 @@ try:
         echecs.append('fabrique : la journée ne passe pas par la série V1')
     elif not all(x in _q53 for x in ('moderngl', 'scenedetect', 'skia-python', 'pyloudnorm', 'piper-tts')):
         echecs.append('fabrique : dépendances de la chaîne V1 incomplètes (requirements.txt)')
-    else: print(f"série V1 (3 scènes différentes par épisode, mots de chute {_m53}), plan à deux par paliers, fabrique au moteur V1 : OK")
+    elif _tr53a or _tr53b != {'salon-1', 'salon-0'}:
+        echecs.append(f'série V1 : sketchs des épisodes en échec technique perdus ou rejoués sans fin ({_tr53a}, {_tr53b})')
+    elif not all(x in _y53 for x in ('libgles2', 'load_raw_library', 'actions/cache@v4', 'venv-fabrique')):
+        echecs.append('fabrique : machine GitHub sans libGLESv2 (MediaPipe) ou sans contrôle de chargement / cache des logiciels')
+    else: print(f"série V1 (3 scènes différentes par épisode, mots de chute {_m53}, sketchs rendus après échec technique), plan à deux par paliers, fabrique au moteur V1 (libGLESv2, cache) : OK")
 except Exception as e:
     echecs.append(f'série V1 : {e}')
 

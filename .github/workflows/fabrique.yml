@@ -75,8 +75,18 @@ jobs:
           print('faire=' + ('produire' if avance or len(a_venir) < cadence or os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch' else 'rien'))
           EOF
       - uses: actions/setup-python@v5
+        id: py
         if: steps.etat.outputs.faire == 'cles' || steps.etat.outputs.faire == 'produire'
         with: { python-version: '3.11' }
+      # 22/10/2026 : l'installation des paquets du moteur prenait 21 min à chaque passage (marche n° 18) ; l'environnement entier
+      # est gardé en cache, à la clé des versions (requirements.txt) et de l'interpréteur exact
+      - name: Logiciels du moteur (cache)
+        id: venv
+        if: steps.etat.outputs.faire == 'produire'
+        uses: actions/cache@v4
+        with:
+          path: ~/venv-fabrique
+          key: venv-ubuntu-24.04-py${{ steps.py.outputs.python-version }}-${{ hashFiles('studio-video/fabrique/requirements.txt') }}
       - name: Paire de clés (la phrase reste dans les secrets)
         if: steps.etat.outputs.faire == 'cles'
         env: { FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
@@ -86,8 +96,16 @@ jobs:
       - name: Logiciels du moteur
         if: steps.etat.outputs.faire == 'produire'
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg libegl1 libegl-mesa0 libgl1-mesa-dri > /dev/null
-          pip install -q -r studio-video/fabrique/requirements.txt
+          # libgles2 : MediaPipe 1.1 (libmediapipe.so) est lié à libGLESv2.so.2 — sans lui, tourne.py s'arrête au chargement
+          # (« OSError: libGLESv2.so.2 », marche n° 18, 22/10/2026) ; libgl1 : contexte EGL de ModernGL (rig2d.gl_actif)
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg libegl1 libegl-mesa0 libgl1-mesa-dri libgles2 libgl1 > /dev/null
+          if [ ! -x ~/venv-fabrique/bin/python3 ]; then
+            python3 -m venv ~/venv-fabrique && ~/venv-fabrique/bin/pip install -q -r studio-video/fabrique/requirements.txt
+          fi
+          echo "$HOME/venv-fabrique/bin" >> "$GITHUB_PATH"
+          # contrôle avant la journée : la bibliothèque native de MediaPipe se charge (sinon arrêt ici, pas trois épisodes perdus)
+          ~/venv-fabrique/bin/python3 -c "from mediapipe.tasks.python.core import mediapipe_c_bindings as b; b.load_raw_library(); import skia, cv2; print('moteur : MediaPipe, Skia, OpenCV chargés')"
+          ~/venv-fabrique/bin/python3 -c "import moderngl; moderngl.create_standalone_context(backend='egl'); print('rendu : EGL actif')" || echo "rendu : EGL absent, chemin processeur"
       - name: Ouvrir le coffre (bibliothèque, modèles, état)
         if: steps.etat.outputs.faire == 'produire'
         env: { GH_TOKEN: '${{ github.token }}', FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }

@@ -54,8 +54,16 @@ def scenes_pretes():
 
 
 def tournes():
-    """sketchs déjà mis dans un épisode (quel qu'en soit le statut) : jamais deux fois le même sketch."""
-    return {s for e in journal() for s in e.get('sketchs', [])}
+    """sketchs déjà tournés jusqu'au bout (étape « fin », quel qu'en soit le statut) : jamais deux fois le même sketch.
+    22/10/2026 (marche GitHub n° 18) : un épisode en échec technique (bibliothèque absente, machine coupée) rend ses sketchs à la
+    réserve — 9 sketchs avaient été perdus pour une panne de la machine ; un sketch qui fait échouer le moteur deux fois est
+    écarté, pour ne pas boucler sur lui."""
+    J = journal(); fini = {s for e in J if e.get('etape') == 'fin' for s in e.get('sketchs', [])}
+    ech = {}
+    for e in J:
+        if e.get('etape') == 'echec':
+            for s in e.get('sketchs', []): ech[s] = ech.get(s, 0) + 1
+    return fini | {s for s, n in ech.items() if n >= 2}
 
 
 def mots_chute(sk):
