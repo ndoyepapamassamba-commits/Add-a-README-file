@@ -113,15 +113,20 @@ def un_episode(journal_=print):
     _note(id=i, etape='debut', sketchs=[s['id'] for s in sks], scenes=[s['image'] for s in sks], t0=_maintenant())
     # HUMOUR CONTRE LA V1 (22/10/2026, humour_v1.py) : duel de chaque sketch contre la V1 par le juge texte gratuit, pendant le
     # tournage (fil à part : aucune minute ajoutée), inscrit dans histoire.json avant la livraison qui le lit
+    # 22/10/2026 : le juge gratuit peut être lent (≈ 45 s par vote) — l'épisode ne l'attend que 2 min après le tournage ; un score
+    # qui arrive plus tard est quand même gardé dans la réserve (garde_humour), jamais perdu
     import threading, humour_v1
     hum = {}
-    fil = threading.Thread(target=lambda: hum.update({s_['id']: s_.get('plancher_v17') if s_.get('plancher_v17') is not None
-                                                      else _essai_plancher(humour_v1, s_) for s_ in sks}), daemon=True)
+    def _juge_sketchs():
+        for s_ in sks:
+            hum[s_['id']] = s_['plancher_v17'] if s_.get('plancher_v17') is not None else _essai_plancher(humour_v1, s_)
+            garde_humour({s_['id']: hum[s_['id']]})
+    fil = threading.Thread(target=_juge_sketchs, daemon=True)
     fil.start()
     try:
         os.environ.pop('USINE_PORTES_FOND', None)   # le juge rend son verdict avant la livraison
         usine.tourne(d, 'v1'); D = os.path.join(d, 'v1')
-        fil.join(timeout=900); note_humour(d, hum)
+        fil.join(timeout=float(os.environ.get('HUMOUR_ATTENTE_S', '120'))); note_humour(d, dict(hum))
         F = autopilot.livre(i, D, journal=journal_)
         F['sketchs'] = [{'id': s['id'], 'titre': s['titre'], 'lieu': s.get('lieu'), 'scene': s['image'], 'acteurs': s['acteurs'],
                          'mecanique': s.get('mecanique'), 'repliques': [{'qui': r['qui'], 'texte': r['texte'], 'chute': bool(r.get('chute'))}
@@ -143,18 +148,26 @@ def _essai_plancher(module, sk):
     except Exception: return None
 
 
-def note_humour(d, hum):
-    """scores d'humour contre la V1 inscrits dans histoire.json de l'épisode et gardés dans la réserve (un sketch n'est jugé
-    qu'une fois)."""
-    f = os.path.join(d, 'histoire.json'); H = json.load(open(f, encoding='utf-8'))
-    for s_ in H['sketchs']:
-        if hum.get(s_['id']) is not None: s_['plancher_v17'] = hum[s_['id']]
-    json.dump(H, open(f, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-    if os.path.isfile(STOCK) and any(v is not None for v in hum.values()):
+_VERROU_STOCK = __import__('threading').Lock()
+
+
+def garde_humour(hum):
+    """scores d'humour gardés dans la réserve : un sketch n'est jugé qu'une fois."""
+    if not os.path.isfile(STOCK) or not any(v is not None for v in hum.values()): return
+    with _VERROU_STOCK:
         St = json.load(open(STOCK, encoding='utf-8'))
         for s_ in St['sketchs']:
             if hum.get(s_['id']) is not None: s_['plancher_v17'] = hum[s_['id']]
         tmp = STOCK + '.tmp'; json.dump(St, open(tmp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1); os.replace(tmp, STOCK)
+
+
+def note_humour(d, hum):
+    """scores d'humour contre la V1 inscrits dans histoire.json de l'épisode (et gardés dans la réserve)."""
+    f = os.path.join(d, 'histoire.json'); H = json.load(open(f, encoding='utf-8'))
+    for s_ in H['sketchs']:
+        if hum.get(s_['id']) is not None: s_['plancher_v17'] = hum[s_['id']]
+    json.dump(H, open(f, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    garde_humour(hum)
 
 
 def menage(d):

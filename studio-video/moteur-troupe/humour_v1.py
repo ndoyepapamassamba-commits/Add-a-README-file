@@ -49,12 +49,13 @@ def juge_fiable():
 
 
 def plancher(sk):
-    """part des duels gagnés contre la V1 (0–1) ou None si le juge n'est pas fiable ou injoignable (« non jugé »)."""
+    """part des duels gagnés contre la V1 (0–1) ou None si le juge n'est pas fiable ou injoignable (« non jugé »).
+    22/10/2026 : le service gratuit répondait en ≈ 45 s par vote (14 min pour 6 duels) — un duel par sketch de la V1, l'ordre
+    alterné d'un duel à l'autre (le biais de position se compense sur les trois), deux votes à la fois."""
     if not juge_fiable(): return None
-    gagnes = sur = 0
-    for v in H.V17:
-        for a, b, moi in ((sk, v, 'A'), (v, sk, 'B')):
-            r = _vote(a, b)
-            if r is None: continue
-            sur += 1; gagnes += r == moi
-    return round(gagnes / sur, 3) if sur >= 4 else None
+    from concurrent.futures import ThreadPoolExecutor
+    duels = [((sk, v, 'A') if k % 2 else (v, sk, 'B')) for k, v in enumerate(H.V17)]
+    with ThreadPoolExecutor(2) as p:
+        rep = list(p.map(lambda d: (_vote(d[0], d[1]), d[2]), duels))
+    faits = [(r, moi) for r, moi in rep if r is not None]
+    return round(sum(r == moi for r, moi in faits) / len(faits), 3) if len(faits) >= 2 else None
