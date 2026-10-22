@@ -68,8 +68,16 @@ def construit(biblio, site, cles):
     open(os.path.join(site, 'catalogue.msb'), 'wb').write(coffre.scelle_octets(corps, pub))
     json.dump(archives, open(os.path.join(site, 'archives.json'), 'w'), indent=1)
     # état PUBLIC (rien de privé : des heures de créneaux et des nombres) — la tâche horaire de GitHub y lit s'il faut produire
-    json.dump({'maj': coffre_maj(), 'videos': len(cat), 'creneaux_a_venir': sorted(x['creneau'] for x in F if x.get('statut') == 'pret' and x.get('creneau'))},
-              open(os.path.join(site, 'etat-public.json'), 'w'), indent=1)
+    # 22/10/2026 — CONTRÔLE SANS DÉCHIFFRER : les vidéos et le catalogue sont scellés (seule la phrase secrète de l'utilisateur les
+    # ouvre) ; l'état public porte, pour chaque épisode, des NOMBRES seulement — statut, durée, qualité de la version téléphone,
+    # mesures contre la V1 et noms des critères en écart (aucun titre, aucune réplique, aucune image) — et le débit de la fabrique
+    ctrl = [{'id': x['id'], 'statut': x.get('statut'), 'livree': x.get('livree'), 'duree_s': x.get('duree_s'),
+             'ssim': (x.get('version_tel') or {}).get('ssim'), 'profil_v1': x.get('profil_v1'),
+             'ecarts': [str(m).split(' :')[0] for m in (x.get('motifs') or [])]} for x in F[-fen:]]
+    debit = {k_: (prod or {}).get(k_) for k_ in ('episodes', 'statuts', 'echecs_techniques', 'minutes_par_episode', 'episodes_par_jour_par_machine')}
+    json.dump({'maj': coffre_maj(), 'videos': len(cat), 'creneaux_a_venir': sorted(x['creneau'] for x in F if x.get('statut') == 'pret' and x.get('creneau')),
+               'controle': ctrl, 'debit': debit},
+              open(os.path.join(site, 'etat-public.json'), 'w'), indent=1, ensure_ascii=False)
     return {'videos': len(cat), 'en_ligne': len(en_ligne), 'archives': len(archives)}
 
 

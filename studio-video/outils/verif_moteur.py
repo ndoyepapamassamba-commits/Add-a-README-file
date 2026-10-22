@@ -1383,6 +1383,25 @@ try:
 except Exception as e:
     echecs.append(f'profondeur de champ / carte douce : {e}')
 
+# 22/10/2026 — état public de la fabrique : les mesures de chaque épisode en clair, jamais un titre, une réplique ou une légende
+try:
+    sys.path.insert(0, os.path.join(ICI, 'fabrique')); import vitrine as _vi55, coffre as _co55
+    with tempfile.TemporaryDirectory() as _d55:
+        _b55, _s55, _k55 = (os.path.join(_d55, x) for x in 'bsk'); os.makedirs(_b55 + '/livraison'); os.makedirs(_s55); os.makedirs(_k55)
+        _co55.cles(_k55, 'phrase-d-essai-locale')
+        json.dump({'id': 'E00009', 'titre': 'TITRE SECRET', 'legende': 'réplique secrète', 'statut': 'a_corriger', 'livree': '2026-10-22T12:00',
+                   'duree_s': 61.4, 'version_tel': {'ssim': 0.97}, 'profil_v1': {'acoups_min': 1.0},
+                   'motifs': ['à-coups par minute (aller-retour) : 3.8 (V1 0.8, à faire descendre en dessous)']}, open(_b55 + '/livraison/E00009.json', 'w'))
+        import contextlib, io
+        with contextlib.redirect_stdout(io.StringIO()): _vi55.construit(_b55, _s55, _k55)
+        _t55 = open(os.path.join(_s55, 'etat-public.json'), encoding='utf-8').read(); _e55 = json.loads(_t55)
+    if 'SECRET' in _t55 or 'secrète' in _t55: echecs.append('état public de la fabrique : un titre ou une réplique passe en clair')
+    elif not _e55.get('controle') or _e55['controle'][0].get('ecarts') != ['à-coups par minute (aller-retour)']:
+        echecs.append(f"état public de la fabrique : contrôle des épisodes absent ou faux ({_e55.get('controle')})")
+    else: print('état public de la fabrique (mesures en clair, aucun contenu) : OK')
+except Exception as e:
+    echecs.append(f'état public de la fabrique : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')
