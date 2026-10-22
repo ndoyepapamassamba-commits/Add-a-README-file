@@ -67,6 +67,18 @@
     <h2>État du système</h2>
     <ul class="health" id="health"></ul>
 
+    <section class="card course-card" id="course-card" hidden aria-labelledby="course-title">
+      <h2 id="course-title">Formation</h2>
+      <ul class="health course-facts" id="course-facts"></ul>
+      <h3>Par produit (30 jours)</h3>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Par produit sur 30 jours (défilement horizontal)">
+        <table class="data">
+          <thead><tr><th scope="col">Produit</th><th scope="col">Commandes</th><th scope="col">Au paiement</th><th scope="col">Payées</th><th scope="col">Revenus</th></tr></thead>
+          <tbody id="funnel-body"></tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="card phone-card" id="phone-card" hidden aria-labelledby="phone-title">
       <h2 id="phone-title">Relier mon téléphone (MacroDroid)</h2>
       <p class="phone-state" id="phone-state"></p>

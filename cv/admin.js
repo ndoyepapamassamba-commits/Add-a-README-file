@@ -245,13 +245,58 @@
     $("#to-unlock").hidden = !waiting.length;
   }
 
+  // A course order has no preview: its first status reads « Commande créée ».
+  var COURSE_PRODUCTS = { pq_essentiel: true };
+
+  function statusBadge(o) {
+    if (o.status === "preview" && COURSE_PRODUCTS[o.product]) return badge({ preview: ["Commande créée", ""] }, "preview");
+    return badge(STATUS, o.status);
+  }
+
+  /** « Formation » card: sales switch, price, content, leads and attestations, then the 30-day funnel per product. */
+  function renderCourse(course, stats) {
+    var card = $("#course-card");
+    if (!card) return;
+    if (!course) {
+      card.hidden = true;
+      return;
+    }
+    var leads = stats.leads || { active: 0 };
+    var passes = stats.quizPasses || { total: 0 };
+    var ul = TCV.dom.clear($("#course-facts"));
+    function fact(on, title, hint) {
+      ul.appendChild(el("li", { class: on ? "on" : "off" }, [
+        el("span", { class: "dot", "aria-hidden": "true" }),
+        el("strong", { text: title }),
+        hint ? el("p", { class: "hint", text: hint }) : null
+      ]));
+    }
+    fact(course.salesOpen, course.salesOpen ? "Ventes ouvertes" : "Ventes fermées", "Prix : " + fcfa(course.price));
+    fact(course.content, course.content ? "Contenu en ligne (version " + course.version + ", " + course.modules + " modules)" : "Contenu manquant");
+    fact(true, leads.active + " contact(s) en attente de l'ouverture");
+    fact(true, passes.total + " attestation(s)");
+    var body = TCV.dom.clear($("#funnel-body"));
+    var rows = (stats.funnel && stats.funnel.last30) || [];
+    if (!rows.length) body.appendChild(emptyRow(5, "Aucune commande sur 30 jours."));
+    rows.forEach(function (r) {
+      body.appendChild(el("tr", { "data-product": r.product }, [
+        el("td", { text: TCV.fmt.productLabel(r.product) }),
+        el("td", { text: String(r.orders) }),
+        el("td", { text: String(r.checkouts) }),
+        el("td", { text: String(r.paid) }),
+        el("td", { text: fcfa(r.revenue) })
+      ]));
+    });
+    card.hidden = false;
+  }
+
   function renderOrders(list) {
     var body = TCV.dom.clear($("#orders-body"));
     if (!list.length) body.appendChild(emptyRow(7, "Aucune commande pour le moment."));
     list.forEach(function (o) {
       body.appendChild(el("tr", null, [
         el("td", null, [el("strong", { text: o.id })]),
-        el("td", null, [badge(STATUS, o.status), o.payment_detected_at ? " " : null, detectedBadge(o)]),
+        el("td", null, [statusBadge(o), o.payment_detected_at ? " " : null, detectedBadge(o)]),
         el("td", { text: fcfa(o.amount) }),
         el("td", { text: TCV.fmt.productLabel(o.product) }),
         el("td", { text: o.payment_method === "wave" ? "Wave" : o.payment_method === "manual" ? "Transfert Wave" : "—" }),
@@ -284,6 +329,7 @@
     renderKpis(stats, health);
     renderHealth(health);
     renderPhoneCard(health);
+    renderCourse(res.course, stats);
     renderUnlock(stats.recentOrders || []);
     renderOrders(stats.recentOrders || []);
     renderPayouts(stats.payouts || []);

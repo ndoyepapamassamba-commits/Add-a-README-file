@@ -452,7 +452,7 @@
     btn.addEventListener("click", function () {
       download(f, btn, status);
     });
-    var ext = /\.zip$/i.test(f.name) ? "ZIP" : /\.xlsx$/i.test(f.name) ? "XLSX" : "";
+    var ext = /\.zip$/i.test(f.name) ? "ZIP" : /\.xlsx$/i.test(f.name) ? "XLSX" : /\.csv$/i.test(f.name) ? "CSV" : "";
     return el("li", { class: "file-item" }, [
       el("span", { class: "file-ext ext-" + ext.toLowerCase(), "aria-hidden": "true", text: ext }),
       el("span", { class: "file-body" }, [

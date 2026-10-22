@@ -834,6 +834,33 @@ input[aria-invalid="true"] { border-color: var(--error); }
 
 @page { margin: 0; }
 
+/* ---------- Demo mode (js/demo-shim.js, demo.html) ---------- */
+.demo-banner {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 90; background: var(--warn-soft); color: #5E3A00;
+  border-top: 2px solid #EBCB98; box-shadow: 0 -4px 14px rgba(11, 37, 69, .12);
+}
+.demo-banner p { margin: 0 auto; max-width: 1120px; padding: 8px 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 8px; font-size: .95rem; text-align: center; }
+.demo-banner strong { letter-spacing: .04em; }
+.demo-banner button {
+  min-height: 44px; padding: 8px 14px; border-radius: 999px; border: 1px solid #C08A3E; background: #fff; color: #5E3A00;
+  font: inherit; font-weight: 650; cursor: pointer;
+}
+.demo-banner button:hover { background: #FFF8EC; }
+.demo-banner button:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+html.is-demo body { padding-bottom: 104px; }
+.demo-card { max-width: 760px; }
+.demo-steps { padding-left: 1.3em; }
+.demo-steps li { margin-bottom: .55em; }
+.demo-actions { margin-top: 20px; }
+@media print {
+  .demo-banner { display: none !important; }
+  html.is-demo body { padding-bottom: 0; }
+  html.is-demo body::before {
+    content: "DÉMONSTRATION — aucun paiement réel, document sans valeur"; display: block; position: fixed; top: 3mm; left: 0; right: 0;
+    text-align: center; font: 700 10pt/1.2 var(--sans); color: #9A5B00; z-index: 100;
+  }
+}
+
 @media print {
   html, body { background: #fff !important; }
   body { font-size: 10.5pt; line-height: 1.5; color: #111; }

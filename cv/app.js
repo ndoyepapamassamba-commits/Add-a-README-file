@@ -97,7 +97,7 @@
     return m ? "+221 " + m[1] + " " + m[2] + " " + m[3] + " " + m[4] : e164 || "";
   }
 
-  var PRODUCT_LABELS = { cv: "CV", lettre: "Lettre de motivation", pack: "Pack CV + lettre", stage: "Pack Stage", premium: "CV Premium" };
+  var PRODUCT_LABELS = { cv: "CV", lettre: "Lettre de motivation", pack: "Pack CV + lettre", stage: "Pack Stage", premium: "CV Premium", pq_essentiel: "Formation Power Query" };
 
   function productLabel(p) {
     return PRODUCT_LABELS[p] || p;

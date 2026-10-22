@@ -1,0 +1,16 @@
+﻿Contrat;Client;Agence;Produit;Encours;Impayé;Date premier impayé
+EX-001;CLT-2041;Agence Flamboyant;Prêt personnel;1850000,00;0,00;
+EX-002;CLT-2042;Agence Rônier;Crédit immobilier;42300000,00;1275400,00;31/08/2026
+EX-003;CLT-2043;Agence Filao;Crédit équipement;18750000,00;0,00;
+EX-004;CLT-2044;Agence Flamboyant;Crédit de trésorerie;6400000,00;2980250,50;18/01/2026
+EX-005;CLT-2045;Agence Filao;Prêt personnel;960000,00;48500,00;04/09/2026
+EX-006;CLT-2046;Agence Rônier;Prêt personnel;2275000,00;0,00;
+EX-007;CLT-2047;Agence Filao;Crédit équipement;11600000,00;1840000,00;01/07/2026
+EX-008;CLT-2048;Agence Rônier;Prêt personnel;1320000,00;1104300,25;14/06/2025
+EX-009;CLT-2049;Agence Flamboyant;Crédit équipement;24900000,00;1530000,00;30/08/2026
+EX-010;CLT-2050;Agence Filao;Crédit immobilier;35800000,00;0,00;
+EX-011;CLT-2051;Agence Flamboyant;Prêt personnel;3150000,00;612900,00;12/05/2026
+EX-012;CLT-2052;Agence Rônier;Crédit de trésorerie;8700000,00;1965800,00;02/07/2026
+EX-013;CLT-2053;Agence Flamboyant;Crédit de trésorerie;5500000,00;0,00;
+EX-014;CLT-2054;Agence Filao;Crédit immobilier;27450000,00;4210600,75;05/10/2025
+EX-015;CLT-2055;Agence Rônier;Crédit équipement;9850000,00;742150,00;07/08/2026
