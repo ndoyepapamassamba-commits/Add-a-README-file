@@ -41,10 +41,19 @@ def _note(**e):
     with open(JOURNAL, 'a', encoding='utf-8') as f: f.write(json.dumps(e, ensure_ascii=False) + '\n')
 
 
+# SCÈNES INTERDITES (22/10/2026) — « il faut pas les mettre dans mes vidéos […] C'était pas ça qui était prévu » / « Les scènes
+# du bas sur l'image » (planche des 6 scènes préparées) : école (Maître Koné, Sœur Awa), marché (Djecky, Tata Prisca), village
+# (Grand-père Ndiaye, Petite Khadija), personnages collés dans un décor composé ; et les scènes de l'ancienne troupe (« je ne veux
+# pas des personnages de l'ancienne troupe », 21/10/2026). Jamais jouables, même préparées sur la machine.
+INTERDITES = {'ecole--maitre-kone--soeur-awa', 'marche--djecky--tata-prisca', 'village--grand-pere-ndiaye--petite-khadija',
+              'ecole-n1', 'cour-n1', 'cour', 'cour-reel', 'chambre', 'chambre-reel', 'chambre-v2', 'maquis', 'maquis-reel', 'maquis-v2'}
+
+
 def scenes_pretes():
-    """scènes préparées dont CHAQUE personnage a sa bibliothèque de visages (meta.json) : seules jouables."""
+    """scènes préparées dont CHAQUE personnage a sa bibliothèque de visages (meta.json) : seules jouables (hors INTERDITES)."""
     P = os.path.join(BIBLIO, 'prep'); ok = {}
     for n in sorted(os.listdir(P)) if os.path.isdir(P) else []:
+        if n in INTERDITES: continue
         f = os.path.join(P, n, 'scene.json')
         if not os.path.isfile(f): continue
         S = json.load(open(f))

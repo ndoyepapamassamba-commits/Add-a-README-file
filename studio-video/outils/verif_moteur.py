@@ -1336,6 +1336,12 @@ try:
         json.dump({'sketchs': _sk53}, open(os.path.join(_d53, 'stock', 'sketchs.json'), 'w'))
         sys.modules.pop('serie_v1', None); import serie_v1 as _s53
         _ch53 = _s53.choisit(3, graine=1); _e53 = _s53.etat(); _m53 = _s53.mots_chute(_sk53[0])
+        # 22/10/2026 — scènes du bas de la planche interdites par l'utilisateur : préparées, elles ne sont jamais jouables
+        for _x53 in ('marche--djecky--tata-prisca', 'village--grand-pere-ndiaye--petite-khadija', 'maquis'):
+            os.makedirs(os.path.join(_d53, 'prep', _x53, 'expressions', 'g'))
+            json.dump({'acteurs': [{'nom': 'G', 'slug': 'g'}]}, open(os.path.join(_d53, 'prep', _x53, 'scene.json'), 'w'))
+            open(os.path.join(_d53, 'prep', _x53, 'expressions', 'g', 'meta.json'), 'w').write('{}')
+        _int53 = set(_s53.scenes_pretes()) & _s53.INTERDITES
         # 22/10/2026 (marche n° 18) : un épisode en échec technique rend ses sketchs ; « fin » les consomme ; deux échecs écartent
         _s53._note(id='E00001', etape='debut', sketchs=['salon-0', 'marche-0', 'gbaka-0'])
         _s53._note(id='E00001', etape='echec', sketchs=['salon-0', 'marche-0', 'gbaka-0'], erreur='libGLESv2')
@@ -1353,6 +1359,8 @@ try:
         echecs.append('fabrique : la journée ne passe pas par la série V1')
     elif not all(x in _q53 for x in ('moderngl', 'scenedetect', 'skia-python', 'pyloudnorm', 'piper-tts')):
         echecs.append('fabrique : dépendances de la chaîne V1 incomplètes (requirements.txt)')
+    elif _int53 or not {'ecole--maitre-kone--soeur-awa', 'marche--djecky--tata-prisca', 'village--grand-pere-ndiaye--petite-khadija'} <= _s53.INTERDITES:
+        echecs.append(f'série V1 : scènes interdites par l\'utilisateur jouables ({sorted(_int53)})')
     elif _tr53a or _tr53b != {'salon-1', 'salon-0'}:
         echecs.append(f'série V1 : sketchs des épisodes en échec technique perdus ou rejoués sans fin ({_tr53a}, {_tr53b})')
     elif not all(x in _y53 for x in ('libgles2', 'load_raw_library', 'actions/cache@v4', 'venv-fabrique')):
