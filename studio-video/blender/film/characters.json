@@ -891,5 +891,25 @@
   "activite": "",
   "genre": "homme",
   "age": 25
+ },
+ "BLAISE": {
+  "height": 1.75,
+  "voice": "siwis",
+  "pitch": 1.0,
+  "dessin": "scene",
+  "lieux": [],
+  "activite": "",
+  "genre": "homme",
+  "age": 30
+ },
+ "ODETTE": {
+  "height": 1.64,
+  "voice": "siwis",
+  "pitch": 1.0,
+  "dessin": "scene",
+  "lieux": [],
+  "activite": "",
+  "genre": "femme",
+  "age": 60
  }
 }
