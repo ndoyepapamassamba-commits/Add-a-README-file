@@ -2,7 +2,8 @@
 // MemoryStore + FakeWave), started here as two child processes (DEV_PAYMENT=wave and DEV_PAYMENT=manual).
 // A–F cover cv / lettre / pack (regression), G–H (products.mjs) the Pack Stage and the CV Premium, I (course.mjs) the
 // Teranga Pro course (formation/: closed sales, manual and Wave purchase, reader, files, quiz, attestation, receipt, demo),
-// J the autopay safeguards (« J'ai envoyé l'argent » before checkout, « Notification répétée » in admin.html).
+// J the autopay safeguards (« J'ai envoyé l'argent » before checkout, « Notification répétée » in admin.html),
+// K (guides.mjs) the free guides of formation/guides/ at 390 px (SEO basics, links, example files, sitemap, IndexNow).
 // Run: cd e2e && npm install && node flow.mjs      Screenshots and server logs go to $SHOTS_DIR (default: tmp).
 import fs from "node:fs";
 import os from "node:os";
@@ -23,6 +24,7 @@ import { hiddenFragments } from "./lib/leaks.mjs";
 import { libreOfficePages, pdfPageCount } from "./lib/office.mjs";
 import { fillWizard, PERSONA } from "./lib/wizard.mjs";
 import { courseFlows } from "./course.mjs";
+import { guideFlows } from "./guides.mjs";
 import { premiumFlows, stageManual } from "./products.mjs";
 
 const OUT = process.env.SHOTS_DIR || path.join(os.tmpdir(), "teranga-cv-e2e");
@@ -519,6 +521,8 @@ async function main() {
     await courseFlows(browser, { wave, manual }, { problems, shoot, out: OUT });
     console.log("# J — « J'ai envoyé l'argent » before checkout, « Notification répétée » in admin.html");
     await repeatedNotification(browser, manual);
+    console.log("# K — Teranga Pro free guides at 390 px (guides.mjs)");
+    await guideFlows(browser, manual, { problems, out: OUT });
     console.log("# E — console errors on every page");
     check(problems.length === 0, `E: zero console errors, page errors or unexpected requests${problems.length ? `:\n  ${problems.join("\n  ")}` : ""}`);
     console.log(`\nPASS — ${passedCount()} checks`);

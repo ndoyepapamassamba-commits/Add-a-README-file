@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RECHERCHEV dans Power Query&nbsp;: fusionner des requêtes</title>
+<meta name="description" content="L'équivalent de RECHERCHEV dans Power Query&nbsp;: fusionner une table de correspondance pas à pas, lister les codes non trouvés, 4 pièges et code M.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#0B2545">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/recherchev-power-query.html">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="fr_SN">
+<meta property="og:site_name" content="Teranga Pro">
+<meta property="og:title" content="RECHERCHEV dans Power Query&nbsp;: fusionner une table de correspondance (pas à pas)">
+<meta property="og:description" content="Une extraction de prêts fictive enrichie avec la zone de l'agence et le segment du produit&nbsp;: fusion Externe gauche, codes non trouvés, et les 4 pièges qui faussent le résultat sans prévenir.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/recherchev-power-query.html">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../formation.css">
+<style>
+.answer3 ol { margin: .4em 0 .6em; }
+.guide-meta { margin-top: 8px; }
+.module table.data td code { white-space: nowrap; }
+.module table.errors td code, .module table.compare-pq td code { white-space: normal; overflow-wrap: anywhere; }
+.module table.data td.vide { color: var(--muted); font-style: italic; }
+.module table.data tbody tr.flag:nth-child(n) td { background: #FDF3E4; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "L'équivalent de RECHERCHEV dans Power Query : fusionner des requêtes",
+  "description": "L'équivalent de RECHERCHEV dans Power Query : fusionner une table de correspondance pas à pas, lister les codes non trouvés, 4 pièges et code M.",
+  "inLanguage": "fr",
+  "isAccessibleForFree": true,
+  "keywords": "RECHERCHEV Power Query, équivalent RECHERCHEV Power Query, fusionner des requêtes, fusionner deux tables, fusionner plusieurs tables, table de correspondance, Table.NestedJoin, Table.ExpandTableColumn, jointure externe gauche, anti gauche, reporting bancaire",
+  "about": [
+    { "@type": "Thing", "name": "Power Query" },
+    { "@type": "Thing", "name": "Fusion de requêtes" },
+    { "@type": "Thing", "name": "RECHERCHEV" }
+  ],
+  "isPartOf": { "@type": "Course", "name": "Power Query pour le reporting bancaire", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "datePublished": "2026-10-22",
+  "dateModified": "2026-10-22",
+  "image": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg",
+  "mainEntityOfPage": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/recherchev-power-query.html",
+  "author": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "publisher": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "Peut-on fusionner sur deux colonnes\u00a0?", "acceptedAnswer": {"@type": "Answer", "text": "Oui. Dans la boîte de dialogue Fusionner, cliquez sur la première colonne puis maintenez Ctrl en cliquant sur la seconde\u00a0; faites de même dans la table de droite. Power Query numérote la sélection (1, 2). Microsoft précise que «\u00a0l'ordre dans lequel vous sélectionnez les colonnes de chaque table doit correspondre\u00a0», sinon les résultats peuvent être incorrects. C'est l'équivalent d'une RECHERCHEV sur une clé concaténée, sans colonne de concaténation à créer."}},
+    {"@type": "Question", "name": "Pourquoi j'obtiens plus de lignes qu'avant\u00a0?", "acceptedAnswer": {"@type": "Answer", "text": "Parce qu'un code apparaît plusieurs fois dans la table de correspondance. RECHERCHEV s'arrête à la première ligne trouvée\u00a0; la fusion ramène toutes les lignes correspondantes, et le développement crée une ligne par correspondance. Sur l'exemple, le code 003 en double fait passer l'extraction de 12 à 15\u00a0lignes et l'encours de 173\u00a0050\u00a0000 à 217\u00a0600\u00a0000\u00a0FCFA. Repérez le code avec Accueil › Conserver les lignes › Conserver les doublons, puis supprimez les lignes identiques ou corrigez la table."}},
+    {"@type": "Question", "name": "Que faire des codes non trouvés\u00a0?", "acceptedAnswer": {"@type": "Answer", "text": "Les lister, pas les supprimer. Une requête Anti gauche donne les contrats dont le code est absent de la table de correspondance, et un regroupement par code donne le nombre de contrats et l'encours concernés. Ensuite, deux cas\u00a0: une faute de saisie (espace, minuscule) se corrige dans Power Query avec Supprimer les espaces et MAJUSCULES\u00a0; un vrai code manquant, comme CB dans l'exemple, s'ajoute à la table de correspondance, puis Données › Actualiser tout."}},
+    {"@type": "Question", "name": "La fusion fonctionne-t-elle entre deux classeurs\u00a0?", "acceptedAnswer": {"@type": "Answer", "text": "Oui. Créez une requête par classeur (Données › Obtenir des données › À partir d'un fichier › À partir d'un classeur), puis fusionnez-les comme ici\u00a0: peu importe d'où viennent les requêtes. À chaque actualisation, Power Query relit les deux fichiers\u00a0: ne les déplacez pas. Comme les données viennent de deux sources, Excel peut demander leurs niveaux de confidentialité (Privé, Organisationnel, Public), qui servent, selon Microsoft, à éviter de «\u00a0combiner par inadvertance des données\u00a0»."}},
+    {"@type": "Question", "name": "Fusionner ou ajouter des requêtes\u00a0?", "acceptedAnswer": {"@type": "Answer", "text": "Fusionner ajoute des colonnes\u00a0: c'est l'équivalent de RECHERCHEV. Ajouter des requêtes empile des lignes\u00a0: c'est l'équivalent d'un copier-coller de deux extractions l'une sous l'autre. Pour empiler les fichiers de plusieurs agences, voyez le guide Combiner plusieurs fichiers Excel en un seul avec Power Query."}}
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="tp-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Teranga Pro, accueil de la formation">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+      <span class="brand-name">Teranga<span>Pro</span></span>
+    </a>
+    <nav class="tp-nav" aria-label="Navigation principale">
+      <a class="nav-hide-sm" href="../gratuit.html">Module gratuit</a>
+      <a href="../index.html">La formation</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="page-head">
+    <div class="wrap">
+      <p class="eyebrow">Guide gratuit <span class="dot" aria-hidden="true">·</span> Power Query</p>
+      <h1>L'équivalent de RECHERCHEV dans Power Query&nbsp;: fusionner des requêtes</h1>
+      <p>Power Query n'a pas de fonction RECHERCHEV&nbsp;: son équivalent est la fusion de requêtes. Sur une extraction de prêts fictive, ajoutez la zone de l'agence et le segment du produit, listez automatiquement les codes non trouvés et évitez les 4&nbsp;pièges qui faussent le résultat sans le moindre message d'erreur.</p>
+      <p class="meta guide-meta">Mis à jour le 22/10/2026 · Données d'exemple 100&nbsp;% fictives · Excel 2016 ou plus récent, ou Microsoft&nbsp;365, sous Windows</p>
+    </div>
+  </div>
+
+  <article class="article">
+    <div class="wrap">
+<section class="module">
+
+<div class="callout-info answer3">
+<p><strong>La réponse en 4&nbsp;étapes</strong>&nbsp;:</p>
+<ol>
+<li>Chargez l'extraction et la table de correspondance dans Power Query (<strong>Données › À partir d'un tableau ou d'une plage</strong>), avec les colonnes de codes en <strong>Texte</strong>.</li>
+<li>Dans l'extraction&nbsp;: <strong>Accueil › Fusionner les requêtes</strong>, cliquez sur la colonne clé de chaque table, type de jointure <strong>Externe gauche</strong>. C'est l'équivalent de <code>RECHERCHEV(…;FAUX)</code>.</li>
+<li>Cliquez sur l'icône <strong>Développer</strong> de la nouvelle colonne, cochez les colonnes à ramener et décochez <strong>Utiliser le nom de colonne d'origine comme préfixe</strong>.</li>
+<li>Vérifiez que le nombre de lignes n'a pas changé et listez les codes sans correspondance (jointure <strong>Anti gauche</strong>). Le mois suivant&nbsp;: <strong>Données › Actualiser tout</strong>.</li>
+</ol>
+<p>Sur l'exemple fictif de ce guide&nbsp;: 12&nbsp;contrats, 2&nbsp;tables de correspondance, 3&nbsp;codes produit sans correspondance trouvés automatiquement, dont 2&nbsp;simples fautes de saisie.</p>
+</div>
+
+<nav class="toc-box" aria-labelledby="toc-title">
+<p id="toc-title">Dans ce guide</p>
+<ol>
+<li><a href="#pourquoi">Pourquoi remplacer RECHERCHEV par une fusion</a></li>
+<li><a href="#fichiers">Les données d'exemple à télécharger</a></li>
+<li><a href="#etape-1">Étape 1 — Charger les trois tableaux</a></li>
+<li><a href="#etape-2">Étape 2 — Fusionner les requêtes</a></li>
+<li><a href="#etape-3">Étape 3 — Développer la colonne fusionnée</a></li>
+<li><a href="#etape-4">Étape 4 — Deuxième fusion&nbsp;: les produits</a></li>
+<li><a href="#etape-5">Étape 5 — Lister les codes sans correspondance</a></li>
+<li><a href="#pieges">Les 4&nbsp;pièges qui faussent le résultat</a></li>
+<li><a href="#code-m">Le code M complet, pièges corrigés</a></li>
+<li><a href="#comparatif">RECHERCHEV, RECHERCHEX ou fusion&nbsp;?</a></li>
+<li><a href="#erreurs">Erreurs fréquentes</a></li>
+<li><a href="#faq">Questions fréquentes</a></li>
+<li><a href="#sources">Sources consultées</a></li>
+</ol>
+</nav>
+
+<h2 id="pourquoi">Pourquoi remplacer RECHERCHEV par une fusion de requêtes</h2>
+<p>Chaque fin de mois, le service reporting de la Banque Fictive de l'Ouest (BFO), une banque <strong>imaginaire</strong>, reçoit l'extraction des prêts&nbsp;: un contrat par ligne, avec un code agence, un code produit et l'encours. Pour présenter l'encours par zone ou par segment de clientèle, il faut ajouter à chaque ligne la zone de l'agence et le segment du produit, rangés dans deux tables de correspondance. Le réflexe Excel&nbsp;: deux colonnes de RECHERCHEV, par exemple <code>=RECHERCHEV([@code_agence];Agences;3;FAUX)</code> pour la zone.</p>
+<p>Cela marche, mais un travail mensuel fait ainsi s'abîme vite&nbsp;:</p>
+<ul>
+<li><strong>Des formules à étendre</strong>&nbsp;: chaque mois, la nouvelle extraction doit recevoir ses colonnes de formules sur toute sa longueur. Quand elle passe de 12 à 5&nbsp;000&nbsp;lignes, la moindre ligne oubliée reste vide.</li>
+<li><strong>Un numéro de colonne figé</strong>&nbsp;: le <code>3</code> de la formule désigne la troisième colonne de la table. Insérez une colonne avant <em>zone</em>, et la formule renvoie une autre colonne, sans erreur.</li>
+<li><strong>Des #N/A masqués</strong>&nbsp;: pour un code introuvable, RECHERCHEV renvoie #N/A&nbsp;; on l'habille souvent d'un <code>SIERREUR(…;"")</code>, et le contrat disparaît du total par zone sans que personne ne le voie.</li>
+<li><strong>Le quatrième argument oublié</strong>&nbsp;: sans <code>FAUX</code>, RECHERCHEV cherche une valeur approchée. Le support Microsoft le précise pour la correspondance approximative&nbsp;: «&nbsp;Cette méthode est appliquée par défaut si vous n'en spécifiez pas d'autre.&nbsp;»</li>
+</ul>
+<p>Dans Power Query, il n'existe pas de formule RECHERCHEV à écrire dans une cellule. L'équivalent est une commande&nbsp;: <strong>Fusionner les requêtes</strong> (en code M, <code>Table.NestedJoin</code>). Microsoft Learn la définit ainsi&nbsp;: «&nbsp;Une opération de requête de fusion joint deux tables existantes en fonction des valeurs correspondantes d'une ou plusieurs colonnes.&nbsp;» La fusion devient une étape de la requête&nbsp;: à chaque actualisation, elle est rejouée sur la nouvelle extraction, quelle que soit sa longueur, sans formule à recopier.</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Correspondance entre les arguments de RECHERCHEV et la fusion Power Query"><table class="data compare-pq">
+<caption>Chaque argument de RECHERCHEV a son équivalent dans la fusion</caption>
+<thead><tr><th scope="col">Dans RECHERCHEV</th><th scope="col">Dans la fusion Power Query</th></tr></thead>
+<tbody>
+<tr><td><code>valeur_cherchée</code> (le code de la ligne)</td><td>La colonne clé de la table de gauche&nbsp;: ici <code>code_agence</code> de l'extraction</td></tr>
+<tr><td><code>table_matrice</code></td><td>La table de droite&nbsp;: la table de correspondance <code>Agences</code></td></tr>
+<tr><td>La première colonne de <code>table_matrice</code>, où se fait la recherche</td><td>La colonne clé de la table de droite, quelle que soit sa place&nbsp;; une ou plusieurs colonnes</td></tr>
+<tr><td><code>no_index_col</code> (le numéro de la colonne renvoyée)</td><td>Les colonnes cochées au développement, désignées par leur nom</td></tr>
+<tr><td><code>valeur_proche</code> = <code>FAUX</code> (correspondance exacte)</td><td>Le type de jointure <strong>Externe gauche</strong>&nbsp;: toutes les lignes de l'extraction, enrichies quand le code est trouvé</td></tr>
+<tr><td>#N/A quand le code est introuvable</td><td><code>null</code>, une cellule vide une fois chargée dans Excel</td></tr>
+</tbody>
+</table></div>
+<figure tabindex="0">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" role="img" aria-label="Schéma : l'extraction Prets (12 contrats, 173 050 000 FCFA) et les tables Agences et Produits entrent dans Power Query. Deux fusions Externe gauche ajoutent agence, zone, famille et segment ; une jointure Anti gauche liste les codes absents. Résultats : Prets_enrichis, 12 lignes et 8 colonnes, et Codes_a_corriger : pp, CT suivi d'un espace, CB.">
+<title>Deux fusions et une liste de codes à corriger</title>
+<defs><marker id="fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B7A72"/></marker></defs>
+<rect x="1" y="1" width="718" height="318" rx="12" fill="#F7F7F2" stroke="#CBD5E1"/>
+<text x="20" y="30" font-size="13" font-weight="bold" fill="#0B2545">Deux fusions et une liste de contrôle — BFO, arrêté du 30/09/2026 (données fictives)</text>
+<rect x="16" y="48" width="196" height="66" rx="8" fill="#fff" stroke="#0B2545"/>
+<text x="28" y="68" font-size="12.5" font-weight="bold" fill="#0B2545">Prets (l'extraction)</text>
+<text x="28" y="86" font-size="11" fill="#1F2933">12 contrats · 173&nbsp;050&nbsp;000</text>
+<text x="28" y="103" font-size="11" fill="#52606D">code_agence, code_produit</text>
+<rect x="16" y="126" width="196" height="66" rx="8" fill="#E6F4F2" stroke="#0B7A72"/>
+<text x="28" y="146" font-size="12.5" font-weight="bold" fill="#0B2545">Agences</text>
+<text x="28" y="164" font-size="11" fill="#1F2933">code_agence → agence, zone</text>
+<text x="28" y="181" font-size="11" fill="#52606D">6 lignes, dont 1 doublon</text>
+<rect x="16" y="204" width="196" height="66" rx="8" fill="#E6F4F2" stroke="#0B7A72"/>
+<text x="28" y="224" font-size="12.5" font-weight="bold" fill="#0B2545">Produits</text>
+<text x="28" y="242" font-size="11" fill="#1F2933">code_produit → famille, segment</text>
+<text x="28" y="259" font-size="11" fill="#52606D">5 lignes, sans le code CB</text>
+<path d="M214 81H234" stroke="#0B7A72" stroke-width="2.5" marker-end="url(#fl)"/>
+<path d="M214 159H234" stroke="#0B7A72" stroke-width="2.5" marker-end="url(#fl)"/>
+<path d="M214 237H234" stroke="#0B7A72" stroke-width="2.5" marker-end="url(#fl)"/>
+<rect x="238" y="48" width="234" height="222" rx="10" fill="#0B2545"/>
+<text x="254" y="72" font-size="13" font-weight="bold" fill="#fff">Power Query</text>
+<text x="254" y="100" font-size="12" fill="#fff">1. Fusion sur code_agence</text>
+<text x="270" y="117" font-size="11" fill="#C9D6E5">Externe gauche → agence, zone</text>
+<text x="254" y="145" font-size="12" fill="#fff">2. Fusion sur code_produit</text>
+<text x="270" y="162" font-size="11" fill="#C9D6E5">Externe gauche → famille, segment</text>
+<text x="254" y="190" font-size="12" fill="#fff">3. Anti gauche sur les codes</text>
+<text x="270" y="207" font-size="11" fill="#C9D6E5">→ les codes absents des tables</text>
+<text x="254" y="246" font-size="11.5" font-weight="bold" fill="#6FD6CC">Contrôle&nbsp;: 12 lignes avant = après</text>
+<path d="M474 104H502" stroke="#0B7A72" stroke-width="2.5" marker-end="url(#fl)"/>
+<path d="M474 222H502" stroke="#0B7A72" stroke-width="2.5" marker-end="url(#fl)"/>
+<rect x="506" y="48" width="198" height="112" rx="10" fill="#fff" stroke="#0B2545"/>
+<text x="520" y="70" font-size="12.5" font-weight="bold" fill="#0B2545">Prets_enrichis</text>
+<text x="520" y="92" font-size="11.5" fill="#1F2933">12 lignes, 8 colonnes</text>
+<text x="520" y="111" font-size="11.5" fill="#1F2933">+ zone, famille, segment</text>
+<text x="520" y="140" font-size="14" font-weight="bold" fill="#0B7A72">173&nbsp;050&nbsp;000 FCFA</text>
+<rect x="506" y="174" width="198" height="96" rx="10" fill="#FDE3C2" stroke="#0B2545"/>
+<text x="520" y="196" font-size="12.5" font-weight="bold" fill="#0B2545">Codes_a_corriger</text>
+<text x="520" y="218" font-size="12" fill="#1F2933">pp · «&nbsp;CT&nbsp;» + espace · CB</text>
+<text x="520" y="240" font-size="11" fill="#52606D">2 fautes de saisie,</text>
+<text x="520" y="257" font-size="11" fill="#52606D">1 code absent de la table</text>
+<text x="20" y="300" font-size="12" fill="#0B2545">Le mois suivant&nbsp;: nouvelle extraction dans le tableau Prets, puis Données › Actualiser tout.</text>
+</svg>
+<figcaption>Figure 1 — Le principe sur l'exemple fictif. Chaque fusion joue le rôle d'une colonne de RECHERCHEV&nbsp;; la jointure Anti gauche remplace la chasse aux #N/A.</figcaption>
+</figure>
+
+<h2 id="fichiers">Les données d'exemple à télécharger</h2>
+<div class="download-box">
+<span class="file-ext" aria-hidden="true">XLSX</span>
+<p><strong>Le classeur de l'exemple</strong><br><span class="muted small">recherchev-power-query-exemple.xlsx · 3&nbsp;tableaux fictifs · 13&nbsp;Ko</span></p>
+<a class="btn btn-outline" href="fichiers/recherchev-power-query-exemple.xlsx" download><span class="btn-label">Télécharger le classeur</span></a>
+</div>
+<p>Le classeur contient une feuille <strong>Lisez-moi</strong> et trois feuilles, chacune avec un tableau Excel du même nom&nbsp;:</p>
+<ul>
+<li><strong>Prets</strong>&nbsp;: l'extraction, 12&nbsp;contrats au 30/09/2026, avec les colonnes <code>contrat</code>, <code>code_agence</code>, <code>code_produit</code> et <code>encours</code> (en FCFA). Total&nbsp;: 173&nbsp;050&nbsp;000&nbsp;FCFA.</li>
+<li><strong>Agences</strong>&nbsp;: la table de correspondance des agences, <code>code_agence</code>, <code>agence</code>, <code>zone</code>.</li>
+<li><strong>Produits</strong>&nbsp;: la table de correspondance des produits, <code>code_produit</code>, <code>famille</code>, <code>segment</code>. Les familles et les segments sont des exemples pédagogiques, pas une nomenclature officielle.</li>
+</ul>
+<p>Les codes sont saisis <strong>en texte</strong>&nbsp;: «&nbsp;001&nbsp;» et «&nbsp;007&nbsp;» gardent leurs zéros. Les deux tables de correspondance, en entier&nbsp;:</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Table Agences, 6 lignes"><table class="data">
+<caption>Tableau Agences (6&nbsp;lignes)</caption>
+<thead><tr><th scope="col">code_agence</th><th scope="col">agence</th><th scope="col">zone</th></tr></thead>
+<tbody>
+<tr><td>001</td><td>Flamboyant</td><td>Littoral</td></tr>
+<tr><td>002</td><td>Ronier</td><td>Plateau</td></tr>
+<tr><td>003</td><td>Filao</td><td>Littoral</td></tr>
+<tr><td>004</td><td>Acajou</td><td>Fleuve</td></tr>
+<tr><td>007</td><td>Néré</td><td>Fleuve</td></tr>
+<tr class="flag"><td>003</td><td>Filao</td><td>Littoral</td></tr>
+</tbody>
+</table></div>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Table Produits, 5 lignes"><table class="data">
+<caption>Tableau Produits (5&nbsp;lignes)</caption>
+<thead><tr><th scope="col">code_produit</th><th scope="col">famille</th><th scope="col">segment</th></tr></thead>
+<tbody>
+<tr><td>CT</td><td>Trésorerie</td><td>Entreprises</td></tr>
+<tr><td>EQ</td><td>Investissement</td><td>Entreprises</td></tr>
+<tr><td>PP</td><td>Consommation</td><td>Particuliers</td></tr>
+<tr><td>IM</td><td>Habitat</td><td>Particuliers</td></tr>
+<tr><td>AV</td><td>Consommation</td><td>Particuliers</td></tr>
+</tbody>
+</table></div>
+<p>Comme dans une vraie extraction, le classeur contient <strong>trois anomalies volontaires</strong>, que les étapes font apparaître une à une&nbsp;:</p>
+<ul>
+<li>le code agence <strong>003</strong> figure deux fois dans <code>Agences</code> (la ligne surlignée)&nbsp;;</li>
+<li>dans <code>Prets</code>, un code produit est saisi en minuscules (<code>pp</code>, contrat P-1004) et un autre est suivi d'un espace (<code>CT</code> + espace, contrat P-1006)&nbsp;;</li>
+<li>le code produit <strong>CB</strong> (un crédit-bail, contrat P-1008) n'existe pas dans <code>Produits</code>.</li>
+</ul>
+
+<h2 id="etape-1">Étape 1 — Charger les trois tableaux dans Power Query</h2>
+<ol>
+<li>Ouvrez le classeur, feuille <strong>Prets</strong>, et cliquez dans le tableau.</li>
+<li><strong>Données › À partir d'un tableau ou d'une plage</strong> (selon la version, le bouton s'appelle aussi <strong>À partir de Tableau/Plage</strong>&nbsp;; sinon <strong>Données › Obtenir des données › À partir d'autres sources › À partir d'un tableau ou d'une plage</strong>). L'Éditeur Power Query s'ouvre sur une requête nommée <code>Prets</code>.</li>
+<li>Regardez l'icône à gauche de chaque en-tête&nbsp;: <strong>ABC</strong> signifie Texte, <strong>123</strong> Nombre entier, <strong>1.2</strong> Nombre décimal. <code>code_agence</code> et <code>code_produit</code> doivent être en <strong>ABC</strong>. Si un code affiche 123, cliquez sur l'icône, choisissez <strong>Texte</strong>, puis <strong>Remplacer l'actuelle</strong>.</li>
+<li><strong>Accueil › Fermer et charger › Fermer et charger dans…</strong>, choisissez <strong>Créer uniquement la connexion</strong>, puis <strong>OK</strong>.</li>
+<li>Recommencez avec le tableau de la feuille <strong>Agences</strong>, puis avec celui de la feuille <strong>Produits</strong>.</li>
+</ol>
+<p>Pourquoi «&nbsp;connexion uniquement&nbsp;»&nbsp;? Ces tableaux sont déjà dans le classeur&nbsp;: les charger une seconde fois créerait trois feuilles en double. Les requêtes servent seulement d'entrées aux fusions. Le choix <strong>Remplacer l'actuelle</strong> a aussi son importance&nbsp;: il change le type de l'étape existante, alors qu'une nouvelle étape convertirait un code déjà devenu 1 en «&nbsp;1&nbsp;», sans retrouver ses zéros (voir le <a href="#piege-3">piège n°&nbsp;3</a>).</p>
+<div class="expected">
+<ul>
+<li>Le volet <strong>Requêtes et connexions</strong> (<strong>Données › Requêtes et connexions</strong>) affiche trois requêtes, <code>Prets</code>, <code>Agences</code> et <code>Produits</code>, chacune avec la mention «&nbsp;Connexion uniquement&nbsp;».</li>
+<li>Dans l'éditeur, <code>code_agence</code> affiche bien «&nbsp;001&nbsp;», «&nbsp;007&nbsp;», et non 1 ou 7.</li>
+</ul>
+</div>
+
+<h2 id="etape-2">Étape 2 — Fusionner les requêtes&nbsp;: le RECHERCHEV de Power Query</h2>
+<p>Fusionner deux tables, ici l'extraction et la table des agences, revient à poser une RECHERCHEV sur toute la colonne d'un coup. On garde la requête <code>Prets</code> intacte et on travaille sur une copie liée&nbsp;: <code>Prets</code> servira plus loin au contrôle et à la liste des codes non trouvés.</p>
+<ol>
+<li>Dans le volet <strong>Requêtes et connexions</strong>, clic droit sur <code>Prets</code> › <strong>Modifier</strong>. L'éditeur s'ouvre.</li>
+<li>Dans le volet <strong>Requêtes</strong>, à gauche, clic droit sur <code>Prets</code> › <strong>Référence</strong>. Une requête <code>Prets (2)</code> apparaît&nbsp;: renommez-la <code>Prets_enrichis</code> (<strong>Paramètres de requête › Propriétés › Nom</strong>, à droite).</li>
+<li>Requête <code>Prets_enrichis</code> sélectionnée&nbsp;: <strong>Accueil › Fusionner les requêtes</strong>. La boîte de dialogue <strong>Fusionner</strong> s'ouvre, avec <code>Prets_enrichis</code> en haut.</li>
+<li>Cliquez sur l'en-tête <code>code_agence</code> de cette table. Dans la liste en dessous, choisissez <code>Agences</code>, puis cliquez sur son en-tête <code>code_agence</code>.</li>
+<li>Dans <strong>Type de jointure</strong>, choisissez (ou vérifiez) <strong>Externe gauche</strong>.</li>
+<li>Lisez le message en bas de la boîte de dialogue, puis cliquez sur <strong>OK</strong>.</li>
+</ol>
+<p>Le message en bas de la boîte de dialogue est votre premier contrôle. Microsoft Learn l'annonce ainsi&nbsp;: une fois les colonnes choisies, «&nbsp;un message s'affiche avec un nombre estimé de correspondances en bas de la boîte de dialogue&nbsp;». Il compte les lignes de la table du haut qui trouvent au moins une correspondance. Ici, il indique 12 lignes sur 12 (la formulation exacte varie selon la version)&nbsp;: tous les codes agence de l'extraction existent dans <code>Agences</code>.</p>
+<p><strong>Externe gauche</strong> est le bon choix pour remplacer RECHERCHEV&nbsp;: d'après Microsoft Learn, la jointure externe gauche «&nbsp;conserve toutes les lignes de la table de gauche et intègre toutes les lignes correspondantes de la table de droite&nbsp;». Une ligne sans correspondance reste dans le résultat, avec une valeur <em>null</em>&nbsp;: c'est le #N/A de Power Query, sauf qu'il ne casse aucune somme. Les noms des colonnes clés n'ont pas besoin d'être identiques&nbsp;; leur type, si (voir le <a href="#piege-3">piège n°&nbsp;3</a>).</p>
+<p>Power Query ajoute une colonne <code>Agences</code> qui affiche <strong>Table</strong> dans chaque cellule&nbsp;: la ou les lignes de <code>Agences</code> trouvées pour ce contrat. Dans la barre de formule, l'étape ressemble à ceci&nbsp;:</p>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : étape de fusion avec Agences, dans la barre de formule">= Table.NestedJoin(Source, {"code_agence"}, Agences, {"code_agence"}, "Agences", JoinKind.LeftOuter)</pre>
+
+<h2 id="etape-3">Étape 3 — Développer la colonne fusionnée (l'équivalent de no_index_col)</h2>
+<ol>
+<li>Cliquez sur l'icône à deux flèches dans l'en-tête de la colonne <code>Agences</code>. Laissez l'option <strong>Développer</strong> choisie.</li>
+<li>Décochez <code>code_agence</code>, déjà présent dans l'extraction&nbsp;; gardez <code>agence</code> et <code>zone</code>.</li>
+<li>Décochez <strong>Utiliser le nom de colonne d'origine comme préfixe</strong>, sinon les colonnes s'appelleront <code>Agences.agence</code> et <code>Agences.zone</code>. <strong>OK</strong>.</li>
+</ol>
+<p>Ce développement fait le travail de <code>no_index_col</code>, en mieux&nbsp;: les colonnes sont désignées par leur nom, et l'ajout d'une colonne à la table <code>Agences</code> ne décale rien. Dans la barre de formule (le nom de l'étape précédente peut différer)&nbsp;:</p>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : étape de développement de la colonne Agences">= Table.ExpandTableColumn(#"Requêtes fusionnées", "Agences", {"agence", "zone"}, {"agence", "zone"})</pre>
+<p>Vérifiez maintenant le nombre de lignes, affiché dans la barre d'état en bas de l'éditeur&nbsp;: <strong>15&nbsp;lignes au lieu de 12</strong>. Ce n'est pas une erreur de manipulation&nbsp;: c'est la première anomalie du classeur. Le code 003 figure deux fois dans <code>Agences</code>, si bien que chacun des trois contrats de l'agence Filao (P-1005, P-1006, P-1007) ressort deux fois. L'encours total passe de 173&nbsp;050&nbsp;000 à 217&nbsp;600&nbsp;000&nbsp;FCFA&nbsp;: 44&nbsp;550&nbsp;000 comptés deux fois. Corrigez tout de suite (l'explication complète est au <a href="#piege-1">piège n°&nbsp;1</a>)&nbsp;:</p>
+<ol>
+<li>Dans le volet <strong>Requêtes</strong>, sélectionnez <code>Agences</code>.</li>
+<li>Sélectionnez toutes ses colonnes&nbsp;: clic sur l'en-tête <code>code_agence</code>, puis Maj + clic sur l'en-tête <code>zone</code>.</li>
+<li><strong>Accueil › Supprimer les lignes › Supprimer les doublons</strong>. <code>Agences</code> passe à 5&nbsp;lignes.</li>
+<li>Revenez sur <code>Prets_enrichis</code>.</li>
+</ol>
+<div class="expected">
+<ul>
+<li><code>Agences</code>&nbsp;: 5&nbsp;lignes, un seul 003.</li>
+<li><code>Prets_enrichis</code>&nbsp;: 12&nbsp;lignes et 6&nbsp;colonnes (<em>contrat</em>, <em>code_agence</em>, <em>code_produit</em>, <em>encours</em>, <em>agence</em>, <em>zone</em>), toutes avec une agence et une zone.</li>
+</ul>
+</div>
+
+<h2 id="etape-4">Étape 4 — Deuxième fusion&nbsp;: fusionner 3 tables, c'est enchaîner les fusions</h2>
+<p>Il n'y a pas de commande spéciale pour fusionner plusieurs tables&nbsp;: que l'on parle de fusionner 3&nbsp;tables ou 3&nbsp;requêtes, chaque table de correspondance donne une fusion de plus, comme chaque RECHERCHEV donnait une colonne de plus. On ajoute maintenant la famille et le segment du produit.</p>
+<ol>
+<li><code>Prets_enrichis</code> sélectionnée&nbsp;: <strong>Accueil › Fusionner les requêtes</strong>.</li>
+<li>Cliquez sur <code>code_produit</code> en haut, choisissez <code>Produits</code> dans la liste, cliquez sur son <code>code_produit</code>. Type de jointure&nbsp;: <strong>Externe gauche</strong>.</li>
+<li>Le message indique cette fois 9&nbsp;lignes sur 12&nbsp;: trois contrats ne trouvent pas leur produit. Cliquez sur <strong>OK</strong> quand même&nbsp;: on veut les voir, pas les perdre.</li>
+<li>Développez la colonne <code>Produits</code>&nbsp;: gardez <code>famille</code> et <code>segment</code>, sans préfixe. <strong>OK</strong>.</li>
+<li><strong>Accueil › Fermer et charger</strong>. <code>Prets_enrichis</code> est chargée dans une nouvelle feuille.</li>
+</ol>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Prets_enrichis : résultat attendu après l'étape 4"><table class="data">
+<caption>Prets_enrichis après l'étape&nbsp;4 (12&nbsp;lignes, montants en FCFA)</caption>
+<thead><tr><th scope="col">contrat</th><th scope="col">code_agence</th><th scope="col">code_produit</th><th scope="col">encours</th><th scope="col">agence</th><th scope="col">zone</th><th scope="col">famille</th><th scope="col">segment</th></tr></thead>
+<tbody>
+<tr><td>P-1001</td><td>001</td><td>CT</td><td class="num">18&nbsp;500&nbsp;000</td><td>Flamboyant</td><td>Littoral</td><td>Trésorerie</td><td>Entreprises</td></tr>
+<tr><td>P-1002</td><td>001</td><td>PP</td><td class="num">4&nbsp;200&nbsp;000</td><td>Flamboyant</td><td>Littoral</td><td>Consommation</td><td>Particuliers</td></tr>
+<tr><td>P-1003</td><td>002</td><td>EQ</td><td class="num">25&nbsp;000&nbsp;000</td><td>Ronier</td><td>Plateau</td><td>Investissement</td><td>Entreprises</td></tr>
+<tr class="flag"><td>P-1004</td><td>002</td><td>pp</td><td class="num">3&nbsp;150&nbsp;000</td><td>Ronier</td><td>Plateau</td><td class="vide">(vide)</td><td class="vide">(vide)</td></tr>
+<tr><td>P-1005</td><td>003</td><td>IM</td><td class="num">32&nbsp;000&nbsp;000</td><td>Filao</td><td>Littoral</td><td>Habitat</td><td>Particuliers</td></tr>
+<tr class="flag"><td>P-1006</td><td>003</td><td>CT + espace</td><td class="num">9&nbsp;800&nbsp;000</td><td>Filao</td><td>Littoral</td><td class="vide">(vide)</td><td class="vide">(vide)</td></tr>
+<tr><td>P-1007</td><td>003</td><td>PP</td><td class="num">2&nbsp;750&nbsp;000</td><td>Filao</td><td>Littoral</td><td>Consommation</td><td>Particuliers</td></tr>
+<tr class="flag"><td>P-1008</td><td>004</td><td>CB</td><td class="num">14&nbsp;600&nbsp;000</td><td>Acajou</td><td>Fleuve</td><td class="vide">(vide)</td><td class="vide">(vide)</td></tr>
+<tr><td>P-1009</td><td>004</td><td>PP</td><td class="num">5&nbsp;400&nbsp;000</td><td>Acajou</td><td>Fleuve</td><td>Consommation</td><td>Particuliers</td></tr>
+<tr><td>P-1010</td><td>007</td><td>EQ</td><td class="num">21&nbsp;300&nbsp;000</td><td>Néré</td><td>Fleuve</td><td>Investissement</td><td>Entreprises</td></tr>
+<tr><td>P-1011</td><td>007</td><td>CT</td><td class="num">7&nbsp;900&nbsp;000</td><td>Néré</td><td>Fleuve</td><td>Trésorerie</td><td>Entreprises</td></tr>
+<tr><td>P-1012</td><td>001</td><td>IM</td><td class="num">28&nbsp;450&nbsp;000</td><td>Flamboyant</td><td>Littoral</td><td>Habitat</td><td>Particuliers</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li>12&nbsp;lignes, 8&nbsp;colonnes, 173&nbsp;050&nbsp;000&nbsp;FCFA d'encours&nbsp;: le même total que l'extraction.</li>
+<li><em>famille</em> et <em>segment</em> vides pour P-1004, P-1006 et P-1008 (27&nbsp;550&nbsp;000&nbsp;FCFA). L'ordre des lignes peut différer chez vous&nbsp;: triez sur <em>contrat</em> si besoin.</li>
+<li>Encours par zone (un tableau croisé dynamique sur ce tableau suffit à le vérifier)&nbsp;: Littoral 6&nbsp;contrats et 95&nbsp;700&nbsp;000&nbsp;; Plateau 2&nbsp;contrats et 28&nbsp;150&nbsp;000&nbsp;; Fleuve 4&nbsp;contrats et 49&nbsp;200&nbsp;000.</li>
+</ul>
+</div>
+<p>Un tableau par segment fait ici apparaître une ligne vide de 27&nbsp;550&nbsp;000&nbsp;FCFA, à côté de 72&nbsp;700&nbsp;000 pour les Entreprises et 72&nbsp;800&nbsp;000 pour les Particuliers. C'est mieux qu'un #N/A masqué&nbsp;: le montant reste dans le total. Mais il faut savoir quels codes corriger&nbsp;: c'est l'étape&nbsp;5.</p>
+<h3 id="deux-colonnes">Et si la clé tient sur deux colonnes&nbsp;?</h3>
+<p>Il arrive qu'un code ne suffise pas&nbsp;: un taux qui dépend de l'agence <em>et</em> du produit, par exemple. Avec RECHERCHEV, on crée une colonne qui concatène les deux codes. Dans la boîte de dialogue <strong>Fusionner</strong>, il suffit de cliquer sur la première colonne, puis de maintenir <kbd>Ctrl</kbd> en cliquant sur la seconde&nbsp;; Power Query numérote la sélection 1, 2. Faites de même dans la table de droite, <strong>dans le même ordre</strong>. Microsoft Learn insiste&nbsp;: «&nbsp;l'ordre dans lequel vous sélectionnez les colonnes de chaque table doit correspondre&nbsp;», sinon «&nbsp;vous pouvez observer des résultats de jointure incorrects&nbsp;». En code M, les deux listes de clés s'écrivent <code>{"code_agence", "code_produit"}</code>.</p>
+
+<h2 id="etape-5">Étape 5 — Lister automatiquement les codes sans correspondance</h2>
+<p>Pour un premier coup d'œil, filtrez la colonne <em>famille</em> du tableau chargé dans Excel sur <strong>(Vides)</strong>&nbsp;: les trois contrats apparaissent. Pour un contrôle qui se refait tout seul chaque mois, créez plutôt une requête qui liste les codes à corriger, avec la jointure <strong>Anti gauche</strong>. Microsoft Learn la décrit comme une jointure «&nbsp;qui n'amène que des lignes de la table de gauche qui n'ont pas de lignes correspondantes dans la table de droite&nbsp;».</p>
+<ol>
+<li>Dans l'éditeur (clic droit sur une requête du volet <strong>Requêtes et connexions</strong> › <strong>Modifier</strong>), clic droit sur <code>Prets</code> › <strong>Référence</strong>. Renommez la nouvelle requête <code>Codes_a_corriger</code>.</li>
+<li><strong>Accueil › Fusionner les requêtes</strong>&nbsp;: <code>code_produit</code> en haut, <code>Produits</code> et son <code>code_produit</code> en bas, type de jointure <strong>Anti gauche</strong>. Le message indique 3&nbsp;lignes sur 12&nbsp;: pour cette jointure, ce sont les lignes gardées, celles <em>sans</em> correspondance. <strong>OK</strong>.</li>
+<li>Clic droit sur l'en-tête de la colonne <code>Produits</code>, qui ne contient que des tables vides › <strong>Supprimer</strong>.</li>
+<li><strong>Accueil › Regrouper par</strong>, option <strong>Avancé</strong>&nbsp;: regroupement par <code>code_produit</code>&nbsp;; agrégation <code>Contrats</code>, opération <strong>Compter les lignes</strong>&nbsp;; <strong>Ajouter une agrégation</strong>&nbsp;: <code>Encours</code>, <strong>Somme</strong> de <em>encours</em>. <strong>OK</strong>.</li>
+<li><strong>Accueil › Fermer et charger</strong>.</li>
+</ol>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Codes_a_corriger : résultat attendu"><table class="data">
+<caption>Codes_a_corriger&nbsp;: résultat attendu (FCFA, ordre des lignes variable&nbsp;; la colonne Diagnostic est un commentaire du guide, pas une colonne de la requête)</caption>
+<thead><tr><th scope="col">code_produit</th><th scope="col">Contrats</th><th scope="col">Encours</th><th scope="col">Diagnostic</th></tr></thead>
+<tbody>
+<tr><td>pp</td><td class="num">1</td><td class="num">3&nbsp;150&nbsp;000</td><td>Saisi en minuscules (<a href="#piege-2">piège n°&nbsp;2</a>)</td></tr>
+<tr><td>CT + espace</td><td class="num">1</td><td class="num">9&nbsp;800&nbsp;000</td><td>Espace après le code (<a href="#piege-2">piège n°&nbsp;2</a>)</td></tr>
+<tr><td>CB</td><td class="num">1</td><td class="num">14&nbsp;600&nbsp;000</td><td>Produit absent de la table <code>Produits</code></td></tr>
+</tbody>
+</table></div>
+<p>Faites la même requête avec <code>Agences</code> et <code>code_agence</code>&nbsp;: elle doit renvoyer 0&nbsp;ligne.</p>
+</div>
+<p>Cette liste change de nature le contrôle de fin de mois&nbsp;: au lieu de chercher des #N/A dans des milliers de lignes, on lit une table de quelques codes, avec l'encours concerné, avant de publier l'état. Deux des trois lignes viennent d'une faute de saisie que Power Query peut corriger seul&nbsp;; la troisième, CB, est un vrai manque&nbsp;: il faut compléter la table de correspondance. Les deux cas sont traités au piège suivant.</p>
+
+<h2 id="pieges">Les 4&nbsp;pièges qui faussent le résultat sans prévenir</h2>
+<p>Aucun de ces pièges ne déclenche de message d'erreur&nbsp;: la requête s'actualise, les chiffres sont simplement faux. Chacun a donc son test de contrôle.</p>
+
+<h3 id="piege-1">Piège n°&nbsp;1 — Un doublon dans la table de correspondance multiplie les lignes</h3>
+<p>RECHERCHEV s'arrête à la première ligne trouvée. La fusion, elle, ramène <strong>toutes</strong> les lignes correspondantes, et le développement crée une ligne par correspondance. Le code 003 en double l'a montré à l'étape&nbsp;3&nbsp;: 15&nbsp;lignes au lieu de 12, et 44&nbsp;550&nbsp;000&nbsp;FCFA comptés deux fois. Le message de la boîte de dialogue ne vous aide pas&nbsp;: il annonçait 12 correspondances sur 12, parce qu'il compte les lignes de l'extraction qui trouvent au moins un code, pas le nombre de lignes du résultat.</p>
+<p><strong>Test de contrôle.</strong> Comparez le nombre de lignes avant et après la fusion&nbsp;: il doit être identique (12 et 12). Pour trouver le code fautif, sélectionnez la colonne <code>code_agence</code> de <code>Agences</code>, puis <strong>Accueil › Conserver les lignes › Conserver les doublons</strong>&nbsp;: seules les lignes dont le code se répète restent affichées. Sur le classeur d'origine, ce test affiche les deux lignes 003&nbsp;; après la correction de l'étape&nbsp;3, il n'affiche plus rien. Supprimez ensuite cette étape de test (la croix à gauche de son nom, dans <strong>Étapes appliquées</strong>).</p>
+<p><strong>Correction.</strong> Deux cas&nbsp;:</p>
+<ul>
+<li><strong>Les lignes sont identiques</strong> (une ligne copiée deux fois, comme ici)&nbsp;: <strong>Supprimer les doublons</strong> sur toutes les colonnes, comme à l'étape&nbsp;3, est sans risque.</li>
+<li><strong>Les lignes diffèrent</strong> (003 rattaché au Littoral sur une ligne, au Plateau sur l'autre)&nbsp;: ne supprimez pas les doublons sur la seule colonne <code>code_agence</code>. Microsoft Learn prévient que «&nbsp;Power Query ne garantit pas qu'elle conserve la première instance dans un ensemble de doublons lorsqu'elle supprime les doublons&nbsp;». Power Query ne peut pas savoir quelle zone est la bonne&nbsp;: corrigez la table de correspondance. Pour voir ces codes, <strong>Accueil › Regrouper par</strong> <code>code_agence</code> avec <strong>Compter les lignes</strong>, puis filtrez les comptes supérieurs à 1.</li>
+</ul>
+<p>Attention aussi à la casse&nbsp;: «&nbsp;Power Query respecte la casse&nbsp;», écrit Microsoft, y compris pour les doublons. «&nbsp;pp&nbsp;» et «&nbsp;PP&nbsp;» ne sont pas des doublons l'un de l'autre&nbsp;: d'où le piège suivant.</p>
+
+<h3 id="piege-2">Piège n°&nbsp;2 — Espaces et casse&nbsp;: «&nbsp;pp&nbsp;» n'est pas «&nbsp;PP&nbsp;»</h3>
+<p>En correspondance exacte, Power Query compare les codes caractère par caractère. Un espace en fin de code, fréquent dans les extractions de systèmes qui complètent les champs à longueur fixe, ou une minuscule saisie à la main suffisent à faire échouer la correspondance. C'est ce qui arrive à P-1004 (<code>pp</code>) et à P-1006 (<code>CT</code> suivi d'un espace).</p>
+<p><strong>Test de contrôle.</strong> La liste <code>Codes_a_corriger</code> de l'étape&nbsp;5. Pour voir un espace invisible, sélectionnez la colonne puis <strong>Ajouter une colonne › Extraire › Longueur</strong>&nbsp;: «&nbsp;CT&nbsp;» suivi d'un espace compte 3&nbsp;caractères au lieu de 2. Supprimez ensuite cette colonne de test.</p>
+<p><strong>Correction</strong>, dans les <strong>deux</strong> tables, sinon le problème se déplace&nbsp;:</p>
+<ol>
+<li>Requête <code>Prets</code>&nbsp;: sélectionnez <code>code_produit</code>, puis <strong>Transformer › Format › Supprimer les espaces</strong>, puis <strong>Transformer › Format › MAJUSCULES</strong>.</li>
+<li>Requête <code>Produits</code>&nbsp;: les mêmes deux commandes sur <code>code_produit</code>.</li>
+<li><strong>Accueil › Fermer et charger</strong>, puis <strong>Données › Actualiser tout</strong>.</li>
+</ol>
+<p>Les deux commandes créent deux étapes, l'une avec <code>Text.Trim</code>, l'autre avec <code>Text.Upper</code>. <code>Text.Trim</code> retire, selon sa documentation, «&nbsp;tous les espaces blancs de début et de fin&nbsp;»&nbsp;; il ne touche pas aux espaces au milieu du code. En code M, on peut les réunir en une seule étape (le nom de l'étape précédente peut différer)&nbsp;:</p>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : nettoyage de code_produit en une seule étape">= Table.TransformColumns(#"Type modifié", {{"code_produit", each Text.Upper(Text.Trim(_)), type text}})</pre>
+<div class="expected">
+<ul>
+<li><code>Codes_a_corriger</code>&nbsp;: une seule ligne, <strong>CB</strong>, 1&nbsp;contrat, 14&nbsp;600&nbsp;000&nbsp;FCFA.</li>
+<li><code>Prets_enrichis</code>&nbsp;: P-1004 et P-1006 ont désormais une famille et un segment (Consommation, Particuliers&nbsp;; Trésorerie, Entreprises). La fusion trouve 11&nbsp;correspondances sur 12.</li>
+</ul>
+</div>
+<p>Reste CB, un produit qui n'est pas dans la table. Ajoutez-le dans le tableau Excel <strong>Produits</strong>, sur la ligne juste sous le tableau&nbsp;: <code>CB</code>, <code>Investissement</code>, <code>Entreprises</code>. Le tableau s'agrandit tout seul. Puis <strong>Données › Actualiser tout</strong>&nbsp;: <code>Codes_a_corriger</code> n'affiche plus que ses en-têtes, et les 12&nbsp;contrats ont une famille et un segment (Entreprises&nbsp;: 6&nbsp;contrats, 97&nbsp;100&nbsp;000&nbsp;; Particuliers&nbsp;: 6&nbsp;contrats, 75&nbsp;950&nbsp;000).</p>
+
+<h3 id="piege-3">Piège n°&nbsp;3 — Des clés de types différents&nbsp;: «&nbsp;001&nbsp;» n'est pas 1</h3>
+<p>Pour Power Query, le texte «&nbsp;001&nbsp;» et le nombre 1 sont deux valeurs différentes. Si <code>code_agence</code> est en Texte dans l'extraction et en Nombre entier dans <code>Agences</code>, aucun code ne correspond. Microsoft Learn le dit clairement&nbsp;: «&nbsp;les colonnes doivent être du même type de données, sinon l'opération de fusion risque de ne pas générer de résultats corrects&nbsp;».</p>
+<p>Ce piège vient souvent d'Excel lui-même&nbsp;: tapez 001 dans une cellule au format Standard, et Excel enregistre le nombre 1. Un format personnalisé «&nbsp;000&nbsp;» le réaffiche «&nbsp;001&nbsp;», mais la valeur reste 1, et c'est elle que lit Power Query. Il peut venir aussi de la détection automatique des types, qui, selon Microsoft, se fonde sur les 200&nbsp;premières lignes et peut se tromper&nbsp;; et, ajoute la même page, «&nbsp;un type incorrect ne produit pas toujours d'erreurs&nbsp;».</p>
+<p><strong>Test de contrôle.</strong> Avant chaque fusion, les deux colonnes clés doivent afficher la même icône (<strong>ABC</strong> pour des codes). Dans la boîte de dialogue <strong>Fusionner</strong>, un nombre de correspondances anormalement bas, ou nul, est le signal d'alarme. Faites l'essai&nbsp;: passez <code>code_agence</code> de <code>Agences</code> en <strong>Nombre entier</strong>&nbsp;; les codes deviennent 1, 2, 3, 4 et 7, la fusion ne trouve plus aucune des 12&nbsp;lignes, et <em>agence</em> et <em>zone</em> sont vides partout, sans message. Supprimez ensuite cette étape d'essai (la croix à gauche de son nom, dans <strong>Étapes appliquées</strong>).</p>
+<p><strong>Correction.</strong> Mettez les colonnes clés en Texte des deux côtés, en remplaçant l'étape de type existante. Si les zéros sont déjà perdus à la source (des codes saisis comme des nombres), reconstituez-les avec <code>Text.PadStart</code>, qui complète un texte à gauche jusqu'à la longueur voulue&nbsp;:</p>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : codes agence complétés à 3 chiffres">= Table.TransformColumns(#"Type modifié", {{"code_agence", each Text.PadStart(Text.From(_), 3, "0"), type text}})</pre>
+<p>Cette ligne transforme 1 en «&nbsp;001&nbsp;» et laisse «&nbsp;001&nbsp;» intact. Elle suppose des codes agence toujours sur 3&nbsp;chiffres&nbsp;: adaptez la longueur à vos codes.</p>
+
+<h3 id="piege-4">Piège n°&nbsp;4 — Pas d'équivalent direct de RECHERCHEV(…;VRAI)</h3>
+<p>Avec <code>VRAI</code>, RECHERCHEV sert souvent à classer un montant dans des tranches d'un barème. La fusion n'a pas d'équivalent&nbsp;: elle ne compare que des valeurs égales. La case <strong>Utiliser la correspondance approximative pour effectuer la fusion</strong>, en bas de la boîte de dialogue, ne fait pas ce travail. Elle compare des <em>textes qui se ressemblent</em> (des noms mal orthographiés, par exemple), avec un seuil de similarité qui vaut 0,80 par défaut, et Microsoft précise que «&nbsp;la correspondance approximative est uniquement prise en charge pour les opérations de fusion sur les colonnes de texte&nbsp;». Elle ne sait donc pas qu'un encours de 9&nbsp;800&nbsp;000 tombe entre 5 et 20&nbsp;millions. Pour des codes, elle est même dangereuse&nbsp;: la page Microsoft Learn consacrée à la correspondance approximative indique qu'elle «&nbsp;peut ignorer les différences telles que la casse, l'ordre des mots et la ponctuation&nbsp;», et chaque rapprochement serait à vérifier.</p>
+<p>Pour des tranches, utilisez une <strong>colonne conditionnelle</strong>. Dans le volet <strong>Requêtes</strong>, clic droit sur <code>Prets_enrichis</code> › <strong>Référence</strong>, nommez la copie <code>Prets_tranches</code>, puis <strong>Ajouter une colonne › Colonne conditionnelle</strong>. Nouveau nom de colonne&nbsp;: <code>Tranche</code>. Première clause&nbsp;: si <code>encours</code> <strong>est inférieur à</strong> 5000000, sortie «&nbsp;Moins de 5 M&nbsp;». <strong>Ajouter une clause</strong>&nbsp;: si <code>encours</code> <strong>est inférieur à</strong> 20000000, sortie «&nbsp;5 à 20 M&nbsp;». Sinon&nbsp;: «&nbsp;20 M et plus&nbsp;». D'après Microsoft Learn, «&nbsp;chaque clause conditionnelle est testée sur l'ordre indiqué dans la boîte de dialogue, de haut en bas&nbsp;»&nbsp;: rangez les bornes dans l'ordre croissant, comme le barème d'une RECHERCHEV approchée. La colonne créée n'a pas de type&nbsp;: passez-la en Texte. En code M&nbsp;:</p>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Prets_tranches">// Requête Prets_tranches : l'extraction enrichie, avec sa tranche d'encours
+let
+    Source = Prets_enrichis,
+    // Les clauses sont testées dans l'ordre : la première vraie l'emporte
+    AvecTranche = Table.AddColumn(Source, "Tranche", each
+        if [encours] &lt; 5000000 then "Moins de 5 M"
+        else if [encours] &lt; 20000000 then "5 à 20 M"
+        else "20 M et plus", type text)
+in
+    AvecTranche</pre>
+<p>Regroupez ensuite <code>Prets_tranches</code> par <em>Tranche</em> (<strong>Accueil › Regrouper par</strong>, avec <strong>Compter les lignes</strong> et la <strong>Somme</strong> de <em>encours</em>) pour vérifier&nbsp;:</p>
+<div class="expected">
+<ul>
+<li>Moins de 5&nbsp;M&nbsp;: 3&nbsp;contrats, 10&nbsp;100&nbsp;000&nbsp;FCFA.</li>
+<li>5 à 20&nbsp;M&nbsp;: 5&nbsp;contrats, 56&nbsp;200&nbsp;000&nbsp;FCFA.</li>
+<li>20&nbsp;M et plus&nbsp;: 4&nbsp;contrats, 106&nbsp;750&nbsp;000&nbsp;FCFA.</li>
+</ul>
+</div>
+<p>Le <a href="../gratuit.html">module gratuit «&nbsp;Calculer l'ancienneté des impayés avec Power Query&nbsp;»</a> applique la même logique aux jours de retard&nbsp;: il range chaque prêt dans une tranche d'ancienneté, puis regroupe l'encours et les impayés par tranche, avec le code M complet et les résultats attendus.</p>
+
+<h2 id="code-m">Le code M complet, pièges corrigés</h2>
+<p>Voici les six requêtes de l'exemple, telles qu'on peut les écrire une fois les pièges connus. Elles portent les mêmes noms que celles créées à la souris. Si vous avez suivi les étapes, remplacez le code de chaque requête (<strong>Accueil › Éditeur avancé</strong>). Sinon, partez d'une copie du classeur téléchargé&nbsp;: créez chaque requête par <strong>Données › Obtenir des données › À partir d'autres sources › Requête vide</strong>, ouvrez <strong>Accueil › Éditeur avancé</strong>, collez le code, puis renommez la requête (<strong>Paramètres de requête › Propriétés › Nom</strong>). Chargez <code>Prets</code>, <code>Agences</code> et <code>Produits</code> en connexion uniquement, les trois autres dans des feuilles.</p>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Prets">// Requête Prets (connexion uniquement) : l'extraction, clés nettoyées
+let
+    Source = Excel.CurrentWorkbook(){[Name = "Prets"]}[Content],
+    // Clés en texte, sans espace au début ni à la fin (pièges 2 et 3) ;
+    // un code agence lu comme le nombre 1 redevient "001"
+    Cles = Table.TransformColumns(Source, {
+        {"code_agence", each Text.PadStart(Text.Trim(Text.From(_)), 3, "0"), type text},
+        {"code_produit", each Text.Upper(Text.Trim(Text.From(_))), type text}}),
+    Types = Table.TransformColumnTypes(Cles,
+        {{"contrat", type text}, {"encours", type number}})
+in
+    Types</pre>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Agences">// Requête Agences (connexion uniquement) : la table de correspondance des agences
+let
+    Source = Excel.CurrentWorkbook(){[Name = "Agences"]}[Content],
+    Cles = Table.TransformColumns(Source, {
+        {"code_agence", each Text.PadStart(Text.Trim(Text.From(_)), 3, "0"), type text}}),
+    Types = Table.TransformColumnTypes(Cles,
+        {{"agence", type text}, {"zone", type text}}),
+    // Piège 1 : retire les lignes identiques. Deux lignes différentes pour un même code
+    // restent : le contrôle les signale, et c'est la table Excel qu'il faut corriger.
+    SansDoublons = Table.Distinct(Types)
+in
+    SansDoublons</pre>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Produits">// Requête Produits (connexion uniquement) : la table de correspondance des produits
+let
+    Source = Excel.CurrentWorkbook(){[Name = "Produits"]}[Content],
+    Cles = Table.TransformColumns(Source, {
+        {"code_produit", each Text.Upper(Text.Trim(Text.From(_))), type text}}),
+    Types = Table.TransformColumnTypes(Cles,
+        {{"famille", type text}, {"segment", type text}}),
+    SansDoublons = Table.Distinct(Types)
+in
+    SansDoublons</pre>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Prets_enrichis">// Requête Prets_enrichis : l'extraction + agence, zone, famille, segment
+let
+    Source = Prets,
+    // Fusion n° 1 (le premier « RECHERCHEV ») : Externe gauche = toutes les lignes
+    // de l'extraction, enrichies quand le code existe dans Agences
+    FusionAgences = Table.NestedJoin(Source, {"code_agence"},
+        Agences, {"code_agence"}, "Agences", JoinKind.LeftOuter),
+    // Développement : les colonnes voulues, par leur nom (l'équivalent de no_index_col),
+    // avec leur nom final, sans préfixe
+    AvecAgence = Table.ExpandTableColumn(FusionAgences, "Agences",
+        {"agence", "zone"}, {"agence", "zone"}),
+    // Fusion n° 2 : la famille et le segment du produit
+    FusionProduits = Table.NestedJoin(AvecAgence, {"code_produit"},
+        Produits, {"code_produit"}, "Produits", JoinKind.LeftOuter),
+    AvecProduit = Table.ExpandTableColumn(FusionProduits, "Produits",
+        {"famille", "segment"}, {"famille", "segment"}),
+    // L'ordre des lignes n'est pas garanti après une fusion : on trie à la fin
+    Tri = Table.Sort(AvecProduit, {{"contrat", Order.Ascending}})
+in
+    Tri</pre>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Codes_a_corriger">// Requête Codes_a_corriger : les codes de l'extraction absents d'une table de correspondance
+let
+    // Anti gauche : seulement les contrats sans correspondance
+    SansAgence = Table.NestedJoin(Prets, {"code_agence"},
+        Agences, {"code_agence"}, "Agences", JoinKind.LeftAnti),
+    CodesAgence = Table.Group(SansAgence, {"code_agence"}, {
+        {"Contrats", each Table.RowCount(_), Int64.Type},
+        {"Encours", each List.Sum([encours]), type nullable number}}),
+    ListeAgences = Table.AddColumn(Table.RenameColumns(CodesAgence, {{"code_agence", "Code"}}),
+        "Table à compléter", each "Agences", type text),
+
+    SansProduit = Table.NestedJoin(Prets, {"code_produit"},
+        Produits, {"code_produit"}, "Produits", JoinKind.LeftAnti),
+    CodesProduit = Table.Group(SansProduit, {"code_produit"}, {
+        {"Contrats", each Table.RowCount(_), Int64.Type},
+        {"Encours", each List.Sum([encours]), type nullable number}}),
+    ListeProduits = Table.AddColumn(Table.RenameColumns(CodesProduit, {{"code_produit", "Code"}}),
+        "Table à compléter", each "Produits", type text),
+
+    // Une seule liste, vide quand tout est correct
+    Liste = Table.Combine({ListeAgences, ListeProduits}),
+    Ordre = Table.ReorderColumns(Liste, {"Table à compléter", "Code", "Contrats", "Encours"})
+in
+    Ordre</pre>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Controle_Fusion">// Requête Controle_Fusion : quatre chiffres à relire après chaque actualisation
+let
+    LignesAvant = Table.RowCount(Prets),
+    LignesApres = Table.RowCount(Prets_enrichis),
+    EcartEncours = List.Sum(Prets_enrichis[encours]) - List.Sum(Prets[encours]),
+    SansAgence = List.Count(List.Select(Prets_enrichis[zone], each _ = null)),
+    SansProduit = List.Count(List.Select(Prets_enrichis[famille], each _ = null)),
+    Resultat = #table(
+        type table [Contrôle = text, Valeur = number, Statut = text],
+        {
+            {"Lignes ajoutées par la fusion (doublons)", LignesApres - LignesAvant,
+                if LignesApres = LignesAvant then "OK" else "À vérifier"},
+            {"Écart d'encours après fusion (FCFA)", EcartEncours,
+                if EcartEncours = 0 then "OK" else "À vérifier"},
+            {"Contrats sans agence trouvée", SansAgence,
+                if SansAgence = 0 then "OK" else "À vérifier"},
+            {"Contrats sans produit trouvé", SansProduit,
+                if SansProduit = 0 then "OK" else "À vérifier"}
+        })
+in
+    Resultat</pre>
+<p>Les deux fonctions qui font le travail&nbsp;:</p>
+<ul>
+<li><strong><code>Table.NestedJoin</code></strong> joint les lignes de deux tables «&nbsp;en fonction de l'égalité des valeurs des colonnes clés&nbsp;» et range le résultat dans une nouvelle colonne de tables. Sa documentation précise&nbsp;: «&nbsp;Par défaut, une jointure externe gauche est effectuée si aucun <code>joinKind</code> n'est spécifié.&nbsp;» On l'écrit quand même&nbsp;: <code>JoinKind.LeftOuter</code> se lit mieux. <code>JoinKind.LeftAnti</code> donne la jointure Anti gauche.</li>
+<li><strong><code>Table.ExpandTableColumn</code></strong> développe ces tables en colonnes. Le troisième argument choisit les colonnes, le quatrième leur donne leur nom final&nbsp;: c'est lui qui évite le préfixe <code>Agences.</code> devant les noms de colonnes.</li>
+</ul>
+<div class="expected">
+<ul>
+<li><code>Prets_enrichis</code>&nbsp;: 12&nbsp;lignes, 173&nbsp;050&nbsp;000&nbsp;FCFA, P-1004 et P-1006 déjà complétés grâce au nettoyage des clés.</li>
+<li><code>Codes_a_corriger</code>&nbsp;: une ligne, <em>Produits</em>, <em>CB</em>, 1&nbsp;contrat, 14&nbsp;600&nbsp;000.</li>
+<li><code>Controle_Fusion</code>&nbsp;: les trois premières lignes valent 0, avec le statut «&nbsp;OK&nbsp;»&nbsp;; la ligne «&nbsp;Contrats sans produit trouvé&nbsp;» vaut 1, avec le statut «&nbsp;À vérifier&nbsp;» (le contrat P-1008, code CB). Après l'ajout de CB à la table <strong>Produits</strong> et <strong>Données › Actualiser tout</strong>&nbsp;: quatre «&nbsp;OK&nbsp;» et une liste vide.</li>
+</ul>
+</div>
+<p>Pour le mois suivant, collez la nouvelle extraction dans le tableau <strong>Prets</strong> (mêmes en-têtes), puis <strong>Données › Actualiser tout</strong>, et lisez <code>Controle_Fusion</code> avant d'utiliser les chiffres.</p>
+<div class="callout-info">
+<p><strong>Pour aller jusqu'au reporting mensuel.</strong> Ce guide enrichit une extraction avec deux petites tables de codes. Le module&nbsp;4 de la formation «&nbsp;Power Query pour le reporting bancaire&nbsp;» applique la fusion à la balance des comptes&nbsp;: table de correspondance comptes → postes par préfixe de compte (structure du PCB révisé), détection automatique des comptes non mappés, état par poste avec convention de signe et règle du préfixe le plus long. Ce guide n'en reprend rien. <a href="../index.html#tarif">Voir le programme et le tarif de la formation</a></p>
+</div>
+
+<h2 id="comparatif">RECHERCHEV, RECHERCHEX ou fusion Power Query&nbsp;: que choisir&nbsp;?</h2>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Comparatif RECHERCHEV, RECHERCHEX et fusion Power Query"><table class="data compare-pq">
+<caption>Trois façons de ramener une information d'une table de correspondance</caption>
+<thead><tr><th scope="col"><span class="sr-only">Critère</span></th><th scope="col">RECHERCHEV</th><th scope="col">RECHERCHEX</th><th scope="col">Fusion Power Query</th></tr></thead>
+<tbody>
+<tr><th scope="row">Où vit la règle</th><td>Une formule sur chaque ligne de l'extraction</td><td>Une formule sur chaque ligne de l'extraction</td><td>Une étape de requête, écrite une fois</td></tr>
+<tr><th scope="row">Correspondance par défaut</th><td>Approximative si le 4<sup>e</sup>&nbsp;argument est omis</td><td>Exacte</td><td>Exacte</td></tr>
+<tr><th scope="row">Colonne de recherche</th><td>La première colonne de la plage</td><td>N'importe quelle colonne</td><td>N'importe quelle colonne, une ou plusieurs</td></tr>
+<tr><th scope="row">Code présent deux fois</th><td>La première ligne trouvée, sans alerte</td><td>La première (ou la dernière) trouvée</td><td>Toutes&nbsp;: le résultat a plus de lignes</td></tr>
+<tr><th scope="row">Code introuvable</th><td>#N/A</td><td>#N/A, ou la valeur de <code>si_non_trouvé</code></td><td><code>null</code>, et la liste par Anti gauche</td></tr>
+<tr><th scope="row">Versions d'Excel</th><td>Toutes</td><td>Microsoft&nbsp;365, Excel 2021 et 2024 (ni 2016 ni 2019)</td><td>Excel 2016 et plus récent, Microsoft&nbsp;365</td></tr>
+<tr><th scope="row">Quand la choisir</th><td>Un besoin ponctuel, un classeur partagé avec d'anciennes versions</td><td>Une recherche ponctuelle dans un Excel récent</td><td>Un traitement répété chaque mois, plusieurs tables, de gros volumes</td></tr>
+</tbody>
+</table></div>
+<p>Le support Microsoft recommande lui-même RECHERCHEX à la place de RECHERCHEV&nbsp;: sa page RECHERCHEV la présente comme «&nbsp;une version améliorée de RECHERCHEV&nbsp;», qui «&nbsp;fonctionne dans n'importe quelle direction et renvoie des correspondances exactes par défaut&nbsp;». Mais RECHERCHEX reste une formule&nbsp;: elle ne liste pas les codes manquants et doit accompagner chaque nouvelle extraction, comme les autres. Pour un état mensuel produit à partir d'extractions, la fusion est la bonne place de la règle&nbsp;; pour une vérification ponctuelle, une formule suffit.</p>
+
+<h2 id="erreurs">Erreurs fréquentes</h2>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Diagnostic rapide des erreurs fréquentes"><table class="data errors">
+<caption>Diagnostic rapide</caption>
+<thead><tr><th scope="col">Ce que vous constatez</th><th scope="col">Cause probable</th><th scope="col">Solution</th></tr></thead>
+<tbody>
+<tr><td>Plus de lignes après la fusion, total gonflé</td><td>Un code en double dans la table de correspondance</td><td><strong>Conserver les doublons</strong> pour le trouver, puis supprimer les lignes identiques ou corriger la table (<a href="#piege-1">piège n°&nbsp;1</a>)</td></tr>
+<tr><td>Colonnes ramenées vides sur toutes les lignes</td><td>Clés de types différents (texte d'un côté, nombre de l'autre), ou mauvaise colonne cliquée</td><td>Les deux clés en Texte&nbsp;; relire le nombre de correspondances dans la boîte de dialogue (<a href="#piege-3">piège n°&nbsp;3</a>)</td></tr>
+<tr><td>Colonnes ramenées vides sur quelques lignes</td><td>Code absent de la table, ou espace et casse différents</td><td>Requête Anti gauche&nbsp;; <strong>Supprimer les espaces</strong> et <strong>MAJUSCULES</strong> des deux côtés (<a href="#piege-2">piège n°&nbsp;2</a>)</td></tr>
+<tr><td>Colonnes nommées <code>Agences.agence</code>, <code>Agences.zone</code></td><td>Case <strong>Utiliser le nom de colonne d'origine comme préfixe</strong> restée cochée</td><td>Renommer les colonnes, ou corriger le quatrième argument de <code>Table.ExpandTableColumn</code> dans la barre de formule</td></tr>
+<tr><td>Erreur «&nbsp;La colonne … de la table est introuvable&nbsp;» à l'actualisation</td><td>Un en-tête renommé dans un tableau Excel (<em>zone</em> devenu <em>Zone</em>), cité par une étape</td><td>Rétablir l'en-tête, ou corriger les étapes qui le citent</td></tr>
+<tr><td>L'ordre des lignes a changé après la fusion</td><td>Microsoft Learn l'indique&nbsp;: l'ordre de tri n'est pas garanti après une fusion (<code>Table.NestedJoin</code>)</td><td>Trier en dernière étape (flèche de l'en-tête › <strong>Tri croissant</strong>)</td></tr>
+<tr><td>Message sur les niveaux de confidentialité</td><td>Les requêtes fusionnées viennent de sources différentes (deux classeurs, par exemple)</td><td>Indiquer le niveau de chaque source&nbsp;: <strong>Données › Obtenir des données › Paramètres de la source de données</strong>, puis <strong>Modifier les autorisations</strong></td></tr>
+</tbody>
+</table></div>
+
+<h2 id="faq">Questions fréquentes</h2>
+<h3 id="faq-deux-colonnes">Peut-on fusionner sur deux colonnes&nbsp;?</h3>
+<p>Oui. Dans la boîte de dialogue Fusionner, cliquez sur la première colonne puis maintenez Ctrl en cliquant sur la seconde&nbsp;; faites de même dans la table de droite. Power Query numérote la sélection (1, 2). Microsoft précise que «&nbsp;l'ordre dans lequel vous sélectionnez les colonnes de chaque table doit correspondre&nbsp;», sinon les résultats peuvent être incorrects. C'est l'équivalent d'une RECHERCHEV sur une clé concaténée, sans colonne de concaténation à créer.</p>
+<h3 id="faq-plus-de-lignes">Pourquoi j'obtiens plus de lignes qu'avant&nbsp;?</h3>
+<p>Parce qu'un code apparaît plusieurs fois dans la table de correspondance. RECHERCHEV s'arrête à la première ligne trouvée&nbsp;; la fusion ramène toutes les lignes correspondantes, et le développement crée une ligne par correspondance. Sur l'exemple, le code 003 en double fait passer l'extraction de 12 à 15&nbsp;lignes et l'encours de 173&nbsp;050&nbsp;000 à 217&nbsp;600&nbsp;000&nbsp;FCFA. Repérez le code avec Accueil › Conserver les lignes › Conserver les doublons, puis supprimez les lignes identiques ou corrigez la table.</p>
+<h3 id="faq-non-trouves">Que faire des codes non trouvés&nbsp;?</h3>
+<p>Les lister, pas les supprimer. Une requête Anti gauche donne les contrats dont le code est absent de la table de correspondance, et un regroupement par code donne le nombre de contrats et l'encours concernés. Ensuite, deux cas&nbsp;: une faute de saisie (espace, minuscule) se corrige dans Power Query avec Supprimer les espaces et MAJUSCULES&nbsp;; un vrai code manquant, comme CB dans l'exemple, s'ajoute à la table de correspondance, puis Données › Actualiser tout.</p>
+<h3 id="faq-classeurs">La fusion fonctionne-t-elle entre deux classeurs&nbsp;?</h3>
+<p>Oui. Créez une requête par classeur (Données › Obtenir des données › À partir d'un fichier › À partir d'un classeur), puis fusionnez-les comme ici&nbsp;: peu importe d'où viennent les requêtes. À chaque actualisation, Power Query relit les deux fichiers&nbsp;: ne les déplacez pas. Comme les données viennent de deux sources, Excel peut demander leurs niveaux de confidentialité (Privé, Organisationnel, Public), qui servent, selon Microsoft, à éviter de «&nbsp;combiner par inadvertance des données&nbsp;».</p>
+<h3 id="faq-ajouter">Fusionner ou ajouter des requêtes&nbsp;?</h3>
+<p>Fusionner ajoute des colonnes&nbsp;: c'est l'équivalent de RECHERCHEV. Ajouter des requêtes empile des lignes&nbsp;: c'est l'équivalent d'un copier-coller de deux extractions l'une sous l'autre. Pour empiler les fichiers de plusieurs agences, voyez le guide <a href="combiner-plusieurs-fichiers-excel-power-query.html">Combiner plusieurs fichiers Excel en un seul avec Power Query</a>.</p>
+
+<h2 id="suite">Aller plus loin</h2>
+<p>Pour pratiquer sans attendre, le <a href="../gratuit.html">module gratuit de la formation</a> part d'une extraction de prêts fictive, à télécharger, et calcule les jours de retard et la balance âgée des impayés, avec le code M complet et les résultats attendus.</p>
+<p>Sur le même thème&nbsp;:</p>
+<ul>
+<li><a href="combiner-plusieurs-fichiers-excel-power-query.html">Combiner plusieurs fichiers Excel en un seul avec Power Query</a>&nbsp;: réunir les classeurs des agences avant de les enrichir comme ici.</li>
+<li><a href="comparer-deux-fichiers-excel-power-query.html">Comparer deux fichiers Excel avec Power Query</a>&nbsp;: les jointures Anti gauche et Anti droite, appliquées à deux arrêtés, montrent les crédits apparus ou soldés.</li>
+<li><a href="creances-en-souffrance-bceao.html">Créances en souffrance BCEAO</a>&nbsp;: côté banques, le classement des créances et les dépréciations, que l'on présente ensuite par zone une fois la zone ajoutée par fusion.</li>
+<li><a href="portefeuille-a-risque-par30.html">Portefeuille à risque (PAR&nbsp;30)</a>&nbsp;: côté microfinance (SFD), l'indicateur de qualité du portefeuille, présenté lui aussi par agence ou par zone.</li>
+</ul>
+<p>Tous les guides gratuits sont réunis sur la <a href="../index.html#guides">page de la formation</a>.</p>
+
+<h2 id="sources">Sources publiques consultées le 22/10/2026</h2>
+<ul>
+<li>Support Microsoft, <a href="https://support.microsoft.com/fr-fr/Excel/merge-queries-power-query" rel="noopener">Fusionner des requêtes (Power Query)</a>.</li>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/merge-queries-overview" rel="noopener">Vue d'ensemble des requêtes de fusion</a>&nbsp;: nombre estimé de correspondances, colonnes du même type, sélection de plusieurs colonnes avec Ctrl, types de jointure, correspondance approximative limitée aux colonnes de texte.</li>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/merge-queries-left-outer" rel="noopener">Jointure externe gauche</a> et <a href="https://learn.microsoft.com/fr-fr/power-query/merge-queries-left-anti" rel="noopener">Jointure anti gauche</a>.</li>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/fuzzy-matching" rel="noopener">Fonctionnement de la correspondance approximative dans Power Query</a> et <a href="https://learn.microsoft.com/fr-fr/power-query/merge-queries-fuzzy-match" rel="noopener">Fusion approximative</a>&nbsp;: seuil de 0,80 par défaut, colonnes de texte uniquement.</li>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/working-with-duplicates" rel="noopener">Utilisation de valeurs en double</a>&nbsp;: respect de la casse, Supprimer et Conserver les doublons.</li>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/common-issues" rel="noopener">Problèmes courants de création dans Power Query</a>&nbsp;: conservation du tri, inférence des types sur les 200&nbsp;premières lignes.</li>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/add-conditional-column" rel="noopener">Ajouter une colonne conditionnelle</a>.</li>
+<li>Microsoft Learn, fonctions M&nbsp;: <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-nestedjoin" rel="noopener">Table.NestedJoin</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-expandtablecolumn" rel="noopener">Table.ExpandTableColumn</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-distinct" rel="noopener">Table.Distinct</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/text-trim" rel="noopener">Text.Trim</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/text-upper" rel="noopener">Text.Upper</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/text-padstart" rel="noopener">Text.PadStart</a> et <a href="https://learn.microsoft.com/fr-fr/powerquery-m/excel-currentworkbook" rel="noopener">Excel.CurrentWorkbook</a>.</li>
+<li>Support Microsoft, <a href="https://support.microsoft.com/fr-fr/office/recherchev-recherchev-fonction-0bbc8083-26fe-4963-8ab8-93a18ad188a1" rel="noopener">RECHERCHEV (RECHERCHEV, fonction)</a> et <a href="https://support.microsoft.com/fr-fr/office/fonction-recherchex-b7fd680e-6d10-43e6-84f9-88eae8bf5929" rel="noopener">Fonction RECHERCHEX</a>.</li>
+<li>Support Microsoft, <a href="https://support.microsoft.com/fr-fr/office/d%C3%A9finir-les-niveaux-de-confidentialit%C3%A9-power-query-cc3ede4d-359e-4b28-bc72-9bee7900b540" rel="noopener">Définir les niveaux de confidentialité (Power Query)</a>.</li>
+</ul>
+<p>Ce guide est un support pédagogique. Il ne cite aucune donnée d'établissement réel&nbsp;: la Banque Fictive de l'Ouest, ses agences, ses zones, ses produits et ses montants sont inventés. Les libellés de l'interface peuvent varier légèrement selon la version d'Excel et sa langue.</p>
+</section>
+
+      <div class="cta-band cta-after-author">
+        <div>
+          <h2>Vos tables de correspondance, fusionnées et contrôlées</h2>
+          <p>La formation «&nbsp;Power Query pour le reporting bancaire&nbsp;»&nbsp;: 8&nbsp;modules, 51&nbsp;exercices corrigés, environ 13&nbsp;h de travail, des données fictives sur plusieurs arrêtés mensuels, un quiz final et une attestation de suivi (non diplômante). <strong>25&nbsp;000&nbsp;FCFA</strong>, paiement unique.</p>
+        </div>
+        <a class="btn btn-light btn-lg" href="../index.html#tarif"><span class="btn-label">Voir le programme et le tarif</span><span class="arrow" aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </article>
+</main>
+
+<footer class="tp-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="../index.html" aria-label="Teranga Pro, accueil de la formation">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+          <span class="brand-name">Teranga<span>Pro</span></span>
+        </a>
+        <p>Conçu par un praticien du reporting bancaire en Afrique de l'Ouest. Données d'exercice 100&nbsp;% fictives&nbsp;; tables de correspondance&nbsp;: exemples pédagogiques, pas des états réglementaires officiels.</p>
+      </div>
+      <div>
+        <h2>Formation</h2>
+        <ul>
+          <li><a href="../index.html">Présentation et programme</a></li>
+          <li><a href="../gratuit.html">Module gratuit</a></li>
+          <li><a href="../index.html#guides">Guides gratuits</a></li>
+          <li><a href="../attestation.html">Vérifier une attestation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Informations</h2>
+        <ul>
+          <li><a href="../cgv.html">Conditions générales de vente</a></li>
+          <li><a href="../confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="footer-note">© 2026 Teranga Pro · Vendeur&nbsp;: particulier résidant au Sénégal.</p>
+  </div>
+</footer>
+</body>
+</html>

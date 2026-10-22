@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comparer deux fichiers Excel avec Power Query&nbsp;: les différences</title>
+<meta name="description" content="Lignes ajoutées, supprimées ou modifiées entre deux fichiers Excel&nbsp;: la méthode Power Query, anti-jointures, jointure interne, code M, contrôle à zéro.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#0B2545">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/comparer-deux-fichiers-excel-power-query.html">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="fr_SN">
+<meta property="og:site_name" content="Teranga Pro">
+<meta property="og:title" content="Comparer deux fichiers Excel avec Power Query&nbsp;: lignes ajoutées, supprimées, modifiées">
+<meta property="og:description" content="Deux arrêtés de portefeuille fictifs, trois jointures (anti gauche, anti droite, interne), un pont d'encours qui tombe à zéro, puis les différences en couleur.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/comparer-deux-fichiers-excel-power-query.html">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../formation.css">
+<style>
+.answer3 ol { margin: .4em 0 .6em; }
+.guide-meta { margin-top: 8px; }
+.module table.data td code { white-space: nowrap; }
+.module table.errors td code { white-space: normal; overflow-wrap: anywhere; }
+.module table.data tr.pont-total td { font-weight: 650; border-top: 1.5px solid var(--line-strong); }
+.module .st { display: inline-block; padding: .05em .55em; border-radius: 999px; font-size: .86em; font-weight: 650; white-space: nowrap; }
+.module .st-add { background: #E3F4E8; color: #1E6B34; }
+.module .st-del { background: #FBE4E2; color: #9C2A1E; }
+.module .st-mod { background: #FFF1CC; color: #6E4B00; }
+.module .st-id { background: #EEF2F1; color: #4A5562; }
+@media (min-width: 600px) {
+  .download-box.two-files .file-ext, .download-box.two-files p { grid-row: 1 / span 2; }
+  .download-box.two-files .btn { grid-column: 3; }
+}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Comparer deux fichiers Excel avec Power Query : lignes ajoutées, supprimées, modifiées",
+  "description": "Lignes ajoutées, supprimées ou modifiées entre deux fichiers Excel : la méthode Power Query, anti-jointures, jointure interne, code M, contrôle à zéro.",
+  "inLanguage": "fr",
+  "isAccessibleForFree": true,
+  "keywords": "comparer deux fichiers Excel, comparer deux tableaux Excel, trouver les différences entre deux fichiers Excel, Power Query fusionner les requêtes, anti jointure gauche, anti jointure droite, jointure interne, jointure externe complète, Table.NestedJoin, JoinKind, reporting bancaire",
+  "about": [
+    { "@type": "Thing", "name": "Power Query" },
+    { "@type": "Thing", "name": "Comparaison de fichiers Excel" },
+    { "@type": "Thing", "name": "Jointures (fusion de requêtes)" }
+  ],
+  "isPartOf": { "@type": "Course", "name": "Power Query pour le reporting bancaire", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "datePublished": "2026-10-22",
+  "dateModified": "2026-10-22",
+  "image": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg",
+  "mainEntityOfPage": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/comparer-deux-fichiers-excel-power-query.html",
+  "author": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "publisher": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Comment trouver les doublons entre deux fichiers Excel ?", "acceptedAnswer": { "@type": "Answer", "text": "Si « doublons » veut dire les lignes présentes dans les deux fichiers, c'est une jointure interne : fusionnez les deux requêtes sur la clé avec le type Interne. Sur l'exemple, 13 contrats sont présents en août et en septembre. Si vous cherchez une clé répétée à l'intérieur d'un même fichier, c'est un regroupement : Accueil › Regrouper par sur la clé, opération Compter les lignes, puis un filtre « supérieur à 1 »." } },
+    { "@type": "Question", "name": "Et si la clé tient sur plusieurs colonnes ?", "acceptedAnswer": { "@type": "Answer", "text": "Dans la boîte de dialogue Fusionner, maintenez Ctrl et cliquez sur les colonnes de la clé, par exemple Agence puis Contrat, dans la table du haut, puis dans le même ordre dans la table du bas. Microsoft le précise : la première colonne sélectionnée à gauche est mise en correspondance avec la première sélectionnée à droite, et ainsi de suite ; sinon, les résultats de la jointure peuvent être incorrects. Des petits numéros 1, 2… s'affichent à côté des en-têtes pour rappeler l'ordre." } },
+    { "@type": "Question", "name": "Comment refaire la comparaison le mois suivant ?", "acceptedAnswer": { "@type": "Answer", "text": "Le plus simple est de donner aux fichiers des noms fixes, par exemple portefeuille-precedent.xlsx et portefeuille-courant.xlsx : chaque mois, on remplace les deux fichiers, puis Données › Actualiser tout. Si les noms changent, modifiez le chemin dans Données › Obtenir des données › Paramètres de la source de données, ou dans la ligne Source de chaque requête, puis actualisez. Les requêtes de fusion, le pont et la mise en forme conditionnelle n'ont pas à être refaits." } },
+    { "@type": "Question", "name": "Peut-on comparer deux listes ou deux colonnes simples de la même façon ?", "acceptedAnswer": { "@type": "Answer", "text": "Oui. Une liste d'une seule colonne est une table d'une seule colonne : l'anti gauche donne les valeurs de la première liste absentes de la seconde, l'anti gauche dans l'autre sens donne l'inverse, et la jointure interne les valeurs communes. Si les deux listes sont dans le même classeur, mettez-les sous forme de tableau et chargez-les avec Données › À partir de Tableau/Plage. Le nettoyage de l'étape 0 reste indispensable." } },
+    { "@type": "Question", "name": "Et sur Mac ?", "acceptedAnswer": { "@type": "Answer", "text": "La page du support Microsoft sur la fusion de requêtes indique qu'elle s'applique aussi à Excel pour Microsoft 365 pour Mac. Ce guide décrit Excel pour Windows : sur Mac, les menus peuvent différer. L'outil Comparer les feuilles de calcul, lui, n'est proposé que dans Excel pour Windows, selon Microsoft." } }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="tp-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Teranga Pro, accueil de la formation">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+      <span class="brand-name">Teranga<span>Pro</span></span>
+    </a>
+    <nav class="tp-nav" aria-label="Navigation principale">
+      <a class="nav-hide-sm" href="../gratuit.html">Module gratuit</a>
+      <a href="../index.html">La formation</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="page-head">
+    <div class="wrap">
+      <p class="eyebrow">Guide gratuit <span class="dot" aria-hidden="true">·</span> Power Query</p>
+      <h1>Comparer deux fichiers Excel avec Power Query</h1>
+      <p>Quelles lignes ont été ajoutées, supprimées ou modifiées entre deux extractions&nbsp;? Trois jointures répondent aux trois questions, sans RECHERCHEV. Exemple complet sur deux arrêtés de portefeuille fictifs, code M, pont d'encours qui se termine par un contrôle à zéro, puis les différences en couleur.</p>
+      <p class="meta guide-meta">Mis à jour le 22/10/2026 · Données d'exemple 100&nbsp;% fictives · Excel 2016 ou plus récent, ou Microsoft&nbsp;365, sous Windows</p>
+    </div>
+  </div>
+
+  <article class="article">
+    <div class="wrap">
+<section class="module">
+
+<div class="callout-info answer3">
+<p><strong>La réponse en 4&nbsp;étapes</strong>&nbsp;:</p>
+<ol>
+<li>Chargez les deux fichiers dans Power Query, en connexion uniquement. Nettoyez la clé (ici le numéro de contrat)&nbsp;: type Texte, <strong>Supprimer les espaces</strong>, <strong>MAJUSCULES</strong>. Vérifiez qu'elle n'est pas en double.</li>
+<li><strong>Accueil › Combiner › Fusionner les requêtes</strong>, clé sélectionnée des deux côtés, type de jointure <strong>Anti gauche</strong>&nbsp;: ancien fichier en haut, vous obtenez les lignes supprimées&nbsp;; nouveau fichier en haut, les lignes ajoutées.</li>
+<li>Type <strong>Interne</strong>&nbsp;: les lignes présentes des deux côtés. Développez l'ancien montant, calculez une colonne <em>Écart</em> et gardez les écarts au-delà d'une tolérance&nbsp;: ce sont les lignes modifiées.</li>
+<li>Bouclez par un pont&nbsp;: ancien total − supprimées + ajoutées ± écarts = nouveau total. La ligne de contrôle doit valoir 0.</li>
+</ol>
+<p>Sur l'exemple fictif de ce guide&nbsp;: 2&nbsp;prêts sortis, 2&nbsp;nouveaux, 10&nbsp;encours modifiés, et un contrôle à 0.</p>
+</div>
+
+<nav class="toc-box" aria-labelledby="toc-title">
+<p id="toc-title">Dans ce guide</p>
+<ol>
+<li><a href="#principe">Le principe&nbsp;: une clé, trois questions, trois jointures</a></li>
+<li><a href="#fichiers">Les deux fichiers d'exemple à télécharger</a></li>
+<li><a href="#etape-0">Étape 0 — Préparer les deux tables</a></li>
+<li><a href="#etape-1">Étape 1 — Les prêts sortis&nbsp;: anti gauche</a></li>
+<li><a href="#etape-2">Étape 2 — Les nouveaux prêts&nbsp;: anti droite</a></li>
+<li><a href="#etape-3">Étape 3 — Les encours modifiés&nbsp;: jointure interne</a></li>
+<li><a href="#etape-4">Étape 4 — Le pont d'encours et le contrôle à zéro</a></li>
+<li><a href="#une-requete">Variante&nbsp;: tout en une seule requête</a></li>
+<li><a href="#couleurs">Afficher les différences en couleur</a></li>
+<li><a href="#sans-power-query">Comparer sans Power Query</a></li>
+<li><a href="#erreurs">Erreurs fréquentes</a></li>
+<li><a href="#faq">Questions fréquentes</a></li>
+<li><a href="#sources">Sources consultées</a></li>
+</ol>
+</nav>
+
+<h2 id="principe">Le principe&nbsp;: une clé, trois questions, trois jointures</h2>
+<p>Le service reporting de la Banque Fictive de l'Ouest (BFO), une banque <strong>imaginaire</strong>, reçoit chaque fin de mois une extraction de son portefeuille de prêts&nbsp;: une ligne par prêt, avec son numéro de contrat et son encours. Entre fin août et fin septembre 2026, l'encours total a augmenté. Le responsable veut savoir pourquoi, prêt par prêt. Il faut répondre à trois questions&nbsp;:</p>
+<ul>
+<li><strong>Quels prêts sont sortis</strong>&nbsp;? Ils étaient dans le fichier d'août et ne sont plus dans celui de septembre.</li>
+<li><strong>Quels prêts sont nouveaux</strong>&nbsp;? Ils sont dans septembre et n'étaient pas dans août.</li>
+<li><strong>Quels prêts ont changé</strong>&nbsp;? Ils sont dans les deux fichiers, avec un encours différent.</li>
+</ul>
+<p>Pour rapprocher deux lignes, il faut une <strong>clé</strong>&nbsp;: une colonne (ou un groupe de colonnes) qui identifie chaque ligne sans ambiguïté et qui ne change pas d'un fichier à l'autre. Ici, le numéro de contrat. Le nom du client ne convient pas&nbsp;: un client peut avoir plusieurs prêts, et son nom peut être saisi de deux façons.</p>
+<p>Dans Power Query, rapprocher deux tables par une clé s'appelle <strong>fusionner des requêtes</strong>. Microsoft le résume ainsi&nbsp;: «&nbsp;Une opération de requête de fusion joint deux tables existantes en fonction des valeurs correspondantes d'une ou plusieurs colonnes.&nbsp;» Le <strong>type de jointure</strong> choisi décide des lignes gardées. Chacune des trois questions a la sienne.</p>
+<figure tabindex="0">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 370" role="img" aria-label="Schéma en deux cercles qui se chevauchent. Cercle de gauche : août, 15 prêts. Cercle de droite : septembre, 15 prêts. Partie gauche seule : prêts sortis, anti gauche, 2 prêts, 8 400 000 FCFA. Partie commune : présents dans les deux, jointure interne, 13 prêts dont 10 modifiés. Partie droite seule : nouveaux prêts, anti droite, 2 prêts, 16 500 000 FCFA. La jointure externe complète couvre les trois zones : 17 contrats.">
+<title>Trois questions, trois jointures</title>
+<rect x="1" y="1" width="718" height="368" rx="12" fill="#F7F7F2" stroke="#CBD5E1"/>
+<text x="20" y="30" font-size="13" font-weight="bold" fill="#0B2545">Août contre septembre : une clé, trois questions, trois jointures (données fictives)</text>
+<circle cx="285" cy="200" r="130" fill="#13A89E" fill-opacity=".14" stroke="#0B7A72" stroke-width="2"/>
+<circle cx="435" cy="200" r="130" fill="#C98A2A" fill-opacity=".16" stroke="#9A5B00" stroke-width="2"/>
+<text x="150" y="60" font-size="13" font-weight="bold" fill="#0B7A72">Août · 15 prêts</text>
+<text x="570" y="60" font-size="13" font-weight="bold" fill="#9A5B00" text-anchor="end">Septembre · 15 prêts</text>
+<text x="228" y="176" font-size="13" font-weight="bold" fill="#0B2545" text-anchor="middle">Prêts sortis</text>
+<text x="228" y="196" font-size="12" fill="#08655E" text-anchor="middle">Anti gauche</text>
+<text x="228" y="222" font-size="12" fill="#1F2933" text-anchor="middle">2 prêts</text>
+<text x="228" y="240" font-size="12" font-weight="bold" fill="#1F2933" text-anchor="middle">8 400 000</text>
+<text x="360" y="176" font-size="12" font-weight="bold" fill="#0B2545" text-anchor="middle">Dans les deux</text>
+<text x="360" y="196" font-size="12" fill="#0B2545" text-anchor="middle">Interne</text>
+<text x="360" y="222" font-size="12" fill="#1F2933" text-anchor="middle">13 prêts</text>
+<text x="360" y="240" font-size="12" font-weight="bold" fill="#1F2933" text-anchor="middle">10 modifiés</text>
+<text x="492" y="176" font-size="13" font-weight="bold" fill="#0B2545" text-anchor="middle">Nouveaux prêts</text>
+<text x="492" y="196" font-size="12" fill="#7F4B00" text-anchor="middle">Anti droite</text>
+<text x="492" y="222" font-size="12" fill="#1F2933" text-anchor="middle">2 prêts</text>
+<text x="492" y="240" font-size="12" font-weight="bold" fill="#1F2933" text-anchor="middle">16 500 000</text>
+<text x="20" y="356" font-size="12" fill="#0B2545">Externe complète = les trois zones : 17 contrats et une colonne Statut.</text>
+</svg>
+<figcaption>Figure 1 — Chaque zone du schéma correspond à un type de jointure. Montants en FCFA, données fictives, après le nettoyage de l'étape&nbsp;0.</figcaption>
+</figure>
+<p>La vue d'ensemble de Microsoft Learn décrit six types de jointure (la page du support Microsoft sur Excel cite en plus une jointure croisée, qui ne sert pas ici). Les libellés ci-dessous sont ceux de la documentation Microsoft en français, avec le nom qu'ils prennent dans le code M&nbsp;:</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Les six types de jointure de Power Query"><table class="data">
+<caption>Les six types de jointure décrits par Microsoft Learn (table de gauche = celle du haut dans la boîte de dialogue)</caption>
+<thead><tr><th scope="col">Type de jointure</th><th scope="col">Lignes renvoyées (d'après la doc Microsoft)</th><th scope="col">En code M</th><th scope="col">Pour comparer deux fichiers</th></tr></thead>
+<tbody>
+<tr><td>Externe gauche</td><td>Toutes les lignes de la table de gauche et les lignes correspondantes de la table de droite</td><td><code>JoinKind.LeftOuter</code></td><td>Ajouter une information à une table, comme une RECHERCHEV</td></tr>
+<tr><td>Externe droite</td><td>Toutes les lignes de la table de droite, lignes correspondantes de la table de gauche</td><td><code>JoinKind.RightOuter</code></td><td>La même chose, dans l'autre sens</td></tr>
+<tr><td>Externe complète</td><td>Toutes les lignes des deux tableaux</td><td><code>JoinKind.FullOuter</code></td><td>Tout voir en une requête, avec un statut par ligne (<a href="#une-requete">variante</a>)</td></tr>
+<tr><td>Interne</td><td>Seules les lignes correspondantes des deux tables</td><td><code>JoinKind.Inner</code></td><td>Les lignes présentes des deux côtés&nbsp;: <strong>lignes modifiées</strong> (<a href="#etape-3">étape&nbsp;3</a>)</td></tr>
+<tr><td>Anti gauche</td><td>Seules les lignes de la table de gauche (sans correspondance à droite)</td><td><code>JoinKind.LeftAnti</code></td><td>Ancien fichier à gauche&nbsp;: <strong>lignes supprimées</strong> (<a href="#etape-1">étape&nbsp;1</a>)</td></tr>
+<tr><td>Anti droite</td><td>Seules les lignes de la table de droite (sans correspondance à gauche)</td><td><code>JoinKind.RightAnti</code></td><td>Nouveau fichier à droite&nbsp;: <strong>lignes ajoutées</strong> (<a href="#etape-2">étape&nbsp;2</a>)</td></tr>
+</tbody>
+</table></div>
+<p>Les noms varient selon les pages et les versions&nbsp;: la vue d'ensemble de Microsoft Learn écrit «&nbsp;Anti jointure gauche&nbsp;», ses pas à pas font choisir «&nbsp;Anti gauche&nbsp;», et la page du support Microsoft appelle la jointure externe complète «&nbsp;Externe entière&nbsp;». Dans des tutoriels en français, vous croiserez aussi «&nbsp;gauche opposée&nbsp;»&nbsp;: c'est la même opération. Dans la boîte de dialogue, chaque type est suivi d'un court rappel entre parenthèses (en anglais, par exemple, «&nbsp;Left Anti (rows only in first)&nbsp;»), dont la traduction peut changer d'une version à l'autre. En cas de doute, ouvrez <strong>Accueil › Éditeur avancé</strong>&nbsp;: le nom <code>JoinKind</code> du code M, lui, ne change pas.</p>
+<p>La place des tables compte. Microsoft le souligne&nbsp;: «&nbsp;La position (gauche ou droite) des tables devient très importante lorsque vous sélectionnez le type de jointure approprié à utiliser.&nbsp;» La table de gauche est celle que vous choisissez en haut de la boîte de dialogue <strong>Fusionner</strong>.</p>
+
+<h2 id="fichiers">Les deux fichiers d'exemple à télécharger</h2>
+<div class="download-box two-files">
+<span class="file-ext" aria-hidden="true">XLSX</span>
+<p><strong>Les deux portefeuilles de l'exemple</strong><br><span class="muted small">portefeuille-2026-08.xlsx et portefeuille-2026-09.xlsx · prêts fictifs de la BFO · tableau T_Portefeuille · 10&nbsp;Ko chacun</span></p>
+<a class="btn btn-outline" href="fichiers/portefeuille-2026-08.xlsx" download><span class="btn-label">Télécharger fin août 2026</span></a>
+<a class="btn btn-outline" href="fichiers/portefeuille-2026-09.xlsx" download><span class="btn-label">Télécharger fin septembre 2026</span></a>
+</div>
+<p>Enregistrez les deux fichiers dans un même dossier, par exemple <code>C:\Reporting\Comparaison</code>. Chaque classeur contient une feuille <strong>Lisez-moi</strong> et une feuille <strong>Portefeuille</strong>, avec un tableau Excel nommé <code>T_Portefeuille</code>&nbsp;: une ligne par prêt et six colonnes, <em>Arrêté</em>, <em>Contrat</em>, <em>Client</em>, <em>Agence</em>, <em>Produit</em> et <em>Encours</em> (en FCFA). Les quatre agences, Flamboyant, Ronier, Filao et Acajou, sont imaginaires, comme les clients et les montants.</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Ce que contiennent les deux fichiers"><table class="data">
+<caption>Ce que contiennent les deux fichiers, avant tout nettoyage</caption>
+<thead><tr><th scope="col">Fichier</th><th scope="col">Arrêté</th><th scope="col">Lignes</th><th scope="col">Somme de la colonne Encours (FCFA)</th><th scope="col">Particularités</th></tr></thead>
+<tbody>
+<tr><td>portefeuille-2026-08.xlsx</td><td>31/08/2026</td><td class="num">15</td><td class="num">184&nbsp;755&nbsp;000,40</td><td>Un encours avec des centimes&nbsp;: BFO-1006, 3&nbsp;125&nbsp;000,40</td></tr>
+<tr><td>portefeuille-2026-09.xlsx</td><td>30/09/2026</td><td class="num">16</td><td class="num">193&nbsp;415&nbsp;000</td><td>Deux défauts ajoutés volontairement&nbsp;: la ligne de BFO-1008 figure <strong>deux fois</strong>, et la clé de BFO-1005 est suivie d'un <strong>espace</strong> («&nbsp;BFO-1005␣&nbsp;»)</td></tr>
+</tbody>
+</table></div>
+<p>Ces deux défauts sont fréquents dans les extractions réelles&nbsp;: une ligne répétée par un export ou un copier-coller, un espace ajouté à la saisie ou par un système qui complète les champs à longueur fixe. Ils faussent une comparaison sans faire apparaître la moindre erreur. L'étape&nbsp;0 les traite.</p>
+
+<h2 id="etape-0">Étape 0 — Préparer les deux tables</h2>
+<p>C'est l'étape qui décide de la justesse de tout le reste. Trois choses à faire&nbsp;: charger les deux tableaux sans les afficher, nettoyer la clé, vérifier qu'elle est unique.</p>
+<h3 id="charger">Charger les deux tableaux en connexion uniquement</h3>
+<ol>
+<li>Ouvrez un classeur vierge&nbsp;: ce sera votre classeur de comparaison. Enregistrez-le en dehors du dossier des deux fichiers.</li>
+<li><strong>Données › Obtenir des données › À partir d'un fichier › À partir d'un classeur Excel</strong> (Excel 2016&nbsp;: <strong>Données › Nouvelle requête › À partir d'un fichier › À partir d'un classeur</strong>). Choisissez <code>portefeuille-2026-08.xlsx</code>, puis <strong>Importer</strong>.</li>
+<li>Dans le <strong>Navigateur</strong>, sélectionnez le tableau <code>T_Portefeuille</code> (icône de tableau), pas la feuille <code>Portefeuille</code>, puis <strong>Transformer les données</strong>.</li>
+<li>À droite, dans <strong>Paramètres de requête › Propriétés › Nom</strong>, nommez la requête <code>Aout</code>, sans accent&nbsp;: ce nom sera repris tel quel dans le code M des étapes suivantes.</li>
+<li>Vérifiez les types avec l'icône à gauche de chaque en-tête&nbsp;: <em>Arrêté</em> en <strong>Date</strong>&nbsp;; <em>Contrat</em>, <em>Client</em>, <em>Agence</em> et <em>Produit</em> en <strong>Texte</strong>&nbsp;; <em>Encours</em> en <strong>Nombre décimal</strong>.</li>
+</ol>
+<p>Le type de la clé n'est pas un détail. Microsoft Learn prévient que les colonnes de jointure «&nbsp;doivent être du même type de données, sinon l'opération de fusion risque de ne pas générer de résultats corrects&nbsp;». Un numéro de contrat se garde en <strong>Texte</strong> dans les deux requêtes&nbsp;: c'est un identifiant, pas une quantité, et il peut commencer par des zéros.</p>
+<h3 id="nettoyer">Nettoyer la clé&nbsp;: espaces et majuscules</h3>
+<ol>
+<li>Sélectionnez la colonne <em>Contrat</em>, puis <strong>Transformer › Format › Supprimer les espaces</strong>. La fonction M correspondante, <code>Text.Trim</code>, retire les espaces au début et à la fin du texte&nbsp;: «&nbsp;Par défaut, tous les espaces blancs de début et de fin sont supprimés.&nbsp;»</li>
+<li>Toujours sur <em>Contrat</em>&nbsp;: <strong>Transformer › Format › MAJUSCULES</strong> (<code>Text.Upper</code>). Power Query distingue les majuscules des minuscules (Microsoft écrit&nbsp;: «&nbsp;Power Query respecte la casse&nbsp;»)&nbsp;: «&nbsp;bfo-1005&nbsp;» et «&nbsp;BFO-1005&nbsp;» ne se rapprocheraient pas.</li>
+<li><strong>Accueil › Fermer et charger › Fermer et charger dans…</strong>, choisissez <strong>Créer uniquement la connexion</strong>, puis <strong>OK</strong>. La requête existe, sans remplir de feuille&nbsp;: elle ne sert que d'entrée aux comparaisons.</li>
+</ol>
+<p>Dans l'<strong>Éditeur avancé</strong> (<strong>Accueil › Éditeur avancé</strong>), la requête ressemble à ceci. Les deux étapes de nettoyage y sont réunies en une&nbsp;:</p>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Aout">// Requête Aout : le portefeuille de fin août, clé nettoyée
+let
+    Source = Excel.Workbook(File.Contents("C:\Reporting\Comparaison\portefeuille-2026-08.xlsx"), null, true),
+    Portefeuille = Source{[Item = "T_Portefeuille", Kind = "Table"]}[Data],
+    Types = Table.TransformColumnTypes(Portefeuille, {
+        {"Arrêté", type date}, {"Contrat", type text}, {"Client", type text},
+        {"Agence", type text}, {"Produit", type text}, {"Encours", type number}}),
+    // Supprimer les espaces de début et de fin, puis MAJUSCULES
+    CleNettoyee = Table.TransformColumns(Types, {{"Contrat", each Text.Upper(Text.Trim(_)), type text}})
+in
+    CleNettoyee</pre>
+<p>Pour le fichier de septembre, le plus sûr est de dupliquer cette requête&nbsp;: rouvrez l'éditeur (<strong>Données › Requêtes et connexions</strong>, puis double-clic sur <code>Aout</code>), clic droit sur <code>Aout</code> dans le volet <strong>Requêtes</strong> › <strong>Dupliquer</strong>, nommez la copie <code>Septembre</code>, cliquez sur l'étape <strong>Source</strong> et remplacez <code>2026-08</code> par <code>2026-09</code> dans la barre de formule. Les deux requêtes ont ainsi exactement les mêmes étapes&nbsp;; vérifiez que <code>Septembre</code> est, elle aussi, en connexion uniquement. Si Excel l'a chargée dans une feuille&nbsp;: <strong>Données › Requêtes et connexions</strong>, clic droit sur <code>Septembre</code> › <strong>Charger dans…</strong> › <strong>Créer uniquement la connexion</strong>. Ce même chemin sert pour toutes les requêtes de ce guide.</p>
+<div class="expected">
+<ul>
+<li><code>Aout</code>&nbsp;: 15&nbsp;lignes, 6&nbsp;colonnes, somme de <em>Encours</em> 184&nbsp;755&nbsp;000,40.</li>
+<li><code>Septembre</code>&nbsp;: 16&nbsp;lignes à ce stade (le doublon est encore là), somme 193&nbsp;415&nbsp;000. La clé de BFO-1005 n'a plus d'espace.</li>
+</ul>
+</div>
+<p>Sans ce nettoyage, «&nbsp;BFO-1005␣&nbsp;» et «&nbsp;BFO-1005&nbsp;» seraient deux clés différentes&nbsp;: le prêt apparaîtrait à la fois parmi les prêts sortis (12&nbsp;300&nbsp;000) et parmi les nouveaux (11&nbsp;900&nbsp;000), et sa vraie variation, −400&nbsp;000, disparaîtrait.</p>
+<h3 id="doublons">Vérifier que la clé est unique</h3>
+<p>Une jointure associe chaque ligne de gauche à <strong>toutes</strong> les lignes de droite qui ont la même clé. Si un contrat figure deux fois dans un fichier, il sort deux fois du rapprochement&nbsp;: les lignes se multiplient, les totaux gonflent, sans aucun message d'erreur. D'où une requête de contrôle&nbsp;:</p>
+<ol>
+<li>Dans le volet <strong>Requêtes</strong>, clic droit sur <code>Septembre</code> › <strong>Référence</strong>. Nommez la nouvelle requête <code>Doublons_Septembre</code>.</li>
+<li><strong>Accueil › Regrouper par</strong>&nbsp;: regroupez par <em>Contrat</em>, nom de la nouvelle colonne <code>Nombre de lignes</code>, opération <strong>Compter les lignes</strong>. <strong>OK</strong>.</li>
+<li>Flèche de l'en-tête <em>Nombre de lignes</em> › <strong>Filtres numériques › Supérieur à…</strong>, saisissez <code>1</code>, puis <strong>OK</strong>.</li>
+</ol>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Doublons_Septembre">// Requête Doublons_Septembre : les contrats présents plus d'une fois (résultat attendu en régime normal : aucune ligne)
+let
+    Source = Septembre,
+    ParContrat = Table.Group(Source, {"Contrat"}, {{"Nombre de lignes", each Table.RowCount(_), Int64.Type}}),
+    Doublons = Table.SelectRows(ParContrat, each [Nombre de lignes] &gt; 1)
+in
+    Doublons</pre>
+<div class="expected">
+<ul>
+<li>Une seule ligne&nbsp;: <em>Contrat</em> BFO-1008, <em>Nombre de lignes</em> 2.</li>
+<li>Le même contrôle fait sur <code>Aout</code> (une requête <code>Doublons_Aout</code>, construite de la même façon) ne renvoie aucune ligne.</li>
+</ul>
+</div>
+<p>Pour voir les deux lignes en entier, faites une autre référence de <code>Septembre</code>, sélectionnez <em>Contrat</em>, puis <strong>Accueil › Conserver les lignes › Conserver les doublons</strong>. Ici, les deux lignes de BFO-1008 sont identiques sur toutes les colonnes (même client, même agence, même encours de 1&nbsp;870&nbsp;000)&nbsp;: c'est une copie, que l'on peut retirer sans risque.</p>
+<ol>
+<li>Revenez sur la requête <code>Septembre</code> et cliquez sur sa dernière étape.</li>
+<li>Sélectionnez toutes les colonnes (<kbd>Ctrl</kbd>+<kbd>A</kbd> dans l'aperçu), puis <strong>Accueil › Supprimer les lignes › Supprimer les doublons</strong>. Avec toutes les colonnes sélectionnées, seules les lignes identiques en tout point sont retirées.</li>
+</ol>
+<p>La requête <code>Septembre</code> complète devient&nbsp;:</p>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Septembre">// Requête Septembre : le portefeuille de fin septembre, clé nettoyée, copies exactes retirées
+let
+    Source = Excel.Workbook(File.Contents("C:\Reporting\Comparaison\portefeuille-2026-09.xlsx"), null, true),
+    Portefeuille = Source{[Item = "T_Portefeuille", Kind = "Table"]}[Data],
+    Types = Table.TransformColumnTypes(Portefeuille, {
+        {"Arrêté", type date}, {"Contrat", type text}, {"Client", type text},
+        {"Agence", type text}, {"Produit", type text}, {"Encours", type number}}),
+    CleNettoyee = Table.TransformColumns(Types, {{"Contrat", each Text.Upper(Text.Trim(_)), type text}}),
+    // Supprimer les doublons sur toutes les colonnes : seules les lignes identiques en tout point disparaissent
+    SansCopies = Table.Distinct(CleNettoyee)
+in
+    SansCopies</pre>
+<div class="expected">
+<ul>
+<li><code>Septembre</code>&nbsp;: 15&nbsp;lignes, somme de <em>Encours</em> 191&nbsp;545&nbsp;000.</li>
+<li><code>Doublons_Septembre</code>&nbsp;: aucune ligne. Gardez cette requête&nbsp;: un tableau vide est le résultat attendu.</li>
+</ul>
+</div>
+<div class="callout-warning">
+<p><strong>Une copie exacte se supprime, un doublon de clé s'examine.</strong> Si un mois prochain <code>Doublons_Septembre</code> affiche un contrat, c'est que deux lignes portent le même numéro avec des valeurs différentes (deux encours, deux agences). <code>Table.Distinct</code> ne les retire pas, et c'est voulu&nbsp;: il faut comprendre avant de supprimer. Deux tranches d'un même prêt, par exemple, demandent une clé à deux colonnes ou un regroupement par contrat. Retenez aussi que Power Query «&nbsp;ne garantit pas&nbsp;» de conserver la première ligne d'un groupe de doublons, selon Microsoft&nbsp;: ne supprimez jamais sur la seule colonne de clé des lignes qui diffèrent.</p>
+</div>
+
+<h2 id="etape-1">Étape 1 — Les prêts sortis&nbsp;: anti gauche</h2>
+<p>Un prêt sorti est dans le fichier d'août et n'est plus dans celui de septembre. C'est exactement ce que fait l'anti gauche&nbsp;: elle «&nbsp;n'amène que des lignes de la table de gauche qui n'ont pas de lignes correspondantes dans la table de droite&nbsp;» (Microsoft Learn). Le fichier d'août doit donc être <strong>à gauche</strong>, en haut de la boîte de dialogue.</p>
+<ol>
+<li>Rouvrez l'Éditeur Power Query et sélectionnez <code>Aout</code> dans le volet <strong>Requêtes</strong>.</li>
+<li><strong>Accueil › Combiner</strong>, flèche à côté de <strong>Fusionner les requêtes</strong> › <strong>Fusionner les requêtes en tant que nouvelles</strong> (libellé variable selon la version, par exemple «&nbsp;comme nouvelles&nbsp;»). Cette commande crée une nouvelle requête au lieu d'ajouter une étape à <code>Aout</code>.</li>
+<li>Dans la boîte de dialogue <strong>Fusionner</strong>&nbsp;: en haut, la table <code>Aout</code>&nbsp;; cliquez sur l'en-tête <em>Contrat</em>. En bas, choisissez <code>Septembre</code> et cliquez sur son en-tête <em>Contrat</em>.</li>
+<li>Dans la liste <strong>Type de jointure</strong>, choisissez <strong>Anti gauche</strong>.</li>
+<li>Lisez le message en bas de la boîte de dialogue avant de cliquer sur <strong>OK</strong>. Microsoft le juge «&nbsp;essentiel pour comprendre le résultat obtenu&nbsp;». Pour une anti gauche, il compte les lignes de la première table qui seront gardées&nbsp;: ici 2 sur 15. Dans l'exemple de Microsoft, il se lit «&nbsp;La sélection sélectionne 3 de 4 lignes dans le premier tableau&nbsp;»&nbsp;; la formulation varie selon la version.</li>
+<li>La nouvelle requête contient les colonnes d'<code>Aout</code> et une colonne <code>Septembre</code>, dont chaque cellule est une table vide&nbsp;: l'anti gauche «&nbsp;n'apporte aucune valeur de la table de droite&nbsp;». Clic droit sur l'en-tête <code>Septembre</code> › <strong>Supprimer</strong>.</li>
+<li>Nommez la requête <code>Prets_sortis</code>.</li>
+</ol>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Prets_sortis">// Requête Prets_sortis : dans Aout, absents de Septembre
+let
+    Fusion = Table.NestedJoin(Aout, {"Contrat"}, Septembre, {"Contrat"}, "Septembre", JoinKind.LeftAnti),
+    Sortis = Table.RemoveColumns(Fusion, {"Septembre"})
+in
+    Sortis</pre>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Prets_sortis : résultat attendu"><table class="data">
+<caption>Prets_sortis&nbsp;: résultat attendu (colonne Arrêté masquée, FCFA)</caption>
+<thead><tr><th scope="col">Contrat</th><th scope="col">Client</th><th scope="col">Agence</th><th scope="col">Produit</th><th scope="col">Encours</th></tr></thead>
+<tbody>
+<tr><td>BFO-1003</td><td>CLI-2043</td><td>Ronier</td><td>Prêt personnel</td><td class="num">2&nbsp;400&nbsp;000</td></tr>
+<tr><td>BFO-1011</td><td>CLI-2051</td><td>Filao</td><td>Crédit de trésorerie</td><td class="num">6&nbsp;000&nbsp;000</td></tr>
+<tr><td><strong>Total</strong></td><td></td><td></td><td></td><td class="num"><strong>8&nbsp;400&nbsp;000</strong></td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Dans l'exemple, BFO-1003 a été remboursé par anticipation et BFO-1011 est arrivé à échéance. Dans la réalité, chaque prêt sorti doit s'expliquer de la même façon&nbsp;: remboursement total, échéance, sortie du bilan, transfert vers une autre entité. C'est la première liste à faire justifier.</p>
+
+<h2 id="etape-2">Étape 2 — Les nouveaux prêts&nbsp;: anti droite</h2>
+<p>Un nouveau prêt est dans septembre et n'était pas dans août. Deux façons d'y arriver&nbsp;:</p>
+<ul>
+<li><strong>Anti droite</strong>, avec <code>Aout</code> toujours en haut. Elle «&nbsp;apporte uniquement des lignes de la table de droite qui n'ont pas de lignes correspondantes à partir de la table de gauche&nbsp;». Mais le résultat est déroutant&nbsp;: les colonnes d'<code>Aout</code> sont vides (<code>null</code>), et les données des nouveaux prêts sont rangées dans la colonne <code>Septembre</code>, qu'il faut développer avant de supprimer les colonnes vides. Le message du bas compte aussi à l'envers&nbsp;: il annonce les lignes de la deuxième table <em>exclues</em> (13 sur 15).</li>
+<li><strong>Anti gauche en inversant les tables</strong>&nbsp;: <code>Septembre</code> en haut, <code>Aout</code> en bas. Le résultat a directement les colonnes de septembre. C'est la méthode conseillée.</li>
+</ul>
+<ol>
+<li>Sélectionnez <code>Septembre</code> dans le volet <strong>Requêtes</strong>, puis <strong>Accueil › Combiner › Fusionner les requêtes en tant que nouvelles</strong>.</li>
+<li>En haut&nbsp;: <code>Septembre</code>, en-tête <em>Contrat</em>. En bas&nbsp;: <code>Aout</code>, en-tête <em>Contrat</em>. Type de jointure&nbsp;: <strong>Anti gauche</strong>. Le message annonce 2&nbsp;lignes sur 15 de la première table. <strong>OK</strong>.</li>
+<li>Supprimez la colonne <code>Aout</code> (des tables vides) et nommez la requête <code>Nouveaux_prets</code>.</li>
+</ol>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Nouveaux_prets">// Requête Nouveaux_prets : dans Septembre, absents de Aout (anti gauche, tables inversées)
+let
+    Fusion = Table.NestedJoin(Septembre, {"Contrat"}, Aout, {"Contrat"}, "Aout", JoinKind.LeftAnti),
+    Nouveaux = Table.RemoveColumns(Fusion, {"Aout"})
+in
+    Nouveaux</pre>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Nouveaux_prets : résultat attendu"><table class="data">
+<caption>Nouveaux_prets&nbsp;: résultat attendu (FCFA)</caption>
+<thead><tr><th scope="col">Contrat</th><th scope="col">Client</th><th scope="col">Agence</th><th scope="col">Produit</th><th scope="col">Encours</th></tr></thead>
+<tbody>
+<tr><td>BFO-1016</td><td>CLI-2056</td><td>Filao</td><td>Prêt personnel</td><td class="num">6&nbsp;500&nbsp;000</td></tr>
+<tr><td>BFO-1017</td><td>CLI-2057</td><td>Flamboyant</td><td>Crédit de trésorerie</td><td class="num">10&nbsp;000&nbsp;000</td></tr>
+<tr><td><strong>Total</strong></td><td></td><td></td><td></td><td class="num"><strong>16&nbsp;500&nbsp;000</strong></td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Si vous préférez l'anti droite, le code M ne change que d'un mot&nbsp;: <code>Table.NestedJoin(Aout, {"Contrat"}, Septembre, {"Contrat"}, "Septembre", JoinKind.RightAnti)</code>, suivi du développement de la colonne <code>Septembre</code>.</p>
+
+<h2 id="etape-3">Étape 3 — Les encours modifiés&nbsp;: jointure interne et colonne Écart</h2>
+<p>Reste les prêts présents des deux côtés. La jointure interne «&nbsp;apporte uniquement des lignes correspondantes des tables de gauche et de droite&nbsp;». On met septembre à gauche, on va chercher l'encours d'août, et on calcule l'écart.</p>
+<ol>
+<li>Sélectionnez <code>Septembre</code>, puis <strong>Accueil › Combiner › Fusionner les requêtes en tant que nouvelles</strong>. En haut&nbsp;: <code>Septembre</code>, <em>Contrat</em>&nbsp;; en bas&nbsp;: <code>Aout</code>, <em>Contrat</em>&nbsp;; type de jointure <strong>Interne</strong>. Le message annonce 13&nbsp;correspondances. <strong>OK</strong>.</li>
+<li>Cliquez sur l'icône à deux flèches de l'en-tête <code>Aout</code> (<strong>Développer</strong>). Décochez <strong>(Sélectionner toutes les colonnes)</strong>, cochez seulement <em>Encours</em>, et <strong>laissez cochée</strong> la case <strong>Utiliser le nom de la colonne d'origine comme préfixe</strong>&nbsp;: le préfixe donne à l'encours d'août un nom distinct, <code>Aout.Encours</code>, car la table a déjà une colonne <em>Encours</em> (celle de septembre) et une table ne peut pas avoir deux colonnes du même nom. <strong>OK</strong>.</li>
+<li>Renommez <code>Aout.Encours</code> en <code>Encours août</code> et <code>Encours</code> en <code>Encours septembre</code> (double-clic sur l'en-tête).</li>
+<li><strong>Ajouter une colonne › Colonne personnalisée</strong>. Nom&nbsp;: <code>Écart</code>&nbsp;; formule&nbsp;: <code>Number.Round([Encours septembre] - [Encours août], 2)</code>. <strong>OK</strong>, puis type <strong>Nombre décimal</strong>. L'arrondi au centime évite d'afficher −0,399999999… au lieu de −0,40, un effet du calcul en virgule flottante.</li>
+<li>Nommez la requête <code>Prets_communs</code>.</li>
+</ol>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Prets_communs">// Requête Prets_communs : les prêts présents dans les deux fichiers, avec l'écart d'encours
+let
+    Fusion = Table.NestedJoin(Septembre, {"Contrat"}, Aout, {"Contrat"}, "Aout", JoinKind.Inner),
+    EncoursAout = Table.ExpandTableColumn(Fusion, "Aout", {"Encours"}, {"Encours août"}),
+    Renomme = Table.RenameColumns(EncoursAout, {{"Encours", "Encours septembre"}}),
+    // Écart = septembre − août : négatif = baisse (remboursement), positif = hausse (déblocage)
+    AvecEcart = Table.AddColumn(Renomme, "Écart", each Number.Round([Encours septembre] - [Encours août], 2), type number)
+in
+    AvecEcart</pre>
+<div class="expected">
+<ul>
+<li>13&nbsp;lignes. Somme de <em>Écart</em>&nbsp;: −1&nbsp;310&nbsp;000,40.</li>
+<li>Trois lignes à écart nul ou presque&nbsp;: BFO-1002 (0), BFO-1013 (0) et BFO-1006 (−0,40).</li>
+</ul>
+</div>
+<h3 id="tolerance">Filtrer les écarts, avec une tolérance d'arrondi</h3>
+<p>BFO-1006 passe de 3&nbsp;125&nbsp;000,40 à 3&nbsp;125&nbsp;000&nbsp;: un écart de 40&nbsp;centimes, venu d'un calcul d'intérêts ou d'un arrondi dans le système, pas d'un vrai mouvement. Filtrer sur «&nbsp;Écart différent de 0&nbsp;» le ferait passer pour un encours modifié. On fixe donc une <strong>tolérance</strong>, ici 1&nbsp;FCFA, et on l'écrit noir sur blanc dans la requête, pour qu'elle reste visible et discutable.</p>
+<ol>
+<li>Clic droit sur <code>Prets_communs</code> › <strong>Référence</strong>&nbsp;; nommez la requête <code>Encours_modifies</code>.</li>
+<li>Flèche de l'en-tête <em>Écart</em> › <strong>Filtres numériques › Supérieur à…</strong> Dans la boîte <strong>Filtrer les lignes</strong>&nbsp;: première condition <strong>est supérieur à</strong> <code>1</code>, cochez <strong>Ou</strong>, seconde condition <strong>est inférieur à</strong> <code>-1</code>. <strong>OK</strong>.</li>
+<li>Triez par <em>Écart</em> croissant&nbsp;: les plus fortes baisses en tête.</li>
+</ol>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Encours_modifies">// Requête Encours_modifies : écarts au-delà de la tolérance
+let
+    Tolerance = 1,    // en FCFA : à documenter et à faire valider
+    Source = Prets_communs,
+    Modifies = Table.SelectRows(Source, each Number.Abs([Écart]) &gt; Tolerance),
+    Tri = Table.Sort(Modifies, {{"Écart", Order.Ascending}, {"Contrat", Order.Ascending}})
+in
+    Tri</pre>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Encours_modifies : résultat attendu"><table class="data">
+<caption>Encours_modifies&nbsp;: résultat attendu, 10&nbsp;lignes (colonnes Arrêté et Client masquées, FCFA)</caption>
+<thead><tr><th scope="col">Contrat</th><th scope="col">Agence</th><th scope="col">Produit</th><th scope="col">Encours septembre</th><th scope="col">Encours août</th><th scope="col">Écart</th></tr></thead>
+<tbody>
+<tr><td>BFO-1007</td><td>Acajou</td><td>Crédit de trésorerie</td><td class="num">7&nbsp;500&nbsp;000</td><td class="num">9&nbsp;500&nbsp;000</td><td class="num">−2&nbsp;000&nbsp;000</td></tr>
+<tr><td>BFO-1014</td><td>Ronier</td><td>Crédit d'équipement</td><td class="num">14&nbsp;950&nbsp;000</td><td class="num">15&nbsp;400&nbsp;000</td><td class="num">−450&nbsp;000</td></tr>
+<tr><td>BFO-1005</td><td>Filao</td><td>Crédit d'équipement</td><td class="num">11&nbsp;900&nbsp;000</td><td class="num">12&nbsp;300&nbsp;000</td><td class="num">−400&nbsp;000</td></tr>
+<tr><td>BFO-1012</td><td>Acajou</td><td>Crédit immobilier</td><td class="num">40&nbsp;860&nbsp;000</td><td class="num">41&nbsp;200&nbsp;000</td><td class="num">−340&nbsp;000</td></tr>
+<tr><td>BFO-1004</td><td>Ronier</td><td>Crédit immobilier</td><td class="num">35&nbsp;420&nbsp;000</td><td class="num">35&nbsp;750&nbsp;000</td><td class="num">−330&nbsp;000</td></tr>
+<tr><td>BFO-1001</td><td>Flamboyant</td><td>Prêt personnel</td><td class="num">4&nbsp;600&nbsp;000</td><td class="num">4&nbsp;850&nbsp;000</td><td class="num">−250&nbsp;000</td></tr>
+<tr><td>BFO-1010</td><td>Ronier</td><td>Prêt personnel</td><td class="num">5&nbsp;350&nbsp;000</td><td class="num">5&nbsp;600&nbsp;000</td><td class="num">−250&nbsp;000</td></tr>
+<tr><td>BFO-1015</td><td>Acajou</td><td>Prêt personnel</td><td class="num">3&nbsp;720&nbsp;000</td><td class="num">3&nbsp;900&nbsp;000</td><td class="num">−180&nbsp;000</td></tr>
+<tr><td>BFO-1008</td><td>Acajou</td><td>Prêt personnel</td><td class="num">1&nbsp;870&nbsp;000</td><td class="num">1&nbsp;980&nbsp;000</td><td class="num">−110&nbsp;000</td></tr>
+<tr><td>BFO-1009</td><td>Flamboyant</td><td>Crédit d'équipement</td><td class="num">25&nbsp;000&nbsp;000</td><td class="num">22&nbsp;000&nbsp;000</td><td class="num">3&nbsp;000&nbsp;000</td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Neuf baisses (des remboursements) pour −4&nbsp;310&nbsp;000 et une hausse&nbsp;: BFO-1009, dont une deuxième tranche a été débloquée (+3&nbsp;000&nbsp;000). Les trois prêts écartés par le filtre ne sont pas «&nbsp;sans intérêt&nbsp;» pour autant. BFO-1002 est une ligne de trésorerie remboursable en une fois, son encours ne bouge pas&nbsp;; mais BFO-1013, un prêt personnel, aurait dû baisser&nbsp;: aucun remboursement ce mois-ci, c'est peut-être un impayé. Le <a href="../gratuit.html">module gratuit</a> montre comment calculer l'ancienneté des impayés.</p>
+
+<h2 id="etape-4">Étape 4 — Le pont d'encours et le contrôle à zéro</h2>
+<p>Trois listes, c'est bien. Mais expliquent-elles <strong>toute</strong> la variation de l'encours&nbsp;? Le pont (on dit aussi «&nbsp;tableau de passage&nbsp;») le vérifie&nbsp;:</p>
+<div class="callout-info">
+<p><strong>Encours d'août − prêts sortis + nouveaux prêts + hausses − baisses ± écarts sous la tolérance = encours de septembre</strong></p>
+</div>
+<p>La dernière ligne du pont compare l'encours ainsi calculé à celui du fichier de septembre. Elle doit valoir 0, en montant et en nombre de contrats. Les écarts sous la tolérance n'y sont pas oubliés&nbsp;: ils ont leur propre ligne. La tolérance sert à ne pas lister les centimes, pas à les faire disparaître.</p>
+<ol>
+<li><strong>Données › Obtenir des données › À partir d'autres sources › Requête vide</strong> (ou, dans l'éditeur, <strong>Accueil › Nouvelle source › Autres sources › Requête vide</strong>).</li>
+<li><strong>Accueil › Éditeur avancé</strong>&nbsp;: remplacez tout le contenu par le code ci-dessous, puis <strong>Terminé</strong>. Nommez la requête <code>Pont_Encours</code>.</li>
+</ol>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Pont_Encours">// Requête Pont_Encours : de l'encours d'août à celui de septembre, avec un contrôle qui doit valoir 0
+let
+    Tolerance = 1,
+    // Somme qui renvoie 0 (et non null) pour une liste vide
+    Somme = (valeurs as list) as number =&gt; List.Sum({0} &amp; valeurs),
+    Ecarts = Prets_communs[Écart],
+    Hausses = List.Select(Ecarts, each _ &gt; Tolerance),
+    Baisses = List.Select(Ecarts, each _ &lt; -Tolerance),
+    Arrondis = List.Select(Ecarts, each Number.Abs(_) &lt;= Tolerance),
+    EncoursAout = Somme(Aout[Encours]),
+    EncoursSept = Somme(Septembre[Encours]),
+    Sortis = Somme(Prets_sortis[Encours]),
+    Nouveaux = Somme(Nouveaux_prets[Encours]),
+    Calcule = EncoursAout - Sortis + Nouveaux + Somme(Hausses) + Somme(Baisses) + Somme(Arrondis),
+    NbCalcule = Table.RowCount(Aout) - Table.RowCount(Prets_sortis) + Table.RowCount(Nouveaux_prets),
+    Pont = #table(
+        type table [Ligne = text, Contrats = Int64.Type, Montant = number],
+        {
+            {"Encours au 31/08/2026", Table.RowCount(Aout), EncoursAout},
+            {"− Prêts sortis", Table.RowCount(Prets_sortis), -Sortis},
+            {"+ Nouveaux prêts", Table.RowCount(Nouveaux_prets), Nouveaux},
+            {"+ Hausses d'encours", List.Count(Hausses), Somme(Hausses)},
+            {"− Baisses d'encours", List.Count(Baisses), Somme(Baisses)},
+            {"± Écarts sous la tolérance", List.Count(Arrondis), Somme(Arrondis)},
+            {"= Encours calculé au 30/09/2026", NbCalcule, Calcule},
+            {"Encours du fichier au 30/09/2026", Table.RowCount(Septembre), EncoursSept},
+            {"Contrôle (doit valoir 0)", NbCalcule - Table.RowCount(Septembre), Number.Round(Calcule - EncoursSept, 2)}
+        })
+in
+    Pont</pre>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Pont_Encours : résultat attendu"><table class="data">
+<caption>Pont_Encours&nbsp;: résultat attendu (FCFA)</caption>
+<thead><tr><th scope="col">Ligne</th><th scope="col">Contrats</th><th scope="col">Montant</th></tr></thead>
+<tbody>
+<tr><td>Encours au 31/08/2026</td><td class="num">15</td><td class="num">184&nbsp;755&nbsp;000,40</td></tr>
+<tr><td>− Prêts sortis</td><td class="num">2</td><td class="num">−8&nbsp;400&nbsp;000</td></tr>
+<tr><td>+ Nouveaux prêts</td><td class="num">2</td><td class="num">16&nbsp;500&nbsp;000</td></tr>
+<tr><td>+ Hausses d'encours</td><td class="num">1</td><td class="num">3&nbsp;000&nbsp;000</td></tr>
+<tr><td>− Baisses d'encours</td><td class="num">9</td><td class="num">−4&nbsp;310&nbsp;000</td></tr>
+<tr><td>± Écarts sous la tolérance</td><td class="num">3</td><td class="num">−0,40</td></tr>
+<tr class="pont-total"><td>= Encours calculé au 30/09/2026</td><td class="num">15</td><td class="num">191&nbsp;545&nbsp;000</td></tr>
+<tr><td>Encours du fichier au 30/09/2026</td><td class="num">15</td><td class="num">191&nbsp;545&nbsp;000</td></tr>
+<tr class="pont-total"><td>Contrôle (doit valoir 0)</td><td class="num">0</td><td class="num">0</td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Dans la colonne <em>Contrats</em>, seules les entrées et les sorties changent le nombre de prêts&nbsp;: 15 − 2 + 2 = 15. Les lignes de hausses, de baisses et d'écarts sous la tolérance comptent des prêts déjà présents (1 + 9 + 3 = les 13&nbsp;prêts communs). Chargez le pont dans une feuille&nbsp;: <strong>Accueil › Fermer et charger</strong>. Faites de même pour <code>Prets_sortis</code>, <code>Nouveaux_prets</code> et <code>Encours_modifies</code>&nbsp;; laissez <code>Prets_communs</code> et les requêtes de doublons en connexion uniquement (au besoin, <strong>Données › Requêtes et connexions</strong>, clic droit › <strong>Charger dans…</strong>).</p>
+<p>Le contrôle attrape les erreurs de rapprochement. Sans la suppression de la ligne en double, par exemple, la jointure interne renvoie 14&nbsp;lignes au lieu de 13 et le contrôle affiche −1&nbsp;contrat et −1&nbsp;980&nbsp;000&nbsp;: le fichier de septembre compte la copie en trop (1&nbsp;870&nbsp;000), et le calcul compte deux fois la baisse de BFO-1008 (110&nbsp;000 de trop).</p>
+<div class="callout-warning">
+<p><strong>Ce que le contrôle ne voit pas.</strong> Sans le nettoyage de la clé, le pont tombe quand même à 0&nbsp;: BFO-1005 compte une fois en sortie (−12&nbsp;300&nbsp;000) et une fois en entrée (+11&nbsp;900&nbsp;000), et le total est juste. Seules les listes sont fausses (3&nbsp;sortis, 3&nbsp;nouveaux). Un contrôle à zéro prouve que tout est expliqué, pas que tout est bien expliqué. Relisez donc les sortis et les nouveaux&nbsp;: un prêt sorti et un nouveau prêt du même client, de la même agence et du même produit trahissent presque toujours une clé mal nettoyée.</p>
+</div>
+<div class="callout-info">
+<p><strong>Le même raisonnement, pour le rapprochement comptable.</strong> Ces jointures et ce contrôle à zéro sont au cœur du module&nbsp;7 de la formation «&nbsp;Power Query pour le reporting bancaire&nbsp;»&nbsp;: rapprocher la balance et l'encours par mois et par compte, avec une tolérance documentée, comprendre pourquoi un rapprochement en total ne suffit pas, produire la liste des écarts à justifier et remonter d'un écart aux contrats. Le module&nbsp;3, lui, traite le nettoyage en amont&nbsp;: normaliser les codes, isoler les erreurs, dédoublonner au bon moment. <a href="../index.html#tarif">Voir le programme et le tarif de la formation</a></p>
+</div>
+
+<h2 id="une-requete">Variante&nbsp;: tout en une seule requête (externe complète et colonne Statut)</h2>
+<p>Les trois listes séparées sont pratiques pour faire justifier chaque catégorie. Pour un état de synthèse, une seule table, avec une ligne par contrat et un statut, est souvent plus lisible. La jointure externe complète «&nbsp;intègre toutes les lignes des tables de gauche et de droite&nbsp;», et Microsoft précise, pour <code>JoinKind.FullOuter</code>, que «&nbsp;les lignes qui n'ont pas de correspondance dans l'autre table sont jointes avec une ligne par défaut contenant des valeurs Null pour toutes ses colonnes&nbsp;». Il suffit donc de regarder quel côté est vide&nbsp;:</p>
+<ul>
+<li>rien en septembre&nbsp;: <span class="st st-del">Supprimé</span>&nbsp;;</li>
+<li>rien en août&nbsp;: <span class="st st-add">Ajouté</span>&nbsp;;</li>
+<li>des deux côtés, écart au-delà de la tolérance&nbsp;: <span class="st st-mod">Modifié</span>&nbsp;; sinon <span class="st st-id">Identique</span>.</li>
+</ul>
+<p>Créez une requête vide (comme à l'étape&nbsp;4), collez le code ci-dessous dans l'<strong>Éditeur avancé</strong>, nommez la requête <code>Comparaison</code>, puis <strong>Fermer et charger</strong>. Elle s'appuie sur les requêtes <code>Aout</code> et <code>Septembre</code> de l'étape&nbsp;0, déjà nettoyées.</p>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Comparaison">// Requête Comparaison : une ligne par contrat, avec un statut Ajouté / Supprimé / Modifié / Identique
+let
+    Tolerance = 1,
+    Colonnes = {"Contrat", "Client", "Agence", "Produit", "Encours"},
+    Fusion = Table.NestedJoin(
+        Table.SelectColumns(Aout, Colonnes), {"Contrat"},
+        Table.SelectColumns(Septembre, Colonnes), {"Contrat"},
+        "Sept", JoinKind.FullOuter),
+    // Les colonnes de septembre arrivent préfixées « S. » ; elles valent null pour un prêt sorti
+    Developpe = Table.ExpandTableColumn(Fusion, "Sept", Colonnes,
+        {"S.Contrat", "S.Client", "S.Agence", "S.Produit", "S.Encours"}),
+    Lignes = Table.TransformRows(Developpe, (r) =&gt;
+        let
+            EnAout = r[Contrat] &lt;&gt; null,
+            EnSept = r[S.Contrat] &lt;&gt; null,
+            Ecart = Number.Round((if EnSept then r[S.Encours] else 0) - (if EnAout then r[Encours] else 0), 2)
+        in
+            [
+                Contrat = if EnAout then r[Contrat] else r[S.Contrat],
+                Client = if EnAout then r[Client] else r[S.Client],
+                Agence = if EnAout then r[Agence] else r[S.Agence],
+                Produit = if EnAout then r[Produit] else r[S.Produit],
+                #"Encours août" = r[Encours],
+                #"Encours septembre" = r[S.Encours],
+                Écart = Ecart,
+                Statut =
+                    if not EnSept then "Supprimé"
+                    else if not EnAout then "Ajouté"
+                    else if Number.Abs(Ecart) &gt; Tolerance then "Modifié"
+                    else "Identique"
+            ]),
+    Comparaison = Table.FromRecords(Lignes, type table [
+        Contrat = text, Client = text, Agence = text, Produit = text,
+        #"Encours août" = nullable number, #"Encours septembre" = nullable number,
+        Écart = number, Statut = text]),
+    Tri = Table.Sort(Comparaison, {{"Statut", Order.Ascending}, {"Contrat", Order.Ascending}})
+in
+    Tri</pre>
+<p>Pour un prêt ajouté, les colonnes d'août sont vides&nbsp;: le code reprend donc le contrat, le client, l'agence et le produit du côté où ils existent. L'écart d'un prêt sorti vaut moins son encours d'août, celui d'un nouveau prêt son encours de septembre&nbsp;: la somme de la colonne <em>Écart</em> est ainsi égale à la variation totale de l'encours.</p>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Comparaison : synthèse par statut"><table class="data">
+<caption>Comparaison&nbsp;: 17&nbsp;lignes, synthèse par statut (FCFA)</caption>
+<thead><tr><th scope="col">Statut</th><th scope="col">Contrats</th><th scope="col">Somme de Écart</th></tr></thead>
+<tbody>
+<tr><td><span class="st st-add">Ajouté</span></td><td class="num">2</td><td class="num">16&nbsp;500&nbsp;000</td></tr>
+<tr><td><span class="st st-id">Identique</span></td><td class="num">3</td><td class="num">−0,40</td></tr>
+<tr><td><span class="st st-mod">Modifié</span></td><td class="num">10</td><td class="num">−1&nbsp;310&nbsp;000</td></tr>
+<tr><td><span class="st st-del">Supprimé</span></td><td class="num">2</td><td class="num">−8&nbsp;400&nbsp;000</td></tr>
+<tr><td><strong>Total</strong></td><td class="num"><strong>17</strong></td><td class="num"><strong>6&nbsp;789&nbsp;999,60</strong></td></tr>
+</tbody>
+</table></div>
+<p>Le total de la colonne <em>Écart</em>, 6&nbsp;789&nbsp;999,60, est bien la différence entre les deux encours&nbsp;: 191&nbsp;545&nbsp;000 − 184&nbsp;755&nbsp;000,40.</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Comparaison : les 17 lignes"><table class="data">
+<caption>Comparaison&nbsp;: les 17&nbsp;lignes, dans l'ordre du tri (colonnes Client et Produit masquées, FCFA)</caption>
+<thead><tr><th scope="col">Contrat</th><th scope="col">Agence</th><th scope="col">Encours août</th><th scope="col">Encours septembre</th><th scope="col">Écart</th><th scope="col">Statut</th></tr></thead>
+<tbody>
+<tr><td>BFO-1016</td><td>Filao</td><td>null</td><td class="num">6&nbsp;500&nbsp;000</td><td class="num">6&nbsp;500&nbsp;000</td><td><span class="st st-add">Ajouté</span></td></tr>
+<tr><td>BFO-1017</td><td>Flamboyant</td><td>null</td><td class="num">10&nbsp;000&nbsp;000</td><td class="num">10&nbsp;000&nbsp;000</td><td><span class="st st-add">Ajouté</span></td></tr>
+<tr><td>BFO-1002</td><td>Flamboyant</td><td class="num">18&nbsp;000&nbsp;000</td><td class="num">18&nbsp;000&nbsp;000</td><td class="num">0</td><td><span class="st st-id">Identique</span></td></tr>
+<tr><td>BFO-1006</td><td>Filao</td><td class="num">3&nbsp;125&nbsp;000,40</td><td class="num">3&nbsp;125&nbsp;000</td><td class="num">−0,40</td><td><span class="st st-id">Identique</span></td></tr>
+<tr><td>BFO-1013</td><td>Flamboyant</td><td class="num">2&nbsp;750&nbsp;000</td><td class="num">2&nbsp;750&nbsp;000</td><td class="num">0</td><td><span class="st st-id">Identique</span></td></tr>
+<tr><td>BFO-1001</td><td>Flamboyant</td><td class="num">4&nbsp;850&nbsp;000</td><td class="num">4&nbsp;600&nbsp;000</td><td class="num">−250&nbsp;000</td><td><span class="st st-mod">Modifié</span></td></tr>
+<tr><td>BFO-1004</td><td>Ronier</td><td class="num">35&nbsp;750&nbsp;000</td><td class="num">35&nbsp;420&nbsp;000</td><td class="num">−330&nbsp;000</td><td><span class="st st-mod">Modifié</span></td></tr>
+<tr><td>BFO-1005</td><td>Filao</td><td class="num">12&nbsp;300&nbsp;000</td><td class="num">11&nbsp;900&nbsp;000</td><td class="num">−400&nbsp;000</td><td><span class="st st-mod">Modifié</span></td></tr>
+<tr><td>BFO-1007</td><td>Acajou</td><td class="num">9&nbsp;500&nbsp;000</td><td class="num">7&nbsp;500&nbsp;000</td><td class="num">−2&nbsp;000&nbsp;000</td><td><span class="st st-mod">Modifié</span></td></tr>
+<tr><td>BFO-1008</td><td>Acajou</td><td class="num">1&nbsp;980&nbsp;000</td><td class="num">1&nbsp;870&nbsp;000</td><td class="num">−110&nbsp;000</td><td><span class="st st-mod">Modifié</span></td></tr>
+<tr><td>BFO-1009</td><td>Flamboyant</td><td class="num">22&nbsp;000&nbsp;000</td><td class="num">25&nbsp;000&nbsp;000</td><td class="num">3&nbsp;000&nbsp;000</td><td><span class="st st-mod">Modifié</span></td></tr>
+<tr><td>BFO-1010</td><td>Ronier</td><td class="num">5&nbsp;600&nbsp;000</td><td class="num">5&nbsp;350&nbsp;000</td><td class="num">−250&nbsp;000</td><td><span class="st st-mod">Modifié</span></td></tr>
+<tr><td>BFO-1012</td><td>Acajou</td><td class="num">41&nbsp;200&nbsp;000</td><td class="num">40&nbsp;860&nbsp;000</td><td class="num">−340&nbsp;000</td><td><span class="st st-mod">Modifié</span></td></tr>
+<tr><td>BFO-1014</td><td>Ronier</td><td class="num">15&nbsp;400&nbsp;000</td><td class="num">14&nbsp;950&nbsp;000</td><td class="num">−450&nbsp;000</td><td><span class="st st-mod">Modifié</span></td></tr>
+<tr><td>BFO-1015</td><td>Acajou</td><td class="num">3&nbsp;900&nbsp;000</td><td class="num">3&nbsp;720&nbsp;000</td><td class="num">−180&nbsp;000</td><td><span class="st st-mod">Modifié</span></td></tr>
+<tr><td>BFO-1003</td><td>Ronier</td><td class="num">2&nbsp;400&nbsp;000</td><td>null</td><td class="num">−2&nbsp;400&nbsp;000</td><td><span class="st st-del">Supprimé</span></td></tr>
+<tr><td>BFO-1011</td><td>Filao</td><td class="num">6&nbsp;000&nbsp;000</td><td>null</td><td class="num">−6&nbsp;000&nbsp;000</td><td><span class="st st-del">Supprimé</span></td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Une fois chargées dans Excel, les valeurs <code>null</code> apparaissent comme des cellules vides. Si un doublon de clé n'a pas été traité, il se voit aussi ici&nbsp;: la table compte 18&nbsp;lignes au lieu de 17, avec deux fois BFO-1008.</p>
+
+<h2 id="couleurs">Afficher les différences en couleur</h2>
+<p>Power Query calcule, Excel met en forme. Une fois la requête <code>Comparaison</code> chargée dans une feuille, la mise en forme conditionnelle fait ressortir les différences, et elle suit les données à chaque actualisation. Dans le tableau chargé, les colonnes vont de A (<em>Contrat</em>) à H (<em>Statut</em>)&nbsp;; <em>Écart</em> est en G.</p>
+<ol>
+<li><strong>Le statut</strong>&nbsp;: sélectionnez les cellules de la colonne <em>Statut</em> (H2:H18), puis <strong>Accueil › Mise en forme conditionnelle › Règles de mise en surbrillance des cellules › Texte qui contient…</strong> Saisissez <code>Supprimé</code> et choisissez <strong>Remplissage rouge clair avec texte rouge foncé</strong>. Recommencez avec <code>Ajouté</code> (<strong>Remplissage vert avec texte vert foncé</strong>) et <code>Modifié</code> (<strong>Remplissage jaune avec texte jaune foncé</strong>).</li>
+<li><strong>La ligne entière</strong>, si vous préférez&nbsp;: sélectionnez A2:H18, puis <strong>Mise en forme conditionnelle › Nouvelle règle › Utiliser une formule pour déterminer pour quelles cellules le format sera appliqué</strong>, formule <code>=$H2="Modifié"</code>, bouton <strong>Format…</strong> pour la couleur. Le <code>$</code> devant H fixe la colonne&nbsp;: chaque cellule de la ligne regarde le statut de sa ligne.</li>
+<li><strong>Le sens de l'écart</strong>&nbsp;: sélectionnez G2:G18, <strong>Règles de mise en surbrillance des cellules › Inférieur à…</strong> <code>-1</code> en rouge, puis <strong>Supérieur à…</strong> <code>1</code> en vert. Avec ces seuils, les écarts sous la tolérance restent sans couleur.</li>
+</ol>
+<p>Pour revoir ou corriger les règles&nbsp;: <strong>Mise en forme conditionnelle › Gérer les règles</strong>, qui ouvre le <strong>Gestionnaire des règles de mise en forme conditionnelle</strong>. Après une actualisation qui ajoute des lignes, vérifiez-y la zone <strong>S'applique à</strong>&nbsp;: elle doit couvrir toute la colonne du tableau.</p>
+
+<h2 id="sans-power-query">Comparer sans Power Query</h2>
+<h3 id="formules">Avec RECHERCHEV ou EQUIV, dans la feuille</h3>
+<p>Copiez les deux tableaux dans un même classeur, nommez-les <code>T_Aout</code> et <code>T_Sept</code>, puis ajoutez une colonne de formule à chacun&nbsp;:</p>
+<ul>
+<li>dans <code>T_Aout</code>, l'encours de septembre, ou «&nbsp;Sorti&nbsp;»&nbsp;: <code>=SIERREUR(RECHERCHEV([@Contrat];T_Sept[[Contrat]:[Encours]];5;FAUX);"Sorti")</code>&nbsp;;</li>
+<li>dans <code>T_Sept</code>, les nouveaux prêts&nbsp;: <code>=SI(ESTNA(EQUIV([@Contrat];T_Aout[Contrat];0));"Nouveau";"")</code>.</li>
+</ul>
+<p>Cela dépanne pour un contrôle ponctuel, avec trois limites. Il faut deux formules, une par sens. La clé n'est pas nettoyée&nbsp;: «&nbsp;BFO-1005␣&nbsp;» ne trouve pas «&nbsp;BFO-1005&nbsp;», et le prêt passe pour sorti. Et RECHERCHEV s'arrête à la première ligne trouvée&nbsp;: un doublon de clé passe inaperçu, là où une jointure le fait apparaître. Le guide <a href="recherchev-power-query.html">RECHERCHEV avec Power Query</a> détaille le passage de la formule à la fusion de requêtes.</p>
+<h3 id="spreadsheet-compare">Avec l'outil Comparer les feuilles de calcul de Microsoft</h3>
+<p>Microsoft propose un outil de comparaison de classeurs, Spreadsheet Compare («&nbsp;Comparer les feuilles de calcul&nbsp;»), accessible par l'onglet <strong>Inquire › Compare Files</strong>. L'aide française reprend ces libellés anglais sur une page et les traduit sur une autre («&nbsp;Demande de renseignements&nbsp;»)&nbsp;: fiez-vous à votre ruban. Deux réserves avant de compter dessus&nbsp;:</p>
+<ul>
+<li><strong>Sa disponibilité.</strong> D'après les pages du support Microsoft consultées le 22/10/2026, il est «&nbsp;disponible uniquement dans Excel pour Windows&nbsp;», dans les applications Microsoft&nbsp;365 pour les grandes entreprises et les éditions équivalentes, et la page de l'outil vise ses versions 2013, 2016, 2019 et 2021. L'onglet Inquire doit en outre être activé (<strong>Fichier › Options › Compléments</strong>, liste <strong>Compléments COM</strong>), et Microsoft prévient que l'administrateur de votre organisation peut l'avoir rendu indisponible. Sur d'autres éditions de Microsoft&nbsp;365, il peut donc être absent.</li>
+<li><strong>Ce qu'il compare.</strong> Selon Microsoft, il montre «&nbsp;les différences, cellule par cellule, entre deux classeurs&nbsp;», chaque feuille étant comparée à la feuille correspondante de l'autre fichier, et les modifications sont mises en couleur selon leur type. C'est précieux pour savoir ce qui a changé dans un modèle ou dans ses formules. Mais il compare des <strong>cellules</strong>, pas des <strong>lignes rapprochées par une clé</strong>&nbsp;: il ne vous donne pas directement la liste des prêts sortis, nouveaux ou modifiés avec leurs montants, ni un total qui se contrôle, et il se relance à la main chaque mois.</li>
+</ul>
+<p>Pour deux extractions mensuelles, Power Query reste la méthode la plus sûre&nbsp;: elle rapproche par la clé, quel que soit l'ordre des lignes, et se refait d'un clic le mois suivant.</p>
+
+<h2 id="erreurs">Erreurs fréquentes</h2>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Diagnostic rapide des erreurs fréquentes"><table class="data errors">
+<caption>Diagnostic rapide</caption>
+<thead><tr><th scope="col">Ce que vous constatez</th><th scope="col">Cause probable</th><th scope="col">Solution</th></tr></thead>
+<tbody>
+<tr><td>Un même prêt figure dans les sortis <em>et</em> dans les nouveaux (ici BFO-1005)</td><td>Clé non nettoyée&nbsp;: espace en fin de texte, majuscules et minuscules mélangées</td><td><strong>Supprimer les espaces</strong> et <strong>MAJUSCULES</strong> sur la clé, dans les deux requêtes (étape&nbsp;0)</td></tr>
+<tr><td>Plus de lignes que prévu après la jointure, contrôle du pont différent de 0 (ici −1&nbsp;contrat, −1&nbsp;980&nbsp;000)</td><td>Clé en double dans un des fichiers&nbsp;: la jointure multiplie les lignes</td><td>Requête <code>Doublons_…</code> avec <strong>Regrouper par</strong>&nbsp;; <strong>Supprimer les doublons</strong> sur toutes les colonnes si c'est une copie exacte, sinon enquête</td></tr>
+<tr><td>Aucune correspondance&nbsp;: tout est «&nbsp;sorti&nbsp;» et tout est «&nbsp;nouveau&nbsp;»</td><td>Texte contre nombre&nbsp;: clé en <strong>Nombre entier</strong> d'un côté, en <strong>Texte</strong> de l'autre, ou zéros de tête perdus («&nbsp;001001&nbsp;» devenu 1001)</td><td>Même type des deux côtés, <strong>Texte</strong> pour un numéro de contrat&nbsp;; ne jamais typer un code en nombre</td></tr>
+<tr><td><em>Écart</em> en erreur, ou montants alignés à gauche dans l'aperçu</td><td>Montants restés en texte, au format français («&nbsp;1&nbsp;234,50&nbsp;»)</td><td>Clic droit sur l'en-tête › <strong>Modifier le type › Utiliser les paramètres régionaux…</strong>, type <strong>Nombre décimal</strong>, paramètres régionaux français</td></tr>
+<tr><td>Des prêts «&nbsp;modifiés&nbsp;» pour quelques centimes (ici BFO-1006, −0,40)</td><td>Filtre «&nbsp;différent de 0&nbsp;», sans tolérance</td><td>Filtre au-delà de la tolérance (1&nbsp;FCFA ici), écrite dans la requête, et une ligne «&nbsp;écarts sous la tolérance&nbsp;» dans le pont</td></tr>
+<tr><td>La liste des «&nbsp;sortis&nbsp;» contient en fait les nouveaux prêts</td><td>Tables inversées dans l'anti-jointure&nbsp;: septembre en haut au lieu d'août</td><td>En haut, le fichier dont on cherche les lignes absentes de l'autre&nbsp;; relire le message du bas avant <strong>OK</strong></td></tr>
+<tr><td>Le pont ne tombe pas à 0 après un changement de fichier</td><td>Requête de fusion construite sur une ancienne copie, ou fichier du mauvais mois</td><td>Vérifier la colonne <em>Arrêté</em> des deux requêtes et la ligne <strong>Source</strong>, puis <strong>Données › Actualiser tout</strong></td></tr>
+</tbody>
+</table></div>
+
+<h2 id="faq">Questions fréquentes</h2>
+<h3 id="faq-doublons">Comment trouver les doublons entre deux fichiers Excel&nbsp;?</h3>
+<p>Si «&nbsp;doublons&nbsp;» veut dire les lignes présentes dans les deux fichiers, c'est une jointure interne&nbsp;: fusionnez les deux requêtes sur la clé avec le type <strong>Interne</strong>. Sur l'exemple, 13&nbsp;contrats sont présents en août et en septembre. Si vous cherchez une clé répétée à l'intérieur d'un même fichier, c'est un regroupement&nbsp;: <strong>Accueil › Regrouper par</strong> sur la clé, opération <strong>Compter les lignes</strong>, puis un filtre «&nbsp;supérieur à 1&nbsp;».</p>
+<h3 id="faq-plusieurs-cles">Et si la clé tient sur plusieurs colonnes&nbsp;?</h3>
+<p>Dans la boîte de dialogue <strong>Fusionner</strong>, maintenez <kbd>Ctrl</kbd> et cliquez sur les colonnes de la clé, par exemple <em>Agence</em> puis <em>Contrat</em>, dans la table du haut, puis dans le même ordre dans la table du bas. Microsoft le précise&nbsp;: la première colonne sélectionnée à gauche est mise en correspondance avec la première sélectionnée à droite, et ainsi de suite&nbsp;; sinon, les résultats de la jointure peuvent être incorrects. Des petits numéros 1, 2… s'affichent à côté des en-têtes pour rappeler l'ordre.</p>
+<h3 id="faq-mois-suivant">Comment refaire la comparaison le mois suivant&nbsp;?</h3>
+<p>Le plus simple est de donner aux fichiers des noms fixes, par exemple <code>portefeuille-precedent.xlsx</code> et <code>portefeuille-courant.xlsx</code>&nbsp;: chaque mois, on remplace les deux fichiers, puis <strong>Données › Actualiser tout</strong>. Si les noms changent, modifiez le chemin dans <strong>Données › Obtenir des données › Paramètres de la source de données</strong>, ou dans la ligne <strong>Source</strong> de chaque requête, puis actualisez. Les requêtes de fusion, le pont et la mise en forme conditionnelle n'ont pas à être refaits.</p>
+<h3 id="faq-listes">Peut-on comparer deux listes ou deux colonnes simples de la même façon&nbsp;?</h3>
+<p>Oui. Une liste d'une seule colonne est une table d'une seule colonne&nbsp;: l'anti gauche donne les valeurs de la première liste absentes de la seconde, l'anti gauche dans l'autre sens donne l'inverse, et la jointure interne les valeurs communes. Si les deux listes sont dans le même classeur, mettez-les sous forme de tableau et chargez-les avec <strong>Données › À partir de Tableau/Plage</strong>. Le nettoyage de l'étape&nbsp;0 reste indispensable.</p>
+<h3 id="faq-mac">Et sur Mac&nbsp;?</h3>
+<p>La page du support Microsoft sur la fusion de requêtes indique qu'elle s'applique aussi à Excel pour Microsoft&nbsp;365 pour Mac. Ce guide décrit Excel pour Windows&nbsp;: sur Mac, les menus peuvent différer. L'outil Comparer les feuilles de calcul, lui, n'est proposé que dans Excel pour Windows, selon Microsoft.</p>
+
+<h2 id="suite">Aller plus loin</h2>
+<p>Pour pratiquer sans attendre, le <a href="../gratuit.html">module gratuit «&nbsp;Calculer l'ancienneté des impayés avec Power Query&nbsp;»</a> part d'une extraction de prêts fictive, à télécharger, et calcule les jours de retard et la balance âgée, avec le code M complet et les résultats attendus. C'est la suite logique d'un prêt comme BFO-1013, dont l'encours n'a pas bougé.</p>
+<p>Sur le même thème&nbsp;:</p>
+<ul>
+<li><a href="combiner-plusieurs-fichiers-excel-power-query.html">Combiner plusieurs fichiers Excel en un seul avec Power Query</a>&nbsp;: réunir les fichiers de plusieurs agences avant de comparer deux mois.</li>
+<li><a href="recherchev-power-query.html">RECHERCHEV avec Power Query</a>&nbsp;: la jointure externe gauche pour ajouter une information d'une table de référence.</li>
+<li><a href="taux-de-degradation-du-portefeuille.html">Taux de dégradation du portefeuille</a>&nbsp;: un indicateur de qualité du portefeuille à suivre d'un arrêté à l'autre.</li>
+</ul>
+<p>Tous les guides gratuits sont réunis sur la <a href="../index.html#guides">page de la formation</a>.</p>
+
+<h2 id="sources">Sources publiques consultées le 22/10/2026</h2>
+<ul>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/merge-queries-overview" rel="noopener">Vue d'ensemble des requêtes de fusion</a>&nbsp;: commandes, position des tables, même type de données, plusieurs colonnes avec Ctrl, tableau des six types de jointure.</li>
+<li>Microsoft Learn, pas à pas par type&nbsp;: <a href="https://learn.microsoft.com/fr-fr/power-query/merge-queries-left-anti" rel="noopener">Jointure anti gauche</a>, <a href="https://learn.microsoft.com/fr-fr/power-query/merge-queries-right-anti" rel="noopener">Jointure anti droite</a>, <a href="https://learn.microsoft.com/fr-fr/power-query/merge-queries-inner" rel="noopener">Jointure interne</a> et <a href="https://learn.microsoft.com/fr-fr/power-query/merge-queries-full-outer" rel="noopener">Jointure externe complète</a>&nbsp;: libellés de la liste <em>Type de jointure</em> et messages du bas de la boîte de dialogue.</li>
+<li>Support Microsoft, <a href="https://support.microsoft.com/fr-fr/excel/merge-queries-power-query" rel="noopener">Fusionner des requêtes (Power Query)</a>&nbsp;: fusion en ligne ou en tant que nouvelle requête, types de jointure, même type de données, versions concernées.</li>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/working-with-duplicates" rel="noopener">Utilisation de valeurs en double</a>&nbsp;: respect de la casse, Supprimer les doublons, Conserver les doublons.</li>
+<li>Microsoft Learn, fonctions M&nbsp;: <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-nestedjoin" rel="noopener">Table.NestedJoin</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/joinkind-type" rel="noopener">JoinKind.Type</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-group" rel="noopener">Table.Group</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-distinct" rel="noopener">Table.Distinct</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/text-trim" rel="noopener">Text.Trim</a> et <a href="https://learn.microsoft.com/fr-fr/powerquery-m/text-upper" rel="noopener">Text.Upper</a>.</li>
+<li>Support Microsoft, <a href="https://support.microsoft.com/fr-fr/excel/compare-two-versions-of-a-workbook-by-using-spreadsheet-compare" rel="noopener">Comparer deux versions d'un classeur à l'aide de la fonction Comparer les feuilles de calcul</a>, <a href="https://support.microsoft.com/fr-fr/excel/compare-workbooks-using-spreadsheet-inquire" rel="noopener">Comparer des classeurs à l'aide d'une feuille de calcul</a> et <a href="https://support.microsoft.com/fr-fr/excel/turn-on-the-inquire-add-in" rel="noopener">Activer le complément Inquire</a>&nbsp;: disponibilité et comparaison cellule par cellule.</li>
+<li>Support Microsoft, <a href="https://support.microsoft.com/fr-fr/office/utiliser-la-mise-en-forme-conditionnelle-pour-mettre-en-%C3%A9vidence-des-informations-fed60dfa-1d3f-4e13-9ecb-f1951ff89d7f" rel="noopener">Utiliser la mise en forme conditionnelle pour mettre en évidence des informations</a>.</li>
+</ul>
+<p>Ce guide est un support pédagogique. Il ne cite aucune donnée d'établissement réel&nbsp;: la Banque Fictive de l'Ouest, ses agences, ses clients et ses montants sont inventés. Les libellés de l'interface peuvent varier légèrement selon la version d'Excel et sa langue.</p>
+</section>
+
+      <div class="cta-band cta-after-author">
+        <div>
+          <h2>Vos rapprochements mensuels, expliqués jusqu'au dernier franc</h2>
+          <p>La formation «&nbsp;Power Query pour le reporting bancaire&nbsp;»&nbsp;: 8&nbsp;modules, 51&nbsp;exercices corrigés, environ 13&nbsp;h de travail, des données fictives sur plusieurs arrêtés mensuels, un quiz final et une attestation de suivi (non diplômante). <strong>25&nbsp;000&nbsp;FCFA</strong>, paiement unique.</p>
+        </div>
+        <a class="btn btn-light btn-lg" href="../index.html#tarif"><span class="btn-label">Voir le programme et le tarif</span><span class="arrow" aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </article>
+</main>
+
+<footer class="tp-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="../index.html" aria-label="Teranga Pro, accueil de la formation">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+          <span class="brand-name">Teranga<span>Pro</span></span>
+        </a>
+        <p>Conçu par un praticien du reporting bancaire en Afrique de l'Ouest. Données d'exercice 100&nbsp;% fictives&nbsp;; tables de correspondance&nbsp;: exemples pédagogiques, pas des états réglementaires officiels.</p>
+      </div>
+      <div>
+        <h2>Formation</h2>
+        <ul>
+          <li><a href="../index.html">Présentation et programme</a></li>
+          <li><a href="../gratuit.html">Module gratuit</a></li>
+          <li><a href="../index.html#guides">Guides gratuits</a></li>
+          <li><a href="../attestation.html">Vérifier une attestation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Informations</h2>
+        <ul>
+          <li><a href="../cgv.html">Conditions générales de vente</a></li>
+          <li><a href="../confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="footer-note">© 2026 Teranga Pro · Vendeur&nbsp;: particulier résidant au Sénégal.</p>
+  </div>
+</footer>
+</body>
+</html>

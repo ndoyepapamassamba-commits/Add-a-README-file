@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taux de dégradation du portefeuille&nbsp;: formule BCEAO, brut et net</title>
+<meta name="description" content="Taux brut et net de dégradation du portefeuille&nbsp;: formules UMOA citées mot pour mot, exemple chiffré, calcul dans Excel et Power Query.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#0B2545">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/taux-de-degradation-du-portefeuille.html">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="fr_SN">
+<meta property="og:site_name" content="Teranga Pro">
+<meta property="og:title" content="Taux de dégradation du portefeuille&nbsp;: formule (brut, net) et calcul dans Excel">
+<meta property="og:description" content="Les formules officielles de l'UMOA, un exemple chiffré pas à pas et le même calcul dans Excel puis dans Power Query, sur des données fictives.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/taux-de-degradation-du-portefeuille.html">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../formation.css">
+<style>
+.module pre.xl-code::before { content: "Formule Excel · séparateur ;"; position: absolute; left: 16px; top: 12px; color: var(--teal-light); font: 650 .7rem/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; }
+.module .formula { margin: 1em 0 1.2em; padding: 12px 14px; background: #fff; border: 1px solid var(--line); border-radius: 10px; font: 600 .95rem/1.7 var(--mono); color: var(--navy); overflow-x: auto; white-space: nowrap; }
+.module .formula span { display: block; }
+.answer3 ul { margin: .4em 0 .6em; }
+.guide-meta { margin-top: 8px; }
+.module table.formulas td code { white-space: normal; overflow-wrap: anywhere; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Taux de dégradation du portefeuille : formule (brut, net) et calcul dans Excel",
+  "description": "Taux brut et net de dégradation du portefeuille : formules UMOA citées mot pour mot, exemple chiffré, calcul dans Excel et Power Query.",
+  "inLanguage": "fr",
+  "isAccessibleForFree": true,
+  "keywords": "taux de dégradation du portefeuille, taux brut de dégradation, taux net de dégradation, créances en souffrance, taux de provisionnement, BCEAO, Commission Bancaire de l'UMOA, Excel, Power Query",
+  "about": [
+    { "@type": "Thing", "name": "Taux de dégradation du portefeuille" },
+    { "@type": "Thing", "name": "Créances en souffrance" }
+  ],
+  "isPartOf": { "@type": "Course", "name": "Power Query pour le reporting bancaire", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "datePublished": "2026-10-22",
+  "dateModified": "2026-10-22",
+  "image": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg",
+  "mainEntityOfPage": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/taux-de-degradation-du-portefeuille.html",
+  "author": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "publisher": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Quelle différence entre taux brut et taux net de dégradation ?", "acceptedAnswer": { "@type": "Answer", "text": "Le taux brut rapporte les créances en souffrance brutes au total des crédits bruts : il mesure la part du portefeuille en difficulté, quelles que soient les provisions. Le taux net rapporte les créances en souffrance nettes de provisions au total des crédits nets de provisions : il mesure la part qui reste non couverte. Un taux net bas peut venir de peu de créances en souffrance ou d'un fort provisionnement ; lisez-le avec le taux de provisionnement." } },
+    { "@type": "Question", "name": "Le taux de dégradation est-il une norme prudentielle ?", "acceptedAnswer": { "@type": "Answer", "text": "Les textes consultés pour ce guide ne fixent pas de seuil réglementaire pour le taux de dégradation des banques : la Commission Bancaire le publie parmi les ratios caractéristiques, pas parmi les normes prudentielles. Pour les SFD, une note de la BCEAO sur la microfinance à fin mars 2018 évoque « une norme généralement admise de 3% dans le secteur », sans citer de texte qui la fixe. L'annexe de l'Instruction n° 020-12-2010 fixe, elle, des normes pour d'autres indicateurs des SFD, comme le portefeuille classé à risque. Pour un état officiel, référez-vous aux textes en vigueur." } },
+    { "@type": "Question", "name": "Le taux de dégradation est-il la même chose que le PAR ?", "acceptedAnswer": { "@type": "Answer", "text": "Non. Le taux de dégradation part de la classification comptable : créances restructurées et créances douteuses ou litigieuses. Le portefeuille classé à risque (PAR) des SFD part des jours de retard : encours des prêts ayant une échéance impayée depuis plus de 30, 90 ou 180 jours. Sur l'exemple bancaire fictif du guide, le taux brut est de 10,00 % ; le PAR30, calculé pour comparaison, serait de 9,76 %, avec des crédits différents dans chaque numérateur." } },
+    { "@type": "Question", "name": "Faut-il inclure les intérêts dans l'encours ?", "acceptedAnswer": { "@type": "Answer", "text": "Les libellés publiés par la Commission Bancaire ne le détaillent pas. Pour un calcul interne, retenez le même périmètre au numérateur et au dénominateur (capital seul, ou capital et intérêts) et écrivez-le dans la note de l'état. Pour un état réglementaire, suivez les instructions de remise en vigueur." } },
+    { "@type": "Question", "name": "Et dans la CEMAC ?", "acceptedAnswer": { "@type": "Answer", "text": "Dans la CEMAC, ce sont les règles de la COBAC qui s'appliquent. Elles ne sont pas traitées dans ce guide, qui s'appuie uniquement sur les textes de l'UMOA. La mécanique du calcul se transpose, mais vérifiez dans les textes COBAC la définition des créances à retenir avant de comparer des chiffres." } }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="tp-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Teranga Pro, accueil de la formation">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+      <span class="brand-name">Teranga<span>Pro</span></span>
+    </a>
+    <nav class="tp-nav" aria-label="Navigation principale">
+      <a class="nav-hide-sm" href="../gratuit.html">Module gratuit</a>
+      <a href="../index.html">La formation</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="page-head">
+    <div class="wrap">
+      <p class="eyebrow">Guide gratuit <span class="dot" aria-hidden="true">·</span> Qualité du portefeuille</p>
+      <h1>Taux de dégradation du portefeuille&nbsp;: formule (brut, net) et calcul dans Excel</h1>
+      <p>La définition officielle de l'UMOA citée mot pour mot, un exemple chiffré pas à pas sur une banque fictive, puis le même calcul automatisé dans Excel et dans Power Query.</p>
+      <p class="meta guide-meta">Mis à jour le 22/10/2026 · Données d'exemple 100&nbsp;% fictives · Excel 2016 ou plus récent, ou Microsoft&nbsp;365</p>
+    </div>
+  </div>
+
+  <article class="article">
+    <div class="wrap">
+<section class="module">
+
+<div class="callout-info answer3">
+<p><strong>La réponse en 3&nbsp;lignes</strong> (formules du Tableau n°&nbsp;15 des rapports annuels 2024 et 2025 de la Commission Bancaire de l'UMOA, citées mot pour mot)&nbsp;:</p>
+<ul>
+<li><strong>Taux brut de dégradation du portefeuille</strong> = «&nbsp;Créances en souffrance brutes / Total Crédits bruts&nbsp;»</li>
+<li><strong>Taux net de dégradation du portefeuille</strong> = «&nbsp;Créances en souffrance nettes / Total Crédits nets&nbsp;»</li>
+<li><strong>Taux de provisionnement des créances en souffrance</strong> = «&nbsp;Provisions constituées / Créances en souffrance brutes&nbsp;»</li>
+</ul>
+<p>«&nbsp;Nettes&nbsp;» et «&nbsp;nets&nbsp;» veulent dire&nbsp;: après déduction des provisions constituées. Sur l'exemple fictif de ce guide&nbsp;: 10,00&nbsp;% brut, 5,26&nbsp;% net, 50,00&nbsp;% de provisionnement.</p>
+</div>
+
+<nav class="toc-box" aria-labelledby="toc-title">
+<p id="toc-title">Dans ce guide</p>
+<ol>
+<li><a href="#formule">La formule officielle, brut et net</a></li>
+<li><a href="#numerateur">Ce que contient le numérateur</a></li>
+<li><a href="#exemple">Exemple chiffré pas à pas</a></li>
+<li><a href="#brut-ou-net">Brut ou net&nbsp;: lequel lire&nbsp;?</a></li>
+<li><a href="#excel">Le calcul dans Excel</a></li>
+<li><a href="#power-query">La version Power Query</a></li>
+<li><a href="#sfd">Côté SFD&nbsp;: la «&nbsp;norme&nbsp;» de 3&nbsp;% et le PAR</a></li>
+<li><a href="#reperes">Repères publics 2023-2025</a></li>
+<li><a href="#erreurs">Erreurs fréquentes</a></li>
+<li><a href="#faq">Questions fréquentes</a></li>
+<li><a href="#sources">Sources consultées</a></li>
+</ol>
+</nav>
+
+<h2 id="formule">La formule officielle du taux de dégradation (brut et net)</h2>
+<p>Le taux de dégradation du portefeuille mesure la part des crédits à la clientèle devenus des <strong>créances en souffrance</strong>. Chaque année, la Commission Bancaire de l'UMOA le publie parmi les «&nbsp;ratios caractéristiques des établissements de crédit&nbsp;» (Tableau n°&nbsp;15 de son Rapport annuel 2025, page&nbsp;62, et déjà du Rapport annuel 2024, page&nbsp;67). Sous le nom de chaque ratio, le tableau donne sa formule&nbsp;:</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Les quatre ratios de qualité du portefeuille du Tableau n° 15"><table class="data">
+<caption>Les quatre ratios de qualité du portefeuille du Tableau n°&nbsp;15 (noms écrits en capitales dans le rapport, formules reproduites telles quelles)</caption>
+<thead><tr><th scope="col">Ratio</th><th scope="col">Formule publiée</th></tr></thead>
+<tbody>
+<tr><td>Taux brut de dégradation du portefeuille clientèle</td><td>Créances en souffrance brutes / Total Crédits bruts</td></tr>
+<tr><td>Taux net de dégradation du portefeuille clientèle</td><td>Créances en souffrance nettes / Total Crédits nets</td></tr>
+<tr><td>Taux de provisionnement des créances en souffrance</td><td>Provisions constituées / Créances en souffrance brutes</td></tr>
+<tr><td>Taux de provisionnement des douteux &amp; litigieux</td><td>Provisions constituées / Créances douteuses et litigieuses brutes</td></tr>
+</tbody>
+</table></div>
+<p>Le même rapport précise ce que «&nbsp;net&nbsp;» veut dire. Il écrit que les créances en souffrance nettes du système bancaire sont «&nbsp;calculées après déduction des provisions&nbsp;» (page&nbsp;54) et parle des «&nbsp;crédits à la clientèle, nets des provisions&nbsp;» (page&nbsp;50). D'où les deux agrégats nets et la forme développée du taux net&nbsp;:</p>
+<p class="formula"><span>Créances en souffrance nettes = Créances en souffrance brutes − Provisions constituées</span><span>Total crédits nets = Total crédits bruts − Provisions constituées</span><span>Taux net = (CES brutes − Provisions) / (Crédits bruts − Provisions)</span></p>
+<p>Les provisions sortent donc <strong>à la fois</strong> du numérateur et du dénominateur. Les chiffres publiés se recoupent de cette façon, à l'arrondi près&nbsp;: le calcul est fait plus bas, dans les <a href="#reperes">repères publics</a>.</p>
+
+<h2 id="numerateur">Ce que contient le numérateur&nbsp;: les créances en souffrance</h2>
+<p>Le numérateur n'est pas «&nbsp;les crédits en retard&nbsp;». C'est une catégorie comptable définie par l'<a href="https://www.cb-umoa.org/sites/default/files/2022-01/INSTRUCTION%20N%C2%B0026-11-2016%20RELATIVE%20A%20LA%20COMPTABILISATION%20ET%20A%20L%27EVALUATION%20DES%20ENGAGEMENTS%20EN%20SOUFFRANCE.pdf" rel="noopener">Instruction BCEAO n°&nbsp;026-11-2016 relative à la comptabilisation et à l'évaluation des engagements en souffrance</a>. Son article premier vise les banques et les établissements financiers à caractère bancaire&nbsp;: les règles ci-dessous sont celles des établissements de crédit, pas celles des SFD (voir la partie <a href="#sfd">Côté SFD</a>).</p>
+<ul>
+<li><strong>Article&nbsp;5</strong>&nbsp;: «&nbsp;Les créances en souffrance comprennent les créances restructurées et les créances douteuses ou litigieuses.&nbsp;»</li>
+<li><strong>Article&nbsp;4</strong>&nbsp;: «&nbsp;Les échéances impayées depuis quatre-vingt-dix jours au plus et n'ayant pas fait l'objet de prorogation de terme ou de renouvellement sont considérées comme des créances saines.&nbsp;»</li>
+<li><strong>Article&nbsp;8</strong>&nbsp;: sont notamment douteuses ou litigieuses «&nbsp;les créances dont au moins une échéance est restée impayée depuis plus de quatre-vingt-dix jours&nbsp;», délai porté à 180&nbsp;jours pour les expositions sur les États de l'UMOA, sur les organismes publics hors administration centrale et pour les financements accordés aux PME/PMI. Le même article y range aussi, indépendamment de tout impayé, les créances sur une contrepartie dont il est probable que l'établissement ne perçoive pas tout ou partie des sommes dues.</li>
+<li><strong>Article&nbsp;11</strong>&nbsp;: le reclassement d'une créance d'une contrepartie en douteuse «&nbsp;entraîne un reclassement identique de la totalité des encours et des engagements hors bilan relatifs à cette contrepartie&nbsp;». La règle ne s'applique ni à l'escompte commercial, ni aux encours sur la clientèle de détail au sens du dispositif prudentiel.</li>
+</ul>
+<p>Trois conséquences pratiques pour le calcul&nbsp;:</p>
+<ol>
+<li><strong>Un impayé de 45&nbsp;jours, à lui seul, ne fait pas entrer un crédit dans le taux de dégradation.</strong> La créance reste saine (article&nbsp;4), sauf restructuration, risque probable ou contagion (articles&nbsp;5, 8 et&nbsp;11). Le même retard compterait en revanche dans un PAR30, l'indicateur de la microfinance, qui part des jours de retard.</li>
+<li><strong>Une créance restructurée y entre, même payée à l'heure.</strong> Elle ne peut revenir parmi les créances saines qu'au bout d'un an à compter de la première échéance issue de la restructuration, sans aucun impayé de la contrepartie sur la période (article&nbsp;7).</li>
+<li><strong>Un crédit sans aucun impayé peut y entrer</strong>, par contagion de la contrepartie (article&nbsp;11) ou parce que le risque de non-recouvrement est jugé probable (article&nbsp;8).</li>
+</ol>
+<p>Conclusion&nbsp;: le numérateur se lit dans la <strong>classification comptable</strong> de chaque crédit, pas dans la colonne des jours de retard. Les créances irrécouvrables, elles, sont passées en pertes pour l'intégralité de leur montant (article&nbsp;13)&nbsp;: une extraction qui les contiendrait encore gonflerait les deux termes du taux. Le détail des catégories et de leurs délais est expliqué dans le guide <a href="creances-en-souffrance-bceao.html">Créances en souffrance BCEAO</a>.</p>
+
+<h2 id="exemple">Exemple chiffré pas à pas&nbsp;: la Banque Fictive de l'Ouest</h2>
+<p>La Banque Fictive de l'Ouest (BFO) est une banque <strong>imaginaire</strong>. Son extraction au 30/09/2026 compte ici 12&nbsp;crédits, une ligne par crédit, montants en millions de FCFA (dans le classeur à télécharger, une première colonne <em>Arrêté</em> porte la date du 30/09/2026 sur chaque ligne). Une vraie extraction en compte des milliers&nbsp;; le calcul est le même. Les dépréciations sont inventées pour l'exemple&nbsp;: elles n'appliquent pas les règles de l'article&nbsp;16 de l'Instruction n°&nbsp;026-11-2016, qui dépendent des garanties et de la date de transfert.</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Extraction fictive de la BFO au 30/09/2026 (millions de FCFA)"><table class="data">
+<caption>Extraction fictive de la BFO au 30/09/2026 (millions de FCFA)</caption>
+<thead><tr><th scope="col">Contrat</th><th scope="col">Client</th><th scope="col">Agence</th><th scope="col">Produit</th><th scope="col">Jours de retard</th><th scope="col">Catégorie</th><th scope="col">Encours brut</th><th scope="col">Dépréciation</th></tr></thead>
+<tbody>
+<tr><td>TD-01</td><td>C-201</td><td>Agence Filao</td><td>Crédit de trésorerie</td><td class="num">0</td><td>Saine</td><td class="num">380</td><td class="num">0</td></tr>
+<tr><td>TD-02</td><td>C-202</td><td>Agence Filao</td><td>Crédit d'équipement</td><td class="num">45</td><td>Saine</td><td class="num">95</td><td class="num">0</td></tr>
+<tr><td>TD-03</td><td>C-203</td><td>Agence Filao</td><td>Prêt immobilier</td><td class="num">0</td><td>Saine</td><td class="num">240</td><td class="num">0</td></tr>
+<tr><td>TD-04</td><td>C-204</td><td>Agence Filao</td><td>Crédit de trésorerie</td><td class="num">130</td><td>Douteuse ou litigieuse</td><td class="num">70</td><td class="num">49</td></tr>
+<tr><td>TD-05</td><td>C-204</td><td>Agence Filao</td><td>Crédit d'équipement</td><td class="num">0</td><td>Douteuse ou litigieuse</td><td class="num">40</td><td class="num">16</td></tr>
+<tr><td>TD-06</td><td>C-205</td><td>Agence Kapokier</td><td>Crédit d'équipement</td><td class="num">0</td><td>Restructurée</td><td class="num">60</td><td class="num">0</td></tr>
+<tr><td>TD-07</td><td>C-206</td><td>Agence Kapokier</td><td>Crédit de trésorerie</td><td class="num">0</td><td>Saine</td><td class="num">410</td><td class="num">0</td></tr>
+<tr><td>TD-08</td><td>C-207</td><td>Agence Kapokier</td><td>Prêt personnel</td><td class="num">210</td><td>Douteuse ou litigieuse</td><td class="num">12</td><td class="num">12</td></tr>
+<tr><td>TD-09</td><td>C-208</td><td>Agence Kapokier</td><td>Prêt immobilier</td><td class="num">0</td><td>Saine</td><td class="num">225</td><td class="num">0</td></tr>
+<tr><td>TD-10</td><td>C-209</td><td>Agence Karité</td><td>Crédit d'équipement</td><td class="num">300</td><td>Douteuse ou litigieuse</td><td class="num">28</td><td class="num">28</td></tr>
+<tr><td>TD-11</td><td>C-210</td><td>Agence Karité</td><td>Crédit de trésorerie</td><td class="num">0</td><td>Saine</td><td class="num">340</td><td class="num">0</td></tr>
+<tr><td>TD-12</td><td>C-211</td><td>Agence Karité</td><td>Prêt personnel</td><td class="num">0</td><td>Saine</td><td class="num">200</td><td class="num">0</td></tr>
+</tbody>
+</table></div>
+<p>Trois lignes illustrent les règles vues plus haut. <strong>TD-02</strong>&nbsp;: 45&nbsp;jours de retard, mais saine (article&nbsp;4). <strong>TD-05</strong>&nbsp;: aucun impayé, mais douteuse, parce que le même client C-204 a un autre crédit douteux (TD-04)&nbsp;: c'est la contagion de l'article&nbsp;11. Dans l'exemple, C-204 est une grande entreprise, ni PME/PMI ni clientèle de détail&nbsp;: le délai de 90&nbsp;jours s'applique à TD-04, et la contagion aussi. <strong>TD-06</strong>&nbsp;: restructurée et à jour, donc en souffrance&nbsp;; sa dépréciation est nulle, ce que l'article&nbsp;16 permet pour un risque privé restructuré.</p>
+
+<h3 id="etape-agregats">Étape 1 — Calculer les agrégats</h3>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Agrégats de la BFO au 30/09/2026 (millions de FCFA)"><table class="data">
+<caption>Agrégats de la BFO au 30/09/2026 (millions de FCFA)</caption>
+<thead><tr><th scope="col">Agrégat</th><th scope="col">Calcul</th><th scope="col">Montant</th></tr></thead>
+<tbody>
+<tr><td>Total crédits bruts</td><td>Somme des 12&nbsp;encours</td><td class="num">2&nbsp;100</td></tr>
+<tr><td>Créances restructurées</td><td>TD-06</td><td class="num">60</td></tr>
+<tr><td>Créances douteuses ou litigieuses brutes</td><td>70 + 40 + 12 + 28 (TD-04, TD-05, TD-08, TD-10)</td><td class="num">150</td></tr>
+<tr><td>Créances en souffrance brutes</td><td>60 + 150</td><td class="num">210</td></tr>
+<tr><td>Provisions constituées</td><td>49 + 16 + 12 + 28 (+ 0 sur TD-06)</td><td class="num">105</td></tr>
+<tr><td>Créances en souffrance nettes</td><td>210 − 105</td><td class="num">105</td></tr>
+<tr><td>Total crédits nets</td><td>2&nbsp;100 − 105</td><td class="num">1&nbsp;995</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="etape-brut">Étape 2 — Le taux brut</h3>
+<p class="formula"><span>Taux brut = 210 / 2&nbsp;100 = 10,00&nbsp;%</span></p>
+<p>Un dixième de l'encours de la BFO est en souffrance, avant toute provision.</p>
+
+<h3 id="etape-net">Étape 3 — Le taux net</h3>
+<p class="formula"><span>Taux net = 105 / 1&nbsp;995 = 5,26&nbsp;%</span></p>
+<p>Le dénominateur est bien 1&nbsp;995, et non 2&nbsp;100&nbsp;: les provisions sont retirées des deux côtés.</p>
+
+<h3 id="etape-provisionnement">Étape 4 — Les taux de provisionnement</h3>
+<p class="formula"><span>Provisionnement des créances en souffrance = 105 / 210 = 50,00&nbsp;%</span><span>Provisionnement des douteux et litigieux = 105 / 150 = 70,00&nbsp;%</span></p>
+<p>Les deux taux diffèrent parce que la créance restructurée (60) entre dans le premier dénominateur sans porter de provision. Sur cet exemple, toutes les provisions portent sur les créances douteuses&nbsp;; si vos créances restructurées sont dépréciées, ne retenez au numérateur du second taux que les provisions sur douteuses ou litigieuses.</p>
+
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Les quatre taux de la BFO au 30/09/2026"><table class="data">
+<caption>Les quatre taux de la BFO au 30/09/2026</caption>
+<thead><tr><th scope="col">Ratio</th><th scope="col">Calcul</th><th scope="col">Résultat</th></tr></thead>
+<tbody>
+<tr><td>Taux brut de dégradation</td><td>210 / 2&nbsp;100</td><td class="num">10,00&nbsp;%</td></tr>
+<tr><td>Taux net de dégradation</td><td>105 / 1&nbsp;995</td><td class="num">5,26&nbsp;%</td></tr>
+<tr><td>Taux de provisionnement des créances en souffrance</td><td>105 / 210</td><td class="num">50,00&nbsp;%</td></tr>
+<tr><td>Taux de provisionnement des douteux et litigieux</td><td>105 / 150</td><td class="num">70,00&nbsp;%</td></tr>
+</tbody>
+</table></div>
+</div>
+
+<h3 id="etape-sensibilite">Le taux net baisse quand le provisionnement monte</h3>
+<p>Gardons les mêmes 210 de créances en souffrance et faisons varier les provisions. Le taux brut ne bouge pas&nbsp;: il ne voit pas les provisions. Le taux net, lui, va du taux brut (aucune provision) jusqu'à zéro (créances entièrement provisionnées).</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Taux net de la BFO selon le taux de provisionnement (millions de FCFA)"><table class="data">
+<caption>Taux net de la BFO selon le taux de provisionnement (taux brut constant&nbsp;: 10,00&nbsp;%)</caption>
+<thead><tr><th scope="col">Provisionnement</th><th scope="col">Provisions</th><th scope="col">CES nettes</th><th scope="col">Crédits nets</th><th scope="col">Taux net</th></tr></thead>
+<tbody>
+<tr><td>0&nbsp;%</td><td class="num">0</td><td class="num">210</td><td class="num">2&nbsp;100</td><td class="num">10,00&nbsp;%</td></tr>
+<tr><td>25&nbsp;%</td><td class="num">52,5</td><td class="num">157,5</td><td class="num">2&nbsp;047,5</td><td class="num">7,69&nbsp;%</td></tr>
+<tr><td>50&nbsp;% (situation de la BFO)</td><td class="num">105</td><td class="num">105</td><td class="num">1&nbsp;995</td><td class="num">5,26&nbsp;%</td></tr>
+<tr><td>75&nbsp;%</td><td class="num">157,5</td><td class="num">52,5</td><td class="num">1&nbsp;942,5</td><td class="num">2,70&nbsp;%</td></tr>
+<tr><td>100&nbsp;%</td><td class="num">210</td><td class="num">0</td><td class="num">1&nbsp;890</td><td class="num">0,00&nbsp;%</td></tr>
+</tbody>
+</table></div>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" role="img" aria-label="Du brut au net sur la BFO : en brut, 210 de créances en souffrance sur 2 100 de crédits, soit 10,00 %. En net, les 105 de provisions sont retirées des deux côtés : 105 sur 1 995, soit 5,26 %.">
+<title>Du brut au net&nbsp;: les provisions sortent des deux côtés</title>
+<rect x="1" y="1" width="718" height="298" rx="12" fill="#F7F7F2" stroke="#CBD5E1"/>
+<text x="20" y="30" font-size="13" font-weight="bold" fill="#0B2545">BFO, arrêté du 30/09/2026 — du brut au net (millions de FCFA)</text>
+<text x="20" y="49" font-size="11.5" fill="#52606D">Échelle non proportionnelle&nbsp;: les créances en souffrance sont agrandies pour rester lisibles.</text>
+<text x="20" y="92" font-size="13" font-weight="bold" fill="#0B2545">Brut</text>
+<rect x="80" y="68" width="450" height="40" fill="#E6F4F2" stroke="#0B2545"/>
+<text x="305" y="93" text-anchor="middle" font-size="12" fill="#1F2933">Crédits sains&nbsp;: 1&nbsp;890</text>
+<rect x="530" y="68" width="170" height="40" fill="#FDE3C2" stroke="#0B2545"/>
+<text x="615" y="85" text-anchor="middle" font-size="11.5" fill="#1F2933">Créances en souffrance</text>
+<text x="615" y="101" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1F2933">brutes&nbsp;: 210</text>
+<text x="80" y="132" font-size="12.5" font-weight="bold" fill="#0B7A72">Taux brut = 210 / 2&nbsp;100 = 10,00&nbsp;%</text>
+<text x="20" y="184" font-size="13" font-weight="bold" fill="#0B2545">Net</text>
+<rect x="80" y="160" width="450" height="40" fill="#E6F4F2" stroke="#0B2545"/>
+<text x="305" y="185" text-anchor="middle" font-size="12" fill="#1F2933">Crédits sains&nbsp;: 1&nbsp;890</text>
+<rect x="530" y="160" width="85" height="40" fill="#FDE3C2" stroke="#0B2545"/>
+<text x="572" y="177" text-anchor="middle" font-size="11" fill="#1F2933">CES nettes</text>
+<text x="572" y="193" text-anchor="middle" font-size="11" font-weight="bold" fill="#1F2933">105</text>
+<rect x="615" y="160" width="85" height="40" fill="none" stroke="#9B1C1C" stroke-dasharray="5 4"/>
+<text x="657" y="177" text-anchor="middle" font-size="11" fill="#9B1C1C">Provisions</text>
+<text x="657" y="193" text-anchor="middle" font-size="11" font-weight="bold" fill="#9B1C1C">− 105</text>
+<text x="80" y="224" font-size="12.5" font-weight="bold" fill="#0B7A72">Taux net = 105 / (2&nbsp;100 − 105) = 105 / 1&nbsp;995 = 5,26&nbsp;%</text>
+<text x="20" y="272" font-size="11.5" fill="#9B1C1C">Erreur classique&nbsp;: 105 / 2&nbsp;100 = 5,00&nbsp;%. Les provisions ont été retirées du numérateur seulement.</text>
+</svg>
+<figcaption>Figure 1 — Le passage du brut au net sur l'exemple fictif. Les provisions (105) réduisent à la fois les créances en souffrance et le total des crédits.</figcaption>
+</figure>
+
+<h2 id="brut-ou-net">Brut ou net&nbsp;: lequel lire&nbsp;?</h2>
+<p>Les deux, avec le taux de provisionnement entre eux&nbsp;:</p>
+<ul>
+<li><strong>Le taux brut mesure le risque</strong>&nbsp;: la part du portefeuille en difficulté, indépendamment de la politique de provisionnement. C'est lui qui sert à suivre la qualité du portefeuille dans le temps et à comparer des portefeuilles entre eux. C'est aussi celui que cite le «&nbsp;Mot du Président&nbsp;» du Rapport annuel 2025 de la Commission Bancaire, et que ce rapport détaille par pays (Graphique n°&nbsp;24).</li>
+<li><strong>Le taux de provisionnement mesure la couverture</strong>&nbsp;: quelle part des créances en souffrance est déjà absorbée par des provisions.</li>
+<li><strong>Le taux net mesure ce qui reste non couvert</strong>&nbsp;: la part du portefeuille net qui est en souffrance et pas encore provisionnée. Un taux net bas peut venir de peu de créances en souffrance… ou d'un fort provisionnement. Il ne se lit jamais seul.</li>
+</ul>
+<div class="callout-warning">
+<p><strong>L'erreur classique&nbsp;: diviser des créances nettes par des crédits bruts.</strong> Sur la BFO, 105 / 2&nbsp;100 donne 5,00&nbsp;% au lieu de 5,26&nbsp;%. L'écart grandit avec le provisionnement&nbsp;: à 75&nbsp;%, on obtiendrait 2,50&nbsp;% au lieu de 2,70&nbsp;%. Règle simple&nbsp;: des créances nettes avec des crédits nets, des créances brutes avec des crédits bruts.</p>
+</div>
+
+<h2 id="excel">Le calcul dans Excel avec SOMME.SI.ENS</h2>
+<div class="download-box">
+<span class="file-ext" aria-hidden="true">XLSX</span>
+<p><strong>Le classeur de l'exemple</strong><br><span class="muted small">taux-de-degradation-exemple.xlsx · 12&nbsp;crédits fictifs · tableau T_Credits et feuille de calcul complète</span></p>
+<a class="btn btn-outline" href="fichiers/taux-de-degradation-exemple.xlsx" download><span class="btn-label">Télécharger le classeur</span></a>
+</div>
+<p>Le principe&nbsp;: une ligne par crédit dans un tableau Excel, puis quelques sommes conditionnelles. Les formules ci-dessous utilisent les noms de fonctions de l'Excel français et le point-virgule comme séparateur.</p>
+<ol>
+<li>Ouvrez le classeur, feuille <strong>Credits</strong>. Les données forment un tableau Excel nommé <code>T_Credits</code>&nbsp;: cliquez dans le tableau, puis vérifiez le nom dans l'onglet <strong>Création de tableau › Nom du tableau</strong> (à gauche du ruban&nbsp;; <strong>Outils de tableau › Création</strong> dans Excel 2016).</li>
+<li>Avec votre propre extraction&nbsp;: sélectionnez une cellule des données, puis <strong>Accueil › Mettre sous forme de tableau</strong> (ou <strong>Insertion › Tableau</strong>), cochez «&nbsp;Mon tableau comporte des en-têtes&nbsp;», OK. Renommez le tableau <code>T_Credits</code> dans <strong>Création de tableau › Nom du tableau</strong>. Les formules des taux utilisent trois colonnes&nbsp;: <em>Encours brut</em>, <em>Catégorie</em> et <em>Dépréciation</em>&nbsp;; le premier contrôle utilise aussi <em>Jours de retard</em>. La requête Power Query plus bas attend les neuf colonnes du classeur, avec les mêmes noms.</li>
+<li>Dans la feuille <strong>Calcul</strong> (ou une feuille vide), saisissez les libellés en colonne A et les formules en colonne B, comme dans le tableau suivant.</li>
+<li>Sélectionnez B3:B9, puis <strong>Accueil › Nombre › Séparateur de milliers</strong>. Sélectionnez B11:B14, puis <strong>Accueil › Nombre › Style de pourcentage</strong>, et cliquez deux fois sur <strong>Ajouter une décimale</strong>.</li>
+</ol>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Feuille Calcul : formules des agrégats et des ratios"><table class="data formulas">
+<caption>Feuille Calcul&nbsp;: formules des agrégats et des ratios</caption>
+<thead><tr><th scope="col">Cellule</th><th scope="col">Ce que l'on calcule</th><th scope="col">Formule</th></tr></thead>
+<tbody>
+<tr><td>B3</td><td>Total crédits bruts</td><td><code>=SOMME(T_Credits[Encours brut])</code></td></tr>
+<tr><td>B4</td><td>Créances en souffrance brutes</td><td><code>=SOMME.SI.ENS(T_Credits[Encours brut];T_Credits[Catégorie];"Restructurée")+SOMME.SI.ENS(T_Credits[Encours brut];T_Credits[Catégorie];"Douteuse ou litigieuse")</code></td></tr>
+<tr><td>B5</td><td>dont douteuses ou litigieuses brutes</td><td><code>=SOMME.SI.ENS(T_Credits[Encours brut];T_Credits[Catégorie];"Douteuse ou litigieuse")</code></td></tr>
+<tr><td>B6</td><td>Provisions constituées</td><td><code>=SOMME.SI.ENS(T_Credits[Dépréciation];T_Credits[Catégorie];"Restructurée")+SOMME.SI.ENS(T_Credits[Dépréciation];T_Credits[Catégorie];"Douteuse ou litigieuse")</code></td></tr>
+<tr><td>B7</td><td>dont provisions sur douteuses ou litigieuses</td><td><code>=SOMME.SI.ENS(T_Credits[Dépréciation];T_Credits[Catégorie];"Douteuse ou litigieuse")</code></td></tr>
+<tr><td>B8</td><td>Créances en souffrance nettes</td><td><code>=B4-B6</code></td></tr>
+<tr><td>B9</td><td>Total crédits nets</td><td><code>=B3-B6</code></td></tr>
+<tr><td>B11</td><td>Taux brut de dégradation</td><td><code>=B4/B3</code></td></tr>
+<tr><td>B12</td><td>Taux net de dégradation</td><td><code>=B8/B9</code></td></tr>
+<tr><td>B13</td><td>Taux de provisionnement des créances en souffrance</td><td><code>=B6/B4</code></td></tr>
+<tr><td>B14</td><td>Taux de provisionnement des douteux et litigieux</td><td><code>=B7/B5</code></td></tr>
+</tbody>
+</table></div>
+<p>Avec un Excel en anglais, les fonctions s'appellent <code>SUM</code> et <code>SUMIFS</code> (et, pour les contrôles, <code>COUNTIFS</code>, <code>ROWS</code> et <code>COUNTIF</code>), et le séparateur est en général la virgule. Pourquoi additionner deux SOMME.SI.ENS plutôt qu'écrire «&nbsp;tout sauf Saine&nbsp;» (<code>"&lt;&gt;Saine"</code>)&nbsp;? Parce qu'un libellé inattendu (une faute de frappe, une cellule vide, une catégorie «&nbsp;Irrécouvrable&nbsp;») serait alors compté en souffrance sans que personne ne le voie. Avec la liste explicite, il est ignoré… et le troisième contrôle ci-dessous le signale.</p>
+<p>La formule la plus longue, celle de B4, à copier telle quelle dans un Excel en français&nbsp;:</p>
+<pre class="xl-code">=SOMME.SI.ENS(T_Credits[Encours brut];T_Credits[Catégorie];"Restructurée")+SOMME.SI.ENS(T_Credits[Encours brut];T_Credits[Catégorie];"Douteuse ou litigieuse")</pre>
+<p>Ajoutez trois contrôles sous les ratios. Chacun doit afficher 0&nbsp;; sinon, l'extraction est à vérifier avant de diffuser les taux.</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Contrôles : résultat attendu 0"><table class="data formulas">
+<caption>Contrôles (résultat attendu&nbsp;: 0)</caption>
+<thead><tr><th scope="col">Cellule</th><th scope="col">Contrôle</th><th scope="col">Formule</th></tr></thead>
+<tbody>
+<tr><td>B17</td><td>Crédits classés «&nbsp;Saine&nbsp;» avec plus de 90&nbsp;jours de retard (à vérifier, en tenant compte du délai de 180&nbsp;jours de l'article&nbsp;8)</td><td><code>=NB.SI.ENS(T_Credits[Catégorie];"Saine";T_Credits[Jours de retard];"&gt;90")</code></td></tr>
+<tr><td>B18</td><td>Dépréciations portées sur des crédits sains</td><td><code>=SOMME.SI.ENS(T_Credits[Dépréciation];T_Credits[Catégorie];"Saine")</code></td></tr>
+<tr><td>B19</td><td>Lignes dont la catégorie n'est pas reconnue</td><td><code>=LIGNES(T_Credits[Catégorie])-NB.SI(T_Credits[Catégorie];"Saine")-NB.SI(T_Credits[Catégorie];"Restructurée")-NB.SI(T_Credits[Catégorie];"Douteuse ou litigieuse")</code></td></tr>
+</tbody>
+</table></div>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Feuille Calcul : résultats attendus sur l'exemple"><table class="data">
+<caption>Feuille Calcul&nbsp;: résultats attendus sur l'exemple (millions de FCFA)</caption>
+<thead><tr><th scope="col">Cellule</th><th scope="col">Libellé</th><th scope="col">Résultat</th></tr></thead>
+<tbody>
+<tr><td>B3</td><td>Total crédits bruts</td><td class="num">2&nbsp;100</td></tr>
+<tr><td>B4</td><td>Créances en souffrance brutes</td><td class="num">210</td></tr>
+<tr><td>B5</td><td>dont douteuses ou litigieuses brutes</td><td class="num">150</td></tr>
+<tr><td>B6</td><td>Provisions constituées</td><td class="num">105</td></tr>
+<tr><td>B7</td><td>dont provisions sur douteuses ou litigieuses</td><td class="num">105</td></tr>
+<tr><td>B8</td><td>Créances en souffrance nettes</td><td class="num">105</td></tr>
+<tr><td>B9</td><td>Total crédits nets</td><td class="num">1&nbsp;995</td></tr>
+<tr><td>B11</td><td>Taux brut de dégradation</td><td class="num">10,00&nbsp;%</td></tr>
+<tr><td>B12</td><td>Taux net de dégradation</td><td class="num">5,26&nbsp;%</td></tr>
+<tr><td>B13</td><td>Taux de provisionnement des créances en souffrance</td><td class="num">50,00&nbsp;%</td></tr>
+<tr><td>B14</td><td>Taux de provisionnement des douteux et litigieux</td><td class="num">70,00&nbsp;%</td></tr>
+<tr><td>B17 à B19</td><td>Contrôles</td><td class="num">0</td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Le tableau Excel s'agrandit tout seul quand vous collez de nouvelles lignes sous la dernière&nbsp;: les formules suivent sans être modifiées. Il reste à recoller l'extraction chaque mois. C'est cette étape que Power Query supprime.</p>
+
+<h2 id="power-query">La version Power Query&nbsp;: les quatre taux en une requête actualisable</h2>
+<p>La même logique en code M&nbsp;: <code>Table.Group</code> regroupe les crédits par date d'arrêté, et des <code>List.Sum</code> conditionnels calculent les agrégats. Le résultat est une ligne par arrêté, avec les quatre taux.</p>
+<ol>
+<li>Dans le classeur de l'exemple&nbsp;: <strong>Données › Obtenir des données › À partir d'autres sources › Requête vide</strong> (Excel 2016&nbsp;: <strong>Données › Nouvelle requête › À partir d'autres sources › Requête vide</strong>).</li>
+<li>Dans l'éditeur Power Query&nbsp;: <strong>Accueil › Éditeur avancé</strong>, remplacez tout le contenu par le code ci-dessous, puis <strong>Terminé</strong>.</li>
+<li>Dans le volet <strong>Paramètres de requête</strong>, à droite, renommez la requête <code>out_TauxDegradation</code> (zone <strong>Propriétés › Nom</strong>).</li>
+<li><strong>Accueil › Fermer et charger</strong>. Dans la feuille créée, appliquez le format Pourcentage aux quatre colonnes de taux.</li>
+<li>Le mois suivant, collez la nouvelle extraction dans <code>T_Credits</code> (mêmes noms de colonnes), puis <strong>Données › Actualiser tout</strong>.</li>
+</ol>
+<pre class="m-code">// Requête out_TauxDegradation : taux de dégradation et de provisionnement, une ligne par arrêté
+let
+    Source = Excel.CurrentWorkbook(){[Name = "T_Credits"]}[Content],
+    Types = Table.TransformColumnTypes(Source, {
+        {"Arrêté", type date}, {"Contrat", type text}, {"Client", type text}, {"Agence", type text},
+        {"Produit", type text}, {"Jours de retard", Int64.Type}, {"Catégorie", type text},
+        {"Encours brut", type number}, {"Dépréciation", type number}}),
+
+    // Garde-fou : une catégorie inconnue arrête l'actualisation au lieu de fausser les taux
+    Categories = {"Saine", "Restructurée", "Douteuse ou litigieuse"},
+    Inconnues = Table.SelectRows(Types, each not List.Contains(Categories, [Catégorie])),
+    Controle = if Table.IsEmpty(Inconnues) then Types
+        else error Error.Record("Catégorie inconnue", "Contrat " & Inconnues{0}[Contrat] & " : catégorie à corriger dans T_Credits", Inconnues{0}[Catégorie]),
+
+    // Créances en souffrance = restructurées + douteuses ou litigieuses (Instruction BCEAO n° 026-11-2016, art. 5)
+    EnSouffrance = {"Restructurée", "Douteuse ou litigieuse"},
+    // Somme d'une colonne sur les lignes des catégories demandées (0 si aucune ligne)
+    Somme = (t as table, colonne as text, cats as list) as number =>
+        List.Sum({0} &amp; Table.Column(Table.SelectRows(t, each List.Contains(cats, [Catégorie])), colonne)),
+
+    Agregats = Table.Group(Controle, {"Arrêté"}, {
+        {"Total crédits bruts", each List.Sum([Encours brut]), type number},
+        {"Créances en souffrance brutes", each Somme(_, "Encours brut", EnSouffrance), type number},
+        {"Douteuses ou litigieuses brutes", each Somme(_, "Encours brut", {"Douteuse ou litigieuse"}), type number},
+        {"Provisions constituées", each Somme(_, "Dépréciation", EnSouffrance), type number},
+        {"Provisions sur douteuses", each Somme(_, "Dépréciation", {"Douteuse ou litigieuse"}), type number},
+        {"Saines à plus de 90 jours", each Table.RowCount(Table.SelectRows(_, each [Catégorie] = "Saine" and [Jours de retard] &lt;&gt; null and [Jours de retard] &gt; 90)), Int64.Type}}),
+
+    // Agrégats nets : provisions déduites des deux côtés
+    CesNettes = Table.AddColumn(Agregats, "Créances en souffrance nettes", each [Créances en souffrance brutes] - [Provisions constituées], type number),
+    CreditsNets = Table.AddColumn(CesNettes, "Total crédits nets", each [Total crédits bruts] - [Provisions constituées], type number),
+
+    // Les quatre ratios du Tableau n° 15 (format Pourcentage à appliquer dans Excel)
+    TauxBrut = Table.AddColumn(CreditsNets, "Taux brut de dégradation", each [Créances en souffrance brutes] / [Total crédits bruts], type number),
+    TauxNet = Table.AddColumn(TauxBrut, "Taux net de dégradation", each [Créances en souffrance nettes] / [Total crédits nets], type number),
+    TauxProv = Table.AddColumn(TauxNet, "Taux de provisionnement des CES", each [Provisions constituées] / [Créances en souffrance brutes], type number),
+    TauxProvDL = Table.AddColumn(TauxProv, "Taux de provisionnement des douteux", each [Provisions sur douteuses] / [Douteuses ou litigieuses brutes], type number)
+in
+    TauxProvDL</pre>
+<p>Deux détails du code. La fonction <code>Somme</code> ajoute un 0 à la liste à additionner&nbsp;: sans lui, <code>List.Sum</code> d'une liste vide renvoie <code>null</code> (un mois sans créance restructurée, par exemple) et tous les calculs suivants deviendraient vides. Et la colonne <em>Saines à plus de 90 jours</em> reprend le premier contrôle de la version Excel&nbsp;: elle doit valoir 0.</p>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="out_TauxDegradation : résultat attendu (une ligne, présentée ici en colonne)"><table class="data">
+<caption>out_TauxDegradation&nbsp;: résultat attendu (une seule ligne, présentée ici en colonne&nbsp;; millions de FCFA)</caption>
+<thead><tr><th scope="col">Colonne</th><th scope="col">Valeur</th></tr></thead>
+<tbody>
+<tr><td>Arrêté</td><td class="num">30/09/2026</td></tr>
+<tr><td>Total crédits bruts</td><td class="num">2&nbsp;100</td></tr>
+<tr><td>Créances en souffrance brutes</td><td class="num">210</td></tr>
+<tr><td>Douteuses ou litigieuses brutes</td><td class="num">150</td></tr>
+<tr><td>Provisions constituées</td><td class="num">105</td></tr>
+<tr><td>Provisions sur douteuses</td><td class="num">105</td></tr>
+<tr><td>Saines à plus de 90 jours</td><td class="num">0</td></tr>
+<tr><td>Créances en souffrance nettes</td><td class="num">105</td></tr>
+<tr><td>Total crédits nets</td><td class="num">1&nbsp;995</td></tr>
+<tr><td>Taux brut de dégradation</td><td class="num">10,00&nbsp;%</td></tr>
+<tr><td>Taux net de dégradation</td><td class="num">5,26&nbsp;%</td></tr>
+<tr><td>Taux de provisionnement des CES</td><td class="num">50,00&nbsp;%</td></tr>
+<tr><td>Taux de provisionnement des douteux</td><td class="num">70,00&nbsp;%</td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Le regroupement par <em>Arrêté</em> n'est pas décoratif&nbsp;: si le tableau contient plusieurs dates d'arrêté, la requête renvoie une ligne par mois, sans changer une ligne de code. Pour empiler automatiquement les extractions mensuelles d'un dossier, voyez le guide <a href="combiner-plusieurs-fichiers-excel-power-query.html">Combiner plusieurs fichiers Excel avec Power Query</a>.</p>
+<div class="callout-info">
+<p><strong>Pour aller jusqu'au reporting mensuel.</strong> Ce guide calcule un taux global sur un seul arrêté. Le module&nbsp;6 de la formation «&nbsp;Power Query pour le reporting bancaire&nbsp;» est consacré aux indicateurs de qualité du portefeuille&nbsp;: créances en souffrance et taux de créances douteuses côté banques, PAR30 et PAR90 côté microfinance, avec un calcul mensuel et un détail par agence et par produit sans moyenne de taux, sur des données fictives couvrant trois arrêtés. <a href="../index.html#tarif">Voir le programme et le tarif de la formation</a></p>
+</div>
+
+<h2 id="sfd">Côté SFD&nbsp;: Tableau n°&nbsp;34, la «&nbsp;norme&nbsp;» de 3&nbsp;% et le PAR</h2>
+<p>Pour les systèmes financiers décentralisés (SFD) de grande taille, la Commission Bancaire publie <strong>les mêmes formules</strong>&nbsp;: Tableau n°&nbsp;31 du Rapport annuel 2024 (page&nbsp;98), qui parle de «&nbsp;SFD de grande taille&nbsp;», et Tableau n°&nbsp;34 du Rapport annuel 2025 (page&nbsp;95), qui parle d'«&nbsp;IMF de grande taille&nbsp;». On y lit «&nbsp;Créances en souffrance brutes / Total Crédits bruts&nbsp;», «&nbsp;Créances en souffrance nettes / Total Crédits nets&nbsp;» et, sous le nom «&nbsp;taux de provisions des créances en souffrance&nbsp;», «&nbsp;Provisions constituées / Créances en souffrance brutes&nbsp;».</p>
+<p>La mécanique du ratio est donc la même&nbsp;; le contenu du numérateur, non. Les règles de classement vues plus haut (90&nbsp;jours, restructurées, contagion) viennent de l'Instruction n°&nbsp;026-11-2016, qui vise les banques et les établissements financiers à caractère bancaire. Un SFD classe ses créances selon ses propres textes, à commencer par le référentiel comptable spécifique des SFD (RCSFD), listé avec les autres textes applicables aux SFD sur le <a href="https://www.cb-umoa.org/fr/sfd" rel="noopener">site de la Commission Bancaire</a>. Ne transposez pas les règles bancaires à un SFD sans vérifier ces textes.</p>
+<p>La <a href="https://www.bceao.int/fr/publications/note-sur-la-situation-de-la-microfinance-fin-mars-2018" rel="noopener">note de la BCEAO sur la situation de la microfinance à fin mars 2018</a>, établie sur des données estimées, indique un taux brut de dégradation du portefeuille des SFD «&nbsp;ressortant à 8,1% contre 5,6% à fin mars 2017, pour une norme généralement admise de 3% dans le secteur&nbsp;». C'est une référence de place, citée telle quelle&nbsp;: la note ne renvoie à aucun texte qui fixerait ce seuil.</p>
+<div class="callout-warning">
+<p><strong>Ne pas confondre avec le portefeuille classé à risque (PAR).</strong> L'annexe de l'<a href="https://www.cb-umoa.org/sites/default/files/2022-01/INSTRUCTION%20N%C2%B0020-12-2010%20RELATIVES%20AUX%20INDICATEURS%20P%C3%89RIODIQUES%20%C3%80%20TRANSMETTRE%20PAR%20LES%20SFD%20AU%20MINISTRE%20EN%20CHARGE%20DES%20FINANCES%2C%20%C3%80%20LA%20BCEAO%20ET%20%C3%80%20LA%20COMMISSION%20BANCAIRE%20DE%20L%27UMOA.pdf" rel="noopener">Instruction BCEAO n°&nbsp;020-12-2010 relative aux indicateurs périodiques des SFD</a> définit un autre indicateur&nbsp;: «&nbsp;Encours des prêts comportant au moins une échéance impayée de x jours&nbsp;» rapporté au «&nbsp;Montant brut du portefeuille de prêts&nbsp;», pour x = 30, 90 et 180&nbsp;jours. Le PAR part des <strong>jours de retard</strong>&nbsp;; le taux de dégradation part de la <strong>classification comptable</strong>. La même annexe fixe des normes pour le PAR (moins de 5&nbsp;% à 30&nbsp;jours, moins de 3&nbsp;% à 90&nbsp;jours, moins de 2&nbsp;% au-delà de 180&nbsp;jours) et pour le taux de provisions pour créances en souffrance (40&nbsp;% au moins).</p>
+</div>
+<p>À titre de comparaison seulement (le PAR de l'Instruction n°&nbsp;020-12-2010 vise les SFD, pas les banques), appliquons sa logique au portefeuille de la BFO&nbsp;: le PAR30 compterait TD-02, TD-04, TD-08 et TD-10 (95 + 70 + 12 + 28 = 205), soit 9,76&nbsp;%, et le PAR90 TD-04, TD-08 et TD-10 (110), soit 5,24&nbsp;%. Le taux brut de dégradation est de 10,00&nbsp;%, avec d'autres crédits au numérateur&nbsp;: le PAR30 contient le crédit sain TD-02, mais ni la créance restructurée TD-06 ni le crédit contaminé TD-05. Des chiffres voisins, mais qui ne se remplacent pas l'un l'autre. Le calcul pas à pas du PAR est dans le guide <a href="portefeuille-a-risque-par30.html">Portefeuille à risque (PAR30)</a>.</p>
+
+<h2 id="reperes">Repères publics&nbsp;: les taux de l'UMOA de 2023 à 2025</h2>
+<p>Pour situer un taux, voici les ratios publiés par la Commission Bancaire dans son Rapport annuel 2025. Ce sont des ratios de l'ensemble de l'Union&nbsp;: aucun établissement n'y est isolé, et un chiffre de place n'est pas un objectif.</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Ratios de qualité du portefeuille publiés pour l'UMOA, 2023 à 2025"><table class="data">
+<caption>Ratios de qualité du portefeuille publiés pour l'UMOA (fin d'année&nbsp;; 2025&nbsp;: données provisoires)</caption>
+<thead><tr><th scope="col">Indicateur</th><th scope="col">2023</th><th scope="col">2024</th><th scope="col">2025</th></tr></thead>
+<tbody>
+<tr><td>Établissements de crédit — taux brut de dégradation</td><td class="num">9,2&nbsp;%</td><td class="num">9,3&nbsp;%</td><td class="num">9,1&nbsp;%</td></tr>
+<tr><td>Établissements de crédit — taux net de dégradation</td><td class="num">3,8&nbsp;%</td><td class="num">4,1&nbsp;%</td><td class="num">4,0&nbsp;%</td></tr>
+<tr><td>Établissements de crédit — provisionnement des créances en souffrance</td><td class="num">60,9&nbsp;%</td><td class="num">58,4&nbsp;%</td><td class="num">58,9&nbsp;%</td></tr>
+<tr><td>Établissements de crédit — provisionnement des douteux et litigieux</td><td class="num">69,1&nbsp;%</td><td class="num">63,9&nbsp;%</td><td class="num">67,1&nbsp;%</td></tr>
+<tr><td>IMF de grande taille — taux brut de dégradation</td><td class="num">4,4&nbsp;%</td><td class="num">6,0&nbsp;%</td><td class="num">5,5&nbsp;%</td></tr>
+<tr><td>IMF de grande taille — taux net de dégradation</td><td class="num">3,8&nbsp;%</td><td class="num">4,8&nbsp;%</td><td class="num">4,3&nbsp;%</td></tr>
+<tr><td>IMF de grande taille — provisions des créances en souffrance</td><td class="num">13,2&nbsp;%</td><td class="num">21,0&nbsp;%</td><td class="num">23,9&nbsp;%</td></tr>
+</tbody>
+</table></div>
+<p class="small muted">Source&nbsp;: Commission Bancaire de l'UMOA, Rapport annuel 2025, Tableau n°&nbsp;15 (page&nbsp;62) et Tableau n°&nbsp;34 (page&nbsp;95).</p>
+<p>Méfiez-vous des données provisoires&nbsp;: le Rapport annuel 2024 annonçait un taux brut 2024 de 8,5&nbsp;% (données provisoires)&nbsp;; le Rapport annuel 2025 donne 9,3&nbsp;% pour la même année. Citez toujours l'édition du rapport avec le chiffre.</p>
+<p><strong>Le recoupement.</strong> Avec les montants publiés dans le même rapport pour fin 2025, on retrouve les trois taux du Tableau n°&nbsp;15 en appliquant exactement les formules de ce guide&nbsp;:</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Recoupement des taux 2025 des établissements de crédit (milliards de FCFA)"><table class="data">
+<caption>Recoupement des taux 2025 des établissements de crédit de l'UMOA (milliards de FCFA, données provisoires)</caption>
+<thead><tr><th scope="col">Élément</th><th scope="col">Montant ou calcul</th><th scope="col">Taux publié</th></tr></thead>
+<tbody>
+<tr><td>Créances en souffrance brutes (page&nbsp;54)</td><td class="num">3&nbsp;721,2</td><td></td></tr>
+<tr><td>Provisions déduites (page&nbsp;54)</td><td class="num">2&nbsp;190,6</td><td></td></tr>
+<tr><td>Créances en souffrance nettes (page&nbsp;54)</td><td class="num">1&nbsp;530,6</td><td></td></tr>
+<tr><td>Crédits à la clientèle, nets des provisions (page&nbsp;50)</td><td class="num">38&nbsp;731,6</td><td></td></tr>
+<tr><td>Total crédits bruts reconstitué</td><td class="num">38&nbsp;731,6 + 2&nbsp;190,6 = 40&nbsp;922,2</td><td></td></tr>
+<tr><td>Taux brut</td><td class="num">3&nbsp;721,2 / 40&nbsp;922,2 = 9,09&nbsp;%</td><td class="num">9,1&nbsp;%</td></tr>
+<tr><td>Taux net</td><td class="num">1&nbsp;530,6 / 38&nbsp;731,6 = 3,95&nbsp;%</td><td class="num">4,0&nbsp;%</td></tr>
+<tr><td>Taux de provisionnement</td><td class="num">2&nbsp;190,6 / 3&nbsp;721,2 = 58,87&nbsp;%</td><td class="num">58,9&nbsp;%</td></tr>
+</tbody>
+</table></div>
+<p>Ce recoupement est notre propre calcul, pas une méthode décrite par le rapport. Il confirme la lecture des libellés&nbsp;: crédits nets = crédits bruts − provisions, et les provisions sortent des deux termes du taux net.</p>
+
+<h2 id="erreurs">Erreurs fréquentes</h2>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Diagnostic rapide, chiffré sur l'exemple de la BFO"><table class="data">
+<caption>Diagnostic rapide, chiffré sur l'exemple de la BFO (bon résultat&nbsp;: 10,00&nbsp;% brut, 5,26&nbsp;% net)</caption>
+<thead><tr><th scope="col">Ce que vous constatez</th><th scope="col">Cause probable</th><th scope="col">Solution</th></tr></thead>
+<tbody>
+<tr><td>Taux brut trop élevé&nbsp;: 14,52&nbsp;%</td><td>Les impayés de 90&nbsp;jours ou moins sont comptés (TD-02, 45&nbsp;jours)</td><td>Partir de la catégorie comptable, pas des jours de retard (article&nbsp;4)</td></tr>
+<tr><td>Taux brut trop bas&nbsp;: 8,10&nbsp;%</td><td>Contagion oubliée&nbsp;: TD-05 laissé sain alors que son client a un crédit douteux</td><td>Reclasser toute la contrepartie (article&nbsp;11), hors escompte commercial et clientèle de détail</td></tr>
+<tr><td>Taux brut trop bas&nbsp;: 7,14&nbsp;%</td><td>Créances restructurées oubliées (TD-06, pourtant à jour)</td><td>Créances en souffrance = restructurées + douteuses ou litigieuses (article&nbsp;5)</td></tr>
+<tr><td>Taux net de 5,00&nbsp;% au lieu de 5,26&nbsp;%</td><td>Créances nettes divisées par des crédits bruts</td><td>Nettes avec nets&nbsp;: retirer les provisions des deux termes</td></tr>
+<tr><td>Taux de la banque de 9,48&nbsp;% au lieu de 10,00&nbsp;%</td><td>Moyenne simple des taux des agences (13,33&nbsp;%, 10,18&nbsp;% et 4,93&nbsp;%)</td><td>Recalculer sur les totaux&nbsp;: somme des créances en souffrance / somme des crédits</td></tr>
+<tr><td>Écart inexpliqué avec la comptabilité</td><td>Intérêts courus ou impayés inclus dans l'encours sans le dire, ou créances passées en pertes encore présentes</td><td>Écrire le périmètre retenu (capital seul ou capital et intérêts)&nbsp;; exclure les créances passées en pertes (article&nbsp;13)</td></tr>
+<tr><td>Taux qui change sans raison d'un mois à l'autre</td><td>Libellés de catégories modifiés dans l'extraction&nbsp;: des lignes ne sont plus reconnues</td><td>Contrôle B19 dans Excel, garde-fou <code>Catégorie inconnue</code> dans Power Query</td></tr>
+</tbody>
+</table></div>
+<p>La moyenne des agences est le piège le plus discret&nbsp;: elle donne le même poids à l'Agence Karité (568) qu'à l'Agence Filao (825). Un taux se recalcule toujours à partir des montants, à chaque niveau de détail.</p>
+
+<h2 id="faq">Questions fréquentes</h2>
+<h3 id="faq-brut-net">Quelle différence entre taux brut et taux net de dégradation&nbsp;?</h3>
+<p>Le taux brut rapporte les créances en souffrance brutes au total des crédits bruts&nbsp;: il mesure la part du portefeuille en difficulté, quelles que soient les provisions. Le taux net rapporte les créances en souffrance nettes de provisions au total des crédits nets de provisions&nbsp;: il mesure la part qui reste non couverte. Un taux net bas peut venir de peu de créances en souffrance ou d'un fort provisionnement&nbsp;; lisez-le avec le taux de provisionnement.</p>
+<h3 id="faq-norme">Le taux de dégradation est-il une norme prudentielle&nbsp;?</h3>
+<p>Les textes consultés pour ce guide ne fixent pas de seuil réglementaire pour le taux de dégradation des banques&nbsp;: la Commission Bancaire le publie parmi les ratios caractéristiques, pas parmi les normes prudentielles. Pour les SFD, une note de la BCEAO sur la microfinance à fin mars 2018 évoque «&nbsp;une norme généralement admise de 3% dans le secteur&nbsp;», sans citer de texte qui la fixe. L'annexe de l'Instruction n°&nbsp;020-12-2010 fixe, elle, des normes pour d'autres indicateurs des SFD, comme le portefeuille classé à risque. Pour un état officiel, référez-vous aux textes en vigueur.</p>
+<h3 id="faq-par">Le taux de dégradation est-il la même chose que le PAR&nbsp;?</h3>
+<p>Non. Le taux de dégradation part de la classification comptable&nbsp;: créances restructurées et créances douteuses ou litigieuses. Le portefeuille classé à risque (PAR) des SFD part des jours de retard&nbsp;: encours des prêts ayant une échéance impayée depuis plus de 30, 90 ou 180&nbsp;jours. Sur l'exemple bancaire fictif du guide, le taux brut est de 10,00&nbsp;%&nbsp;; le PAR30, calculé pour comparaison, serait de 9,76&nbsp;%, avec des crédits différents dans chaque numérateur.</p>
+<h3 id="faq-interets">Faut-il inclure les intérêts dans l'encours&nbsp;?</h3>
+<p>Les libellés publiés par la Commission Bancaire ne le détaillent pas. Pour un calcul interne, retenez le même périmètre au numérateur et au dénominateur (capital seul, ou capital et intérêts) et écrivez-le dans la note de l'état. Pour un état réglementaire, suivez les instructions de remise en vigueur.</p>
+<h3 id="faq-cemac">Et dans la CEMAC&nbsp;?</h3>
+<p>Dans la CEMAC, ce sont les règles de la COBAC qui s'appliquent. Elles ne sont pas traitées dans ce guide, qui s'appuie uniquement sur les textes de l'UMOA. La mécanique du calcul se transpose, mais vérifiez dans les textes COBAC la définition des créances à retenir avant de comparer des chiffres.</p>
+
+<h2 id="suite">Aller plus loin</h2>
+<p>Pour pratiquer sans attendre, le <a href="../gratuit.html">module gratuit «&nbsp;Calculer l'ancienneté des impayés avec Power Query&nbsp;»</a> montre comment calculer les jours de retard et la balance âgée à partir d'une extraction de prêts, sur des données fictives à télécharger&nbsp;: c'est l'ancienneté qui signale les crédits qui approchent du seuil de 90&nbsp;jours.</p>
+<p>Sur le même sujet&nbsp;:</p>
+<ul>
+<li><a href="creances-en-souffrance-bceao.html">Créances en souffrance BCEAO</a>&nbsp;: les catégories de l'Instruction n°&nbsp;026-11-2016 et leurs délais.</li>
+<li><a href="portefeuille-a-risque-par30.html">Portefeuille à risque (PAR30)</a>&nbsp;: l'indicateur des SFD, calculé pas à pas.</li>
+<li><a href="combiner-plusieurs-fichiers-excel-power-query.html">Combiner plusieurs fichiers Excel avec Power Query</a>&nbsp;: pour empiler les arrêtés mensuels.</li>
+</ul>
+<p>Tous les guides gratuits sont réunis sur la <a href="../index.html#guides">page de la formation</a>.</p>
+
+<h2 id="sources">Sources publiques consultées le 22/10/2026</h2>
+<ul>
+<li>Commission Bancaire de l'UMOA, <a href="https://www.bceao.int/fr/publications/rapport-annuel-de-la-commission-bancaire-de-lumoa-2025" rel="noopener">Rapport annuel 2025</a> (<a href="https://www.bceao.int/sites/default/files/2026-08/RAPPORT_ANNUEL_2025_DE_LA_COMMISSION_BANCAIRE.pdf" rel="noopener">PDF</a>)&nbsp;: Mot du Président, Tableau n°&nbsp;15 (page&nbsp;62), Tableau n°&nbsp;34 (page&nbsp;95), pages&nbsp;50, 54 et&nbsp;55, Graphique n°&nbsp;24.</li>
+<li>Commission Bancaire de l'UMOA, <a href="https://www.bceao.int/fr/publications/rapport-annuel-de-la-commission-bancaire-de-lumoa-2024" rel="noopener">Rapport annuel 2024</a> (<a href="https://cofeb.bceao.int/sites/default/files/2025-08/Rapport_annuel_2024_de_la_Commission_Bancaire.pdf" rel="noopener">PDF</a>)&nbsp;: Tableau n°&nbsp;15 (page&nbsp;67) et Tableau n°&nbsp;31 (page&nbsp;98).</li>
+<li>BCEAO, <a href="https://www.cb-umoa.org/sites/default/files/2022-01/INSTRUCTION%20N%C2%B0026-11-2016%20RELATIVE%20A%20LA%20COMPTABILISATION%20ET%20A%20L%27EVALUATION%20DES%20ENGAGEMENTS%20EN%20SOUFFRANCE.pdf" rel="noopener">Instruction n°&nbsp;026-11-2016 relative à la comptabilisation et à l'évaluation des engagements en souffrance</a>, articles&nbsp;1, 4 à 8, 11, 13 et&nbsp;16.</li>
+<li>BCEAO, <a href="https://www.bceao.int/fr/publications/note-sur-la-situation-de-la-microfinance-fin-mars-2018" rel="noopener">Note sur la situation de la microfinance à fin mars 2018</a> (<a href="https://www.bceao.int/sites/default/files/2018-08/Situation_microfinance_fin_mars_2018.pdf" rel="noopener">PDF</a>).</li>
+<li>BCEAO, <a href="https://www.cb-umoa.org/sites/default/files/2022-01/INSTRUCTION%20N%C2%B0020-12-2010%20RELATIVES%20AUX%20INDICATEURS%20P%C3%89RIODIQUES%20%C3%80%20TRANSMETTRE%20PAR%20LES%20SFD%20AU%20MINISTRE%20EN%20CHARGE%20DES%20FINANCES%2C%20%C3%80%20LA%20BCEAO%20ET%20%C3%80%20LA%20COMMISSION%20BANCAIRE%20DE%20L%27UMOA.pdf" rel="noopener">Instruction n°&nbsp;020-12-2010 relative aux indicateurs périodiques à transmettre par les SFD</a>, annexe (indicateurs de qualité du portefeuille)&nbsp;; liste des textes applicables aux SFD, dont le référentiel comptable spécifique des SFD, sur le <a href="https://www.cb-umoa.org/fr/sfd" rel="noopener">site de la Commission Bancaire</a>.</li>
+<li>Microsoft, <a href="https://support.microsoft.com/fr-fr/excel/functions/sumifs-function" rel="noopener">Fonction SOMME.SI.ENS</a> et <a href="https://support.microsoft.com/fr-fr/excel/overview-of-excel-tables" rel="noopener">Présentation des tableaux Excel</a>.</li>
+<li>Microsoft Learn, fonctions M <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-group" rel="noopener">Table.Group</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/list-sum" rel="noopener">List.Sum</a> et <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-selectrows" rel="noopener">Table.SelectRows</a>.</li>
+</ul>
+<p>Ce guide est un support pédagogique. Il ne remplace ni les textes en vigueur ni les règles de votre établissement, et ne cite aucune donnée d'établissement réel&nbsp;: la Banque Fictive de l'Ouest et ses chiffres sont inventés. Les libellés de l'interface peuvent varier légèrement selon la version d'Excel et sa langue.</p>
+</section>
+
+      <div class="cta-band cta-after-author">
+        <div>
+          <h2>Automatiser vos états mensuels avec Power Query</h2>
+          <p>La formation «&nbsp;Power Query pour le reporting bancaire&nbsp;»&nbsp;: 8&nbsp;modules, 51&nbsp;exercices corrigés, environ 13&nbsp;h de travail, des données fictives sur 3&nbsp;arrêtés mensuels, un quiz final et une attestation de suivi (non diplômante). <strong>25&nbsp;000&nbsp;FCFA</strong>, paiement unique.</p>
+        </div>
+        <a class="btn btn-light btn-lg" href="../index.html#tarif"><span class="btn-label">Voir le programme et le tarif</span><span class="arrow" aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </article>
+</main>
+
+<footer class="tp-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="../index.html" aria-label="Teranga Pro, accueil de la formation">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+          <span class="brand-name">Teranga<span>Pro</span></span>
+        </a>
+        <p>Conçu par un praticien du reporting bancaire en Afrique de l'Ouest. Données d'exercice 100&nbsp;% fictives&nbsp;; tables de correspondance&nbsp;: exemples pédagogiques, pas des états réglementaires officiels.</p>
+      </div>
+      <div>
+        <h2>Formation</h2>
+        <ul>
+          <li><a href="../index.html">Présentation et programme</a></li>
+          <li><a href="../gratuit.html">Module gratuit</a></li>
+          <li><a href="../index.html#guides">Guides gratuits</a></li>
+          <li><a href="../attestation.html">Vérifier une attestation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Informations</h2>
+        <ul>
+          <li><a href="../cgv.html">Conditions générales de vente</a></li>
+          <li><a href="../confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="footer-note">© 2026 Teranga Pro · Vendeur&nbsp;: particulier résidant au Sénégal.</p>
+  </div>
+</footer>
+</body>
+</html>
