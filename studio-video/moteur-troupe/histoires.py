@@ -275,7 +275,14 @@ def llm(prompt, temp=1.0, juge=False):
     for essai in range(3):
         try:
             req = urllib.request.Request(url, data=json.dumps(corps).encode(), headers=tete)
-            with (_EN_VOL if juge else _EN_VOL_SCEN): rep = json.loads(urllib.request.urlopen(req, timeout=delai).read())
+            with (_EN_VOL if juge else _EN_VOL_SCEN):
+                r_ = urllib.request.urlopen(req, timeout=delai); brut = r_.read()
+            # 22/10/2026 (marches GitHub n° 22 et 23) : GitHub Models répondait « Expecting value » — un corps non JSON sans plus
+            # d'indice ; l'erreur garde désormais le statut, le type et le début du corps reçu (diagnostic depuis le journal)
+            try: rep = json.loads(brut)
+            except ValueError:
+                raise RuntimeError(f"réponse non JSON : HTTP {r_.status}, {r_.headers.get('Content-Type')}, "
+                                   f"{r_.headers.get('Content-Encoding') or 'sans compression'}, {len(brut)} octets, début {brut[:160]!r}") from None
             m = rep['choices'][0]['message']; t = rep.get('timings') or {}
             TEMPS.append({'juge': juge, 'fin': rep['choices'][0].get('finish_reason'), **{k: t.get(k) for k in TEMPS_CLES}})
             if m.get('content'): return m['content']
