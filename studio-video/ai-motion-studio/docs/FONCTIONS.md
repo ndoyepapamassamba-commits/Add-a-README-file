@@ -23,6 +23,7 @@
 | Protection des clés : jeton en mémoire seulement, absent des stockages, exports et page ; envoyé seulement au service appelé | E15, U (serveur) |
 | Serveur local : voies payantes fermées (403), validation (400), fichiers protégés, origine étrangère refusée, limite de débit (429), journaux caviardés | U (serveur, 7 tests) |
 | Personnages : 61 duos et 122 personnages de la troupe, fiches de continuité modifiables, « Utiliser dans Générer » | Fumée Playwright (9 vues sans erreur) |
+| Moteur V1 de la troupe par l'application (serveur local) : sketch tourné, vidéo TikTok H.264 1080×1920 récupérée, 8 portes de qualité sur 9 (seule la durée d'un épisode complet manque, l'essai ne compte qu'un sketch) | Essai réel du 22/10/2026 (RAPPORT-TESTS § 3) |
 | Storyboard : découpage d'un scénario en scènes, moteur par scène, variantes, « Film complet » avec confirmation, assemblage en timeline | Code relu ; génération par scène = même chemin que E6 à E9 |
 
 ## 2. Partiellement opérationnelles
@@ -31,7 +32,6 @@
 |---|---|---|
 | Génération réelle sur les Spaces gratuits **depuis le conteneur de développement** | Protocole complet vérifié (E6 à E8) contre les configurations réelles. Le 22/10/2026, un vrai calcul I2V a eu lieu sur le GPU du Space Wan 2.2 (26,7 s). | Depuis le conteneur, le téléchargement du clip a été refusé (403 : plusieurs répliques derrière le proxy). Le navigateur de l'utilisateur garde sa connexion HTTP/2 vers la même réplique. **Mesure attendue** : premier clip reçu dans le navigateur de l'utilisateur, consigné dans l'Historique. |
 | Texte → vidéo anonyme | Chemin LTX-2.3 et chaîne Pollinations → Wan branchés et validés | Quota anonyme épuisé le 22/10 à 20:52 (« 37 s restantes »). Un compte Hugging Face gratuit de l'utilisateur lève ce point. |
-| Moteur V1 de la troupe par l'API | Catalogue des scènes, contrôle de ton (CONFORME sur « telephone-ecoute »), voix et visages préparés, tournage lancé par l'API | Résultat du tournage par l'API : voir le RAPPORT-TESTS (durée mesurée) |
 | Voix off | Piper local (siwis, gilles) par le serveur ; voix du navigateur en écoute seule | La voix du navigateur ne peut pas être enregistrée dans l'export (limite de l'API Web Speech) ; Piper la remplace. |
 
 ## 3. Dépendantes d'un service externe
