@@ -911,5 +911,35 @@
   "activite": "",
   "genre": "femme",
   "age": 60
+ },
+ "LASSINA": {
+  "height": 1.75,
+  "voice": "siwis",
+  "pitch": 1.0,
+  "dessin": "scene",
+  "lieux": [],
+  "activite": "",
+  "genre": "homme",
+  "age": 45
+ },
+ "ESTELLE": {
+  "height": 1.64,
+  "voice": "siwis",
+  "pitch": 1.0,
+  "dessin": "scene",
+  "lieux": [],
+  "activite": "",
+  "genre": "femme",
+  "age": 30
+ },
+ "STÉPHANE": {
+  "height": 1.75,
+  "voice": "siwis",
+  "pitch": 1.0,
+  "dessin": "scene",
+  "lieux": [],
+  "activite": "",
+  "genre": "homme",
+  "age": 25
  }
 }
