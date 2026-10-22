@@ -253,6 +253,7 @@ for sk in T['sketchs']:
                     x0c, y0c, x1c, y1c = ent['complete']; im_a = img.copy(); im_a[y0c:y1c, x0c:x1c] = cv2.cvtColor(cv2.imread(f'{d}/rig/complete-{sl}.png'), cv2.COLOR_BGR2RGB)
                 v3 = np.load(f'{d}/rig/visage3d-{sl}.npy') if os.path.isfile(f'{d}/rig/visage3d-{sl}.npy') else None
                 bras_ = prepare_rig.charge_bras(f'{d}/rig/bras-{sl}.npz') if os.path.isfile(f'{d}/rig/bras-{sl}.npz') else []
+                A_['objets'] = [(b_['objet'], b_['main_xy'], float(b_['lf'])) for b_ in bras_ if b_.get('objet') is not None and b_.get('main_xy') is not None]
                 assis_ = prepare_rig.assis(a); box_ = rig2d.boite(a['bbox'], img.shape)
                 R_ = rig2d.preparer(im_a, al, a['pts'], a['bbox'], memo.memo(gestes.classes, img, box_), plaque=plate, bras=bras_, segmente=gestes.classes, visage3d=v3, assis=assis_)
                 dl = f'{d}/expressions/{sl}'
@@ -310,6 +311,7 @@ for sk in T['sketchs']:
                 continue
             bras = gestes.prepare(img, acts[a['nom']]['mask'], a['pts'], a['visage']['box'] if a.get('visage') else None, a['bbox']) if REG['gestes'] > 0 else []
             acts[a['nom']]['bras'] = bras; acts[a['nom']]['marge_bras'] = int(max([1.1 * b_['lf'] for b_ in bras], default=0))
+            acts[a['nom']]['objets'] = [(b_['objet'], b_['main_xy'], float(b_['lf'])) for b_ in bras if b_.get('objet') is not None and b_.get('main_xy') is not None]
             print(f"{a['nom']}: gestes {[(b_['cote'], 'avant-bras' if b_['nu'] else 'main') for b_ in bras]}", flush=True)
         for n_, A_ in acts.items():   # de quel côté est le partenaire le plus proche (le « pas vers l'autre »)
             autres = [B for m_, B in acts.items() if m_ != n_]
@@ -1124,6 +1126,37 @@ def tete_dedans(S, c, n):
     if not hb: return True
     cx, cy, w, h = c
     return hb[0] >= cx - w / 2 - 1 and hb[2] <= cx + w / 2 + 1 and hb[1] >= cy - h / 2 - 1 and hb[3] <= cy + h / 2 + 1
+# OBJET TENU ENTIER OU HORS CHAMP (22/10/2026, « la brosse de la coiffeuse est détachée », 2e remarque, après publication de
+# l'épisode 4 v4 et de E00001) : la brosse suivait la main (gestes, VERSION_BRAS 6), mais le gros plan de Josiane prenait la
+# tête de la brosse et coupait sous son poing — à 56,7 s (ep04) et 33 s (E00001), une brosse qui sort du bas de l'image sans
+# main. Même règle que les têtes : un objet tenu est dans le cadre AVEC la main qui le tient, ou il n'y est pas.
+OBJET_PART = 0.05   # au-delà de 5 % de sa boîte dans le cadre, l'objet « est à l'image »
+OBJETS_COUPES = []  # plans où aucun cadre ne peut garder la main (consignés dans tournage.json)
+def objet_sans_main(S, c):
+    """(nom, boîte du poing) du premier objet tenu dont un morceau est dans le cadre c sans le poing qui le tient (poing
+    = position de la main ± 0,35 avant-bras, entier dans le cadre) ; None si tous les objets tenus sont entiers ou absents."""
+    cx, cy, w, h = c; l, r, t, b = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2
+    for n, A in S['acts'].items():
+        for ob, m, lf in A.get('objets', ()):
+            ia = max(0.0, min(r, ob[2]) - max(l, ob[0])) * max(0.0, min(b, ob[3]) - max(t, ob[1]))
+            if ia <= OBJET_PART * max(1.0, (ob[2] - ob[0]) * (ob[3] - ob[1])): continue
+            rm = 0.35 * lf; poing = (m[0] - rm, m[1] - rm, m[0] + rm, m[1] + rm)
+            if poing[0] >= l and poing[2] <= r and poing[1] >= t and poing[3] <= b: continue
+            return n, poing
+    return None
+def objet_entier(S, c, keep):
+    """le cadre c élargi juste assez pour prendre le poing qui tient l'objet (le haut du cadre ne bouge pas : la tête garde
+    son air), puis la règle des têtes ; None si aucun cadre de moins de 1,8 fois la hauteur ne le permet."""
+    h0 = c[3]
+    for _ in range(4):
+        r_ = objet_sans_main(S, c)
+        if r_ is None: return c
+        _, (px0, py0, px1, py1) = r_; cx, cy, w, h = c
+        L, R, T, B = min(cx - w / 2, px0), max(cx + w / 2, px1), cy - h / 2, max(cy + h / 2, py1)
+        h2 = max(B - T, (R - L) * CH / CW) * 1.03; w2 = h2 * CW / CH
+        if h2 > 1.8 * h0 or h2 > S['H'] * 1.001: return None
+        c = faces_ok(S, clamp_crop(S, ((L + R) / 2, T + h2 / 2, w2, h2)), keep)
+    return c if objet_sans_main(S, c) is None else None
 def chemin_ok(S, a, b, keep, n=12):
     """tout le trajet de caméra de a à b (avec la même courbe d'aisance que le rendu) garde les têtes entières ou absentes."""
     for k in range(1, n):
@@ -1157,6 +1190,13 @@ def cadres_du_plan(S, s, keep):
             c2 = faces_ok(S, clamp_crop(S, crop_for(S, 'duo', (keep, n_v))), keep)
             if not voisin_coupe(S, c2, keep) and taille_visage(S, keep, c2) >= VISAGE_MIN:
                 print(f"plan {s[0]:.2f} {s[3]} {s[4]} : {n_v} collé au personnage → plan à deux (visage {taille_visage(S, keep, c2):.0f} px)", flush=True); c0 = c2
+        if objet_sans_main(S, c0) is not None:   # objet tenu sans sa main : le cadre s'agrandit vers le bas pour prendre le poing
+            oe_ = objet_entier(S, c0, keep)
+            if oe_ is not None:
+                print(f"plan {s[0]:.2f} {s[3]} {s[4]} : objet tenu par {objet_sans_main(S, c0)[0]} → cadre agrandi pour prendre la main ({c0[3]:.0f} → {oe_[3]:.0f} px)", flush=True); c0 = oe_
+            else:
+                print(f"plan {s[0]:.2f} {s[3]} {s[4]} : objet tenu sans sa main, aucun cadre ne la prend", flush=True); OBJETS_COUPES.append(round(s[0], 2))
+        objet_ok_ = objet_sans_main(S, c0) is None   # le mouvement de caméra ne fait pas ressortir la main
         propre_ = voisin_coupe(S, c0, keep) is None   # cadre de départ sans morceau de voisin : le mouvement n'en ramène pas
         if os.environ.get('TOURNE_DEBUG_CADRE'):   # diagnostic : cadre voulu → borné → après la règle des têtes
             print('cadre', s[2], s[3], s[4], [round(v) for v in crop_for(S, s[3], s[4])], [round(v) for v in clamp_crop(S, crop_for(S, s[3], s[4]))], [round(v) for v in c0], flush=True)
@@ -1182,6 +1222,7 @@ def cadres_du_plan(S, s, keep):
             cp = faces_ok(S, clamp_crop(S, (c1[0], c1[1], c1[2] / 1.15, c1[3] / 1.15)), keep)
             if not (chemin_ok(S, c0, c1, keep) and (s[5] is None or chemin_ok(S, c1, cp, keep))): continue
             if propre_ and (voisin_coupe(S, c1, keep) or (s[5] is not None and voisin_coupe(S, cp, keep))): continue
+            if objet_ok_ and (objet_sans_main(S, c1) or (s[5] is not None and objet_sans_main(S, cp))): continue
             vie_ = math.hypot(c1[0] - c0[0], c1[1] - c0[1]) * sc0_ + 0.5 * abs(1 - c0[2] / c1[2]) * CW
             essais.append((min(vie_, cible), -abs(vie_ - cible), g_ == 1.0 and dr == dirn, c1, cp, (g_, dr == dirn, vv, pz)))
             if g_ == 1.0 and dr == dirn and pz == REG['pousse']: break   # le mouvement voulu passe : inutile d'en chercher un autre
@@ -1190,6 +1231,7 @@ def cadres_du_plan(S, s, keep):
         else:
             c1, cp, choix_ = c0, faces_ok(S, clamp_crop(S, (c0[0], c0[1], c0[2] / 1.15, c0[3] / 1.15)), keep), (0.0, True, 0.0, 1.0)
             if propre_ and voisin_coupe(S, cp, keep): cp = c0   # le coup de zoom ramènerait un morceau de voisin : pas de zoom
+            if objet_ok_ and objet_sans_main(S, cp): cp = c0      # … ou couperait la main qui tient l'objet
         if choix_ != (1.0, True, 1.0, REG['pousse']):
             print(f"plan {s[0]:.2f} {s[3]} {s[4]} : mouvement {'glissement ' + str(round(choix_[0] * 100)) + '%' + ('' if choix_[1] else ' (autre côté)') if choix_[0] else ('grue' if choix_[2] else 'travelling')}, poussée {choix_[3]:.2f} (trajet sans tête coupée)", flush=True)
         cs = faces_ok(S, clamp_crop(S, crop_for(S, 'large')), None) if s[3].startswith('ouvre-') else None
@@ -1665,6 +1707,6 @@ if CLES:   # les plans tournés rejoignent le cache (images, image source, mesur
 json.dump({'images': NF, 'fps': FPS, 'plans': cut_count, 'plans_par_minute': round(cut_count / (total / 60), 1), 'reglages': REG, 'decoupage': decoupage_exact(),
            'cadres': {f'{k[0]:.2f}': [None if c is None else [round(v, 1) for v in c] for c in v_] for k, v_ in CADRES.items()},
            'empreintes': {f'{SH[i][0]:.2f}': c_[0] for i, c_ in CLES.items()}, 'repris_du_cache': [round(SH[i][0], 2) for i in REPRIS], 'realisateur_jev': REALISATION, 'jeu_humain': JOURNAL_JEU,
-           'avance_levres_s': round(AVANCE_LEVRES, 3), 'mesure_levres': MESURE_LEVRES},
+           'avance_levres_s': round(AVANCE_LEVRES, 3), 'mesure_levres': MESURE_LEVRES, 'objets_sans_main': OBJETS_COUPES},
           open(f'{OUT}/tournage.json', 'w'), ensure_ascii=False, indent=1)
 print('ok', len(RANGE), 'images,', cut_count, 'plans,', round(time.time() - T0), 's', f'({len(RANGE_T)} tournées, {len(RANGE) - len(RANGE_T)} reprises du cache)')

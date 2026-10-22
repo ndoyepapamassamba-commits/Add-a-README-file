@@ -1285,6 +1285,34 @@ try:
 except Exception as e:
     echecs.append(f'objet tenu, vote, écart : {e}')
 
+# 22/10/2026 — « la brosse de la coiffeuse est détachée » (2e remarque, ep04 v4 à 56,7 s et E00001 à 33 s) : la brosse suivait la
+# main, mais le gros plan prenait sa tête et coupait sous le poing. Règle du cadrage : un objet tenu est à l'image AVEC sa main,
+# ou n'y est pas ; le cadre s'agrandit vers le bas (le haut ne bouge pas) ; la livraison le compte en motif. Test fonctionnel
+# des deux fonctions de tourne.py sur une brosse dont le poing est sous le cadre.
+try:
+    import ast as _ast54
+    _t54 = open(os.path.join(ICI, 'moteur-troupe', 'tourne.py'), encoding='utf-8').read(); _m54 = _ast54.parse(_t54)
+    _ns54 = {'CW': 720, 'CH': 1280, 'OBJET_PART': 0.05, 'faces_ok': lambda S, c, keep=None: c,
+             'clamp_crop': lambda S, c: c}
+    for _n in _m54.body:
+        if isinstance(_n, _ast54.FunctionDef) and _n.name in ('objet_sans_main', 'objet_entier'):
+            exec(compile(_ast54.Module([_n], []), 'tourne.py', 'exec'), _ns54)
+    _S54 = {'W': 1152, 'H': 896, 'acts': {'JOSIANE': {'objets': [([300, 200, 340, 330], [320, 420], 60.0)]}}}
+    _c54 = (320, 260, 180, 320)                                  # gros plan : tête de la brosse dedans, poing (420 ± 21) dessous
+    _d54 = _ns54['objet_sans_main'](_S54, _c54); _f54 = _ns54['objet_entier'](_S54, _c54, 'JOSIANE')
+    _hors54 = _ns54['objet_sans_main'](_S54, (700, 260, 180, 320))   # objet hors champ : rien à reprocher
+    _g54 = open(os.path.join(ICI, 'moteur-troupe', 'gestes.py'), encoding='utf-8').read()
+    _a54 = open(os.path.join(ICI, 'moteur-troupe', 'autopilot.py'), encoding='utf-8').read()
+    if _d54 is None or _hors54 is not None:
+        echecs.append(f'cadrage : objet tenu sans main non repéré ({_d54}, {_hors54})')
+    elif _f54 is None or _ns54['objet_sans_main'](_S54, _f54) is not None or abs((_f54[1] - _f54[3] / 2) - (_c54[1] - _c54[3] / 2)) > 1:
+        echecs.append(f'cadrage : cadre non agrandi vers le poing ({_f54})')
+    elif "b['objet']" not in _g54 or "b['main_xy']" not in _g54 or 'objet_ok_ and' not in _t54 or 'objets_sans_main' not in _a54:
+        echecs.append('cadrage : objet tenu non branché (gestes, mouvement de caméra ou livraison)')
+    else: print(f'objet tenu entier ou hors champ : gros plan {_c54[3]} → {_f54[3]:.0f} px de haut, poing compris : OK')
+except Exception as e:
+    echecs.append(f'objet tenu entier ou hors champ : {e}')
+
 # 21/10/2026 — fabrique au moteur de la V1, sans Claude (« si demain je ne suis pas autonome avec tout bouclé avec les 10000
 # vidéos j'arrêterai ») : série V1 (réserve de sketchs × scènes préparées), air du plan à deux resserré par paliers avant le
 # champ-contrechamp (épisode 4 : salon 18 → 13 plans, plan médian 2,33 → 4,51 s), dépendances relevées par traçage

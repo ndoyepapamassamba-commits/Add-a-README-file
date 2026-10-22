@@ -127,8 +127,11 @@ def livre(i, D=None, journal=print):
     F['profil_v1'] = niveau_v1.profil(film)
     nv = [x for x in nv if not x.startswith('animation sous la V1')] + niveau_v1.ecarts(
         F['profil_v1'], humour=min(pl) if pl and None not in pl else None)
+    # 22/10/2026 — « la brosse de la coiffeuse est détachée » : un plan qui montre un objet tenu sans la main qui le tient
+    tg_ = os.path.join(D, 'tournage.json'); osm_ = (json.load(open(tg_)).get('objets_sans_main') or []) if os.path.isfile(tg_) else []
     F['motifs'] = ([] if F['a_publier'] else [f"juge : {', '.join(map(str, rap.get('echecs') or [])) or 'porte échouée'}"]) \
-        + ([] if (mesure['ssim'] or 0) >= SSIM_MIN else [f"qualité téléphone : SSIM {mesure['ssim']} < {SSIM_MIN}"]) + nv
+        + ([] if (mesure['ssim'] or 0) >= SSIM_MIN else [f"qualité téléphone : SSIM {mesure['ssim']} < {SSIM_MIN}"]) + nv \
+        + ([f"objet tenu sans sa main dans les plans de {', '.join(f'{x:.1f} s' for x in osm_)}"] if osm_ else [])
     F['statut'] = 'doublon' if r >= doublons.SEUIL_DOUBLON else ('a_corriger' if F['motifs'] else 'pret')
     if F['statut'] == 'pret': F['creneau'] = prochain_creneau({f.get('creneau') for f in fiches() if f.get('creneau')})
     json.dump(F, open(os.path.join(LIV, f'{i}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)

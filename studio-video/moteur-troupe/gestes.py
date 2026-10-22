@@ -153,6 +153,7 @@ def prepare(img, alpha, pts, visage_box, bbox=None):
         Rz = (s > 0.8) & (np.hypot(xs - main[0], ys - main[1]) < 1.8 * lf)
         # le liseré du bras (bord anticrénelé, pas assez « peau ») est retiré : il reliait la brosse au bord de la zone
         obj = (np.clip(alpha[y0:y1, x0:x1], 0, 1) > 0.5) & ~(pk > 0.5) & ~(cv2.dilate(garde.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0) & Rz
+        tenu = np.zeros_like(garde)   # objet(s) tenu(s) rattaché(s) à cette main (boîte retenue pour le cadrage, tourne.objet_sans_main)
         if obj.any():
             n2, lab2, st2, _ = cv2.connectedComponentsWithStats(obj.astype(np.uint8))
             pres = cv2.dilate(garde.astype(np.uint8), np.ones((7, 7), np.uint8)) > 0; gs = int(garde.sum())
@@ -160,7 +161,7 @@ def prepare(img, alpha, pts, visage_box, bbox=None):
             for k in range(1, n2):
                 comp = lab2 == k
                 if st2[k, cv2.CC_STAT_AREA] <= 1.5 * gs and (comp & pres).any() and not (comp & bordz).any():
-                    garde |= comp
+                    garde |= comp; tenu |= comp
             bras_m = cv2.GaussianBlur(cv2.dilate(garde.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(np.float32), (0, 0), 1.0)
         if nue >= 0.4:   # avant-bras nu : le calque va du coude au bout des doigts, fondu au coude
             piv = E; fondu = np.where(s > 1.0, 1.0, _lisse(s, 0.06, 0.32))
@@ -188,6 +189,13 @@ def prepare(img, alpha, pts, visage_box, bbox=None):
         b = dict(cote=cote, nu=nue >= 0.4, piv=piv.astype(np.float32), x=float(piv[0]), lf=lf, box=(x0, y0, x1, y1), tronc=tronc,
                  rgb=reg, calque=calque, sil=sil, fondu=fondu.astype(np.float32), fond=fond, trou=trou.astype(bool), sens=sens, Hc=Hc.astype(np.float32),
                  empreinte=empreinte, rgb_ext=rgb_ext, calque_ext=calque_ext)
+        # OBJET TENU ENTIER OU HORS CHAMP (22/10/2026, « la brosse de la coiffeuse est détachée », 2e remarque) : la brosse suivait
+        # bien la main, mais le gros plan prenait sa tête et coupait sous le poing (ep04 v4 à 56,7 s, E00001 à 33 s) — une brosse
+        # qui sort du bas de l'image, sans main. Boîte de l'objet et position du poing (image entière) gardées pour le cadrage.
+        if tenu.any():
+            ty_, tx_ = np.nonzero(tenu); b['objet'] = [int(x0 + tx_.min()), int(y0 + ty_.min()), int(x0 + tx_.max() + 1), int(y0 + ty_.max() + 1)]
+        else: b['objet'] = None
+        b['main_xy'] = [float(main[0]), float(main[1])]
         b.update(enveloppe(b)); out.append(b)
     return sans_doublon(out, (H, W))
 
