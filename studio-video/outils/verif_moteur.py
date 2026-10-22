@@ -1361,6 +1361,28 @@ try:
 except Exception as e:
     echecs.append(f'série V1 : {e}')
 
+# 22/10/2026 — écarts de E00001 à la V1 : netteté personnage/décor 1,61 (V1 1,88) → profondeur de champ du décor (net au plan des
+# pieds, flou au loin) ; à-coups 5,9/min (V1 0,8), le plus fort sous la carte du sketch 2 posée sur Soumaila → carte douce sur un corps
+try:
+    sys.path.insert(0, os.path.join(ICI, 'moteur-troupe')); import harmonie as _h54, ast as _ast54
+    _ech54 = (np.indices((120, 160)).sum(0) % 2 * 255).astype(np.uint8); _pl54 = np.dstack([_ech54] * 3)
+    _dep54 = np.tile(np.linspace(0.0, 1.0, 120, dtype=np.float32)[:, None], (1, 160))   # haut loin, bas près (pieds à 0,9)
+    _o54 = _h54.profondeur_de_champ(_pl54, _dep54, 0.9, 1.4)
+    _lap54 = lambda im: float(np.abs(cv2.Laplacian(im[..., 0].astype(np.float32), cv2.CV_32F)).mean())
+    _loin54, _pres54 = _lap54(_o54[5:30]) / _lap54(_pl54[5:30]), _lap54(_o54[104:112]) / _lap54(_pl54[104:112])
+    _t54 = open(os.path.join(ICI, 'moteur-troupe', 'tourne.py'), encoding='utf-8').read()
+    _f54 = [n for n in _ast54.parse(_t54).body if isinstance(n, _ast54.FunctionDef) and n.name == 'carte_sur_corps'][0]
+    _ns54 = {'CH': 1000}; exec(compile(_ast54.Module(body=[_f54], type_ignores=[]), 'tourne.py', 'exec'), _ns54)
+    _sur54 = _ns54['carte_sur_corps']((300, 200, 400, 140), [(250, 300, 330, 390)])    # buste sous la carte
+    _hors54 = _ns54['carte_sur_corps']((300, 150, 400, 140), [(620, 500, 680, 570)])   # personnage loin à droite
+    if not (_loin54 < 0.5 and _pres54 > 0.9):
+        echecs.append(f'profondeur de champ : loin {_loin54:.2f} (< 0,5 attendu), plan des pieds {_pres54:.2f} (> 0,9 attendu)')
+    elif not (_sur54 and not _hors54) or 'doux=PLACES[cle_][1]' not in _t54 or 'harmonie.profondeur_de_champ' not in _t54:
+        echecs.append(f'carte sur un corps : douce {_sur54}, hors des corps {_hors54} — ou carte douce / profondeur de champ non branchées')
+    else: print(f'profondeur de champ (netteté gardée {_pres54:.2f} au plan des pieds, {_loin54:.2f} au loin), carte douce sur un corps : OK')
+except Exception as e:
+    echecs.append(f'profondeur de champ / carte douce : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

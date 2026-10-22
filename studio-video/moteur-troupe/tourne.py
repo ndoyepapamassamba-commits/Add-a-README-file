@@ -35,7 +35,7 @@
 # Réglages (montage.json → "reglages") : plan_s, cam_px, pousse (travelling avant par plan), parallaxe, jeu_gain, corps, whip_s, ouverture, decor, gestes, carte_sur_scene, rig.
 # python3 tourne.py montage.json sortie_dir
 import json, math, os, sys, zlib, numpy as np, cv2
-import decor_vivant, entites, gestes, linge, rig2d, regard, expressions, expressions_lp, jeu, memo, prepare_rig, vie_fond
+import decor_vivant, entites, gestes, harmonie, linge, rig2d, regard, expressions, expressions_lp, jeu, memo, prepare_rig, vie_fond
 import poses_dessinees as PD   # gestes dessinés : animation pose à pose (17/10/2026)
 # 60 IMAGES PAR SECONDE (18/10/2026, « on doit aller à 60 images par seconde pour améliorer la fluidité ») : chaque image est
 # tournée à son instant exact (bouche, regard, décor, bêtes, caméra) ; 30 i/s par défaut depuis le 19/10/2026 (accord de
@@ -327,6 +327,13 @@ for sk in T['sketchs']:
             Lp_ = (json.load(open(f'{d}/genese.json')).get('L') if os.path.isfile(f'{d}/genese.json') else None) or \
                   entites.physique.lumiere(img, [(A_['mask'] if A_['mask'].ndim == 2 else A_['mask'][..., 0], A_['bbox'], not A_.get('assis')) for A_ in acts.values()])
             plate = memo.memo(vie_fond.ombres_peintes, img, plate, Lp_, [A_['mask'] for A_ in acts.values()], _deps=('linge.py',))   # SAM : 15 s → 0 au 2e tour
+        # en essai (22/10/2026) : coupée par défaut tant que l'essai du salon n'a pas montré qu'aucune mesure V1 ne recule
+        # (PDC_SIGMA=1.4 pour l'essai) ; la profondeur de champ floute le décor, qui pourrait sembler moins vivant au flux
+        if prof_ is not None and REG.setdefault('pdc', float(os.environ.get('PDC_SIGMA', '0'))) > 0:
+            # PROFONDEUR DE CHAMP (22/10/2026, écart à la V1 « netteté des personnages / décor autour » 1,23–1,61 contre 1,88) : le
+            # décor se floute selon sa distance au plan des pieds des acteurs (Depth Anything V2 déjà calculée), une fois par scène
+            pieds_ = [float(prof_[min(img.shape[0] - 1, int(A_['bbox'][3]) - 2), min(img.shape[1] - 1, max(0, int((A_['bbox'][0] + A_['bbox'][2]) / 2)))]) for A_ in acts.values()]
+            plate = harmonie.profondeur_de_champ(plate, prof_, float(np.median(pieds_)) if pieds_ else 0.6, REG['pdc'])
         _PREP[d] = (S, img, plate, betes, acts, prof_, kpar, vie, lin, vf, xs_, ys_)
     n_ent = int((REG.get('entites') or {}).get(sk['id'], 0))   # bêtes du décor (poules) : nombre choisi par sketch dans le montage
     ents = betes or (entites.prepare(d, img.shape[0], img.shape[1], [(A_['bbox'], not A_.get('assis')) for A_ in acts.values()], n=n_ent, lieu=sk.get('lieu')) if n_ent else [])
@@ -1056,14 +1063,14 @@ def in_card(t):
 from PIL import Image as PImage, ImageDraw, ImageFont
 EMO = {'addition': 'emoji/face_with_tears_of_joy.png', 'poulet': 'emoji/face_screaming_in_fear.png'}
 FONT = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/fonts/Montserrat.ttf'
-def carte(c, t, rgba=False, place=None):
+def carte(c, t, rgba=False, place=None, doux=False):
     """place : (centre x de l'émoji, centre y de l'émoji, haut du titre, taille de base de l'émoji) — par défaut l'émoji au
-    centre en haut et le titre dessous (cartes de Ladjagaï)."""
+    centre en haut et le titre dessous (cartes de Ladjagaï). doux : carte posée sur un personnage (voir sur_scene)."""
     if rgba and os.environ.get('CARTES_FX', '1') == '1':   # cartes redessinées (cartes_fx.py, 18/10/2026)
         import cartes_fx
         ids_ = [k_['id'] for k_ in H_['sketchs']]; rang_ = ids_.index(c['apres']) + 1 if c['apres'] in ids_ else 1
         titre_ = [k_ for k_ in H_['sketchs'] if k_['id'] == c['apres']][0]['titre'].upper()
-        return cartes_fx.carte(CW, CH, t - c['t0'], titre_, rang_, len(ids_), place or (CW / 2, 145, 290, 210))
+        return cartes_fx.carte(CW, CH, t - c['t0'], titre_, rang_, len(ids_), place or (CW / 2, 145, 290, 210), doux=doux)
     im = PImage.new('RGBA' if rgba else 'RGB', (CW, CH), (0, 0, 0, 0) if rgba else (0, 0, 0)); u = (t - c['t0']) / (c['t1'] - c['t0'])
     e = PImage.open(EMO.get(c['apres'], 'emoji/face_with_tears_of_joy.png')).convert('RGBA')
     ex, ey, ty, base = place or (CW / 2, 145, 290, 210)
@@ -1271,6 +1278,20 @@ def place_carte(c, visages):
         if best[0][0] == 0: break
     return best[1]
 PLACES = {}
+def carte_sur_corps(place, visages):
+    """CARTE POSÉE SUR UN CORPS → CARTE DOUCE (22/10/2026). E00001 à 19,3 s : la carte du sketch 2 sur le buste de Soumaila —
+    l'émoji 🤣 animé qui roule d'un côté puis de l'autre et les deux satellites qui glissent en sens contraires faisaient repartir
+    le mouvement mesuré sur le corps en sens inverse (−51 puis +24 px/s : l'à-coup le plus fort de l'épisode ; 5,9 à-coups par
+    minute contre 0,8 dans la V1, qui posait ses cartes sur le décor). Le mode doux de cartes_fx (entrée sans rebond, émoji tenu,
+    satellites en fondu à leur place) existait depuis le 21/10 mais le moteur V1 ne le demandait jamais. Corps approché par la
+    boîte du visage élargie d'une largeur de visage de chaque côté, jusqu'au bas de l'image ; zone de la carte : soleil de
+    rayons (2 R) et satellites."""
+    ex, ey, ty, base = place; R = 0.5 * 1.32 * base
+    zx0, zy0, zx1, zy1 = ex - 2.2 * R, ey - 2.0 * R, ex + 2.2 * R, ey + 2.0 * R
+    for v in visages:
+        fw = v[2] - v[0]; bx0, by0, bx1, by1 = v[0] - fw, v[1], v[2] + fw, CH
+        if min(zx1, bx1) > max(zx0, bx0) and min(zy1, by1) > max(zy0, by0): return True
+    return False
 def sur_scene(img, c, t, visages=()):
     """la carte posée sur la fin du sketch : image assombrie qui continue de vivre, émoji + titre par-dessus. Fondu de 0,6 s :
     à 0,25 s l'instrument des TikTok le comptait encore comme une coupe (mesuré le 17/10 sur v19)."""
@@ -1278,8 +1299,8 @@ def sur_scene(img, c, t, visages=()):
     # posé sur les visages faisait un « fantôme » (rendu abîmé 0,85) et le titre translucide était illisible (22 images) :
     # émoji et titre entrent opaques sur la coupe (comme les cartes de Ladjagaï), seul l'assombrissement du décor se fond (0,15 s)
     cle_ = round(c['t0'], 2)
-    if cle_ not in PLACES: PLACES[cle_] = place_carte(c, visages)
-    k = ease((t - (c['t0'] - 0.05)) / 0.15); cal = carte(c, t, rgba=True, place=PLACES[cle_]).astype(np.float32)
+    if cle_ not in PLACES: PLACES[cle_] = (place_carte(c, visages), carte_sur_corps(place_carte(c, visages), visages))
+    k = ease((t - (c['t0'] - 0.05)) / 0.15); cal = carte(c, t, rgba=True, place=PLACES[cle_][0], doux=PLACES[cle_][1]).astype(np.float32)
     a_ = cal[..., 3:] / 255.0; cal = cal[..., :3]                                       # émoji et titre (contour noir compris)
     base = img.astype(np.float32) * (1 - 0.35 * k)
     return np.clip(base * (1 - a_) + cal * a_, 0, 255).astype(np.uint8)
