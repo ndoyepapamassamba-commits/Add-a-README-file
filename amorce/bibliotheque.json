@@ -1,0 +1,15 @@
+{
+ "nom": "bibliotheque",
+ "parts": [
+  {
+   "fichier": "bibliotheque.000.msb",
+   "octets": 90000000,
+   "sha256": "9dc3541a60598771c61e138882c1c84227c721606329909d557f1c79b27dbd71"
+  },
+  {
+   "fichier": "bibliotheque.001.msb",
+   "octets": 8324480,
+   "sha256": "14ca293b9ecc10fa5f0f2e06740ba87d9db875944b3ab6767da5c86b01cdd9ff"
+  }
+ ]
+}

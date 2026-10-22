@@ -1,0 +1,90 @@
+{
+ "nom": "modeles",
+ "parts": [
+  {
+   "fichier": "modeles.000.msb",
+   "octets": 90000000,
+   "sha256": "190c2022005054bc182b23424915726faed6e4b21a21be339292f65aa141d7d0"
+  },
+  {
+   "fichier": "modeles.001.msb",
+   "octets": 90000000,
+   "sha256": "ff409a99c654978bc1bb22e63c02fd2e75f2203b3b24aecc47a6100706c7b182"
+  },
+  {
+   "fichier": "modeles.002.msb",
+   "octets": 90000000,
+   "sha256": "feb5df84b1ad1e2eae9bb40e5adadc6d9faa0f5664aba73241125262035b832d"
+  },
+  {
+   "fichier": "modeles.003.msb",
+   "octets": 90000000,
+   "sha256": "a7bb54d9f30fe4ed77d9eba634b2132ff616ee96708bee8df9886813549c8e79"
+  },
+  {
+   "fichier": "modeles.004.msb",
+   "octets": 90000000,
+   "sha256": "6865fa5d4df9c2860b5e25478cd1bbb11ee7bcc762f1fa199a727d6615434a66"
+  },
+  {
+   "fichier": "modeles.005.msb",
+   "octets": 90000000,
+   "sha256": "d888679d410774098b1d4c153cc684419b74db001e1a19dd6136597f92d26e8b"
+  },
+  {
+   "fichier": "modeles.006.msb",
+   "octets": 90000000,
+   "sha256": "8bde3c411387d5cbba7ba0da45e02dadaf3d7958c28dd630e231448b39bcb358"
+  },
+  {
+   "fichier": "modeles.007.msb",
+   "octets": 90000000,
+   "sha256": "2faa5075db99b625355f80b78b51082a62aeda1e2fb380cc48669df913a9e19d"
+  },
+  {
+   "fichier": "modeles.008.msb",
+   "octets": 90000000,
+   "sha256": "649fb76f01d8bc677099817ae7c16359184b692c7e11236000493b3393438f51"
+  },
+  {
+   "fichier": "modeles.009.msb",
+   "octets": 90000000,
+   "sha256": "62307a413e0b0ef04df035cb900c94cfbc4a2e5159eec8c0e514072670f7bca9"
+  },
+  {
+   "fichier": "modeles.010.msb",
+   "octets": 90000000,
+   "sha256": "e68ba4879cef96fcadf74b7ffbeeaeab8fbc7c4e59d86bf6fcf94c853d3801f7"
+  },
+  {
+   "fichier": "modeles.011.msb",
+   "octets": 90000000,
+   "sha256": "875030208de819b53ce91afe4cb25008c942262a2809cca521166616560ff47a"
+  },
+  {
+   "fichier": "modeles.012.msb",
+   "octets": 90000000,
+   "sha256": "a538fd76ac19449313cbaaab396d82e4c01fa4c34ecc7a990c7ea9544591f084"
+  },
+  {
+   "fichier": "modeles.013.msb",
+   "octets": 90000000,
+   "sha256": "4248349202afec20a6ad03f47045f64f197757b976abf8f3868fe9f7db145b8e"
+  },
+  {
+   "fichier": "modeles.014.msb",
+   "octets": 90000000,
+   "sha256": "e287beafda3b9ada8f89eb446bf46f9c176b1616ee1db48dcb9cbd0b44aa99d8"
+  },
+  {
+   "fichier": "modeles.015.msb",
+   "octets": 90000000,
+   "sha256": "317bfae8fc4bf00b27fb86379878c6ff258aeb8a6d4ad08b98ee8fc6a1cfa7ef"
+  },
+  {
+   "fichier": "modeles.016.msb",
+   "octets": 70768640,
+   "sha256": "cbe798011ce50230f572c601c3521e855b896f5e3c95a1d307d3d6b9a003403d"
+  }
+ ]
+}
