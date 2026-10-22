@@ -125,9 +125,11 @@ jobs:
           PIPER_VOICES: ${{ env.MASSAMBA_MODELS }}/piper/
           JUGE_LOCAL: ${{ env.MASSAMBA_MODELS }}/juge-local
           FABRIQUE_CADENCE: ${{ inputs.videos }}
-          # 22/10/2026 : 50 min par marche (et non 290) — la marche suivante part à l'heure suivante ; les épisodes sont scellés et
-          # publiés chaque heure au lieu d'attendre 5 h, et une panne de machine ne perd qu'une heure de travail
-          FABRIQUE_MINUTES: '50'
+          # 22/10/2026 : 290 min par marche — GitHub ne déclenche la marche programmée « horaire » que toutes les 3 à 6 h (13:44,
+          # 18:35, 22:18, 01:28, 07:30 relevés) ; une marche longue garde la production presque continue (le déclenchement suivant
+          # attend dans la file de concurrence pendant qu'elle tourne). L'essai de marches de 50 min (marche n° 20 : 6 épisodes)
+          # laissait la fabrique à l'arrêt entre deux déclenchements.
+          FABRIQUE_MINUTES: '290'
           OMP_NUM_THREADS: '1'
           TOURNE_PROCS: '4'
           GITHUB_TOKEN: ${{ github.token }}
