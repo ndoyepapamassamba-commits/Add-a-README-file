@@ -9,6 +9,10 @@
 #   1. pas de clé publiée → crée la paire de clés depuis la phrase (si le secret existe) ;
 #   2. coffre absent → attend l'amorce (bibliothèque scellée versée par la machine de départ) ;
 #   3. réserve de vidéos insuffisante → journée de production (autopilot.py jour), scellement, publication.
+# 21/10/2026 — MOTEUR DE LA V1 (config.json « moteur »: « v1 ») : « si demain je ne suis pas autonome avec tout bouclé avec
+# les 10000 vidéos j'arrêterai » ; « fabriqué d'avance à ma disposition ». La machine fabrique D'AVANCE à chaque marche
+# (réserve de sketchs × scènes préparées de la troupe neuve, serie_v1.py), sans attendre qu'un créneau se libère ; le rendu
+# des corps passe par EGL (Mesa) comme sur la machine de production ; paquets relevés par traçage d'un épisode complet.
 name: Fabrique MASSAMBA
 on:
   schedule:
@@ -18,12 +22,14 @@ on:
       videos: { description: 'Vidéos par jour (1 à 6, vide = config.json)', default: '' }
   push:
     branches: [fabrique-amorce]
-permissions: { contents: write }
+permissions: { contents: write, models: read }
 concurrency: { group: fabrique, cancel-in-progress: false }
 env:
   CODE: claude/relaxed-noether-svkgiu          # branche du moteur
   BIBLIO: ${{ github.workspace }}/../bibliotheque
-  MASSAMBA_MODELS: ${{ github.workspace }}/../modeles
+  # 22/10/2026 : les modules lisent ~/.cache/massamba-models en dur (ambiance, rires, émojis, BEAT2, juge local…) — le coffre s'ouvre
+  # au même endroit que sur la machine de production ; liste des modèles relevée par traçage d'un épisode à froid (1,5 Go)
+  MASSAMBA_MODELS: /home/runner/.cache/massamba-models
 jobs:
   amorce:
     if: github.event_name == 'push'
@@ -63,8 +69,10 @@ jobs:
           p = '../site/etat-public.json'; E = json.load(open(p)) if os.path.isfile(p) else {}
           maintenant = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='minutes')
           a_venir = [c for c in E.get('creneaux_a_venir', []) if c > maintenant]
-          cadence = int(os.environ.get('INPUT_VIDEOS') or json.load(open('studio-video/fabrique/config.json'))['cadence'])
-          print('faire=' + ('produire' if len(a_venir) < cadence or os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch' else 'rien'))
+          C = json.load(open('studio-video/fabrique/config.json'))
+          cadence = int(os.environ.get('INPUT_VIDEOS') or C['cadence'])
+          avance = C.get('moteur') == 'v1'   # production d'avance : la réserve de vidéos n'a pas de plafond
+          print('faire=' + ('produire' if avance or len(a_venir) < cadence or os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch' else 'rien'))
           EOF
       - uses: actions/setup-python@v5
         if: steps.etat.outputs.faire == 'cles' || steps.etat.outputs.faire == 'produire'
@@ -78,7 +86,7 @@ jobs:
       - name: Logiciels du moteur
         if: steps.etat.outputs.faire == 'produire'
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg libegl1 libegl-mesa0 libgl1-mesa-dri > /dev/null
           pip install -q -r studio-video/fabrique/requirements.txt
       - name: Ouvrir le coffre (bibliothèque, modèles, état)
         if: steps.etat.outputs.faire == 'produire'
@@ -97,7 +105,12 @@ jobs:
           MASSAMBA_BIBLIO: ${{ env.BIBLIO }}
           MASSAMBA_TROUPE: ${{ env.BIBLIO }}/troupe
           PIPER_VOICES: ${{ env.MASSAMBA_MODELS }}/piper/
+          JUGE_LOCAL: ${{ env.MASSAMBA_MODELS }}/juge-local
           FABRIQUE_CADENCE: ${{ inputs.videos }}
+          FABRIQUE_MINUTES: '290'
+          OMP_NUM_THREADS: '1'
+          TOURNE_PROCS: '4'
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           cd studio-video/moteur-troupe
           python3 autopilot.py jour 2>&1 | grep -vE "onnxruntime|W0000|I0000|XNNPACK" | tail -300
