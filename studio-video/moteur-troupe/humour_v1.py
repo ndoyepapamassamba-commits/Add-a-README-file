@@ -14,9 +14,16 @@ CONSIGNE = ("Voici deux sketchs comiques, A et B, pour {pub}.\n\nSKETCH A :\n{a}
 _PIEGE = {}; _VERROU = threading.Lock()
 
 
-def _vote(a, b):
-    t = H.llm(CONSIGNE.format(pub=PUBLIC, a=H.script(a), b=H.script(b)), temp=0.0, juge=True).strip().upper()
-    return 'A' if t.startswith('A') else 'B' if t.startswith('B') else None
+def _vote(a, b, essais=3):
+    """'A', 'B' ou None. 22/10/2026 : un appel perdu (service gratuit saturé : piège à 4/6 en 294 s, puis 6/6 en 36 s sur les
+    mêmes questions) n'est pas une mauvaise réponse — chaque vote est redemandé jusqu'à 3 fois."""
+    for _ in range(essais):
+        try:
+            t = H.llm(CONSIGNE.format(pub=PUBLIC, a=H.script(a), b=H.script(b)), temp=0.0, juge=True).strip().upper()
+        except Exception:
+            continue
+        if t[:1] in ('A', 'B'): return t[:1]
+    return None
 
 
 def sans_chute(v):
@@ -31,12 +38,13 @@ def juge_fiable():
     """le juge préfère-t-il la V1 à la V1 sans chute (≥ 5 fois sur 6) ? Une fois par processus."""
     with _VERROU:
         if 'ok' not in _PIEGE:
-            bons = 0
+            bons = repondus = 0
             for v in H.V17:
-                try:
-                    p = sans_chute(v); bons += (_vote(v, p) == 'A') + (_vote(p, v) == 'B')
-                except Exception: pass
-            _PIEGE.update(ok=bons >= 5, bons=bons)
+                p = sans_chute(v)
+                for r, att in ((_vote(v, p), 'A'), (_vote(p, v), 'B')):
+                    if r is not None: repondus += 1; bons += r == att
+            # fiable : au moins 5 réponses sur 6 et aucune erreur parmi elles au-delà d'une
+            _PIEGE.update(ok=repondus >= 5 and bons >= repondus - 1 and bons >= 5, bons=bons, repondus=repondus)
         return _PIEGE['ok']
 
 
@@ -46,10 +54,7 @@ def plancher(sk):
     gagnes = sur = 0
     for v in H.V17:
         for a, b, moi in ((sk, v, 'A'), (v, sk, 'B')):
-            try:
-                r = _vote(a, b)
-            except Exception:
-                continue
+            r = _vote(a, b)
             if r is None: continue
             sur += 1; gagnes += r == moi
     return round(gagnes / sur, 3) if sur >= 4 else None
