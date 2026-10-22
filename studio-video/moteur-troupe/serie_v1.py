@@ -24,11 +24,33 @@ VIDES = {'AVEC', 'DANS', 'POUR', 'MAIS', 'TOUT', 'TOUS', 'TOUTE', 'AUSSI', 'COMM
          'PLUS', 'VOTRE', 'NOTRE', 'LEUR', 'LEURS', 'QUAND', 'AVANT', 'APRÈS', 'FAIT', 'FAIS', 'FAUT', 'VAIS', 'VEUX', 'PEUX'}
 
 
+_VERROU_STOCK = __import__('threading').Lock()
+
+
 def _maintenant(): return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
 
 
 def reserve():
     return json.load(open(STOCK, encoding='utf-8'))['sketchs'] if os.path.isfile(STOCK) else []
+
+
+def fusionne_lots():
+    """sketchs livrés à part (stock/lots/*.json, par ex. ceux des scènes neuves posées dans le coffre) versés dans la réserve,
+    sans doublon d'identifiant ni perte des scores déjà gardés. 22/10/2026 : l'état scellé de la fabrique (qui porte la réserve
+    et son journal) est ouvert APRÈS le coffre — un lot à part n'écrase rien et n'est pas écrasé. Renvoie le nombre ajouté."""
+    D = os.path.join(BIBLIO, 'stock', 'lots')
+    if not os.path.isdir(D): return 0
+    with _VERROU_STOCK:
+        St = json.load(open(STOCK, encoding='utf-8')) if os.path.isfile(STOCK) else {'sketchs': []}
+        ids = {s['id'] for s in St['sketchs']}; n = 0
+        for f in sorted(os.listdir(D)):
+            if not f.endswith('.json'): continue
+            for s in json.load(open(os.path.join(D, f), encoding='utf-8')).get('sketchs', []):
+                if s['id'] not in ids: St['sketchs'].append(s); ids.add(s['id']); n += 1
+        if n:
+            os.makedirs(os.path.dirname(STOCK), exist_ok=True); tmp = STOCK + '.tmp'
+            json.dump(St, open(tmp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1); os.replace(tmp, STOCK)
+    return n
 
 
 def journal():
@@ -199,9 +221,6 @@ def un_episode(journal_=print):
 def _essai_plancher(module, sk):
     try: return module.plancher(sk)
     except Exception: return None
-
-
-_VERROU_STOCK = __import__('threading').Lock()
 
 
 def garde_humour(hum):

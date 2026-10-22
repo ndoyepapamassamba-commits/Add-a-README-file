@@ -180,6 +180,8 @@ def jour(n=None, journal=print):
     if config().get('moteur') == 'v1':
         import serie_v1
         t0 = time.time(); lim = float(os.environ.get('FABRIQUE_MINUTES', '300')) * 60; faits = []; rechargee = False
+        n_lots = serie_v1.fusionne_lots()
+        if n_lots: journal(f'réserve : {n_lots} sketch(s) des lots neufs versés')
         while True:
             moy = (serie_v1.etat()['minutes_par_episode'] or 20) * 60
             if time.time() - t0 + 1.2 * moy > lim: journal('temps de la machine bientôt écoulé : arrêt propre'); break

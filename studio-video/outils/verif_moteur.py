@@ -1397,9 +1397,15 @@ try:
         _tout57 = [e[2] for e in _s57.episodes_faits()] + _suite57
         _viol57 = [k for k in range(1, len(_tout57)) if _tout57[k] & (_tout57[k - 1] | (_tout57[k - 2] if k >= 2 else set()))]
         _n57 = _s57.suite_possible()
+        # sketchs des scènes neuves livrés à part (stock/lots) : versés une fois, sans doublon ni perte de score
+        os.makedirs(os.path.join(_d57, 'stock', 'lots'))
+        json.dump({'sketchs': [{'id': 's0-0'}, {'id': 'neuf-1', 'image': 'neuf', 'acteurs': ['N1', 'N2']}]}, open(os.path.join(_d57, 'stock', 'lots', 'l.json'), 'w'))
+        _lot57 = (_s57.fusionne_lots(), _s57.fusionne_lots(), len(_s57.reserve()))
     os.environ.pop('MASSAMBA_BIBLIO', None); sys.modules.pop('serie_v1', None)
     if _ch57 != ['s6', 's7', 's8']:
         echecs.append(f'variété : le choix reprend un personnage ou un décor des 2 épisodes précédents ({_ch57})')
+    elif _lot57 != (1, 0, 21):
+        echecs.append(f'variété : lots de sketchs neufs mal versés dans la réserve ({_lot57})')
     elif _viol57 or len(_suite57) != 4 or _n57 != 4:
         echecs.append(f'variété : suite simulée fautive (personnages repris aux épisodes {_viol57}, {len(_suite57)} épisodes, état {_n57})')
     else: print(f'variété : aucun personnage ni décor repris sur 3 épisodes voisins ({len(_tout57)} épisodes simulés), scène la plus ancienne d\'abord : OK')
