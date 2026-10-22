@@ -5,8 +5,10 @@
 import type {
   AttestationRecord,
   CourseAsset,
+  CourseAssetInfo,
   FunnelRow,
   LeadRow,
+  ManualHoldParams,
   OrderRow,
   OrderStatus,
   PayoutRow,
@@ -41,13 +43,18 @@ export const PAID_ORDER_PATCH_KEYS: ReadonlySet<string> = new Set(["template"]);
 export const RECENT_ORDERS_LIMIT = 50;
 export const RECENT_PAYOUTS_LIMIT = 30;
 export const EVENT_RETENTION_DAYS = 30;
+/** The Wave notification text (payer name and number) and the payer phone: 30 days after the detection. */
+export const NOTIFICATION_RETENTION_DAYS = 30;
 const DAY_MS = 86_400_000;
 
 const ms = (iso: string) => Date.parse(iso);
 const iso = (t: number | string) => new Date(t).toISOString();
 
-/** Same checks as the tcv.course_assets columns. */
-export const COURSE_ASSET_NAME_RE = /^[a-z0-9_]+\/[a-z0-9][a-z0-9._\/-]{0,150}$/;
+/** Same checks as the tcv.course_assets name column (plus no "..", no "//", no trailing "/"). */
+export const COURSE_ASSET_NAME_RE = /^[a-z0-9_]+\/[A-Za-z0-9._\/-]{1,150}$/;
+export function isCourseAssetName(name: string): boolean {
+  return COURSE_ASSET_NAME_RE.test(name) && !name.includes("..") && !name.includes("//") && !name.endsWith("/");
+}
 const ATTESTATION_CODE_RE = /^[0-9a-f]{12}$/;
 
 interface Bucket {
@@ -124,6 +131,11 @@ export class MemoryStore implements Store {
     if (this.events.has(eventId)) return false;
     this.events.set(eventId, { type, ref, payload: structuredClone(payload), createdAt: new Date().toISOString() });
     return true;
+  }
+
+  async peekRateLimit(key: string, windowSeconds: number, nowIso: string): Promise<number> {
+    const b = this.rateLimits.get(key);
+    return b && b.windowStart > ms(nowIso) - windowSeconds * 1000 ? b.count : 0;
   }
 
   async hitRateLimit(key: string, windowSeconds: number, max: number, nowIso: string): Promise<boolean> {
@@ -218,6 +230,16 @@ export class MemoryStore implements Store {
       });
       count++;
     }
+    // The notification text names the payer: 30 days after the detection, whatever the order (a paid course order
+    // stays 730 days). Not counted as a purge.
+    const notificationBefore = now - NOTIFICATION_RETENTION_DAYS * DAY_MS;
+    for (const o of this.orders.values()) {
+      const personal = o.payment_detected_text !== null || o.manual_payer_phone !== null;
+      if (personal && ms(o.payment_detected_at ?? o.paid_at ?? o.created_at) < notificationBefore) {
+        o.payment_detected_text = null;
+        o.manual_payer_phone = null;
+      }
+    }
     // Like tcv_purge: old events keep their id (duplicate detection) but lose their payload; rate-limit
     // buckets (hashed key + counter) are left alone.
     for (const e of this.events.values()) if (ms(e.createdAt) < now - EVENT_RETENTION_DAYS * DAY_MS) e.payload = null;
@@ -283,28 +305,43 @@ export class MemoryStore implements Store {
     return structuredClone({ ...stats, lastPhoneNotificationAt: phoneTimes.at(-1) ?? null });
   }
 
-  async assignManualAmount(id: string, base: number, maxOffset: number, sinceIso: string): Promise<number | null> {
+  async holdManualAmount(id: string, p: ManualHoldParams): Promise<number | null> {
     const o = this.orders.get(id);
     if (!o) return null;
-    if (o.manual_amount !== null) return o.manual_amount;
-    const since = ms(sinceIso);
-    const used = new Set(
+    if (o.status === "paid") return o.manual_amount;
+    const unpaidSince = ms(p.unpaidSinceIso);
+    const paidSince = ms(p.paidSinceIso);
+    const now = iso(p.nowIso);
+    if (o.manual_amount !== null && isOpenManual(o) && heldSince(o) > unpaidSince) {
+      o.manual_amount_at = now;
+      return o.manual_amount;
+    }
+    const held = new Set(
       [...this.orders.values()]
-        .filter((x) => x.id !== id && isOpenManual(x) && x.manual_amount !== null && ms(x.created_at) > since)
+        .filter((x) => x.id !== id && x.manual_amount !== null && holdsAmount(x, unpaidSince, paidSince))
         .map((x) => x.manual_amount),
     );
-    for (let k = 1; k <= maxOffset && base - k > 0; k++) {
-      if (!used.has(base - k)) {
-        o.manual_amount = base - k;
-        return o.manual_amount;
-      }
+    // The amount this order showed before stays its amount when nobody took it meanwhile.
+    const previous = o.manual_amount;
+    const candidates: number[] = [];
+    if (previous !== null && previous < p.base && previous >= p.base - p.maxOffset && previous > 0) candidates.push(previous);
+    for (let k = 1; k <= p.maxOffset && p.base - k > 0; k++) candidates.push(p.base - k);
+    const free = candidates.find((v) => !held.has(v));
+    if (free !== undefined) {
+      o.manual_amount = free;
+      o.manual_amount_at = now;
+      return free;
     }
+    o.manual_amount = null;
+    o.manual_amount_at = null;
     return null;
   }
 
-  async listOpenManualOrders(sinceIso: string): Promise<OrderRow[]> {
-    const since = ms(sinceIso);
-    const rows = [...this.orders.values()].filter((o) => isOpenManual(o) && ms(o.created_at) > since).sort(byCreatedDesc);
+  async listHeldManualOrders(unpaidSinceIso: string): Promise<OrderRow[]> {
+    const since = ms(unpaidSinceIso);
+    const rows = [...this.orders.values()]
+      .filter((o) => isOpenManual(o) && o.purged_at === null && o.manual_amount !== null && heldSince(o) > since)
+      .sort(byCreatedDesc);
     return structuredClone(rows);
   }
 
@@ -323,11 +360,22 @@ export class MemoryStore implements Store {
 
   /** MemoryStore-only seeding (tests, dev.ts): the SQL side uploads through tcv_course_upload_* instead. */
   async putCourseAsset(name: string, mime: string, bytes: Uint8Array): Promise<CourseAsset> {
-    if (!COURSE_ASSET_NAME_RE.test(name) || name.includes("..")) throw new Error(`invalid course asset name ${name}`);
+    if (!isCourseAssetName(name)) throw new Error(`invalid course asset name ${name}`);
     if (mime.length < 3 || mime.length > 120) throw new Error(`invalid mime for ${name}`);
     const asset: CourseAsset = { name, mime, bytes: bytes.slice(), sha256: await sha256Bytes(bytes), updatedAt: iso(Date.now()) };
     this.courseAssets.set(name, asset);
     return { ...asset, bytes: asset.bytes.slice() };
+  }
+
+  async uploadCourseAsset(name: string, mime: string, bytes: Uint8Array): Promise<CourseAssetInfo> {
+    return assetInfo(await this.putCourseAsset(name, mime, bytes));
+  }
+
+  async listCourseAssets(prefix: string): Promise<CourseAssetInfo[]> {
+    return [...this.courseAssets.values()]
+      .filter((a) => a.name.startsWith(prefix))
+      .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+      .map(assetInfo);
   }
 
   async getCourseAsset(name: string): Promise<CourseAsset | null> {
@@ -396,9 +444,24 @@ export class MemoryStore implements Store {
   }
 }
 
-/** A manual order still waiting for its transfer (same filter as tcv_list_open_manual_orders). */
+/** A manual order still waiting for its transfer (same filter as tcv_list_held_manual_orders). */
 function isOpenManual(o: OrderRow): boolean {
   return (o.status === "checkout" || o.status === "awaiting_manual") && o.payment_method === null;
+}
+
+/** When the order's unique amount was last given or shown (rows from before 000007: their creation). */
+function heldSince(o: OrderRow): number {
+  return ms(o.manual_amount_at ?? o.created_at);
+}
+
+/** The order keeps its manual_amount away from other orders (same rule as tcv_hold_manual_amount). */
+function holdsAmount(o: OrderRow, unpaidSince: number, paidSince: number): boolean {
+  if (isOpenManual(o)) return heldSince(o) > unpaidSince;
+  return o.status === "paid" && o.paid_at !== null && ms(o.paid_at) > paidSince;
+}
+
+function assetInfo(a: CourseAsset): CourseAssetInfo {
+  return { name: a.name, mime: a.mime, size: a.bytes.byteLength, sha256: a.sha256, updated_at: a.updatedAt };
 }
 
 /** Most recent attempt first: max created_at, then max id (same rule as tcv_quiz_progress). */

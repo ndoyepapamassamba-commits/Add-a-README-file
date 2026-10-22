@@ -5,7 +5,7 @@ import { sha256Bytes } from "../lib/ids.ts";
 import { openTestDb, sqlStore } from "./fixtures/backend_pglite.ts";
 import type { TestDb } from "./fixtures/backend_pglite.ts";
 import { fixtureAssets } from "./fixtures/course_harness.ts";
-import { CHUNK_BYTES, MAX_STATEMENT_BYTES, MIME_TYPES, mimeFor, uploadIdFor } from "../../../../scripts/course-sql.mjs";
+import { CHUNK_BYTES, isInside, MAX_STATEMENT_BYTES, MIME_TYPES, mimeFor, uploadIdFor } from "../../../../scripts/course-sql.mjs";
 
 const SCRIPT = decodeURIComponent(new URL("../../../../scripts/course-sql.mjs", import.meta.url).pathname);
 const REPO = decodeURIComponent(new URL("../../../../", import.meta.url).pathname);
@@ -122,6 +122,22 @@ Deno.test({
   },
 });
 
+Deno.test("course-sql.mjs: isInside — a folder whose name starts with « .. » is still inside", () => {
+  const repo = "/home/user/Add-a-README-file";
+  const table: Array<[string, boolean]> = [
+    [repo, true],
+    [`${repo}/out`, true],
+    [`${repo}/..out`, true],
+    [`${repo}/..sql/x`, true],
+    [`${repo}/a/../..b`, true],
+    [`${repo}/..`, false],
+    [`${repo}/../other`, false],
+    ["/home/user/Add-a-README-file-2/out", false],
+    ["/tmp/out", false],
+  ];
+  for (const [p, inside] of table) assertEquals(isInside(p, repo), inside, p);
+});
+
 Deno.test("course-sql.mjs: refuses an output folder inside the repository, or a folder holding other files", async () => {
   const inside = `${REPO}supabase/functions/api/tests/fixtures/course-sql-out-must-not-exist`;
   const r = await runScript(COURSE_FIXTURE_DIR, inside);
@@ -130,6 +146,11 @@ Deno.test("course-sql.mjs: refuses an output folder inside the repository, or a 
   assertEquals(await Deno.stat(inside).then(() => true).catch(() => false), false, "nothing written");
   const viaDots = await runScript(COURSE_FIXTURE_DIR, `${REPO}supabase/../tmp-course-out`);
   assertEquals(viaDots.code, 1);
+  const dotted = `${REPO}..course-sql-out-must-not-exist`;
+  const dottedRun = await runScript(COURSE_FIXTURE_DIR, dotted);
+  assertEquals(dottedRun.code, 1, "a repo folder named « ..xxx » is inside the repository");
+  assertMatch(dottedRun.stderr, /refusing to write into the repository/);
+  assertEquals(await Deno.stat(dotted).then(() => true).catch(() => false), false, "nothing written");
   const busy = await Deno.makeTempDir({ prefix: "tcv-busy-" });
   await Deno.writeTextFile(`${busy}/notes.txt`, "keep me");
   const refused = await runScript(COURSE_FIXTURE_DIR, busy);

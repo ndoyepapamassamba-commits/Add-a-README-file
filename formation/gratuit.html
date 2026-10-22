@@ -73,7 +73,7 @@
 <main id="main">
   <div class="page-head">
     <div class="wrap">
-      <p class="eyebrow">Module gratuit <span class="dot" aria-hidden="true">·</span> Power Query <span class="dot" aria-hidden="true">·</span> Édition UEMOA</p>
+      <p class="eyebrow">Module gratuit <span class="dot" aria-hidden="true">·</span> Power Query</p>
       <h1>Calculer l'ancienneté des impayés avec Power Query</h1>
       <p>Un extrait en accès libre de la formation «&nbsp;Power Query pour le reporting bancaire&nbsp;»&nbsp;: à partir d'une petite extraction de prêts, calculez les jours de retard à la date d'arrêté et regroupez les impayés par tranche d'ancienneté, sans aucune formule à recopier chaque mois.</p>
       <p class="meta">Données 100&nbsp;% fictives · Excel 2016 ou plus récent, ou Microsoft 365</p>
@@ -87,6 +87,7 @@
         <p><strong>Le jeu de données de l'exemple</strong><br><span class="muted small">exemple-impayes.csv · 15 prêts · séparateur point-virgule · données fictives</span></p>
         <a class="btn btn-outline" href="gratuit/exemple-impayes.csv" download><span class="btn-label">Télécharger les données</span></a>
       </div>
+      <p class="callout-free-origin">Ce module gratuit reprend, sur un petit jeu de données, une partie du <strong>module&nbsp;5</strong> de la formation complète, qui traite la balance âgée sur 3&nbsp;arrêtés mensuels&nbsp;: tranches lues dans un tableau Excel, croisement agence × produit, matrice de transition. <a href="index.html#programme">Voir le programme</a></p>
 
 <!-- GRATUIT:DEBUT -->
 <section class="module module-free" data-module="0">
@@ -351,7 +352,7 @@ in
 </div>
 <details class="solution"><summary>Voir la solution</summary>
 <p>Seule la ligne <code>DateArrete</code> change&nbsp;: <code>DateArrete = #date(2026, 10, 31),</code> (ou la date écrite dans la formule de l'étape&nbsp;2, si vous avez construit la requête par l'interface). Chaque prêt en retard gagne 31&nbsp;jours&nbsp;: EX-002 passe de 30 à 61&nbsp;jours (T3), EX-005 de 26 à 57 (T3), EX-012 de 90 à 121 (T4), EX-004 de 255 à 286 (T5, inchangé) et EX-014 de 360 à 391 (T6). <code>Table.Group</code> ne crée une ligne que pour les tranches présentes dans les données&nbsp;: une tranche sans prêt ce mois-là disparaît de l'état. Dans un état mensuel, c'est un piège&nbsp;: les formules et les graphiques qui pointaient sur «&nbsp;la deuxième ligne&nbsp;» se décalent. Remettez ensuite <code>#date(2026, 9, 30)</code>.</p>
-</div>
+</details>
 </div>
 
 <h2 id="m0-erreurs">Erreurs fréquentes</h2>
@@ -396,8 +397,8 @@ in
 
       <div class="cta-band cta-after-author">
         <div>
-          <h2>La formation complète, en 8 modules</h2>
-          <p>8 modules, des classeurs d'exercices corrigés, des données fictives sur plusieurs arrêtés mensuels, un quiz final et une attestation de suivi (non diplômante).</p>
+          <h2>La formation complète, en 8&nbsp;modules</h2>
+          <p>8&nbsp;modules, 51&nbsp;exercices corrigés, environ 13&nbsp;h de travail, des données fictives sur 3&nbsp;arrêtés mensuels, un quiz final et une attestation de suivi (non diplômante). <strong>25&nbsp;000&nbsp;FCFA</strong>, paiement unique.</p>
         </div>
         <a class="btn btn-light btn-lg" href="index.html"><span class="btn-label">Découvrir la formation complète</span><span class="arrow" aria-hidden="true">→</span></a>
       </div>

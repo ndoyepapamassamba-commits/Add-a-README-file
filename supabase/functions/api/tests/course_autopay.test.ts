@@ -3,9 +3,11 @@
 // unlocks nothing. Document products keep their rounded-up near match.
 import { assert, assertEquals } from "jsr:@std/assert@1.0.13";
 import { HIGH_TICKET_MIN_AMOUNT, matchManualOrder, NEAR_MATCH_WINDOW_MS } from "../lib/autopay.ts";
-import { ADMIN_KEY, createOrder, MIN, orderRow, T0 } from "./fixtures/backend_harness.ts";
-import { courseCheckout, courseHarness, createCourseOrder, notify, RETURN_BASE } from "./fixtures/course_harness.ts";
-import type { OrderRow } from "../lib/types.ts";
+import { ADMIN_KEY, createOrder, DAY, HOUR, MIN, orderRow, T0 } from "./fixtures/backend_harness.ts";
+import type { Harness } from "./fixtures/backend_harness.ts";
+import { openTestDb, sqlStore } from "./fixtures/backend_pglite.ts";
+import { courseCheckout, courseHarness, createCourseOrder, notify, RETURN_BASE, seedCourseSql, waveReceived } from "./fixtures/course_harness.ts";
+import type { OrderRow, Store } from "../lib/types.ts";
 
 const NOW = new Date(Date.parse(T0) + 10 * MIN);
 
@@ -115,4 +117,99 @@ Deno.test("course autopay: the owner can still unlock a course order from admin.
   assertEquals(res.body, { ok: true, changed: true });
   const order = (await h.store.getOrder(a.id))!;
   assertEquals([order.status, order.paid_amount], ["paid", 24999], "the amount the buyer was asked to send");
+});
+
+// --- Review of 22/10/2026: a 25 000 F course order must never be unlocked by another buyer's transfer ------------
+
+/** Runs `scenario` on a MemoryStore harness and on SqlStore over PGlite with every migration (000001 … 000007). */
+function bothStores(name: string, scenario: (h: Harness, store: Store) => Promise<void>) {
+  Deno.test(`course autopay [MemoryStore] ${name}`, async () => {
+    const h = await courseHarness();
+    await scenario(h, h.store);
+  });
+  Deno.test({
+    name: `course autopay [SqlStore(PGlite)] ${name}`,
+    sanitizeOps: false,
+    sanitizeResources: false,
+    fn: async () => {
+      const t = await openTestDb();
+      try {
+        const store = sqlStore(t);
+        await seedCourseSql(t, 100_000);
+        await scenario(await courseHarness({ store }), store);
+      } finally {
+        await t.close();
+      }
+    },
+  });
+}
+
+bothStores("C1: an amount re-shown after 48 h stays with its order; the late payer unlocks only himself", async (h, store) => {
+  const a = await createCourseOrder(h);
+  assertEquals((await courseCheckout(h, a.id, a.token)).body.exactAmount, 24999);
+  h.clock.advance(48 * HOUR + 5 * MIN);
+  const b = await createCourseOrder(h);
+  assertEquals((await courseCheckout(h, b.id, b.token)).body.exactAmount, 24998, "24 999 is still A's");
+  assertEquals((await courseCheckout(h, a.id, a.token)).body.exactAmount, 24999, "A re-opens the payment panel");
+  const r = await notify(h, waveReceived(24999, "Awa Ndiaye"));
+  assertEquals([r.body.matched, r.body.paid], [a.id, true]);
+  assertEquals([(await store.getOrder(a.id))?.status, (await store.getOrder(b.id))?.status], ["paid", "checkout"]);
+  assertEquals((await h.call("GET", `/orders/${b.id}/course?t=${b.token}`)).status, 404, "B reads nothing");
+});
+
+bothStores("C1b: checkout 47 h after the order, transfer 65 min later → the same order", async (h) => {
+  const a = await createCourseOrder(h);
+  h.clock.advance(47 * HOUR);
+  assertEquals((await courseCheckout(h, a.id, a.token)).body.exactAmount, 24999);
+  h.clock.advance(65 * MIN);
+  const b = await createCourseOrder(h);
+  assertEquals((await courseCheckout(h, b.id, b.token)).body.exactAmount, 24998);
+  assertEquals((await notify(h, waveReceived(24999, "Awa Ndiaye"))).body.matched, a.id);
+});
+
+bothStores("R1: the same Wave notification delivered again (+61 s, +1 h) unlocks no other order", async (h, store) => {
+  const a = await createCourseOrder(h);
+  await courseCheckout(h, a.id, a.token);
+  const text = waveReceived(24999, "Moussa Sarr");
+  assertEquals((await notify(h, text)).body.matched, a.id);
+  h.clock.advance(30_000);
+  const b = await createCourseOrder(h);
+  assertEquals((await courseCheckout(h, b.id, b.token)).body.exactAmount, 24998, "the paid order keeps 24 999");
+  h.clock.advance(31_000);
+  assertEquals((await notify(h, text)).body, { ok: true, duplicate: true });
+  h.clock.advance(HOUR);
+  assertEquals((await notify(h, text)).body, { ok: true, duplicate: true });
+  const ob = await store.getOrder(b.id);
+  assertEquals([ob?.status, ob?.paid_amount], ["checkout", null]);
+});
+
+bothStores("C2: when the 49 amounts are held, the checkout says the owner verifies (autoUnlock false)", async (h, store) => {
+  for (let i = 0; i < 49; i++) {
+    const o = await createCourseOrder(h);
+    assertEquals((await courseCheckout(h, o.id, o.token)).status, 200);
+  }
+  const victim = await createCourseOrder(h);
+  const c = await courseCheckout(h, victim.id, victim.token);
+  assertEquals([c.body.amount, c.body.exactAmount, c.body.autoUnlock], [25000, 25000, false]);
+  h.clock.advance(MIN);
+  assertEquals((await notify(h, waveReceived(25000, "Victime Payeuse"))).body.matched, null);
+  assertEquals((await store.getOrder(victim.id))?.status, "checkout", "left to the owner (admin « Débloquer »)");
+  assert(h.logs.warn.some((l) => l.includes("no automatic unlock")));
+});
+
+bothStores("P1: the notification text of a paid course order is erased after 30 days, the access stays", async (h, store) => {
+  const a = await createCourseOrder(h);
+  await courseCheckout(h, a.id, a.token);
+  const text = "Vous avez reçu 24 999F de Moussa Sarr (77 123 45 67). Nouveau solde : 80 000F";
+  assertEquals((await notify(h, text)).body.paid, true);
+  const purgeAt = async (days: number) => {
+    const now = new Date(h.clock.t + days * DAY);
+    await store.purge(new Date(now.getTime() - 3 * DAY).toISOString(), new Date(now.getTime() - 30 * DAY).toISOString(), now.toISOString());
+  };
+  await purgeAt(29);
+  assertEquals((await store.getOrder(a.id))?.payment_detected_text, `Wave ${text}`, "29 days: kept (title + text)");
+  await purgeAt(31);
+  const o = (await store.getOrder(a.id))!;
+  assertEquals([o.payment_detected_text, o.manual_payer_phone, o.purged_at, o.status], [null, null, null, "paid"]);
+  assertEquals(o.buyer?.fullName, "Aïssatou N'Diaye-Bâ", "the buyer's name stays for the 24-month access");
 });

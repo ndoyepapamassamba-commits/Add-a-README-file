@@ -4,6 +4,7 @@ import { assert, assertEquals } from "jsr:@std/assert@1.0.13";
 import { ADMIN_KEY, createOrder, HOUR, makeHarness, MIN, RETURN_BASE } from "./fixtures/backend_harness.ts";
 import type { Harness, HarnessOptions } from "./fixtures/backend_harness.ts";
 import { MemoryStore } from "../lib/store_memory.ts";
+import { DEDUPE_BUCKET_MS, dedupeKeys, holdCutoffs, parseNotification } from "../lib/autopay.ts";
 
 const HOOK = "test-hook-key";
 const AWA = "Awa Ndiaye";
@@ -52,12 +53,14 @@ Deno.test("manual checkout: each open order gets its own exact amount, stable ac
   assertEquals([order.status, order.manual_amount], ["checkout", 1499], "the order now waits for its transfer");
 });
 
-Deno.test("manual checkout: a paid order frees its amount; autoUnlock reflects the configuration", async () => {
+Deno.test("manual checkout: a paid order keeps its amount 48 h, then frees it; autoUnlock reflects the configuration", async () => {
   const h = manualHarness();
   const a = await manualOrder(h);
   assertEquals((await notify(h, { text: received("1 499") })).body.paid, true);
   const b = await manualOrder(h);
-  assertEquals(b.exact, 1499);
+  assertEquals(b.exact, 1498, "1 499 stays with the paid order (a replayed notification must unlock nobody)");
+  h.clock.advance(48 * HOUR + MIN);
+  assertEquals((await manualOrder(h)).exact, 1499, "two days after the payment it is free again");
   const off = manualHarness({ MANUAL_AUTO_CONFIRM: "false" });
   assertEquals((await manualOrder(off)).body.autoUnlock, false);
   const noHook = manualHarness({ PHONE_HOOK_KEY: undefined });
@@ -66,17 +69,103 @@ Deno.test("manual checkout: a paid order frees its amount; autoUnlock reflects t
   assertEquals(a.exact, 1499);
 });
 
-Deno.test("manual checkout: all 49 amounts taken → catalogue price, logged", async () => {
+Deno.test("manual checkout: all 49 amounts held → catalogue price, no automatic unlock promised, logged", async () => {
   const store = new MemoryStore();
   const h = manualHarness({}, { store });
   for (let i = 0; i < 49; i++) {
     const { id } = await createOrder(h, "cv", `203.0.113.${i + 1}`);
     await store.updateOrder(id, { status: "checkout" });
-    assert((await store.assignManualAmount(id, 1000, 49, new Date(h.clock.t - 48 * HOUR).toISOString())) !== null);
+    const held = await store.holdManualAmount(id, { base: 1000, maxOffset: 49, nowIso: h.clock.iso(), ...holdCutoffs(h.clock.now()) });
+    assert(held !== null);
   }
   const last = await manualOrder(h, "cv");
-  assertEquals([last.exact, last.body.exactAmountFormatted], [1000, "1 000 FCFA"]);
+  assertEquals([last.exact, last.body.exactAmountFormatted, last.body.autoUnlock], [1000, "1 000 FCFA", false]);
   assert(h.logs.warn.some((l) => l.includes("pays the catalogue price")));
+  // The round price matches nothing (only orders holding a unique amount can match).
+  assertEquals((await notify(h, { text: received("1 000") })).body.matched, null);
+});
+
+// --- Holds: an amount stays with the order that showed it (review of 22/10/2026) ----------------
+
+Deno.test("hold: an amount still shown to a late payer is never handed to another order (C1)", async () => {
+  const h = manualHarness();
+  const a = await manualOrder(h);
+  assertEquals(a.exact, 1499);
+  h.clock.advance(48 * HOUR + 5 * MIN); // A has not paid yet; its order still exists (unpaid purge: 3 days)
+  const b = await manualOrder(h);
+  assertEquals(b.exact, 1498, "1 499 is still A's");
+  const again = await h.call("POST", `/orders/${a.id}/checkout`, { body: { t: a.token, returnBase: RETURN_BASE } });
+  assertEquals([again.body.exactAmount, again.body.autoUnlock], [1499, true], "A comes back: same amount");
+  const res = await notify(h, { text: received("1 499") });
+  assertEquals([res.body.matched, res.body.paid], [a.id, true], "A's late transfer unlocks A");
+  assertEquals((await h.store.getOrder(b.id))?.status, "checkout", "B is untouched");
+});
+
+Deno.test("hold: counted from the checkout, not from the order's creation (C1b)", async () => {
+  const h = manualHarness();
+  const { id, token } = await createOrder(h, "pack", "198.51.100.201");
+  h.clock.advance(47 * HOUR); // the customer comes back to pay
+  const a = await h.call("POST", `/orders/${id}/checkout`, { body: { t: token, returnBase: RETURN_BASE } });
+  assertEquals(a.body.exactAmount, 1499);
+  h.clock.advance(65 * MIN);
+  const b = await manualOrder(h);
+  assertEquals(b.exact, 1498);
+  assertEquals((await notify(h, { text: received("1 499") })).body.matched, id);
+});
+
+Deno.test("hold: after 72 h without display the amount is free; the old order never shows it again", async () => {
+  const h = manualHarness();
+  const a = await manualOrder(h);
+  h.clock.advance(72 * HOUR + MIN);
+  const b = await manualOrder(h);
+  assertEquals(b.exact, 1499, "A's hold ran out");
+  // A's late transfer of 1 499 now belongs to B's amount: the documented residual risk after 3 days without display.
+  const again = await h.call("POST", `/orders/${a.id}/checkout`, { body: { t: a.token, returnBase: RETURN_BASE } });
+  assertEquals(again.body.exactAmount, 1498, "A is given a new amount, never B's");
+  assertEquals((await h.store.getOrder(a.id))?.manual_amount, 1498);
+});
+
+Deno.test("hold: a notification delivered again later unlocks nobody (R1)", async () => {
+  const h = manualHarness();
+  const a = await manualOrder(h);
+  const text = received("1 499"); // carries « Nouveau solde »
+  assertEquals((await notify(h, { text })).body.matched, a.id);
+  h.clock.advance(30_000);
+  const b = await manualOrder(h);
+  assertEquals(b.exact, 1498, "the paid order keeps 1 499");
+  for (const wait of [31_000, 10 * MIN, 3 * HOUR, 49 * HOUR]) {
+    h.clock.advance(wait);
+    assertEquals((await notify(h, { text })).body, { ok: true, duplicate: true }, `replay after ${wait} ms`);
+  }
+  assertEquals((await h.store.getOrder(b.id))?.status, "checkout");
+  // Without a balance in the text: duplicates for 6 to 12 hours, and the paid order's hold covers the rest.
+  const h2 = manualHarness();
+  const c = await manualOrder(h2);
+  const bare = `Vous avez reçu 1 499F de ${AWA}`;
+  assertEquals((await notify(h2, { text: bare })).body.matched, c.id);
+  const d = await manualOrder(h2);
+  assertEquals(d.exact, 1498);
+  h2.clock.advance(5 * HOUR);
+  assertEquals((await notify(h2, { text: bare })).body, { ok: true, duplicate: true });
+  h2.clock.advance(13 * HOUR);
+  assertEquals((await notify(h2, { text: bare })).body, { ok: true, matched: null, amount: 1499, paid: false }, "no other order holds 1 499");
+  assertEquals((await h2.store.getOrder(d.id))?.status, "checkout");
+});
+
+Deno.test("dedupe: a replay just after a 6-hour boundary is still a duplicate; heartbeats keep the minute", async () => {
+  const h = manualHarness();
+  const o = await manualOrder(h);
+  h.clock.set(new Date(Math.ceil(h.clock.t / DEDUPE_BUCKET_MS) * DEDUPE_BUCKET_MS - 1000).toISOString()); // 1 s before a boundary
+  const bare = `Vous avez reçu 1 499F de ${AWA}`;
+  assertEquals((await notify(h, { text: bare })).body.matched, o.id);
+  h.clock.advance(2000);
+  assertEquals((await notify(h, { text: bare })).body, { ok: true, duplicate: true });
+  const n = parseNotification("Test MacroDroid");
+  const k1 = await dedupeKeys(n, 0);
+  const k2 = await dedupeKeys(n, 60_000);
+  assert(k1.id !== k2.id && k1.next === null, "non-incoming texts: one id per minute (the heartbeat moves)");
+  const withBalance = parseNotification(received("1 499"));
+  assertEquals((await dedupeKeys(withBalance, 0)).id, (await dedupeKeys(withBalance, 365 * 24 * HOUR)).id);
 });
 
 Deno.test("manual-paid: the payer phone is optional, a wrong one is still refused", async () => {
@@ -194,15 +283,16 @@ Deno.test("notify: a rounded-up transfer matches the single recent order; not af
   assertEquals((await notify(tie, { text: received("1 601") })).body.matched, null, "above price + 100");
 });
 
-Deno.test("notify: the same notification twice is a duplicate; a second one later finds the order paid", async () => {
+Deno.test("notify: the same notification twice is a duplicate, also later; a second real transfer finds the order paid", async () => {
   const h = manualHarness();
   const o = await manualOrder(h);
   const first = await notify(h, { text: received("1 499") });
   const again = await notify(h, { text: received("1 499") });
   assertEquals([first.body.matched, again.body], [o.id, { ok: true, duplicate: true }]);
   h.clock.advance(MIN);
-  const later = await notify(h, { text: received("1 499") });
-  assertEquals(later.body, { ok: true, matched: null, amount: 1499, paid: false });
+  assertEquals((await notify(h, { text: received("1 499") })).body, { ok: true, duplicate: true }, "same balance: same notification");
+  const second = `Vous avez reçu 1 499F de ${AWA} (77 123 45 67). Nouveau solde : 26 799F`;
+  assertEquals((await notify(h, { text: second })).body, { ok: true, matched: null, amount: 1499, paid: false });
 });
 
 Deno.test("notify: outgoing operations and texts without an amount are ignored and never matched", async () => {

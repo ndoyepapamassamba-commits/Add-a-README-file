@@ -65,6 +65,7 @@ Deno.test("migrations: the expected files, in order; PGlite runs all of them but
     "20261018000004_premium.sql",
     "20261018000005_autopay.sql",
     "20261021000006_course.sql",
+    "20261022000007_autopay_hold.sql",
   ]);
   assertEquals((await migrationFiles()).map(name), [
     "20261018000001_schema.sql",
@@ -72,6 +73,7 @@ Deno.test("migrations: the expected files, in order; PGlite runs all of them but
     "20261018000004_premium.sql",
     "20261018000005_autopay.sql",
     "20261021000006_course.sql",
+    "20261022000007_autopay_hold.sql",
   ]);
 });
 
@@ -136,7 +138,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "migrations on the live database (000001 already applied, with data): 000003 → 000006 keep every row",
+  name: "migrations on the live database (000001 already applied, with data): 000003 → 000007 keep every row",
   sanitizeOps: false,
   sanitizeResources: false,
   fn: async () => {
@@ -147,6 +149,7 @@ Deno.test({
       const legacy = (over: Record<string, unknown>) => ({
         ...orderRow(),
         manual_amount: undefined,
+        manual_amount_at: undefined,
         payment_detected_at: undefined,
         payment_detected_text: undefined,
         buyer: undefined,
@@ -163,7 +166,7 @@ Deno.test({
       const store = sqlStore(t);
       const got = await store.getOrder(paid.id);
       assertEquals([got?.status, got?.paid_amount, got?.payment_method, got?.product], ["paid", 1500, "wave", "pack"]);
-      assertEquals([got?.manual_amount, got?.payment_detected_at, got?.payment_detected_text], [null, null, null]);
+      assertEquals([got?.manual_amount, got?.manual_amount_at, got?.payment_detected_at, got?.payment_detected_text], [null, null, null, null]);
       assertEquals([got?.buyer, (await store.getOrder(waiting.id))?.buyer], [null, null], "old rows have no buyer");
       assertEquals((await store.getOrder(waiting.id))?.manual_payer_phone, "+221771234567");
       assertEquals(await store.recordEvent("evt-live", "checkout.session.completed", "cos-live", {}), false, "events kept");
@@ -171,7 +174,11 @@ Deno.test({
       assertEquals((await store.stats("2026-10-18T12:00:00.000Z")).allTime, { paid: 1, revenue: 1500 });
       // The new autopay functions work on rows created before the migration.
       await store.updateOrder(waiting.id, { status: "checkout" });
-      assertEquals(await store.assignManualAmount(waiting.id, 1000, 49, "2000-01-01T00:00:00.000Z"), 999);
+      const now = "2026-10-18T12:00:00.000Z";
+      const hold = { base: 1000, maxOffset: 49, nowIso: now, unpaidSinceIso: "2000-01-01T00:00:00.000Z", paidSinceIso: now };
+      assertEquals(await store.holdManualAmount(waiting.id, hold), 999);
+      assertEquals((await store.getOrder(waiting.id))?.manual_amount_at, now);
+      assertEquals((await store.listHeldManualOrders("2000-01-01T00:00:00.000Z")).map((o) => o.id), [waiting.id]);
     } finally {
       await t.close();
     }

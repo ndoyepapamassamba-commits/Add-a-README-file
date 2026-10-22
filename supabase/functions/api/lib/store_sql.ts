@@ -3,7 +3,9 @@
 import type {
   AttestationRecord,
   CourseAsset,
+  CourseAssetInfo,
   LeadRow,
+  ManualHoldParams,
   OrderRow,
   PayoutRow,
   QuizAttemptRow,
@@ -11,6 +13,7 @@ import type {
   Stats,
   Store,
 } from "./types.ts";
+import { newRandomId, sha256Bytes } from "./ids.ts";
 
 export type ArgType = "text" | "integer" | "double precision" | "jsonb" | "timestamptz" | "date";
 
@@ -48,27 +51,49 @@ export const RPC_SIGNATURES: Record<string, ReadonlyArray<readonly [string, ArgT
   tcv_stats: [["p_now", "timestamptz"]],
   tcv_get_settings: [],
   // 20261018000005_autopay.sql
-  tcv_assign_manual_amount: [["p_id", "text"], ["p_base", "integer"], ["p_max_offset", "integer"], ["p_since", "timestamptz"]],
-  tcv_list_open_manual_orders: [["p_since", "timestamptz"]],
   tcv_record_payment_detection: [["p_id", "text"], ["p_text", "text"], ["p_now", "timestamptz"]],
-  // 20261021000006_course.sql (the upload functions tcv_course_upload_* / put_asset / asset_list are SQL-only)
+  // 20261021000006_course.sql
   tcv_course_asset: [["p_name", "text"]],
+  tcv_course_asset_list: [["p_prefix", "text"]],
+  tcv_course_upload_chunk: [["p_upload_id", "text"], ["p_seq", "integer"], ["p_b64", "text"]],
+  tcv_course_upload_commit: [
+    ["p_upload_id", "text"],
+    ["p_name", "text"],
+    ["p_mime", "text"],
+    ["p_sha256", "text"],
+    ["p_chunks", "integer"],
+  ],
+  tcv_rate_limit_count: [["p_key", "text"], ["p_window_seconds", "integer"], ["p_now", "timestamptz"]],
   tcv_insert_lead: [["p_row", "jsonb"]],
   tcv_insert_quiz_attempt: [["p_row", "jsonb"]],
   tcv_quiz_progress: [["p_order_id", "text"]],
   tcv_find_attestation: [["p_code", "text"]],
+  // 20261022000007_autopay_hold.sql
+  tcv_hold_manual_amount: [
+    ["p_id", "text"],
+    ["p_base", "integer"],
+    ["p_max_offset", "integer"],
+    ["p_now", "timestamptz"],
+    ["p_unpaid_since", "timestamptz"],
+    ["p_paid_since", "timestamptz"],
+  ],
+  tcv_list_held_manual_orders: [["p_unpaid_since", "timestamptz"]],
 };
 
 /**
- * public.tcv_* functions the API never calls: the course content upload, run as plain SQL by the lead
- * (`scripts/course-sql.mjs` output through the Supabase MCP `execute_sql`). Service role only, like the others.
+ * public.tcv_* functions the API never calls. tcv_course_put_asset: one-statement upload of a small asset, run as
+ * plain SQL by the lead (`scripts/course-sql.mjs` output through the Supabase MCP `execute_sql`). Service role only.
  */
-export const SQL_ONLY_FUNCTIONS: readonly string[] = [
-  "tcv_course_upload_chunk",
-  "tcv_course_upload_commit",
-  "tcv_course_put_asset",
-  "tcv_course_asset_list",
-];
+export const SQL_ONLY_FUNCTIONS: readonly string[] = ["tcv_course_put_asset"];
+
+/**
+ * 000005 functions replaced by 000007 (tcv_hold_manual_amount, tcv_list_held_manual_orders) and kept for the Edge
+ * Function deployed before it; this version never calls them. Service role only.
+ */
+export const LEGACY_FUNCTIONS: readonly string[] = ["tcv_assign_manual_amount", "tcv_list_open_manual_orders"];
+
+/** Raw bytes per tcv_course_upload_chunk call of the upload route: base64 of 720 000 bytes = 960 000 characters. */
+export const COURSE_UPLOAD_CHUNK_BYTES = 720_000;
 
 /** Calls `public.<fn>` with named arguments and returns its JSON result (null for SQL NULL / void). */
 export type Rpc = (fn: string, args: Record<string, unknown>) => Promise<unknown>;
@@ -87,6 +112,18 @@ function toPayout(v: unknown): PayoutRow {
 
 function toOrder(v: unknown): OrderRow {
   return v as OrderRow;
+}
+
+function toAssetInfo(v: unknown): CourseAssetInfo {
+  const r = v as CourseAssetInfo;
+  return { name: r.name, mime: r.mime, size: Number(r.size), sha256: r.sha256, updated_at: r.updated_at };
+}
+
+/** bytes → base64 (no line breaks). */
+export function bytesToBase64(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
 }
 
 /** base64 (line breaks tolerated) → bytes. */
@@ -197,14 +234,26 @@ export class RpcStore implements Store {
     return r && typeof r === "object" ? (r as Record<string, string>) : {};
   }
 
-  async assignManualAmount(id: string, base: number, maxOffset: number, sinceIso: string): Promise<number | null> {
-    const r = await this.call("tcv_assign_manual_amount", { p_id: id, p_base: base, p_max_offset: maxOffset, p_since: sinceIso });
+  async holdManualAmount(id: string, p: ManualHoldParams): Promise<number | null> {
+    const r = await this.call("tcv_hold_manual_amount", {
+      p_id: id,
+      p_base: p.base,
+      p_max_offset: p.maxOffset,
+      p_now: p.nowIso,
+      p_unpaid_since: p.unpaidSinceIso,
+      p_paid_since: p.paidSinceIso,
+    });
     return r === null || r === undefined ? null : Number(r);
   }
 
-  async listOpenManualOrders(sinceIso: string): Promise<OrderRow[]> {
-    const r = await this.call("tcv_list_open_manual_orders", { p_since: sinceIso });
+  async listHeldManualOrders(unpaidSinceIso: string): Promise<OrderRow[]> {
+    const r = await this.call("tcv_list_held_manual_orders", { p_unpaid_since: unpaidSinceIso });
     return Array.isArray(r) ? r.map(toOrder) : [];
+  }
+
+  async peekRateLimit(key: string, windowSeconds: number, nowIso: string): Promise<number> {
+    const r = await this.call("tcv_rate_limit_count", { p_key: key, p_window_seconds: windowSeconds, p_now: nowIso });
+    return Number(r ?? 0);
   }
 
   async recordPaymentDetection(id: string, text: string, nowIso: string): Promise<void> {
@@ -217,6 +266,30 @@ export class RpcStore implements Store {
       | null;
     if (!r) return null;
     return { name: r.name, mime: r.mime, sha256: r.sha256, updatedAt: r.updated_at, bytes: base64ToBytes(r.base64) };
+  }
+
+  async uploadCourseAsset(name: string, mime: string, bytes: Uint8Array): Promise<CourseAssetInfo> {
+    // A fresh id per upload: two uploads of the same name never mix their chunks. Each call carries at most
+    // COURSE_UPLOAD_CHUNK_BYTES raw bytes (960 000 base64 characters), well within PostgREST's request limit.
+    const uploadId = newRandomId("up-", 20);
+    let chunks = 0;
+    for (let offset = 0; offset < Math.max(bytes.length, 1); offset += COURSE_UPLOAD_CHUNK_BYTES, chunks++) {
+      const b64 = bytesToBase64(bytes.subarray(offset, offset + COURSE_UPLOAD_CHUNK_BYTES));
+      await this.call("tcv_course_upload_chunk", { p_upload_id: uploadId, p_seq: chunks, p_b64: b64 });
+    }
+    const r = await this.call("tcv_course_upload_commit", {
+      p_upload_id: uploadId,
+      p_name: name,
+      p_mime: mime,
+      p_sha256: await sha256Bytes(bytes),
+      p_chunks: chunks,
+    });
+    return toAssetInfo(r);
+  }
+
+  async listCourseAssets(prefix: string): Promise<CourseAssetInfo[]> {
+    const r = await this.call("tcv_course_asset_list", { p_prefix: prefix });
+    return Array.isArray(r) ? r.map(toAssetInfo) : [];
   }
 
   async insertLead(row: LeadRow): Promise<void> {

@@ -35,6 +35,10 @@
       <p class="eyebrow">Démonstration</p>
       <h1>Essayer tout le parcours, sans payer</h1>
       <p id="demo-lead"><strong>Version de démonstration&nbsp;: le paiement est simulé, aucun argent n'est prélevé.</strong></p>
+      <p class="demo-actions">
+        <button type="button" class="btn btn-light btn-lg" id="demo-start"><span class="btn-label">Commencer la démo</span></button>
+      </p>
+      <p class="form-status" id="demo-status" role="alert"></p>
     </div>
   </div>
 
@@ -43,18 +47,14 @@
       <section class="card demo-card" aria-labelledby="demo-how">
         <h2 id="demo-how">Comment se passe la démonstration</h2>
         <ol class="demo-steps">
-          <li>Touchez «&nbsp;Commencer la démo&nbsp;»&nbsp;: la page de la formation s'ouvre, avec les inscriptions ouvertes.</li>
-          <li>Remplissez le formulaire avec le nom de votre choix, puis touchez «&nbsp;Acheter la formation&nbsp;».</li>
-          <li>La page affiche un montant exact à envoyer (24&nbsp;987&nbsp;FCFA)&nbsp;: <strong>n'envoyez rien</strong>. Touchez simplement «&nbsp;J'ai envoyé l'argent&nbsp;».</li>
-          <li>Après quelques secondes, l'espace de lecture s'ouvre&nbsp;: le module&nbsp;1 est le module gratuit, donné en exemple de leçon. Les modules&nbsp;2 à 8 sont seulement listés.</li>
-          <li>Essayez le téléchargement (le fichier de données du module gratuit), le quiz d'exemple de 3&nbsp;questions, l'attestation et le reçu.</li>
+          <li>Touchez «&nbsp;Commencer la démo&nbsp;».</li>
+          <li>Écrivez un nom, cochez la case, touchez «&nbsp;Acheter la formation&nbsp;».</li>
+          <li><strong>N'envoyez pas d'argent</strong>&nbsp;: touchez «&nbsp;J'ai envoyé l'argent&nbsp;».</li>
+          <li>Attendez 3&nbsp;secondes&nbsp;: la formation s'ouvre (le module&nbsp;1 est le module gratuit, les modules&nbsp;2 à 8 sont décrits).</li>
+          <li>Essayez le quiz, l'attestation et le reçu.</li>
         </ol>
         <p>Rien n'est envoyé au vendeur&nbsp;: aucune commande réelle n'est créée, aucun contact n'est enregistré. Le reçu et l'attestation de la démonstration n'ont aucune valeur.</p>
         <p>Pour revenir au vrai site, touchez «&nbsp;Quitter la démo&nbsp;» dans la bande en bas de l'écran. Fermer l'onglet arrête aussi la démonstration.</p>
-        <p class="demo-actions">
-          <button type="button" class="btn btn-primary btn-lg" id="demo-start"><span class="btn-label">Commencer la démo</span></button>
-        </p>
-        <p class="form-status" id="demo-status" role="alert"></p>
       </section>
     </div>
   </article>

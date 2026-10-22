@@ -49,6 +49,8 @@ Deno.test("loadConfig: defaults from SPEC.md", () => {
     stageMultiPrice: 2500,
     coursePrices: { pq_essentiel: 25000 },
     pqSalesOpen: false,
+    courseUploadTokenSha256: null,
+    courseUploadUntil: null,
     openrouterApiKey: null,
     llmModel: "google/gemini-2.5-flash",
     previewRateLimitPerHour: 12,

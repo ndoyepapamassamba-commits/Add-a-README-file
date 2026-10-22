@@ -218,6 +218,19 @@ async function closedAndFree(browser, server, { problems, shoot }) {
   const section = free.locator('section.module.module-free[data-module="0"]');
   check(await section.count() === 1 && (await section.innerText()).includes("La balance âgée des impayés"), "M: the free module fragment is inside the page (static HTML)");
   check(!(await free.content()).includes("Emplacement réservé"), "M: the lorem placeholder was replaced at integration");
+  const layout = await free.evaluate(() => {
+    const ids = ["m0-erreurs", "m0-faq", "m0-suite", "m0-sources"].filter((id) => document.getElementById(id));
+    return {
+      ids,
+      inside: ids.every((id) => !!document.getElementById(id).closest(".wrap .module")),
+      gutter: Math.round(document.getElementById(ids[0] ?? "m0-erreurs")?.getBoundingClientRect().left ?? -1),
+      cta: !!document.querySelector(".wrap > .cta-band"),
+      styledTh: getComputedStyle(document.querySelector("#m0-erreurs ~ .table-wrap th") ?? document.body).backgroundColor,
+    };
+  });
+  check(layout.ids.length >= 1 && layout.inside && layout.gutter >= 16 && layout.cta, `M: the end of the free module stays in its column (${JSON.stringify(layout)})`);
+  check(layout.styledTh !== "rgba(0, 0, 0, 0)", "M: the « Diagnostic rapide » table keeps the module table style");
+  check(await free.locator('.callout-free-origin a[href="index.html#programme"]').count() === 1, "M: a bridge to the programme right after the download box");
   const csvLinks = await free.locator('a[href="gratuit/exemple-impayes.csv"]').count();
   check(csvLinks >= 2, `M: ${csvLinks} links to gratuit/exemple-impayes.csv`);
   const csv = await free.request.get(`${server.site}/formation/gratuit/exemple-impayes.csv`);
@@ -269,6 +282,8 @@ async function manualJourney(browser, server, { problems, shoot, out }) {
   const exactText = norm(await page.locator("#m-amount").innerText());
   check(exactText === norm(fcfa(24999)), `L: the panel asks for exactly ${exactText} (first course order of this server)`);
   check(norm(await page.locator(".exact-line").innerText()).startsWith("Envoyez exactement"), "L: « Envoyez exactement … »");
+  check(norm(await page.locator(".exact-why").innerText()).includes(`C'est votre montant personnel, ${norm(fcfa(1))} de moins que le prix (${norm(fcfa(25000))})`), "L: the panel says the exact amount is a little below the price");
+  check(norm(await page.locator("#manual-after").innerText()).startsWith("Votre accès s'ouvre tout seul"), "L: a unique amount → « Votre accès s'ouvre tout seul »");
   check(norm(await page.locator(".pay-note").first().innerText()) === "Les frais de transfert Wave sont à votre charge.", "L: transfer fees at the buyer's charge");
   await assertNoHorizontalScroll(page, "L index/manual panel");
   await shot("manual-panel");
@@ -293,6 +308,7 @@ async function manualJourney(browser, server, { problems, shoot, out }) {
   await page.waitForURL(/\/formation\/lecture\.html\?o=/);
   await page.waitForFunction(() => document.querySelector("#rd-state h1")?.textContent === "Paiement en attente");
   check(true, "L: « J'ai envoyé l'argent » → lecture.html « Paiement en attente »");
+  check(norm(await page.locator("#rd-state").innerText()).includes(`prix ${norm(fcfa(25000))}. Le montant exact à envoyer (un peu moins)`), "L: the waiting screen says the price, and that the exact amount is a little less");
   await shot("pending");
 
   await phone.reload();
@@ -310,6 +326,19 @@ async function manualJourney(browser, server, { problems, shoot, out }) {
   const footer = norm(await page.locator("#rd-footer-licence").innerText());
   check(footer === `Licence personnelle — ${BUYER.fullName} — ${order.id}. Usage personnel uniquement.`, "L: the licence line is in the footer");
   await assertNoHorizontalScroll(page, "L lecture");
+  const codes = await page.evaluate(() => ({
+    pre: document.querySelectorAll("#m1 pre.m-code").length,
+    buttons: document.querySelectorAll("#m1 .code-box > pre.m-code + .code-copy").length,
+    title: document.querySelector("#m1 .table-title")?.textContent ?? "",
+    nextIsBox: document.querySelector("#m1 .table-title")?.nextElementSibling?.classList.contains("table-wrap") ?? false,
+    captionHidden: document.querySelector("#m1 .table-wrap caption")?.classList.contains("sr-only") ?? false,
+  }));
+  check(codes.pre > 0 && codes.buttons === codes.pre, `L: every M block has its « Copier le code » button (${codes.buttons}/${codes.pre})`);
+  check(codes.title.length > 0 && codes.nextIsBox && codes.captionHidden, "L: the table title sits above its scrolling box (caption kept for screen readers)");
+  await page.locator("#m1 .code-copy").first().click();
+  await page.waitForFunction(() => document.querySelector("#m1 .code-copy")?.textContent !== "Copier le code", null, { timeout: 10_000 }).catch(() => {});
+  const copied = norm(await page.locator("#m1 .code-copy").first().innerText());
+  check(copied === "Copié ✓" || copied === "Sélectionnez le code", `L: « Copier le code » answers (${copied})`);
   await shot("reader");
 
   // Module 2 carries the inert sanitizer trap of the fixture.
@@ -452,10 +481,18 @@ async function demoJourney(browser, server, { problems, shoot, out }) {
   await assertNoHorizontalScroll(page, "P demo.html");
   await shot("demo");
   apiCalls.length = 0;
+  const startTop = await page.evaluate(() => document.getElementById("demo-start").getBoundingClientRect().top);
+  check(startTop < 844, `P: « Commencer la démo » is on the first screen (top ${Math.round(startTop)} px)`);
   await page.click("#demo-start");
-  await page.waitForURL(/\/formation\/index\.html$/);
+  await page.waitForURL(/\/formation\/index\.html#tarif$/);
   await page.waitForSelector("#tpro-demo-banner");
-  check(norm(await page.locator("#tpro-demo-banner").innerText()) === "MODE DÉMO — paiement simulé · Quitter la démo", "P: fixed banner « MODE DÉMO — paiement simulé · Quitter la démo »");
+  const bannerText = norm(await page.locator("#tpro-demo-banner").innerText());
+  check(bannerText === "MODE DÉMO Paiement simulé : n'envoyez rien, touchez « J'ai envoyé l'argent » Quitter la démo", `P: fixed banner with the next step of the page (${bannerText})`);
+  const bar = await page.evaluate(() => ({
+    h: document.getElementById("tpro-demo-banner").getBoundingClientRect().height,
+    v: getComputedStyle(document.documentElement).getPropertyValue("--demo-bar-h").trim(),
+  }));
+  check(bar.v === `${Math.ceil(bar.h)}px`, `P: --demo-bar-h follows the banner height (${bar.v}, ${Math.round(bar.h)} px)`);
   check(await page.evaluate(() => sessionStorage.getItem("tpro:demo")) === "1", "P: « Commencer la démo » set sessionStorage tpro:demo = 1");
   await page.waitForSelector("#buy-form:not([hidden])");
   check(true, "P: the demo opens sales (mock GET /config)");
@@ -478,9 +515,15 @@ async function demoJourney(browser, server, { problems, shoot, out }) {
   check((await page.locator("#m1").innerText()).includes("La balance âgée des impayés") && await page.locator("#m1 pre.m-code").count() > 0, "P: module 1 is the free module (sample lesson)");
   await goSection(page, "m5");
   check(norm(await page.locator("#m5").innerText()).includes("Contenu réservé aux acheteurs — visible dans la vraie formation"), "P: modules 2–8 show « Contenu réservé aux acheteurs — visible dans la vraie formation »");
+  check(norm(await page.locator("#m5").innerText()).includes("Dans la vraie formation : Jours de retard recalculés") && norm(await page.locator("#m5").innerText()).includes("7 exercices"), "P: a demo placeholder describes the real module (public programme line, exercise count)");
+  check(await page.locator('#m1 a[href="gratuit/exemple-impayes.csv"]').count() >= 2, "P: the sample lesson keeps its links to the public data file");
   await assertNoHorizontalScroll(page, "P lecture");
   await shot("reader");
 
+  // « Envoyer ce lien sur mon WhatsApp » would send a link that only works in this tab: explained, nothing opens.
+  const pagesBefore = context.pages().length;
+  await page.locator("[data-whatsapp-self]").first().dispatchEvent("click"); // it lives in the (closed) Sommaire drawer
+  check(norm(await page.locator("#tpro-demo-banner .demo-hint").innerText()).startsWith("En démonstration, ce lien ne marcherait pas") && context.pages().length === pagesBefore, "P: the WhatsApp self-send link is explained in the demo, not opened");
   await goSection(page, "fichiers");
   const csv = await download(page, '#fichiers [data-file="exemple-impayes.csv"]', out);
   check(Buffer.compare(csv.bytes, fs.readFileSync(FREE_CSV)) === 0, "P: the download is the public exemple-impayes.csv");

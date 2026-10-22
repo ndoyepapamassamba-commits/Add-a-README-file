@@ -2,8 +2,9 @@
 -- Applies on top of 20261018000001_schema.sql, 000003 stage, 000004 premium and 000005 autopay. Idempotent; runs on
 -- Supabase Postgres 17 and in PGlite.
 -- New: products pq_essentiel (sold) and pq_complet / imf_kit (reserved), column tcv.orders.buyer, tables
--- tcv.course_assets, tcv.course_upload_chunks, tcv.leads, tcv.quiz_attempts and their Store functions; new
--- definitions of tcv.order_json, tcv_insert_order, tcv_purge and tcv_stats (every column and block of 000005 kept).
+-- tcv.course_assets, tcv.course_upload_chunks, tcv.leads, tcv.quiz_attempts and their Store functions (among them
+-- the chunked upload used by PUT /admin/course-assets/:name and tcv_rate_limit_count); new definitions of
+-- tcv.order_json, tcv_insert_order, tcv_purge and tcv_stats (every column and block of 000005 kept).
 -- Deployment rule: from 000003 on, migrations erase data with UPDATE only (the deployment tool asks for an
 -- interactive confirmation before any statement that removes rows).
 
@@ -22,18 +23,24 @@ alter table tcv.orders add column if not exists buyer jsonb;
 -- Tables
 -- ---------------------------------------------------------------------------------------------
 
--- Private course content (module HTML, workbooks, quiz and its key). Read by the Edge Function only.
+-- Private course content (module HTML, workbooks, quiz and its key; `_backup/…` copies are never served: the API
+-- only reads the assets its manifest lists under `pq_essentiel/`). Read by the Edge Function only.
 create table if not exists tcv.course_assets (
-  name       text primary key
-             check (name ~ '^[a-z0-9_]+/[a-z0-9][a-z0-9._/-]{0,150}$' and position('..' in name) = 0),
+  name       text primary key,
   mime       text not null check (length(mime) between 3 and 120),
   bytes      bytea not null,
   sha256     text not null check (sha256 ~ '^[0-9a-f]{64}$'),
   updated_at timestamptz not null default now()
 );
 
--- Staging area of the chunked upload (plain SQL, statements of about 200 KB). A committed upload keeps its rows with
--- an empty b64 (no row removal).
+-- `<folder>/<path>`: no "..", no empty segment, no trailing slash (same rule as isCourseAssetName in store_memory.ts).
+alter table tcv.course_assets drop constraint if exists course_assets_name_check;
+alter table tcv.course_assets add constraint course_assets_name_check
+  check (name ~ '^[a-z0-9_]+/[A-Za-z0-9._/-]{1,150}$' and position('..' in name) = 0 and position('//' in name) = 0
+         and right(name, 1) <> '/');
+
+-- Staging area of the chunked upload (plain SQL statements of about 200 KB, or PUT /admin/course-assets/:name with
+-- chunks of at most 1 000 000 base64 characters). A committed upload keeps its rows with an empty b64 (no row removal).
 create table if not exists tcv.course_upload_chunks (
   upload_id    text not null check (upload_id ~ '^[A-Za-z0-9_.-]{8,100}$'),
   seq          integer not null check (seq >= 0 and seq < 1000),
@@ -159,6 +166,8 @@ $$;
 -- * expired orders lose input, document, buyer, payer phone, notification text and ip hash; the payment facts stay.
 --   Course orders (pq_*, imf_kit) stay readable 730 days after payment (access period), other paid orders 30 days
 --   (p_paid_before); unpaid orders of every product follow p_unpaid_before;
+-- * whatever the order, the Wave notification text (payer name and number) and the payer phone are erased 30 days
+--   after the detection (or the payment), as the privacy policy says; not counted as a purge;
 -- * events older than 30 days lose their payload, the row is kept (duplicate detection);
 -- * leads lose their contact fields 365 days after sign-up;
 -- * upload chunks left uncommitted for 2 days lose their content;
@@ -179,6 +188,9 @@ begin
       or (status = 'paid' and product in ('pq_essentiel', 'pq_complet', 'imf_kit')
           and coalesce(paid_at, created_at) < p_now - interval '730 days'));
   get diagnostics v_count = row_count;
+  update tcv.orders set payment_detected_text = null, manual_payer_phone = null
+  where (payment_detected_text is not null or manual_payer_phone is not null)
+    and coalesce(payment_detected_at, paid_at, created_at) < p_now - interval '30 days';
   update tcv.events set payload = null
   where created_at < p_now - interval '30 days' and payload is not null;
   update tcv.leads set email = null, whatsapp = null, ip_hash = null, purged_at = p_now
@@ -259,15 +271,16 @@ $$;
 -- Course content: chunked upload (plain SQL) and read
 -- ---------------------------------------------------------------------------------------------
 
--- One chunk = base64 of ≤ 140 000 raw bytes (≈ 186 700 characters), each chunk encoded on its own. Re-sending the same
+-- One chunk = base64 of a slice of the file, each chunk encoded on its own: ≤ 140 000 raw bytes (≈ 186 700 characters)
+-- from scripts/course-sql.mjs, ≤ 720 000 raw bytes (960 000 characters) from the upload route. Re-sending the same
 -- (upload_id, seq) replaces it. Returns the number of uncommitted chunks held for this upload.
 create or replace function public.tcv_course_upload_chunk(p_upload_id text, p_seq integer, p_b64 text) returns integer
 language plpgsql security definer set search_path = '' as $$
 declare
   v_count integer;
 begin
-  if p_b64 is null or length(p_b64) > 300000 then
-    raise exception 'tcv_course_upload_chunk: chunk missing or longer than 300000 characters' using errcode = '22023';
+  if p_b64 is null or length(p_b64) > 1000000 then
+    raise exception 'tcv_course_upload_chunk: chunk missing or longer than 1000000 characters' using errcode = '22023';
   end if;
   perform decode(p_b64, 'base64'); -- invalid base64 raises here, before anything is stored
   insert into tcv.course_upload_chunks as c (upload_id, seq, b64, created_at, committed_at)
@@ -344,6 +357,17 @@ language sql stable security definer set search_path = '' as $$
   ) order by a.name), '[]'::jsonb)
   from tcv.course_assets a
   where left(a.name, length(coalesce(p_prefix, ''))) = coalesce(p_prefix, '')
+$$;
+
+-- Read-only view of a tcv_hit_rate_limit bucket: its count in the current window, 0 when absent or expired (the upload
+-- route refuses an IP after too many wrong tokens, even with the right one, without counting its good requests).
+create or replace function public.tcv_rate_limit_count(p_key text, p_window_seconds integer, p_now timestamptz)
+returns integer
+language sql stable security definer set search_path = '' as $$
+  select coalesce((
+    select r.count from tcv.rate_limits r
+    where r.key = p_key and r.window_start > p_now - make_interval(secs => p_window_seconds)
+  ), 0)
 $$;
 
 -- ---------------------------------------------------------------------------------------------
@@ -437,6 +461,7 @@ revoke all on function public.tcv_course_upload_commit(text, text, text, text, i
 revoke all on function public.tcv_course_put_asset(text, text, text, text) from public, anon, authenticated;
 revoke all on function public.tcv_course_asset(text) from public, anon, authenticated;
 revoke all on function public.tcv_course_asset_list(text) from public, anon, authenticated;
+revoke all on function public.tcv_rate_limit_count(text, integer, timestamptz) from public, anon, authenticated;
 revoke all on function public.tcv_insert_lead(jsonb) from public, anon, authenticated;
 revoke all on function public.tcv_insert_quiz_attempt(jsonb) from public, anon, authenticated;
 revoke all on function public.tcv_quiz_progress(text) from public, anon, authenticated;
@@ -447,6 +472,7 @@ grant execute on function public.tcv_course_upload_commit(text, text, text, text
 grant execute on function public.tcv_course_put_asset(text, text, text, text) to service_role;
 grant execute on function public.tcv_course_asset(text) to service_role;
 grant execute on function public.tcv_course_asset_list(text) to service_role;
+grant execute on function public.tcv_rate_limit_count(text, integer, timestamptz) to service_role;
 grant execute on function public.tcv_insert_lead(jsonb) to service_role;
 grant execute on function public.tcv_insert_quiz_attempt(jsonb) to service_role;
 grant execute on function public.tcv_quiz_progress(text) to service_role;

@@ -120,10 +120,13 @@ contract("course assets: a returned asset is a copy", async (store, impl) => {
 
 Deno.test("course store [MemoryStore] putCourseAsset applies the database checks", async () => {
   const store = new MemoryStore();
-  for (const bad of ["../x", "pq_essentiel/../x", "PQ/x", "pq_essentiel", "pq_essentiel/.hidden", "pq essentiel/x"]) {
+  for (const bad of ["../x", "pq_essentiel/../x", "PQ/x", "pq_essentiel", "pq_essentiel/", "pq_essentiel//x", "pq_essentiel/x/", "pq essentiel/x", "pq_essentiel/a b"]) {
     await assertRejects(() => store.putCourseAsset(bad, "application/json", new Uint8Array([1])), Error, undefined, bad);
   }
   await assertRejects(() => store.putCourseAsset("pq_essentiel/x.json", "a", new Uint8Array([1])));
+  for (const ok of ["pq_essentiel/Files/Module-1.XLSX", "_backup/2026-10-22/content/module-01.html"]) {
+    assertEquals((await store.putCourseAsset(ok, "text/plain", new Uint8Array([1]))).name, ok, ok);
+  }
   const put = await store.putCourseAsset("pq_essentiel/x.json", "application/json", new TextEncoder().encode("{}"));
   assertEquals(put.sha256, "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a");
 });
@@ -145,7 +148,7 @@ sqlTest("upload errors: sha256 mismatch, wrong chunk count, invalid base64, name
   await assertRejects(() => q("select public.tcv_course_upload_commit('upload-test-1', 'pq_essentiel/a.txt', 'text/plain', $1, 2)", [sha]), Error, "expected");
   await assertRejects(() => q("select public.tcv_course_upload_chunk('upload-test-2', 0, 'not base64 !!')"));
   await assertRejects(() => q("select public.tcv_course_upload_chunk('bad id', 0, 'AA==')"), Error);
-  for (const name of ["../x", "pq_essentiel/../x", "Pq/x"]) {
+  for (const name of ["../x", "pq_essentiel/../x", "Pq/x", "pq_essentiel//x", "pq_essentiel/x/", "pq_essentiel/"]) {
     await assertRejects(() => q("select public.tcv_course_upload_commit('upload-test-1', $1, 'text/plain', $2, 1)", [name, sha]), Error, undefined, name);
   }
   // The same upload then commits fine with the right digest and count.

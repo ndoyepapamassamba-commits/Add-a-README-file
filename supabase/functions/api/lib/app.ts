@@ -37,6 +37,7 @@ import {
   publicCourses,
   submitQuiz,
 } from "./course.ts";
+import { listCourseAssetsRoute, putCourseAssetRoute } from "./course_upload.ts";
 
 export { GLOBAL_DAILY_PREVIEW_LIMIT } from "./order_access.ts";
 export { publicOrder };
@@ -148,6 +149,7 @@ const createOrder: Handler = async (deps, req) => {
     payment_method: null,
     manual_payer_phone: null,
     manual_amount: null,
+    manual_amount_at: null,
     payment_detected_at: null,
     payment_detected_text: null,
     paid_amount: null,
@@ -237,15 +239,16 @@ const checkout: Handler = async (deps, req, [id]) => {
 
   const c = deps.config;
   if (c.manualWaveNumber) {
-    // A unique amount per order lets the owner's phone recognise the transfer (see autopay.ts).
-    const exactAmount = await prepareManualCheckout(deps, order);
+    // A unique amount per order lets the owner's phone recognise the transfer (see autopay.ts). Without one (all
+    // held) the customer sends the catalogue price, which never matches: the page says the owner checks it.
+    const { exactAmount, unique } = await prepareManualCheckout(deps, order);
     return json(200, {
       mode: "manual",
       waveNumber: formatSnMobile(c.manualWaveNumber),
       amount: order.amount,
       exactAmount,
       exactAmountFormatted: formatFcfa(exactAmount),
-      autoUnlock: c.phoneHookKey !== null && c.manualAutoConfirm,
+      autoUnlock: unique && c.phoneHookKey !== null && c.manualAutoConfirm,
       reference: order.id,
       whatsapp: c.ownerWhatsapp,
     });
@@ -405,6 +408,9 @@ const ROUTES: Array<[method: string, pattern: RegExp, handler: Handler]> = [
   ["POST", /^\/orders\/([^/]+)\/quiz$/, submitQuiz],
   ["GET", /^\/attestations\/([^/]+)$/, getAttestation],
   ["POST", /^\/leads$/, createLead],
+  // Private course assets, uploaded by scripts/course-upload.mjs (course_upload.ts): unknown-route 404 unless allowed
+  ["PUT", /^\/admin\/course-assets\/.+$/, putCourseAssetRoute],
+  ["GET", /^\/admin\/course-assets$/, listCourseAssetsRoute],
 ];
 
 function decodeSegment(segment: string): string {

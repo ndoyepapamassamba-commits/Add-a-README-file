@@ -5,7 +5,7 @@
 // Env: PORT (default 8787), DEV_PAYMENT = wave (default) | manual | none, PQ_SALES_OPEN (default true here),
 // COURSE_ASSETS_DIR (private course tree `<dir>/pq_essentiel/…`; default: the public lorem fixture).
 import { createApp } from "./lib/app.ts";
-import { MANUAL_WINDOW_MS } from "./lib/autopay.ts";
+import { holdCutoffs } from "./lib/autopay.ts";
 import { DEFAULT_RETURN_PREFIXES, envFrom, loadConfig } from "./lib/config.ts";
 import { MemoryStore } from "./lib/store_memory.ts";
 import { COURSE_FIXTURE_DIR, loadCourseAssetDir } from "./dev_course.ts";
@@ -225,8 +225,7 @@ export function createDevServer(opts: DevServerOptions): DevServer {
     if (fake) return fakeWave(req, decodeURIComponent(fake[1]), fake[2]);
     if (req.method !== "GET" && req.method !== "HEAD") return text(405, "Méthode non autorisée.");
     if (path === "/fake-phone") {
-      const since = new Date(Date.now() - MANUAL_WINDOW_MS).toISOString();
-      const open = (await store.listOpenManualOrders(since)).filter((o) => o.manual_amount !== null);
+      const open = await store.listHeldManualOrders(holdCutoffs(new Date()).unpaidSinceIso);
       return fakePhonePage(open.map((o) => ({ id: o.id, amount: o.manual_amount as number })));
     }
     if (path === "/config.js" || path === "/cv/config.js") {

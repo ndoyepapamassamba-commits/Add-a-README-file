@@ -87,9 +87,14 @@ const tooLarge = () => new HttpError(413, "payload_too_large", "La demande est t
 
 /** Reads the raw body as UTF-8, refusing anything above `maxBytes` (declared or actual). */
 export async function readBodyText(req: Request, maxBytes = MAX_BODY_BYTES): Promise<string> {
+  return new TextDecoder().decode(await readBodyBytes(req, maxBytes));
+}
+
+/** Reads the raw body, refusing anything above `maxBytes` (declared or actual) without buffering more. */
+export async function readBodyBytes(req: Request, maxBytes = MAX_BODY_BYTES): Promise<Uint8Array> {
   const declared = Number(req.headers.get("content-length") ?? "0");
   if (Number.isFinite(declared) && declared > maxBytes) throw tooLarge();
-  if (!req.body) return "";
+  if (!req.body) return new Uint8Array(0);
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -109,7 +114,7 @@ export async function readBodyText(req: Request, maxBytes = MAX_BODY_BYTES): Pro
     all.set(c, offset);
     offset += c.byteLength;
   }
-  return new TextDecoder().decode(all);
+  return all;
 }
 
 /** Reads and parses a JSON object body; anything else is a 400. */

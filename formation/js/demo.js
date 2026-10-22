@@ -1,5 +1,5 @@
 // Teranga Pro — demo.html: « Commencer la démo » turns the demo mode on for this tab (sessionStorage tpro:demo=1,
-// read by js/demo-shim.js on every formation page) and opens the sales page.
+// read by js/demo-shim.js on every formation page) and opens the sales page at its order form.
 (function () {
   "use strict";
 
@@ -14,6 +14,7 @@
       if (status) status.textContent = "La démonstration a besoin du stockage du navigateur. Quittez la navigation privée puis réessayez.";
       return;
     }
-    window.location.href = "index.html";
+    // Straight to the order form: the sales page is long on a phone.
+    window.location.href = "index.html#tarif";
   });
 })();

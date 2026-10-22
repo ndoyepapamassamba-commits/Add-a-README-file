@@ -147,7 +147,7 @@ let paySeq = 0;
 export async function payCourseOrder(h: Harness, id: string): Promise<number> {
   const order = await h.store.getOrder(id);
   if (!order) throw new Error(`payCourseOrder: unknown order ${id}`);
-  const exact = order.manual_amount ?? await prepareManualCheckout(h.deps, order);
+  const { exactAmount: exact } = await prepareManualCheckout(h.deps, order);
   // A different sender each time: the same text twice in one minute is a duplicate notification.
   const res = await notify(h, waveReceived(exact, SENDERS[paySeq++ % SENDERS.length]));
   assertEquals([res.status, res.body.matched, res.body.paid], [200, id, true], `payCourseOrder ${id}`);

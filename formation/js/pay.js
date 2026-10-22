@@ -8,6 +8,7 @@
   var el = TPRO.dom.el;
   var setText = TPRO.dom.setText;
   var fmt = TPRO.fmt;
+  var NBSP = fmt.NBSP;
 
   function isSafeLaunchUrl(u) {
     return /^https:\/\//i.test(u) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(u);
@@ -38,6 +39,7 @@
   /** Builds the manual transfer panel inside ctx.container (replaces its content) and focuses its title. */
   function showManual(ctx, res) {
     var exact = Number(res.exactAmount || res.amount || ctx.amount) || 0;
+    var price = Number(res.amount || ctx.amount) || 0;
     var number = String(res.waveNumber || "");
     var status = el("p", { class: "form-status", role: "alert" });
     var paidBtn = el("button", { type: "button", class: "btn btn-primary btn-block btn-lg", id: "manual-paid-btn" }, [
@@ -72,10 +74,7 @@
             return String(exact);
           }, "Copier le montant")
         ]),
-        el("p", {
-          class: "exact-why",
-          text: "Pourquoi ce montant ? Ce montant précis permet de reconnaître votre paiement automatiquement. Envoyez-le au franc près, sans arrondir."
-        })
+        el("p", { class: "exact-why", text: exactWhy(exact, price) })
       ]),
       el("ol", { class: "pay-steps" }, [
         el("li", null, [
@@ -129,6 +128,17 @@
     }
     title.focus({ preventScroll: true });
     return panel;
+  }
+
+  /** Why the amount differs from the price (the buyer must not think he underpays, nor round up). */
+  function exactWhy(exact, price) {
+    if (price > exact) {
+      return (
+        "Pourquoi ce montant" + NBSP + "? C'est votre montant personnel, " + fmt.fcfa(price - exact) + " de moins que le prix (" +
+        fmt.fcfa(price) + ")" + NBSP + ": il permet de reconnaître votre transfert automatiquement. Envoyez-le au franc près, sans arrondir."
+      );
+    }
+    return "Envoyez ce montant au franc près. Le vendeur vérifie la réception de votre transfert, puis ouvre votre accès.";
   }
 
   function prefersReducedMotion() {

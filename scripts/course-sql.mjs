@@ -11,7 +11,7 @@
 // Dependencies: node:fs, node:path, node:crypto, node:url only.
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, unlinkSync, writeFileSync } from "node:fs";
-import { basename, dirname, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** Raw bytes per statement: base64 of 140 000 bytes is 186 668 characters, the SQL around it a few hundred. */
@@ -55,9 +55,11 @@ function realpathLoose(p) {
   return join(realpathSync(current), ...rest);
 }
 
+/** True when `child` is `parent` or below it. A folder named « ..out » inside `parent` is inside (only a first
+ * segment equal to « .. » leaves it). */
 export function isInside(child, parent) {
   const rel = relative(parent, child);
-  return rel === "" || (!rel.startsWith("..") && !rel.startsWith(sep) && rel !== "..");
+  return rel === "" || !(rel === ".." || rel.startsWith(".." + sep) || isAbsolute(rel));
 }
 
 function walk(dir, rel, out) {

@@ -192,8 +192,9 @@ export interface OrderRow {
   payment_method: PaymentMethod | null;
   manual_payer_phone: string | null;
   manual_amount: number | null; // unique amount (base price − 1..49) the customer must send in manual mode
+  manual_amount_at: string | null; // ISO; when manual_amount was given or last shown at checkout (its hold starts here)
   payment_detected_at: string | null; // ISO; when the owner's phone reported a matching Wave notification
-  payment_detected_text: string | null; // the notification text that matched (kept 30 days, purged with the order)
+  payment_detected_text: string | null; // the notification text that matched (erased by purge 30 days after detection)
   paid_amount: number | null;
   paid_at: string | null; // ISO
   payout_id: string | null;
@@ -280,6 +281,24 @@ export interface CourseAsset {
   bytes: Uint8Array;
   sha256: string; // hex of bytes
   updatedAt: string; // ISO
+}
+
+/** Metadata of a stored course asset (tcv_course_asset_list, tcv_course_upload_commit, GET /admin/course-assets). */
+export interface CourseAssetInfo {
+  name: string;
+  mime: string;
+  size: number; // bytes
+  sha256: string; // hex
+  updated_at: string; // ISO
+}
+
+/** Store.holdManualAmount arguments (autopay.ts computes the two cut-offs from MANUAL_HOLD_MS and PAID_HOLD_MS). */
+export interface ManualHoldParams {
+  base: number; // catalogue price
+  maxOffset: number; // MANUAL_MAX_OFFSET
+  nowIso: string;
+  unpaidSinceIso: string; // now − MANUAL_HOLD_MS
+  paidSinceIso: string; // now − PAID_HOLD_MS
 }
 
 /** pq_essentiel/manifest.json (schema 1), produced by the content kit. The API trusts only what it lists. */
@@ -428,6 +447,8 @@ export interface Store {
    * Erase personal data in place: unpaid orders older than unpaidBeforeIso, paid orders older than paidBeforeIso
    * (input, document, buyer, payer phone, notification text, ip hash → null; purged_at = now). Paid COURSE orders
    * (pq_essentiel, pq_complet, imf_kit) ignore paidBeforeIso: they are purged COURSE_RETENTION_DAYS (730) after payment.
+   * Whatever the order, the Wave notification text and the payer phone are erased NOTIFICATION_RETENTION_DAYS (30)
+   * after coalesce(payment_detected_at, created_at) (the privacy policy promises 30 days; not counted as a purge).
    * Events older than 30 days lose their payload. Leads older than LEAD_RETENTION_DAYS (365) lose email, whatsapp and
    * ip_hash (purged_at = now). Uncommitted upload chunks older than 2 days lose their content. Rows are never
    * removed. Returns the number of orders purged.
@@ -435,21 +456,41 @@ export interface Store {
   purge(unpaidBeforeIso: string, paidBeforeIso: string, nowIso: string): Promise<number>;
   stats(nowIso: string): Promise<Stats>;
   /**
-   * Atomically give order `id` a unique manual amount: base − k with the smallest k in 1..maxOffset not used by
-   * another manual order still awaiting payment (status checkout/awaiting_manual, created after sinceIso).
-   * Idempotent: returns the existing manual_amount when already set. Returns null when every offset is taken.
+   * Atomically give order `id` its unique manual amount for this checkout (autopay.ts, prepareManualCheckout).
+   * An amount is HELD by an order when it is unpaid (status checkout/awaiting_manual, payment_method null) and was
+   * given or shown after `unpaidSinceIso` (coalesce(manual_amount_at, created_at)), or when it is paid with that
+   * amount after `paidSinceIso` (a replayed notification then unlocks nobody else).
+   * - order paid → its manual_amount, unchanged;
+   * - the order still holds its amount → the same amount, manual_amount_at = nowIso (the hold restarts);
+   * - otherwise → its previous amount if no other order holds it, else base − k with the smallest k in 1..maxOffset
+   *   held by no other order (manual_amount_at = nowIso); none free → manual_amount and manual_amount_at become null
+   *   and the result is null.
+   * Unknown order → null.
    */
-  assignManualAmount(id: string, base: number, maxOffset: number, sinceIso: string): Promise<number | null>;
-  /** Unpaid manual orders (status checkout/awaiting_manual, payment_method null) created after sinceIso. */
-  listOpenManualOrders(sinceIso: string): Promise<OrderRow[]>;
+  holdManualAmount(id: string, p: ManualHoldParams): Promise<number | null>;
+  /**
+   * Unpaid manual orders that still hold a unique amount: status checkout/awaiting_manual, payment_method null,
+   * not purged, manual_amount set and coalesce(manual_amount_at, created_at) after unpaidSinceIso. Newest first.
+   */
+  listHeldManualOrders(unpaidSinceIso: string): Promise<OrderRow[]>;
   /** Store the matched notification on the order (does NOT mark it paid). */
   recordPaymentDetection(id: string, text: string, nowIso: string): Promise<void>;
   /** Key/value settings from tcv.settings (same keys as the env vars). MemoryStore returns what it was seeded with. */
   getSettings(): Promise<Record<string, string>>;
+  /** Read-only view of a hitRateLimit bucket: its count in the current window (0 when absent or expired). */
+  peekRateLimit(key: string, windowSeconds: number, nowIso: string): Promise<number>;
 
   // --- Teranga Pro courses (20261021000006_course.sql) -------------------------------------------
-  /** A private course file by its asset name, or null. Uploads go through SQL only (tcv_course_upload_*). */
+  /** A private course file by its asset name, or null. */
   getCourseAsset(name: string): Promise<CourseAsset | null>;
+  /**
+   * Creates or replaces a course asset (PUT /admin/course-assets/:name). SQL side: base64 chunks of at most
+   * COURSE_UPLOAD_CHUNK_BYTES raw bytes through tcv_course_upload_chunk, then tcv_course_upload_commit, which checks
+   * the sha256 of the whole file. Returns the stored metadata.
+   */
+  uploadCourseAsset(name: string, mime: string, bytes: Uint8Array): Promise<CourseAssetInfo>;
+  /** Metadata (no bytes) of every asset whose name starts with `prefix` ("" = all), sorted by name. */
+  listCourseAssets(prefix: string): Promise<CourseAssetInfo[]>;
   /** Stores a lead (no dedupe: the HTTP layer rate-limits by IP). */
   insertLead(row: LeadRow): Promise<void>;
   /** Stores a passed quiz attempt. */
@@ -532,6 +573,10 @@ export interface Config {
   /** Course prices, kept apart so GET /config `prices` stays byte-identical: pq_essentiel = PRICE_PQ_ESSENTIEL, default 25000. */
   coursePrices: Record<CourseProduct, number>;
   pqSalesOpen: boolean; // PQ_SALES_OPEN (default false; "true"/"1"/"yes"/"oui"/"on" open it): POST /orders for pq_essentiel → 403 sales_closed when false
+  /** COURSE_UPLOAD_TOKEN_SHA256: lower-case hex sha256 of the upload token (64 hex), else null = uploads disabled. */
+  courseUploadTokenSha256: string | null;
+  /** COURSE_UPLOAD_UNTIL: end of the upload window (ms since epoch, from an ISO date), null = uploads disabled. */
+  courseUploadUntil: number | null;
   openrouterApiKey: string | null;
   llmModel: string;
   previewRateLimitPerHour: number; // default 12

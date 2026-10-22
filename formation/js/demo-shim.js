@@ -42,17 +42,28 @@
   var START = "<!-- GRATUIT:DEBUT -->";
   var END = "<!-- GRATUIT:FIN -->";
 
-  // Public table of contents (the same titles and durations as the sales page). No module text here.
+  // Public table of contents: the titles, durations, programme lines and exercise counts of the sales page
+  // (index.html #programme). No module text here.
   var MODULES = [
-    [1, "Exemple de leçon" + NBSP + ": calculer l'ancienneté des impayés (module gratuit)", 30],
-    [2, "Importer les extractions", 90],
-    [3, "Nettoyer et typer", 90],
-    [4, "Table de correspondance comptes → postes", 100],
-    [5, "Ancienneté des impayés", 110],
-    [6, "Indicateurs de qualité du portefeuille", 110],
-    [7, "Rapprochement balance ↔ encours", 110],
-    [8, "Contrôles de cohérence et actualisation en un clic", 120]
-  ];
+    [1, "Exemple de leçon" + NBSP + ": calculer l'ancienneté des impayés (module gratuit)", 30, "", 1],
+    [2, "Importer les extractions", 90,
+      "CSV au point-virgule et bon encodage ; «" + NBSP + "1" + NBSP + "234" + NBSP + "567,50" + NBSP + "» et jj/mm/aaaa en fr-FR ; codes gardés en texte ; tous les fichiers mensuels d'un dossier combinés ; date d'arrêté pilotée par un tableau de paramètres ; contrôle de chaque import.", 5],
+    [3, "Nettoyer et typer", 90,
+      "Diagnostiquer une extraction «" + NBSP + "sale" + NBSP + "» (titres, lignes vides, total en pied) ; normaliser textes et codes agence ; isoler les erreurs dans une requête d'audit ; dédoublonner au bon moment ; rapprocher les totaux du pied de fichier.", 6],
+    [4, "Table de correspondance comptes → postes", 100,
+      "Mapper la balance par préfixe de compte (structure du PCB révisé) ; détecter automatiquement les comptes non mappés ; état par poste avec convention de signe ; règle du préfixe le plus long. Table d'exemple pédagogique, pas un état réglementaire officiel.", 7],
+    [5, "Ancienneté des impayés", 110,
+      "Jours de retard recalculés et contrôlés ; tranches lues dans un tableau Excel, sans toucher au code ; balance âgée stable avec ligne Total ; croisement agence × produit ; évolution sur plusieurs mois ; matrice de transition des tranches.", 7],
+    [6, "Indicateurs de qualité du portefeuille", 110,
+      "Créances en souffrance et taux de créances douteuses (banques) d'un côté, PAR30/PAR90 (microfinance) de l'autre" + NBSP + ": définitions publiques citées, calcul mensuel, détail par agence et par produit sans moyenne de taux.", 6],
+    [7, "Rapprochement balance ↔ encours", 110,
+      "Ventiler l'encours en comptes comptables ; rapprocher balance et encours par mois et par compte avec une tolérance documentée ; pourquoi un rapprochement en total ne suffit pas ; liste des écarts à justifier ; remonter d'un écart aux contrats.", 9],
+    [8, "Contrôles de cohérence et actualisation en un clic", 120,
+      "Contrôles bloquants et d'alerte (équilibre, continuité des soldes, sens anormaux, variations à double seuil) ; tableau de contrôle horodaté ; test avec un fichier du mauvais mois ; checklist mensuelle.", 7]
+  ].map(function (m) {
+    m[3] = m[3].replace(/ ;/g, NBSP + ";");
+    return m;
+  });
 
   // Sample quiz on the free module only (the real 20-question quiz is never in the public site).
   var QUIZ = [
@@ -318,10 +329,20 @@
       });
   }
 
+  function escapeHtml(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  /** Modules 2–8: what the real module holds (public programme line and exercise count), never its text. */
   function placeholder(n) {
+    var m = MODULES[n - 1] || [n, "", 0, "", 0];
+    var about = m[3]
+      ? "<p><strong>Dans la vraie formation" + NBSP + ":</strong> " + escapeHtml(m[3]) + "</p><p>" + m[4] + NBSP +
+        "exercices · classeur d'exercices + données fictives · solutions en code M · résultats attendus.</p>"
+      : "";
     return (
       '<section class="module" data-module="' + n + '"><div class="callout-info"><p><strong>' + RESERVED +
-      "</strong></p><p>Version de démonstration" + NBSP + ": seuls le titre et la durée de ce module sont affichés.</p></div></section>"
+      "</strong></p>" + about + "<p>Version de démonstration" + NBSP + ": le texte du module n'est pas affiché.</p></div></section>"
     );
   }
 
@@ -564,6 +585,32 @@
     w.location.href = "index.html";
   }
 
+  /** The next step on this page, shown in the banner (the instructions of demo.html are not visible here). */
+  function pageHint() {
+    var page = (w.location.pathname.split("/").pop() || "index.html").toLowerCase();
+    var q = function (t) {
+      return "«" + NBSP + t + NBSP + "»";
+    };
+    if (page === "index.html") return "Paiement simulé" + NBSP + ": n'envoyez rien, touchez " + q("J'ai envoyé l'argent");
+    if (page === "lecture.html") return "Touchez " + q("Sommaire") + NBSP + ": quiz, fichiers, reçu";
+    if (page === "recu.html" || page === "attestation.html") return q("Retour à la formation") + " pour continuer";
+    if (page === "gratuit.html") return "Formulaire simulé" + NBSP + ": rien n'est envoyé";
+    return "Paiement simulé";
+  }
+
+  var hintNode = null;
+  var hintTimer = null;
+
+  /** Shows `text` in the banner for a few seconds, then the page hint again. */
+  function flash(text) {
+    if (!hintNode) return;
+    hintNode.textContent = text;
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(function () {
+      hintNode.textContent = pageHint();
+    }, 8000);
+  }
+
   function banner() {
     if (doc.getElementById("tpro-demo-banner")) return;
     var bar = doc.createElement("div");
@@ -575,7 +622,11 @@
     var strong = doc.createElement("strong");
     strong.textContent = "MODE DÉMO";
     p.appendChild(strong);
-    p.appendChild(doc.createTextNode(" — paiement simulé · "));
+    hintNode = doc.createElement("span");
+    hintNode.className = "demo-hint";
+    hintNode.setAttribute("aria-live", "polite");
+    hintNode.textContent = pageHint();
+    p.appendChild(hintNode);
     var btn = doc.createElement("button");
     btn.type = "button";
     btn.id = "tpro-demo-quit";
@@ -584,12 +635,25 @@
     p.appendChild(btn);
     bar.appendChild(p);
     doc.body.appendChild(bar);
+    // Nothing of the page may stay hidden under the banner (formation.css reads --demo-bar-h).
+    var measure = function () {
+      doc.documentElement.style.setProperty("--demo-bar-h", Math.ceil(bar.getBoundingClientRect().height) + "px");
+    };
+    measure();
+    w.addEventListener("resize", measure);
   }
 
   // Pages of this folder opened in a new tab would lose the demo (sessionStorage is per tab): keep them here.
+  // « Envoyer ce lien sur mon WhatsApp » would send a demo link that only works in this tab: explained instead.
   doc.addEventListener(
     "click",
     function (e) {
+      var self = e.target && e.target.closest ? e.target.closest("[data-whatsapp-self]") : null;
+      if (self) {
+        e.preventDefault();
+        flash("En démonstration, ce lien ne marcherait pas hors de cet onglet. Dans la vraie formation, il ouvre WhatsApp avec le lien personnel de l'acheteur.");
+        return;
+      }
       var a = e.target && e.target.closest ? e.target.closest('a[target="_blank"]') : null;
       if (!a) return;
       try {

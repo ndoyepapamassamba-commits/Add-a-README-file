@@ -203,6 +203,7 @@ export function orderRow(overrides: Partial<OrderRow> = {}): OrderRow {
     payment_method: null,
     manual_payer_phone: null,
     manual_amount: null,
+    manual_amount_at: null,
     payment_detected_at: null,
     payment_detected_text: null,
     paid_amount: null,

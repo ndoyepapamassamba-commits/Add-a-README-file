@@ -75,6 +75,21 @@ function publicApiBase(get: Get): string {
   return url.origin + url.pathname.replace(/\/+$/, "");
 }
 
+/** COURSE_UPLOAD_TOKEN_SHA256: exactly 64 hex digits (any case), else null (uploads disabled). */
+function sha256Setting(get: Get, key: string): string | null {
+  const raw = get(key);
+  return raw !== null && /^[0-9a-f]{64}$/i.test(raw) ? raw.toLowerCase() : null;
+}
+
+/** COURSE_UPLOAD_UNTIL: an ISO date ("2026-10-23") or date-time with a zone ("2026-10-23T18:00:00Z"), else null. */
+const ISO_UNTIL_RE = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2}))?$/;
+function untilSetting(get: Get, key: string): number | null {
+  const raw = get(key);
+  if (raw === null || !ISO_UNTIL_RE.test(raw)) return null;
+  const t = Date.parse(raw);
+  return Number.isFinite(t) ? t : null;
+}
+
 export function loadConfig(envGet: EnvGet, settings: Record<string, string> = {}): Config {
   const get = reader(envGet, settings);
   const ownerWaveMobile = normalizeSnMobile(get("OWNER_WAVE_MOBILE") ?? "");
@@ -107,6 +122,8 @@ export function loadConfig(envGet: EnvGet, settings: Record<string, string> = {}
     stageMultiPrice: int(get, "PRICE_STAGE_MULTI", 2500, 1),
     coursePrices: { pq_essentiel: int(get, "PRICE_PQ_ESSENTIEL", 25000, 1) },
     pqSalesOpen: /^(true|1|yes|oui|on)$/i.test(get("PQ_SALES_OPEN") ?? ""),
+    courseUploadTokenSha256: sha256Setting(get, "COURSE_UPLOAD_TOKEN_SHA256"),
+    courseUploadUntil: untilSetting(get, "COURSE_UPLOAD_UNTIL"),
     openrouterApiKey: get("OPENROUTER_API_KEY"),
     llmModel: get("LLM_MODEL") ?? DEFAULT_LLM_MODEL,
     previewRateLimitPerHour: int(get, "PREVIEW_RATE_LIMIT_PER_HOUR", 12, 1),

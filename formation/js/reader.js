@@ -23,6 +23,11 @@
   var pollTimer = null;
   var pollUntil = 0;
 
+  /** Demo mode (js/demo-shim.js): the page runs on the in-browser mock. */
+  function isDemo() {
+    return document.documentElement.classList.contains("is-demo");
+  }
+
   function api(method, suffix, body) {
     return TPRO.api.request(method, TPRO.api.orderPath(id, suffix), body ? { body: body } : undefined);
   }
@@ -209,7 +214,11 @@
             el("span", { class: "pulse", "aria-hidden": "true" }),
             "Nous attendons la confirmation de votre transfert Wave. Cette page s'ouvre toute seule dès que le paiement est reconnu."
           ]),
-          el("p", { class: "muted" }, ["Commande ", el("strong", { text: id }), " · ", TPRO.COURSE_LABEL, " — " + fmt.fcfa(res.order.amount)]),
+          el("p", { class: "muted" }, [
+            "Commande ", el("strong", { text: id }), " · ", TPRO.COURSE_LABEL,
+            " — prix " + fmt.fcfa(res.order.amount) + ". Le montant exact à envoyer (un peu moins) s'affiche avec «" + NBSP +
+              "Afficher les instructions de paiement" + NBSP + "»."
+          ]),
           el("p", { class: "state-actions" }, [showPay]),
           payError,
           payBox,
@@ -351,14 +360,43 @@
     ]);
     art.appendChild(head);
 
-    var frag = TPRO.safeHtml(m.html);
+    // Demo only: module 1 is the public free module, whose « gratuit/… » links point at the public data file.
+    var frag = TPRO.safeHtml(m.html, { allowLocalDownloads: isDemo() && m.n === 1 });
     var holder = el("div", { class: "module-body module" });
     holder.appendChild(frag);
-    // Wide tables scroll inside their own box (never the page) and stay announced as tables.
+    // Wide tables scroll inside their own box (never the page) and stay announced as tables. The caption is shown
+    // above the box (it would be cut at the box edge otherwise) and stays in the table for screen readers.
     $$("table", holder).forEach(function (t) {
-      var box = el("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": t.caption ? t.caption.textContent : "Tableau" });
+      var label = t.caption ? t.caption.textContent : "";
+      var box = el("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": label || "Tableau" });
       t.parentNode.insertBefore(box, t);
       box.appendChild(t);
+      if (label) {
+        box.parentNode.insertBefore(el("p", { class: "table-title", "aria-hidden": "true", text: label }), box);
+        t.caption.classList.add("sr-only");
+      }
+    });
+    // « Copier le code » on every M block: the method is to paste it into the Advanced Editor.
+    $$("pre.m-code", holder).forEach(function (pre) {
+      var box = el("div", { class: "code-box" });
+      pre.parentNode.insertBefore(box, pre);
+      box.appendChild(pre);
+      var label = el("span", { class: "btn-label", text: "Copier le code" });
+      var b = el("button", { type: "button", class: "code-copy" }, [label]);
+      b.addEventListener("click", function () {
+        TPRO.copyText(pre.textContent).then(
+          function () {
+            setText(label, "Copié ✓");
+            setTimeout(function () {
+              setText(label, "Copier le code");
+            }, 2500);
+          },
+          function () {
+            setText(label, "Sélectionnez le code");
+          }
+        );
+      });
+      box.appendChild(b);
     });
     var firstEl = holder.firstElementChild;
     var root = firstEl && firstEl.tagName === "SECTION" ? firstEl : holder;
