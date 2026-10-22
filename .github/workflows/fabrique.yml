@@ -27,7 +27,9 @@ concurrency: { group: fabrique, cancel-in-progress: false }
 env:
   CODE: claude/relaxed-noether-svkgiu          # branche du moteur
   BIBLIO: ${{ github.workspace }}/../bibliotheque
-  MASSAMBA_MODELS: ${{ github.workspace }}/../modeles
+  # 22/10/2026 : les modules lisent ~/.cache/massamba-models en dur (ambiance, rires, émojis, BEAT2, juge local…) — le coffre s'ouvre
+  # au même endroit que sur la machine de production ; liste des modèles relevée par traçage d'un épisode à froid (1,5 Go)
+  MASSAMBA_MODELS: /home/runner/.cache/massamba-models
 jobs:
   amorce:
     if: github.event_name == 'push'
@@ -103,6 +105,7 @@ jobs:
           MASSAMBA_BIBLIO: ${{ env.BIBLIO }}
           MASSAMBA_TROUPE: ${{ env.BIBLIO }}/troupe
           PIPER_VOICES: ${{ env.MASSAMBA_MODELS }}/piper/
+          JUGE_LOCAL: ${{ env.MASSAMBA_MODELS }}/juge-local
           FABRIQUE_CADENCE: ${{ inputs.videos }}
           FABRIQUE_MINUTES: '290'
           OMP_NUM_THREADS: '1'
