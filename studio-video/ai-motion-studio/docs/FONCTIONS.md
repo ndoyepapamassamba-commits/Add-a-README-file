@@ -1,0 +1,45 @@
+# Fonctions : opérationnelles, partielles, dépendantes d'un service externe
+
+État au 22/10/2026. Chaque ligne renvoie à sa preuve : test unitaire (U), test e2e (E1 à E17) ou essai réel consigné dans [RAPPORT-TESTS.md](RAPPORT-TESTS.md).
+
+## 1. Opérationnelles (dans l'application, sans service externe)
+
+| Fonction | Preuve |
+|---|---|
+| Ouverture sans clé, 9 sections, aucun appel payant | E1 |
+| Mode démo marqué jusque dans l'image (bandeau incrusté, étiquette DÉMO, jamais compté comme IA) | E2 |
+| Import d'images : aperçu, formats refusés, médiathèque | E3 |
+| Assistant de consigne : idée gardée en tête, ajouts sourcés, 11 préréglages, rien de réécrit en silence | E4, U |
+| Validation des paramètres d'après les capacités du moteur (image, image de fin, durée bornée, consigne) | E5, U |
+| Gestionnaire de tâches : états, double soumission refusée, concurrence, délai, annulation, relance, restauration | E7, E14, U |
+| Timeline avec vraies vidéos (durée réelle, point d'entrée, vitesse, volume, muet) | E9, E10, E11 |
+| Lecture synchronisée image et son | E10 |
+| Découpe au curseur, duplication, suppression, glisser, poignées ; 10 transitions | E11, E17 |
+| Sous-titres `.srt` / `.vtt` (import, édition, export, incrustation) ; dialogues du storyboard vers sous-titres | Code relu ; incrustation rendue dans l'export (E13) |
+| Sauvegarde automatique (IndexedDB) et fichier projet complet v3, réouverture à l'identique | E12 |
+| Ouverture et migration des projets MASSAMBA Motion Studio 2 (v2) | E16, U |
+| Export MP4 image par image validé par l'application, puis relu par ffprobe et décodé sans erreur ; repli WebM | E13 (dans le Chromium de test : VP9 + Opus dans le MP4, faute d'encodeur H.264 ; H.264/AAC à confirmer dans Chrome ou Edge) |
+| Fonctions de montage d'origine (117 identifiants, 13 listes, mouvements, images clés, textes, annuler et rétablir, étalonnage, PNG, planche, lecture) | E17 |
+| Protection des clés : jeton en mémoire seulement, absent des stockages, exports et page ; envoyé seulement au service appelé | E15, U (serveur) |
+| Serveur local : voies payantes fermées (403), validation (400), fichiers protégés, origine étrangère refusée, limite de débit (429), journaux caviardés | U (serveur, 7 tests) |
+| Personnages : 61 duos et 122 personnages de la troupe, fiches de continuité modifiables, « Utiliser dans Générer » | Fumée Playwright (9 vues sans erreur) |
+| Storyboard : découpage d'un scénario en scènes, moteur par scène, variantes, « Film complet » avec confirmation, assemblage en timeline | Code relu ; génération par scène = même chemin que E6 à E9 |
+
+## 2. Partiellement opérationnelles
+
+| Fonction | Ce qui marche | Ce qui reste : greffe en cours |
+|---|---|---|
+| Génération réelle sur les Spaces gratuits **depuis le conteneur de développement** | Protocole complet vérifié (E6 à E8) contre les configurations réelles. Le 22/10/2026, un vrai calcul I2V a eu lieu sur le GPU du Space Wan 2.2 (26,7 s). | Depuis le conteneur, le téléchargement du clip a été refusé (403 : plusieurs répliques derrière le proxy). Le navigateur de l'utilisateur garde sa connexion HTTP/2 vers la même réplique. **Mesure attendue** : premier clip reçu dans le navigateur de l'utilisateur, consigné dans l'Historique. |
+| Texte → vidéo anonyme | Chemin LTX-2.3 et chaîne Pollinations → Wan branchés et validés | Quota anonyme épuisé le 22/10 à 20:52 (« 37 s restantes »). Un compte Hugging Face gratuit de l'utilisateur lève ce point. |
+| Moteur V1 de la troupe par l'API | Catalogue des scènes, contrôle de ton (CONFORME sur « telephone-ecoute »), voix et visages préparés, tournage lancé par l'API | Résultat du tournage par l'API : voir le RAPPORT-TESTS (durée mesurée) |
+| Voix off | Piper local (siwis, gilles) par le serveur ; voix du navigateur en écoute seule | La voix du navigateur ne peut pas être enregistrée dans l'export (limite de l'API Web Speech) ; Piper la remplace. |
+
+## 3. Dépendantes d'un service externe
+
+| Fonction | Service | État |
+|---|---|---|
+| Image → vidéo, texte → vidéo gratuits | Spaces Hugging Face (Wan 2.2, LTX-2.3, LTX-Video) | Disponibles selon la file et le quota GPU gratuit ; capacités relues en direct |
+| Image de départ générée | Pollinations (`sana`) | Gratuit, sans compte |
+| Traduction de la consigne | Pollinations `openai-fast` | Gratuite ; traduction **affichée** avant usage, jamais appliquée en silence |
+| fal.ai, Replicate, Runway, Luma | API officielles, clé dans `.env` | Branchées et testées hors ligne (en-têtes Runway conformes au SDK 4.22.0) ; **fermées** tant que `PAYANT_AUTORISE=0` |
+| Kling | API officielle | **À CONFIRMER** : adresse et modèle à renseigner depuis la console Kling de l'utilisateur |

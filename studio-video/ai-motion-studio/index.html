@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>MASSAMBA AI MOTION STUDIO</title>
+<meta name="description" content="Studio de création vidéo assistée par IA : image → vidéo, texte → vidéo, storyboard, personnages, montage, audio et export."/>
+<link rel="stylesheet" href="css/studio.css"/>
+</head>
+<body class="vue-generer">
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22"><path d="M5 26V7l11 11L27 7v19" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="16" cy="18" r="2.4" fill="currentColor"/></svg></span>
+    <div>
+      <h1>MASSAMBA AI MOTION STUDIO</h1>
+      <p>Image → vidéo · Texte → vidéo · Storyboard · Montage · Export</p>
+    </div>
+  </div>
+  <div class="topactions">
+    <button class="chip mode" id="modeChip" title="Basculer entre moteurs réels et mode démo">Moteurs réels</button>
+    <button class="chip" id="jobsChip" title="Tâches de génération">0 tâche</button>
+    <span class="pill" id="statusPill">Prêt</span>
+    <button class="btn ghost icon" id="btnUndo" title="Annuler (Ctrl+Z)">↶</button>
+    <button class="btn ghost icon" id="btnRedo" title="Rétablir (Ctrl+Y)">↷</button>
+    <button class="btn ghost small" id="btnDemo" title="Ajoute 3 images de démonstration (pas des générations IA)">Images démo</button>
+    <button class="btn ghost small" id="btnHelp">Aide</button>
+    <button class="btn ghost small" id="btnSaveProj">Sauver</button>
+    <label class="btn ghost small" style="display:inline-block">Ouvrir<input id="projFile" type="file" accept=".json,application/json" hidden></label>
+    <button class="btn ghost small" id="btnPng">PNG</button>
+    <button class="btn primary" id="btnExport">● Exporter la vidéo</button>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="rail" aria-label="Sections">
+    <button class="nav on" data-vue="generer"><i>✦</i><span>Générer</span></button>
+    <button class="nav" data-vue="storyboard"><i>▤</i><span>Storyboard</span></button>
+    <button class="nav" data-vue="medias"><i>▦</i><span>Médiathèque</span></button>
+    <button class="nav" data-vue="personnages"><i>☺</i><span>Personnages</span></button>
+    <button class="nav" data-vue="montage"><i>▭</i><span>Montage</span></button>
+    <button class="nav" data-vue="audio"><i>♫</i><span>Audio &amp; voix</span></button>
+    <button class="nav" data-vue="historique"><i>⧗</i><span>Historique</span></button>
+    <button class="nav" data-vue="projets"><i>⇩</i><span>Projets</span></button>
+    <button class="nav" data-vue="moteurs"><i>⚙</i><span>Moteurs IA</span></button>
+  </nav>
+
+  <!-- ============================================================ 1. STUDIO DE GÉNÉRATION -->
+  <section class="vue on" data-vue="generer" id="vueGenerer">
+    <div class="gen">
+      <div class="gen-form">
+        <div class="seg trois" role="tablist">
+          <button class="segb on" id="modeI2V" data-mode="i2v">Image → vidéo</button>
+          <button class="segb" id="modeT2V" data-mode="t2v">Texte → vidéo</button>
+          <button class="segb" id="modeV1" data-mode="v1" title="Moteur de la V1 : sketch parlé, voix, bouches synchronisées, en local">Sketch V1</button>
+        </div>
+        <div id="blocV1" hidden>
+          <p class="hint">Moteur de la V1, sur votre ordinateur (serveur local) : voix Piper, bouches synchronisées, rires, ambiance, montage TikTok 1080×1920. Grille de ton de la V1 appliquée avant le tournage.</p>
+          <div class="grp"><label for="v1Scene">Scène préparée (duo)</label><select id="v1Scene"><option value="">— chargement… —</option></select></div>
+          <div class="grp"><label for="v1Sketch">Sketch</label><select id="v1Sketch"><option value="">— écrire mon sketch —</option></select></div>
+          <div class="grp"><label for="v1Titre">Titre</label><input id="v1Titre" type="text" placeholder="LE TÉLÉPHONE QUI ÉCOUTE"></div>
+          <div class="grp"><label>Répliques (la dernière est la chute)</label><div id="v1Repliques" class="repliques"></div>
+            <div class="row"><button class="btn ghost small" id="btnV1Ligne">+ Réplique</button><button class="btn ghost small" id="btnV1Controle">Contrôler avec la grille de ton</button></div></div>
+          <pre class="ton" id="v1Ton"></pre>
+        </div>
+        <div id="blocImage">
+          <div class="drop" id="genImageDrop"><strong>Image de départ</strong><span>JPG · PNG · WEBP — glissez ou choisissez</span>
+            <div class="row"><label class="btn small">Choisir un fichier<input id="genImageFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></label><button class="btn ghost small" id="genImageFromLib">Médiathèque</button></div>
+            <img id="genImagePreview" class="apercu" alt="" hidden></div>
+          <details class="grp" id="blocFin"><summary>Image de fin (si le moteur le permet)</summary>
+            <div class="row"><label class="btn ghost small">Choisir<input id="genFinFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></label><button class="btn ghost small" id="genFinClear">Retirer</button></div>
+            <img id="genFinPreview" class="apercu" alt="" hidden></details>
+        </div>
+        <div class="grp"><label for="genPerso">Personnage de référence</label><select id="genPerso"><option value="">— aucun —</option></select>
+          <label class="check"><input type="checkbox" id="genContinuite" checked> Ajouter sa fiche de continuité à la consigne</label></div>
+        <div class="grp"><label for="genPrompt">Consigne (votre idée, en français ou en anglais)</label>
+          <textarea id="genPrompt" rows="4" placeholder="Ex. : Anime ce jeune réparateur de téléphones dans sa boutique d'Abidjan : il montre l'écran cassé et éclate de rire, travelling avant lent."></textarea></div>
+        <details class="grp" id="genAvance"><summary>Options avancées et assistant de consigne</summary>
+          <div class="grid2">
+            <div class="grp"><label for="genSujet">Sujet</label><input id="genSujet" type="text"></div>
+            <div class="grp"><label for="genAction">Action</label><input id="genAction" type="text"></div>
+            <div class="grp"><label for="genDecor">Décor</label><input id="genDecor" type="text"></div>
+            <div class="grp"><label for="genPreset">Style (préréglage)</label><select id="genPreset"><option value="">— aucun —</option></select></div>
+            <div class="grp"><label for="genCamera">Caméra</label><select id="genCamera"><option value="">— libre —</option></select></div>
+            <div class="grp"><label for="genLumiere">Éclairage</label><input id="genLumiere" type="text"></div>
+            <div class="grp"><label for="genAmbiance">Ambiance</label><input id="genAmbiance" type="text"></div>
+            <div class="grp"><label for="genMouvements">Mouvements, gestes, expressions</label><input id="genMouvements" type="text"></div>
+          </div>
+          <div class="grp"><label for="genContraintes">Contraintes de cohérence</label><input id="genContraintes" type="text" placeholder="Ex. : mêmes vêtements, pas de texte à l'écran"></div>
+          <div class="row"><button class="btn small" id="btnStructurer">Structurer la consigne</button><button class="btn ghost small" id="btnTraduire" title="Traduction gratuite (Pollinations), affichée avant l'envoi">Traduire en anglais</button></div>
+          <ol class="parts" id="genParts"></ol>
+          <p class="hint">Les préréglages sont des instructions de style, pas des garanties : le résultat dépend du moteur.</p>
+        </details>
+        <div class="grp"><label for="genPromptFinal">Consigne envoyée au moteur (modifiable, rien n'est changé en silence)</label><textarea id="genPromptFinal" rows="3"></textarea></div>
+        <div class="grp"><label for="genModele">Moteur</label><select id="genModele"></select><div class="caps" id="genCaps">—</div></div>
+        <div class="grid3">
+          <div class="grp"><label for="genDuree">Durée (s)</label><input id="genDuree" type="number" step="0.5" value="3"></div>
+          <div class="grp"><label for="genFormat">Format</label><select id="genFormat"><option value="16:9">16:9 horizontal</option><option value="9:16">9:16 vertical</option><option value="1:1">1:1 carré</option></select></div>
+          <div class="grp"><label for="genGraine">Graine</label><input id="genGraine" type="number" placeholder="aléatoire"></div>
+        </div>
+        <div class="grp" id="blocResolution"><label for="genResolution">Qualité</label><select id="genResolution"><option value="eco">Économique (aperçu)</option><option value="std" selected>Standard</option><option value="hd">Haute (plus de quota)</option></select></div>
+        <div class="cout" id="genCout"></div>
+        <div class="row"><button class="btn primary big" id="btnGenerer">Générer la vidéo</button><button class="btn ghost" id="btnVariante" disabled>Nouvelle variante</button></div>
+        <p class="hint" id="genErreurs" role="alert"></p>
+      </div>
+      <div class="gen-vue">
+        <div class="viewer"><video id="genVideo" controls playsinline></video><div class="viewer-vide" id="genVide">Le résultat de la génération s'affichera ici.<br><small>Les vidéos générées sont rangées dans la médiathèque et l'historique.</small></div></div>
+        <div class="etat" id="genEtat"></div>
+        <div class="row"><button class="btn" id="btnGenAjouter" disabled>Ajouter à la timeline</button><button class="btn ghost" id="btnGenTelecharger" disabled>Télécharger</button><button class="btn ghost" id="btnGenAnnuler" disabled>Annuler la génération</button></div>
+        <div class="sec-title"><span>Variantes</span></div>
+        <div class="variantes" id="genVariantes"><p class="empty">Aucune variante pour l'instant.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 2. SCÉNARIO ET STORYBOARD -->
+  <section class="vue" data-vue="storyboard" id="vueStoryboard">
+    <div class="page">
+      <div class="page-head"><h2>Scénario et storyboard</h2>
+        <div class="row"><button class="btn ghost small" id="btnSceneAjouter">+ Scène</button><button class="btn small" id="btnFilmComplet">Film complet…</button><button class="btn primary small" id="btnAssembler">Assembler dans la timeline</button></div></div>
+      <div class="grp"><label for="sbScenario">Scénario (une scène par paragraphe, ou « SCÈNE 1 », « SCÈNE 2 »…)</label><textarea id="sbScenario" rows="4" placeholder="Blaise répare un téléphone. Odette arrive, furieuse.&#10;&#10;Blaise montre l'écran : c'est encore pire."></textarea>
+        <div class="row"><button class="btn small" id="btnDecouper">Découper en scènes</button><span class="hint">Un film long se construit scène par scène : chaque moteur ne produit que quelques secondes par génération.</span></div></div>
+      <div class="scenes" id="sbScenes"><p class="empty">Aucune scène. Écrivez un scénario ou ajoutez une scène.</p></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 3. MÉDIATHÈQUE -->
+  <section class="vue" data-vue="medias" id="vueMedias">
+    <div class="page">
+      <div class="page-head"><h2>Médiathèque</h2>
+        <div class="row"><select id="libFiltre"><option value="tout">Tout</option><option value="image">Images</option><option value="ia">Vidéos générées par IA</option><option value="video">Toutes les vidéos</option><option value="demo">Démo</option><option value="audio">Audio</option></select>
+          <label class="btn small">Importer<input id="libImport" type="file" accept="image/*,video/*,audio/*" multiple hidden></label></div></div>
+      <p class="hint">Stockage : les médias sont gardés dans <strong>ce navigateur</strong> (IndexedDB) et dans le fichier projet quand vous le sauvez. Les liens temporaires des fournisseurs sont rapatriés dès réception : rien ne reste chez eux du côté de l'application.</p>
+      <div class="libgrid" id="libGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 4. PERSONNAGES ET RÉFÉRENCES -->
+  <section class="vue" data-vue="personnages" id="vuePersonnages">
+    <div class="page two">
+      <div>
+        <div class="page-head"><h2>Personnages</h2><div class="row"><button class="btn small" id="btnPersoNouveau">+ Personnage</button></div></div>
+        <div class="row"><input id="persoRecherche" type="search" placeholder="Rechercher (nom, métier, lieu)"><label class="check"><input type="checkbox" id="persoTroupe" checked> Nouvelle troupe (61 duos)</label></div>
+        <div class="persos" id="persoListe"></div>
+      </div>
+      <div class="fiche" id="persoFiche">
+        <h3 id="persoTitre">Fiche</h3>
+        <div class="grid2">
+          <div class="grp"><label for="pfNom">Nom</label><input id="pfNom" type="text"></div>
+          <div class="grp"><label for="pfLieu">Lieu / scène</label><input id="pfLieu" type="text"></div>
+        </div>
+        <div class="grp"><label for="pfDescription">Description</label><textarea id="pfDescription" rows="2"></textarea></div>
+        <div class="grid2">
+          <div class="grp"><label for="pfAttributs">Attributs visuels (allure)</label><textarea id="pfAttributs" rows="2"></textarea></div>
+          <div class="grp"><label for="pfVetements">Vêtements</label><textarea id="pfVetements" rows="2"></textarea></div>
+        </div>
+        <div class="grp"><label for="pfSignes">Signes distinctifs</label><input id="pfSignes" type="text"></div>
+        <div class="grp"><label for="pfContinuite">Fiche de continuité (ajoutée aux consignes des scènes où il apparaît)</label><textarea id="pfContinuite" rows="2"></textarea></div>
+        <div class="grp"><label>Images de référence</label><div class="refs" id="pfRefs"></div>
+          <div class="row"><label class="btn ghost small">Ajouter des images<input id="pfRefFile" type="file" accept="image/*" multiple hidden></label><button class="btn ghost small" id="btnPersoImage" title="Image dessinée gratuitement par Pollinations d'après l'allure">Créer une image (gratuit)</button></div></div>
+        <div class="grp"><label>Scènes où il apparaît</label><div id="pfScenes" class="hint">—</div></div>
+        <div class="row"><button class="btn primary small" id="btnPersoEnregistrer">Enregistrer</button><button class="btn small" id="btnPersoUtiliser">Utiliser dans Générer</button><button class="btn ghost small" id="btnPersoSupprimer">Supprimer</button></div>
+        <p class="hint">Limite connue : aucun moteur gratuit actuel ne garantit une identité parfaitement constante d'une scène à l'autre. L'image de référence sert d'image de départ (image → vidéo) et la fiche de continuité est ajoutée à la consigne.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 5. TIMELINE DE MONTAGE (moteur de Motion Studio 2) -->
+  <section class="vue" data-vue="montage" id="vueMontage">
+  <main class="app">
+    <aside class="panel left">
+      <div class="drop" id="drop">
+        <strong>Glissez vos médias ici</strong>
+        <span>Images · vidéos · audio — plusieurs fichiers</span>
+        <label class="btn primary small" style="display:inline-block">Choisir des fichiers
+          <input id="fileInput" type="file" accept="image/*,video/*,audio/*" multiple hidden>
+        </label>
+      </div>
+      <div class="sec-title"><span>Médiathèque</span><span class="mono" id="mediaCount">0</span></div>
+      <div id="mediaGrid" class="mgrid"></div>
+      <div class="sep"></div>
+      <div class="sec-title"><span>Résultats</span></div>
+      <div id="results" class="results"><p class="empty">Vos exports apparaîtront ici, prêts à télécharger.</p></div>
+      <div class="foot">Espace = lecture · ← → = ±0,5 s · S = découper · Ctrl+D = dupliquer · Suppr = retirer le plan · Ctrl+Z / Ctrl+Y = historique.</div>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-top">
+        <button class="chip" data-guide="safe">Marges sûres</button>
+        <button class="chip" data-guide="thirds">Règle des tiers</button>
+        <button class="chip" data-guide="center">Centre</button>
+        <span class="sp"></span>
+        <span class="mono" id="stageInfo">1280 × 720 · 30 i/s</span>
+      </div>
+      <div class="stage-wrap">
+        <canvas id="cv" width="1280" height="720"></canvas>
+        <span class="badge-ratio" id="ratioBadge">16:9</span>
+      </div>
+      <div class="transport">
+        <button id="btnPlay" class="play" title="Lecture (Espace)">▶</button>
+        <button class="btn ghost small" id="btnPrev" title="Plan précédent">⏮</button>
+        <span id="tcur" class="mono">0:00.00</span>
+        <input id="scrub" type="range" min="0" max="1" step="0.01" value="0"/>
+        <span id="tdur" class="mono">0:00.00</span>
+        <button class="btn ghost small" id="btnNext" title="Plan suivant">⏭</button>
+        <button class="btn ghost small on" id="btnLoop">Boucle</button>
+      </div>
+      <div class="tl">
+        <div class="tl-tools">
+          <span class="lbl">Timeline</span>
+          <button class="btn ghost small" id="btnAutoPlan">Pilote auto</button>
+          <button class="btn ghost small" id="btnAddText">+ Texte</button>
+          <button class="btn ghost small" id="btnAddKf">◆ Keyframe</button>
+          <button class="btn ghost small" id="btnSplit" title="Découper au curseur (S)">✂ Découper</button>
+          <button class="btn ghost small" id="btnDup" title="Dupliquer (Ctrl+D)">⧉ Dupliquer</button>
+          <button class="btn ghost small" id="btnDelClip" title="Supprimer le plan (Suppr)">🗑</button>
+          <span class="sp" style="flex:1"></span>
+          <span class="lbl">Zoom</span>
+          <input id="tlZoom" type="range" min="20" max="220" step="2" value="60"/>
+          <span class="mono" id="tlZoomVal">60 px/s</span>
+        </div>
+        <div class="tl-body">
+          <div class="tl-labels">
+            <div class="lr ruler">Temps</div>
+            <div class="lr">Vidéo</div>
+            <div class="lr t">Texte</div>
+            <div class="lr s">Sous-titres</div>
+            <div class="lr a">Audio</div>
+          </div>
+          <div class="tl-lanes" id="tlLanes">
+            <div class="tl-inner" id="tlInner">
+              <div class="tl-ruler" id="tlRuler"></div>
+              <div class="lane" data-lane="video" id="laneVideo"></div>
+              <div class="lane t" data-lane="text" id="laneText"></div>
+              <div class="lane s" data-lane="sub" id="laneSub"></div>
+              <div class="lane a" data-lane="audio" id="laneAudio"></div>
+              <div class="ph" id="playhead" style="left:0"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel right">
+      <div class="tabs">
+        <button class="tab on" data-tab="plan">Plan</button>
+        <button class="tab" data-tab="text">Texte</button>
+        <button class="tab" data-tab="fx">Effets</button>
+        <button class="tab" data-tab="audio">Audio</button>
+        <button class="tab" data-tab="out">Sortie</button>
+      </div>
+
+      <div class="tabpane on" data-pane="plan">
+        <div id="videoClipBox" style="display:none">
+          <div class="sec-title"><span>Clip vidéo</span></div>
+          <p class="hint" id="clipSrcInfo"></p>
+          <div class="row">
+            <div class="grp"><label>Début dans la source (s)</label><input id="inpTrimIn" type="number" min="0" step="0.05" value="0"></div>
+            <label class="check" style="align-self:end"><input type="checkbox" id="chkMute"> Couper le son</label>
+          </div>
+          <div class="srow"><span class="lbl">Volume du clip</span><input id="rngClipVol" type="range" min="0" max="1.5" step="0.05" value="1"><span class="val" id="valClipVol">1.00</span></div>
+          <div class="sep"></div>
+        </div>
+        <div class="grp"><label>Mouvement de caméra</label><select id="selPreset"></select></div>
+        <div class="row">
+          <div class="grp"><label>Durée (s)</label><input id="inpDur" type="number" min="0.2" max="60" step="0.1" value="4"></div>
+          <div class="grp"><label>Vitesse</label><input id="inpSpeed" type="number" min="0.25" max="3" step="0.25" value="1"></div>
+        </div>
+        <div class="srow"><span class="lbl">Intensité</span><input id="rngClipInt" type="range" min="0" max="1.8" step="0.05" value="1"><span class="val" id="valClipInt">1.00</span></div>
+        <div class="row">
+          <div class="grp"><label>Courbe</label><select id="selEase">
+            <option value="easeInOut">Fluide</option><option value="easeOut">Départ vif</option><option value="easeIn">Arrivée douce</option><option value="smooth">Très doux</option><option value="linear">Linéaire</option>
+          </select></div>
+          <div class="grp"><label>Punch d'entrée</label><input id="inpEntry" type="number" min="0" max="0.3" step="0.01" value="0.04"></div>
+        </div>
+        <div class="sep"></div>
+        <div class="sec-title"><span>Transition vers le plan suivant</span></div>
+        <div class="grp"><select id="selTrans"></select></div>
+        <div class="srow"><span class="lbl">Durée</span><input id="rngTransDur" type="range" min="0" max="1.5" step="0.05" value="0.5"><span class="val" id="valTransDur">0.50</span></div>
+        <div class="sep"></div>
+        <div class="sec-title"><span>Keyframes</span><button class="btn ghost small" id="btnKfCap">Capturer</button></div>
+        <div class="kfbar" id="kfbar"><i style="left:0"></i></div>
+        <div class="kflist" id="kfList"></div>
+        <div id="kfEditor" style="display:none">
+          <div class="srow"><span class="lbl">Échelle</span><input id="kfScale" type="range" min="0.5" max="3" step="0.01" value="1"><span class="val" id="kfScaleV">1.00</span></div>
+          <div class="srow"><span class="lbl">Décal. X</span><input id="kfX" type="range" min="-1" max="1" step="0.01" value="0"><span class="val" id="kfXV">0.00</span></div>
+          <div class="srow"><span class="lbl">Décal. Y</span><input id="kfY" type="range" min="-1" max="1" step="0.01" value="0"><span class="val" id="kfYV">0.00</span></div>
+          <div class="srow"><span class="lbl">Rotation</span><input id="kfR" type="range" min="-0.6" max="0.6" step="0.01" value="0"><span class="val" id="kfRV">0.00</span></div>
+          <div class="srow"><span class="lbl">Opacité</span><input id="kfO" type="range" min="0" max="1" step="0.01" value="1"><span class="val" id="kfOV">1.00</span></div>
+        </div>
+        <p class="hint">Dès qu'un plan possède des keyframes, ce sont elles qui pilotent le mouvement. Sur une vidéo générée, choisissez « Fixe » pour garder le cadre du modèle.</p>
+      </div>
+
+      <div class="tabpane" data-pane="text">
+        <div class="grp"><label>Titre</label><input id="inpTitle" type="text" placeholder="Titre du film"></div>
+        <div class="grp"><label>Sous-titre</label><input id="inpSubtitle" type="text" placeholder="Sous-titre optionnel"></div>
+        <div class="row">
+          <div class="grp"><label>Style</label><select id="selTextStyle"><option value="lower">Bas de cadre</option><option value="center">Centré</option><option value="top">Haut de cadre</option><option value="caption">Carton bas</option></select></div>
+          <div class="grp"><label>Animation</label><select id="selTextAnim"><option value="fade">Fondu</option><option value="up">Montée</option><option value="down">Descente</option><option value="scale">Pop</option><option value="type">Machine à écrire</option><option value="blur">Flou entrant</option><option value="kinetic">Cinétique</option></select></div>
+        </div>
+        <div class="row">
+          <div class="grp"><label>Taille</label><input id="inpTextSize" type="number" min="0.02" max="0.14" step="0.005" value="0.052"></div>
+          <div class="grp"><label>Couleur</label><input id="inpTextColor" type="text" value="#FFFFFF"></div>
+        </div>
+        <div class="row">
+          <div class="grp"><label>Début (s)</label><input id="inpTextStart" type="number" min="0" step="0.1" value="0"></div>
+          <div class="grp"><label>Durée (s)</label><input id="inpTextDur" type="number" min="0.5" step="0.1" value="4"></div>
+        </div>
+        <div class="row">
+          <button class="btn small" id="btnTextApply">Mettre à jour</button>
+          <button class="btn ghost small" id="btnTextAdd">+ Nouveau calque</button>
+          <button class="btn ghost small" id="btnTextDel">Suppr.</button>
+        </div>
+        <div class="sec-title"><span>Calques de texte</span></div>
+        <div class="kflist" id="textList"></div>
+        <div class="sep"></div>
+        <div class="sec-title"><span>Sous-titres</span><label class="check"><input type="checkbox" id="chkSubs" checked> Incruster</label></div>
+        <div class="grp"><label>Texte</label><textarea id="inpSubText" rows="2" placeholder="Réplique à la tête de lecture"></textarea></div>
+        <div class="row"><div class="grp"><label>Durée (s)</label><input id="inpSubDur" type="number" min="0.5" step="0.1" value="2.5"></div><button class="btn small" id="btnSubAdd" style="align-self:end">+ Sous-titre</button></div>
+        <div class="row"><label class="btn ghost small">Importer .srt / .vtt<input id="subFile" type="file" accept=".srt,.vtt,text/vtt" hidden></label><button class="btn ghost small" id="btnSubExport">Exporter .srt</button></div>
+        <p class="hint">Double-clic sur un sous-titre de la timeline pour le retirer.</p>
+      </div>
+
+      <div class="tabpane" data-pane="fx">
+        <div class="grp"><label>Étalonnage global</label><select id="selGrade">
+          <option value="cinema">Cinéma</option><option value="chaud">Chaud / doré</option><option value="froid">Froid / bleuté</option><option value="noir">Noir et blanc</option>
+          <option value="vif">Vif / saturé</option><option value="delave">Délavé / vintage</option><option value="nuit">Nuit bleue</option><option value="none">Aucun</option>
+        </select></div>
+        <div class="grp"><label>Cadrage</label><select id="selFit"><option value="cover">Remplir (recadre)</option><option value="blur">Fond flou</option><option value="contain">Image entière</option></select></div>
+        <div class="srow"><span class="lbl">Vignette</span><input id="rngVig" type="range" min="0" max="1" step="0.05" value="0.35"><span class="val" id="valVig">0.35</span></div>
+        <div class="srow"><span class="lbl">Grain</span><input id="rngGrain" type="range" min="0" max="0.4" step="0.01" value="0.08"><span class="val" id="valGrain">0.08</span></div>
+        <div class="srow"><span class="lbl">Poussière</span><input id="rngDust" type="range" min="0" max="1" step="0.05" value="0.4"><span class="val" id="valDust">0.40</span></div>
+        <div class="srow"><span class="lbl">Bloom</span><input id="rngBloom" type="range" min="0" max="1" step="0.05" value="0"><span class="val" id="valBloom">0.00</span></div>
+        <div class="srow"><span class="lbl">Secousse</span><input id="rngShake" type="range" min="0" max="1" step="0.05" value="0"><span class="val" id="valShake">0.00</span></div>
+        <div class="srow"><span class="lbl">Letterbox</span><input id="rngLetter" type="range" min="0" max="0.2" step="0.01" value="0"><span class="val" id="valLetter">0.00</span></div>
+        <div class="sep"></div>
+        <div class="grp"><label>Transition par défaut</label><select id="selTransDefault"></select></div>
+        <button class="btn ghost small" id="btnApplyAll">Appliquer ce preset à tous les plans image</button>
+        <button class="btn ghost small" id="btnReset">Réinitialiser le montage</button>
+        <p class="hint">Les guides de cadrage affichés sur la scène ne sont jamais exportés.</p>
+      </div>
+
+      <div class="tabpane" data-pane="audio">
+        <div class="grp"><label>Musique (fichier importé)</label><input id="audioFile" type="file" accept="audio/*"></div>
+        <div class="srow"><span class="lbl">Volume</span><input id="rngVol" type="range" min="0" max="1" step="0.05" value="0.6"><span class="val" id="valVol">0.60</span></div>
+        <div class="srow"><span class="lbl">Fondu entrée</span><input id="rngFadeIn" type="range" min="0" max="3" step="0.1" value="0.5"><span class="val" id="valFadeIn">0.5</span></div>
+        <div class="srow"><span class="lbl">Fondu sortie</span><input id="rngFadeOut" type="range" min="0" max="3" step="0.1" value="0.8"><span class="val" id="valFadeOut">0.8</span></div>
+        <div class="grp"><label>Bruitage / dialogue (piste placée à la tête de lecture)</label><input id="audioTrackFile" type="file" accept="audio/*"></div>
+        <div class="sep"></div>
+        <div class="sec-title"><span>Voix off (micro)</span></div>
+        <div class="row">
+          <button class="btn small" id="btnRec">● Enregistrer</button>
+          <button class="btn ghost small" id="btnRecStop" disabled>■ Stop</button>
+          <button class="btn ghost small" id="btnVoiceDel">Effacer</button>
+        </div>
+        <div class="srow" style="margin-top:7px"><span class="lbl">Volume voix</span><input id="rngVoiceVol" type="range" min="0" max="1" step="0.05" value="0.9"><span class="val" id="valVoiceVol">0.90</span></div>
+        <div class="sep"></div>
+        <div class="sec-title"><span>Nappe musicale synthétisée</span></div>
+        <div class="grp"><select id="selGen"><option value="none">Aucune</option><option value="calme">Nappe calme (pad)</option><option value="pulse">Pulsation douce</option><option value="epique">Montée épique</option></select></div>
+        <div class="srow"><span class="lbl">Volume</span><input id="rngGenVol" type="range" min="0" max="0.6" step="0.02" value="0.18"><span class="val" id="valGenVol">0.18</span></div>
+        <p class="hint">La nappe est synthétisée par le navigateur (aucun fichier, aucun droit). Musique, voix, pistes et son des vidéos générées sont mixés dans l'export.</p>
+      </div>
+
+      <div class="tabpane" data-pane="out">
+        <div class="grp"><label>Format</label><select id="selAspect">
+          <option value="16:9">16:9 — 1280×720 (YouTube)</option><option value="9:16">9:16 — 720×1280 (TikTok, Reels, Shorts)</option><option value="1:1">1:1 — 1080×1080</option><option value="4:3">4:3 — 1080×810</option><option value="21:9">21:9 — 1344×576</option>
+        </select></div>
+        <div class="row">
+          <div class="grp"><label>Qualité</label><select id="selQuality"><option value="1">Standard</option><option value="1.5">HD (×1,5)</option></select></div>
+          <div class="grp"><label>Images/s</label><select id="selFps"><option value="24">24</option><option value="30" selected>30</option><option value="60">60</option></select></div>
+        </div>
+        <div class="grp"><label>Débit vidéo</label><select id="selBitrate"><option value="6000000">6 Mb/s — léger</option><option value="12000000" selected>12 Mb/s — standard</option><option value="20000000">20 Mb/s — haute qualité</option></select></div>
+        <div class="grp"><label>Fichier</label><select id="selExportFormat"><option value="auto">MP4 (H.264/AAC si disponible)</option><option value="webm">WebM temps réel</option></select><p class="hint" id="exportCodecs">Vérification des encodeurs…</p></div>
+        <div class="sep"></div>
+        <button class="btn primary" id="btnExport2" style="width:100%">● Exporter la vidéo</button>
+        <div class="row" style="margin-top:7px">
+          <button class="btn ghost small" id="btnPng2">Image PNG</button>
+          <button class="btn ghost small" id="btnSheet">Planche des plans</button>
+        </div>
+        <div class="sep"></div>
+        <div id="progressWrap"><div id="progressBar"><i></i></div><div id="progressTxt">0 %</div></div>
+        <div id="exportRapport" class="rapport"></div>
+        <div class="foot" id="projInfo">Projet vide</div>
+      </div>
+    </aside>
+  </main>
+  </section>
+
+  <!-- ============================================================ 6. AUDIO ET VOIX -->
+  <section class="vue" data-vue="audio" id="vueAudio">
+    <div class="page">
+      <div class="page-head"><h2>Audio et voix</h2></div>
+      <div class="cards3">
+        <div class="card"><h3>Sources du mixage</h3><div id="audioSources" class="liste"></div><p class="hint">Chaque son est étiqueté : importé, enregistré, généré localement ou généré par IA. Une vidéo n'est annoncée « avec son » que si sa piste audio a été réellement décodée.</p></div>
+        <div class="card"><h3>Voix off générée</h3>
+          <div class="grp"><label for="ttsTexte">Texte à dire</label><textarea id="ttsTexte" rows="3" placeholder="Écrivez la réplique…"></textarea></div>
+          <div class="row"><select id="ttsVoix"></select><button class="btn small" id="btnTts">Générer la voix</button></div>
+          <p class="hint" id="ttsEtat">Connecteur : Pollinations (gratuit, sans compte) — vérifié au premier usage.</p></div>
+        <div class="card"><h3>Dialogues → sous-titres</h3><p class="hint">Les dialogues saisis dans le storyboard deviennent des sous-titres calés sur chaque scène lors de l'assemblage.</p>
+          <button class="btn small" id="btnDialoguesSubs">Créer les sous-titres depuis le storyboard</button></div>
+      </div>
+      <p class="hint">Volumes, fondus, voix au micro, nappe et bruitages se règlent dans Montage → onglet Audio.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ 7. HISTORIQUE DES GÉNÉRATIONS -->
+  <section class="vue" data-vue="historique" id="vueHistorique">
+    <div class="page">
+      <div class="page-head"><h2>Historique des générations</h2>
+        <div class="row"><select id="histFiltre"><option value="tout">Toutes</option><option value="actives">En cours</option><option value="terminee">Terminées</option><option value="echec">Échecs</option><option value="annulee">Annulées</option></select>
+          <button class="btn ghost small" id="btnHistJson">Exporter JSON</button><button class="btn ghost small" id="btnHistCsv">Exporter CSV</button></div></div>
+      <div class="table-wrap"><table class="tab-hist"><thead><tr><th>Lancée</th><th>Fournisseur</th><th>Modèle</th><th>Mode</th><th>Statut</th><th>Coût</th><th>Résultat</th><th></th></tr></thead><tbody id="histListe"></tbody></table></div>
+      <p class="hint">Aucun pourcentage n'est inventé : la progression ne s'affiche que si le service la donne. Après une actualisation, les tâches du serveur local reprennent ; celles d'un Space gratuit sont marquées interrompues.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ 8. PROJETS ET EXPORTS -->
+  <section class="vue" data-vue="projets" id="vueProjets">
+    <div class="page">
+      <div class="page-head"><h2>Projets et exports</h2></div>
+      <div class="cards3">
+        <div class="card"><h3>Projet</h3>
+          <div class="grp"><label for="projNom">Nom</label><input id="projNom" type="text" value="Mon film"></div>
+          <div class="row"><button class="btn small" id="btnProjSauver">Sauver le projet complet</button><label class="btn ghost small">Ouvrir<input id="projFile2" type="file" accept=".json,application/json" hidden></label><button class="btn ghost small" id="btnProjNouveau">Nouveau</button></div>
+          <p class="hint" id="projAuto">Sauvegarde automatique dans ce navigateur.</p>
+          <p class="hint">Le fichier projet contient tous les médias (images, vidéos, sons), les scènes, les personnages et l'historique — jamais de clé. Les projets de MASSAMBA Motion Studio 2 s'ouvrent aussi (migration automatique).</p></div>
+        <div class="card"><h3>Exports</h3><div id="exportsListe" class="liste"><p class="empty">Aucun export.</p></div></div>
+        <div class="card"><h3>Où sont vos données</h3><ul class="hint"><li><strong>Ce navigateur</strong> : médias, projet en cours, historique (IndexedDB).</li><li><strong>Fichier projet</strong> : tout, pour rouvrir ailleurs.</li><li><strong>Serveur local</strong> (s'il est lancé) : vidéos reçues des fournisseurs payants, effacées au bout de 24 h.</li><li><strong>Fournisseurs</strong> : leurs liens sont temporaires ; l'application les télécharge aussitôt.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 9. PARAMÈTRES DES MOTEURS IA -->
+  <section class="vue" data-vue="moteurs" id="vueMoteurs">
+    <div class="page">
+      <div class="page-head"><h2>Paramètres des moteurs IA</h2><div class="row"><button class="btn small" id="btnRegVerifier">Vérifier tous les moteurs en direct</button></div></div>
+      <div class="cards3">
+        <div class="card"><h3>Compte Hugging Face (gratuit)</h3>
+          <p class="hint avert">⚠ Ce jeton est gardé en <strong>mémoire seulement</strong> (jamais enregistré, jamais exporté) et n'est envoyé qu'à huggingface.co et aux Spaces appelés — mécanisme prévu par Hugging Face pour les navigateurs. Créez un jeton « Read » ; ne collez jamais une clé de fournisseur payant ici.</p>
+          <div class="row"><input id="hfJeton" type="password" autocomplete="off" placeholder="hf_… (facultatif)"><button class="btn small" id="btnHfVerifier">Vérifier</button><button class="btn ghost small" id="btnHfOublier">Oublier</button></div>
+          <p class="hint" id="hfEtat">Sans compte : file anonyme, quota réduit.</p></div>
+        <div class="card"><h3>Serveur local (fournisseurs à clé secrète)</h3>
+          <div class="row"><input id="srvUrl" type="text" value="http://127.0.0.1:8787"><button class="btn small" id="btnSrvTester">Tester</button></div>
+          <div id="srvEtat" class="hint">Non testé. Les clés fal.ai, Replicate, Runway, Luma, Kling restent dans les variables d'environnement du serveur (voir docs/GUIDE-MOTEURS-ET-COUTS.md).</div></div>
+        <div class="card"><h3>Budget et limites</h3>
+          <div class="grid2"><div class="grp"><label for="budgetMax">Budget maximal (USD, voies payantes)</label><input id="budgetMax" type="number" min="0" step="1" value="0"></div>
+            <div class="grp"><label for="limiteTaches">Tâches par session</label><input id="limiteTaches" type="number" min="1" value="30"></div></div>
+          <label class="check"><input type="checkbox" id="chkDemo"> Mode démo (aucun appel réseau, résultats marqués « DÉMO »)</label>
+          <p class="hint">Rien de payant par défaut : les voies payantes restent désactivées tant que le serveur n'a pas PAYANT_AUTORISE=1 et que vous ne confirmez pas chaque génération.</p></div>
+      </div>
+      <div class="table-wrap"><table class="tab-reg"><thead><tr><th>Fournisseur</th><th>Modèle</th><th>T→V</th><th>I→V</th><th>Image fin</th><th>Durées</th><th>Sortie</th><th>Prix</th><th>Licence</th><th>Limites</th><th>État</th><th>Vérifié</th></tr></thead><tbody id="regTable"></tbody></table></div>
+    </div>
+  </section>
+</div>
+
+<div class="modal" id="helpModal">
+  <div class="box">
+    <h2>MASSAMBA AI MOTION STUDIO — mode d'emploi</h2>
+    <ul>
+      <li><strong>1. Générez</strong> : Image → vidéo (importez une image, décrivez le mouvement) ou Texte → vidéo (décrivez la scène). Choisissez un moteur gratuit ; un compte Hugging Face gratuit augmente le quota.</li>
+      <li><strong>2. Storyboard</strong> : découpez votre scénario en scènes, générez-les une par une ou en « Film complet » (confirmation demandée), puis assemblez.</li>
+      <li><strong>3. Personnages</strong> : la nouvelle troupe est déjà là ; une fiche de continuité est ajoutée aux consignes.</li>
+      <li><strong>4. Montage</strong> : vraies vidéos dans la timeline, découpe, transitions, textes, sous-titres, effets, keyframes.</li>
+      <li><strong>5. Son</strong> : musique, bruitages, voix au micro ou générée, son d'origine des vidéos.</li>
+      <li><strong>6. Exportez</strong> : MP4 H.264/AAC validé (dimensions, durée, codec, son) ou WebM ; sauvez le projet pour le rouvrir.</li>
+    </ul>
+    <p class="hint">Raccourcis (Montage) : <span class="kbd">Espace</span> lecture · <span class="kbd">←</span>/<span class="kbd">→</span> ±0,5 s · <span class="kbd">S</span> découper · <span class="kbd">K</span> keyframe · <span class="kbd">Ctrl+D</span> dupliquer · <span class="kbd">Suppr</span> retirer · <span class="kbd">Ctrl+Z</span>/<span class="kbd">Ctrl+Y</span>.</p>
+    <p class="hint">Mode démo : animation locale marquée « DÉMO », jamais présentée comme une génération IA.</p>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn primary" id="btnHelpClose">Compris</button></div>
+  </div>
+</div>
+<div class="modal" id="confirmModal"><div class="box"><h2 id="confirmTitre">Confirmer</h2><div id="confirmCorps"></div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn ghost" id="confirmNon">Annuler</button><button class="btn primary" id="confirmOui">Confirmer</button></div></div></div>
+<div class="modal" id="pickerModal"><div class="box"><h2>Choisir un média</h2><div class="libgrid" id="pickerGrid"></div>
+  <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn ghost" id="pickerFermer">Fermer</button></div></div></div>
+
+<script src="vendor/mp4-muxer.js"></script>
+<script src="js/troupe-donnees.js"></script>
+<script src="prive/troupe-images.js" onerror="void 0"></script>
+<script src="js/gradio.js"></script>
+<script src="js/registre.js"></script>
+<script src="js/prompt.js"></script>
+<script src="js/fournisseurs.js"></script>
+<script src="js/taches.js"></script>
+<script src="js/stockage.js"></script>
+<script src="js/studio.js"></script>
+<script src="js/export.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

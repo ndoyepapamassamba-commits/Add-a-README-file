@@ -5,3 +5,14 @@ test-results/
 .filmbench/
 __pycache__/
 *.pyc
+
+# images de la troupe (jamais dans le dépôt public)
+ai-motion-studio/prive/
+
+# application assemblée (contient les vignettes de la troupe)
+ai-motion-studio/dist/
+ai-motion-studio/tests/resultats/
+
+# secrets et données du serveur local de l’AI Motion Studio
+ai-motion-studio/.env
+ai-motion-studio/serveur/donnees/

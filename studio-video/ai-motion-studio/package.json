@@ -1,0 +1,14 @@
+{
+  "name": "massamba-ai-motion-studio",
+  "version": "3.0.0",
+  "private": true,
+  "description": "MASSAMBA AI MOTION STUDIO : génération vidéo IA (image → vidéo, texte → vidéo), storyboard, timeline et export",
+  "type": "commonjs",
+  "license": "MIT",
+  "scripts": {
+    "serveur": "node serveur/serveur.mjs",
+    "assembler": "node outils/assembler.mjs",
+    "test:unitaires": "node --test tests/unitaires/*.test.cjs tests/unitaires/*.test.mjs",
+    "test:e2e": "node ../../workbench/node_modules/@playwright/test/cli.js test -c tests/playwright.config.cjs"
+  }
+}
