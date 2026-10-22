@@ -59,6 +59,9 @@ Si l'heure ne s'affiche pas :
 - Si un client arrondit (par exemple 1 500 au lieu de 1 487), le site le reconnaît quand même s'il est
   le seul client récent. Sinon, la commande reste dans **« Paiements à vérifier »** avec l'étiquette
   **« Paiement détecté »** : vérifiez votre Wave, puis touchez **« Débloquer »**.
+- Si le téléphone renvoie une notification déjà reçue, rien ne se débloque. La commande qui a ce montant porte
+  l'étiquette **« Notification répétée — vérifiez votre historique Wave avant de débloquer »** : touchez
+  **« Débloquer »** seulement si l'argent est bien dans votre historique Wave.
 - Si vous changez de téléphone, refaites ce guide sur le nouveau téléphone.
 
 ## Vos données

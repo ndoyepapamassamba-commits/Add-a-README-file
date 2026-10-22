@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portefeuille à risque (PAR 30)&nbsp;: définition, formule BCEAO</title>
+<meta name="description" content="PAR 30, PAR 90, PAR 180&nbsp;: définitions CGAP et BCEAO citées mot pour mot, normes des SFD de l'UMOA, calcul Excel et Power Query sur 12 prêts fictifs.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#0B2545">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/portefeuille-a-risque-par30.html">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="fr_SN">
+<meta property="og:site_name" content="Teranga Pro">
+<meta property="og:title" content="Portefeuille à risque (PAR 30, PAR 90)&nbsp;: définition, formule et calcul dans Excel">
+<meta property="og:description" content="Les définitions du CGAP et de la BCEAO côte à côte, les normes des SFD de l'UMOA, puis le calcul dans Excel et dans Power Query sur 12 prêts fictifs, avec l'erreur la plus fréquente corrigée.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/portefeuille-a-risque-par30.html">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../formation.css">
+<style>
+.module pre.xl-code::before { content: "Formule Excel · séparateur ;"; position: absolute; left: 16px; top: 12px; color: var(--teal-light); font: 650 .7rem/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; }
+.module .formula { margin: 1em 0 1.2em; padding: 12px 14px; background: #fff; border: 1px solid var(--line); border-radius: 10px; font: 600 .95rem/1.7 var(--mono); color: var(--navy); overflow-wrap: break-word; }
+.module .formula span { display: block; }
+.answer3 ul { margin: .4em 0 .6em; }
+.guide-meta { margin-top: 8px; }
+.module blockquote { margin: 1em 0 1.2em; padding: 10px 16px; border-left: 3px solid var(--line-strong); color: var(--ink); font-style: italic; }
+.module blockquote p { margin: 0 0 .4em; }
+.module blockquote p:last-child { margin-bottom: 0; }
+.module blockquote cite { font-style: normal; font-size: .88rem; color: var(--muted); }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Portefeuille à risque (PAR 30, PAR 90) : définition, formule et calcul dans Excel",
+  "description": "PAR 30, PAR 90, PAR 180 : définitions CGAP et BCEAO citées mot pour mot, normes des SFD de l'UMOA, calcul Excel et Power Query sur 12 prêts fictifs.",
+  "inLanguage": "fr",
+  "isAccessibleForFree": true,
+  "keywords": "portefeuille à risque, PAR 30, PAR 90, PAR 180, portefeuille classé à risque, microfinance, SFD, BCEAO, Instruction 020-12-2010, CGAP, qualité du portefeuille, ratio de couverture du risque, Excel, Power Query",
+  "about": [
+    { "@type": "Thing", "name": "Portefeuille à risque" },
+    { "@type": "Thing", "name": "Qualité du portefeuille en microfinance" }
+  ],
+  "isPartOf": { "@type": "Course", "name": "Power Query pour le reporting bancaire", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "datePublished": "2026-10-22",
+  "dateModified": "2026-10-22",
+  "image": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg",
+  "mainEntityOfPage": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/portefeuille-a-risque-par30.html",
+  "author": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "publisher": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Le PAR 30 inclut-il les prêts en retard de plus de 90 jours ?", "acceptedAnswer": { "@type": "Answer", "text": "Oui. L'indicateur est cumulatif : un prêt en retard de 215 jours compte à la fois dans le PAR 30, le PAR 90 et le PAR 180. Le PAR 30 est donc toujours supérieur ou égal au PAR 90, lui-même supérieur ou égal au PAR 180. Sur l'exemple du guide, les 1 450 000 FCFA du PAR 30 contiennent les 625 000 FCFA du PAR 90, qui contiennent les 215 000 FCFA du PAR 180." } },
+    { "@type": "Question", "name": "Faut-il inclure les prêts restructurés dans le PAR ?", "acceptedAnswer": { "@type": "Answer", "text": "Les deux pratiques existent. Le CGAP exclut les prêts restructurés ou refinancés du portefeuille à risque (B3) et demande d'indiquer s'ils sont inclus dans le ratio (R11). Le texte de la BCEAO ne prévoit pas d'exclusion : lu à la lettre, un prêt restructuré entre dans le PAR dès qu'une échéance est impayée depuis plus de x jours. Publiez les deux versions, hors restructurés et y compris les restructurés, en disant laquelle est laquelle." } },
+    { "@type": "Question", "name": "Quelle est la norme du PAR pour les SFD de l'UMOA ?", "acceptedAnswer": { "@type": "Answer", "text": "L'annexe de l'Instruction BCEAO n° 020-12-2010 fixe, pour le portefeuille classé à risque : « <5% pour x>ou=30 jours », « <3% pour x>ou=90 jours » et « <2% pour x>180 jours ». Pour un état officiel, vérifiez toujours les textes et les instructions de remise en vigueur." } },
+    { "@type": "Question", "name": "Le PAR se calcule-t-il sur le capital seul ?", "acceptedAnswer": { "@type": "Answer", "text": "Selon le CGAP, oui : l'encours de prêts brut (B1) et le portefeuille à risque (B3) n'incluent pas les intérêts courus. Le texte de la BCEAO parle d'« encours bruts de crédits » sans détailler. Retenez le même périmètre au numérateur et au dénominateur et écrivez-le dans la note de l'état." } },
+    { "@type": "Question", "name": "Et dans la CEMAC ?", "acceptedAnswer": { "@type": "Answer", "text": "Dans la CEMAC, les établissements de microfinance relèvent de la réglementation de la CEMAC et de la supervision de la COBAC. Ces textes ne sont pas traités dans ce guide, qui s'appuie sur le CGAP et sur les textes de l'UMOA. La mécanique du calcul se transpose, mais vérifiez dans les textes de la CEMAC et de la COBAC la définition et les seuils avant de comparer des chiffres." } }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="tp-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Teranga Pro, accueil de la formation">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+      <span class="brand-name">Teranga<span>Pro</span></span>
+    </a>
+    <nav class="tp-nav" aria-label="Navigation principale">
+      <a class="nav-hide-sm" href="../gratuit.html">Module gratuit</a>
+      <a href="../index.html">La formation</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="page-head">
+    <div class="wrap">
+      <p class="eyebrow">Guide gratuit <span class="dot" aria-hidden="true">·</span> Qualité du portefeuille</p>
+      <h1>Portefeuille à risque (PAR 30, PAR 90)&nbsp;: définition, formule et calcul dans Excel</h1>
+      <p>Les deux définitions de référence côte à côte, celle du CGAP et celle de la BCEAO pour les SFD de l'UMOA, puis le calcul du PAR 30, du PAR 90 et du PAR 180 sur 12&nbsp;prêts fictifs, dans Excel et dans Power Query.</p>
+      <p class="meta guide-meta">Mis à jour le 22/10/2026 · Données d'exemple 100&nbsp;% fictives · Excel 2016 ou plus récent, ou Microsoft&nbsp;365</p>
+    </div>
+  </div>
+
+  <article class="article">
+    <div class="wrap">
+<section class="module">
+
+<div class="callout-info answer3">
+<p><strong>La réponse en 3&nbsp;lignes</strong></p>
+<ul>
+<li><strong>PAR (x&nbsp;jours)</strong> = encours restant dû des prêts dont au moins une échéance est impayée depuis plus de x&nbsp;jours, divisé par l'encours brut total des prêts (intérêts courus exclus, selon le CGAP).</li>
+<li>On retient <strong>tout le solde restant dû</strong> de ces prêts, pas seulement le montant impayé. Et on précise toujours le nombre de jours&nbsp;: PAR 30, PAR 90 ou PAR 180.</li>
+<li>Pour les SFD de l'UMOA, l'annexe de l'Instruction BCEAO n°&nbsp;020-12-2010 fixe les normes&nbsp;: moins de 5&nbsp;% à 30&nbsp;jours, moins de 3&nbsp;% à 90&nbsp;jours, moins de 2&nbsp;% au-delà de 180&nbsp;jours.</li>
+</ul>
+<p>Sur l'exemple fictif de ce guide&nbsp;: PAR 30 = 12,08&nbsp;%, PAR 90 = 5,21&nbsp;%, PAR 180 = 1,79&nbsp;%. Calculé à tort avec les seuls impayés, le PAR 30 tomberait à 4,47&nbsp;%.</p>
+</div>
+
+<nav class="toc-box" aria-labelledby="toc-title">
+<p id="toc-title">Dans ce guide</p>
+<ol>
+<li><a href="#definition">Ce que mesure le portefeuille à risque</a></li>
+<li><a href="#cgap">La définition du CGAP&nbsp;: B1, B3 et R11</a></li>
+<li><a href="#bceao">La formule BCEAO pour les SFD</a></li>
+<li><a href="#donnees">Le jeu de données&nbsp;: 12&nbsp;prêts fictifs</a></li>
+<li><a href="#excel">Le calcul dans Excel</a></li>
+<li><a href="#erreur-impaye">L'erreur n°&nbsp;1&nbsp;: l'impayé au lieu de l'encours</a></li>
+<li><a href="#power-query">Le calcul dans Power Query</a></li>
+<li><a href="#normes">Lire le résultat face aux normes</a></li>
+<li><a href="#degradation">PAR et taux de dégradation</a></li>
+<li><a href="#erreurs">Erreurs fréquentes</a></li>
+<li><a href="#faq">Questions fréquentes</a></li>
+<li><a href="#sources">Sources consultées</a></li>
+</ol>
+</nav>
+
+<h2 id="definition">Ce que mesure le portefeuille à risque (PAR)</h2>
+<p>Le portefeuille à risque, ou PAR (de l'anglais <em lang="en">portfolio at risk</em>), est, selon le CGAP, le ratio «&nbsp;le plus couramment utilisé en matière de qualité du portefeuille&nbsp;» en microfinance. Il répond à une question simple&nbsp;: quelle part de l'encours de crédit est due par des emprunteurs qui ont cessé de payer à l'heure&nbsp;? On l'écrit toujours avec un nombre de jours&nbsp;: le PAR 30 retient les prêts dont une échéance est impayée depuis plus de 30&nbsp;jours, le PAR 90 depuis plus de 90&nbsp;jours, le PAR 180 depuis plus de 180&nbsp;jours.</p>
+<p class="formula"><span>PAR (x&nbsp;jours) = Encours restant dû des prêts en retard de plus de x&nbsp;jours / Encours brut total des prêts</span></p>
+<p>Trois idées suffisent pour le calculer juste&nbsp;:</p>
+<ol>
+<li><strong>Le numérateur est un encours, pas un impayé.</strong> Dès qu'un prêt a une échéance en retard depuis plus de x&nbsp;jours, tout ce que l'emprunteur doit encore, échéances échues et échéances à venir, est considéré comme à risque.</li>
+<li><strong>Le dénominateur est l'encours brut de tous les prêts</strong>, sains ou non, avant déduction des provisions.</li>
+<li><strong>L'indicateur est cumulatif.</strong> Un prêt en retard de 215&nbsp;jours compte à la fois dans le PAR 30, le PAR 90 et le PAR 180. Le PAR 30 est donc toujours supérieur ou égal au PAR 90, lui-même supérieur ou égal au PAR 180.</li>
+</ol>
+
+<h2 id="cgap">La définition du CGAP&nbsp;: B1, B3 et R11</h2>
+<p>Côté international, la définition vient d'un document du CGAP (Groupe consultatif d'assistance aux pauvres), publié avec le Groupe de la Banque mondiale&nbsp;: «&nbsp;Directives concertées pour la microfinance. Définitions de certains termes, ratios et retraitements financiers dans le domaine de la microfinance&nbsp;», dont l'édition française est datée de décembre 2003. Trois de ses définitions font le PAR.</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Les définitions du CGAP utiles au PAR"><table class="data">
+<caption>Les définitions du CGAP utiles au PAR (extraits cités tels quels)</caption>
+<thead><tr><th scope="col">Code</th><th scope="col">Terme</th><th scope="col">Définition</th></tr></thead>
+<tbody>
+<tr><td>B1</td><td>Encours de prêts brut</td><td>«&nbsp;Solde restant dû de tous les prêts en cours accordés par une IMF, qu'ils soient sains, douteux ou restructurés. Ce montant n'inclut pas les prêts qui ont fait l'objet d'un abandon de créance, ni les intérêts courus.&nbsp;» (page&nbsp;6)</td></tr>
+<tr><td>B3</td><td>Portefeuille à risque</td><td>«&nbsp;Solde restant dû de tous les prêts en cours dont au moins un remboursement du principal est en situation d'impayé depuis un certain nombre de jours. Ce compte inclut le montant total restant à payer (remboursements échus et impayés et remboursements non échus futurs), mais pas les intérêts courus. Il ne comprend pas non plus les prêts qui ont fait l'objet d'une restructuration ou d'un refinancement.&nbsp;» (page&nbsp;6)</td></tr>
+<tr><td>R11</td><td>Ratio du portefeuille à risque</td><td>«&nbsp;Portefeuille à risque (à x jours)&nbsp;» divisé par l'«&nbsp;Encours de prêts brut&nbsp;» (page&nbsp;18)</td></tr>
+</tbody>
+</table></div>
+<p>Le ratio R11 s'accompagne de deux consignes, citées ici mot pour mot&nbsp;:</p>
+<blockquote>
+<p>«&nbsp;Les IMF doivent accompagner toute référence au portefeuille de prêts à risque d'une mention spécifiant le nombre de jours de retard pris en compte.&nbsp;»</p>
+<p>«&nbsp;Les IMF doivent indiquer si les prêts ayant fait l'objet d'une restructuration sont inclus dans le calcul, ce que certaines IMF font automatiquement.&nbsp;»</p>
+<p><cite>CGAP, Directives concertées, ratio R11 (page&nbsp;18)</cite></p>
+</blockquote>
+<p>Les prêts restructurés ont leur propre compte, B4 «&nbsp;Portefeuille des prêts restructurés&nbsp;» (page&nbsp;7)&nbsp;: les prêts rééchelonnés, renégociés ou refinancés. D'où deux versions possibles du même indicateur&nbsp;: le PAR au sens strict de B3, <strong>hors restructurés</strong>, et un PAR <strong>y compris les restructurés</strong>, que R11 autorise à condition de le dire. Le conseil le plus sûr&nbsp;: publier les deux, chacune avec son étiquette. Le CGAP prévoit lui-même ce cas&nbsp;: une IMF qui s'écarte d'une définition «&nbsp;peut utiliser le document comme point de référence afin d'expliquer comment sa définition ou formule diffère de la norme suggérée&nbsp;» (page&nbsp;1).</p>
+
+<h2 id="bceao">La formule BCEAO pour les SFD&nbsp;: le «&nbsp;portefeuille classé à risque&nbsp;»</h2>
+<p>Dans l'UMOA, l'<strong>Instruction n°&nbsp;020-12-2010</strong> de la BCEAO, relative aux indicateurs périodiques à transmettre par les systèmes financiers décentralisés (SFD) au Ministre chargé des Finances, à la BCEAO et à la Commission Bancaire de l'UMOA, fixe la liste de ces indicateurs dans son annexe. Signée à Dakar le 29&nbsp;décembre 2010, elle est entrée en vigueur le 1<sup>er</sup>&nbsp;janvier 2011 (article&nbsp;6). Les SFD visés à l'article&nbsp;44 de la loi portant réglementation des SFD transmettent ces indicateurs chaque mois, les autres chaque trimestre (article&nbsp;2). Le texte figure dans la liste des textes applicables aux SFD publiée sur le site de la Commission Bancaire.</p>
+<p>L'indicateur s'y appelle <strong>«&nbsp;portefeuille classé à risque&nbsp;»</strong>. Il ouvre le tableau de l'annexe, page numérotée «&nbsp;2&nbsp;», sous le titre «&nbsp;I. - Indicateurs financiers&nbsp;» et dans la rubrique «&nbsp;I - Indicateurs de qualité du portefeuille&nbsp;». Le PDF publié est une image scannée&nbsp;: voici la ligne recopiée telle quelle, colonne par colonne.</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Annexe de l'Instruction n° 020-12-2010 : ligne Portefeuille classé à risque"><table class="data">
+<caption>Annexe de l'Instruction n°&nbsp;020-12-2010, ligne «&nbsp;Portefeuille classé à risque&nbsp;» (texte recopié tel quel)</caption>
+<thead><tr><th scope="col">Colonne de l'annexe</th><th scope="col">Texte</th></tr></thead>
+<tbody>
+<tr><td>Formule, numérateur</td><td>Encours des prêts comportant au moins une échéance impayée de x jours</td></tr>
+<tr><td>Formule, dénominateur</td><td>Montant brut du portefeuille de prêts</td></tr>
+<tr><td>Formule, note</td><td>NB&nbsp;: x = 30&nbsp;; 90&nbsp;; 180 jours.</td></tr>
+<tr><td>Éléments de calcul</td><td>Numérateur = Montant des crédits dont une échéance au moins est impayée depuis plus de x jours</td></tr>
+<tr><td>Éléments de calcul</td><td>Dénominateur = Total des encours bruts de crédits, y compris ceux en souffrance</td></tr>
+<tr><td>Code du RCSFD</td><td>(B2D à B70) - B65</td></tr>
+<tr><td>Normes</td><td>&lt;5% pour x&gt;ou=30 jours<br>&lt;3% pour x&gt;ou=90 jours<br>&lt;2% pour x&gt;180 jours</td></tr>
+</tbody>
+</table></div>
+<p>Sur l'essentiel, la BCEAO et le CGAP disent la même chose&nbsp;: au numérateur, l'<strong>encours</strong> des prêts en retard, pas leurs impayés&nbsp;; au dénominateur, tout l'encours brut, «&nbsp;y compris ceux en souffrance&nbsp;». La colonne «&nbsp;Code du RCSFD&nbsp;» renvoie au référentiel comptable spécifique des SFD, d'où se tire le dénominateur d'un état réglementaire. Une différence&nbsp;: le texte de la BCEAO ne prévoit <strong>pas d'exclusion des prêts restructurés</strong>. Lu à la lettre, un prêt restructuré entre au numérateur dès qu'une de ses échéances est impayée depuis plus de x&nbsp;jours, comme n'importe quel autre prêt.</p>
+<div class="callout-warning">
+<p><strong>Un texte, deux bornes possibles.</strong> La formule dit «&nbsp;impayée de x jours&nbsp;», les éléments de calcul disent «&nbsp;depuis plus de x jours&nbsp;», et la colonne des normes écrit «&nbsp;x&gt;ou=30&nbsp;» et «&nbsp;x&gt;ou=90&nbsp;», mais «&nbsp;x&gt;180&nbsp;». Pour un prêt en retard d'exactement 30&nbsp;jours, le texte permet donc deux lectures. Choisissez une convention, écrivez-la dans la note de l'état, et gardez-la d'un mois à l'autre.</p>
+<p>Ce guide retient «&nbsp;depuis plus de x jours&nbsp;», la lecture des éléments de calcul&nbsp;: strictement plus de 30&nbsp;jours, soit 31&nbsp;jours et plus. C'est aussi le découpage des tranches du module gratuit, où un retard de 30&nbsp;jours reste dans la tranche «&nbsp;1 à 30 jours&nbsp;». L'enjeu n'est pas mince&nbsp;: sur l'exemple ci-dessous, le PAR 30 vaut 12,08&nbsp;% avec «&nbsp;plus de 30 jours&nbsp;» et 16,42&nbsp;% avec «&nbsp;30 jours ou plus&nbsp;», à cause d'un seul prêt en retard d'exactement 30&nbsp;jours.</p>
+</div>
+
+<h2 id="donnees">Le jeu de données&nbsp;: 12&nbsp;prêts d'IMF Exemple</h2>
+<p>IMF Exemple est une caisse d'épargne et de crédit <strong>imaginaire</strong>. Son extraction au 30/09/2026 compte 12&nbsp;prêts, une ligne par prêt, montants en FCFA. Agents, prêts et montants sont inventés. Une vraie extraction compte des milliers de lignes&nbsp;; les formules restent les mêmes.</p>
+<div class="download-box">
+<span class="file-ext" aria-hidden="true">CSV</span>
+<p><strong>Le jeu de données de l'exemple</strong><br><span class="muted small">portefeuille-a-risque-exemple.csv · 12&nbsp;prêts · séparateur point-virgule · UTF-8 · données fictives</span></p>
+<a class="btn btn-outline" href="fichiers/portefeuille-a-risque-exemple.csv" download><span class="btn-label">Télécharger les données</span></a>
+</div>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Extraction fictive d'IMF Exemple au 30/09/2026 (FCFA)"><table class="data">
+<caption>Extraction fictive d'IMF Exemple au 30/09/2026 (FCFA)</caption>
+<thead><tr><th scope="col">Prêt</th><th scope="col">Agent</th><th scope="col">Encours restant dû</th><th scope="col">Montant impayé</th><th scope="col">Jours de retard</th><th scope="col">Restructuré</th></tr></thead>
+<tbody>
+<tr><td>P-01</td><td>Aïda</td><td class="num">1&nbsp;850&nbsp;000</td><td class="num">0</td><td class="num">0</td><td>Non</td></tr>
+<tr><td>P-02</td><td>Aïda</td><td class="num">1&nbsp;240&nbsp;000</td><td class="num">0</td><td class="num">0</td><td>Non</td></tr>
+<tr><td>P-03</td><td>Aïda</td><td class="num">520&nbsp;000</td><td class="num">58&nbsp;000</td><td class="num">30</td><td>Non</td></tr>
+<tr><td>P-04</td><td>Aïda</td><td class="num">650&nbsp;000</td><td class="num">0</td><td class="num">0</td><td>Oui</td></tr>
+<tr><td>P-05</td><td>Bakary</td><td class="num">480&nbsp;000</td><td class="num">94&nbsp;000</td><td class="num">45</td><td>Non</td></tr>
+<tr><td>P-06</td><td>Bakary</td><td class="num">1&nbsp;420&nbsp;000</td><td class="num">0</td><td class="num">0</td><td>Non</td></tr>
+<tr><td>P-07</td><td>Bakary</td><td class="num">410&nbsp;000</td><td class="num">136&nbsp;000</td><td class="num">118</td><td>Non</td></tr>
+<tr><td>P-08</td><td>Bakary</td><td class="num">690&nbsp;000</td><td class="num">61&nbsp;000</td><td class="num">12</td><td>Non</td></tr>
+<tr><td>P-09</td><td>Coumba</td><td class="num">1&nbsp;980&nbsp;000</td><td class="num">0</td><td class="num">0</td><td>Non</td></tr>
+<tr><td>P-10</td><td>Coumba</td><td class="num">345&nbsp;000</td><td class="num">114&nbsp;000</td><td class="num">63</td><td>Oui</td></tr>
+<tr><td>P-11</td><td>Coumba</td><td class="num">215&nbsp;000</td><td class="num">192&nbsp;000</td><td class="num">215</td><td>Non</td></tr>
+<tr><td>P-12</td><td>Coumba</td><td class="num">2&nbsp;200&nbsp;000</td><td class="num">0</td><td class="num">0</td><td>Non</td></tr>
+</tbody>
+</table></div>
+<p>Ce que contient chaque colonne&nbsp;:</p>
+<ul>
+<li><strong>Encours restant dû</strong>&nbsp;: le capital que l'emprunteur doit encore, échéances échues impayées et échéances à venir, sans intérêts courus (B1 du CGAP).</li>
+<li><strong>Montant impayé</strong>&nbsp;: le capital des échéances échues et non payées (le «&nbsp;montant des impayés&nbsp;», P4 du CGAP).</li>
+<li><strong>Jours de retard</strong>&nbsp;: les jours écoulés, à la date d'arrêté, depuis la <strong>plus ancienne</strong> échéance restée impayée&nbsp;; 0 pour un prêt à jour.</li>
+<li><strong>Restructuré</strong>&nbsp;: «&nbsp;Oui&nbsp;» si le prêt a été rééchelonné ou refinancé.</li>
+</ul>
+<p>Quatre lignes servent de témoins&nbsp;: <strong>P-03</strong>, en retard d'exactement 30&nbsp;jours (la borne)&nbsp;; <strong>P-04</strong>, restructuré mais à jour&nbsp;; <strong>P-10</strong>, restructuré <em>et</em> en retard de 63&nbsp;jours&nbsp;; <strong>P-11</strong>, en retard de 215&nbsp;jours, donc présent dans le PAR 30, le PAR 90 et le PAR 180.</p>
+<p>Votre extraction n'a pas de colonne de jours de retard, seulement une date de premier impayé&nbsp;? Le <a href="../gratuit.html">module gratuit «&nbsp;Calculer l'ancienneté des impayés avec Power Query&nbsp;»</a> montre comment la calculer à la date d'arrêté, pas à pas, sur 15&nbsp;prêts fictifs. Sa balance âgée contient d'ailleurs déjà le numérateur du PAR 30&nbsp;: l'encours des tranches T3 à T6 (plus de 30&nbsp;jours), à diviser par l'encours total, soit 93&nbsp;370&nbsp;000 / 200&nbsp;805&nbsp;000 = 46,50&nbsp;% sur ce jeu d'exercice, qui couvre volontairement toutes les tranches.</p>
+
+<h2 id="excel">Calculer le PAR 30, le PAR 90 et le PAR 180 dans Excel</h2>
+<p>Le principe&nbsp;: une ligne par prêt dans un tableau Excel, une somme conditionnelle par seuil, puis une division par l'encours total. Les formules utilisent les noms de fonctions de l'Excel français et le point-virgule comme séparateur.</p>
+
+<h3 id="excel-import">Étape 1 — Importer les données dans un tableau</h3>
+<ol>
+<li>Enregistrez <code>portefeuille-a-risque-exemple.csv</code> dans <code>C:\Formation\guides\</code>. Sur Mac, choisissez un dossier, puis adaptez le chemin dans le code Power Query plus bas.</li>
+<li>Dans un nouveau classeur&nbsp;: <strong>Données › Obtenir des données › À partir d'un fichier › À partir d'un fichier texte/CSV</strong> (Excel 2016&nbsp;: <strong>Données › Nouvelle requête › À partir d'un fichier › À partir d'un fichier CSV</strong>). Choisissez le fichier, puis <strong>Importer</strong>.</li>
+<li>Dans la fenêtre d'aperçu, vérifiez <strong>Origine du fichier</strong> «&nbsp;65001&nbsp;: Unicode (UTF-8)&nbsp;» et <strong>Délimiteur</strong> «&nbsp;Point-virgule&nbsp;», puis cliquez sur <strong>Charger</strong>. Excel crée une feuille avec les 12&nbsp;prêts sous forme de tableau.</li>
+<li>Cliquez dans le tableau. Dans l'onglet <strong>Création de tableau</strong> (<strong>Outils de tableau › Création</strong> dans les versions plus anciennes), zone <strong>Nom du tableau</strong> à gauche du ruban, remplacez le nom proposé par <code>T_Prets</code>, puis appuyez sur Entrée.</li>
+<li>Ajoutez une feuille (bouton <strong>+</strong> à côté des onglets) et renommez-la <code>Calcul</code> (double-clic sur l'onglet).</li>
+</ol>
+
+<h3 id="excel-formules">Étape 2 — Les encours à risque et les trois PAR</h3>
+<p>Dans la feuille <strong>Calcul</strong>, saisissez les libellés en colonne&nbsp;A et les formules en colonne&nbsp;B&nbsp;:</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Feuille Calcul : formules des PAR"><table class="data">
+<caption>Feuille Calcul&nbsp;: formules des encours à risque et des PAR</caption>
+<thead><tr><th scope="col">Cellule</th><th scope="col">Ce que l'on calcule</th><th scope="col">Formule</th></tr></thead>
+<tbody>
+<tr><td>B3</td><td>Encours brut total</td><td><code>=SOMME(T_Prets[Encours restant dû])</code></td></tr>
+<tr><td>B4</td><td>Encours à risque, plus de 30&nbsp;jours</td><td><code>=SOMME.SI.ENS(T_Prets[Encours restant dû];T_Prets[Jours de retard];"&gt;30")</code></td></tr>
+<tr><td>B5</td><td>Encours à risque, plus de 90&nbsp;jours</td><td><code>=SOMME.SI.ENS(T_Prets[Encours restant dû];T_Prets[Jours de retard];"&gt;90")</code></td></tr>
+<tr><td>B6</td><td>Encours à risque, plus de 180&nbsp;jours</td><td><code>=SOMME.SI.ENS(T_Prets[Encours restant dû];T_Prets[Jours de retard];"&gt;180")</code></td></tr>
+<tr><td>B8</td><td>PAR 30</td><td><code>=B4/B3</code></td></tr>
+<tr><td>B9</td><td>PAR 90</td><td><code>=B5/B3</code></td></tr>
+<tr><td>B10</td><td>PAR 180</td><td><code>=B6/B3</code></td></tr>
+</tbody>
+</table></div>
+<p>Mise en forme&nbsp;: sélectionnez B3:B6, puis <strong>Accueil › Nombre › Séparateur de milliers</strong>. Sélectionnez B8:B10, puis <strong>Accueil › Nombre › Style de pourcentage</strong>, et cliquez deux fois sur <strong>Ajouter une décimale</strong>.</p>
+<p>En une seule cellule, le PAR 30 s'écrit ainsi&nbsp;:</p>
+<pre class="xl-code">=SOMME.SI.ENS(T_Prets[Encours restant dû];T_Prets[Jours de retard];"&gt;30")/SOMME(T_Prets[Encours restant dû])</pre>
+<p>Le critère <code>"&gt;30"</code> porte la convention&nbsp;: plus de 30&nbsp;jours. Pour tester l'autre lecture du texte, remplacez-le par <code>"&gt;=30"</code>&nbsp;: le PAR 30 passe à 16,42&nbsp;%, parce que P-03 (30&nbsp;jours, 520&nbsp;000&nbsp;FCFA) entre au numérateur. Avec un Excel en anglais, les fonctions s'appellent <code>SUM</code> et <code>SUMIFS</code>&nbsp;; le séparateur d'arguments, virgule ou point-virgule, dépend des paramètres régionaux de l'ordinateur.</p>
+
+<h3 id="excel-restructures">Étape 3 — Avec et sans les prêts restructurés</h3>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Feuille Calcul : les deux variantes des prêts restructurés"><table class="data">
+<caption>Feuille Calcul&nbsp;: hors restructurés et y compris les restructurés</caption>
+<thead><tr><th scope="col">Cellule</th><th scope="col">Ce que l'on calcule</th><th scope="col">Formule</th></tr></thead>
+<tbody>
+<tr><td>B12</td><td>PAR 30 hors restructurés (compte B3 du CGAP au sens strict)</td><td><code>=SOMME.SI.ENS(T_Prets[Encours restant dû];T_Prets[Jours de retard];"&gt;30";T_Prets[Restructuré];"Non")/B3</code></td></tr>
+<tr><td>B13</td><td>PAR 30 y compris tous les restructurés (option de R11)</td><td><code>=(B4+SOMME.SI.ENS(T_Prets[Encours restant dû];T_Prets[Jours de retard];"&lt;=30";T_Prets[Restructuré];"Oui"))/B3</code></td></tr>
+</tbody>
+</table></div>
+<p>B13 ajoute à B4 les prêts restructurés qui n'y sont pas déjà, c'est-à-dire ceux qui ont 30&nbsp;jours de retard ou moins. Sans le critère <code>"&lt;=30"</code>, P-10, restructuré <em>et</em> en retard de 63&nbsp;jours, serait compté deux fois.</p>
+
+<h3 id="excel-controles">Étape 4 — Trois contrôles avant de diffuser</h3>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Contrôles : résultat attendu 0"><table class="data">
+<caption>Contrôles (résultat attendu&nbsp;: 0)</caption>
+<thead><tr><th scope="col">Cellule</th><th scope="col">Contrôle</th><th scope="col">Formule</th></tr></thead>
+<tbody>
+<tr><td>B15</td><td>Prêts dont l'impayé dépasse l'encours</td><td><code>=SOMMEPROD(--(T_Prets[Montant impayé]&gt;T_Prets[Encours restant dû]))</code></td></tr>
+<tr><td>B16</td><td>Prêts avec un impayé mais 0&nbsp;jour de retard, ou l'inverse</td><td><code>=SOMMEPROD(--((T_Prets[Montant impayé]&gt;0)&lt;&gt;(T_Prets[Jours de retard]&gt;0)))</code></td></tr>
+<tr><td>B17</td><td>Valeurs de la colonne Restructuré autres que Oui et Non</td><td><code>=LIGNES(T_Prets[Restructuré])-NB.SI(T_Prets[Restructuré];"Oui")-NB.SI(T_Prets[Restructuré];"Non")</code></td></tr>
+</tbody>
+</table></div>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Feuille Calcul : résultats attendus sur l'exemple"><table class="data">
+<caption>Feuille Calcul&nbsp;: résultats attendus sur l'exemple (FCFA)</caption>
+<thead><tr><th scope="col">Cellule</th><th scope="col">Libellé</th><th scope="col">Résultat</th></tr></thead>
+<tbody>
+<tr><td>B3</td><td>Encours brut total</td><td class="num">12&nbsp;000&nbsp;000</td></tr>
+<tr><td>B4</td><td>Encours à risque, plus de 30&nbsp;jours (P-05, P-07, P-10, P-11)</td><td class="num">1&nbsp;450&nbsp;000</td></tr>
+<tr><td>B5</td><td>Encours à risque, plus de 90&nbsp;jours (P-07, P-11)</td><td class="num">625&nbsp;000</td></tr>
+<tr><td>B6</td><td>Encours à risque, plus de 180&nbsp;jours (P-11)</td><td class="num">215&nbsp;000</td></tr>
+<tr><td>B8</td><td>PAR 30</td><td class="num">12,08&nbsp;%</td></tr>
+<tr><td>B9</td><td>PAR 90</td><td class="num">5,21&nbsp;%</td></tr>
+<tr><td>B10</td><td>PAR 180</td><td class="num">1,79&nbsp;%</td></tr>
+<tr><td>B12</td><td>PAR 30 hors restructurés</td><td class="num">9,21&nbsp;%</td></tr>
+<tr><td>B13</td><td>PAR 30 y compris tous les restructurés</td><td class="num">17,50&nbsp;%</td></tr>
+<tr><td>B15 à B17</td><td>Contrôles</td><td class="num">0</td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Quel chiffre publier&nbsp;? Les trois périmètres donnent trois PAR 30 différents sur le même portefeuille&nbsp;:</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Trois périmètres, trois PAR 30"><table class="data">
+<caption>Trois périmètres, trois PAR 30 (IMF Exemple, 30/09/2026)</caption>
+<thead><tr><th scope="col">Périmètre</th><th scope="col">Prêts au numérateur</th><th scope="col">PAR 30</th></tr></thead>
+<tbody>
+<tr><td>Hors restructurés (B3 du CGAP)</td><td>P-05, P-07, P-11</td><td class="num">9,21&nbsp;%</td></tr>
+<tr><td>Tous les prêts en retard de plus de 30&nbsp;jours (texte de la BCEAO lu à la lettre)</td><td>P-05, P-07, P-10, P-11</td><td class="num">12,08&nbsp;%</td></tr>
+<tr><td>Y compris tous les restructurés, même à jour (option de R11)</td><td>P-04, P-05, P-07, P-10, P-11</td><td class="num">17,50&nbsp;%</td></tr>
+</tbody>
+</table></div>
+<p>Pour un tableau de bord interne ou un partenaire qui suit les directives du CGAP, publiez les versions hors restructurés et y compris les restructurés, chacune avec son étiquette. Pour un état réglementaire, suivez les textes et les instructions de remise en vigueur. Dans tous les cas, écrivez la convention dans la note de l'état.</p>
+<p>Le tableau Excel s'agrandit tout seul quand de nouvelles lignes arrivent&nbsp;: les formules suivent sans être modifiées. Et comme <code>T_Prets</code> a été chargé par une requête, il suffit le mois suivant de remplacer le fichier CSV (même nom, mêmes colonnes) puis de cliquer sur <strong>Données › Actualiser tout</strong>.</p>
+
+<h2 id="erreur-impaye">L'erreur n°&nbsp;1&nbsp;: prendre l'impayé au lieu de l'encours</h2>
+<p>L'erreur la plus fréquente consiste à additionner la colonne <em>Montant impayé</em> au lieu de la colonne <em>Encours restant dû</em>. La formule a l'air presque identique&nbsp;; seule la colonne additionnée change&nbsp;:</p>
+<pre class="xl-code">=SOMME.SI.ENS(T_Prets[Montant impayé];T_Prets[Jours de retard];"&gt;30")/SOMME(T_Prets[Encours restant dû])</pre>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Le même calcul avec l'encours et avec l'impayé"><table class="data">
+<caption>Le même calcul avec l'encours restant dû et avec le seul impayé (IMF Exemple)</caption>
+<thead><tr><th scope="col">Indicateur</th><th scope="col">Avec l'encours restant dû (juste)</th><th scope="col">Avec le seul impayé (faux)</th><th scope="col">Norme BCEAO</th></tr></thead>
+<tbody>
+<tr><td>PAR 30</td><td class="num">1&nbsp;450&nbsp;000 → 12,08&nbsp;%</td><td class="num">536&nbsp;000 → 4,47&nbsp;%</td><td>moins de 5&nbsp;%</td></tr>
+<tr><td>PAR 90</td><td class="num">625&nbsp;000 → 5,21&nbsp;%</td><td class="num">328&nbsp;000 → 2,73&nbsp;%</td><td>moins de 3&nbsp;%</td></tr>
+<tr><td>PAR 180</td><td class="num">215&nbsp;000 → 1,79&nbsp;%</td><td class="num">192&nbsp;000 → 1,60&nbsp;%</td><td>moins de 2&nbsp;%</td></tr>
+</tbody>
+</table></div>
+<p>Le faux calcul divise le PAR 30 par 2,7. Pire&nbsp;: il fait passer sous les normes deux indicateurs qui les dépassent. Le comité de crédit lirait un portefeuille conforme là où il ne l'est pas.</p>
+<p>Le CGAP est explicite. Le portefeuille à risque «&nbsp;inclut le montant total restant à payer (remboursements échus et impayés et remboursements non échus futurs)&nbsp;» (B3). Le montant des impayés est défini à part (P4, page&nbsp;10), et le texte précise que cette rubrique «&nbsp;ne doit pas être confondue avec le portefeuille à risque (B3)&nbsp;». La raison est de bon sens&nbsp;: un emprunteur qui n'a rien payé depuis 118&nbsp;jours a peu de chances d'honorer les échéances des mois suivants. Ce qui est à risque, c'est tout ce qu'il doit encore, pas seulement ce qui est déjà échu.</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" role="img" aria-label="Le prêt P-07 au 30/09/2026 : encours restant dû de 410 000 FCFA, dont 136 000 FCFA d'échéances impayées et 274 000 FCFA d'échéances à venir. Le PAR compte les 410 000 FCFA ; l'impayé n'en compte que 136 000.">
+<title>Prêt P-07&nbsp;: ce que compte le PAR, ce que compte l'impayé</title>
+<rect x="1" y="1" width="718" height="278" rx="12" fill="#F7F7F2" stroke="#CBD5E1"/>
+<text x="20" y="30" font-size="13" font-weight="bold" fill="#0B2545">Prêt P-07 au 30/09/2026 — 118 jours de retard (FCFA, échelle proportionnelle)</text>
+<line x1="80" y1="70" x2="279" y2="70" stroke="#9B1C1C" stroke-width="2"/>
+<line x1="80" y1="64" x2="80" y2="76" stroke="#9B1C1C" stroke-width="2"/>
+<line x1="279" y1="64" x2="279" y2="76" stroke="#9B1C1C" stroke-width="2"/>
+<text x="80" y="56" font-size="12" font-weight="bold" fill="#9B1C1C">Montant impayé (P4)&nbsp;: 136&nbsp;000</text>
+<rect x="80" y="88" width="199" height="48" fill="#FDE3C2" stroke="#0B2545"/>
+<text x="179" y="108" text-anchor="middle" font-size="11.5" fill="#1F2933">4 échéances impayées</text>
+<text x="179" y="125" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1F2933">136&nbsp;000</text>
+<rect x="279" y="88" width="401" height="48" fill="#E6F4F2" stroke="#0B2545"/>
+<text x="479" y="108" text-anchor="middle" font-size="11.5" fill="#1F2933">Échéances à venir, non encore échues</text>
+<text x="479" y="125" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1F2933">274&nbsp;000</text>
+<line x1="80" y1="152" x2="680" y2="152" stroke="#0B7A72" stroke-width="2"/>
+<line x1="80" y1="146" x2="80" y2="158" stroke="#0B7A72" stroke-width="2"/>
+<line x1="680" y1="146" x2="680" y2="158" stroke="#0B7A72" stroke-width="2"/>
+<text x="80" y="178" font-size="12" font-weight="bold" fill="#0B7A72">Compté dans le PAR 30 et le PAR 90 (B3 du CGAP, texte de la BCEAO)&nbsp;: 410&nbsp;000</text>
+<text x="20" y="226" font-size="12" fill="#1F2933">Sur tout le portefeuille&nbsp;: PAR 30 = 1&nbsp;450&nbsp;000 / 12&nbsp;000&nbsp;000 = 12,08&nbsp;%.</text>
+<text x="20" y="250" font-size="12" fill="#9B1C1C">Erreur classique, avec les seuls impayés&nbsp;: 536&nbsp;000 / 12&nbsp;000&nbsp;000 = 4,47&nbsp;%.</text>
+</svg>
+<figcaption>Figure 1 — Un prêt en retard compte pour tout son solde restant dû dans le PAR. Le montant impayé reste utile pour le recouvrement, mais il ne remplace pas le PAR.</figcaption>
+</figure>
+
+<h2 id="power-query">Le calcul dans Power Query&nbsp;: un tableau qui s'actualise chaque mois</h2>
+<p>La même logique en code M. Une petite fonction additionne l'encours restant dû des lignes retenues par un filtre (<code>Table.SelectRows</code>, puis <code>List.Sum</code>)&nbsp;; on l'applique aux seuils de 30, 90 et 180&nbsp;jours et aux deux variantes des prêts restructurés, puis on divise par l'encours brut. Le résultat est une petite table de cinq lignes.</p>
+<ol>
+<li>Dans le classeur&nbsp;: <strong>Données › Obtenir des données › À partir d'autres sources › Requête vide</strong> (Excel 2016&nbsp;: <strong>Données › Nouvelle requête › À partir d'autres sources › Requête vide</strong>).</li>
+<li>Dans l'éditeur Power Query&nbsp;: <strong>Accueil › Éditeur avancé</strong>, remplacez tout le contenu par le code ci-dessous, puis <strong>Terminé</strong>. Si vous avez enregistré le CSV ailleurs, corrigez le chemin de la ligne <code>Fichier</code>.</li>
+<li>Dans le volet <strong>Paramètres de requête</strong>, à droite, renommez la requête <code>out_PAR</code> (zone <strong>Propriétés › Nom</strong>).</li>
+<li><strong>Accueil › Fermer et charger</strong>. Dans la feuille créée, sélectionnez la colonne <em>Taux</em>, puis <strong>Accueil › Nombre › Style de pourcentage</strong> et deux fois <strong>Ajouter une décimale</strong>.</li>
+<li>Le mois suivant, remplacez le fichier CSV par la nouvelle extraction (même nom, mêmes colonnes), puis <strong>Données › Actualiser tout</strong>.</li>
+</ol>
+<pre class="m-code">// Requête out_PAR : PAR 30, PAR 90, PAR 180 et les deux variantes des prêts restructurés
+let
+    Fichier = "C:\Formation\guides\portefeuille-a-risque-exemple.csv",
+
+    // 1. Import : point-virgule, UTF-8, types imposés
+    Source = Csv.Document(File.Contents(Fichier), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.None]),
+    EnTetes = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+    Types = Table.TransformColumnTypes(EnTetes, {
+        {"Prêt", type text}, {"Agent", type text}, {"Encours restant dû", Int64.Type},
+        {"Montant impayé", Int64.Type}, {"Jours de retard", Int64.Type}, {"Restructuré", type text}}, "fr-FR"),
+
+    // 2. Garde-fou : une ligne douteuse arrête l'actualisation au lieu de fausser le PAR
+    Anomalies = Table.SelectRows(Types, each [Encours restant dû] = null or [Encours restant dû] &lt; 0
+        or [Jours de retard] = null or [Jours de retard] &lt; 0
+        or not List.Contains({"Oui", "Non"}, [Restructuré])),
+    Controle = if Table.IsEmpty(Anomalies) then Types
+        else error Error.Record("Ligne à vérifier", "Prêt " &amp; Text.From(Anomalies{0}[Prêt])
+            &amp; " : encours ou jours de retard vides ou négatifs, ou Restructuré différent de Oui et Non", Anomalies{0}),
+
+    // 3. Dénominateur : l'encours brut de tous les prêts, en retard ou non
+    EncoursBrut = List.Sum(Controle[Encours restant dû]),
+
+    // 4. Numérateur : TOUT l'encours restant dû des prêts retenus par le filtre (0 si aucun)
+    EncoursRetenu = (filtre as function) as number =>
+        List.Sum({0} &amp; Table.SelectRows(Controle, filtre)[Encours restant dû]),
+
+    // 5. Les indicateurs. Convention : « depuis plus de x jours », donc &gt; x et non &gt;= x
+    Indicateurs = {
+        {"PAR 30", each [Jours de retard] &gt; 30},
+        {"PAR 90", each [Jours de retard] &gt; 90},
+        {"PAR 180", each [Jours de retard] &gt; 180},
+        {"PAR 30 hors restructurés", each [Jours de retard] &gt; 30 and [Restructuré] = "Non"},
+        {"PAR 30 y compris tous les restructurés", each [Jours de retard] &gt; 30 or [Restructuré] = "Oui"}
+    },
+    Resultat = #table(
+        type table [Indicateur = text, #"Encours à risque" = number, #"Encours brut" = number, Taux = number],
+        List.Transform(Indicateurs, (i) =&gt;
+            {i{0}, EncoursRetenu(i{1}), EncoursBrut, EncoursRetenu(i{1}) / EncoursBrut}))
+in
+    Resultat</pre>
+<p>Trois détails du code&nbsp;:</p>
+<ul>
+<li><strong>Le <code>{0} &amp;</code> devant la liste.</strong> <code>List.Sum</code> d'une liste vide renvoie <code>null</code>, pas 0. Sans ce <code>{0}</code>, le mois où aucun prêt ne dépasse 180&nbsp;jours, la somme vaudrait <code>null</code> et le PAR 180 ne sortirait pas à 0,00&nbsp;%.</li>
+<li><strong>Le garde-fou.</strong> Une ligne sans encours ou sans jours de retard, avec un montant ou un retard négatif, ou avec une valeur «&nbsp;Restructuré&nbsp;» inattendue arrête l'actualisation avec un message qui cite le prêt. Mieux vaut une erreur visible qu'un PAR faux diffusé en silence.</li>
+<li><strong>Les comparaisons <code>&gt; 30</code>, <code>&gt; 90</code>, <code>&gt; 180</code></strong> portent la convention «&nbsp;depuis plus de x jours&nbsp;». Si votre établissement retient l'autre lecture, c'est le seul endroit à modifier.</li>
+</ul>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="out_PAR : résultat attendu"><table class="data">
+<caption>out_PAR&nbsp;: résultat attendu (FCFA, colonne Taux au format Pourcentage)</caption>
+<thead><tr><th scope="col">Indicateur</th><th scope="col">Encours à risque</th><th scope="col">Encours brut</th><th scope="col">Taux</th></tr></thead>
+<tbody>
+<tr><td>PAR 30</td><td class="num">1&nbsp;450&nbsp;000</td><td class="num">12&nbsp;000&nbsp;000</td><td class="num">12,08&nbsp;%</td></tr>
+<tr><td>PAR 90</td><td class="num">625&nbsp;000</td><td class="num">12&nbsp;000&nbsp;000</td><td class="num">5,21&nbsp;%</td></tr>
+<tr><td>PAR 180</td><td class="num">215&nbsp;000</td><td class="num">12&nbsp;000&nbsp;000</td><td class="num">1,79&nbsp;%</td></tr>
+<tr><td>PAR 30 hors restructurés</td><td class="num">1&nbsp;105&nbsp;000</td><td class="num">12&nbsp;000&nbsp;000</td><td class="num">9,21&nbsp;%</td></tr>
+<tr><td>PAR 30 y compris tous les restructurés</td><td class="num">2&nbsp;100&nbsp;000</td><td class="num">12&nbsp;000&nbsp;000</td><td class="num">17,50&nbsp;%</td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Les chiffres sont ceux de la version Excel&nbsp;: les deux méthodes se contrôlent l'une l'autre. Pour obtenir une ligne par mois à partir d'un dossier d'extractions mensuelles, il faut d'abord empiler les fichiers&nbsp;; c'est l'objet du guide <a href="combiner-plusieurs-fichiers-excel-power-query.html">Combiner plusieurs fichiers Excel avec Power Query</a>.</p>
+<div class="callout-info">
+<p><strong>Pour aller jusqu'au reporting mensuel.</strong> Ce guide calcule un PAR global sur un seul arrêté. Le module&nbsp;6 de la formation «&nbsp;Power Query pour le reporting bancaire&nbsp;» est consacré aux indicateurs de qualité du portefeuille&nbsp;: PAR 30 et PAR 90 calculés chaque mois, détail par agence et par produit sans moyenne de taux, et, côté banques, créances en souffrance et taux de créances douteuses, sur des données fictives couvrant trois arrêtés. <a href="../index.html#tarif">Voir le programme et le tarif de la formation</a></p>
+</div>
+
+<h2 id="normes">Lire le résultat face aux normes BCEAO</h2>
+<div class="table-wrap" role="region" tabindex="0" aria-label="IMF Exemple face aux normes de l'annexe"><table class="data">
+<caption>IMF Exemple au 30/09/2026 face aux normes de l'annexe de l'Instruction n°&nbsp;020-12-2010</caption>
+<thead><tr><th scope="col">Indicateur</th><th scope="col">IMF Exemple</th><th scope="col">Norme de l'annexe</th><th scope="col">Lecture</th></tr></thead>
+<tbody>
+<tr><td>PAR 30</td><td class="num">12,08&nbsp;%</td><td>&lt;5% pour x&gt;ou=30 jours</td><td>Au-dessus de la norme</td></tr>
+<tr><td>PAR 90</td><td class="num">5,21&nbsp;%</td><td>&lt;3% pour x&gt;ou=90 jours</td><td>Au-dessus de la norme</td></tr>
+<tr><td>PAR 180</td><td class="num">1,79&nbsp;%</td><td>&lt;2% pour x&gt;180 jours</td><td>Sous la norme</td></tr>
+</tbody>
+</table></div>
+<p>Lire les trois horizons ensemble en dit plus que chacun pris seul. Ici, le PAR 180 est faible mais le PAR 30 est élevé&nbsp;: l'essentiel de l'encours à risque est récent. Sur les 1&nbsp;450&nbsp;000&nbsp;FCFA à risque, 825&nbsp;000 sont en retard de 31 à 90&nbsp;jours (P-05 et P-10). C'est la tranche à suivre en priorité au comité de crédit, avant qu'elle ne glisse vers le PAR 90 dans les mois qui viennent.</p>
+<p>Une comparaison avec la norme, avec un autre mois ou avec une autre caisse n'a de sens qu'à convention égale&nbsp;: même borne (plus de 30&nbsp;jours ou 30&nbsp;jours et plus), même traitement des restructurés, même date d'arrêté.</p>
+
+<h3 id="indicateurs-voisins">Les indicateurs voisins de la même annexe</h3>
+<p>La rubrique «&nbsp;Indicateurs de qualité du portefeuille&nbsp;» de l'annexe compte deux autres ratios, avec leurs normes&nbsp;:</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Les deux autres indicateurs de qualité du portefeuille de l'annexe"><table class="data">
+<caption>Les deux autres indicateurs de qualité du portefeuille de l'annexe (texte recopié tel quel)</caption>
+<thead><tr><th scope="col">Nom du ratio</th><th scope="col">Formule</th><th scope="col">Norme</th></tr></thead>
+<tbody>
+<tr><td>Taux de provisions pour créances en souffrance</td><td>Montant brut des provisions constituées / Montant brut des créances en souffrance</td><td>&gt;ou=40%</td></tr>
+<tr><td>Taux de perte sur créances</td><td>Montant des crédits passés en perte durant la période / Montant brut du portefeuille de crédits de la période</td><td>&lt; 2&nbsp;%</td></tr>
+</tbody>
+</table></div>
+<p>Attention au dénominateur du premier&nbsp;: ce sont les <strong>créances en souffrance</strong>, une catégorie comptable, et non le PAR. Notre jeu de données ne dit pas quels prêts sont classés en souffrance&nbsp;: ce ratio ne se calcule pas à partir des seuls jours de retard.</p>
+
+<h3 id="couverture">Le ratio de couverture du risque du CGAP (R13)</h3>
+<p>Le CGAP rapproche, lui, les provisions du PAR. Son ratio R13, «&nbsp;ratio de couverture du risque&nbsp;» (page&nbsp;19), se calcule ainsi&nbsp;:</p>
+<p class="formula"><span>R13 = Provisions pour créances douteuses / Portefeuille à risque &gt; X&nbsp;jours</span></p>
+<p>Il «&nbsp;indique dans quelle mesure le portefeuille à risque est couvert par les provisions pour créances douteuses d'une IMF&nbsp;». Supposons, pour l'exemple, qu'IMF Exemple ait constitué 450&nbsp;000&nbsp;FCFA de provisions (montant inventé, absent du jeu de données)&nbsp;:</p>
+<p class="formula"><span>R13 (PAR &gt; 30&nbsp;jours) = 450&nbsp;000 / 1&nbsp;450&nbsp;000 = 31,03&nbsp;%</span><span>R13 (PAR &gt; 90&nbsp;jours) = 450&nbsp;000 / 625&nbsp;000 = 72,00&nbsp;%</span></p>
+<p>Mêmes provisions, deux ratios très différents&nbsp;: ici aussi, l'horizon doit toujours être écrit. Le CGAP ajoute qu'«&nbsp;un ratio de couverture du risque de 100&nbsp;% n'est pas forcément optimal&nbsp;». Et ne comparez pas R13 à la norme de 40&nbsp;% de l'annexe BCEAO&nbsp;: les dénominateurs ne sont pas les mêmes.</p>
+
+<h2 id="degradation">PAR et taux de dégradation du portefeuille&nbsp;: deux numérateurs différents</h2>
+<p>Un autre ratio de qualité du portefeuille circule&nbsp;: le <strong>taux brut de dégradation</strong>, égal aux créances en souffrance brutes divisées par le total des crédits bruts. Son numérateur vient de la <strong>classification comptable</strong> des créances, alors que celui du PAR vient des <strong>jours de retard</strong>. Un prêt peut entrer dans l'un sans entrer dans l'autre&nbsp;: les deux chiffres ne se remplacent pas.</p>
+<p>C'est le taux de dégradation que la Commission Bancaire de l'UMOA retient dans son Rapport annuel 2024 pour suivre la qualité du portefeuille des 286&nbsp;SFD de grande taille (ceux qui relèvent de l'article&nbsp;44, page&nbsp;89)&nbsp;: 6,6&nbsp;% brut à fin 2024 selon les données provisoires de son Tableau n°&nbsp;31 (page&nbsp;98). Le PAR, lui, fait partie des indicateurs que chaque SFD transmet au titre de l'Instruction n°&nbsp;020-12-2010. Les formules du taux brut et du taux net, et le même calcul dans Excel, sont détaillés dans le guide <a href="taux-de-degradation-du-portefeuille.html">Taux de dégradation du portefeuille</a>.</p>
+
+<h2 id="erreurs">Erreurs fréquentes</h2>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Diagnostic rapide, chiffré sur l'exemple d'IMF Exemple"><table class="data">
+<caption>Diagnostic rapide, chiffré sur l'exemple (bon résultat&nbsp;: PAR 30 = 12,08&nbsp;%)</caption>
+<thead><tr><th scope="col">Ce que vous constatez</th><th scope="col">Cause probable</th><th scope="col">Solution</th></tr></thead>
+<tbody>
+<tr><td>PAR 30 de 4,47&nbsp;%</td><td>Colonne <em>Montant impayé</em> additionnée à la place de l'encours</td><td>Additionner tout l'encours restant dû des prêts en retard (B3 du CGAP)</td></tr>
+<tr><td>PAR 30 de 16,42&nbsp;%</td><td>Prêt à exactement 30&nbsp;jours compté&nbsp;: <code>"&gt;=30"</code> au lieu de <code>"&gt;30"</code></td><td>Choisir la borne, l'écrire dans la note, la garder chaque mois</td></tr>
+<tr><td>«&nbsp;PAR de 12,08&nbsp;%&nbsp;», sans autre précision</td><td>Horizon non précisé&nbsp;: le PAR 180 du même portefeuille est de 1,79&nbsp;%</td><td>Toujours écrire PAR 30, PAR 90 ou PAR 180 (consigne de R11)</td></tr>
+<tr><td>Encours brut supérieur au capital restant dû de la comptabilité</td><td>Intérêts courus ajoutés à l'encours</td><td>Capital seul aux deux termes (B1 et B3 du CGAP excluent les intérêts courus), ou périmètre écrit dans la note</td></tr>
+<tr><td>PAR 30 de la caisse à 13,83&nbsp;%</td><td>Moyenne simple des PAR des agents (0,00&nbsp;%, 29,67&nbsp;% et 11,81&nbsp;%)</td><td>Recalculer sur les montants&nbsp;: 1&nbsp;450&nbsp;000 / 12&nbsp;000&nbsp;000</td></tr>
+<tr><td>PAR 30 de 8,08&nbsp;%</td><td>Retard de P-05 compté depuis sa dernière échéance impayée&nbsp;: 15&nbsp;jours au lieu de 45</td><td>Compter depuis la plus ancienne échéance restée impayée</td></tr>
+<tr><td>PAR 30 de 14,23&nbsp;% et PAR 180 de 4,19&nbsp;%</td><td>Prêt déjà passé en perte (300&nbsp;000&nbsp;FCFA, 400&nbsp;jours) resté dans l'extraction</td><td>L'exclure des deux termes&nbsp;: B1 n'inclut pas les prêts qui ont fait l'objet d'un abandon de créance</td></tr>
+<tr><td>9,21&nbsp;% pour l'un, 17,50&nbsp;% pour l'autre</td><td>Prêts restructurés exclus ou ajoutés sans le dire</td><td>Publier les deux versions, chacune avec son étiquette</td></tr>
+</tbody>
+</table></div>
+<p>La moyenne des agents est le piège le plus discret. Elle donne le même poids au portefeuille de Bakary (3&nbsp;000&nbsp;000&nbsp;FCFA, PAR 30 de 29,67&nbsp;%) qu'à celui de Coumba (4&nbsp;740&nbsp;000&nbsp;FCFA, 11,81&nbsp;%) ou d'Aïda (4&nbsp;260&nbsp;000&nbsp;FCFA, 0,00&nbsp;%). Un taux se recalcule toujours à partir des montants, à chaque niveau de détail&nbsp;: par agent, par agence, par produit.</p>
+<p>Le prêt passé en perte, lui, gonfle les deux termes à la fois&nbsp;: l'encours brut passe à 12&nbsp;300&nbsp;000, et ses 300&nbsp;000&nbsp;FCFA s'ajoutent aux trois numérateurs. Le PAR 180 fait plus que doubler, de 1,79&nbsp;% à 4,19&nbsp;%, et dépasse la norme de 2&nbsp;%.</p>
+
+<h2 id="faq">Questions fréquentes</h2>
+<h3 id="faq-cumulatif">Le PAR 30 inclut-il les prêts en retard de plus de 90&nbsp;jours&nbsp;?</h3>
+<p>Oui. L'indicateur est cumulatif&nbsp;: un prêt en retard de 215&nbsp;jours compte à la fois dans le PAR 30, le PAR 90 et le PAR 180. Le PAR 30 est donc toujours supérieur ou égal au PAR 90, lui-même supérieur ou égal au PAR 180. Sur l'exemple du guide, les 1&nbsp;450&nbsp;000&nbsp;FCFA du PAR 30 contiennent les 625&nbsp;000&nbsp;FCFA du PAR 90, qui contiennent les 215&nbsp;000&nbsp;FCFA du PAR 180.</p>
+<h3 id="faq-restructures">Faut-il inclure les prêts restructurés dans le PAR&nbsp;?</h3>
+<p>Les deux pratiques existent. Le CGAP exclut les prêts restructurés ou refinancés du portefeuille à risque (B3) et demande d'indiquer s'ils sont inclus dans le ratio (R11). Le texte de la BCEAO ne prévoit pas d'exclusion&nbsp;: lu à la lettre, un prêt restructuré entre dans le PAR dès qu'une échéance est impayée depuis plus de x&nbsp;jours. Publiez les deux versions, hors restructurés et y compris les restructurés, en disant laquelle est laquelle.</p>
+<h3 id="faq-norme">Quelle est la norme du PAR pour les SFD de l'UMOA&nbsp;?</h3>
+<p>L'annexe de l'Instruction BCEAO n°&nbsp;020-12-2010 fixe, pour le portefeuille classé à risque&nbsp;: «&nbsp;&lt;5% pour x&gt;ou=30 jours&nbsp;», «&nbsp;&lt;3% pour x&gt;ou=90 jours&nbsp;» et «&nbsp;&lt;2% pour x&gt;180 jours&nbsp;». Pour un état officiel, vérifiez toujours les textes et les instructions de remise en vigueur.</p>
+<h3 id="faq-capital">Le PAR se calcule-t-il sur le capital seul&nbsp;?</h3>
+<p>Selon le CGAP, oui&nbsp;: l'encours de prêts brut (B1) et le portefeuille à risque (B3) n'incluent pas les intérêts courus. Le texte de la BCEAO parle d'«&nbsp;encours bruts de crédits&nbsp;» sans détailler. Retenez le même périmètre au numérateur et au dénominateur et écrivez-le dans la note de l'état.</p>
+<h3 id="faq-cemac">Et dans la CEMAC&nbsp;?</h3>
+<p>Dans la CEMAC, les établissements de microfinance relèvent de la réglementation de la CEMAC et de la supervision de la COBAC. Ces textes ne sont pas traités dans ce guide, qui s'appuie sur le CGAP et sur les textes de l'UMOA. La mécanique du calcul se transpose, mais vérifiez dans les textes de la CEMAC et de la COBAC la définition et les seuils avant de comparer des chiffres.</p>
+
+<h2 id="suite">Aller plus loin</h2>
+<p>Pour pratiquer sans attendre, le <a href="../gratuit.html">module gratuit «&nbsp;Calculer l'ancienneté des impayés avec Power Query&nbsp;»</a> part d'une extraction de prêts et calcule les jours de retard et la balance âgée, sur des données fictives à télécharger&nbsp;: c'est l'étape qui précède le calcul du PAR.</p>
+<p>Sur le même sujet&nbsp;:</p>
+<ul>
+<li><a href="taux-de-degradation-du-portefeuille.html">Taux de dégradation du portefeuille</a>&nbsp;: les formules brut et net, et le calcul dans Excel.</li>
+<li><a href="creances-en-souffrance-bceao.html">Créances en souffrance BCEAO</a>&nbsp;: les catégories de créances des établissements de crédit et leurs délais.</li>
+<li><a href="combiner-plusieurs-fichiers-excel-power-query.html">Combiner plusieurs fichiers Excel avec Power Query</a>&nbsp;: pour empiler les arrêtés mensuels.</li>
+</ul>
+<p>Tous les guides gratuits sont réunis sur la <a href="../index.html#guides">page de la formation</a>.</p>
+
+<h2 id="sources">Sources publiques consultées le 22/10/2026</h2>
+<ul>
+<li>BCEAO, <a href="https://www.cb-umoa.org/sites/default/files/2022-01/INSTRUCTION%20N%C2%B0020-12-2010%20RELATIVES%20AUX%20INDICATEURS%20P%C3%89RIODIQUES%20%C3%80%20TRANSMETTRE%20PAR%20LES%20SFD%20AU%20MINISTRE%20EN%20CHARGE%20DES%20FINANCES%2C%20%C3%80%20LA%20BCEAO%20ET%20%C3%80%20LA%20COMMISSION%20BANCAIRE%20DE%20L%27UMOA.pdf" rel="noopener">Instruction n°&nbsp;020-12-2010 relative aux indicateurs périodiques à transmettre par les SFD</a> (PDF scanné)&nbsp;: articles&nbsp;2 et&nbsp;6, annexe page «&nbsp;2&nbsp;», indicateurs de qualité du portefeuille.</li>
+<li>Commission Bancaire de l'UMOA, <a href="https://www.cb-umoa.org/fr/sfd" rel="noopener">Réglementation comptable et prudentielle des SFD</a>&nbsp;: liste des textes applicables aux SFD.</li>
+<li>CGAP, <a href="https://cgap.org/sites/default/files/researches/documents/CGAP-Consensus-Guidelines-Definitions-of-Selected-Financial-Terms-Ratios-and-Adjustments-for-Microfinance-Sep-2003-French.pdf" rel="noopener">Directives concertées pour la microfinance. Définitions de certains termes, ratios et retraitements financiers dans le domaine de la microfinance</a> (édition française, décembre 2003)&nbsp;: B1, B3 (page&nbsp;6), B4 (page&nbsp;7), P4 (page&nbsp;10), R11 (page&nbsp;18), R13 (page&nbsp;19).</li>
+<li>Commission Bancaire de l'UMOA, <a href="https://cofeb.bceao.int/sites/default/files/2025-08/Rapport_annuel_2024_de_la_Commission_Bancaire.pdf" rel="noopener">Rapport annuel 2024</a> (PDF)&nbsp;: page&nbsp;89 et Tableau n°&nbsp;31 (page&nbsp;98).</li>
+<li>Microsoft, <a href="https://support.microsoft.com/fr-fr/excel/functions/sumifs-function" rel="noopener">Fonction SOMME.SI.ENS</a>.</li>
+<li>Microsoft Learn, fonctions M <a href="https://learn.microsoft.com/fr-fr/powerquery-m/csv-document" rel="noopener">Csv.Document</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-selectrows" rel="noopener">Table.SelectRows</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/list-sum" rel="noopener">List.Sum</a> et <a href="https://learn.microsoft.com/fr-fr/powerquery-m/sharptable" rel="noopener">#table</a>.</li>
+</ul>
+<p>Ce guide est un support pédagogique. Il ne remplace ni les textes en vigueur ni les règles de votre établissement, et ne cite aucune donnée d'établissement réel&nbsp;: IMF Exemple, ses agents et ses chiffres sont inventés. Les libellés de l'interface peuvent varier légèrement selon la version d'Excel et sa langue.</p>
+</section>
+
+      <div class="cta-band cta-after-author">
+        <div>
+          <h2>Automatiser tout le reporting mensuel</h2>
+          <p>La formation «&nbsp;Power Query pour le reporting bancaire&nbsp;»&nbsp;: 8&nbsp;modules, 51&nbsp;exercices corrigés, environ 13&nbsp;h de travail, des données fictives sur 3&nbsp;arrêtés mensuels, un quiz final et une attestation de suivi (non diplômante). <strong>25&nbsp;000&nbsp;FCFA</strong>, paiement unique.</p>
+        </div>
+        <a class="btn btn-light btn-lg" href="../index.html#tarif"><span class="btn-label">Voir le programme et le tarif</span><span class="arrow" aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </article>
+</main>
+
+<footer class="tp-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="../index.html" aria-label="Teranga Pro, accueil de la formation">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+          <span class="brand-name">Teranga<span>Pro</span></span>
+        </a>
+        <p>Conçu par un praticien du reporting bancaire en Afrique de l'Ouest. Données d'exercice 100&nbsp;% fictives&nbsp;; tables de correspondance&nbsp;: exemples pédagogiques, pas des états réglementaires officiels.</p>
+      </div>
+      <div>
+        <h2>Formation</h2>
+        <ul>
+          <li><a href="../index.html">Présentation et programme</a></li>
+          <li><a href="../gratuit.html">Module gratuit</a></li>
+          <li><a href="../index.html#guides">Guides gratuits</a></li>
+          <li><a href="../attestation.html">Vérifier une attestation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Informations</h2>
+        <ul>
+          <li><a href="../cgv.html">Conditions générales de vente</a></li>
+          <li><a href="../confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="footer-note">© 2026 Teranga Pro · Vendeur&nbsp;: particulier résidant au Sénégal.</p>
+  </div>
+</footer>
+</body>
+</html>

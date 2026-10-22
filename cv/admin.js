@@ -220,8 +220,14 @@
     return o.manual_amount || o.amount;
   }
 
+  // A notification already seen (re-delivery, or a real second payment with the very same text): never unlocked by itself.
+  var REPEATED_LABEL = "Notification répétée — vérifiez votre historique Wave avant de débloquer";
+
+  /** « Paiement détecté » (the phone saw the exact amount), or « Notification répétée » when GET /admin/stats says so. */
   function detectedBadge(o) {
-    return o.payment_detected_at ? el("span", { class: "badge badge-detected", text: "Paiement détecté" }) : null;
+    if (!o.payment_detected_at) return null;
+    if (o.payment_detected_repeated) return el("span", { class: "badge badge-repeated", text: REPEATED_LABEL });
+    return el("span", { class: "badge badge-detected", text: "Paiement détecté" });
   }
 
   /** Orders paid by manual Wave transfer that the owner must confirm: shown first, as cards. */

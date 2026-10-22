@@ -35,11 +35,11 @@ const GOOGLE_FONTS = /^https:\/\/fonts\.(googleapis|gstatic)\.com\//;
 
 /**
  * A fresh phone-sized context (own storage, like a separate device). Every console error, uncaught page error
- * and unexpected external request of every page it opens is appended to `problems`.
+ * and unexpected external request of every page it opens is appended to `problems`. `viewport` defaults to PHONE.
  */
-export async function phoneContext(browser, problems, label, { fonts = false } = {}) {
+export async function phoneContext(browser, problems, label, { fonts = false, viewport = PHONE } = {}) {
   const context = await browser.newContext({
-    viewport: PHONE,
+    viewport,
     deviceScaleFactor: 2,
     isMobile: true,
     hasTouch: true,
@@ -78,7 +78,8 @@ export async function assertNoHorizontalScroll(page, label) {
     scroll: document.documentElement.scrollWidth,
     client: document.documentElement.clientWidth,
   }));
-  check(scroll <= client, `${label}: no horizontal scrollbar at ${PHONE.width} px (scrollWidth ${scroll} ≤ ${client})`);
+  const width = page.viewportSize()?.width ?? PHONE.width;
+  check(scroll <= client, `${label}: no horizontal scrollbar at ${width} px (scrollWidth ${scroll} ≤ ${client})`);
 }
 
 export function screenshotter(dir) {

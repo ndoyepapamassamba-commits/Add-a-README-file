@@ -1,0 +1,13 @@
+﻿Prêt;Agent;Encours restant dû;Montant impayé;Jours de retard;Restructuré
+P-01;Aïda;1850000;0;0;Non
+P-02;Aïda;1240000;0;0;Non
+P-03;Aïda;520000;58000;30;Non
+P-04;Aïda;650000;0;0;Oui
+P-05;Bakary;480000;94000;45;Non
+P-06;Bakary;1420000;0;0;Non
+P-07;Bakary;410000;136000;118;Non
+P-08;Bakary;690000;61000;12;Non
+P-09;Coumba;1980000;0;0;Non
+P-10;Coumba;345000;114000;63;Oui
+P-11;Coumba;215000;192000;215;Non
+P-12;Coumba;2200000;0;0;Non

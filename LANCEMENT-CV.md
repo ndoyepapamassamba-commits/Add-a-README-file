@@ -214,6 +214,9 @@ Chaque ligne est une commande, avec sa référence (TCV-…), le produit, le mon
 - **Payé** : tout est bon.
 - **Paiement détecté** (étiquette bleue, à côté de l'état) : votre téléphone a vu arriver le montant exact de cette commande.
   Normalement, elle passe aussitôt à « Payé ».
+- **Notification répétée — vérifiez votre historique Wave avant de débloquer** (étiquette rouge) : votre téléphone a
+  renvoyé une notification déjà reçue avant. C'est souvent un simple doublon, pas un nouveau paiement. Ouvrez Wave :
+  si l'argent de cette commande est bien arrivé, cliquez sur **Débloquer**. Sinon, ne faites rien.
 
 ### Les versements
 

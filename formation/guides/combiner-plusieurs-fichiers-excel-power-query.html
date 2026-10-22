@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Combiner plusieurs fichiers Excel en un seul avec Power Query</title>
+<meta name="description" content="Consolider les classeurs de vos agences depuis un dossier avec Power Query&nbsp;: pas à pas, code M, contrôle des lignes et des totaux, mise à jour d'un clic.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#0B2545">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/combiner-plusieurs-fichiers-excel-power-query.html">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="fr_SN">
+<meta property="og:site_name" content="Teranga Pro">
+<meta property="og:title" content="Combiner plusieurs fichiers Excel en un seul avec Power Query (pas à pas)">
+<meta property="og:description" content="Quatre agences fictives, quatre classeurs, un seul tableau&nbsp;: la méthode depuis un dossier, le code M complet, un contrôle par fichier et la mise à jour du mois suivant.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/combiner-plusieurs-fichiers-excel-power-query.html">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../formation.css">
+<style>
+.module pre.tree::before { content: "Contenu du fichier zip"; position: absolute; left: 16px; top: 12px; color: var(--teal-light); font: 650 .7rem/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; }
+.answer3 ol { margin: .4em 0 .6em; }
+.guide-meta { margin-top: 8px; }
+.module table.data td code { white-space: nowrap; }
+.module table.errors td code { white-space: normal; overflow-wrap: anywhere; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Combiner plusieurs fichiers Excel en un seul avec Power Query",
+  "description": "Consolider les classeurs de vos agences depuis un dossier avec Power Query : pas à pas, code M, contrôle des lignes et des totaux, mise à jour d'un clic.",
+  "inLanguage": "fr",
+  "isAccessibleForFree": true,
+  "keywords": "combiner plusieurs fichiers Excel, consolider plusieurs fichiers Excel en un seul, Power Query dossier, Power Query combiner les fichiers, combiner plusieurs onglets, Folder.Files, Table.Combine, reporting bancaire",
+  "about": [
+    { "@type": "Thing", "name": "Power Query" },
+    { "@type": "Thing", "name": "Consolidation de fichiers Excel" }
+  ],
+  "isPartOf": { "@type": "Course", "name": "Power Query pour le reporting bancaire", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "datePublished": "2026-10-22",
+  "dateModified": "2026-10-22",
+  "image": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg",
+  "mainEntityOfPage": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/combiner-plusieurs-fichiers-excel-power-query.html",
+  "author": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "publisher": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Les colonnes doivent-elles être dans le même ordre dans tous les fichiers ?", "acceptedAnswer": { "@type": "Answer", "text": "Non. Selon Microsoft, « les colonnes n'ont pas besoin d'être dans le même ordre, car la correspondance est effectuée par les noms de colonne ». Les noms, en revanche, doivent être identiques, casse et espaces compris : « Encours » et « encours » sont deux colonnes différentes pour Power Query." } },
+    { "@type": "Question", "name": "Et sur Mac ?", "acceptedAnswer": { "@type": "Answer", "text": "Prudence. Sur Mac, Power Query demande Excel pour Microsoft 365 à jour. La page du support Microsoft sur Power Query dans Excel pour Mac, consultée le 22/10/2026, liste comme sources d'import le classeur Excel, le texte/CSV, XML, JSON, une base SQL Server, une liste SharePoint Online, OData, une table vide et une requête vide : le dossier local n'y figure pas, même si les dossiers sont cités parmi les sources que l'on peut actualiser. Ce guide décrit Excel pour Windows : sur Mac, l'import d'un dossier peut différer ou ne pas être proposé." } },
+    { "@type": "Question", "name": "Et pour des fichiers CSV au point-virgule ?", "acceptedAnswer": { "@type": "Answer", "text": "Le principe est le même : filtrez l'extension .csv au lieu de .xlsx. Dans la boîte de dialogue Combiner les fichiers, Microsoft indique que l'on règle l'origine du fichier, le délimiteur et la détection du type de données. Restent à traiter l'encodage, les montants et les dates au format français et les codes à garder en texte : c'est l'objet du module 2 de la formation. Microsoft Learn a aussi une page « Combiner des fichiers CSV »." } },
+    { "@type": "Question", "name": "Combien de fichiers peut-on combiner ?", "acceptedAnswer": { "@type": "Answer", "text": "Les pages Microsoft consultées pour ce guide ne fixent pas de nombre maximal de fichiers. La limite pratique est le temps d'actualisation, car chaque fichier est relu à chaque fois, et, si vous chargez le résultat dans une feuille, la taille d'une feuille Excel : 1 048 576 lignes. Au-delà, chargez dans le modèle de données ou regroupez avant de charger." } },
+    { "@type": "Question", "name": "Combiner les fichiers d'un dossier ou « Ajouter des requêtes » ?", "acceptedAnswer": { "@type": "Answer", "text": "« Ajouter des requêtes » empile des requêtes qui existent déjà, une par source : cela convient pour deux ou trois sources fixes. Le dossier s'adapte tout seul : une agence de plus, c'est un fichier de plus dans le dossier, sans requête à créer." } }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="tp-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Teranga Pro, accueil de la formation">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+      <span class="brand-name">Teranga<span>Pro</span></span>
+    </a>
+    <nav class="tp-nav" aria-label="Navigation principale">
+      <a class="nav-hide-sm" href="../gratuit.html">Module gratuit</a>
+      <a href="../index.html">La formation</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="page-head">
+    <div class="wrap">
+      <p class="eyebrow">Guide gratuit <span class="dot" aria-hidden="true">·</span> Power Query</p>
+      <h1>Combiner plusieurs fichiers Excel en un seul avec Power Query</h1>
+      <p>Quatre agences, quatre classeurs, un seul tableau&nbsp;: la méthode pas à pas depuis un dossier, le code M complet, un contrôle des lignes et des totaux de chaque fichier, puis la mise à jour du mois suivant en un clic.</p>
+      <p class="meta guide-meta">Mis à jour le 22/10/2026 · Données d'exemple 100&nbsp;% fictives · Excel 2016 ou plus récent, ou Microsoft&nbsp;365, sous Windows</p>
+    </div>
+  </div>
+
+  <article class="article">
+    <div class="wrap">
+<section class="module">
+
+<div class="callout-info answer3">
+<p><strong>La réponse en 4&nbsp;étapes</strong>&nbsp;:</p>
+<ol>
+<li>Mettez les classeurs à combiner, de même structure, dans un dossier qui ne contient qu'eux.</li>
+<li><strong>Données › Obtenir des données › À partir d'un fichier › À partir d'un dossier</strong>, choisissez le dossier, puis <strong>Transformer les données</strong>.</li>
+<li>Gardez les seuls fichiers <code>.xlsx</code> (sans les fichiers temporaires «&nbsp;~$&nbsp;»), puis <strong>Accueil › Combiner › Combiner les fichiers</strong> et choisissez le tableau à empiler.</li>
+<li>Tirez le nom de l'agence de la colonne <code>Source.Name</code>, typez les colonnes, <strong>Fermer et charger</strong>. Le mois suivant&nbsp;: remplacez les fichiers, puis <strong>Données › Actualiser tout</strong>.</li>
+</ol>
+<p>Sur l'exemple fictif de ce guide&nbsp;: 4&nbsp;fichiers, 20&nbsp;lignes, 374&nbsp;950&nbsp;000&nbsp;FCFA d'encours.</p>
+</div>
+
+<nav class="toc-box" aria-labelledby="toc-title">
+<p id="toc-title">Dans ce guide</p>
+<ol>
+<li><a href="#besoin">Le besoin et le résultat attendu</a></li>
+<li><a href="#fichiers">Les fichiers d'exemple à télécharger</a></li>
+<li><a href="#dossier">Préparer le dossier</a></li>
+<li><a href="#etape-1">Étape 1 — Se connecter au dossier</a></li>
+<li><a href="#etape-2">Étape 2 — Ne garder que les bons fichiers</a></li>
+<li><a href="#etape-3">Étape 3 — Combiner les fichiers</a></li>
+<li><a href="#etape-4">Étape 4 — Le nom de l'agence et les types</a></li>
+<li><a href="#code-m">La variante en code M, sans requêtes d'aide</a></li>
+<li><a href="#controle">Contrôler chaque fichier&nbsp;: lignes et total</a></li>
+<li><a href="#mois-suivant">Le mois suivant&nbsp;: remplacer, actualiser</a></li>
+<li><a href="#onglets">Variante&nbsp;: plusieurs onglets d'un même classeur</a></li>
+<li><a href="#erreurs">Erreurs fréquentes</a></li>
+<li><a href="#faq">Questions fréquentes</a></li>
+<li><a href="#sources">Sources consultées</a></li>
+</ol>
+</nav>
+
+<h2 id="besoin">Le besoin&nbsp;: un tableau unique, qui se met à jour d'un clic</h2>
+<p>Chaque fin de mois, le service reporting de la Banque Fictive de l'Ouest (BFO), une banque <strong>imaginaire</strong>, reçoit un classeur d'encours de chacune de ses quatre agences&nbsp;: Flamboyant, Ronier, Filao et Acajou. Les ouvrir un par un et copier-coller les lignes dans un classeur de synthèse prend du temps et laisse passer des erreurs&nbsp;: une agence oubliée, une colonne décalée, des lignes collées deux fois.</p>
+<p>Power Query fait ce travail à votre place. Microsoft le décrit ainsi&nbsp;: «&nbsp;Utilisez Power Query pour combiner plusieurs fichiers avec le même schéma stocké dans un seul dossier dans une seule table.&nbsp;» Le résultat visé ici&nbsp;:</p>
+<ul>
+<li><strong>un seul tableau</strong>, avec toutes les lignes des quatre agences&nbsp;;</li>
+<li><strong>une colonne Agence</strong>, tirée du nom de chaque fichier, pour savoir d'où vient chaque ligne&nbsp;;</li>
+<li><strong>un contrôle par fichier</strong>&nbsp;: nombre de lignes et total de l'encours, à comparer à ce que chaque agence annonce&nbsp;;</li>
+<li><strong>une mise à jour d'un clic</strong>&nbsp;: le mois suivant, on remplace les fichiers du dossier, puis <strong>Données › Actualiser tout</strong>.</li>
+</ul>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Extrait du tableau combiné, 4 lignes sur 20"><table class="data">
+<caption>Extrait du tableau combiné (4&nbsp;lignes sur 20, arrêté du 30/09/2026, montants en FCFA)</caption>
+<thead><tr><th scope="col">Source.Name</th><th scope="col">Arrêté</th><th scope="col">Code agence</th><th scope="col">Contrat</th><th scope="col">Client</th><th scope="col">Produit</th><th scope="col">Encours</th><th scope="col">Jours de retard</th><th scope="col">Agence</th></tr></thead>
+<tbody>
+<tr><td>agence-acajou.xlsx</td><td>30/09/2026</td><td>004</td><td>AC-0401</td><td>C-4101</td><td>Crédit de trésorerie</td><td class="num">12&nbsp;500&nbsp;000</td><td class="num">0</td><td>Acajou</td></tr>
+<tr><td>agence-filao.xlsx</td><td>30/09/2026</td><td>003</td><td>FI-0301</td><td>C-3101</td><td>Prêt personnel</td><td class="num">5&nbsp;200&nbsp;000</td><td class="num">0</td><td>Filao</td></tr>
+<tr><td>agence-flamboyant.xlsx</td><td>30/09/2026</td><td>001</td><td>FL-0101</td><td>C-1101</td><td>Crédit de trésorerie</td><td class="num">18&nbsp;500&nbsp;000</td><td class="num">0</td><td>Flamboyant</td></tr>
+<tr><td>agence-ronier.xlsx</td><td>30/09/2026</td><td>002</td><td>RO-0202</td><td>C-2102</td><td>Crédit de trésorerie</td><td class="num">9&nbsp;650&nbsp;000</td><td class="num">95</td><td>Ronier</td></tr>
+</tbody>
+</table></div>
+<figure tabindex="0">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" role="img" aria-label="Schéma : le dossier Encours_Agences contient quatre classeurs (Acajou 5 lignes, Filao 6, Flamboyant 5, Ronier 4). Power Query garde les fichiers .xlsx, combine les fichiers, ajoute la colonne Agence et type les colonnes. Résultat : un tableau de 20 lignes et 374 950 000 FCFA, plus un contrôle par fichier.">
+<title>Du dossier au tableau unique</title>
+<defs><marker id="fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B7A72"/></marker></defs>
+<rect x="1" y="1" width="718" height="318" rx="12" fill="#F7F7F2" stroke="#CBD5E1"/>
+<text x="20" y="30" font-size="13" font-weight="bold" fill="#0B2545">Du dossier au tableau unique — BFO, arrêté du 30/09/2026 (données fictives)</text>
+<rect x="16" y="48" width="196" height="210" rx="10" fill="#fff" stroke="#0B2545" stroke-dasharray="6 4"/>
+<text x="28" y="70" font-size="12" font-weight="bold" fill="#0B2545">Dossier Encours_Agences</text>
+<rect x="28" y="82" width="172" height="38" rx="6" fill="#E6F4F2" stroke="#0B7A72"/>
+<text x="38" y="98" font-size="12" fill="#1F2933">agence-acajou.xlsx</text>
+<text x="38" y="113" font-size="10.5" fill="#52606D">5 lignes · 88&nbsp;000&nbsp;000</text>
+<rect x="28" y="126" width="172" height="38" rx="6" fill="#E6F4F2" stroke="#0B7A72"/>
+<text x="38" y="142" font-size="12" fill="#1F2933">agence-filao.xlsx</text>
+<text x="38" y="157" font-size="10.5" fill="#52606D">6 lignes · ordre différent</text>
+<rect x="28" y="170" width="172" height="38" rx="6" fill="#E6F4F2" stroke="#0B7A72"/>
+<text x="38" y="186" font-size="12" fill="#1F2933">agence-flamboyant.xlsx</text>
+<text x="38" y="201" font-size="10.5" fill="#52606D">5 lignes · 94&nbsp;600&nbsp;000</text>
+<rect x="28" y="214" width="172" height="38" rx="6" fill="#E6F4F2" stroke="#0B7A72"/>
+<text x="38" y="230" font-size="12" fill="#1F2933">agence-ronier.xlsx</text>
+<text x="38" y="245" font-size="10.5" fill="#52606D">4 lignes · une colonne de plus</text>
+<path d="M214 153H240" stroke="#0B7A72" stroke-width="2.5" marker-end="url(#fl)"/>
+<rect x="244" y="48" width="224" height="210" rx="10" fill="#0B2545"/>
+<text x="262" y="74" font-size="13" font-weight="bold" fill="#fff">Power Query</text>
+<text x="262" y="104" font-size="12" fill="#E4ECF5">1. Garder les .xlsx (sans «&nbsp;~$&nbsp;»)</text>
+<text x="262" y="132" font-size="12" fill="#E4ECF5">2. Combiner les fichiers</text>
+<text x="262" y="160" font-size="12" fill="#E4ECF5">3. Agence tirée de Source.Name</text>
+<text x="262" y="188" font-size="12" fill="#E4ECF5">4. Types&nbsp;: codes en texte</text>
+<text x="262" y="230" font-size="12" font-weight="bold" fill="#6FD6CC">Fermer et charger</text>
+<path d="M470 153H496" stroke="#0B7A72" stroke-width="2.5" marker-end="url(#fl)"/>
+<rect x="500" y="48" width="204" height="122" rx="10" fill="#fff" stroke="#0B2545"/>
+<text x="514" y="72" font-size="12.5" font-weight="bold" fill="#0B2545">Tableau Encours_Agences</text>
+<text x="514" y="96" font-size="12" fill="#1F2933">20 lignes, colonne Agence</text>
+<text x="514" y="122" font-size="14" font-weight="bold" fill="#0B7A72">374&nbsp;950&nbsp;000 FCFA</text>
+<text x="514" y="146" font-size="11" fill="#52606D">4 agences, 1 seul tableau</text>
+<rect x="500" y="182" width="204" height="76" rx="10" fill="#FDE3C2" stroke="#0B2545"/>
+<text x="514" y="206" font-size="12.5" font-weight="bold" fill="#0B2545">Contrôle par fichier</text>
+<text x="514" y="228" font-size="11.5" fill="#1F2933">lignes et total de l'encours,</text>
+<text x="514" y="246" font-size="11.5" fill="#1F2933">à comparer à chaque agence</text>
+<text x="20" y="292" font-size="12" fill="#0B2545">Le mois suivant&nbsp;: remplacer les 4 fichiers du dossier, puis Données › Actualiser tout.</text>
+</svg>
+<figcaption>Figure 1 — Le principe sur l'exemple fictif. Le dossier ne contient que les fichiers à combiner&nbsp;; Power Query refait les mêmes étapes à chaque actualisation.</figcaption>
+</figure>
+
+<h2 id="fichiers">Les fichiers d'exemple à télécharger</h2>
+<div class="download-box">
+<span class="file-ext" aria-hidden="true">ZIP</span>
+<p><strong>Les classeurs de l'exemple</strong><br><span class="muted small">combiner-fichiers-excel-exemple.zip · 9&nbsp;classeurs fictifs (septembre, octobre et variante onglets) · 69&nbsp;Ko</span></p>
+<a class="btn btn-outline" href="fichiers/combiner-fichiers-excel-exemple.zip" download><span class="btn-label">Télécharger les fichiers</span></a>
+</div>
+<p>Décompressez le fichier zip (clic droit › <strong>Extraire tout…</strong>). Vous obtenez trois dossiers&nbsp;:</p>
+<pre class="tree" tabindex="0" role="region" aria-label="Contenu du fichier zip">combiner-fichiers-excel-exemple\
+├── Encours_Agences\          ← le dossier à combiner (arrêté du 30/09/2026)
+│   ├── agence-acajou.xlsx
+│   ├── agence-filao.xlsx
+│   ├── agence-flamboyant.xlsx
+│   └── agence-ronier.xlsx
+├── Mois_suivant_2026-10\     ← les mêmes agences au 31/10/2026, pour tester la mise à jour
+│   └── (4 classeurs)
+├── Onglets\
+│   └── encours-par-onglet.xlsx   ← variante « plusieurs onglets »
+└── LISEZ-MOI.txt</pre>
+<p>Chaque classeur d'agence contient une feuille <strong>Portefeuille</strong> avec un tableau Excel nommé <code>Encours</code>&nbsp;: une ligne par crédit, avec les colonnes <em>Arrêté</em>, <em>Code agence</em>, <em>Contrat</em>, <em>Client</em>, <em>Produit</em>, <em>Encours</em> (en FCFA) et <em>Jours de retard</em>. À droite du tableau, un bloc «&nbsp;Contrôle de l'agence&nbsp;» donne le nombre de contrats et le total de l'encours&nbsp;: ce sont les chiffres que l'agence annonce, et que le contrôle comparera. Deux fichiers s'écartent volontairement du modèle, comme cela arrive dans la réalité.</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Les quatre classeurs du dossier Encours_Agences"><table class="data">
+<caption>Les quatre classeurs du dossier Encours_Agences (arrêté du 30/09/2026)</caption>
+<thead><tr><th scope="col">Fichier</th><th scope="col">Code agence</th><th scope="col">Contrats</th><th scope="col">Total encours (FCFA)</th><th scope="col">Particularité</th></tr></thead>
+<tbody>
+<tr><td>agence-acajou.xlsx</td><td>004</td><td class="num">5</td><td class="num">88&nbsp;000&nbsp;000</td><td>Modèle standard (7&nbsp;colonnes)</td></tr>
+<tr><td>agence-filao.xlsx</td><td>003</td><td class="num">6</td><td class="num">109&nbsp;250&nbsp;000</td><td>Mêmes colonnes, dans un autre ordre (<em>Contrat</em> en premier, <em>Arrêté</em> en dernier)</td></tr>
+<tr><td>agence-flamboyant.xlsx</td><td>001</td><td class="num">5</td><td class="num">94&nbsp;600&nbsp;000</td><td>Modèle standard</td></tr>
+<tr><td>agence-ronier.xlsx</td><td>002</td><td class="num">4</td><td class="num">83&nbsp;100&nbsp;000</td><td>Une colonne en plus&nbsp;: <em>Commentaire</em></td></tr>
+<tr><td><strong>Total</strong></td><td></td><td class="num"><strong>20</strong></td><td class="num"><strong>374&nbsp;950&nbsp;000</strong></td><td></td></tr>
+</tbody>
+</table></div>
+<p>Pourquoi un <strong>tableau Excel</strong> plutôt qu'une simple plage&nbsp;? Parce qu'il a un nom stable (<code>Encours</code>), qu'il s'agrandit quand l'agence ajoute des lignes, et que Power Query le lit sans le bloc de contrôle placé à côté. Si vos agences envoient des plages sans tableau, la variante <a href="#onglets">par feuille</a> plus bas montre comment lire une feuille entière.</p>
+
+<h2 id="dossier">Préparer le dossier&nbsp;: rien que les fichiers à combiner</h2>
+<p>C'est la règle n°&nbsp;1. Microsoft écrit&nbsp;: «&nbsp;Assurez-vous que tous les fichiers que vous souhaitez combiner sont contenus dans un dossier dédié, sans fichiers superflus. Sinon, tous les fichiers du dossier et les sous-dossiers que vous sélectionnez sont inclus dans les données à combiner.&nbsp;» La fonction M qui lit le dossier, <code>Folder.Files</code>, renvoie de même «&nbsp;une ligne pour chaque fichier trouvé dans le dossier spécifié et tous ses sous-dossiers&nbsp;».</p>
+<p>Quelques conventions qui évitent la plupart des pannes&nbsp;:</p>
+<ul>
+<li><strong>Un dossier par flux</strong>&nbsp;: ici <code>Encours_Agences</code>, qui ne reçoit que les encours des agences. Votre classeur de reporting est enregistré <strong>ailleurs</strong>, sinon il serait combiné avec les autres.</li>
+<li><strong>Un nom de fichier fixe par agence</strong>, en minuscules et sans espace&nbsp;: <code>agence-&lt;nom&gt;.xlsx</code>. Pas de date dans le nom&nbsp;: elle est dans la colonne <em>Arrêté</em>. Le nom ne change donc pas d'un mois à l'autre, et l'on en tire le nom de l'agence.</li>
+<li><strong>Les mois précédents archivés hors du dossier</strong>, et surtout pas dans un sous-dossier&nbsp;: ils seraient relus.</li>
+<li><strong>Un modèle commun</strong> envoyé aux agences&nbsp;: même nom de tableau, mêmes en-têtes, au caractère près.</li>
+</ul>
+<div class="callout-warning">
+<p><strong>Choisissez le dossier <code>Encours_Agences</code>, pas le dossier parent.</strong> Avec <code>combiner-fichiers-excel-exemple</code>, Power Query lirait aussi les sous-dossiers&nbsp;: le classeur des onglets, qui n'a pas de tableau <code>Encours</code>, provoquerait une erreur&nbsp;; et même sans lui, les quatre classeurs d'octobre, aux mêmes noms de fichier, s'ajouteraient à ceux de septembre (41&nbsp;lignes au lieu de 20, sur deux arrêtés).</p>
+</div>
+
+<h2 id="etape-1">Étape 1 — Se connecter au dossier</h2>
+<ol>
+<li>Ouvrez un classeur vierge&nbsp;: ce sera votre classeur de reporting. Enregistrez-le en dehors du dossier <code>Encours_Agences</code>.</li>
+<li><strong>Données › Obtenir des données › À partir d'un fichier › À partir d'un dossier</strong> (Excel 2016&nbsp;: <strong>Données › Nouvelle requête › À partir d'un fichier › À partir d'un dossier</strong>).</li>
+<li>Cliquez sur <strong>Parcourir</strong>, sélectionnez le dossier <code>Encours_Agences</code>, puis validez.</li>
+<li>Une fenêtre liste les fichiers du dossier, avec les colonnes <code>Content</code> (le contenu du fichier), <code>Name</code>, <code>Extension</code>, <code>Date accessed</code>, <code>Date modified</code>, <code>Date created</code>, <code>Attributes</code> et <code>Folder Path</code>. Vérifiez que les quatre classeurs y sont, et rien d'autre.</li>
+<li>Cliquez sur <strong>Transformer les données</strong>, et non sur <strong>Combiner</strong>&nbsp;: on filtre d'abord, on combine ensuite.</li>
+</ol>
+<p>Le bouton <strong>Combiner</strong> propose trois commandes&nbsp;: <strong>Combiner et transformer les données</strong>, <strong>Combiner et charger</strong>, <strong>Combiner et charger dans…</strong> Elles vont plus vite, mais elles combinent tout ce que contient le dossier. La page Microsoft Learn du connecteur Dossier le confirme&nbsp;: pour exclure des fichiers, sélectionnez d'abord <strong>Transformer les données</strong> et filtrez la table des fichiers avant de combiner.</p>
+
+<h2 id="etape-2">Étape 2 — Ne garder que les bons fichiers</h2>
+<p>Dans l'Éditeur Power Query, la requête affiche une ligne par fichier. Deux filtres suffisent&nbsp;:</p>
+<ol>
+<li>Colonne <code>Extension</code>&nbsp;: cliquez sur la flèche de l'en-tête, ne laissez cochée que la valeur <code>.xlsx</code>, puis <strong>OK</strong>.</li>
+<li>Colonne <code>Name</code>&nbsp;: flèche de l'en-tête › <strong>Filtres textuels › Ne commence pas par…</strong>, saisissez <code>~$</code>, puis <strong>OK</strong>.</li>
+</ol>
+<p>Le second filtre vise un piège classique. Quand un classeur est ouvert dans Excel, Excel crée à côté de lui un petit fichier temporaire au nom commençant par «&nbsp;~$&nbsp;», par exemple <code>~$agence-ronier.xlsx</code>. Ce n'est pas un vrai classeur&nbsp;: Power Query ne sait pas le lire comme tel, et l'actualisation échoue. Ces fichiers sont d'ordinaire masqués, et la combinaison automatique ajoute en général une étape qui écarte les fichiers masqués&nbsp;; le filtre sur le nom, lui, ne dépend pas de cet attribut. Dans l'<strong>Éditeur avancé</strong> (<strong>Accueil › Éditeur avancé</strong>), la requête ressemble alors à ceci&nbsp;:</p>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M de l'étape 2 : filtres sur la liste des fichiers">let
+    Source = Folder.Files("C:\Reporting\Encours_Agences"),
+    #"Lignes filtrées" = Table.SelectRows(Source, each [Extension] = ".xlsx"),
+    #"Lignes filtrées1" = Table.SelectRows(#"Lignes filtrées", each not Text.StartsWith([Name], "~$"))
+in
+    #"Lignes filtrées1"</pre>
+<p>Le chemin <code>C:\Reporting\Encours_Agences</code> est un exemple&nbsp;: Power Query écrit celui du dossier que vous avez choisi.</p>
+
+<h2 id="etape-3">Étape 3 — Combiner les fichiers</h2>
+<ol>
+<li>Cliquez sur l'icône à deux flèches dans l'en-tête de la colonne <code>Content</code> (<strong>Combiner les fichiers</strong>), ou sur <strong>Accueil › Combiner › Combiner les fichiers</strong>.</li>
+<li>La boîte de dialogue <strong>Combiner les fichiers</strong> s'ouvre. Dans la liste <strong>Exemple de fichier</strong>, laissez <strong>Premier fichier</strong>&nbsp;: ici <code>agence-acajou.xlsx</code>.</li>
+<li>À gauche, Power Query affiche le contenu de ce fichier&nbsp;: le tableau <code>Encours</code> (icône de tableau) et la feuille <code>Portefeuille</code> (icône de feuille). Sélectionnez le <strong>tableau</strong> <code>Encours</code>&nbsp;: la feuille contient aussi le bloc de contrôle.</li>
+<li>Laissez décochée la case <strong>Ignorer les fichiers avec des erreurs</strong>&nbsp;: mieux vaut voir une erreur que perdre une agence sans le savoir. Cliquez sur <strong>OK</strong>.</li>
+</ol>
+<p>Power Query crée alors plusieurs requêtes, visibles dans le volet <strong>Requêtes</strong>, à gauche. D'après Microsoft Learn et le support Microsoft&nbsp;:</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Les requêtes créées par Combiner les fichiers"><table class="data">
+<caption>Les requêtes créées par «&nbsp;Combiner les fichiers&nbsp;» (noms de l'interface française)</caption>
+<thead><tr><th scope="col">Requête</th><th scope="col">Rôle</th></tr></thead>
+<tbody>
+<tr><td>Paramètre1</td><td>Le paramètre qui reçoit, tour à tour, le contenu de chaque fichier.</td></tr>
+<tr><td>Exemple de fichier</td><td>Le fichier d'exemple choisi dans la boîte de dialogue (ici le premier de la liste).</td></tr>
+<tr><td>Transformer l'exemple de fichier</td><td>Les étapes appliquées à un fichier&nbsp;: ouvrir le classeur, prendre le tableau <code>Encours</code>. C'est <strong>la requête à modifier</strong> pour changer ce qui est fait sur chaque fichier.</td></tr>
+<tr><td>Transformer le fichier</td><td>La fonction (icône <em>fx</em>) appliquée à chaque fichier. Elle est liée à la requête précédente&nbsp;: «&nbsp;les modifications apportées à l'exemple de requête sont donc reflétées dans la requête de fonction&nbsp;» (Microsoft Learn).</td></tr>
+<tr><td>Encours_Agences</td><td>La requête finale, rangée dans «&nbsp;Autres requêtes&nbsp;». «&nbsp;Par défaut, il porte le nom du dossier à partir duquel vous avez importé les fichiers&nbsp;» (support Microsoft).</td></tr>
+</tbody>
+</table></div>
+<p>Les quatre premières sont rangées à part, dans un groupe nommé d'après le dossier («&nbsp;Transformer le fichier à partir de Encours_Agences&nbsp;»), avec un sous-groupe «&nbsp;Requêtes d'assistance&nbsp;». Ne supprimez rien&nbsp;: la requête finale en dépend. Les libellés exacts peuvent varier un peu selon la version d'Excel.</p>
+<p>Dans la requête finale, Power Query appelle la fonction sur chaque fichier, renomme la colonne <code>Name</code> en <code>Source.Name</code>, puis développe les tables obtenues en colonnes. Un détail de cette dernière étape compte beaucoup&nbsp;: dans l'Éditeur avancé, elle contient <code>Table.ColumnNames(#"Transformer le fichier"(#"Exemple de fichier"))</code>. Autrement dit, <strong>la liste des colonnes est celle du fichier d'exemple</strong>. Deux conséquences sur nos données&nbsp;:</p>
+<ul>
+<li><strong>Filao, aux colonnes dans un autre ordre, ne pose aucun problème.</strong> Microsoft le précise&nbsp;: «&nbsp;Les colonnes n'ont pas besoin d'être dans le même ordre, car la correspondance est effectuée par les noms de colonne.&nbsp;»</li>
+<li><strong>La colonne <em>Commentaire</em> de Ronier disparaît sans message.</strong> Elle n'existe pas dans le fichier d'exemple (Acajou), donc elle n'est pas développée. Si vous aviez choisi <code>agence-ronier.xlsx</code> comme exemple, elle serait présente, et vide pour les trois autres agences. La <a href="#code-m">variante en code M</a> règle la question.</li>
+</ul>
+
+<h2 id="etape-4">Étape 4 — Le nom de l'agence et les types</h2>
+<p>La colonne <code>Source.Name</code> contient le nom du fichier d'origine de chaque ligne&nbsp;: gardez-la. On en tire une colonne <em>Agence</em> plus lisible.</p>
+<ol>
+<li>Sélectionnez la colonne <code>Source.Name</code>, puis <strong>Ajouter une colonne › Extraire › Texte entre les délimiteurs</strong>. Délimiteur de début&nbsp;: <code>agence-</code>&nbsp;; délimiteur de fin&nbsp;: <code>.xlsx</code>. <strong>OK</strong>.</li>
+<li>Double-cliquez sur l'en-tête de la nouvelle colonne et renommez-la <code>Agence</code>. Puis <strong>Transformer › Format › Mettre en majuscule chaque mot</strong>&nbsp;: «&nbsp;flamboyant&nbsp;» devient «&nbsp;Flamboyant&nbsp;».</li>
+<li>Autre méthode, si vos noms de fichiers sont moins réguliers&nbsp;: <strong>Ajouter une colonne › Dupliquer la colonne</strong> sur <code>Source.Name</code>, puis <strong>Transformer › Remplacer les valeurs</strong> deux fois (<code>agence-</code> par rien, puis <code>.xlsx</code> par rien).</li>
+<li>Vérifiez les types, avec l'icône à gauche de chaque en-tête&nbsp;: <em>Arrêté</em> en <strong>Date</strong>&nbsp;; <em>Code agence</em>, <em>Contrat</em>, <em>Client</em>, <em>Produit</em> et <em>Agence</em> en <strong>Texte</strong>&nbsp;; <em>Encours</em> en <strong>Nombre décimal</strong>&nbsp;; <em>Jours de retard</em> en <strong>Nombre entier</strong>. L'étape <strong>Type modifié</strong> ajoutée automatiquement a pu typer <em>Code agence</em> en nombre&nbsp;: si Excel demande s'il faut remplacer l'étape existante, choisissez <strong>Remplacer l'actuelle</strong>. Une nouvelle étape partirait des nombres déjà convertis et donnerait «&nbsp;4&nbsp;» au lieu de «&nbsp;004&nbsp;».</li>
+<li><strong>Accueil › Fermer et charger</strong>. Le tableau combiné s'affiche dans une nouvelle feuille.</li>
+</ol>
+<p>Le <em>Code agence</em> mérite une attention particulière&nbsp;: «&nbsp;001&nbsp;» est un code, pas une quantité. En <strong>Nombre entier</strong>, il deviendrait 1 et ne correspondrait plus à aucune table de référence. Un code se garde toujours en texte. Le calcul de la colonne <em>Agence</em>, en code M, tient en une ligne&nbsp;: <code>Text.Proper(Text.BetweenDelimiters([Source.Name], "agence-", ".xlsx"))</code>.</p>
+<div class="expected">
+<ul>
+<li>20&nbsp;lignes et 9&nbsp;colonnes&nbsp;: <em>Source.Name</em>, <em>Arrêté</em>, <em>Code agence</em>, <em>Contrat</em>, <em>Client</em>, <em>Produit</em>, <em>Encours</em>, <em>Jours de retard</em>, <em>Agence</em>.</li>
+<li>Pas de colonne <em>Commentaire</em> (le fichier d'exemple, Acajou, n'en a pas).</li>
+<li>Somme de la colonne <em>Encours</em>&nbsp;: 374&nbsp;950&nbsp;000. Codes agence «&nbsp;001&nbsp;» à «&nbsp;004&nbsp;», en texte.</li>
+<li>Lignes de Filao complètes, malgré l'ordre différent de ses colonnes.</li>
+</ul>
+</div>
+
+<h2 id="code-m">La variante en code M, sans requêtes d'aide</h2>
+<p>La méthode des boutons crée cinq requêtes et ignore les colonnes absentes du fichier d'exemple. Pour un reporting mensuel, une seule requête, lisible de haut en bas, est souvent plus simple à maintenir. Elle repose sur trois fonctions documentées&nbsp;: <code>Folder.Files</code> (la liste des fichiers), <code>Excel.Workbook</code> (le contenu d'un classeur) et <code>Table.Combine</code> (l'empilement).</p>
+<ol>
+<li><strong>Données › Obtenir des données › À partir d'autres sources › Requête vide</strong> (Excel 2016&nbsp;: <strong>Données › Nouvelle requête › À partir d'autres sources › Requête vide</strong>).</li>
+<li><strong>Accueil › Éditeur avancé</strong>&nbsp;: remplacez tout le contenu par le code ci-dessous, puis corrigez la ligne <code>Dossier</code> avec le chemin de votre dossier. <strong>Terminé</strong>.</li>
+<li>Dans <strong>Paramètres de requête › Propriétés › Nom</strong>, à droite, nommez la requête <code>Encours_Agences</code> (ou <code>Encours_Agences_M</code> si la version des boutons existe déjà dans le classeur).</li>
+<li><strong>Accueil › Fermer et charger</strong>.</li>
+</ol>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Encours_Agences, variante M">// Requête Encours_Agences (variante M) : tous les classeurs du dossier en un seul tableau
+let
+    // Le seul chemin à adapter : le dossier qui ne contient que les fichiers à combiner
+    Dossier = "C:\Reporting\Encours_Agences",
+    Fichiers = Folder.Files(Dossier),
+
+    // Les classeurs .xlsx seulement : ni fichiers masqués, ni fichiers temporaires « ~$ » d'un classeur ouvert
+    Classeurs = Table.SelectRows(Fichiers, each Text.Lower([Extension]) = ".xlsx"
+        and not Text.StartsWith([Name], "~$")
+        and [Attributes]?[Hidden]? &lt;&gt; true),
+
+    // Pour chaque fichier : le tableau « Encours », en-têtes sans espace superflu, plus le nom du fichier
+    AvecTables = Table.AddColumn(Classeurs, "Données", each
+        let
+            NomFichier = [Name],
+            Encours = Excel.Workbook([Content], null, true){[Item = "Encours", Kind = "Table"]}[Data],
+            EnTetes = Table.TransformColumnNames(Encours, Text.Trim)
+        in
+            Table.AddColumn(EnTetes, "Source.Name", each NomFichier, type text)),
+
+    // Empiler : la table finale réunit les colonnes de tous les fichiers (null là où un fichier n'en a pas)
+    Combine = Table.Combine(AvecTables[Données]),
+
+    // L'agence, tirée du nom de fichier : « agence-ronier.xlsx » donne « Ronier »
+    AvecAgence = Table.AddColumn(Combine, "Agence",
+        each Text.Proper(Text.BetweenDelimiters([Source.Name], "agence-", ".xlsx")), type text),
+
+    // Types explicites ; Code agence reste du texte pour garder « 001 »
+    Types = Table.TransformColumnTypes(AvecAgence, {
+        {"Arrêté", type date}, {"Code agence", type text}, {"Contrat", type text}, {"Client", type text},
+        {"Produit", type text}, {"Encours", type number}, {"Jours de retard", Int64.Type}}),
+
+    // Source.Name et Agence en tête ; les autres colonnes, y compris celles en plus, à la suite
+    Ordre = Table.ReorderColumns(Types,
+        {"Source.Name", "Agence"} &amp; List.RemoveItems(Table.ColumnNames(Types), {"Source.Name", "Agence"}))
+in
+    Ordre</pre>
+<p>Ce qu'il faut retenir du code&nbsp;:</p>
+<ul>
+<li><strong><code>{[Item = "Encours", Kind = "Table"]}</code></strong> choisit le tableau nommé <code>Encours</code>. <code>Excel.Workbook</code> renvoie une ligne par feuille, par tableau et par nom défini&nbsp;; préciser <code>Kind = "Table"</code> évite de tomber sur une feuille qui porterait le même nom.</li>
+<li><strong><code>null, true</code></strong>&nbsp;: les deux paramètres de <code>Excel.Workbook</code>. Le premier (<code>useHeaders</code>) est inutile pour un tableau, qui a déjà ses en-têtes. Le second laisse les colonnes non typées&nbsp;: on type une seule fois, à la fin. Microsoft déconseille d'ailleurs <code>useHeaders</code>, qui «&nbsp;convertit les nombres et les dates en texte à l'aide de la culture actuelle&nbsp;», au profit de <code>Table.PromoteHeaders</code> (utilisé plus bas, pour les feuilles).</li>
+<li><strong><code>Table.TransformColumnNames(…, Text.Trim)</code></strong> retire les espaces au début et à la fin des en-têtes&nbsp;: «&nbsp;Encours&nbsp;» suivi d'un espace redevient «&nbsp;Encours&nbsp;».</li>
+<li><strong><code>Table.Combine</code></strong>&nbsp;: selon sa documentation, la table obtenue a «&nbsp;une union des types d'entrée&nbsp;», c'est-à-dire toutes les colonnes de tous les fichiers. L'exemple de Microsoft montre qu'une colonne absente d'une table y vaut <code>null</code>. La colonne <em>Commentaire</em> de Ronier est donc conservée.</li>
+</ul>
+<div class="expected">
+<ul>
+<li>20&nbsp;lignes et 10&nbsp;colonnes&nbsp;: <em>Source.Name</em>, <em>Agence</em>, <em>Arrêté</em>, <em>Code agence</em>, <em>Contrat</em>, <em>Client</em>, <em>Produit</em>, <em>Encours</em>, <em>Jours de retard</em>, <em>Commentaire</em>.</li>
+<li><em>Commentaire</em> rempli sur deux lignes seulement&nbsp;: RO-0202 («&nbsp;Relance écrite le 22/09/2026&nbsp;») et RO-0204 («&nbsp;Remboursement anticipé partiel en août&nbsp;»). Il vaut <code>null</code> sur les 18&nbsp;autres lignes.</li>
+<li>Somme de la colonne <em>Encours</em>&nbsp;: 374&nbsp;950&nbsp;000.</li>
+</ul>
+</div>
+<p>L'ordre des lignes suit celui des fichiers renvoyé par le dossier&nbsp;; ne comptez pas dessus et triez si besoin (en-tête de colonne › <strong>Tri croissant</strong>).</p>
+
+<h2 id="controle">Contrôler chaque fichier&nbsp;: nombre de lignes et total</h2>
+<p>Un fichier manquant, un fichier en double ou une colonne renommée ne déclenchent pas toujours d'erreur&nbsp;: ils changent les chiffres. D'où une requête de contrôle, une ligne par fichier, à comparer au bloc «&nbsp;Contrôle de l'agence&nbsp;» de chaque classeur (ou aux chiffres que les agences vous envoient).</p>
+<ol>
+<li>Dans le volet <strong>Requêtes</strong>, clic droit sur <code>Encours_Agences</code> › <strong>Référence</strong>. Renommez la nouvelle requête <code>Controle_Encours</code>.</li>
+<li><strong>Accueil › Regrouper par</strong>, option <strong>Avancé</strong>. Regroupez par <code>Source.Name</code>, puis <strong>Ajouter un regroupement</strong> sur <code>Agence</code>.</li>
+<li>Agrégations, une par ligne (bouton <strong>Ajouter une agrégation</strong> pour les suivantes)&nbsp;: <code>Lignes</code> avec l'opération <strong>Compter les lignes</strong>&nbsp;; <code>Total encours</code>, <strong>Somme</strong> de <em>Encours</em>&nbsp;; <code>Arrêté</code>, <strong>Max</strong> de <em>Arrêté</em>. <strong>OK</strong>, puis <strong>Fermer et charger</strong>.</li>
+</ol>
+<p>La même requête en code M, avec une colonne de plus qui compte les encours vides&nbsp;:</p>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Controle_Encours">// Requête Controle_Encours : une ligne par fichier, à comparer au bloc « Contrôle de l'agence » de chaque classeur
+let
+    Source = Encours_Agences,
+    ParFichier = Table.Group(Source, {"Source.Name", "Agence"}, {
+        {"Lignes", each Table.RowCount(_), Int64.Type},
+        {"Total encours", each List.Sum([Encours]), type nullable number},
+        {"Encours vides", each List.Count(List.Select([Encours], each _ = null)), Int64.Type},
+        {"Arrêté", each List.Max([Arrêté]), type nullable date}}),
+    Tri = Table.Sort(ParFichier, {{"Source.Name", Order.Ascending}})
+in
+    Tri</pre>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Controle_Encours : résultat attendu au 30/09/2026"><table class="data">
+<caption>Controle_Encours&nbsp;: résultat attendu au 30/09/2026 (FCFA)</caption>
+<thead><tr><th scope="col">Source.Name</th><th scope="col">Agence</th><th scope="col">Lignes</th><th scope="col">Total encours</th><th scope="col">Encours vides</th><th scope="col">Arrêté</th></tr></thead>
+<tbody>
+<tr><td>agence-acajou.xlsx</td><td>Acajou</td><td class="num">5</td><td class="num">88&nbsp;000&nbsp;000</td><td class="num">0</td><td>30/09/2026</td></tr>
+<tr><td>agence-filao.xlsx</td><td>Filao</td><td class="num">6</td><td class="num">109&nbsp;250&nbsp;000</td><td class="num">0</td><td>30/09/2026</td></tr>
+<tr><td>agence-flamboyant.xlsx</td><td>Flamboyant</td><td class="num">5</td><td class="num">94&nbsp;600&nbsp;000</td><td class="num">0</td><td>30/09/2026</td></tr>
+<tr><td>agence-ronier.xlsx</td><td>Ronier</td><td class="num">4</td><td class="num">83&nbsp;100&nbsp;000</td><td class="num">0</td><td>30/09/2026</td></tr>
+<tr><td><strong>Total</strong></td><td></td><td class="num"><strong>20</strong></td><td class="num"><strong>374&nbsp;950&nbsp;000</strong></td><td class="num">0</td><td></td></tr>
+</tbody>
+</table></div>
+</div>
+<p>La ligne de total n'est pas produite par la requête&nbsp;: dans Excel, cliquez dans le tableau chargé, puis <strong>Création de tableau › Ligne Total</strong>. Dans la ligne ajoutée, choisissez <strong>Somme</strong> sous <em>Lignes</em>, <em>Total encours</em> et <em>Encours vides</em>, et <strong>Aucun</strong> sous <em>Arrêté</em>&nbsp;: une somme de dates n'a pas de sens. Comment lire le contrôle&nbsp;:</p>
+<ul>
+<li><strong>Lignes ou total différents du chiffre de l'agence</strong>&nbsp;: fichier incomplet, ou lignes en double.</li>
+<li><strong>Une ligne de trop dans le contrôle</strong>&nbsp;: un fichier en trop dans le dossier (une copie, un ancien mois).</li>
+<li><strong>Encours vides supérieur à 0</strong>&nbsp;: l'en-tête <em>Encours</em> a changé dans ce fichier, ou des montants n'y sont pas saisis.</li>
+<li><strong>Arrêté différent de la date attendue</strong>&nbsp;: le fichier n'a pas été remplacé.</li>
+</ul>
+<div class="callout-info">
+<p><strong>Pour aller jusqu'au reporting mensuel.</strong> Ce guide combine des classeurs déjà propres. Le module&nbsp;2 de la formation «&nbsp;Power Query pour le reporting bancaire&nbsp;» part d'extractions CSV mensuelles au point-virgule, celles que produisent souvent les systèmes&nbsp;: bon encodage, montants «&nbsp;1&nbsp;234&nbsp;567,50&nbsp;» et dates jj/mm/aaaa en fr-FR, codes gardés en texte, tous les fichiers mensuels d'un dossier combinés, date d'arrêté pilotée par un tableau de paramètres et contrôle de chaque import. <a href="../index.html#tarif">Voir le programme et le tarif de la formation</a></p>
+</div>
+
+<h2 id="mois-suivant">Le mois suivant&nbsp;: remplacer les fichiers, puis actualiser</h2>
+<p>C'est là que la méthode rapporte. Testez-la avec les fichiers d'octobre fournis&nbsp;:</p>
+<ol>
+<li>Fermez les classeurs des agences s'ils sont ouverts.</li>
+<li>Copiez les quatre fichiers du dossier <code>Mois_suivant_2026-10</code> dans <code>Encours_Agences</code>. Quand Windows signale que les fichiers existent déjà, choisissez <strong>Remplacer les fichiers dans la destination</strong>.</li>
+<li>Dans votre classeur de reporting&nbsp;: <strong>Données › Actualiser tout</strong>.</li>
+</ol>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Controle_Encours : résultat attendu au 31/10/2026"><table class="data">
+<caption>Controle_Encours après actualisation&nbsp;: résultat attendu au 31/10/2026 (FCFA)</caption>
+<thead><tr><th scope="col">Source.Name</th><th scope="col">Agence</th><th scope="col">Lignes</th><th scope="col">Total encours</th><th scope="col">Encours vides</th><th scope="col">Arrêté</th></tr></thead>
+<tbody>
+<tr><td>agence-acajou.xlsx</td><td>Acajou</td><td class="num">6</td><td class="num">100&nbsp;550&nbsp;000</td><td class="num">0</td><td>31/10/2026</td></tr>
+<tr><td>agence-filao.xlsx</td><td>Filao</td><td class="num">6</td><td class="num">106&nbsp;300&nbsp;000</td><td class="num">0</td><td>31/10/2026</td></tr>
+<tr><td>agence-flamboyant.xlsx</td><td>Flamboyant</td><td class="num">5</td><td class="num">93&nbsp;000&nbsp;000</td><td class="num">0</td><td>31/10/2026</td></tr>
+<tr><td>agence-ronier.xlsx</td><td>Ronier</td><td class="num">4</td><td class="num">81&nbsp;200&nbsp;000</td><td class="num">0</td><td>31/10/2026</td></tr>
+<tr><td><strong>Total</strong></td><td></td><td class="num"><strong>21</strong></td><td class="num"><strong>381&nbsp;050&nbsp;000</strong></td><td class="num">0</td><td></td></tr>
+</tbody>
+</table></div>
+</div>
+<p>Aucune requête n'a été modifiée. Entre les deux arrêtés, le crédit FL-0105 a été soldé et deux crédits sont apparus (FL-0106 chez Flamboyant, AC-0406 chez Acajou)&nbsp;: Acajou passe de 5 à 6&nbsp;lignes, Flamboyant reste à 5.</p>
+<div class="callout-warning">
+<p><strong>Ne gardez pas les deux versions d'un fichier.</strong> Si vous choisissez de conserver les deux fichiers, Windows nomme la copie <code>agence-acajou (2).xlsx</code>&nbsp;: elle est lue en plus de l'original. Avec les deux versions des quatre fichiers, le contrôle afficherait huit lignes au lieu de quatre&nbsp;: «&nbsp;Acajou (2)&nbsp;», «&nbsp;Filao (2)&nbsp;», «&nbsp;Flamboyant (2)&nbsp;» et «&nbsp;Ronier (2)&nbsp;» s'ajouteraient aux quatre agences, avec l'autre arrêté.</p>
+</div>
+<h3 id="ce-qui-casse">Ce qui casse, et comment le repérer</h3>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Ce qui casse d'un mois à l'autre"><table class="data errors">
+<caption>Ce qui casse d'un mois à l'autre</caption>
+<thead><tr><th scope="col">Ce qui a changé</th><th scope="col">Ce qui se passe</th><th scope="col">Comment le repérer</th></tr></thead>
+<tbody>
+<tr><td>Fichier renommé par l'agence (<code>Agence Ronier oct.xlsx</code>)</td><td>La colonne <em>Agence</em> est fausse ou vide pour ce fichier</td><td>Une agence inconnue dans <code>Controle_Encours</code></td></tr>
+<tr><td>Tableau renommé (<code>Tableau1</code> au lieu de <code>Encours</code>)</td><td>Erreur <code>Expression.Error</code>&nbsp;: la clé ne correspond à aucune ligne</td><td>L'actualisation signale l'erreur, sur ce fichier</td></tr>
+<tr><td>En-tête renommé (<code>Encours FCFA</code>)</td><td><em>Encours</em> vide pour ce fichier&nbsp;; en code M, une colonne de plus apparaît</td><td><em>Encours vides</em> &gt; 0, total trop bas</td></tr>
+<tr><td>Colonne supprimée dans le fichier d'exemple</td><td>L'étape <strong>Type modifié</strong> cite une colonne qui n'existe plus&nbsp;: erreur pour toute la requête</td><td>Message du type «&nbsp;La colonne … de la table est introuvable&nbsp;»</td></tr>
+<tr><td>Copie du mois précédent restée dans le dossier, sous un autre nom</td><td>Ses lignes s'ajoutent à celles du mois</td><td>Une ligne de plus dans <code>Controle_Encours</code>, avec un arrêté ancien</td></tr>
+<tr><td>Classeur d'agence ouvert pendant l'actualisation</td><td>Un fichier «&nbsp;~$&nbsp;» apparaît dans le dossier</td><td>Sans le filtre de l'étape&nbsp;2, une erreur sur ce fichier s'il n'est pas masqué</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="onglets">Variante&nbsp;: combiner plusieurs onglets d'un même classeur</h2>
+<p>Autre cas fréquent&nbsp;: un seul classeur, avec un onglet par agence. Le fichier <code>Onglets\encours-par-onglet.xlsx</code> de l'exemple contient un onglet <strong>Synthèse</strong> puis quatre onglets d'agence (Flamboyant, Ronier, Filao, Acajou), des plages simples sans tableau. <code>Excel.Workbook</code> liste les onglets avec <code>Kind = "Sheet"</code>&nbsp;: il suffit de les filtrer, de promouvoir la première ligne en en-têtes et d'empiler. Le nom de l'onglet devient l'agence.</p>
+<ol>
+<li><strong>Données › Obtenir des données › À partir d'autres sources › Requête vide</strong>, puis <strong>Accueil › Éditeur avancé</strong>.</li>
+<li>Collez le code ci-dessous et remplacez le chemin du fichier par le vôtre. <strong>Terminé</strong>, nommez la requête <code>Encours_Onglets</code>, puis <strong>Fermer et charger</strong>.</li>
+</ol>
+<pre class="m-code" tabindex="0" role="region" aria-label="Code M : requête Encours_Onglets">// Requête Encours_Onglets : les onglets d'agence d'un même classeur, empilés
+let
+    Classeur = Excel.Workbook(File.Contents("C:\Reporting\Onglets\encours-par-onglet.xlsx"), null, true),
+
+    // Les feuilles seulement (ni tableaux ni noms définis), sans l'onglet de synthèse ni les onglets masqués
+    Feuilles = Table.SelectRows(Classeur, each [Kind] = "Sheet" and [Item] &lt;&gt; "Synthèse" and not [Hidden]),
+
+    // Chaque feuille : la 1re ligne devient l'en-tête, puis le nom de l'onglet devient l'agence
+    AvecTables = Table.AddColumn(Feuilles, "Données", each
+        let
+            Onglet = [Item],
+            Donnees = Table.PromoteHeaders([Data], [PromoteAllScalars = true])
+        in
+            Table.AddColumn(Donnees, "Agence", each Onglet, type text)),
+
+    Combine = Table.Combine(AvecTables[Données]),
+    Types = Table.TransformColumnTypes(Combine, {
+        {"Arrêté", type date}, {"Code agence", type text}, {"Contrat", type text}, {"Client", type text},
+        {"Produit", type text}, {"Encours", type number}, {"Jours de retard", Int64.Type}})
+in
+    Types</pre>
+<div class="expected">
+<ul>
+<li>20&nbsp;lignes, 374&nbsp;950&nbsp;000 d'encours au total&nbsp;: les mêmes chiffres que le dossier de septembre.</li>
+<li>Colonne <em>Agence</em> = nom de l'onglet&nbsp;: 5&nbsp;lignes Flamboyant, 4 Ronier, 6 Filao, 5 Acajou.</li>
+<li>Aucune ligne venue de l'onglet <strong>Synthèse</strong>.</li>
+</ul>
+</div>
+<p>Sans le filtre sur <code>Synthèse</code>, les lignes de cet onglet (le détail par agence, la ligne Total et la mention sur les données fictives) s'empileraient avec celles des agences&nbsp;: plus de 20&nbsp;lignes, une «&nbsp;agence&nbsp;» Synthèse et trois colonnes en plus (<em>Onglet</em>, <em>Nombre de contrats</em>, <em>Total encours</em>), vides sur les lignes des agences. La somme de la colonne <em>Encours</em> ne bougerait pas, car la synthèse n'a pas de colonne de ce nom&nbsp;: c'est le nombre de lignes qui alerte. Le code lit le fichier enregistré sur le disque&nbsp;: enregistrez le classeur des onglets avant d'actualiser.</p>
+
+<h2 id="erreurs">Erreurs fréquentes</h2>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Diagnostic rapide des erreurs fréquentes"><table class="data errors">
+<caption>Diagnostic rapide</caption>
+<thead><tr><th scope="col">Ce que vous constatez</th><th scope="col">Cause probable</th><th scope="col">Solution</th></tr></thead>
+<tbody>
+<tr><td>Erreur sur un fichier dont le nom commence par «&nbsp;~$&nbsp;»</td><td>Un classeur du dossier est ouvert&nbsp;: Excel a créé un fichier temporaire</td><td>Filtre <strong>Ne commence pas par</strong> <code>~$</code> sur <code>Name</code> (étape&nbsp;2)&nbsp;; fermez les classeurs avant d'actualiser</td></tr>
+<tr><td>Une colonne ajoutée par une agence n'apparaît pas (ici <em>Commentaire</em>)</td><td>L'étape de développement reprend la liste des colonnes du fichier d'exemple</td><td>Variante <code>Table.Combine</code>, ou fichier d'exemple le plus complet, ou colonne ajoutée au modèle de toutes les agences</td></tr>
+<tr><td><em>Encours</em> vide pour toute une agence, ou deux colonnes «&nbsp;Encours&nbsp;» et «&nbsp;encours&nbsp;»</td><td>En-tête qui diffère par la casse ou par un espace&nbsp;: Power Query compare les noms à l'identique</td><td>Corriger le modèle&nbsp;; <code>Table.TransformColumnNames(…, Text.Trim)</code> pour les espaces&nbsp;; surveiller <em>Encours vides</em></td></tr>
+<tr><td>L'étape <strong>Type modifié</strong> est en erreur</td><td>Une colonne citée par cette étape a disparu ou changé de nom. Microsoft Learn prévient&nbsp;: une étape de type ajoutée «&nbsp;peut introduire une erreur&nbsp;» quand les noms ou les types changent</td><td>Corriger le fichier, ou supprimer l'étape et la refaire en ne typant que les colonnes stables</td></tr>
+<tr><td>Codes agence 1, 2, 3, 4 au lieu de 001 à 004</td><td>Type <strong>Nombre entier</strong> appliqué à <em>Code agence</em>, parfois par l'étape <strong>Type modifié</strong> automatique</td><td>Type <strong>Texte</strong> dans cette même étape (<strong>Remplacer l'actuelle</strong>)&nbsp;: un code n'est jamais un nombre</td></tr>
+<tr><td>Erreur <code>DataSource.NotFound</code> sur un autre PC</td><td>Chemin absolu du dossier&nbsp;: <code>Folder.Files</code> demande «&nbsp;un chemin absolu valide&nbsp;»</td><td><strong>Données › Obtenir des données › Paramètres de la source de données</strong>, puis <strong>Modifier la source…</strong>&nbsp;; en code M, changer la seule ligne <code>Dossier</code></td></tr>
+<tr><td>Deux fois plus de lignes que prévu</td><td>Fichiers copiés deux fois, dossier parent ou sous-dossier d'archives lu</td><td>Requête de contrôle&nbsp;; archives rangées hors du dossier combiné</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="faq">Questions fréquentes</h2>
+<h3 id="faq-ordre">Les colonnes doivent-elles être dans le même ordre dans tous les fichiers&nbsp;?</h3>
+<p>Non. Selon Microsoft, «&nbsp;les colonnes n'ont pas besoin d'être dans le même ordre, car la correspondance est effectuée par les noms de colonne&nbsp;». Les noms, en revanche, doivent être identiques, casse et espaces compris&nbsp;: «&nbsp;Encours&nbsp;» et «&nbsp;encours&nbsp;» sont deux colonnes différentes pour Power Query.</p>
+<h3 id="faq-mac">Et sur Mac&nbsp;?</h3>
+<p>Prudence. Sur Mac, Power Query demande Excel pour Microsoft&nbsp;365 à jour. La page du support Microsoft sur Power Query dans Excel pour Mac, consultée le 22/10/2026, liste comme sources d'import le classeur Excel, le texte/CSV, XML, JSON, une base SQL Server, une liste SharePoint Online, OData, une table vide et une requête vide&nbsp;: le dossier local n'y figure pas, même si les dossiers sont cités parmi les sources que l'on peut actualiser. Ce guide décrit Excel pour Windows&nbsp;: sur Mac, l'import d'un dossier peut différer ou ne pas être proposé.</p>
+<h3 id="faq-csv">Et pour des fichiers CSV au point-virgule&nbsp;?</h3>
+<p>Le principe est le même&nbsp;: filtrez l'extension .csv au lieu de .xlsx. Dans la boîte de dialogue Combiner les fichiers, Microsoft indique que l'on règle l'origine du fichier, le délimiteur et la détection du type de données. Restent à traiter l'encodage, les montants et les dates au format français et les codes à garder en texte&nbsp;: c'est l'objet du module&nbsp;2 de la formation. Microsoft Learn a aussi une page «&nbsp;Combiner des fichiers CSV&nbsp;».</p>
+<p class="small muted">Liens&nbsp;: <a href="https://learn.microsoft.com/fr-fr/power-query/combine-files-csv" rel="noopener">Combiner des fichiers CSV dans Power Query</a> (Microsoft Learn) · <a href="../index.html#programme">programme du module&nbsp;2</a>.</p>
+<h3 id="faq-combien">Combien de fichiers peut-on combiner&nbsp;?</h3>
+<p>Les pages Microsoft consultées pour ce guide ne fixent pas de nombre maximal de fichiers. La limite pratique est le temps d'actualisation, car chaque fichier est relu à chaque fois, et, si vous chargez le résultat dans une feuille, la taille d'une feuille Excel&nbsp;: 1&nbsp;048&nbsp;576&nbsp;lignes. Au-delà, chargez dans le modèle de données ou regroupez avant de charger.</p>
+<h3 id="faq-ajouter">Combiner les fichiers d'un dossier ou «&nbsp;Ajouter des requêtes&nbsp;»&nbsp;?</h3>
+<p>«&nbsp;Ajouter des requêtes&nbsp;» empile des requêtes qui existent déjà, une par source&nbsp;: cela convient pour deux ou trois sources fixes. Le dossier s'adapte tout seul&nbsp;: une agence de plus, c'est un fichier de plus dans le dossier, sans requête à créer.</p>
+
+<h2 id="suite">Aller plus loin</h2>
+<p>Pour pratiquer sans attendre, le <a href="../gratuit.html">module gratuit «&nbsp;Calculer l'ancienneté des impayés avec Power Query&nbsp;»</a> part d'une extraction de prêts fictive, à télécharger, et calcule les jours de retard et la balance âgée, avec le code M complet et les résultats attendus. Le tableau combiné de ce guide, avec sa colonne <em>Jours de retard</em>, s'y prête directement.</p>
+<p>Sur le même thème&nbsp;:</p>
+<ul>
+<li><a href="recherchev-power-query.html">RECHERCHEV avec Power Query</a>&nbsp;: rapprocher le tableau combiné d'une table de référence, par exemple les libellés des produits.</li>
+<li><a href="comparer-deux-fichiers-excel-power-query.html">Comparer deux fichiers Excel avec Power Query</a>&nbsp;: retrouver les crédits apparus ou soldés entre deux arrêtés, comme ici FL-0105 (soldé), FL-0106 et AC-0406 (apparus).</li>
+<li><a href="taux-de-degradation-du-portefeuille.html">Taux de dégradation du portefeuille</a>&nbsp;: un indicateur à calculer une fois les extractions combinées.</li>
+</ul>
+<p>Tous les guides gratuits sont réunis sur la <a href="../index.html#guides">page de la formation</a>.</p>
+
+<h2 id="sources">Sources publiques consultées le 22/10/2026</h2>
+<ul>
+<li>Support Microsoft, <a href="https://support.microsoft.com/fr-fr/excel/import-data-from-a-folder-with-multiple-files-power-query" rel="noopener">Importer des données à partir d'un dossier avec plusieurs fichiers (Power Query)</a>&nbsp;: dossier dédié, sous-dossiers, correspondance par noms de colonne, commandes et requêtes créées.</li>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/combine-files-overview" rel="noopener">Vue d'ensemble de combiner des fichiers</a>&nbsp;: fichier d'exemple, requête «&nbsp;Transformer l'exemple de fichier&nbsp;», fonction liée, étape de type à vérifier.</li>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/connectors/folder" rel="noopener">Connecteur de dossier Power Query</a> et <a href="https://learn.microsoft.com/fr-fr/power-query/combine-files-csv" rel="noopener">Combiner des fichiers CSV</a>.</li>
+<li>Microsoft Learn, fonctions M&nbsp;: <a href="https://learn.microsoft.com/fr-fr/powerquery-m/folder-files" rel="noopener">Folder.Files</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/excel-workbook" rel="noopener">Excel.Workbook</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-combine" rel="noopener">Table.Combine</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-group" rel="noopener">Table.Group</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/text-betweendelimiters" rel="noopener">Text.BetweenDelimiters</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-promoteheaders" rel="noopener">Table.PromoteHeaders</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-transformcolumnnames" rel="noopener">Table.TransformColumnNames</a> et <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-reordercolumns" rel="noopener">Table.ReorderColumns</a>.</li>
+<li>Support Microsoft, <a href="https://support.microsoft.com/fr-fr/excel/import-and-shape-data-in-excel-for-mac-power-query" rel="noopener">Importer et formater des données dans Excel pour Mac (Power Query)</a>.</li>
+<li>Support Microsoft, <a href="https://support.microsoft.com/fr-fr/excel/excel-specifications-and-limits" rel="noopener">Spécifications et limites relatives à Excel</a>&nbsp;: 1&nbsp;048&nbsp;576&nbsp;lignes par feuille.</li>
+</ul>
+<p>Ce guide est un support pédagogique. Il ne cite aucune donnée d'établissement réel&nbsp;: la Banque Fictive de l'Ouest, ses agences, ses clients et ses montants sont inventés. Les libellés de l'interface peuvent varier légèrement selon la version d'Excel et sa langue.</p>
+</section>
+
+      <div class="cta-band cta-after-author">
+        <div>
+          <h2>Vos extractions mensuelles, combinées et contrôlées</h2>
+          <p>La formation «&nbsp;Power Query pour le reporting bancaire&nbsp;»&nbsp;: 8&nbsp;modules, 51&nbsp;exercices corrigés, environ 13&nbsp;h de travail, des données fictives sur plusieurs arrêtés mensuels, un quiz final et une attestation de suivi (non diplômante). <strong>25&nbsp;000&nbsp;FCFA</strong>, paiement unique.</p>
+        </div>
+        <a class="btn btn-light btn-lg" href="../index.html#tarif"><span class="btn-label">Voir le programme et le tarif</span><span class="arrow" aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </article>
+</main>
+
+<footer class="tp-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="../index.html" aria-label="Teranga Pro, accueil de la formation">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+          <span class="brand-name">Teranga<span>Pro</span></span>
+        </a>
+        <p>Conçu par un praticien du reporting bancaire en Afrique de l'Ouest. Données d'exercice 100&nbsp;% fictives&nbsp;; tables de correspondance&nbsp;: exemples pédagogiques, pas des états réglementaires officiels.</p>
+      </div>
+      <div>
+        <h2>Formation</h2>
+        <ul>
+          <li><a href="../index.html">Présentation et programme</a></li>
+          <li><a href="../gratuit.html">Module gratuit</a></li>
+          <li><a href="../index.html#guides">Guides gratuits</a></li>
+          <li><a href="../attestation.html">Vérifier une attestation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Informations</h2>
+        <ul>
+          <li><a href="../cgv.html">Conditions générales de vente</a></li>
+          <li><a href="../confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="footer-note">© 2026 Teranga Pro · Vendeur&nbsp;: particulier résidant au Sénégal.</p>
+  </div>
+</footer>
+</body>
+</html>

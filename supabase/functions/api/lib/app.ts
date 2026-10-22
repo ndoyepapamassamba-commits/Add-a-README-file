@@ -24,7 +24,7 @@ import { confirmPayment, runReconcile } from "./reconcile.ts";
 import { runDaily } from "./payout.ts";
 import { generateDocument } from "./generator/index.ts";
 import { redactDocument } from "./redact.ts";
-import { formatFcfa, handlePaymentConfirm, handlePaymentNotify, prepareManualCheckout } from "./autopay.ts";
+import { formatFcfa, handlePaymentConfirm, handlePaymentNotify, isRepeatedDetection, prepareManualCheckout } from "./autopay.ts";
 import { hitOrderRateLimits, ipPepper, loadCustomerOrder, notFound, publicOrder } from "./order_access.ts";
 import {
   courseAdminStatus,
@@ -264,6 +264,12 @@ const manualPaid: Handler = async (deps, req, [id]) => {
     throw new HttpError(409, "not_manual", "Le paiement manuel n'est pas disponible.");
   }
   if (order.status === "paid") return json(200, { order: publicOrder(order) });
+  // Only an order that went through checkout (it was shown its exact amount) can wait for a transfer. A preview
+  // order would otherwise be listed with no amount, like an order asked for the catalogue price, and turn the
+  // rounded-up near match off for its price (autopay.ts, matchManualOrder). Nothing is changed.
+  if (order.status === "preview") {
+    throw new HttpError(409, "checkout_required", "Affichez d'abord les instructions de paiement : elles donnent le montant exact à envoyer.");
+  }
   // The payer's number is optional: the transfer is recognised by its unique amount (autopay.ts).
   const typed = typeof body.payerPhone === "string" ? body.payerPhone.trim() : "";
   const phone = typed ? normalizeSnMobile(typed) : null;
@@ -347,6 +353,21 @@ const cronDaily: Handler = async (deps, req) => {
   return json(200, await runDaily(deps));
 };
 
+type RecentOrder = Stats["recentOrders"][number];
+
+/**
+ * recentOrders + payment_detected_repeated: true when the order is open and its detection comes from a notification
+ * already seen (autopay.ts, flagDuplicate), so admin.html shows « Notification répétée — vérifiez votre historique
+ * Wave avant de débloquer » instead of « Paiement détecté ». Only the open orders with a detection are read again
+ * (usually none or one); the notification text itself never leaves the server.
+ */
+async function withRepeatedFlag(deps: Deps, orders: RecentOrder[]): Promise<Array<RecentOrder & { payment_detected_repeated: boolean }>> {
+  const toCheck = orders.filter((o) => o.status !== "paid" && o.payment_detected_at !== null);
+  const rows = await Promise.all(toCheck.map((o) => deps.store.getOrder(o.id)));
+  const repeated = new Set(rows.filter((r) => r !== null && r.status !== "paid" && isRepeatedDetection(r.payment_detected_text)).map((r) => r!.id));
+  return orders.map((o) => ({ ...o, payment_detected_repeated: repeated.has(o.id) }));
+}
+
 const adminStats: Handler = async (deps, req) => {
   requireAdmin(deps, req);
   const c = deps.config;
@@ -355,7 +376,7 @@ const adminStats: Handler = async (deps, req) => {
     lastPhoneNotificationAt?: string | null;
   };
   return json(200, {
-    stats,
+    stats: { ...stats, recentOrders: await withRepeatedFlag(deps, stats.recentOrders) },
     health: {
       wave: deps.wave !== null,
       webhook: c.waveWebhookSecret !== null,

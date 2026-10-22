@@ -14,7 +14,11 @@ sitemap, SEO basics), manual purchase (exact amount 24 999 FCFA, a round « 25 0
 exact one sent from `/fake-phone` opens the reader), sanitizer trap, xlsx/zip downloads unzipped (`fflate`) to find the
 buyer's licence line, quiz fail then pass, public and printable attestation, receipt, Wave purchase, the admin
 « Formation » card, and the demo mode (`demo.html`: whole journey simulated in the browser, zero request to the API,
-« Quitter la démo » leaves nothing behind).
+« Quitter la démo » leaves nothing behind), then `guides.mjs` (same run, 390 px wide): every free guide of
+`formation/guides/` answers 200 with one h1, its canonical URL, valid JSON-LD, sensible title/description lengths, no
+console error and no horizontal scroll, links `../index.html` and at least two other guides, and every local link and
+anchor resolves; the example files open as workbooks / zip / CSV; the « Guides gratuits » sections of `index.html` and
+`gratuit.html` list every guide; `formation/sitemap.xml` and the IndexNow payload carry them.
 When LibreOffice (`soffice`) is installed, the Word files are also opened with it and must fit on one A4 page, and
 the personalised course workbook must open.
 Needs `deno` on the PATH; screenshots, downloads and server logs go to `$SHOTS_DIR` (default: the OS temp folder).

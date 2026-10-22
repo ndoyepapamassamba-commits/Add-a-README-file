@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Créances en souffrance BCEAO&nbsp;: classement et dépréciations</title>
+<meta name="description" content="Instruction BCEAO n°&nbsp;026-11-2016 expliquée article par article&nbsp;: seuil de 90&nbsp;jours (180 pour PME/PMI et États), dépréciations minimales, exemple Excel.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#0B2545">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/creances-en-souffrance-bceao.html">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="fr_SN">
+<meta property="og:site_name" content="Teranga Pro">
+<meta property="og:title" content="Créances en souffrance BCEAO&nbsp;: classement et dépréciations">
+<meta property="og:description" content="Le texte en vigueur depuis 2018 expliqué article par article, puis appliqué dans Excel à 10&nbsp;contrats fictifs&nbsp;: catégorie, délai de 90 ou 180&nbsp;jours, dépréciation minimale.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/creances-en-souffrance-bceao.html">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../formation.css">
+<style>
+.page-head .crumbs { margin: 0 0 10px; font-size: .9rem; color: var(--on-navy-muted); }
+.page-head .crumbs a { color: var(--teal-light); }
+.module pre.xl::before { content: "Formule Excel"; position: absolute; left: 16px; top: 12px; color: var(--teal-light); font: 650 .7rem/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; }
+.module pre.donnees { padding-top: 16px; }
+.module .essentiel ol { margin-bottom: 0; }
+.module .essentiel li { max-width: none; }
+.guide-cta { margin: 1.4em 0; padding: 16px 18px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--navy); border-radius: 0 10px 10px 0; }
+.guide-cta p:last-child { margin-bottom: 0; }
+.related { margin: 1.2em 0 0; padding-left: 1.3em; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Créances en souffrance BCEAO : classement et dépréciations (Instruction n° 026-11-2016)",
+  "description": "L'Instruction BCEAO n° 026-11-2016, en vigueur depuis le 1er janvier 2018, expliquée article par article : catégories de créances, seuil de 90 jours (180 pour les PME/PMI et les États), dépréciations minimales, puis un exemple Excel sur 10 contrats fictifs.",
+  "inLanguage": "fr",
+  "isAccessibleForFree": true,
+  "keywords": "créances en souffrance, BCEAO, Instruction 026-11-2016, créances douteuses et litigieuses, créances restructurées, provisionnement, dépréciation, taux de dégradation, Excel, Power Query, UEMOA",
+  "about": [
+    { "@type": "Thing", "name": "Créances en souffrance" },
+    { "@type": "Thing", "name": "Provisionnement des créances douteuses" }
+  ],
+  "isPartOf": { "@type": "Course", "name": "Power Query pour le reporting bancaire", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "datePublished": "2026-10-22",
+  "dateModified": "2026-10-22",
+  "image": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/img/og.jpg",
+  "mainEntityOfPage": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/creances-en-souffrance-bceao.html",
+  "author": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+  "publisher": { "@type": "Organization", "name": "Teranga Pro", "url": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Un impayé de 60 jours est-il une créance en souffrance ?", "acceptedAnswer": { "@type": "Answer", "text": "En règle générale, non. Une échéance impayée depuis 90 jours au plus, sans prorogation ni renouvellement, reste une créance saine (article 4) ; elle est seulement inscrite dans les comptes prévus pour les impayés. Il y a quatre exceptions : la créance est restructurée et le retard dépasse 30 jours dans les trois ans qui suivent la restructuration (article 7) ; la créance est revenue en sain depuis moins de deux ans et le retard dépasse 30 jours (article 10) ; un risque probable existe indépendamment de tout impayé (article 8, 1°) ; une autre créance de la même contrepartie est douteuse (article 11, hors clientèle de détail et escompte commercial)." } },
+    { "@type": "Question", "name": "Quand le délai passe-t-il à 180 jours ?", "acceptedAnswer": { "@type": "Answer", "text": "Pour trois catégories d'expositions (article 8) : les États de l'UMOA, les organismes publics hors administration centrale de ces États, et les financements accordés aux PME/PMI telles que les définit l'instruction relative à la définition des attributs. Pour toutes les autres contreparties, une créance devient douteuse dès qu'une échéance reste impayée depuis plus de 90 jours." } },
+    { "@type": "Question", "name": "Faut-il déprécier une créance restructurée ?", "acceptedAnswer": { "@type": "Answer", "text": "La décote, oui : au moment de la restructuration, l'écart entre les flux initialement attendus et les flux restructurés, tous deux actualisés au taux d'intérêt effectif d'origine, est enregistré en coût du risque puis amorti sur la durée résiduelle (article 6). Tout abandon de principal ou d'intérêts est constaté en pertes. Au-delà de la décote, la dépréciation d'une créance privée restructurée est facultative (article 16), tant qu'elle n'est pas devenue douteuse ; si elle le devient, les minima des créances douteuses s'appliquent." } },
+    { "@type": "Question", "name": "Que devient une créance douteuse après 5 exercices ?", "acceptedAnswer": { "@type": "Answer", "text": "Une créance douteuse ou litigieuse non recouvrée au terme du cinquième exercice comptable à compter de son transfert en douteux est assimilée à une créance irrécouvrable (article 13). Elle est passée en pertes pour la totalité de son montant et les dépréciations constituées sont reprises. Si les droits de l'établissement ne sont pas éteints, elle fait l'objet d'un suivi extra-comptable, sans comptabilisation d'intérêts. Les autres encours douteux de la même contrepartie ne passent pas automatiquement en irrécouvrables." } }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Formation Power Query pour le reporting bancaire", "item": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/" },
+    { "@type": "ListItem", "position": 2, "name": "Créances en souffrance BCEAO", "item": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/formation/guides/creances-en-souffrance-bceao.html" }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="tp-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Teranga Pro, accueil de la formation">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+      <span class="brand-name">Teranga<span>Pro</span></span>
+    </a>
+    <nav class="tp-nav" aria-label="Navigation principale">
+      <a class="nav-hide-sm" href="../gratuit.html">Module gratuit</a>
+      <a href="../index.html">La formation</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="page-head">
+    <div class="wrap">
+      <nav class="crumbs" aria-label="Fil d'Ariane"><a href="../index.html">Formation</a> › <a href="../index.html#guides">Guides</a> › Créances en souffrance</nav>
+      <p class="eyebrow">Guide gratuit <span class="dot" aria-hidden="true">·</span> UMOA</p>
+      <h1>Créances en souffrance BCEAO&nbsp;: classement et dépréciations (Instruction <span class="nowrap">n°&nbsp;026-11-2016</span>)</h1>
+      <p>Le texte en vigueur depuis le 1<sup>er</sup>&nbsp;janvier 2018, expliqué article par article&nbsp;: les quatre catégories, le seuil des 90&nbsp;jours, la contagion à toute la contrepartie et les dépréciations minimales. Puis la même règle transformée en grille de classement et en calcul de dépréciation dans Excel, sur 10&nbsp;contrats fictifs.</p>
+      <p class="meta">Publié le 22/10/2026 · Banques et établissements financiers à caractère bancaire de l'UMOA · Données 100&nbsp;% fictives</p>
+    </div>
+  </div>
+
+  <article class="article">
+    <div class="wrap">
+      <div class="module">
+
+<div class="callout-warning">
+<p><strong>Illustration pédagogique.</strong> Ce guide résume et illustre un texte public&nbsp;; il ne remplace ni le texte officiel, ni les procédures de votre établissement, ni l'avis de vos services comptables, risques ou conformité. La «&nbsp;Banque Fictive de l'Ouest&nbsp;» (BFO) et tous ses contrats sont inventés.</p>
+</div>
+
+<div class="callout-info essentiel">
+<p><strong>L'essentiel en 5&nbsp;points</strong></p>
+<ol>
+<li><strong>Quatre catégories</strong>&nbsp;: créances saines, créances en souffrance, créances irrécouvrables et engagements douteux (art.&nbsp;3).</li>
+<li><strong>Un impayé de 90&nbsp;jours au plus</strong>, sans prorogation ni renouvellement, laisse la créance <strong>saine</strong>&nbsp;; il est seulement enregistré dans des comptes d'impayés (art.&nbsp;4).</li>
+<li><strong>Les créances en souffrance</strong> regroupent les créances restructurées et les créances douteuses ou litigieuses (art.&nbsp;5).</li>
+<li><strong>Douteuse ou litigieuse</strong>&nbsp;: risque probable de non-recouvrement, ou au moins une échéance impayée depuis <strong>plus de 90&nbsp;jours</strong>, délai porté à <strong>180&nbsp;jours</strong> pour les États de l'UMOA, les organismes publics et les PME/PMI (art.&nbsp;8).</li>
+<li><strong>Dépréciation minimale</strong> de la partie non couverte d'un risque privé douteux&nbsp;: 20&nbsp;% au transfert, 50&nbsp;% trois mois après, 100&nbsp;% neuf mois après. La partie couverte par une garantie éligible suit un calendrier plus long (art.&nbsp;16).</li>
+</ol>
+</div>
+
+<nav class="toc-box" aria-label="Sommaire">
+<p>Sommaire</p>
+<ol>
+<li><a href="#categories">Les quatre catégories de l'article&nbsp;3</a></li>
+<li><a href="#saines">Créances saines, impayés et créances en souffrance (art.&nbsp;4 et 5)</a></li>
+<li><a href="#restructurees">Créances restructurées (art.&nbsp;6 et 7)</a></li>
+<li><a href="#douteuses">Créances douteuses ou litigieuses (art.&nbsp;8 et 9)</a></li>
+<li><a href="#contagion">Contagion à la contrepartie et retour en sain (art.&nbsp;10 et 11)</a></li>
+<li><a href="#irrecouvrables">Créances irrécouvrables (art.&nbsp;13)</a></li>
+<li><a href="#depreciations">Les dépréciations minimales (art.&nbsp;16)</a></li>
+<li><a href="#excel">Exemple Excel sur 10&nbsp;contrats fictifs</a></li>
+<li><a href="#power-query">Variante Power Query</a></li>
+<li><a href="#ratios">Du classement aux ratios de la Commission Bancaire</a></li>
+<li><a href="#erreurs">Erreurs fréquentes</a></li>
+<li><a href="#limites">Limites et textes plus anciens</a></li>
+<li><a href="#faq">Questions fréquentes</a></li>
+<li><a href="#sources">Sources</a></li>
+</ol>
+</nav>
+
+<p>Cherchez «&nbsp;créances en souffrance BCEAO&nbsp;» et vous tomberez souvent sur des documents antérieurs à 2018 qui décrivent l'ancien dispositif&nbsp;: catégories «&nbsp;impayées&nbsp;» et «&nbsp;immobilisées&nbsp;», délai de six mois. Ce dispositif n'est plus en vigueur. Le texte applicable aux banques et aux établissements financiers à caractère bancaire de l'UMOA est l'<strong>Instruction n°&nbsp;026-11-2016 du 15&nbsp;novembre 2016 relative à la comptabilisation et à l'évaluation des engagements en souffrance</strong>, prise en application du Plan Comptable Bancaire révisé. Son article&nbsp;19 est clair&nbsp;: elle «&nbsp;abroge et remplace toutes dispositions antérieures traitant du même objet&nbsp;» et «&nbsp;entre en vigueur le 1<sup>er</sup>&nbsp;janvier 2018&nbsp;».</p>
+<p>Ce guide suit le texte dans l'ordre, puis l'applique à un petit portefeuille. Les citations entre guillemets sont reprises du texte publié par la Commission Bancaire de l'UMOA.</p>
+
+<h2 id="categories">Les quatre catégories de l'article&nbsp;3</h2>
+<p>L'article&nbsp;3 impose de distinguer comptablement, «&nbsp;au sein de l'ensemble de leurs engagements&nbsp;», quatre catégories&nbsp;:</p>
+<ul>
+<li><strong>les créances saines</strong> (art.&nbsp;4), y compris celles qui portent des impayés de 90&nbsp;jours au plus&nbsp;;</li>
+<li><strong>les créances en souffrance</strong> (art.&nbsp;5 à 12), elles-mêmes divisées en créances restructurées et créances douteuses ou litigieuses&nbsp;;</li>
+<li><strong>les créances irrécouvrables</strong> (art.&nbsp;13), passées en pertes&nbsp;;</li>
+<li><strong>les engagements douteux</strong>, c'est-à-dire les engagements hors bilan (cautions, crédits documentaires…) qui, «&nbsp;lors de leur réalisation, présenteront un risque probable ou certain de défaillance&nbsp;» du donneur d'ordre (art.&nbsp;14). Leurs pertes probables sont couvertes par des provisions au passif, et non par des dépréciations à l'actif (art.&nbsp;15 et 17).</li>
+</ul>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" role="img" aria-label="Schéma des catégories. Une créance saine devient restructurée en cas de concession, ou douteuse ou litigieuse au-delà de 90 jours d'impayé (180 jours pour les États, organismes publics et PME/PMI) ou en cas de risque probable. Une créance restructurée devient douteuse en cas de retard de plus de 30 jours dans les trois ans. Une créance douteuse devient irrécouvrable si les droits sont éteints ou au terme du cinquième exercice après le transfert. Les engagements hors bilan douteux forment une catégorie à part.">
+<title>Les catégories de l'Instruction n°&nbsp;026-11-2016 et les passages de l'une à l'autre</title>
+<defs><marker id="fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#0B2545"/></marker></defs>
+<rect x="1" y="1" width="718" height="378" rx="12" fill="#F7F7F2" stroke="#CBD5E1"/>
+<text x="20" y="28" font-size="13" font-weight="bold" fill="#0B2545">Instruction BCEAO n°&nbsp;026-11-2016&nbsp;: les catégories (art.&nbsp;3) et les passages</text>
+<rect x="20" y="70" width="170" height="130" rx="8" fill="#FFFFFF" stroke="#0B2545"/>
+<text x="105" y="98" text-anchor="middle" font-size="13" font-weight="bold" fill="#0B2545">Créances saines</text>
+<text x="105" y="116" text-anchor="middle" font-size="11.5" fill="#52606D">art.&nbsp;4</text>
+<text x="105" y="142" text-anchor="middle" font-size="11.5" fill="#1F2933">dont impayés</text>
+<text x="105" y="158" text-anchor="middle" font-size="11.5" fill="#1F2933">de 90&nbsp;jours au plus</text>
+<text x="105" y="174" text-anchor="middle" font-size="11.5" fill="#1F2933">(180&nbsp;j*)</text>
+<rect x="262" y="48" width="248" height="270" rx="10" fill="#FDF6EC" stroke="#9A5B00" stroke-dasharray="6 4"/>
+<text x="386" y="68" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#9A5B00">Créances en souffrance (art.&nbsp;5)</text>
+<rect x="276" y="82" width="220" height="76" rx="8" fill="#FEF3C7" stroke="#0B2545"/>
+<text x="386" y="110" text-anchor="middle" font-size="13" font-weight="bold" fill="#0B2545">Créances restructurées</text>
+<text x="386" y="128" text-anchor="middle" font-size="11.5" fill="#52606D">art.&nbsp;6 et 7</text>
+<text x="386" y="146" text-anchor="middle" font-size="11.5" fill="#1F2933">décote au taux effectif d'origine</text>
+<rect x="276" y="218" width="220" height="86" rx="8" fill="#FDE8E8" stroke="#0B2545"/>
+<text x="386" y="244" text-anchor="middle" font-size="13" font-weight="bold" fill="#0B2545">Créances douteuses</text>
+<text x="386" y="261" text-anchor="middle" font-size="13" font-weight="bold" fill="#0B2545">ou litigieuses</text>
+<text x="386" y="279" text-anchor="middle" font-size="11.5" fill="#52606D">art.&nbsp;8 à 12</text>
+<text x="386" y="295" text-anchor="middle" font-size="11.5" fill="#1F2933">dépréciations minimales (art.&nbsp;16)</text>
+<rect x="562" y="218" width="140" height="86" rx="8" fill="#ECEFF5" stroke="#0B2545"/>
+<text x="632" y="244" text-anchor="middle" font-size="13" font-weight="bold" fill="#0B2545">Créances</text>
+<text x="632" y="261" text-anchor="middle" font-size="13" font-weight="bold" fill="#0B2545">irrécouvrables</text>
+<text x="632" y="279" text-anchor="middle" font-size="11.5" fill="#52606D">art.&nbsp;13</text>
+<text x="632" y="295" text-anchor="middle" font-size="11.5" fill="#1F2933">passées en pertes</text>
+<rect x="562" y="82" width="140" height="76" rx="8" fill="#FFFFFF" stroke="#0B2545" stroke-dasharray="3 3"/>
+<text x="632" y="106" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0B2545">Engagements</text>
+<text x="632" y="122" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0B2545">hors bilan douteux</text>
+<text x="632" y="142" text-anchor="middle" font-size="11.5" fill="#52606D">art.&nbsp;14 · provision</text>
+<line x1="190" y1="110" x2="274" y2="118" stroke="#0B2545" stroke-width="1.6" marker-end="url(#fl)"/>
+<text x="194" y="98" font-size="11" fill="#0B2545">concession</text>
+<line x1="190" y1="180" x2="274" y2="244" stroke="#0B2545" stroke-width="1.6" marker-end="url(#fl)"/>
+<text x="120" y="226" font-size="11" fill="#0B2545">&gt; 90&nbsp;j (180&nbsp;j*)</text>
+<text x="120" y="241" font-size="11" fill="#0B2545">ou risque probable</text>
+<line x1="386" y1="158" x2="386" y2="216" stroke="#0B2545" stroke-width="1.6" marker-end="url(#fl)"/>
+<text x="395" y="184" font-size="11" fill="#0B2545">retard &gt; 30&nbsp;j</text>
+<text x="395" y="199" font-size="11" fill="#0B2545">pendant 3&nbsp;ans</text>
+<line x1="496" y1="261" x2="560" y2="261" stroke="#0B2545" stroke-width="1.6" marker-end="url(#fl)"/>
+<text x="527" y="328" text-anchor="middle" font-size="11" fill="#0B2545">droits éteints, ou fin du</text>
+<text x="527" y="343" text-anchor="middle" font-size="11" fill="#0B2545">5<tspan baseline-shift="super" font-size="8">e</tspan> exercice après transfert</text>
+<text x="20" y="366" font-size="11" fill="#52606D">* 180&nbsp;jours&nbsp;: États de l'UMOA, organismes publics, PME/PMI. Retour en sain&nbsp;: 1&nbsp;an sans impayé ou de paiements réguliers (art.&nbsp;7 et 10).</text>
+</svg>
+<figcaption>Figure 1 — Les catégories de l'Instruction n°&nbsp;026-11-2016 et les principaux passages de l'une à l'autre (schéma simplifié&nbsp;: la contagion de l'article&nbsp;11 et les sous-catégories de retour en sain sont détaillées plus bas).</figcaption>
+</figure>
+
+<h2 id="saines">Créances saines, impayés et créances en souffrance (art.&nbsp;4 et 5)</h2>
+<p>Une créance est <strong>saine</strong> quand son règlement «&nbsp;s'effectue normalement à l'échéance&nbsp;» et que la capacité de la contrepartie à honorer ses engagements «&nbsp;ne présente pas de motif d'inquiétude&nbsp;» (art.&nbsp;4). Le deuxième alinéa règle la question qui revient le plus souvent&nbsp;:</p>
+<div class="callout-source">
+<p>«&nbsp;Les échéances impayées depuis quatre-vingt-dix jours au plus et n'ayant pas fait l'objet de prorogation de terme ou de renouvellement sont considérées comme des créances saines. Elles sont inscrites dans des comptes prévus à cet effet par le Plan Comptable Bancaire Révisé.&nbsp;» — Article&nbsp;4</p>
+</div>
+<p>Un prêt qui a 60 ou 75&nbsp;jours de retard reste donc une créance saine&nbsp;: son impayé est isolé dans les comptes d'impayés, mais la créance ne change pas de catégorie. Deux conditions comptent&nbsp;: l'ancienneté (90&nbsp;jours au plus) et l'absence de prorogation de terme ou de renouvellement. Repousser l'échéance d'un client en difficulté n'efface pas le problème&nbsp;: c'est le terrain des créances restructurées.</p>
+<p>L'ancienneté se mesure depuis la plus ancienne échéance restée impayée. Si vous voulez la calculer proprement à partir d'une extraction, le <a href="../gratuit.html">module gratuit «&nbsp;Calculer l'ancienneté des impayés avec Power Query&nbsp;»</a> montre la méthode pas à pas sur 15&nbsp;prêts fictifs.</p>
+<p>L'article&nbsp;5 définit ensuite les <strong>créances en souffrance</strong> en une phrase&nbsp;: elles «&nbsp;comprennent les créances restructurées et les créances douteuses ou litigieuses&nbsp;». C'est ce total qui sert aux ratios de qualité du portefeuille (voir plus bas). Une créance saine avec impayé n'en fait pas partie.</p>
+
+<h2 id="restructurees">Créances restructurées (art.&nbsp;6 et 7)</h2>
+<p>Une créance est <strong>restructurée</strong> quand elle a fait l'objet de «&nbsp;mesures de renégociation, consistant en des concessions envers une contrepartie qui éprouve ou est sur le point d'éprouver des difficultés&nbsp;» (art.&nbsp;6). La concession est une modification d'une ou plusieurs conditions du contrat, que la contrepartie est jugée ne pas pouvoir respecter en raison de ses difficultés financières, et qui «&nbsp;n'aurait pas été acceptée&nbsp;» sans ces difficultés. Un rééchelonnement accordé à un bon client pour des raisons commerciales n'est donc pas, en soi, une restructuration au sens du texte.</p>
+<p>Trois conséquences comptables (art.&nbsp;6)&nbsp;:</p>
+<ul>
+<li>tout abandon de principal ou d'intérêts, échus ou courus, est constaté en pertes&nbsp;;</li>
+<li>la créance subit une <strong>décote</strong>&nbsp;: l'écart entre la valeur actualisée des flux initialement attendus et celle des flux issus de la restructuration, les deux calculées au <strong>taux d'intérêt effectif d'origine</strong>&nbsp;;</li>
+<li>la décote est enregistrée en coût du risque et amortie sur la durée résiduelle du crédit restructuré.</li>
+</ul>
+<p>Le taux d'intérêt effectif (art.&nbsp;2) est le taux qui égalise les flux décaissés et encaissés à l'octroi et la valeur actuelle des flux contractuels à recevoir&nbsp;; il est fixé à l'origine. Dans Excel, avec les flux par période sur une ligne et le taux effectif ramené à la même périodicité, la décote s'obtient par <code>=VAN(TIE;FluxInitiaux)-VAN(TIE;FluxRestructurés)</code>, à condition que le premier flux tombe à la fin de la première période.</p>
+<p>L'article&nbsp;7 encadre la sortie et la rechute&nbsp;:</p>
+<ul>
+<li><strong>retour en créance saine</strong> possible au bout d'un an à compter de la première échéance issue de la restructuration, si ni cette créance ni aucune autre exposition de la contrepartie n'a enregistré d'impayé pendant cette période. La créance est alors classée, pendant deux ans, dans une sous-catégorie spécifique des créances saines&nbsp;;</li>
+<li><strong>pendant trois ans</strong> à compter de cette première échéance, toute nouvelle concession ou tout retard de plus de <strong>30&nbsp;jours</strong> sur la créance restructurée ou sur toute autre exposition de la contrepartie entraîne le transfert de l'ensemble des concours concernés en créances douteuses ou litigieuses.</li>
+</ul>
+<p>Retenez le chiffre&nbsp;: pour une créance restructurée, pendant ces trois ans, la limite n'est plus 90 mais <strong>30&nbsp;jours</strong>.</p>
+
+<h2 id="douteuses">Créances douteuses ou litigieuses (art.&nbsp;8 et 9)</h2>
+<p>Les créances douteuses ou litigieuses sont les créances, «&nbsp;échues ou non, présentant un risque probable ou certain de non recouvrement partiel ou total&nbsp;» (art.&nbsp;8). Le texte en distingue deux sources&nbsp;:</p>
+<ol>
+<li><strong>le risque probable</strong>, «&nbsp;indépendamment de l'existence de tout impayé&nbsp;»&nbsp;: une contrepartie dont les caractéristiques rendent probable que la banque ne perçoive pas tout ou partie des sommes dues&nbsp;;</li>
+<li><strong>l'impayé</strong>&nbsp;: «&nbsp;les créances dont au moins une échéance est restée impayée depuis plus de quatre-vingt-dix jours&nbsp;».</li>
+</ol>
+<p>«&nbsp;Plus de 90&nbsp;jours&nbsp;» veut dire 91&nbsp;jours ou davantage&nbsp;: à exactement 90&nbsp;jours, l'article&nbsp;4 garde la créance en sain. Dans une formule, le test s'écrit donc <code>&gt; 90</code>, et non <code>&gt;= 90</code>.</p>
+<div class="callout-source">
+<p>«&nbsp;Le délai de quatre-vingt-dix jours est prorogé à cent quatre-vingt jours pour les expositions sur les Etats de l'UMOA, les organismes publics hors administration centrale des Etats de l'UMOA ainsi que les financements accordés aux PME/PMI telles que mentionnées dans l'instruction relative à la définition des attributs.&nbsp;» — Article&nbsp;8</p>
+</div>
+<p>La qualification PME/PMI ne se décide pas au cas par cas&nbsp;: elle suit l'instruction de la BCEAO relative à la définition des attributs, à laquelle renvoie l'article&nbsp;8. Dans un fichier de reporting, ce délai est donc porté par un attribut de la contrepartie (son segment), pas par une saisie manuelle.</p>
+<p><strong>Comptes ordinaires débiteurs.</strong> Un découvert n'a pas d'échéancier&nbsp;: l'article&nbsp;8 fixe donc le point de départ de l'ancienneté. Elle court dès que la contrepartie a dépassé une limite qui lui a été notifiée, ou dès qu'elle a tiré sans autorisation de découvert. Le même article ajoute un second critère&nbsp;: un compte débiteur dont les mouvements créditeurs cumulés sur 90&nbsp;jours ne couvrent pas les intérêts débiteurs de la période est également reclassé en créances douteuses.</p>
+<p><strong>Signes de risque probable (art.&nbsp;9).</strong> Le texte en cite deux&nbsp;:</p>
+<ul>
+<li>l'existence de procédures collectives d'apurement du passif&nbsp;: procédures préventives (conciliation, règlement préventif), procédures curatives (redressement judiciaire, liquidation de biens), ou faillite personnelle&nbsp;;</li>
+<li>des problèmes de gestion ou des litiges entre les principaux associés ou actionnaires, qui entraînent une dégradation de la situation financière ou un risque de non-recouvrement.</li>
+</ul>
+<p>Ces cas ne se lisent pas dans une colonne «&nbsp;jours de retard&nbsp;»&nbsp;: ils viennent du suivi des dossiers (recouvrement, juridique, analystes crédit). Une grille automatique doit donc prévoir une colonne de déclassement manuel, renseignée et justifiée par ceux qui suivent la contrepartie.</p>
+<p>Enfin, l'article&nbsp;12 précise que les intérêts non réglés sur les créances douteuses ou litigieuses sont enregistrés dans les sous-comptes prévus à cet effet.</p>
+
+<h2 id="contagion">Contagion à la contrepartie et retour en sain (art.&nbsp;10 et 11)</h2>
+<p>C'est la règle la plus souvent oubliée dans les fichiers faits à la main&nbsp;:</p>
+<div class="callout-source">
+<p>«&nbsp;Le reclassement d'une créance d'une contrepartie donnée en créances douteuses ou litigieuses entraîne un reclassement identique de la totalité des encours et des engagements hors bilan relatifs à cette contrepartie. Cette règle n'est applicable ni aux créances résultant de l'escompte commercial, ni aux encours portés sur la clientèle de détail au sens du dispositif prudentiel.&nbsp;» — Article&nbsp;11</p>
+</div>
+<p>Autrement dit, le classement se fait <strong>par contrepartie</strong>, pas par contrat. Une entreprise qui a un crédit d'investissement douteux voit aussi sa ligne de trésorerie et ses cautions passer en douteux, même si elles sont à jour. La contrepartie, au sens de l'article&nbsp;2, est l'entité juridique bénéficiaire du crédit ou de l'engagement par signature. Deux exceptions&nbsp;: l'escompte commercial et la clientèle de détail au sens du dispositif prudentiel. Un client de détail qui a deux prêts, l'un douteux et l'autre à jour, garde le second en sain.</p>
+<p>Le second alinéa étend l'analyse au groupe&nbsp;: quand la contrepartie appartient à un groupe, la banque examine les conséquences de la défaillance au niveau du groupe et apprécie s'il faut classer en douteux les créances sur les autres entités. Ici, il n'y a pas d'automatisme&nbsp;: c'est une appréciation, à documenter.</p>
+<p><strong>Retour en créance saine (art.&nbsp;10).</strong> Une créance douteuse peut revenir en sain lorsque les paiements «&nbsp;ont repris de manière régulière sur une période d'un an&nbsp;», aux échéances d'origine ou à celles issues d'une restructuration. Elle est alors classée deux ans dans une sous-catégorie spécifique, et tout retard de plus de 30&nbsp;jours ou toute concession pendant ces deux ans la renvoie en douteux. Conséquence pratique&nbsp;: <strong>une créance douteuse dont le retard retombe sous 90&nbsp;jours reste douteuse</strong> tant que l'année de paiements réguliers n'est pas acquise.</p>
+
+<h2 id="irrecouvrables">Créances irrécouvrables (art.&nbsp;13)</h2>
+<p>Une créance devient <strong>irrécouvrable</strong> dans deux cas&nbsp;:</p>
+<ul>
+<li>les droits de la banque en tant que créancier sont <strong>juridiquement éteints</strong>&nbsp;;</li>
+<li>la créance, classée douteuse ou litigieuse, n'a pas été recouvrée <strong>au terme du cinquième exercice comptable</strong> à compter de son transfert en douteux.</li>
+</ul>
+<p>La créance irrécouvrable est passée en pertes pour l'intégralité de son montant, et les dépréciations constituées sont reprises. Si les droits ne sont pas éteints (deuxième cas), elle fait l'objet d'un <strong>suivi extra-comptable</strong> et ne donne plus lieu à comptabilisation d'intérêts&nbsp;: elle n'est plus dans les comptes, mais l'établissement garde ses droits de créancier. Le transfert d'une créance en irrécouvrable n'entraîne pas celui des autres encours douteux de la même contrepartie&nbsp;: la contagion de l'article&nbsp;11 ne joue pas à ce stade.</p>
+<p>Le texte ne précise pas si l'exercice du transfert compte comme le premier des cinq. Faites valider la convention par vos services comptables, écrivez-la dans la procédure, puis appliquez-la de la même façon à tout le portefeuille.</p>
+
+<h2 id="depreciations">Les dépréciations minimales (art.&nbsp;16)</h2>
+<p>Quand une créance devient douteuse, la perte probable est prise en compte par une <strong>dépréciation</strong> enregistrée en déduction de la créance (art.&nbsp;15). L'article&nbsp;16 fixe des minima, différents selon la contrepartie et selon que le risque est couvert ou non par une garantie éligible. Le tableau ci-dessous reprend ses règles sans en ajouter.</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Dépréciations minimales des créances douteuses ou litigieuses (article 16)"><table class="data">
+<caption>Dépréciations minimales des créances douteuses ou litigieuses (article&nbsp;16)</caption>
+<thead><tr><th scope="col">Risque</th><th scope="col">Dépréciation minimale</th><th scope="col">Base</th></tr></thead>
+<tbody>
+<tr><td>Risques directs sur les États de l'UMOA et les organismes publics hors administration centrale, et risques garantis par ces mêmes agents économiques</td><td>Facultative</td><td>—</td></tr>
+<tr><td>Risques privés répondant à la définition de créances restructurées</td><td>Facultative, pour le capital comme pour les intérêts</td><td>— (la décote de l'article&nbsp;6 reste due)</td></tr>
+<tr><td>Risques privés non couverts, ou partie non couverte par une garantie prévue par le dispositif prudentiel</td><td>Au moins 20&nbsp;% à la date du transfert en douteux&nbsp;; au moins 50&nbsp;% trois mois après le transfert&nbsp;; 100&nbsp;% neuf mois après le transfert</td><td>Encours non couvert</td></tr>
+<tr><td>Partie des risques privés couverte par une garantie prévue par le dispositif prudentiel ou par une hypothèque de premier rang</td><td>Facultative les deux premières années à compter du transfert&nbsp;; au moins 50&nbsp;% à compter de la troisième année&nbsp;; 100&nbsp;% à compter de la quatrième année</td><td>Créances douteuses garanties</td></tr>
+<tr><td>Intérêts non réglés portés au compte de résultat, sur créances douteuses ou litigieuses</td><td>100&nbsp;%, «&nbsp;nonobstant l'existence de garantie éligible&nbsp;»</td><td>Intérêts impayés</td></tr>
+</tbody>
+</table></div>
+<p>Trois précisions du texte&nbsp;:</p>
+<ul>
+<li>les hypothèques de deuxième rang sont acceptées lorsque le premier rang est inscrit au nom du même établissement&nbsp;;</li>
+<li>pour la location-financement, la base de calcul des dépréciations est constituée des loyers échus impayés (art.&nbsp;18)&nbsp;;</li>
+<li>pour les engagements hors bilan douteux, la provision correspond à la meilleure estimation du montant nécessaire pour éteindre l'obligation, après déduction des garanties reçues&nbsp;; elle est facultative sur les États et organismes publics (art.&nbsp;17).</li>
+</ul>
+<p>Traduits en mois depuis le transfert en douteux, les minima d'un risque privé donnent ce calendrier&nbsp;:</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Calendrier des taux minimaux d'un risque privé douteux, en mois complets depuis le transfert"><table class="data">
+<caption>Calendrier des taux minimaux d'un risque privé douteux, en mois complets depuis le transfert</caption>
+<thead><tr><th scope="col">Mois depuis le transfert</th><th scope="col">Partie non couverte</th><th scope="col">Partie couverte</th></tr></thead>
+<tbody>
+<tr><td>0 à 2</td><td class="num">20&nbsp;%</td><td class="num">facultatif (0&nbsp;%)</td></tr>
+<tr><td>3 à 8</td><td class="num">50&nbsp;%</td><td class="num">facultatif (0&nbsp;%)</td></tr>
+<tr><td>9 à 23</td><td class="num">100&nbsp;%</td><td class="num">facultatif (0&nbsp;%)</td></tr>
+<tr><td>24 à 35 (3<sup>e</sup>&nbsp;année)</td><td class="num">100&nbsp;%</td><td class="num">50&nbsp;%</td></tr>
+<tr><td>36 et plus (à partir de la 4<sup>e</sup>&nbsp;année)</td><td class="num">100&nbsp;%</td><td class="num">100&nbsp;%</td></tr>
+</tbody>
+</table></div>
+<p>Ce sont des <strong>planchers</strong>. Rien n'empêche une banque de déprécier davantage, ni de déprécier une partie couverte avant la troisième année, si son appréciation du risque le justifie.</p>
+
+<h2 id="excel">Exemple Excel sur 10&nbsp;contrats fictifs</h2>
+<p>La Banque Fictive de l'Ouest arrête ses comptes au <strong>30/09/2026</strong>. Son extraction compte 10&nbsp;contrats sur 8&nbsp;contreparties, choisis pour faire jouer chaque règle&nbsp;: un impayé de 75&nbsp;jours, une PME à 150&nbsp;jours, un État à 200&nbsp;jours, une entreprise qui contamine son second contrat, une créance restructurée, une créance douteuse dont le retard est retombé à 40&nbsp;jours.</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Extraction de la BFO au 30/09/2026 (montants en FCFA, données fictives)"><table class="data">
+<caption>Extraction de la BFO au 30/09/2026 (montants en FCFA, données fictives)</caption>
+<thead><tr><th scope="col">Contrat</th><th scope="col">Contrepartie</th><th scope="col">Segment</th><th scope="col">Encours</th><th scope="col">Jours de retard</th><th scope="col">Restructurée</th><th scope="col">Garantie éligible</th><th scope="col">Date de transfert</th></tr></thead>
+<tbody>
+<tr><td>BFO-01</td><td>CP-01</td><td>Détail</td><td class="num">2&nbsp;400&nbsp;000</td><td class="num">0</td><td>Non</td><td class="num">0</td><td>(vide)</td></tr>
+<tr><td>BFO-02</td><td>CP-02</td><td>Détail</td><td class="num">1&nbsp;650&nbsp;000</td><td class="num">75</td><td>Non</td><td class="num">0</td><td>(vide)</td></tr>
+<tr><td>BFO-03</td><td>CP-02</td><td>Détail</td><td class="num">980&nbsp;000</td><td class="num">120</td><td>Non</td><td class="num">0</td><td>(vide)</td></tr>
+<tr><td>BFO-04</td><td>CP-03</td><td>PME/PMI</td><td class="num">15&nbsp;000&nbsp;000</td><td class="num">150</td><td>Non</td><td class="num">6&nbsp;000&nbsp;000</td><td>(vide)</td></tr>
+<tr><td>BFO-05</td><td>CP-04</td><td>Entreprise</td><td class="num">18&nbsp;000&nbsp;000</td><td class="num">95</td><td>Non</td><td class="num">10&nbsp;000&nbsp;000</td><td>(vide)</td></tr>
+<tr><td>BFO-06</td><td>CP-04</td><td>Entreprise</td><td class="num">6&nbsp;000&nbsp;000</td><td class="num">0</td><td>Non</td><td class="num">0</td><td>(vide)</td></tr>
+<tr><td>BFO-07</td><td>CP-05</td><td>Entreprise</td><td class="num">30&nbsp;000&nbsp;000</td><td class="num">400</td><td>Non</td><td class="num">20&nbsp;000&nbsp;000</td><td>30/11/2025</td></tr>
+<tr><td>BFO-08</td><td>CP-06</td><td>État</td><td class="num">25&nbsp;000&nbsp;000</td><td class="num">200</td><td>Non</td><td class="num">0</td><td>(vide)</td></tr>
+<tr><td>BFO-09</td><td>CP-07</td><td>PME/PMI</td><td class="num">12&nbsp;500&nbsp;000</td><td class="num">20</td><td>Oui</td><td class="num">5&nbsp;000&nbsp;000</td><td>(vide)</td></tr>
+<tr><td>BFO-10</td><td>CP-08</td><td>Entreprise</td><td class="num">9&nbsp;000&nbsp;000</td><td class="num">40</td><td>Non</td><td class="num">9&nbsp;000&nbsp;000</td><td>30/06/2024</td></tr>
+</tbody>
+</table></div>
+<p>Lecture des colonnes&nbsp;:</p>
+<ul>
+<li><strong>Segment</strong>&nbsp;: Détail (clientèle de détail au sens du dispositif prudentiel), PME/PMI, État (États de l'UMOA et organismes publics), Entreprise (les autres personnes morales).</li>
+<li><strong>Jours de retard</strong>&nbsp;: ancienneté de la plus ancienne échéance impayée au 30/09/2026.</li>
+<li><strong>Garantie éligible</strong>&nbsp;: montant couvert par une garantie prévue par le dispositif prudentiel ou par une hypothèque de premier rang, tel que retenu par la banque.</li>
+<li><strong>Date de transfert</strong>&nbsp;: date du passage en douteux, si la créance y est déjà. Vide sinon.</li>
+</ul>
+
+<h3 id="excel-donnees">Étape 1 — Mettre les données en tableau</h3>
+<p>Copiez le bloc ci-dessous (les mêmes données, séparées par des points-virgules, montants sans espace) et collez-le dans la cellule A1 d'un classeur vide.</p>
+<pre class="donnees">Contrat;Contrepartie;Segment;Encours;Jours de retard;Restructurée;Garantie éligible;Date de transfert
+BFO-01;CP-01;Détail;2400000;0;Non;0;
+BFO-02;CP-02;Détail;1650000;75;Non;0;
+BFO-03;CP-02;Détail;980000;120;Non;0;
+BFO-04;CP-03;PME/PMI;15000000;150;Non;6000000;
+BFO-05;CP-04;Entreprise;18000000;95;Non;10000000;
+BFO-06;CP-04;Entreprise;6000000;0;Non;0;
+BFO-07;CP-05;Entreprise;30000000;400;Non;20000000;30/11/2025
+BFO-08;CP-06;État;25000000;200;Non;0;
+BFO-09;CP-07;PME/PMI;12500000;20;Oui;5000000;
+BFO-10;CP-08;Entreprise;9000000;40;Non;9000000;30/06/2024</pre>
+<ol>
+<li>En général, les lignes arrivent toutes dans la colonne A (si Excel les a déjà réparties en 8&nbsp;colonnes, passez au point suivant). Sélectionnez la colonne A, puis <strong>Données › Convertir</strong> (groupe <em>Outils de données</em>). Choisissez <strong>Délimité</strong>, <strong>Suivant</strong>, cochez <strong>Point-virgule</strong> (décochez les autres), <strong>Suivant</strong>. Cliquez sur la dernière colonne de l'aperçu et choisissez le format <strong>Date&nbsp;: JMA</strong>, puis <strong>Terminer</strong>.</li>
+<li>Cliquez dans les données, puis <strong>Insertion › Tableau</strong> (ou <kbd>Ctrl</kbd>&nbsp;+&nbsp;<kbd>L</kbd>), cochez <strong>Mon tableau comporte des en-têtes</strong>, OK.</li>
+<li>Dans l'onglet <strong>Création de tableau</strong> («&nbsp;Outils de tableau › Création&nbsp;» dans les versions plus anciennes), zone <strong>Nom du tableau</strong>, remplacez «&nbsp;Tableau1&nbsp;» par <code>Contrats</code>, puis <kbd>Entrée</kbd>.</li>
+<li>Ajoutez une feuille (bouton <strong>+</strong> en bas), renommez-la <code>Paramètres</code>. Tapez <code>Date d'arrêté</code> en A1 et <code>30/09/2026</code> en B1. Sélectionnez B1, cliquez dans la <strong>Zone Nom</strong> (à gauche de la barre de formule), tapez <code>DateArrete</code> et <kbd>Entrée</kbd> (<strong>Formules › Définir un nom</strong> fait la même chose).</li>
+</ol>
+<p>La date d'arrêté est ainsi saisie une seule fois. Le mois suivant, vous changerez B1 et rien d'autre.</p>
+
+<h3 id="excel-categorie">Étape 2 — Le délai et la catégorie de chaque contrat</h3>
+<p>Revenez sur la feuille du tableau. Tapez <code>Délai</code> dans la cellule I1, juste à droite du dernier en-tête&nbsp;: le tableau s'agrandit tout seul. En I2, saisissez la formule ci-dessous et validez&nbsp;; Excel la recopie sur toutes les lignes (colonne calculée).</p>
+<pre class="xl">=SI.CONDITIONS([@Segment]="PME/PMI";180;[@Segment]="État";180;VRAI;90)</pre>
+<p>Puis, en J1, l'en-tête <code>Catégorie ligne</code> et, en J2&nbsp;:</p>
+<pre class="xl">=SI.CONDITIONS([@[Date de transfert]]&lt;&gt;"";"Douteuse ou litigieuse";[@[Jours de retard]]&gt;[@Délai];"Douteuse ou litigieuse";ET([@Restructurée]="Oui";[@[Jours de retard]]&gt;30);"Douteuse ou litigieuse";[@Restructurée]="Oui";"Restructurée";VRAI;"Saine")</pre>
+<p>Les conditions sont testées dans l'ordre et la première vraie l'emporte&nbsp;:</p>
+<ol>
+<li>une date de transfert existe&nbsp;: la créance est déjà douteuse et y reste (art.&nbsp;10&nbsp;: le retour en sain demande un an de paiements réguliers, et se décide par une écriture, pas par une formule)&nbsp;;</li>
+<li>le retard dépasse le délai du segment (art.&nbsp;8)&nbsp;: <code>&gt;</code> et non <code>&gt;=</code>, puisque 90&nbsp;jours pile reste sain&nbsp;;</li>
+<li>la créance est restructurée et le retard dépasse 30&nbsp;jours (art.&nbsp;7). On suppose ici que la restructuration date de moins de trois ans&nbsp;; sinon, ajoutez une colonne «&nbsp;Date de restructuration&nbsp;» et testez-la&nbsp;;</li>
+<li>la créance est restructurée sans retard de plus de 30&nbsp;jours&nbsp;: elle reste restructurée&nbsp;;</li>
+<li><code>VRAI</code>&nbsp;: tous les autres cas, créance saine. Sans cette dernière paire, une ligne qui ne remplit aucune condition afficherait <code>#N/A</code>.</li>
+</ol>
+<details class="solution"><summary>Excel 2016&nbsp;: la même formule avec des SI imbriqués</summary>
+<p><code>SI.CONDITIONS</code> n'existe qu'à partir d'Excel 2019 et dans Microsoft&nbsp;365. Dans Excel 2016, elle affiche <code>#NOM?</code>&nbsp;; utilisez ces équivalents.</p>
+<pre class="xl">=SI(OU([@Segment]="PME/PMI";[@Segment]="État");180;90)</pre>
+<pre class="xl">=SI([@[Date de transfert]]&lt;&gt;"";"Douteuse ou litigieuse";SI([@[Jours de retard]]&gt;[@Délai];"Douteuse ou litigieuse";SI(ET([@Restructurée]="Oui";[@[Jours de retard]]&gt;30);"Douteuse ou litigieuse";SI([@Restructurée]="Oui";"Restructurée";"Saine"))))</pre>
+</details>
+
+<h3 id="excel-contagion">Étape 3 — La contagion de l'article&nbsp;11</h3>
+<p>En K1, l'en-tête <code>Catégorie</code> et, en K2&nbsp;:</p>
+<pre class="xl">=SI(ET([@Segment]&lt;&gt;"Détail";NB.SI.ENS([Contrepartie];[@Contrepartie];[Catégorie ligne];"Douteuse ou litigieuse")&gt;0);"Douteuse ou litigieuse";[@[Catégorie ligne]])</pre>
+<p><code>NB.SI.ENS</code> compte, dans tout le tableau, les contrats de la même contrepartie déjà classés douteux. S'il y en a au moins un, et si la contrepartie n'est pas de la clientèle de détail, la ligne passe en douteux. BFO-06, à jour, est ainsi reclassé à cause de BFO-05&nbsp;; BFO-02, client de détail, garde sa catégorie malgré BFO-03. Si votre extraction contient de l'escompte commercial, ajoutez la même exclusion sur le produit.</p>
+
+<h3 id="excel-depreciation">Étape 4 — Ancienneté du transfert et dépréciation minimale</h3>
+<p>Ajoutez les colonnes suivantes, toujours à droite du tableau (en-tête en ligne 1, formule en ligne 2).</p>
+<ol>
+<li><code>Transfert retenu</code>&nbsp;: la date de transfert connue, ou la date d'arrêté pour une créance qui devient douteuse ce mois-ci. Format <strong>Accueil › Nombre › Date courte</strong>.
+<pre class="xl">=SI([@Catégorie]&lt;&gt;"Douteuse ou litigieuse";"";SI([@[Date de transfert]]="";DateArrete;[@[Date de transfert]]))</pre></li>
+<li><code>Mois depuis transfert</code>&nbsp;: le nombre de mois complets entre le transfert et l'arrêté.
+<pre class="xl">=SI([@[Transfert retenu]]="";"";DATEDIF([@[Transfert retenu]];DateArrete;"m"))</pre></li>
+<li><code>Partie couverte</code>&nbsp;: la garantie, plafonnée à l'encours.
+<pre class="xl">=MIN([@Encours];[@[Garantie éligible]])</pre></li>
+<li><code>Partie non couverte</code>&nbsp;:
+<pre class="xl">=[@Encours]-[@[Partie couverte]]</pre></li>
+<li><code>Taux non couvert</code>&nbsp;: 20, 50 ou 100&nbsp;% selon les mois écoulés, 0 hors douteux et pour l'État (dépréciation facultative). Format <strong>Pourcentage</strong>.
+<pre class="xl">=SI.CONDITIONS([@Catégorie]&lt;&gt;"Douteuse ou litigieuse";0;[@Segment]="État";0;[@[Mois depuis transfert]]&gt;=9;100%;[@[Mois depuis transfert]]&gt;=3;50%;VRAI;20%)</pre></li>
+<li><code>Taux couvert</code>&nbsp;: 0 pendant les deux premières années, 50&nbsp;% la troisième, 100&nbsp;% ensuite. Format <strong>Pourcentage</strong>.
+<pre class="xl">=SI.CONDITIONS([@Catégorie]&lt;&gt;"Douteuse ou litigieuse";0;[@Segment]="État";0;[@[Mois depuis transfert]]&gt;=36;100%;[@[Mois depuis transfert]]&gt;=24;50%;VRAI;0)</pre></li>
+<li><code>Dépréciation minimale</code>&nbsp;:
+<pre class="xl">=[@[Taux non couvert]]*[@[Partie non couverte]]+[@[Taux couvert]]*[@[Partie couverte]]</pre></li>
+</ol>
+<p>Pour finir, cliquez dans le tableau, puis <strong>Création de tableau › Ligne des totaux</strong>, et choisissez <em>Somme</em> sous <em>Encours</em> et <em>Dépréciation minimale</em>. Appliquez aux montants le format <strong>Accueil › Nombre › Séparateur de milliers</strong>.</p>
+<p>Les formules en Excel 2016, sans <code>SI.CONDITIONS</code>&nbsp;:</p>
+<pre class="xl">=SI(OU([@Catégorie]&lt;&gt;"Douteuse ou litigieuse";[@Segment]="État");0;SI([@[Mois depuis transfert]]&gt;=9;100%;SI([@[Mois depuis transfert]]&gt;=3;50%;20%)))</pre>
+<pre class="xl">=SI(OU([@Catégorie]&lt;&gt;"Douteuse ou litigieuse";[@Segment]="État");0;SI([@[Mois depuis transfert]]&gt;=36;100%;SI([@[Mois depuis transfert]]&gt;=24;50%;0)))</pre>
+
+<h3 id="excel-resultat">Résultat attendu et contrôles</h3>
+<div class="expected">
+<div class="table-wrap" role="region" tabindex="0" aria-label="Classement de chaque contrat au 30/09/2026"><table class="data">
+<caption>Classement de chaque contrat au 30/09/2026</caption>
+<thead><tr><th scope="col">Contrat</th><th scope="col">Délai</th><th scope="col">Catégorie ligne</th><th scope="col">Catégorie</th></tr></thead>
+<tbody>
+<tr><td>BFO-01</td><td class="num">90</td><td>Saine</td><td>Saine</td></tr>
+<tr><td>BFO-02</td><td class="num">90</td><td>Saine</td><td>Saine</td></tr>
+<tr><td>BFO-03</td><td class="num">90</td><td>Douteuse ou litigieuse</td><td>Douteuse ou litigieuse</td></tr>
+<tr><td>BFO-04</td><td class="num">180</td><td>Saine</td><td>Saine</td></tr>
+<tr><td>BFO-05</td><td class="num">90</td><td>Douteuse ou litigieuse</td><td>Douteuse ou litigieuse</td></tr>
+<tr><td>BFO-06</td><td class="num">90</td><td>Saine</td><td><strong>Douteuse ou litigieuse</strong></td></tr>
+<tr><td>BFO-07</td><td class="num">90</td><td>Douteuse ou litigieuse</td><td>Douteuse ou litigieuse</td></tr>
+<tr><td>BFO-08</td><td class="num">180</td><td>Douteuse ou litigieuse</td><td>Douteuse ou litigieuse</td></tr>
+<tr><td>BFO-09</td><td class="num">180</td><td>Restructurée</td><td>Restructurée</td></tr>
+<tr><td>BFO-10</td><td class="num">90</td><td>Douteuse ou litigieuse</td><td>Douteuse ou litigieuse</td></tr>
+</tbody>
+</table></div>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Dépréciation minimale des six créances douteuses au 30/09/2026 (montants en FCFA)"><table class="data">
+<caption>Dépréciation minimale des six créances douteuses au 30/09/2026 (montants en FCFA)</caption>
+<thead><tr><th scope="col">Contrat</th><th scope="col">Transfert retenu</th><th scope="col">Mois</th><th scope="col">Partie couverte</th><th scope="col">Partie non couverte</th><th scope="col">Taux non couvert</th><th scope="col">Taux couvert</th><th scope="col">Dépréciation minimale</th></tr></thead>
+<tbody>
+<tr><td>BFO-03</td><td>30/09/2026</td><td class="num">0</td><td class="num">0</td><td class="num">980&nbsp;000</td><td class="num">20&nbsp;%</td><td class="num">0&nbsp;%</td><td class="num">196&nbsp;000</td></tr>
+<tr><td>BFO-05</td><td>30/09/2026</td><td class="num">0</td><td class="num">10&nbsp;000&nbsp;000</td><td class="num">8&nbsp;000&nbsp;000</td><td class="num">20&nbsp;%</td><td class="num">0&nbsp;%</td><td class="num">1&nbsp;600&nbsp;000</td></tr>
+<tr><td>BFO-06</td><td>30/09/2026</td><td class="num">0</td><td class="num">0</td><td class="num">6&nbsp;000&nbsp;000</td><td class="num">20&nbsp;%</td><td class="num">0&nbsp;%</td><td class="num">1&nbsp;200&nbsp;000</td></tr>
+<tr><td>BFO-07</td><td>30/11/2025</td><td class="num">10</td><td class="num">20&nbsp;000&nbsp;000</td><td class="num">10&nbsp;000&nbsp;000</td><td class="num">100&nbsp;%</td><td class="num">0&nbsp;%</td><td class="num">10&nbsp;000&nbsp;000</td></tr>
+<tr><td>BFO-08</td><td>30/09/2026</td><td class="num">0</td><td class="num">0</td><td class="num">25&nbsp;000&nbsp;000</td><td class="num">0&nbsp;%</td><td class="num">0&nbsp;%</td><td class="num">0</td></tr>
+<tr><td>BFO-10</td><td>30/06/2024</td><td class="num">27</td><td class="num">9&nbsp;000&nbsp;000</td><td class="num">0</td><td class="num">100&nbsp;%</td><td class="num">50&nbsp;%</td><td class="num">4&nbsp;500&nbsp;000</td></tr>
+<tr><td><strong>Total</strong></td><td></td><td></td><td class="num"><strong>39&nbsp;000&nbsp;000</strong></td><td class="num"><strong>49&nbsp;980&nbsp;000</strong></td><td></td><td></td><td class="num"><strong>17&nbsp;496&nbsp;000</strong></td></tr>
+</tbody>
+</table></div>
+<p>Les quatre autres contrats (BFO-01, 02, 04 et 09) ont un transfert retenu vide, des taux à 0&nbsp;% et une dépréciation minimale nulle&nbsp;; leurs parties couverte et non couverte s'affichent quand même (par exemple 6&nbsp;000&nbsp;000 et 9&nbsp;000&nbsp;000 pour BFO-04). Sur les 10&nbsp;lignes, la ligne des totaux du tableau Excel donne 120&nbsp;530&nbsp;000 d'encours et 17&nbsp;496&nbsp;000 de dépréciation minimale.</p>
+<p>Par catégorie&nbsp;: <strong>3&nbsp;créances saines</strong> pour 19&nbsp;050&nbsp;000&nbsp;FCFA, <strong>1&nbsp;créance restructurée</strong> pour 12&nbsp;500&nbsp;000&nbsp;FCFA et <strong>6&nbsp;créances douteuses ou litigieuses</strong> pour 88&nbsp;980&nbsp;000&nbsp;FCFA, soit 120&nbsp;530&nbsp;000&nbsp;FCFA au total. Dépréciation minimale&nbsp;: <strong>17&nbsp;496&nbsp;000&nbsp;FCFA</strong>.</p>
+</div>
+<p>Ce que montre chaque ligne&nbsp;:</p>
+<ul>
+<li><strong>BFO-02</strong>, 75&nbsp;jours de retard&nbsp;: créance saine avec impayé (art.&nbsp;4). Et elle le reste malgré BFO-03, douteuse, parce que CP-02 est un client de détail (art.&nbsp;11).</li>
+<li><strong>BFO-04</strong>, PME/PMI à 150&nbsp;jours&nbsp;: saine, le délai est de 180&nbsp;jours, à condition qu'aucun signe de risque probable n'ait été relevé (art.&nbsp;8, 1°). Avec 90&nbsp;jours par erreur, elle serait douteuse et coûterait 1&nbsp;800&nbsp;000&nbsp;FCFA de dépréciation (20&nbsp;% de 9&nbsp;000&nbsp;000).</li>
+<li><strong>BFO-05 et BFO-06</strong>&nbsp;: BFO-05 franchit 90&nbsp;jours ce mois-ci et entraîne BFO-06, pourtant à jour. 20&nbsp;% s'appliquent à la seule partie non couverte de BFO-05 (8&nbsp;000&nbsp;000), pas à son encours total.</li>
+<li><strong>BFO-07</strong>, transférée le 30/11/2025&nbsp;: 10&nbsp;mois, donc 100&nbsp;% de la partie non couverte&nbsp;; la partie couverte (20&nbsp;000&nbsp;000) est encore dans ses deux premières années, dépréciation facultative.</li>
+<li><strong>BFO-08</strong>, État à 200&nbsp;jours&nbsp;: douteuse (plus de 180&nbsp;jours), mais dépréciation facultative, d'où 0 au titre des minima.</li>
+<li><strong>BFO-09</strong>, restructurée à 20&nbsp;jours&nbsp;: reste restructurée (30&nbsp;jours au plus). Pas de minimum de dépréciation, mais une décote a dû être comptabilisée à la restructuration (art.&nbsp;6)&nbsp;; elle n'apparaît pas dans ce tableau.</li>
+<li><strong>BFO-10</strong>, transférée le 30/06/2024, retard retombé à 40&nbsp;jours&nbsp;: reste douteuse (art.&nbsp;10). 27&nbsp;mois écoulés, c'est la troisième année&nbsp;: 50&nbsp;% de la partie couverte.</li>
+</ul>
+<p>Quatre contrôles à faire à chaque arrêté&nbsp;:</p>
+<ol>
+<li>Le total des encours par catégorie retombe sur le total de l'extraction (120&nbsp;530&nbsp;000)&nbsp;: <code>=SOMME.SI.ENS(Contrats[Encours];Contrats[Catégorie];"Saine")</code>, puis «&nbsp;Restructurée&nbsp;» et «&nbsp;Douteuse ou litigieuse&nbsp;», et la somme des trois.</li>
+<li>Aucune dépréciation ne dépasse l'encours de sa ligne, et aucune partie non couverte n'est négative.</li>
+<li>Pour chaque contrepartie hors détail, tous les contrats ont la même catégorie dès que l'un est douteux. Un tableau croisé dynamique (<strong>Insertion › Tableau croisé dynamique</strong>, <em>Contrepartie</em> en lignes, <em>Catégorie</em> en colonnes, nombre de <em>Contrat</em> en valeurs) le montre d'un coup d'œil.</li>
+<li>Toute créance douteuse a une date de transfert retenue, et aucune date de transfert n'est postérieure à la date d'arrêté (sinon <code>DATEDIF</code> renvoie <code>#NOMBRE!</code>).</li>
+</ol>
+
+<div class="guide-cta">
+<p><strong>Du classement au reporting mensuel.</strong> Le module&nbsp;6 de la formation «&nbsp;Power Query pour le reporting bancaire&nbsp;» construit dans Power Query les créances en souffrance et le taux de créances douteuses (et le PAR30/PAR90 pour la microfinance) sur trois arrêtés mensuels fictifs, les détaille par agence et par produit sans moyenne de taux, et rapproche le statut des créances de leur retard. <a href="../index.html#tarif">Voir le programme et le tarif de la formation</a></p>
+</div>
+
+<h2 id="power-query">Variante Power Query</h2>
+<p>Les formules d'Excel suffisent pour 10&nbsp;lignes. Sur une extraction de plusieurs milliers de contrats, refaite chaque mois, Power Query évite de recoller les données et d'étendre les formules&nbsp;: on écrit la règle une fois et on clique sur <strong>Actualiser</strong>. La variante ci-dessous reprend le classement et la contagion de l'article&nbsp;11 à partir du même tableau <code>Contrats</code>.</p>
+<ol>
+<li>Cliquez dans le tableau, puis <strong>Données › À partir de Tableau/Plage</strong> (selon la version&nbsp;: <strong>Données › Obtenir des données › À partir d'autres sources › À partir d'un tableau ou d'une plage</strong>). L'éditeur Power Query s'ouvre.</li>
+<li><strong>Accueil › Éditeur avancé</strong>&nbsp;: remplacez tout le code par celui ci-dessous, puis <strong>Terminé</strong>.</li>
+<li>Renommez la requête <code>out_Classement</code> (volet <strong>Paramètres de requête › Nom</strong>), puis <strong>Accueil › Fermer et charger</strong>&nbsp;: le résultat arrive dans une nouvelle feuille.</li>
+</ol>
+<pre class="m-code">// Requête out_Classement : catégorie de chaque contrat, article 11 compris
+let
+    // 1. Le tableau Excel "Contrats" : on ne garde que les 8 colonnes de l'extraction
+    Source = Excel.CurrentWorkbook(){[Name = "Contrats"]}[Content],
+    Colonnes = Table.SelectColumns(Source, {
+        "Contrat", "Contrepartie", "Segment", "Encours", "Jours de retard",
+        "Restructurée", "Garantie éligible", "Date de transfert"}),
+    Types = Table.TransformColumnTypes(Colonnes, {
+        {"Contrat", type text}, {"Contrepartie", type text},
+        {"Segment", type text}, {"Restructurée", type text},
+        {"Encours", type number}, {"Jours de retard", Int64.Type},
+        {"Garantie éligible", type number}, {"Date de transfert", type date}}),
+
+    // 2. Délai de l'article 8 : 180 jours pour les PME/PMI et les États, 90 sinon
+    Delai = Table.AddColumn(Types, "Délai", each
+        if [Segment] = "PME/PMI" then 180
+        else if [Segment] = "État" then 180
+        else 90, Int64.Type),
+
+    // 3. Catégorie de la ligne : conditions lues de haut en bas
+    CategorieLigne = Table.AddColumn(Delai, "Catégorie ligne", each
+        if [Date de transfert] &lt;&gt; null then "Douteuse ou litigieuse"
+        else if [Jours de retard] &gt; [Délai] then "Douteuse ou litigieuse"
+        else if [Restructurée] = "Oui" and [Jours de retard] &gt; 30
+            then "Douteuse ou litigieuse"
+        else if [Restructurée] = "Oui" then "Restructurée"
+        else "Saine", type text),
+
+    // 4. Article 11 : une ligne par contrepartie, vrai si un contrat est douteux
+    ParContrepartie = Table.Group(CategorieLigne, {"Contrepartie"}, {
+        {"A un douteux",
+            each List.Contains([Catégorie ligne], "Douteuse ou litigieuse"),
+            type logical}}),
+    ContrepartiesDouteuses = List.Buffer(
+        Table.SelectRows(ParContrepartie, each [A un douteux])[Contrepartie]),
+
+    // 5. Catégorie finale : contagion à la contrepartie, sauf clientèle de détail
+    Categorie = Table.AddColumn(CategorieLigne, "Catégorie", each
+        if [Segment] &lt;&gt; "Détail"
+            and List.Contains(ContrepartiesDouteuses, [Contrepartie])
+        then "Douteuse ou litigieuse"
+        else [Catégorie ligne], type text)
+in
+    Categorie</pre>
+<p>Si vous préférez construire la requête avec l'interface, l'étape&nbsp;2 correspond à <strong>Ajouter une colonne › Colonne conditionnelle</strong>&nbsp;: nom <code>Délai</code>, <em>Si</em> Segment <em>est égal à</em> PME/PMI <em>Alors</em> 180, <strong>Ajouter une clause</strong>, <em>Sinon si</em> Segment <em>est égal à</em> État <em>Alors</em> 180, <em>Sinon</em> 90. L'étape&nbsp;3 combine deux conditions dans une même clause (restructurée <em>et</em> plus de 30&nbsp;jours), ce que cette boîte de dialogue ne propose pas&nbsp;: elle s'écrit dans <strong>Ajouter une colonne › Colonne personnalisée</strong>, avec le bloc <code>if … then … else</code> du code. L'étape&nbsp;4 n'a pas d'équivalent direct dans <strong>Accueil › Regrouper par</strong>&nbsp;: collez-la dans l'éditeur avancé.</p>
+<p><code>Table.Group</code> ramène le portefeuille à une ligne par contrepartie et indique si l'une de ses créances est douteuse&nbsp;; <code>List.Buffer</code> garde en mémoire la liste des contreparties concernées, pour ne pas la recalculer à chaque ligne. Le résultat chargé dans Excel doit compter 10&nbsp;lignes et reproduire exactement la colonne <em>Catégorie</em> de l'étape&nbsp;3&nbsp;: BFO-06 passe de «&nbsp;Saine&nbsp;» à «&nbsp;Douteuse ou litigieuse&nbsp;», BFO-02 reste «&nbsp;Saine&nbsp;». Si vos contrats arrivent en plusieurs fichiers (un par agence ou par mois), voyez d'abord le guide <a href="combiner-plusieurs-fichiers-excel-power-query.html">combiner plusieurs fichiers Excel avec Power Query</a>.</p>
+
+<h2 id="ratios">Du classement aux ratios de la Commission Bancaire</h2>
+<p>Une fois chaque créance classée, les ratios de qualité du portefeuille ne sont plus que des divisions. Le Rapport annuel 2025 de la Commission Bancaire de l'UMOA donne leurs formules (tableau n°&nbsp;15, «&nbsp;Ratios caractéristiques des établissements de crédit&nbsp;», page&nbsp;62&nbsp;; mêmes formules dans le Rapport annuel 2024, page&nbsp;67)&nbsp;:</p>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Ratios de qualité du portefeuille appliqués à la BFO au 30/09/2026"><table class="data">
+<caption>Ratios de qualité du portefeuille appliqués à la BFO au 30/09/2026</caption>
+<thead><tr><th scope="col">Ratio</th><th scope="col">Formule (Commission Bancaire)</th><th scope="col">BFO (exemple)</th><th scope="col">UMOA fin 2025*</th></tr></thead>
+<tbody>
+<tr><td>Taux brut de dégradation du portefeuille</td><td>Créances en souffrance brutes / Total crédits bruts</td><td class="num">101&nbsp;480&nbsp;000 / 120&nbsp;530&nbsp;000 = 84,19&nbsp;%</td><td class="num">9,1&nbsp;%</td></tr>
+<tr><td>Taux net de dégradation du portefeuille</td><td>Créances en souffrance nettes / Total crédits nets</td><td class="num">83&nbsp;984&nbsp;000 / 103&nbsp;034&nbsp;000 = 81,51&nbsp;%</td><td class="num">4,0&nbsp;%</td></tr>
+<tr><td>Taux de provisionnement des créances en souffrance</td><td>Provisions constituées / Créances en souffrance brutes</td><td class="num">17&nbsp;496&nbsp;000 / 101&nbsp;480&nbsp;000 = 17,24&nbsp;%</td><td class="num">58,9&nbsp;%</td></tr>
+<tr><td>Taux de provisionnement des douteux et litigieux</td><td>Provisions constituées / Créances douteuses et litigieuses brutes</td><td class="num">17&nbsp;496&nbsp;000 / 88&nbsp;980&nbsp;000 = 19,66&nbsp;%</td><td class="num">67,1&nbsp;%</td></tr>
+</tbody>
+</table></div>
+<p class="small muted">* Ensemble des établissements de crédit de l'UMOA, données provisoires au 31/12/2025 (Rapport annuel 2025 de la Commission Bancaire, tableau n°&nbsp;15, page&nbsp;62). Les chiffres provisoires bougent&nbsp;: le Rapport annuel 2024 donnait un taux brut de 8,5&nbsp;% pour fin 2024, l'édition 2025 donne 9,3&nbsp;% pour la même date. Citez toujours l'édition du rapport avec le chiffre.</p>
+<p>Pour la BFO, on suppose que les provisions constituées sont exactement les minima calculés (17&nbsp;496&nbsp;000&nbsp;FCFA) et on laisse de côté la décote de BFO-09. Les créances en souffrance brutes sont la créance restructurée plus les six douteuses (12&nbsp;500&nbsp;000 + 88&nbsp;980&nbsp;000)&nbsp;; les montants nets sont les montants bruts moins les provisions. Dans le tableau Excel&nbsp;:</p>
+<pre class="xl">=SOMME.SI.ENS(Contrats[Encours];Contrats[Catégorie];"&lt;&gt;Saine")/SOMME(Contrats[Encours])</pre>
+<p>Ne comparez pas les taux de la BFO à ceux de l'Union&nbsp;: les 10&nbsp;contrats ont été choisis pour faire jouer chaque règle, pas pour ressembler à un portefeuille réel. L'exemple montre en revanche deux mécanismes vrais partout. D'abord, les minima de l'article&nbsp;16 restent bas tant que les créances sont jeunes en douteux, garanties ou détenues sur l'État&nbsp;: d'où, dans l'exemple, des provisions qui ne couvrent que 19,66&nbsp;% des créances douteuses. Ensuite, la contagion de l'article&nbsp;11 fait entrer dans les créances en souffrance des contrats parfaitement à jour, comme BFO-06&nbsp;: le taux brut peut monter d'un mois à l'autre bien au-delà des seuls nouveaux impayés. Le guide <a href="taux-de-degradation-du-portefeuille.html">taux de dégradation du portefeuille</a> détaille le calcul mensuel et les pièges de ces ratios.</p>
+
+<h2 id="erreurs">Erreurs fréquentes</h2>
+<div class="table-wrap" role="region" tabindex="0" aria-label="Diagnostic rapide"><table class="data">
+<caption>Diagnostic rapide</caption>
+<thead><tr><th scope="col">Ce que vous constatez</th><th scope="col">Cause probable</th><th scope="col">Solution</th></tr></thead>
+<tbody>
+<tr><td>Une créance à exactement 90&nbsp;jours classée douteuse</td><td>Test <code>&gt;=</code> au lieu de <code>&gt;</code></td><td>«&nbsp;Plus de 90&nbsp;jours&nbsp;»&nbsp;: <code>[@[Jours de retard]]&gt;[@Délai]</code></td></tr>
+<tr><td>Une PME/PMI ou un État en douteux entre 91 et 180&nbsp;jours</td><td>Délai unique de 90&nbsp;jours</td><td>Colonne <em>Délai</em> par segment (art.&nbsp;8)&nbsp;; segment issu des attributs de la contrepartie</td></tr>
+<tr><td>Le second contrat d'une entreprise douteuse reste sain</td><td>Classement par contrat, sans l'article&nbsp;11</td><td>Colonne de contagion par contrepartie (<code>NB.SI.ENS</code> ou <code>Table.Group</code>)</td></tr>
+<tr><td>Tous les prêts d'un particulier passent en douteux</td><td>Contagion appliquée à la clientèle de détail</td><td>Exclure le segment Détail (et l'escompte commercial) de la contagion</td></tr>
+<tr><td>Une créance douteuse redevient saine dès que le retard baisse</td><td>Classement recalculé sur les seuls jours de retard</td><td>Garder la date de transfert&nbsp;: retour en sain seulement après un an de paiements réguliers (art.&nbsp;10)</td></tr>
+<tr><td>Dépréciation trop forte sur une créance garantie</td><td>Taux appliqué à l'encours total</td><td>Séparer partie couverte et partie non couverte&nbsp;; chacune a son calendrier</td></tr>
+<tr><td>Partie non couverte négative</td><td>Garantie supérieure à l'encours</td><td><code>MIN([@Encours];[@[Garantie éligible]])</code></td></tr>
+<tr><td><code>#NOMBRE!</code> dans <em>Mois depuis transfert</em></td><td>Date de transfert postérieure à la date d'arrêté, ou date lue à l'envers</td><td>Vérifier la date d'arrêté et le format de date (Date&nbsp;: JMA à l'import)</td></tr>
+<tr><td>Un transfert du 31/03 compte 2&nbsp;mois au 30/06</td><td><code>DATEDIF</code> compte les mois complets, jour par jour</td><td>Fixer la convention dans la procédure&nbsp;; en fin de mois, <code>MOIS.DECALER([@[Transfert retenu]];3)&lt;=DateArrete</code> donne «&nbsp;3&nbsp;mois atteints&nbsp;»</td></tr>
+<tr><td><code>#NOM?</code> dans les colonnes de catégorie ou de taux</td><td><code>SI.CONDITIONS</code> absente d'Excel 2016</td><td>Utiliser les versions à <code>SI</code> imbriqués données plus haut</td></tr>
+<tr><td><code>#N/A</code> dans <em>Catégorie ligne</em></td><td>Aucune condition vraie, faute de cas par défaut</td><td>Terminer <code>SI.CONDITIONS</code> par <code>VRAI;"Saine"</code></td></tr>
+<tr><td>Délai de six mois, catégories «&nbsp;impayées&nbsp;» et «&nbsp;immobilisées&nbsp;»</td><td>Source antérieure à 2018</td><td>Se référer à l'Instruction n°&nbsp;026-11-2016 (art.&nbsp;19)</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="limites">Limites et textes plus anciens</h2>
+<ul>
+<li><strong>Champ du texte.</strong> L'article&nbsp;1 vise les banques et les établissements financiers à caractère bancaire de l'UMOA. Les systèmes financiers décentralisés (microfinance) n'en font pas partie&nbsp;: ils ont leurs propres textes, dont un référentiel comptable spécifique, et l'Instruction n°&nbsp;020-12-2010 relative à leurs indicateurs périodiques suit leur «&nbsp;portefeuille classé à risque&nbsp;» à 30, 90 et 180&nbsp;jours. Voir le guide <a href="portefeuille-a-risque-par30.html">portefeuille à risque PAR30</a>.</li>
+<li><strong>Garanties éligibles, clientèle de détail.</strong> L'instruction renvoie au dispositif prudentiel (Décision n°&nbsp;013/24/06/CM/UMOA du 24&nbsp;juin 2016) pour la liste des garanties et pour la définition de la clientèle de détail. Ce guide ne les détaille pas&nbsp;: la colonne «&nbsp;Garantie éligible&nbsp;» de l'exemple suppose ce travail fait.</li>
+<li><strong>Zone CEMAC.</strong> Les établissements de crédit d'Afrique centrale relèvent du <a href="https://www.beac.int/wp-content/uploads/2016/10/reglement_cobac_r_2018-01_relatif_a_la_classification_a_la_comptabilisation_et_au_provisionnement_des_creances.pdf" rel="noopener">Règlement COBAC R-2018/01 relatif à la classification, à la comptabilisation et au provisionnement des créances</a>, qui a ses propres catégories (créances saines, sensibles et en souffrance) et ses propres règles. Il n'est pas traité ici.</li>
+<li><strong>Textes antérieurs.</strong> L'article&nbsp;19 abroge et remplace toutes les dispositions antérieures sur le même objet. Les documents rédigés avant 2018 (dont de nombreux mémoires en ligne) décrivent l'ancien dispositif, avec ses créances «&nbsp;impayées&nbsp;» et «&nbsp;immobilisées&nbsp;» et un délai de six mois&nbsp;: c'est pourquoi ils donnent d'autres chiffres que ce guide. À la date de consultation, nous n'avons pas trouvé de texte publié qui modifie l'Instruction n°&nbsp;026-11-2016&nbsp;; vérifiez-le auprès de vos services avant de l'appliquer.</li>
+<li><strong>Ce que l'exemple simplifie.</strong> Pas de risque probable sans impayé (art.&nbsp;8 et 9), pas de comptes ordinaires débiteurs, pas d'analyse de groupe, pas d'intérêts impayés, pas de décote chiffrée. Pas non plus de suivi des autres expositions d'une contrepartie restructurée (art.&nbsp;7), ni de la période de deux ans qui suit un retour en sain (art.&nbsp;7 et 10). Dans un vrai fichier, chacun de ces points demande une colonne et une règle écrite.</li>
+</ul>
+
+<h2 id="faq">Questions fréquentes</h2>
+<h3 id="faq-60-jours">Un impayé de 60&nbsp;jours est-il une créance en souffrance&nbsp;?</h3>
+<p>En règle générale, non. Une échéance impayée depuis 90&nbsp;jours au plus, sans prorogation ni renouvellement, reste une créance saine (article&nbsp;4)&nbsp;; elle est seulement inscrite dans les comptes prévus pour les impayés. Il y a quatre exceptions&nbsp;: la créance est restructurée et le retard dépasse 30&nbsp;jours dans les trois ans qui suivent la restructuration (article&nbsp;7)&nbsp;; la créance est revenue en sain depuis moins de deux ans et le retard dépasse 30&nbsp;jours (article&nbsp;10)&nbsp;; un risque probable existe indépendamment de tout impayé (article&nbsp;8, 1°)&nbsp;; une autre créance de la même contrepartie est douteuse (article&nbsp;11, hors clientèle de détail et escompte commercial).</p>
+<h3 id="faq-180-jours">Quand le délai passe-t-il à 180&nbsp;jours&nbsp;?</h3>
+<p>Pour trois catégories d'expositions (article&nbsp;8)&nbsp;: les États de l'UMOA, les organismes publics hors administration centrale de ces États, et les financements accordés aux PME/PMI telles que les définit l'instruction relative à la définition des attributs. Pour toutes les autres contreparties, une créance devient douteuse dès qu'une échéance reste impayée depuis plus de 90&nbsp;jours.</p>
+<h3 id="faq-restructuree">Faut-il déprécier une créance restructurée&nbsp;?</h3>
+<p>La décote, oui&nbsp;: au moment de la restructuration, l'écart entre les flux initialement attendus et les flux restructurés, tous deux actualisés au taux d'intérêt effectif d'origine, est enregistré en coût du risque puis amorti sur la durée résiduelle (article&nbsp;6). Tout abandon de principal ou d'intérêts est constaté en pertes. Au-delà de la décote, la dépréciation d'une créance privée restructurée est facultative (article&nbsp;16), tant qu'elle n'est pas devenue douteuse&nbsp;; si elle le devient, les minima des créances douteuses s'appliquent.</p>
+<h3 id="faq-5-exercices">Que devient une créance douteuse après 5&nbsp;exercices&nbsp;?</h3>
+<p>Une créance douteuse ou litigieuse non recouvrée au terme du cinquième exercice comptable à compter de son transfert en douteux est assimilée à une créance irrécouvrable (article&nbsp;13). Elle est passée en pertes pour la totalité de son montant et les dépréciations constituées sont reprises. Si les droits de l'établissement ne sont pas éteints, elle fait l'objet d'un suivi extra-comptable, sans comptabilisation d'intérêts. Les autres encours douteux de la même contrepartie ne passent pas automatiquement en irrécouvrables.</p>
+
+<h2 id="aller-plus-loin">Aller plus loin</h2>
+<p>Avant de classer des créances, il faut des jours de retard justes&nbsp;: le <a href="../gratuit.html">module gratuit sur l'ancienneté des impayés</a> les calcule avec Power Query sur 15&nbsp;prêts fictifs, avec les pièges de dates et de bornes qui faussent un classement sans prévenir. La formation complète va ensuite jusqu'au reporting mensuel&nbsp;: balance âgée stable (module&nbsp;5), créances en souffrance, taux de créances douteuses et PAR30/PAR90 calculés chaque mois et détaillés par agence et par produit (module&nbsp;6), puis rapprochement avec la balance et contrôles de cohérence.</p>
+<p>Guides liés&nbsp;:</p>
+<ul class="related">
+<li><a href="taux-de-degradation-du-portefeuille.html">Taux de dégradation du portefeuille&nbsp;: calcul et pièges</a></li>
+<li><a href="portefeuille-a-risque-par30.html">Portefeuille à risque PAR30 en microfinance</a></li>
+<li><a href="combiner-plusieurs-fichiers-excel-power-query.html">Combiner plusieurs fichiers Excel avec Power Query</a></li>
+</ul>
+<p>Tous les guides gratuits sont réunis sur la <a href="../index.html#guides">page de la formation</a>.</p>
+
+<h2 id="sources">Sources publiques consultées le 22/10/2026</h2>
+<ul>
+<li>BCEAO, <a href="https://www.cb-umoa.org/sites/default/files/2022-01/INSTRUCTION%20N%C2%B0026-11-2016%20RELATIVE%20A%20LA%20COMPTABILISATION%20ET%20A%20L%27EVALUATION%20DES%20ENGAGEMENTS%20EN%20SOUFFRANCE.pdf" rel="noopener">Instruction n°&nbsp;026-11-2016 relative à la comptabilisation et à l'évaluation des engagements en souffrance</a>, 15&nbsp;novembre 2016, articles&nbsp;1 à 19 (PDF publié sur le site de la Commission Bancaire de l'UMOA).</li>
+<li>Commission Bancaire de l'UMOA, <a href="https://www.bceao.int/fr/publications/rapport-annuel-de-la-commission-bancaire-de-lumoa-2025" rel="noopener">Rapport annuel 2025</a> (<a href="https://www.bceao.int/sites/default/files/2026-08/RAPPORT_ANNUEL_2025_DE_LA_COMMISSION_BANCAIRE.pdf" rel="noopener">PDF</a>), tableau n°&nbsp;15 «&nbsp;Ratios caractéristiques des établissements de crédit&nbsp;», page&nbsp;62.</li>
+<li>Commission Bancaire de l'UMOA, <a href="https://www.bceao.int/fr/publications/rapport-annuel-de-la-commission-bancaire-de-lumoa-2024" rel="noopener">Rapport annuel 2024</a> (<a href="https://cofeb.bceao.int/sites/default/files/2025-08/Rapport_annuel_2024_de_la_Commission_Bancaire.pdf" rel="noopener">PDF</a>), tableau n°&nbsp;15, page&nbsp;67.</li>
+<li>BCEAO, <a href="https://www.cb-umoa.org/sites/default/files/2022-01/INSTRUCTION%20N%C2%B0020-12-2010%20RELATIVES%20AUX%20INDICATEURS%20P%C3%89RIODIQUES%20%C3%80%20TRANSMETTRE%20PAR%20LES%20SFD%20AU%20MINISTRE%20EN%20CHARGE%20DES%20FINANCES%2C%20%C3%80%20LA%20BCEAO%20ET%20%C3%80%20LA%20COMMISSION%20BANCAIRE%20DE%20L%27UMOA.pdf" rel="noopener">Instruction n°&nbsp;020-12-2010 relative aux indicateurs périodiques à transmettre par les SFD</a>, annexe (portefeuille classé à risque)&nbsp;; liste des textes applicables aux SFD sur le <a href="https://www.cb-umoa.org/fr/sfd" rel="noopener">site de la Commission Bancaire</a>.</li>
+<li>COBAC, <a href="https://www.beac.int/wp-content/uploads/2016/10/reglement_cobac_r_2018-01_relatif_a_la_classification_a_la_comptabilisation_et_au_provisionnement_des_creances.pdf" rel="noopener">Règlement COBAC R-2018/01</a> relatif à la classification, à la comptabilisation et au provisionnement des créances des établissements de crédit (PDF, site de la BEAC).</li>
+<li>Microsoft, fonctions Excel <a href="https://support.microsoft.com/fr-fr/office/fonction-si-conditions-36329a26-37b2-467c-972b-4a39bd951d45" rel="noopener">SI.CONDITIONS</a>, <a href="https://support.microsoft.com/fr-fr/office/fonction-datedif-25dba1a4-2812-480b-84dd-8b32a451b35c" rel="noopener">DATEDIF</a>, <a href="https://support.microsoft.com/fr-fr/office/nb-si-ens-nb-si-ens-fonction-dda3dc6e-f74e-4aee-88bc-aa8c2a866842" rel="noopener">NB.SI.ENS</a>, <a href="https://support.microsoft.com/fr-fr/office/fonction-somme-si-ens-c9e748f5-7ea7-455d-9406-611cebce642b" rel="noopener">SOMME.SI.ENS</a> et <a href="https://support.microsoft.com/fr-fr/office/fonction-mois-decaler-3c920eb2-6e66-44e7-a1f5-753ae47ee4f5" rel="noopener">MOIS.DECALER</a>.</li>
+<li>Microsoft, <a href="https://support.microsoft.com/fr-fr/office/utilisation-de-r%C3%A9f%C3%A9rences-structur%C3%A9es-avec-des-tableaux-excel-f5ed2452-2337-4f71-bed3-c8ae6d2b276e" rel="noopener">Utilisation de références structurées avec des tableaux Excel</a>.</li>
+<li>Microsoft Learn, <a href="https://learn.microsoft.com/fr-fr/power-query/add-conditional-column" rel="noopener">Ajouter une colonne conditionnelle</a>, <a href="https://learn.microsoft.com/fr-fr/power-query/add-custom-column" rel="noopener">Ajouter une colonne personnalisée</a>, et fonctions M <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-group" rel="noopener">Table.Group</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/list-contains" rel="noopener">List.Contains</a>, <a href="https://learn.microsoft.com/fr-fr/powerquery-m/table-selectcolumns" rel="noopener">Table.SelectColumns</a> et <a href="https://learn.microsoft.com/fr-fr/powerquery-m/excel-currentworkbook" rel="noopener">Excel.CurrentWorkbook</a>.</li>
+</ul>
+<p>Les libellés de l'interface peuvent varier légèrement selon la version d'Excel et sa langue. Les citations de l'instruction reprennent l'orthographe du texte publié (par exemple «&nbsp;Etats&nbsp;» sans accent).</p>
+
+      </div>
+
+      <div class="cta-band cta-after-author">
+        <div>
+          <h2>Power Query pour le reporting bancaire</h2>
+          <p>8&nbsp;modules, 51&nbsp;exercices corrigés, environ 13&nbsp;h de travail, des données fictives sur 3&nbsp;arrêtés mensuels, dont un module entier sur les indicateurs de qualité du portefeuille. <strong>25&nbsp;000&nbsp;FCFA</strong>, paiement unique.</p>
+        </div>
+        <a class="btn btn-light btn-lg" href="../index.html#tarif"><span class="btn-label">Voir le tarif et le programme</span><span class="arrow" aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </article>
+</main>
+
+<footer class="tp-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="../index.html" aria-label="Teranga Pro, accueil de la formation">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13A89E" fill-opacity=".16"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#6FD6CC" stroke-opacity=".6" stroke-width="1.5"/><path d="M7.2 9.4h9.2M11.8 9.4v13.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M19 22.8V9.4h3.4a3.6 3.6 0 0 1 0 7.2H19" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="7.2" y="25.4" width="17.6" height="1.7" rx=".85" fill="#13A89E"/></svg>
+          <span class="brand-name">Teranga<span>Pro</span></span>
+        </a>
+        <p>Conçu par un praticien du reporting bancaire en Afrique de l'Ouest. Données d'exercice 100&nbsp;% fictives&nbsp;; guides et tables&nbsp;: illustrations pédagogiques, pas des états réglementaires officiels.</p>
+      </div>
+      <div>
+        <h2>Formation</h2>
+        <ul>
+          <li><a href="../index.html">Présentation et programme</a></li>
+          <li><a href="../gratuit.html">Module gratuit</a></li>
+          <li><a href="../index.html#guides">Guides gratuits</a></li>
+          <li><a href="../attestation.html">Vérifier une attestation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Informations</h2>
+        <ul>
+          <li><a href="../cgv.html">Conditions générales de vente</a></li>
+          <li><a href="../confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="footer-note">© 2026 Teranga Pro · Vendeur&nbsp;: particulier résidant au Sénégal.</p>
+  </div>
+</footer>
+</body>
+</html>

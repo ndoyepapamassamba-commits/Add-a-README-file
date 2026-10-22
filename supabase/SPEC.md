@@ -141,7 +141,7 @@ Token comparison: sha256(token) compared to `access_token_hash` in constant time
 | `GET /orders/:id?t=TOKEN` | token | If purged → 410 `purged`. If status `checkout` and Wave client present: fetch the session, and if it is paid (see "Payment confirmation") mark paid. → 200 `{ order: PublicOrder, document?: Document (only when paid), preview?: Document (redacted, when not paid) }` |
 | `POST /orders/:id/template` | body `t` | `{ t, template }` → updates template (allowed in any status) → 200 `{ order: PublicOrder }` |
 | `POST /orders/:id/checkout` | body `t` | `{ t, returnBase }`. Paid → 409 `already_paid`. `returnBase` (checked before choosing the mode, so in both modes) must be an absolute https URL starting with one of `allowedReturnPrefixes` (no query, no fragment; strip trailing `/`) → else 400 `bad_return_url`. **Wave mode** (wave client present): reuse the stored session if status is `checkout` and `checkout_expires_at` > now + 2 min; else create one: `amount` = order.amount, `clientReference` = order.id, `successUrl` = `${returnBase}/resultat.html?o=${id}&t=${t}`, `errorUrl` = `${returnBase}/index.html?o=${id}&t=${t}&paiement=echec`; store session id, launch url, `checkout_expires_at` (= `when_expires` or now + 30 min), status `checkout`. → 200 `{ mode:"wave", launchUrl }`. WaveError → 502 `wave_error`. **Manual mode** (no wave client, `manualWaveNumber` set) → 200 `{ mode:"manual", waveNumber (formatted), amount, reference: id, whatsapp: ownerWhatsapp }`. Neither → 503 `payment_unavailable` ("Le paiement en ligne arrive très bientôt."). |
-| `POST /orders/:id/manual-paid` | body `t` | Manual mode only (else 409 `not_manual`). `{ t, payerPhone }` → `normalizeSnMobile` else 400. Status → `awaiting_manual`, store `manual_payer_phone` (E.164). → 200 `{ order: PublicOrder }` |
+| `POST /orders/:id/manual-paid` | body `t` | Manual mode only (else 409 `not_manual`). Paid → 200 unchanged. Still `preview` (never went through checkout, so no exact amount shown) → 409 `checkout_required`, nothing changed: such an order would otherwise be listed like one asked the catalogue price and turn the near match off. `{ t, payerPhone }` → `normalizeSnMobile` else 400. Status → `awaiting_manual`, store `manual_payer_phone` (E.164). → 200 `{ order: PublicOrder }` |
 | `POST /wave/webhook` | Wave | See "Webhook". |
 | `POST /cron/reconcile` | `x-cron-secret` | See "Reconcile". 401 if header ≠ `cronSecret` (constant time) or `cronSecret` unset. |
 | `POST /cron/daily` | `x-cron-secret` | See "Daily payout". |
@@ -461,8 +461,8 @@ Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disa
   each open order keeping its own until its purge — about 15 checkouts a day at that price before customers are asked
   the catalogue price (logged « pays the catalogue price »). The manual response adds `exactAmount`,
   `exactAmountFormatted` ("1 487 FCFA") and `autoUnlock` (a unique amount, `PHONE_HOOK_KEY` set and auto-confirm
-  on); `amount` stays the catalogue price. `manual-paid` is optional
-  and `payerPhone` may be empty (a non-empty invalid number is still 400). Admin unlock and confirm record
+  on); `amount` stays the catalogue price. `manual-paid` is optional, comes after checkout (else 409
+  `checkout_required`) and `payerPhone` may be empty (a non-empty invalid number is still 400). Admin unlock and confirm record
   `manual_amount ?? amount`.
 * **`POST /payments/notify`** — key in `?k=` or `x-hook-key` (constant time; unset → 503 `hook_disabled`,
   wrong → 401). Body ≤ 4 KB: JSON `{ title?, text }`, `text/plain`, or form `text=…&title=…`. The text
@@ -478,7 +478,10 @@ Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disa
   anything else → the text and its minute. Already recorded → `{ok:true, duplicate:true}`, never unlocked, but never
   dropped silently either: a repeated text may be a real second payment (same payer, amount and balance once the
   owner emptied his account), so when its amount is exactly the unique amount of ONE open order, that order gets
-  `recordPaymentDetection` (admin.html: « Paiement détecté »), a warning is logged and the answer adds `detected: id`.
+  `recordPaymentDetection` with the text behind `REPEATED_NOTIFICATION_PREFIX` (« [notification répétée] … »; admin.html:
+  « Notification répétée — vérifiez votre historique Wave avant de débloquer », not « Paiement détecté »), a warning is
+  logged and the answer adds `detected: id`. Once flagged with that text, nothing more; an order already detected by a
+  fresh notification keeps it (logged); a later fresh notification that matches replaces the mark.
   Match among `listHeldManualOrders()` (unpaid, not purged; with a `manual_amount`, or asked the catalogue price:
   `manual_amount` null and no Wave session): exact, else a single order created in the last 2 h with `manual_amount <
   amount ≤ amount_catalogue + 100`; several → none. The near match is also off (« ambiguous », nothing unlocks) while
@@ -491,7 +494,10 @@ Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disa
 * **`POST /payments/confirm`** `{ o, c }`, `c = confirmToken(ADMIN_KEY, o)` = first 32 hex of
   HMAC-SHA256(ADMIN_KEY, "confirm:" + o) → `markPaid` → `{ ok:true, changed }`; invalid or no ADMIN_KEY → 401,
   unknown order → 404. Page `cv/confirmer.html?o=…&c=…` confirms only on a button press (never on GET).
-* **Admin.** `recentOrders` add `manual_amount`, `payment_detected_at`; `health` adds `phoneHook`,
+* **Admin.** `recentOrders` add `manual_amount`, `payment_detected_at` and, added by the API (not by `tcv_stats`: no
+  migration), `payment_detected_repeated` — true for an unpaid order whose stored text starts with the prefix (only the
+  unpaid orders with a detection are read again; the text never leaves the server; false once paid, and after the text
+  is erased); `health` adds `phoneHook`,
   `lastPhoneNotificationAt` (newest `phone.notification` event, carried by `tcv_stats`) and `phoneHookUrl` =
   `${PUBLIC_API_BASE}/payments/notify?k=${encodeURIComponent(PHONE_HOOK_KEY)}` (null without a key): the link the
   owner pastes into MacroDroid. It is the only place the key leaves the server (never in `/config`, errors or logs).

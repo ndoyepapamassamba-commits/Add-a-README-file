@@ -291,6 +291,10 @@
   }
 
   function manualPaid(state, o) {
+    // Same rule as the API: an order must go through checkout (its exact amount) before « J'ai payé ».
+    if (o.status === "preview") {
+      return error(409, "checkout_required", "Affichez d'abord les instructions de paiement : elles donnent le montant exact à envoyer.");
+    }
     if (o.status !== "paid") {
       o.status = "awaiting_manual";
       if (!o.paidAfter) o.paidAfter = Date.now() + PAID_AFTER_MS;
