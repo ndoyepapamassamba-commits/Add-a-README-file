@@ -1138,6 +1138,7 @@ def objet_sans_main(S, c):
     cx, cy, w, h = c; l, r, t, b = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2
     for n, A in S['acts'].items():
         for ob, m, lf in A.get('objets', ()):
+            if max(ob[2] - ob[0], ob[3] - ob[1]) < 0.35 * lf: continue   # miette (bout de tresse de Princesse, 11 px) : pas un objet tenu
             ia = max(0.0, min(r, ob[2]) - max(l, ob[0])) * max(0.0, min(b, ob[3]) - max(t, ob[1]))
             if ia <= OBJET_PART * max(1.0, (ob[2] - ob[0]) * (ob[3] - ob[1])): continue
             rm = 0.35 * lf; poing = (m[0] - rm, m[1] - rm, m[0] + rm, m[1] + rm)
