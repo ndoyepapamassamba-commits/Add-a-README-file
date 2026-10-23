@@ -2,6 +2,8 @@
 // Observabilité »): eleven sections in a labelled sidebar; a section that gathers several screens shows them as tabs.
 // The video and 3D screens (Vidéo IA, Réalisation, Studio 3D, Film Autopilot, Blender bridge) left Workbench on
 // 16/10/2026 for their own app, studio-video/ at the root of the repository; Prompt Studio joined « Outils ».
+// 23/10/2026: « Circuit vidéo » comes back as ONE screen: a one-minute film of the troupe made by OpenRouter's video
+// and image models on the user's own credit (asked: « faire appel à mon crédit OpenRouter pour tourner un film »).
 import type { View } from './types';
 
 export type Group =
@@ -12,6 +14,7 @@ export type Group =
   | 'orchestration'
   | 'workspace'
   | 'files'
+  | 'video'
   | 'tools'
   | 'observability'
   | 'costs'
@@ -59,6 +62,12 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   { id: 'files', label: 'Fichiers', hint: 'Fichiers de la session : livrables, pièces jointes, mémoire .ai/.', views: [{ id: 'files', label: 'Fichiers' }] },
+  {
+    id: 'video',
+    label: 'Circuit vidéo',
+    hint: 'Film d’une minute avec la troupe : script, images et plans par Grok Imagine, Seedance, Kling ou Veo sur votre crédit OpenRouter, plafond de dépense, montage MP4.',
+    views: [{ id: 'film', label: 'Circuit vidéo' }],
+  },
   {
     id: 'tools',
     label: 'Outils',

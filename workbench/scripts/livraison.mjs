@@ -23,7 +23,9 @@ if (!fs.existsSync(path.join('dist', APP))) {
   console.error(`livraison : dist/${APP} absent — lancez d'abord la construction`);
   process.exit(1);
 }
-const packs = []; // les décors de la troupe sont livrés avec Studio Vidéo
+// 23/10/2026 : les scènes de la nouvelle troupe pour le Circuit vidéo (dist/massamba-troupe-film.js, construit par
+// scripts/troupe_film_pack.py depuis la bibliothèque du moteur ; jamais versionné).
+const packs = ['massamba-troupe-film.js'].filter((f) => fs.existsSync(path.join('dist', f)));
 // v63: the « massamba » MCP server (JEV's tools in Claude Desktop / Claude Code), when built.
 const MCP = ['massamba-jev.mcpb', 'massamba-mcp.mjs'].filter((f) => fs.existsSync(path.join('dist', 'mcp', f)));
 const files = [APP, ...packs, ...MCP];
@@ -69,6 +71,14 @@ const notice = [
   '- Les fichiers massamba-troupe-1.js a massamba-troupe-4.js de ce dossier ne servent plus a Workbench :',
   '  deplacez-les dans le dossier MASSAMBA Studio Video.',
   '- Vos projets video sont repris automatiquement par Studio Video a son premier lancement.',
+  '',
+  'NOUVEAU DU 23/10/2026 : RUBRIQUE CIRCUIT VIDEO',
+  '- Un film d une minute avec la troupe, tourne sur votre credit OpenRouter (Grok Imagine, Seedance,',
+  '  Kling, Veo...) : script, une image par plan, plans tournes en parallele, montage MP4 avec sous-titres.',
+  '- Le devis s affiche avant toute depense ; un plafond par film bloque tout appel qui le depasserait.',
+  ...(packs.length
+    ? ['- massamba-troupe-film.js (les scenes de la nouvelle troupe) : gardez-le dans ce dossier, a cote de l application.']
+    : []),
   '',
   ...(MCP.length
     ? [

@@ -444,10 +444,10 @@ test('COCKPIT IA: catalogue with measured columns (« — » when never called),
   await expect(page.getByTestId('catalogue-table').getByText('choisi', { exact: true })).toBeVisible();
 });
 
-test('REDESIGN: eleven labelled sections (video in its own app), help dialog, collapsible sidebar, mobile drawer', async ({ page }) => {
+test('REDESIGN: twelve labelled sections (video studio in its own app, Circuit vidéo here), help dialog, collapsible sidebar, mobile drawer', async ({ page }) => {
   await open(page);
   const nav = page.getByTestId('main-nav');
-  for (const label of ['Cockpit IA', 'Chats', 'Agents', 'Catalogue LLM', 'Orchestration', 'Workspace', 'Fichiers', 'Outils', 'Observabilité', 'Coûts', 'Paramètres'])
+  for (const label of ['Cockpit IA', 'Chats', 'Agents', 'Catalogue LLM', 'Orchestration', 'Workspace', 'Fichiers', 'Circuit vidéo', 'Outils', 'Observabilité', 'Coûts', 'Paramètres'])
     await expect(nav.getByRole('button', { name: label, exact: true })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Bac à sable', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'AI Film Studio' })).toHaveCount(0);

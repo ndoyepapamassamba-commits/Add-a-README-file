@@ -190,6 +190,32 @@ JEV (dont l'œil de JEV et `jevAsk`, partagés avec Studio Vidéo), les outils e
 Le préréglage MCP tiers `blender-mcp` reste disponible comme connecteur. Inventaire détaillé :
 `../studio-video/docs/SEPARATION.md`.
 
+## Circuit vidéo : film d’une minute sur votre crédit OpenRouter (23/10/2026)
+
+Rubrique **Circuit vidéo** : un film d’une minute avec la troupe, tourné par les modèles vidéo d’OpenRouter (Grok
+Imagine Video 1.5 et Lite, Seedance 2.0, Kling 3.0, Veo 3.1, Wan…) avec la clé déjà saisie à l’accueil.
+
+1. **Scène** : les 18 scènes de la nouvelle troupe (fichier `massamba-troupe-film.js` livré à côté de l’app, construit
+   par `scripts/troupe_film_pack.py`, jamais versionné) ou une image importée avec les noms de ses personnages.
+2. **Script** : un modèle de vision (Gemini Flash, repli Claude Haiku, Grok) REGARDE l’image de la scène, décrit chaque
+   personnage (âge, tenue, place dans l’image) et écrit les plans (longueur acceptée par le modèle vidéo choisi, 10 s
+   pour Grok) avec répliques en français ; noms ramenés à ceux de la scène, dialogue trop long signalé.
+3. **Images** : une image 9:16 par plan, recomposée par un générateur d’images (Grok Imagine Image 2.0 par défaut,
+   Gemini 3.1 Flash Image, Nano Banana, Seedream) avec l’image de la scène pour référence.
+4. **Tournage** : tous les plans envoyés en même temps à `POST /api/v1/videos`, chacun avec SON image comme première
+   image imposée (`frame_images`, `first_frame`) et chaque réplique attribuée au personnage décrit ; identifiants de
+   tâche enregistrés avant le premier suivi : une page rechargée reprend le suivi sans rien repayer.
+5. **Montage** : Mediabunny (MPL-2.0) réencode en H.264 + AAC (MP4 « fast start ») avec sous-titres incrustés dans
+   Chrome / Edge ; VP9 + Opus (WebM) si le navigateur n’a pas d’encodeur H.264 ; sans réencodage (sous-titres en .srt)
+   si le navigateur ne décode pas les plans.
+
+**Argent** : prix lus en direct (`GET /api/v1/videos/models`, `pricing_skus`), devis affiché et confirmé avant toute
+dépense, **plafond DUR par film** (chaque appel est réservé avant d’être envoyé ; au-delà du plafond il n’est jamais
+envoyé), coût réel d’OpenRouter (`usage.cost`) ajouté au compteur. Exemple au 23/10/2026 : 6 plans de 10 s en 720p
+coûtent 1,86 $ avec Grok Imagine Video 1.5 Lite et 8,46 $ avec Grok Imagine Video 1.5 (hors images, ≈ 0,05 $ chacune).
+Tests : `tests/unit/filmCircuit.test.ts` (prix réels, plafond, script, consignes), `tests/e2e/film.spec.ts` (film
+complet contre un OpenRouter simulé, MP4 contrôlé par ffprobe, plafond, reprise après rechargement).
+
 ## Fonctionnalités
 
 - **Chat d'agent** en streaming : appels d'outils visibles, statut, coûts réels par étape (jamais la chaîne de pensée privée).

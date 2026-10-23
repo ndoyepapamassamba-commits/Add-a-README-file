@@ -6,6 +6,7 @@ import {
   Bot,
   ChevronsLeft,
   ChevronsRight,
+  Clapperboard,
   FolderOpen,
   KeyRound,
   LayoutDashboard,
@@ -45,6 +46,7 @@ import { hydrate, today, useStore } from './lib/store';
 import type { View } from './lib/types';
 import { ChatView } from './views/ChatView';
 import { PromptStudioView } from './views/PromptStudioView';
+import { FilmCircuitView } from './views/FilmCircuitView';
 import { CockpitView } from './views/CockpitView';
 import { WorkflowsView } from './views/WorkflowsView';
 import { FilesView } from './views/FilesView';
@@ -70,6 +72,7 @@ const ICONS: Record<Group, React.ReactNode> = {
   orchestration: <WorkflowIcon size={17} />,
   workspace: <Layers size={17} />,
   files: <FolderOpen size={17} />,
+  video: <Clapperboard size={17} />,
   tools: <Wrench size={17} />,
   observability: <Activity size={17} />,
   costs: <Wallet size={17} />,
@@ -369,6 +372,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
             {shown === 'home' && <CockpitView />}
             {shown === 'chat' && <ChatView />}
             {shown === 'prompts' && <PromptStudioView />}
+            {shown === 'film' && <FilmCircuitView />}
             {shown === 'catalogue' && <ModelCatalogue />}
             {shown === 'models' && <ModelsView />}
             {shown === 'orchestration' && <Orchestration />}

@@ -8,3 +8,7 @@ Workbench embarque ses bibliothèques npm sous leurs licences (liste exacte : `p
 `node_modules/*/package.json`) et les émojis **Microsoft Fluent Emoji 3D** (MIT, © Microsoft Corporation, licence jointe
 dans `server/assets/FLUENT-EMOJI-LICENSE.txt`). **Règle maison :** le code et les modèles exécutés chez nous doivent être
 sous MIT, Apache-2.0 ou BSD.
+
+**23/10/2026 — Circuit vidéo** : **Mediabunny** 1.61.3 (© Vanilagy, **MPL-2.0**, bibliothèque utilisée sans
+modification, sa licence s’applique fichier par fichier ; source : https://github.com/Vanilagy/mediabunny) pour le
+montage des plans en MP4 / WebM dans le navigateur.
