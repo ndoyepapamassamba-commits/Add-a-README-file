@@ -564,3 +564,44 @@ test('19 · Autopilote : chaîne de secours — quota épuisé sur LTX-2.3, le m
   const tg = etiquettes(await dl.path()); expect(JSON.parse(tg.massamba).plansEcrits[0].moteur).toMatch(/LTX-Video/);
   expect(s.payants).toEqual([]); expect(s.erreurs).toEqual([]);
 });
+
+// ------------------------------------------------------------------ 20 (23/10/2026)
+test('20 · Autopilote, voie troupe : l’idée choisit le sketch de la réserve, grille de ton, tournage V1, consigne embarquée, film validé', async ({ page }) => {
+  const s = await ouvrir(page);
+  // vidéo du « moteur V1 » simulé : MP4 lisible par ce Chromium (VP9 + Opus), fabriqué par ffmpeg depuis le clip de test
+  const mp4 = path.join(require('os').tmpdir(), 'aims-e2e-v1-' + Date.now() + '.mp4');
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', path.join(FIX, 'clip-test.webm'), '-c', 'copy', '-f', 'mp4', mp4]);
+  const catalogue = { bibliotheque: '(simulée)', scenes: [{ nom: 'marche-etal', acteurs: ['SERAPHINE', 'MAMAN AKISSI'] }, { nom: 'salon-coiffure', acteurs: ['PRINCESSE', 'JOSIANE'] }],
+    sketchs: [{ id: 'salon-mois', titre: 'LE TISSAGE DU MOIS', image: 'salon-coiffure', acteurs: ['PRINCESSE', 'JOSIANE'], repliques: [{ qui: 'PRINCESSE', texte: 'Fais-moi un tissage, je paie à la fin du mois !', chute: false }, { qui: 'JOSIANE', texte: 'Ta tête attend la fin du mois.', chute: true }] },
+      { id: 'marche-direct', titre: 'LE DIRECT DU MARCHÉ', image: 'marche-etal', acteurs: ['SERAPHINE', 'MAMAN AKISSI'], repliques: [{ qui: 'SERAPHINE', texte: 'Maman, je filme le marché en direct sur TikTok !', chute: false }, { qui: 'MAMAN AKISSI', texte: 'Alors dis à tes abonnés que la tomate est à cinq cents.', chute: true }] }] };
+  const vu = { controle: null, tache: null, suivis: 0 };
+  await page.route('**/api/v1/catalogue', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(catalogue) }));
+  await page.route('**/api/v1/controle', (r) => { vu.controle = JSON.parse(r.request().postData()); return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, rapport: 'grille de ton : conforme', sketchs: ['marche-direct'] }) }); });
+  await page.route(/\/api\/taches(\/.*)?$/, (r) => {
+    const u = new URL(r.request().url()), m = r.request().method();
+    if (m === 'POST' && u.pathname === '/api/taches') { vu.tache = r.request().postData(); return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'sV1essai' }) }); }
+    if (u.pathname === '/api/taches/sV1essai') { vu.suivis++; return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(vu.suivis < 2 ? { etat: 'encours', message: 'Moteur V1 : tournage' } : { etat: 'terminee' }) }); }
+    if (u.pathname === '/api/taches/sV1essai/video') return r.fulfill({ status: 200, contentType: 'video/mp4', body: fs.readFileSync(mp4) });
+    return r.continue();
+  });
+  await page.waitForFunction(() => window.__MAMS_APP__.A.srv);
+  await vue(page, 'autopilote');
+  await page.fill('#apIdee', 'Une fille filme le marché en direct sur TikTok et sa mère en profite pour annoncer le prix de la tomate.');
+  await page.selectOption('#apVoie', 'troupe');
+  await expect(page.locator('#apEstim')).toContainText('moteur V1');
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 120000 }), page.click('#btnApLancer')]);
+  await page.waitForFunction(() => { const J = window.MAMS.autopilote.etat(); return J && J.fini; }, null, { timeout: 120000 });
+  const J = await etatApp(page, () => { const J = window.MAMS.autopilote.etat(); return { ok: J.ok, etapes: Object.fromEntries(Object.entries(J.etapes).map(([k, v]) => [k, v.etat + ' | ' + (v.detail || '')])) }; });
+  expect(J.etapes.ecriture).toMatch(/^fait \| .*LE DIRECT DU MARCHÉ/);   // les mots de l'idée désignent le bon sketch de la réserve
+  expect(vu.controle.sketchs[0]).toEqual({ id: 'marche-direct' });     // la grille de ton de la V1 est consultée avant le tournage
+  expect(JSON.parse(vu.tache.match(/\{.*\}/s)[0]).sketchs[0].id).toBe('marche-direct');   // champ « demande » du formulaire envoyé au serveur
+  for (const k of ['consignes', 'generation', 'montage', 'export']) expect(J.etapes[k]).toMatch(/^fait/);
+  expect(J.etapes.son).toMatch(/^saute \| .*moteur V1/);
+  expect(J.ok).toBe(true);
+  const tg = etiquettes(await dl.path());
+  expect(tg.comment).toContain('MAMAN AKISSI : Alors dis à tes abonnés que la tomate est à cinq cents. (chute)');
+  const mj = JSON.parse(tg.massamba); expect(mj.mode).toBe('v1'); expect(mj.sketchs[0].id).toBe('marche-direct'); expect(mj.modeleId).toBe('moteur-v1');
+  expect(await etatApp(page, () => window.MAMS.studio.S.clips.length)).toBe(1);
+  fs.rmSync(mp4, { force: true });
+  expect(s.erreurs).toEqual([]);
+});

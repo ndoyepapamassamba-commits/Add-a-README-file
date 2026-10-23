@@ -6,7 +6,7 @@
 
 | Fonction | Preuve |
 |---|---|
-| **Autopilote** : idée → plans écrits (modèle gratuit, repli local annoncé) → consignes → génération de tous les plans avec chaîne de secours de moteurs gratuits → montage, fondus, sous-titres, voix Piper, nappe → export validé → rapport chronométré ; relecture des plans facultative ; budget de quota GPU affiché avant le lancement ; voie « sketch de la troupe » (moteur V1) | E18, E19 |
+| **Autopilote** : idée → plans écrits (modèle gratuit, repli local annoncé) → consignes → génération de tous les plans avec chaîne de secours de moteurs gratuits → montage, fondus, sous-titres, voix Piper, nappe → export validé → rapport chronométré ; relecture des plans facultative ; budget de quota GPU affiché avant le lancement ; voie « sketch de la troupe » (moteur V1) | E18, E19, E20 |
 | **Consigne embarquée** dans chaque vidéo produite (génération, démo, moteur V1, export final) : MP4 udta/ilst et WebM Tags, sans ré-encodage ; relue à l'import (consigne, moteur, nature DÉMO) ; bouton « Réutiliser la consigne » | U (4 formats réels, ffprobe, framemd5), E2, E8, E13, E18 |
 | **Export H.264 + AAC** même sans encodeur dans le navigateur : conversion par ffmpeg sur le serveur local, contrôle ffprobe + décodage intégral renvoyé et affiché | U, E13, E18 |
 | Ouverture sans clé, 10 sections, aucun appel payant | E1 |

@@ -47,13 +47,13 @@ Guides :
 | `serveur/fournisseurs.mjs` | Connecteurs fal, Replicate, Runway, Luma, Kling et moteur V1 |
 | `serveur/moteur_v1.py`, `serveur/voix_piper.py` | Pont vers le moteur de la troupe et voix Piper locale |
 | `outils/troupe.py`, `outils/assembler.mjs` | Données de la troupe ; assemblage en un seul fichier HTML |
-| `tests/` | Tests unitaires (`node --test`) et 19 tests e2e Playwright |
+| `tests/` | Tests unitaires (`node --test`) et 20 tests e2e Playwright |
 
 ## Tests
 
 ```
 npm run test:unitaires   # 26 tests : noyau, serveur, consigne embarquée, conversion H.264
-npm run test:e2e         # 19 tests : les 17 de la mission + 2 de l'Autopilote, dans Chromium contre le serveur local
+npm run test:e2e         # 20 tests : les 17 de la mission + 3 de l'Autopilote, dans Chromium contre le serveur local
 ```
 
 ## Licences

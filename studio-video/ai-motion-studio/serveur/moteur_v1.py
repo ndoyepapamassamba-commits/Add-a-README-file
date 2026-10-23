@@ -112,6 +112,17 @@ def _decor_pret(SV, scene):
     return all(os.path.exists(os.path.join(p, f)) for f in ('vie.npz', 'linge.npz', 'profondeur.png', 'rig'))
 
 
+def _episode_sans_ton(usine, d):
+    """usine.episode() sans la grille de ton : le tournage de préchauffage ne produit aucune vidéo, seulement les caches du décor."""
+    for l in usine.LIENS:
+        src, dst = os.path.join(usine.BIBLIO, l), os.path.join(d, l)
+        if os.path.exists(src) and not os.path.lexists(dst): os.symlink(src, dst)
+    H = json.load(open(os.path.join(d, 'histoire.json'), encoding='utf-8'))
+    M = {'timeline': 'timeline.json', 'histoire': 'histoire.json', 'scenes': {s['id']: usine.LIEU_DOSSIER.get(s['image'], f"prep/{s['image']}") for s in H['sketchs']},
+         'reglages': dict(usine.REGLAGES, entites={s['id']: 2 for s in H['sketchs'] if s['image'].split('-')[0] == 'cour'})}
+    json.dump(M, open(os.path.join(d, 'montage.json'), 'w'), ensure_ascii=False, indent=1)
+
+
 def prechauffe():
     """PRÉCHAUFFAGE (23/10/2026) : tout ce qui se calcule une fois par décor est fait au démarrage du serveur, pas pendant un
     sketch. (1) l'essai des visages de chaque scène prête (fume_visages.py : 33,8 s au premier sketch d'une scène, mémorisé
@@ -131,11 +142,13 @@ def prechauffe():
     for sc in sorted(pretes):
         if _decor_pret(SV, sc): res['decors'][sc] = 'déjà prêt'; continue
         sk = next((x for x in reserve if x.get('image') == sc), None)
-        if not sk: res['decors'][sc] = 'aucun sketch de la réserve pour le préparer'; continue
+        if not sk:   # décor sans sketch en réserve : deux répliques neutres suffisent à préparer le décor (rien n'est publié)
+            ac = pretes[sc]
+            sk = _complete({'titre': 'PRECHAUFFAGE', 'image': sc, 'repliques': [{'qui': ac[0], 'texte': 'Bonjour, ça va ?'}, {'qui': ac[-1], 'texte': 'Ça va bien, merci.'}]}, pretes, reserve)
         t1 = time.time()
         try:
             with tempfile.TemporaryDirectory(dir=os.environ.get('PRECHAUFFE_DIR') or None) as d:
-                _histoire(d, 'prechauffe-' + sc, [sk]); usine.episode(d)
+                _histoire(d, 'prechauffe-' + sc, [sk]); _episode_sans_ton(usine, d)
                 env = dict(PIPER_VOICES=os.environ.get('PIPER_VOICES', ''), **tous)
                 for a in ([os.path.join(MOTEUR, 'voix.py')], [os.path.join(MOTEUR, 'levres.py'), 'timeline.json']):
                     usine._py(*a, env=env, cwd=d)
