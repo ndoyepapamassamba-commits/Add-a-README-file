@@ -91,7 +91,8 @@
   function addMedia(name, srcEl, info, ajouterAuMontage) {
     info = info || {};
     var m = { id: info.id || uid(), name: name, type: info.type || 'image', origine: info.origine || 'importe', nature: info.nature || null, blob: info.blob || null,
-      prompt: info.prompt || null, modele: info.modele || null, tacheId: info.tacheId || null, duree: info.duree || null, aAudio: !!info.aAudio, cree: Date.now() };
+      prompt: info.prompt || null, modele: info.modele || null, tacheId: info.tacheId || null, duree: info.duree || null, aAudio: !!info.aAudio, cree: Date.now(),
+      consigneEmbarquee: !!info.consigneEmbarquee };
     if (m.type === 'video') { m.el = srcEl; m.largeur = srcEl.videoWidth; m.hauteur = srcEl.videoHeight; } else m.img = srcEl;
     S.media.push(m);
     if (ajouterAuMontage !== false) { S.clips.push(nouveauClip(m)); if (!S.sel) S.sel = S.clips[0].id; }
@@ -128,6 +129,16 @@
     var v = await chargerVideo(blob);
     var aAudio = await aUnePisteAudio(blob);
     info = Object.assign({}, info || {}, { type: 'video', blob: blob, duree: v.duration, aAudio: !!aAudio });
+    // CONSIGNE EMBARQUÉE RELUE À L'IMPORT (23/10/2026) : une vidéo produite par le studio rapporte sa consigne, son moteur et sa
+    // nature ; un clip DÉMO réimporté reste marqué DÉMO.
+    var meta = window.MAMS && window.MAMS.meta;
+    if (meta && !info.consigneEmbarquee) {
+      var lu = await meta.lire(blob).catch(function () { return null; }), mm = lu && lu.massamba;
+      if (lu && (lu.consigne || (mm && mm.consigne))) {
+        info.consigneEmbarquee = true; info.prompt = info.prompt || lu.consigne || mm.consigne;
+        if (mm) { info.modele = info.modele || mm.modele || null; if (mm.nature === 'demo') { info.nature = 'demo'; info.origine = 'demo'; } else if (!info.nature && mm.nature) info.nature = mm.nature; }
+      }
+    }
     return addMedia(nom, v, info, ajouterAuMontage);
   }
   function chargerImage(blob) { return new Promise(function (res, rej) { var im = new Image(); im.onload = function () { res(im); }; im.onerror = function () { rej(new Error('Image illisible.')); }; im.src = URL.createObjectURL(blob); }); }
@@ -488,10 +499,13 @@
       el.onloadedmetadata = fin; el.onerror = fin;
     });
   }
-  function ajouterPisteAudio(blob, nom, origine) {
-    var el = new Audio(URL.createObjectURL(blob));
-    el.onloadedmetadata = function () { var m = { id: uid(), name: nom, type: 'audio', origine: origine || 'importe', blob: blob, el: el, duree: el.duration, cree: Date.now() }; S.media.push(m); S.audioTracks.push({ id: uid(), mid: m.id, start: Math.round(S.time * 10) / 10, vol: 0.8 }); snap(); renderAll(); status('Piste audio ajoutée : ' + nom); };
-    el.onerror = function () { status('Audio illisible', 0, 1); };
+  /** piste audio posée à la tête de lecture, ou à `debut` (secondes) ; la promesse rend le média (null si illisible). */
+  function ajouterPisteAudio(blob, nom, origine, debut, vol) {
+    return new Promise(function (res) {
+      var el = new Audio(URL.createObjectURL(blob));
+      el.onloadedmetadata = function () { var m = { id: uid(), name: nom, type: 'audio', origine: origine || 'importe', blob: blob, el: el, duree: el.duration, cree: Date.now() }; S.media.push(m); S.audioTracks.push({ id: uid(), mid: m.id, start: Math.round((debut != null ? debut : S.time) * 10) / 10, vol: vol != null ? vol : 0.8 }); snap(); renderAll(); status('Piste audio ajoutée : ' + nom); res(m); };
+      el.onerror = function () { status('Audio illisible', 0, 1); res(null); };
+    });
   }
 
   // ------------------------------------------------------------------ branchements (reprennent ceux de Motion Studio 2)

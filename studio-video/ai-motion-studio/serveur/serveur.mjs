@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { Readable } from 'node:stream';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { CONNECTEURS } from './fournisseurs.mjs';
 
 const ICI = path.dirname(new URL(import.meta.url).pathname);
@@ -31,6 +31,43 @@ const PAYANT = process.env.PAYANT_AUTORISE === '1';
 const PLAFOND_PAYANT = Number(process.env.PLAFOND_TACHES_PAYANTES_JOUR || 5);
 const RETENTION_MS = Number(process.env.RETENTION_HEURES || 24) * 3600 * 1000;
 const MAX_CORPS = 25 * 1024 * 1024;
+const MAX_VIDEO = 600 * 1024 * 1024;   // vidéo à convertir : quelques minutes en 1080p
+
+// ------------------------------------------------------------------ conversion H.264/AAC (23/10/2026)
+// Pour les navigateurs sans encodeur H.264 (Chromium libre, certains Linux) : l'export VP9/Opus est converti ici par ffmpeg
+// (programme séparé, licence LGPL/GPL respectée : aucun code copié). Encodeurs vérifiés au démarrage, jamais supposés.
+const FFMPEG = process.env.FFMPEG || 'ffmpeg';
+function detecterFfmpeg() {
+  try {
+    const r = spawnSync(FFMPEG, ['-hide_banner', '-encoders'], { encoding: 'utf8', timeout: 10000 });
+    if (r.status !== 0) return { ffmpeg: false, h264: false, aac: false };
+    const v = (spawnSync(FFMPEG, ['-version'], { encoding: 'utf8' }).stdout || '').split('\n')[0];
+    return { ffmpeg: true, version: v.replace(/^ffmpeg version\s+/, '').split(' ')[0], h264: /\slibx264\s/.test(r.stdout), aac: /\saac\s/.test(r.stdout) };
+  } catch { return { ffmpeg: false, h264: false, aac: false }; }
+}
+const TRANSCODAGE = detecterFfmpeg();
+const PRECHAUFFE = { etat: 'non lancé' };
+const FFPROBE = process.env.FFPROBE || 'ffprobe';
+function lancer(cmd, args, ms = 120000) {
+  return new Promise((r) => {
+    let out = '', err = ''; const p = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    p.stdout.on('data', (d) => { out = (out + d).slice(-200000); }); p.stderr.on('data', (d) => { err = (err + d).slice(-20000); });
+    const m = setTimeout(() => p.kill('SIGKILL'), ms); p.on('error', () => { clearTimeout(m); r({ code: -1, out, err }); }); p.on('close', (code) => { clearTimeout(m); r({ code, out, err }); });
+  });
+}
+/** contrôle du MP4 converti (23/10/2026) : ffprobe (codecs, dimensions, durée, images) + décodage intégral par ffmpeg (-xerror)
+ * avec la crête du son (volumedetect) — preuve donnée au navigateur qui, sans décodeur H.264, ne peut pas relire le fichier. */
+async function controlerMp4(f) {
+  const p = await lancer(FFPROBE, ['-v', 'error', '-show_entries', 'stream=codec_type,codec_name,width,height,avg_frame_rate,nb_frames:format=duration', '-of', 'json', f], 60000);
+  let j = {}; try { j = JSON.parse(p.out); } catch { /* ffprobe absent */ }
+  const v = (j.streams || []).find((x) => x.codec_type === 'video') || {}, a = (j.streams || []).find((x) => x.codec_type === 'audio') || null;
+  const [fn, fd] = String(v.avg_frame_rate || '0/1').split('/').map(Number);
+  const d = await lancer(FFMPEG, ['-hide_banner', '-nostats', '-v', 'info', '-xerror', '-i', f, ...(a ? ['-af', 'volumedetect'] : []), '-f', 'null', '-'], 10 * 60 * 1000);
+  const mx = /max_volume:\s*(-?[\d.]+|-inf) dB/.exec(d.err);
+  return { video: v.codec_name || null, audio: a ? a.codec_name : null, largeur: v.width || null, hauteur: v.height || null, duree: Number((j.format || {}).duration || 0),
+    fps: fd ? Math.round((fn / fd) * 100) / 100 : null, images: Number(v.nb_frames || 0) || null, decodeSansErreur: d.code === 0 && !/\berror\b/i.test(d.err.replace(/max_volume|mean_volume/g, '')),
+    sonMaxDb: mx ? (mx[1] === '-inf' ? -999 : Number(mx[1])) : null, outil: 'ffprobe + ffmpeg ' + (TRANSCODAGE.version || '').replace(/^ffmpeg version\s*/, '').split(' ')[0] };
+}
 
 // ------------------------------------------------------------------ journal sans secrets
 const SECRETS = () => ['FAL_KEY', 'REPLICATE_API_TOKEN', 'RUNWAYML_API_SECRET', 'LUMAAI_API_KEY', 'KLING_ACCESS_KEY', 'KLING_SECRET_KEY', 'HF_TOKEN'].map((k) => process.env[k]).filter((v) => v && v.length > 5);
@@ -137,7 +174,7 @@ function sante() {
   const f = {};
   for (const [k, c] of Object.entries(CONNECTEURS)) f[k] = { nom: c.nom, configure: !!c.configure(), payant: !!c.payant, actif: !!c.configure() && (!c.payant || PAYANT) };
   return { ok: true, version: '3.0.0', payantAutorise: PAYANT, plafondPayantJour: PLAFOND_PAYANT, payantesAujourdhui: payantesDuJour(), retentionHeures: RETENTION_MS / 3600000,
-    fournisseurs: f, voix: { piper: fs.existsSync(path.join(process.env.PIPER_VOICES || path.join(process.env.HOME || '', '.cache/massamba-models/piper'), 'fr_FR-siwis-medium.onnx')) } };
+    fournisseurs: f, transcodage: TRANSCODAGE, prechauffageV1: PRECHAUFFE, voix: { piper: fs.existsSync(path.join(process.env.PIPER_VOICES || path.join(process.env.HOME || '', '.cache/massamba-models/piper'), 'fr_FR-siwis-medium.onnx')) } };
 }
 
 let catalogueCache = null;
@@ -146,7 +183,7 @@ const serveur = http.createServer(async (req, res) => {
   try {
     if (req.method === 'OPTIONS') {
       const o = req.headers.origin; if (!origineAutorisee(o)) { res.writeHead(403); res.end(); return; }
-      res.writeHead(204, { 'Access-Control-Allow-Origin': o || '*', 'Access-Control-Allow-Methods': 'GET,POST,DELETE', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '600' }); res.end(); return;
+      res.writeHead(204, { 'Access-Control-Allow-Origin': o || '*', 'Access-Control-Allow-Methods': 'GET,POST,DELETE', 'Access-Control-Allow-Headers': 'Content-Type, X-Fps', 'Access-Control-Max-Age': '600' }); res.end(); return;
     }
     if (u.pathname.startsWith('/api/')) {
       if (!origineAutorisee(req.headers.origin)) { envoyer(res, 403, { erreur: 'origine refusée' }, req); return; }
@@ -171,6 +208,39 @@ const serveur = http.createServer(async (req, res) => {
       fs.rmSync(ft, { force: true });
       if (code !== 0 || !fs.existsSync(fw)) return envoyer(res, 500, { erreur: 'Piper n’a pas produit la voix (voir docs/GUIDE-INSTALLATION.md).' }, req);
       return servirFichier(res, fw, req);
+    }
+    if (u.pathname === '/api/transcoder' && req.method === 'POST') {
+      if (!TRANSCODAGE.h264 || !TRANSCODAGE.aac) return envoyer(res, 503, { erreur: 'ffmpeg avec libx264 et aac introuvable sur ce serveur (voir docs/GUIDE-INSTALLATION.md).' }, req);
+      const type = String(req.headers['content-type'] || '').split(';')[0];
+      const format = type === 'video/webm' ? 'matroska' : type === 'video/mp4' ? 'mov' : null;   // format imposé : jamais de HLS ni de concat
+      if (!format) return envoyer(res, 415, { erreur: 'Vidéo WebM ou MP4 attendue.' }, req);
+      if (Number(req.headers['content-length'] || 0) > MAX_VIDEO) return envoyer(res, 413, { erreur: 'Vidéo trop lourde (600 Mo au plus).' }, req);
+      const fps = Math.round(Number(req.headers['x-fps'] || 0));
+      const id = crypto.randomUUID(), entree = path.join(VIDEOS, `conv-${id}.in`), sortie = path.join(VIDEOS, `conv-${id}.mp4`);
+      let n = 0; const fl = fs.createWriteStream(entree);
+      try {
+        for await (const c of req) { n += c.length; if (n > MAX_VIDEO) throw new Error('Vidéo trop lourde (600 Mo au plus).'); if (!fl.write(c)) await new Promise((r) => fl.once('drain', r)); }
+        await new Promise((r, j) => fl.end((e) => (e ? j(e) : r())));
+      } catch (e) { fl.destroy(); fs.rmSync(entree, { force: true }); return envoyer(res, 413, { erreur: e.message }, req); }
+      const args = ['-hide_banner', '-v', 'error', '-y', '-protocol_whitelist', 'file', '-f', format, '-i', entree, '-map', '0:v:0', '-map', '0:a:0?',
+        '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-profile:v', 'high', '-pix_fmt', 'yuv420p',
+        ...(fps >= 1 && fps <= 120 ? ['-r', String(fps), '-fps_mode', 'cfr'] : []),
+        '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-movflags', '+faststart', sortie];
+      const t0 = Date.now(); let err = '';
+      const code = await new Promise((r) => {
+        const p = spawn(FFMPEG, args, { stdio: ['ignore', 'ignore', 'pipe'] }); p.stderr.on('data', (d) => { err = (err + d).slice(-2000); });
+        const minuterie = setTimeout(() => p.kill('SIGKILL'), 10 * 60 * 1000); p.on('close', (c) => { clearTimeout(minuterie); r(c); });
+      });
+      fs.rmSync(entree, { force: true });
+      if (code !== 0 || !fs.existsSync(sortie)) { fs.rmSync(sortie, { force: true }); journal('conversion', 'échec', err); return envoyer(res, 422, { erreur: 'Conversion H.264 impossible : ' + (err.trim().split('\n').pop() || 'ffmpeg a échoué') }, req); }
+      const ms = Date.now() - t0, st = fs.statSync(sortie), ctl = await controlerMp4(sortie);
+      const h = { 'Content-Type': 'video/mp4', 'Content-Length': st.size, 'X-Transcodage-Ms': String(ms), 'X-Controle': encodeURIComponent(JSON.stringify(ctl)),
+        'Access-Control-Expose-Headers': 'X-Transcodage-Ms, X-Controle', 'X-Content-Type-Options': 'nosniff' };
+      const o = req.headers.origin; if (o && origineAutorisee(o)) h['Access-Control-Allow-Origin'] = o;
+      journal('conversion', `${(n / 1048576).toFixed(1)} Mo → ${(st.size / 1048576).toFixed(1)} Mo en ${ms} ms`);
+      res.writeHead(200, h); const lect = fs.createReadStream(sortie); lect.pipe(res);
+      lect.on('close', () => fs.rmSync(sortie, { force: true }));
+      return;
     }
     if (u.pathname === '/api/taches' && req.method === 'POST') {
       const fd = await formulaire(req); let d;
@@ -215,7 +285,15 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(im
   serveur.listen(PORT, HOTE, () => {
     const s = sante();
     journal(`MASSAMBA AI MOTION STUDIO : http://${HOTE}:${PORT}  (payant ${PAYANT ? 'AUTORISÉ' : 'désactivé'})`);
+    journal(`  conversion H.264 : ${s.transcodage.h264 && s.transcodage.aac ? 'ffmpeg ' + s.transcodage.version + ' (libx264 + aac)' : 'indisponible (ffmpeg absent)'}`);
     for (const [k, v] of Object.entries(s.fournisseurs)) journal(`  ${k.padEnd(10)} ${v.configure ? 'configuré' : 'non configuré'}${v.payant ? (v.actif ? ' — actif' : ' — inactif (payant)') : ''}`);
+    // préchauffage du moteur V1 (23/10/2026) : l'essai des visages des scènes prêtes est fait maintenant, pas pendant le sketch
+    const v1 = CONNECTEURS['moteur-v1'];
+    if (v1.configure() && process.env.PRECHAUFFE_V1 !== '0') {
+      PRECHAUFFE.etat = 'en cours'; const t0 = Date.now();
+      v1.prechauffe().then((r) => { Object.assign(PRECHAUFFE, { etat: r.ok ? 'fait' : 'échec', secondes: r.secondes, scenes: r.scenes.length }); journal(`  moteur V1 préchauffé : ${r.scenes.length} scènes en ${r.secondes} s`); },
+        (e) => { Object.assign(PRECHAUFFE, { etat: 'échec', secondes: Math.round((Date.now() - t0) / 1000) }); journal('  préchauffage V1 : ' + caviarder(e.message)); });
+    }
   });
 }
 export { serveur, valider, sante };

@@ -148,11 +148,25 @@
 
   /** contrôle du fichier produit : dimensions, durée, codec, son, lecture au début / milieu / fin. */
   async function valider(blob, attendu) {
-    var det = [], ok = true;
+    var det = [], ok = true, ctl = attendu.controleServeur || null;
     function verifie(cond, txt) { det.push((cond ? '✔ ' : '✘ ') + txt); if (!cond) ok = false; }
     verifie(blob && blob.size > 1000, 'fichier non vide (' + (blob ? (blob.size / 1048576).toFixed(2) : 0) + ' Mo)');
     var v = document.createElement('video'); v.muted = true; v.preload = 'auto'; v.src = URL.createObjectURL(blob);
     var lu = await attendre(v, 'loadedmetadata', 8000);
+    // H.264 converti par le serveur local (23/10/2026) : un navigateur sans décodeur H.264 (Chromium libre) ne peut pas l'ouvrir ;
+    // le contrôle vient alors de ffprobe + décodage intégral par ffmpeg sur le serveur, et il est écrit comme tel.
+    if (!lu && ctl) {
+      det.push('ℹ ce navigateur ne décode pas le H.264 : contrôles faits par ffprobe et ffmpeg sur le serveur local');
+      var tolS = Math.max(0.25, 2 / (attendu.fps || 30));
+      verifie(Math.abs(ctl.duree - attendu.duree) <= tolS, 'durée ' + Number(ctl.duree).toFixed(2) + ' s (attendue ' + attendu.duree.toFixed(2) + ' s, ffprobe)');
+      verifie(ctl.largeur === attendu.largeur && ctl.hauteur === attendu.hauteur, 'dimensions ' + ctl.largeur + '×' + ctl.hauteur + ' (attendues ' + attendu.largeur + '×' + attendu.hauteur + ', ffprobe)');
+      verifie(!!ctl.decodeSansErreur, 'décodage intégral sans erreur (ffmpeg, ' + (ctl.images || '?') + ' images)');
+      verifie(ctl.video === 'h264', 'codec vidéo ' + (ctl.video === 'h264' ? 'H.264 (avc1)' : ctl.video) + ' (ffprobe)');
+      verifie(attendu.aSon ? ctl.audio === 'aac' : true, 'codec audio ' + (ctl.audio || 'aucun') + (attendu.aSon ? '' : ' (aucun son dans le montage)') + ' (ffprobe)');
+      if (attendu.aSon) verifie(ctl.sonMaxDb != null && ctl.sonMaxDb > -60, 'piste audio présente et non silencieuse (crête ' + ctl.sonMaxDb + ' dB, ffmpeg)');
+      URL.revokeObjectURL(v.src);
+      return { ok: ok, details: det, resume: det.join(' · '), par: 'serveur' };
+    }
     verifie(lu, 'le navigateur ouvre le fichier');
     if (lu) {
       if (!isFinite(v.duration)) { v.currentTime = 1e6; await attendre(v, 'timeupdate', 4000); }
@@ -190,13 +204,35 @@
     st.playing(false); S.exporting = true; var tSauve = S.time;
     try {
       var r = cfg.chemin === 'mp4' ? await exporterMp4(cfg, progres, o.signal) : await exporterWebm(progres, o.signal);
+      var chemin = cfg.chemin === 'mp4' ? 'MP4 image par image (' + r.codecs + ')' : 'WebM temps réel (' + r.codecs + ')', controle = null;
+      // EXPORT H.264 PAR LE SERVEUR LOCAL (23/10/2026) : quand le navigateur n'a pas l'encodeur H.264/AAC, le fichier rendu
+      // (VP9/Opus ou WebM) est converti par ffmpeg (libx264 + aac) sur le serveur local ; le rendu image par image reste ici.
+      if (o.transcoder && !/avc1/.test(r.codecs || '') && !o.forcerWebm) {
+        progres(0.9, 'Conversion H.264 + AAC par le serveur local');
+        var c = await o.transcoder(r.blob, S.fps, function (s) { progres(0.9, 'Conversion H.264 + AAC par le serveur local — ' + s + ' s'); });
+        chemin += ' → H.264 + AAC par ffmpeg sur le serveur local (' + (c.ms / 1000).toFixed(1) + ' s)';
+        r = { blob: c.blob, ext: 'mp4', codecs: 'avc1 (H.264) + mp4a (AAC), ffmpeg ' + (c.version || ''), sources: r.sources, aSon: r.aSon }; controle = c.controle;
+      }
+      // CONSIGNE EMBARQUÉE (23/10/2026, « les prompts doivent être embarqués pour chaque vidéo ») : la liste des plans et de leurs
+      // consignes est écrite dans les métadonnées du fichier final, sans ré-encoder une image.
+      var consigneOk = false;
+      if (o.consigne && window.MAMS.meta) {
+        progres(0.96, 'Consigne embarquée dans le fichier');
+        try { r.blob = await window.MAMS.meta.embarquer(r.blob, o.consigne); consigneOk = true; } catch (e) { consigneOk = false; }
+      }
       progres(0.97, 'Validation du fichier');
-      var rapport = await valider(r.blob, { duree: st.total(), largeur: cv.width, hauteur: cv.height, fps: S.fps, ext: r.ext, aSon: r.aSon });
+      var rapport = await valider(r.blob, { duree: st.total(), largeur: cv.width, hauteur: cv.height, fps: S.fps, ext: r.ext, aSon: r.aSon, controleServeur: controle });
+      if (o.consigne) {
+        var relu = consigneOk ? await window.MAMS.meta.lire(r.blob).catch(function () { return null; }) : null;
+        var bon = !!(relu && relu.consigne === String(o.consigne.consigne || ''));
+        rapport.details.push((bon ? '✔ ' : '✘ ') + 'consigne embarquée et relue dans le fichier'); if (!bon) rapport.ok = false;
+        rapport.resume = rapport.details.join(' · '); rapport.consigne = bon;
+      }
       rapport.codecs = r.codecs; rapport.sources = r.sources;
       var nom = (o.nom || 'massamba-ai-motion') + '-' + Date.now() + '.' + r.ext;
       st.addResult(nom, r.blob, 'VIDÉO ' + r.ext.toUpperCase(), rapport);
       progres(1, rapport.ok ? 'Export validé' : 'Export à vérifier');
-      return { nom: nom, blob: r.blob, rapport: rapport, chemin: cfg.chemin === 'mp4' ? 'MP4 image par image (' + r.codecs + ')' : 'WebM temps réel (' + r.codecs + ')' };
+      return { nom: nom, blob: r.blob, rapport: rapport, chemin: chemin };
     } finally { S.exporting = false; S.time = tSauve; st.renderAll(); }
   }
 

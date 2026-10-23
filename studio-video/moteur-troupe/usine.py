@@ -113,8 +113,18 @@ def tourne(d, v):
     etape = lambda nom, *a, e=None: T.__setitem__(nom, _py(*a, env=dict(env, **(e or {})), log=log, cwd=d)[0])
     etape('voix', f'{ICI}/voix.py')
     etape('bouches', f'{ICI}/levres.py', 'timeline.json')
-    etape('rires', f'{ICI}/musique.py', 'timeline.json', 'voix/mix.wav', 'voix/mix-musique.wav')
-    etape('ambiance', f'{ICI}/ambiance.py', 'timeline.json', 'voix/mix-musique.wav', 'voix/mix-ambiance.wav')
+    # SON EN TEMPS MASQUÉ (23/10/2026, « moins de 3 minutes par sketch ») : rires et ambiance ne servent qu'au montage
+    # (compose.py lit voix/mix-musique.wav puis mix-ambiance.wav ; tourne.py ne lit ni l'un ni l'autre) : ils se font pendant
+    # l'essai des visages et le tournage, l'erreur éventuelle est relevée avant le montage. USINE_SON_PARALLELE=0 : à la suite.
+    import threading
+    def _son(err):
+        try:
+            etape('rires', f'{ICI}/musique.py', 'timeline.json', 'voix/mix.wav', 'voix/mix-musique.wav')
+            etape('ambiance', f'{ICI}/ambiance.py', 'timeline.json', 'voix/mix-musique.wav', 'voix/mix-ambiance.wav')
+        except Exception as ex: err.append(ex)
+    err_son = []; th_son = threading.Thread(target=_son, args=(err_son,))
+    if os.environ.get('USINE_SON_PARALLELE', '1') == '1': th_son.start()
+    else: _son(err_son)
     lieux = ','.join(sorted({os.path.basename(os.path.normpath(x)) for x in json.load(open(f'{d}/montage.json'))['scenes'].values()}))
     etape('visages', f'{ICI}/fume_visages.py', 'prep', f'{d}/{v}-visages.jpg', lieux)   # seulement les lieux tournés
     etape('tournage', f'{ICI}/tourne.py', 'montage.json', D, e={'ETIREMENT': '1', 'TOURNE_PROCS': os.environ.get('TOURNE_PROCS', str(os.cpu_count() or 4))})
@@ -123,6 +133,8 @@ def tourne(d, v):
     if os.environ.get('USINE_FLOU', '1') == '1':
         etape('flou', '-c', f"import sys; sys.path.insert(0, {ICI!r}); import fluidite as F; "
                             f"print(F.flou_bouge({D + '/clip'!r}, coupes=F.coupes_du_moteur({D + '/tournage.json'!r})))")
+    if th_son.is_alive() or th_son.ident: th_son.join()
+    if err_son: raise err_son[0]
     tk = f'{D}/tiktok-1080x1920.mp4'
     etape('montage', f'{ICI}/compose.py', D, f'{D}/film.mp4', e={'COMPOSE_TIKTOK': tk})   # film + fichier TikTok d'une seule passe
     etape('planche', f'{ICI}/planche_repliques.py', f'{D}/film.mp4', 'timeline.json', f'{D}/planche.jpg')

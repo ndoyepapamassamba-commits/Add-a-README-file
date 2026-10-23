@@ -33,6 +33,7 @@
 
 <div class="shell">
   <nav class="rail" aria-label="Sections">
+    <button class="nav nav-ap" data-vue="autopilote"><i>➤</i><span>Autopilote</span></button>
     <button class="nav on" data-vue="generer"><i>✦</i><span>Générer</span></button>
     <button class="nav" data-vue="storyboard"><i>▤</i><span>Storyboard</span></button>
     <button class="nav" data-vue="medias"><i>▦</i><span>Médiathèque</span></button>
@@ -43,6 +44,50 @@
     <button class="nav" data-vue="projets"><i>⇩</i><span>Projets</span></button>
     <button class="nav" data-vue="moteurs"><i>⚙</i><span>Moteurs IA</span></button>
   </nav>
+
+  <!-- ============================================================ 0. AUTOPILOTE (23/10/2026) -->
+  <section class="vue" data-vue="autopilote" id="vueAutopilote">
+    <div class="page">
+      <div class="page-head"><h2>Autopilote — de l’idée au film exporté</h2>
+        <div class="row"><button class="btn ghost small" id="btnApMontage">Ouvrir le montage</button></div></div>
+      <div class="ap-grille">
+        <div class="card">
+          <div class="grp"><label for="apIdee">Votre idée (reprise mot pour mot dans chaque plan et dans le fichier final)</label>
+            <textarea id="apIdee" rows="4" placeholder="Une grand-mère découvre que son téléphone répète tout ce qu’elle dit. Elle s’en sert pour réclamer ses dettes à tout le quartier."></textarea></div>
+          <div class="grid3">
+            <div class="grp"><label for="apVoie">Voie</label><select id="apVoie">
+              <option value="auto">Automatique (moteurs IA gratuits)</option><option value="ia">Moteurs IA gratuits (Spaces)</option>
+              <option value="troupe">Sketch de la troupe (moteur V1 local)</option><option value="demo">Démo locale (marquée DÉMO)</option></select></div>
+            <div class="grp"><label for="apDuree">Durée visée (s)</label><input id="apDuree" type="number" min="2" max="60" step="1" value="12"></div>
+            <div class="grp"><label for="apFormat">Format</label><select id="apFormat"><option value="9:16">9:16 (TikTok, Reels, Shorts)</option><option value="16:9">16:9 (YouTube)</option><option value="1:1">1:1</option></select></div>
+          </div>
+          <div class="grid2">
+            <div class="grp"><label for="apStyle">Style</label><select id="apStyle"></select></div>
+            <div class="grp"><label for="apPerso">Personnage (continuité)</label><select id="apPerso"><option value="">— aucun —</option></select></div>
+          </div>
+          <div class="grp"><label for="apImage">Image de départ (facultative : tous les plans en image → vidéo, même personnage, même lieu)</label><input id="apImage" type="file" accept="image/png,image/jpeg,image/webp"></div>
+          <div class="row ap-options">
+            <label class="check"><input type="checkbox" id="apEcritureIA" checked>Écriture des plans par un modèle gratuit</label>
+            <label class="check"><input type="checkbox" id="apVoix" checked>Voix off (Piper, local)</label>
+            <label class="check"><input type="checkbox" id="apSousTitres" checked>Sous-titres</label>
+            <label class="check"><input type="checkbox" id="apMusique" checked>Nappe musicale</label>
+            <label class="check"><input type="checkbox" id="apRepliDemo">Repli DÉMO si aucun moteur ne répond</label>
+            <label class="check"><input type="checkbox" id="apRelire">Relire les plans avant le tournage</label>
+          </div>
+          <p class="hint" id="apEstim"></p>
+          <div class="row"><button class="btn primary" id="btnApLancer">➤ Lancer l’Autopilote</button><button class="btn ghost" id="btnApArreter" disabled>Arrêter</button><span class="hint" id="apTotal"></span></div>
+          <p class="erreurs" id="apErreur"></p>
+          <p class="hint">Rien de payant : moteurs gratuits (votre quota Hugging Face du jour) ou moteur local ; si un moteur échoue, le suivant est essayé automatiquement. Chaque vidéo produite porte sa consigne dans ses métadonnées.</p>
+        </div>
+        <div class="card">
+          <h3>Déroulé</h3>
+          <ol class="ap-etapes" id="apEtapes"><li class="ap-attente"><span class="ap-num">·</span><b>Prêt</b><span class="ap-etat">écrivez une idée puis lancez</span></li></ol>
+          <div id="apPlans"></div>
+          <div id="apResultat" hidden><video id="apVideo" controls playsinline></video><p id="apResume"></p><button class="btn small" id="apTelecharger">Télécharger le film</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- ============================================================ 1. STUDIO DE GÉNÉRATION -->
   <section class="vue on" data-vue="generer" id="vueGenerer">
@@ -369,7 +414,7 @@
           <div class="grp"><label>Images/s</label><select id="selFps"><option value="24">24</option><option value="30" selected>30</option><option value="60">60</option></select></div>
         </div>
         <div class="grp"><label>Débit vidéo</label><select id="selBitrate"><option value="6000000">6 Mb/s — léger</option><option value="12000000" selected>12 Mb/s — standard</option><option value="20000000">20 Mb/s — haute qualité</option></select></div>
-        <div class="grp"><label>Fichier</label><select id="selExportFormat"><option value="auto">MP4 (H.264/AAC si disponible)</option><option value="webm">WebM temps réel</option></select><p class="hint" id="exportCodecs">Vérification des encodeurs…</p></div>
+        <div class="grp"><label>Fichier</label><select id="selExportFormat"><option value="auto">MP4 H.264 + AAC (encodeur du navigateur, sinon conversion par le serveur local)</option><option value="webm">WebM temps réel</option></select><p class="hint" id="exportCodecs">Vérification des encodeurs…</p></div>
         <div class="sep"></div>
         <button class="btn primary" id="btnExport2" style="width:100%">● Exporter la vidéo</button>
         <div class="row" style="margin-top:7px">
@@ -482,8 +527,10 @@
 <script src="js/fournisseurs.js"></script>
 <script src="js/taches.js"></script>
 <script src="js/stockage.js"></script>
+<script src="js/meta.js"></script>
 <script src="js/studio.js"></script>
 <script src="js/export.js"></script>
+<script src="js/autopilote.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

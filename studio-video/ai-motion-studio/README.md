@@ -2,13 +2,15 @@
 
 Studio vidéo IA issu de **MASSAMBA Motion Studio 2**. Il couvre :
 
+- l'**Autopilote** : une idée → plans écrits → génération de tous les plans (moteurs gratuits, essayés l'un après l'autre) → montage → voix, nappe, sous-titres → export MP4 validé, sans intervention ;
 - la génération **image → vidéo** et **texte → vidéo** avec de vrais moteurs, gratuits par défaut ;
 - le **sketch V1** de la troupe, tourné par le moteur local ;
 - un storyboard multiscène et le mode « Film complet » ;
 - les personnages de référence, dont les 122 personnages de la nouvelle troupe ;
 - une timeline qui monte de vraies vidéos ;
 - l'audio, la voix off et les sous-titres ;
-- l'export MP4 validé ;
+- l'export MP4 validé, en H.264 + AAC même dans un navigateur sans cet encodeur (conversion par ffmpeg sur le serveur local) ;
+- la **consigne embarquée** dans chaque vidéo produite (métadonnées MP4 et WebM, relues à l'import) ;
 - l'historique des générations, les projets et la sauvegarde automatique ;
 - un mode démo honnête.
 
@@ -29,7 +31,9 @@ Guides :
 
 | Fichier | Rôle |
 |---|---|
-| `index.html`, `css/studio.css` | Interface en 9 sections, thème sombre ; tous les identifiants d'origine sont conservés |
+| `index.html`, `css/studio.css` | Interface en 10 sections (Autopilote + les 9 d'origine), thème sombre ; tous les identifiants d'origine sont conservés |
+| `js/autopilote.js` | Autopilote : écriture des plans, consignes, génération avec chaîne de secours, montage, son, export, rapport chronométré |
+| `js/meta.js` | Consigne embarquée dans le fichier vidéo (MP4 udta/ilst, WebM Tags), sans ré-encodage ; lecture à l'import |
 | `js/registre.js` | Registre des moteurs : capacités relues en direct, aucun prix inventé |
 | `js/gradio.js` | Client du protocole Gradio (Spaces Hugging Face) : envoi, file d'attente, flux d'états, téléchargement |
 | `js/fournisseurs.js` | Adaptateurs : Space, chaîne Pollinations → Wan, serveur local, démo ; validation des demandes |
@@ -43,13 +47,13 @@ Guides :
 | `serveur/fournisseurs.mjs` | Connecteurs fal, Replicate, Runway, Luma, Kling et moteur V1 |
 | `serveur/moteur_v1.py`, `serveur/voix_piper.py` | Pont vers le moteur de la troupe et voix Piper locale |
 | `outils/troupe.py`, `outils/assembler.mjs` | Données de la troupe ; assemblage en un seul fichier HTML |
-| `tests/` | Tests unitaires (`node --test`) et 17 tests e2e Playwright |
+| `tests/` | Tests unitaires (`node --test`) et 19 tests e2e Playwright |
 
 ## Tests
 
 ```
-npm run test:unitaires   # 17 tests : noyau et serveur
-npm run test:e2e         # 17 tests de la mission, dans Chromium contre le serveur local
+npm run test:unitaires   # 26 tests : noyau, serveur, consigne embarquée, conversion H.264
+npm run test:e2e         # 19 tests : les 17 de la mission + 2 de l'Autopilote, dans Chromium contre le serveur local
 ```
 
 ## Licences

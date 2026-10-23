@@ -41,7 +41,7 @@ async function simulerSpaces(page, o) {
     if (u.pathname.endsWith('/queue/join')) { if (o.coupure) return route.abort('internetdisconnected'); return json({ event_id: 'e1' }); }
     if (u.pathname.endsWith('/queue/data')) {
       if (o.delaiMs) await new Promise((r) => setTimeout(r, o.delaiMs));
-      const ev = o.evenements || [{ msg: 'estimation', rank: 3, rank_eta: 12 }, { msg: 'process_starts', eta: 8 },
+      const ev = (o.quotaSur || []).includes(u.hostname) ? [{ msg: 'process_completed', success: false, output: { error: 'You have exceeded your GPU quota (60s requested vs. 12s left)' } }] : o.evenements || [{ msg: 'estimation', rank: 3, rank_eta: 12 }, { msg: 'process_starts', eta: 8 },
         { msg: 'progress', progress_data: [{ index: 1, length: 4 }] },
         { msg: 'process_completed', success: true, output: { data: [{ video: { url: 'https://' + u.hostname + '/gradio_api/file=/tmp/gradio/essai/sortie.webm' } }, 4242] } }];
       return route.fulfill({ status: 200, headers: { ...h, 'content-type': 'text/event-stream' }, body: ev.map((e) => 'data: ' + JSON.stringify(e) + '\n\n').join('') });
@@ -71,6 +71,15 @@ async function ouvrir(page, o = {}) {
   return suivi;
 }
 const etatApp = (page, f, arg) => page.evaluate(f, arg);
+/** octets du Blob d'un média de l'application (pour ffprobe / ffmpeg). */
+async function octetsMedia(page, mid) {
+  const b64 = await page.evaluate(async (id) => { const b = window.MAMS.studio.media(id).blob; const u = new Uint8Array(await b.arrayBuffer()); let s = ''; for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode.apply(null, u.subarray(i, i + 32768)); return btoa(s); }, mid);
+  return Buffer.from(b64, 'base64');
+}
+/** étiquettes du conteneur lues par ffprobe (clés en minuscules). */
+function etiquettes(f) { const t = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_format', '-of', 'json', f]).toString()).format.tags || {}; const o = {}; for (const k in t) o[k.toLowerCase()] = t[k]; return o; }
+const framemd5 = (f) => execFileSync('ffmpeg', ['-v', 'error', '-i', f, '-map', '0', '-f', 'framemd5', '-']).toString().split('\n').filter((l) => l && !l.startsWith('#')).join('\n');
+const tmpFichier = (nom, octets) => { const f = path.join(require('os').tmpdir(), 'aims-e2e-' + Date.now() + '-' + nom); fs.writeFileSync(f, octets); return f; };
 async function vue(page, nom) { await page.click(`.nav[data-vue="${nom}"]`); }
 async function choisirModele(page, mode, id) {
   await vue(page, 'generer');
@@ -146,6 +155,11 @@ test('02 · mode démo clairement identifié : bascule visible, résultat marqu�
   });
   expect(bandeau[0]).toBeGreaterThan(200); expect(bandeau[1]).toBeGreaterThan(110); expect(bandeau[2]).toBeLessThan(90);
   await vue(page, 'medias'); await expect(page.locator('#libGrid .tag.demo').first()).toHaveText('DÉMO');
+  // consigne embarquée dans le WebM du MediaRecorder (23/10/2026), lue par ffprobe ; la nature DÉMO voyage avec le fichier
+  const f = tmpFichier('demo.webm', await octetsMedia(page, t.resultatMediaId)), tg = etiquettes(f);
+  expect(tg.comment).toBe('Essai démo'); const mj = JSON.parse(tg.massamba); expect(mj.nature).toBe('demo'); expect(mj.modeleId).toBe('demo');
+  execFileSync('ffmpeg', ['-v', 'error', '-xerror', '-i', f, '-f', 'null', '-']);
+  await expect(page.locator('#libGrid .tag.ok', { hasText: 'consigne embarquée' }).first()).toBeVisible();
   expect(s.erreurs).toEqual([]);
 });
 
@@ -257,7 +271,7 @@ test('07 · affichage des états (file, calcul, fin) et des erreurs en français
 });
 
 // ------------------------------------------------------------------ 8
-test('08 · récupération de la vidéo terminée : octets identiques, lecture, téléchargement, médiathèque', async ({ page }) => {
+test('08 · récupération de la vidéo terminée : images et son identiques, consigne embarquée, lecture, téléchargement, médiathèque', async ({ page }) => {
   const s = await ouvrir(page); await simulerSpaces(page, {});
   await genererI2V(page, 'Plan récupération', 2);
   const t = await attendreTache(page, 'Plan récupération'); expect(t.etat).toBe('terminee');
@@ -269,7 +283,12 @@ test('08 · récupération de la vidéo terminée : octets identiques, lecture, 
   await expect(page.locator('#btnGenTelecharger')).toBeEnabled();
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btnGenTelecharger')]);
   expect(dl.suggestedFilename()).toMatch(/^IA-plan-recuperation-.{4}\.webm$/);
-  expect(fs.readFileSync(await dl.path()).equals(CLIP)).toBe(true);
+  // la consigne est écrite dans le fichier (métadonnées) sans toucher une image ni un échantillon de son
+  const f = await dl.path(), orig = tmpFichier('clip.webm', CLIP);
+  expect(framemd5(f)).toBe(framemd5(orig));
+  const tg = etiquettes(f); expect(tg.comment).toBe('Plan récupération');
+  const mj = JSON.parse(tg.massamba); expect(mj.graine).toBe(4242); expect(mj.modeleId).toBe('wan22-i2v-rapide'); expect(mj.mode).toBe('i2v'); expect(mj.imageDepart).toBe(true);
+  expect(fs.statSync(f).size - CLIP.length).toBeLessThan(4096);
   await vue(page, 'medias'); await expect(page.locator('#libGrid .tag.ia').first()).toHaveText('généré par IA');
   expect(s.erreurs).toEqual([]);
 });
@@ -361,7 +380,8 @@ test('13 · export final : fichier validé par l’application puis relu par ffp
   await importerAuMontage(page, [IMG1, path.join(FIX, 'clip-test.webm')]);
   await etatApp(page, () => { const ST = window.MAMS.studio, S = ST.S; S.clips = S.clips.filter((c) => /image-test-1|clip-test/.test(ST.media(c.mid).name)); S.clips[0].dur = 1.5; S.clips[0].trans = 'fade'; ST.addText({ text: 'Fin', start: 0, dur: 1 }); ST.renderAll(); });
   const total = await etatApp(page, () => window.MAMS.studio.total());
-  await page.click('.tab[data-tab="out"]'); await page.selectOption('#selExportFormat', 'auto');   // « MP4 (H.264/AAC si disponible) »
+  await page.waitForFunction(() => window.__MAMS_APP__.A.srv && window.__MAMS_APP__.A.srv.transcodage);   // serveur local joint
+  await page.click('.tab[data-tab="out"]'); await page.selectOption('#selExportFormat', 'auto');   // « MP4 H.264 + AAC (navigateur, sinon serveur local) »
   const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 150000 }), page.click('#btnExport')]);
   await expect(page.locator('#exportRapport')).toContainText('Export validé');
   const f = await dl.path(); const nom = dl.suggestedFilename();
@@ -371,8 +391,11 @@ test('13 · export final : fichier validé par l’application puis relu par ffp
   expect([vid.width, vid.height]).toEqual(dims);
   expect(Math.abs(Number(sonde.format.duration) - total)).toBeLessThan(0.35);
   expect(aud).toBeTruthy();
-  if (/\.mp4$/.test(nom)) { expect(['h264', 'vp9']).toContain(vid.codec_name); expect(['aac', 'opus']).toContain(aud.codec_name); }
-  else { expect(['vp8', 'vp9']).toContain(vid.codec_name); }
+  // 23/10/2026 : ce Chromium n'a pas d'encodeur H.264 ; le serveur local convertit (ffmpeg) → H.264 + AAC dans tous les cas
+  expect(nom).toMatch(/\.mp4$/); expect(vid.codec_name).toBe('h264'); expect(aud.codec_name).toBe('aac'); expect(Number(aud.sample_rate)).toBe(48000);
+  await expect(page.locator('#exportRapport')).toContainText('H.264 + AAC par ffmpeg sur le serveur local');
+  await expect(page.locator('#exportRapport')).toContainText('consigne embarquée et relue dans le fichier');
+  const tg = etiquettes(f); expect(tg.comment).toMatch(/^Plan 1 \(1,5 s\)/); expect(JSON.parse(tg.massamba).type).toBe('montage');
   // toute la vidéo se décode sans erreur
   execFileSync('ffmpeg', ['-v', 'error', '-xerror', '-i', f, '-f', 'null', '-']);
   test.info().annotations.push({ type: 'export', description: `${nom} : ${vid.codec_name} ${vid.width}×${vid.height}, ${aud.codec_name}, ${Number(sonde.format.duration).toFixed(2)} s (montage ${total.toFixed(2)} s)` });
@@ -492,4 +515,52 @@ test('17 · non-régression des fonctions de montage d’origine (identifiants, 
   await page.click('#btnPlay'); await page.waitForTimeout(600); await page.click('#btnPlay');
   expect(await etatApp(page, () => window.MAMS.studio.S.time)).toBeGreaterThan(0.2);
   expect(s.erreurs).toEqual([]);
+});
+
+// ------------------------------------------------------------------ 18 (23/10/2026)
+test('18 · Autopilote : une idée → plans écrits → génération → montage → son → export H.264 validé, consigne embarquée', async ({ page }) => {
+  const s = await ouvrir(page);
+  await page.waitForFunction(() => window.__MAMS_APP__.A.srv && window.__MAMS_APP__.A.srv.transcodage);
+  await vue(page, 'autopilote');
+  const idee = 'Une grand-mère découvre que son téléphone répète tout. Elle s’en sert pour réclamer ses dettes au quartier.';
+  await page.fill('#apIdee', idee); await page.selectOption('#apVoie', 'demo'); await page.fill('#apDuree', '6'); await page.selectOption('#apFormat', '9:16');
+  await expect(page.locator('#apEstim')).toContainText('2 plan(s) DÉMO');
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 170000 }), page.click('#btnApLancer')]);
+  await page.waitForFunction(() => { const J = window.MAMS.autopilote.etat(); return J && J.fini; }, null, { timeout: 170000 });
+  const J = await etatApp(page, () => { const J = window.MAMS.autopilote.etat(); return { ok: J.ok, etapes: Object.fromEntries(Object.entries(J.etapes).map(([k, v]) => [k, v.etat + ' | ' + (v.detail || '')])), plans: J.plans.map((p) => ({ nature: p.nature, moteur: p.moteur, narration: p.narration })) }; });
+  expect(J.ok).toBe(true);
+  for (const k of ['ecriture', 'consignes', 'generation', 'montage', 'son', 'export']) expect(J.etapes[k]).toMatch(/^fait/);
+  expect(J.etapes.ecriture).toMatch(/découpage local/);   // modèle de texte coupé dans les tests : repli local annoncé
+  expect(J.plans).toHaveLength(2); expect(J.plans.every((p) => p.nature === 'demo')).toBe(true);
+  expect(J.plans.map((p) => p.narration)).toEqual(['Une grand-mère découvre que son téléphone répète tout.', 'Elle s’en sert pour réclamer ses dettes au quartier.']);
+  const m = await etatApp(page, () => ({ scenes: window.__MAMS_APP__.A.scenes.filter((x) => x.autopilote).length, clips: window.MAMS.studio.S.clips.length, subs: window.MAMS.studio.S.subs.length, total: window.MAMS.studio.total(), gen: window.MAMS.studio.S.audio.gen }));
+  expect(m.scenes).toBe(2); expect(m.clips).toBe(2); expect(m.subs).toBe(2); expect(m.gen).toBe('pulse');
+  await expect(page.locator('#apResume')).toContainText('Film validé');
+  const f = await dl.path(), sonde = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', f]).toString());
+  const vid = sonde.streams.find((x) => x.codec_type === 'video'), aud = sonde.streams.find((x) => x.codec_type === 'audio');
+  expect(vid.codec_name).toBe('h264'); expect([vid.width, vid.height]).toEqual([720, 1280]); expect(aud.codec_name).toBe('aac');
+  expect(Math.abs(Number(sonde.format.duration) - m.total)).toBeLessThan(0.35);
+  execFileSync('ffmpeg', ['-v', 'error', '-xerror', '-i', f, '-f', 'null', '-']);
+  const tg = etiquettes(f); expect(tg.comment.indexOf('Idée : ' + idee)).toBe(0);
+  const mj = JSON.parse(tg.massamba); expect(mj.type).toBe('autopilote'); expect(mj.idee).toBe(idee); expect(mj.plansEcrits).toHaveLength(2); expect(mj.reglages.format).toBe('9:16');
+  test.info().annotations.push({ type: 'autopilote', description: `${dl.suggestedFilename()} : ${vid.codec_name} ${vid.width}×${vid.height}, ${aud.codec_name}, ${Number(sonde.format.duration).toFixed(2)} s` });
+  expect(s.erreurs).toEqual([]);
+});
+
+// ------------------------------------------------------------------ 19 (23/10/2026)
+test('19 · Autopilote : chaîne de secours — quota épuisé sur LTX-2.3, le moteur suivant rend le plan, rien de payant', async ({ page }) => {
+  const s = await ouvrir(page); await simulerSpaces(page, { quotaSur: ['lightricks-ltx-2-3.hf.space'] });
+  await page.waitForFunction(() => window.__MAMS_APP__.A.srv && window.__MAMS_APP__.A.srv.transcodage);
+  await vue(page, 'autopilote');
+  await page.fill('#apIdee', 'Un marché coloré au lever du soleil.'); await page.selectOption('#apVoie', 'ia'); await page.fill('#apDuree', '3');
+  await page.uncheck('#apVoix'); await page.uncheck('#apMusique');
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 170000 }), page.click('#btnApLancer')]);
+  await page.waitForFunction(() => { const J = window.MAMS.autopilote.etat(); return J && J.fini; }, null, { timeout: 170000 });
+  const J = await etatApp(page, () => { const J = window.MAMS.autopilote.etat(); return { ok: J.ok, plans: J.plans.map((p) => ({ essais: p.essais, moteur: p.moteur, nature: p.nature })) }; });
+  expect(J.ok).toBe(true); expect(J.plans).toHaveLength(1);
+  expect(J.plans[0].essais[0]).toMatch(/LTX-2\.3/); expect(J.plans[0].moteur).toMatch(/LTX-Video distillé/); expect(J.plans[0].nature).toBe('ia');
+  const quota = await etatApp(page, () => window.__MAMS_APP__.gest.taches.some((t) => t.etat === 'echec' && /Quota GPU gratuit du jour épuisé/.test(t.erreur)));
+  expect(quota).toBe(true);
+  const tg = etiquettes(await dl.path()); expect(JSON.parse(tg.massamba).plansEcrits[0].moteur).toMatch(/LTX-Video/);
+  expect(s.payants).toEqual([]); expect(s.erreurs).toEqual([]);
 });

@@ -47,12 +47,59 @@
       surImage: function (img) { ST.ajouterImage(img, 'depart-' + t.id + '.jpg', { origine: 'genere-ia', nature: 'ia', prompt: t.prompt, modele: 'Pollinations (sana)' }, false).then(persisterMedia); },
       surId: function (id) { suivi({ etat: 'encours', idFournisseur: id }); } };
     var r = await prov.soumettre(m, d, suivi, opts);
+    // consigne embarquée dans le fichier (23/10/2026) : toute vidéo reçue — Space, moteur V1, démo — porte sa consigne
+    var em = await embarquerConsigne(r.video, champsConsigne(t, m, d, r)); r.video = em.blob; t.consigneEmbarquee = em.ok;
     var nature = m.voie === 'demo' ? 'demo' : 'ia';
     var nom = (nature === 'demo' ? 'DEMO-' : m.serveur === 'moteur-v1' ? 'V1-' : 'IA-') + nomFichier(t.titre || t.prompt) + '-' + t.id.slice(-4) + (r.video.type.indexOf('webm') >= 0 ? '.webm' : '.mp4');
-    var med = await ST.ajouterVideo(r.video, nom, { origine: nature === 'demo' ? 'demo' : (m.serveur === 'moteur-v1' ? 'genere-local' : 'genere-ia'), nature: nature, prompt: t.prompt, modele: m.nom, tacheId: t.id }, false);
+    var med = await ST.ajouterVideo(r.video, nom, { origine: nature === 'demo' ? 'demo' : (m.serveur === 'moteur-v1' ? 'genere-local' : 'genere-ia'), nature: nature, prompt: em.consigne || t.prompt, modele: m.nom, tacheId: t.id, consigneEmbarquee: em.ok }, false);
     t.resultatMediaId = med.id; persisterMedia(med);
     if (t.sceneId) { var sc = scene(t.sceneId); if (sc) { sc.variantes.push(med.id); if (!sc.choisie) sc.choisie = med.id; rendreScenes(); } }
     return { mediaId: med.id, graine: r.graine, meta: { source: r.meta && r.meta.source } };
+  }
+  // ---------- CONSIGNE EMBARQUÉE (23/10/2026, « les prompts doivent être embarqués pour chaque vidéo ») : js/meta.js écrit la
+  // consigne et ses réglages dans les métadonnées du fichier (MP4 : udta/ilst ; WebM : Tags), sans ré-encoder une image.
+  function sketchComplet(s) {
+    if (s && s.id && !(s.repliques || []).length && A.v1) s = A.v1.sketchs.filter(function (x) { return x.id === s.id; })[0] || s;
+    return s || {};
+  }
+  function texteSketch(s) {
+    s = sketchComplet(s);
+    return [(s.titre || 'SKETCH') + (s.image ? ' — ' + s.image.replace(/-/g, ' ') : '')].concat((s.repliques || []).map(function (r) { return r.qui + ' : ' + r.texte + (r.chute ? ' (chute)' : ''); })).join('\n');
+  }
+  function champsConsigne(t, m, d, r) {
+    var v1 = m.serveur === 'moteur-v1', consigne = v1 ? (d.sketchs || []).map(texteSketch).join('\n\n') : String(t.prompt || d.prompt || '');
+    var graine = r && r.graine != null ? r.graine : d.graine != null ? d.graine : null;
+    var desc = [m.nom + ' (' + m.fournisseur + ')', v1 ? 'sketch du moteur V1' : d.mode === 'i2v' ? 'image → vidéo' : d.mode === 't2v' ? 'texte → vidéo' : d.mode,
+      d.dureeS ? d.dureeS + ' s' : null, d.format || null, graine != null ? 'graine ' + graine : null, m.voie === 'demo' ? 'DÉMO — pas une génération IA' : null].filter(Boolean).join(' · ');
+    return { titre: (t.titre || consigne.split('\n')[0]).slice(0, 120), consigne: consigne, description: desc,
+      massamba: { type: 'generation', consigne: consigne, modele: m.nom, modeleId: m.id, fournisseur: m.fournisseur, voie: m.voie, nature: m.voie === 'demo' ? 'demo' : 'ia',
+        mode: v1 ? 'v1' : d.mode, dureeS: d.dureeS || null, format: d.format || null, largeur: d.largeur || null, hauteur: d.hauteur || null, graine: graine,
+        imageDepart: !!d.image, imageFin: !!d.fin, sketchs: v1 ? (d.sketchs || []).map(sketchComplet) : undefined, tacheId: t.id, sceneId: t.sceneId || null, genereLe: new Date().toISOString() } };
+  }
+  async function embarquerConsigne(blob, champs) {
+    if (!M.meta) return { blob: blob, ok: false, consigne: champs.consigne, erreur: 'module js/meta.js absent' };
+    try { return { blob: await M.meta.embarquer(blob, champs), ok: true, consigne: champs.consigne }; }
+    catch (e) { return { blob: blob, ok: false, consigne: champs.consigne, erreur: e.message }; }
+  }
+  function champsMontage() {
+    var S = ST.S, plans = S.clips.map(function (c, i) { var m = ST.media(c.mid) || {};
+      return { plan: i + 1, media: m.name || null, type: m.type || c.type, duree: Math.round((c.dur || 0) * 100) / 100, consigne: m.prompt || null, modele: m.modele || null, nature: m.nature || null, origine: m.origine || null }; });
+    var lignes = plans.map(function (p) { return 'Plan ' + p.plan + ' (' + p.duree.toFixed(1).replace('.', ',') + ' s) : ' + (p.consigne || '(' + (p.origine === 'importe' ? 'média importé' : 'sans consigne') + ')') + (p.modele ? ' [' + p.modele + ']' : ''); });
+    return { titre: A.nomProjet, consigne: lignes.join('\n'),
+      description: 'Montage de ' + plans.length + ' plan(s) exporté par MASSAMBA AI Motion Studio' + (plans.some(function (p) { return p.nature === 'demo'; }) ? ' — contient des plans DÉMO (pas des générations IA)' : ''),
+      massamba: { type: 'montage', projet: A.nomProjet, plans: plans, textes: S.texts.map(function (o) { return o.text || ''; }).filter(Boolean), sousTitres: S.subs.length, fps: S.fps, exporteLe: new Date().toISOString() } };
+  }
+  // ---------- EXPORT H.264 PAR LE SERVEUR LOCAL (23/10/2026) : ffmpeg (libx264 + aac) quand le navigateur n'a pas l'encodeur
+  function conversionServeur() { var c = A.srv && A.srv.transcodage; return !!(c && c.h264 && c.aac); }
+  async function transcoderServeur(blob, fps, surSec) {
+    var t0 = Date.now(), tic = setInterval(function () { if (surSec) surSec(Math.round((Date.now() - t0) / 1000)); }, 1000);
+    try {
+      var r = await fetch(A.serveur + '/api/transcoder', { method: 'POST', headers: { 'Content-Type': /webm/.test(blob.type) ? 'video/webm' : 'video/mp4', 'X-Fps': String(fps || 30) }, body: blob });
+      if (!r.ok) { var j = await r.json().catch(function () { return {}; }); throw new Error(j.erreur || ('Conversion H.264 refusée par le serveur local (' + r.status + ')')); }
+      var ctl = null; try { ctl = JSON.parse(decodeURIComponent(r.headers.get('X-Controle') || '')); } catch (e) { ctl = null; }
+      return { blob: new Blob([await r.arrayBuffer()], { type: 'video/mp4' }), ms: +(r.headers.get('X-Transcodage-Ms') || 0) || (Date.now() - t0), controle: ctl,
+        version: ((A.srv.transcodage.version || '').replace(/^ffmpeg version\s*/, '').split(' ')[0]) };
+    } finally { clearInterval(tic); }
   }
   // la voie serveur reçoit la demande complète (fournisseur, modèle) : on surcharge l'appel d'origine
   var soumettreServeur = F.FournisseurServeur.soumettre;
@@ -454,6 +501,7 @@
     sel.innerHTML = '<option value="">— aucun —</option>' + (A.personnages.length ? '<optgroup label="Mes fiches">' + A.personnages.map(function (p) { return '<option value="' + esc(p.id) + '">' + esc(p.nom) + '</option>'; }).join('') + '</optgroup>' : '') +
       '<optgroup label="Nouvelle troupe">' + toutesLesFiches().map(function (p) { return '<option value="' + esc(p.id) + '">' + esc(p.nom) + ' — ' + esc(p.lieu) + '</option>'; }).join('') + '</optgroup>';
     sel.value = v;
+    if (M.autopilote) M.autopilote.remplirPersos(A.personnages.concat(toutesLesFiches()));
   }
   function ficheVersForm(p) {
     A.persoSel = p ? p.id : null; $('#persoTitre').textContent = p ? (p.troupe ? 'Fiche (nouvelle troupe — « Enregistrer » crée votre copie modifiable)' : 'Ma fiche') : 'Nouvelle fiche';
@@ -501,9 +549,9 @@
     $('#libGrid').innerHTML = l.map(function (m) {
       var vis = m.type === 'video' ? '<video src="' + m.el.src + '" muted preload="metadata"></video>' : m.type === 'image' ? '' : '<div class="hint" style="padding:30px 10px">♫</div>';
       var bg = m.type === 'image' ? ' style="background-image:url(' + JSON.stringify(m.img.src || (m.img.toDataURL ? m.img.toDataURL('image/jpeg', 0.6) : '')) + ')"' : '';
-      var tag = m.nature === 'demo' ? '<span class="tag demo">DÉMO</span>' : m.origine === 'genere-ia' ? '<span class="tag ia">généré par IA</span>' : m.origine === 'genere-local' ? '<span class="tag ok">moteur local</span>' : '<span class="tag">' + esc(ST.libelleOrigine(m.origine)) + '</span>';
+      var tag = (m.nature === 'demo' ? '<span class="tag demo">DÉMO</span>' : m.origine === 'genere-ia' ? '<span class="tag ia">généré par IA</span>' : m.origine === 'genere-local' ? '<span class="tag ok">moteur local</span>' : '<span class="tag">' + esc(ST.libelleOrigine(m.origine)) + '</span>') + (m.consigneEmbarquee ? ' <span class="tag ok" title="Consigne et réglages écrits dans les métadonnées du fichier vidéo">consigne embarquée</span>' : '');
       return '<div class="libitem"><div class="vis"' + bg + '>' + vis + '</div><div class="meta"><b title="' + esc(m.name) + '">' + esc(m.name) + '</b>' + tag + (m.duree ? ' · ' + m.duree.toFixed(1) + ' s' : '') + (m.type === 'video' ? ' · ' + (m.aAudio ? 'avec son' : 'sans son') : '') + (m.prompt ? '<br><small>' + esc(m.prompt.slice(0, 90)) + '</small>' : '') + '</div>' +
-        '<div class="acts">' + (m.type !== 'audio' ? '<button class="btn small" data-lib="monter" data-mid="' + m.id + '">Au montage</button>' : '') + (m.type === 'video' ? '<button class="btn ghost small" data-lib="voir" data-mid="' + m.id + '">Voir</button>' : '') + (m.blob ? '<button class="btn ghost small" data-lib="dl" data-mid="' + m.id + '">Télécharger</button>' : '') + '<button class="btn ghost small" data-lib="suppr" data-mid="' + m.id + '">Retirer</button></div></div>';
+        '<div class="acts">' + (m.type !== 'audio' ? '<button class="btn small" data-lib="monter" data-mid="' + m.id + '">Au montage</button>' : '') + (m.type === 'video' ? '<button class="btn ghost small" data-lib="voir" data-mid="' + m.id + '">Voir</button>' : '') + (m.prompt ? '<button class="btn ghost small" data-lib="reprendre" data-mid="' + m.id + '" title="Remettre cette consigne dans Générer">Réutiliser la consigne</button>' : '') + (m.blob ? '<button class="btn ghost small" data-lib="dl" data-mid="' + m.id + '">Télécharger</button>' : '') + '<button class="btn ghost small" data-lib="suppr" data-mid="' + m.id + '">Retirer</button></div></div>';
     }).join('') || '<p class="empty">Médiathèque vide.</p>';
   }
   function brancherMedias() {
@@ -517,6 +565,7 @@
       var b = e.target.closest('[data-lib]'); if (!b) return; var m = ST.media(b.getAttribute('data-mid')), a = b.getAttribute('data-lib'); if (!m) return;
       if (a === 'monter') { ST.S.clips.push(ST.nouveauClip(m)); ST.snap(); ST.renderAll(); ST.status('Ajouté à la timeline'); }
       if (a === 'voir') { vue('generer'); montrerResultat(m.id); }
+      if (a === 'reprendre') { vue('generer'); if (A.mode === 'v1') document.querySelector('.segb[data-mode="t2v"]').click(); $('#genPrompt').value = m.prompt; $('#genPromptFinal').value = m.prompt; ST.status('Consigne reprise du fichier ' + m.name); }
       if (a === 'dl') ST.dl(m.blob, m.name);
       if (a === 'suppr') { m.supprime = true; ST.S.clips = ST.S.clips.filter(function (c) { return c.mid !== m.id; }); ST.snap(); ST.renderAll(); rendreMedias(); }
     });
@@ -595,7 +644,7 @@
     for (var i = 0; i < S.media.length; i++) {
       var m = S.media[i]; if (m.supprime && !utiles[m.id]) continue;
       var data = await donneeMedia(m, enDataUrl); if (!data) continue;
-      var e = { id: m.id, nom: m.name, type: m.type, origine: m.origine, nature: m.nature, prompt: m.prompt, modele: m.modele, tacheId: m.tacheId, duree: m.duree, aAudio: m.aAudio, supprime: !!m.supprime };
+      var e = { id: m.id, nom: m.name, type: m.type, origine: m.origine, nature: m.nature, prompt: m.prompt, modele: m.modele, tacheId: m.tacheId, duree: m.duree, aAudio: m.aAudio, supprime: !!m.supprime, consigneEmbarquee: !!m.consigneEmbarquee };
       e[enDataUrl ? 'data' : 'blob'] = data; medias.push(e);
     }
     var mu = ST.musique(), vo = ST.voix();
@@ -617,7 +666,7 @@
     var echecs = 0;
     for (var i = 0; i < p.medias.length; i++) {
       var e = p.medias[i], b = versBlob(e); if (!b) continue;
-      var info = { id: e.id, origine: e.origine, nature: e.nature, prompt: e.prompt, modele: e.modele, tacheId: e.tacheId };
+      var info = { id: e.id, origine: e.origine, nature: e.nature, prompt: e.prompt, modele: e.modele, tacheId: e.tacheId, consigneEmbarquee: !!e.consigneEmbarquee };
       try {
         var m = e.type === 'video' ? await ST.ajouterVideo(b, e.nom, info, false) : e.type === 'audio' ? await ST.ajouterAudioMedia(b, e.nom, Object.assign(info, { duree: e.duree })) : await ST.ajouterImage(b, e.nom, info, false);
         if (e.supprime) m.supprime = true; if (e.note) m.note = e.note;
@@ -663,7 +712,8 @@
     $('#progressWrap').style.display = 'block'; $('#exportRapport').innerHTML = '';
     var prog = function (p, txt) { $('#progressBar>i').style.width = Math.round(p * 100) + '%'; $('#progressTxt').textContent = Math.round(p * 100) + ' % — ' + (txt || ''); };
     try {
-      var r = await X.exporter({ forcerWebm: $('#selExportFormat').value === 'webm', progres: prog, nom: nomFichier(A.nomProjet) });
+      var fmt = $('#selExportFormat').value;
+      var r = await X.exporter({ forcerWebm: fmt === 'webm', progres: prog, nom: nomFichier(A.nomProjet), transcoder: fmt !== 'webm' && conversionServeur() ? transcoderServeur : null, consigne: champsMontage() });
       $('#exportRapport').innerHTML = '<b class="' + (r.rapport.ok ? 'ok' : 'ko') + '">' + (r.rapport.ok ? 'Export validé' : 'Export à vérifier') + '</b> — ' + esc(r.chemin) + '<br>' + r.rapport.details.map(esc).join('<br>') + (r.rapport.sources && r.rapport.sources.length ? '<br>Son mixé : ' + esc(r.rapport.sources.join(', ')) : '<br>Aucun son dans le montage.');
       ST.dl(r.blob, r.nom); ST.status(r.rapport.ok ? 'Vidéo exportée et validée' : 'Vidéo exportée — contrôles à revoir', 0, !r.rapport.ok); rendreExports();
     } catch (e) { $('#exportRapport').innerHTML = '<b class="ko">Export impossible</b> — ' + esc(e.message); ST.status('Export impossible', 0, 1); }
@@ -683,7 +733,15 @@
     try { var r = await fetch(A.serveur + '/api/sante'); if (!r.ok) throw new Error(r.status); A.srv = await r.json();
       var f = A.srv.fournisseurs; $('#srvEtat').innerHTML = 'Serveur joint. Voies payantes : <b>' + (A.srv.payantAutorise ? 'autorisées (plafond ' + A.srv.plafondPayantJour + '/jour)' : 'désactivées') + '</b>.<br>' + Object.keys(f).map(function (k) { return esc(f[k].nom) + ' : ' + (f[k].configure ? (f[k].actif ? 'actif' : 'configuré, inactif') : 'non configuré'); }).join(' · ') + '<br>Voix Piper locale : ' + (A.srv.voix && A.srv.voix.piper ? 'disponible' : 'absente');
     } catch (e) { A.srv = null; if (!silencieux) $('#srvEtat').textContent = 'Serveur local injoignable à ' + A.serveur + ' (' + e.message + '). Les moteurs gratuits du navigateur restent utilisables.'; }
-    remplirModeles(); rendreRegistre();
+    remplirModeles(); rendreRegistre(); majCodecs();
+  }
+  function majCodecs() {
+    if (!X) return;
+    X.codecsDisponibles(ST.canvas().width, ST.canvas().height, ST.S.fps, ST.S.bitrate).then(function (c) {
+      var nav = c.chemin === 'mp4' ? 'Encodeur du navigateur : ' + c.video.codec + (c.audio ? ' + ' + c.audio.codec : ' (sans encodeur audio)') + ' — MP4 image par image.' : 'WebCodecs absent : export WebM en temps réel.';
+      var h264 = c.chemin === 'mp4' && /^avc1/.test(c.video.codec);
+      $('#exportCodecs').textContent = nav + (h264 ? '' : conversionServeur() ? ' Conversion H.264 + AAC par le serveur local (ffmpeg) : active.' : ' Conversion H.264 : lancez le serveur local (ffmpeg) pour l’obtenir.') + ' Consigne embarquée dans le fichier.';
+    });
   }
   function brancherMoteurs() {
     $('#btnRegVerifier').addEventListener('click', async function () { this.disabled = true; for (var i = 0; i < R.MODELES.length; i++) { var m = R.MODELES[i]; if (m.voie === 'navigateur') { A.caps[m.id] = await F.FournisseurSpace.decrire(m, { jeton: A.jeton }); rendreRegistre(); } } this.disabled = false; remplirModeles(); });
@@ -713,14 +771,19 @@
     $('#pickerFermer').addEventListener('click', function () { $('#pickerModal').classList.remove('on'); });
     $('#btnExport').addEventListener('click', lancerExport); $('#btnExport2').addEventListener('click', lancerExport);
     brancherGenerer(); brancherStoryboard(); brancherPersos(); brancherMedias(); brancherAudio(); brancherHistorique(); brancherProjets(); brancherMoteurs();
+    // Autopilote (23/10/2026) : il pilote les mêmes fonctions que l'utilisateur (storyboard, tâches, montage, export)
+    if (M.autopilote) M.autopilote.brancher({ A: A, gest: gest, ST: ST, R: R, F: F, P: P, K: K, X: X, generer: generer, genererScene: genererScene, nouvelleScene: nouvelleScene,
+      promptScene: promptScene, placerScenes: placerScenes, rendreScenes: rendreScenes, champsMontage: champsMontage, chargerCatalogueV1: chargerCatalogueV1,
+      confirmer: confirmer, vue: vue, nomFichier: nomFichier, sauverPlusTard: sauverPlusTard,
+      exporter: function (prog, consigne) { return X.exporter({ forcerWebm: false, progres: prog, nom: nomFichier(A.nomProjet), transcoder: conversionServeur() ? transcoderServeur : null, consigne: consigne }); } });
     window.addEventListener('offline', function () { ST.status('Hors ligne : les générations en cours échoueront proprement', 0, 1); });
     window.addEventListener('online', function () { ST.status('Connexion rétablie'); });
     remplirModeles(); remplirSelectPersos(); ficheVersForm(null); majTaches();
-    if (X) X.codecsDisponibles(ST.canvas().width, ST.canvas().height, ST.S.fps, ST.S.bitrate).then(function (c) { $('#exportCodecs').textContent = c.chemin === 'mp4' ? 'Encodeur disponible : ' + c.video.codec + (c.audio ? ' + ' + c.audio.codec : ' (sans encodeur audio)') + ' — MP4 image par image.' : 'WebCodecs absent : export WebM en temps réel.'; });
+    majCodecs();
     K.idb.lire('etat', 'projet').then(function (p) { return p ? charger(p, 'auto') : null; }).catch(function () { return null; }).then(function () { restaurationFaite = true; });
     if (/^https?:/.test(location.protocol) && /^(127\.0\.0\.1|localhost)$/.test(location.hostname)) $('#srvUrl').value = location.origin;
     testerServeur(true);
-    window.__MAMS_APP__ = { A: A, gest: gest, vue: vue, generer: generer, charger: charger, instantane: instantane, sauverProjet: sauverProjet, lancerExport: lancerExport, decouper: decouper, placerScenes: placerScenes, toutesLesFiches: toutesLesFiches, testerServeur: testerServeur };
+    window.__MAMS_APP__ = { A: A, gest: gest, vue: vue, autopilote: M.autopilote, generer: generer, charger: charger, instantane: instantane, sauverProjet: sauverProjet, lancerExport: lancerExport, decouper: decouper, placerScenes: placerScenes, toutesLesFiches: toutesLesFiches, testerServeur: testerServeur };
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', demarrer); else demarrer();
 })();

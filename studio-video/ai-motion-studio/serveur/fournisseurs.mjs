@@ -176,6 +176,7 @@ export const moteurV1 = {
     });
   },
   catalogue() { return this.executer(['catalogue']); },
+  prechauffe() { return this.executer(['prechauffe']); },
   controle(demande, dossier) { const f = path.join(dossier, `controle-${Date.now()}.json`); fs.writeFileSync(f, JSON.stringify(demande)); return this.executer(['controle', f]).finally(() => fs.rmSync(f, { force: true })); },
   async soumettre(d, f, t, dossier) {
     const rep = path.join(dossier, `v1-${t.id}`); fs.mkdirSync(rep, { recursive: true });

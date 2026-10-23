@@ -6,8 +6,16 @@
 #   python3 moteur_v1.py catalogue                     → scènes prêtes (duos) et sketchs de la réserve, en JSON
 #   python3 moteur_v1.py controle  <demande.json>      → verdict de la grille de ton sans tourner
 #   python3 moteur_v1.py tourne    <demande.json> <dossier>  → tourne, écrit <dossier>/resultat.json (chemin du MP4, durées)
+#   python3 moteur_v1.py prechauffe                    → essai des visages de toutes les scènes prêtes (mémorisé), au démarrage
 # Variables : MASSAMBA_BIBLIO (bibliothèque : prep/, stock/sketchs.json), PIPER_VOICES, MOTEUR_V1_DIR (code du moteur).
 import json, os, re, subprocess, sys, time
+
+# VITESSE (23/10/2026, « le tournage a pris 56 minutes pour ce seul sketch […] objectif : moins de 3 minutes par sketch ») :
+# les réglages de la fabrique GitHub (.github/workflows/fabrique.yml l. 133-134) deviennent ceux de l'application. Sans
+# OMP_NUM_THREADS, chaque processus de rendu ouvrait un fil par cœur (33 fils relevés pour 4 processus sur 4 cœurs) ; le même
+# sketch est passé de 3 641 s (machine partagée, fils non bornés) à 306 s (machine libre, un fil par processus).
+for _k in ('OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS'): os.environ.setdefault(_k, '1')
+os.environ.setdefault('TOURNE_PROCS', str(os.cpu_count() or 4))
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 MOTEUR = os.path.abspath(os.environ.get('MOTEUR_V1_DIR') or os.path.join(ICI, '..', '..', 'moteur-troupe'))
@@ -97,10 +105,52 @@ def tourne(demande, d):
     return res
 
 
+def _decor_pret(SV, scene):
+    """caches de préparation d'un décor écrits par tourne.py au premier sketch : décor vivant (vie.npz), linge (linge.npz),
+    profondeur et squelettes (rig/)."""
+    p = os.path.join(SV.BIBLIO, 'prep', scene)
+    return all(os.path.exists(os.path.join(p, f)) for f in ('vie.npz', 'linge.npz', 'profondeur.png', 'rig'))
+
+
+def prechauffe():
+    """PRÉCHAUFFAGE (23/10/2026) : tout ce qui se calcule une fois par décor est fait au démarrage du serveur, pas pendant un
+    sketch. (1) l'essai des visages de chaque scène prête (fume_visages.py : 33,8 s au premier sketch d'une scène, mémorisé
+    ensuite) ; (2) la préparation du décor (décor vivant étiqueté par le juge visuel local, linge, profondeur, squelettes) :
+    py-spy l'a trouvée dans tourne.py au premier sketch du marché, juge Idefics3 sur UN cœur (OMP_NUM_THREADS=1, réglage du
+    rendu parallèle) — ici un seul processus, donc tous les cœurs, et un tournage « sans rendu » d'un sketch de la réserve."""
+    SV = _sv(); import usine; pretes = SV.scenes_pretes(); t0 = time.time()
+    import tempfile
+    with tempfile.TemporaryDirectory() as t:
+        r = subprocess.run([sys.executable, os.path.join(MOTEUR, 'fume_visages.py'), os.path.join(SV.BIBLIO, 'prep'), os.path.join(t, 'visages.jpg'), ','.join(sorted(pretes))],
+                           capture_output=True, text=True, cwd=t)
+    lignes = (r.stdout or '').strip().splitlines()
+    res = {'ok': r.returncode == 0, 'scenes': sorted(pretes), 'deja_verifies': sum('déjà vérifié' in l for l in lignes), 'verifies': sum(l.endswith(' ok') for l in lignes),
+           'fin': lignes[-1] if lignes else '', 'decors': {}}
+    reserve = SV.reserve() if os.path.isfile(os.path.join(SV.BIBLIO, 'stock', 'sketchs.json')) else []
+    tous = {k: str(os.cpu_count() or 4) for k in ('OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS')}
+    for sc in sorted(pretes):
+        if _decor_pret(SV, sc): res['decors'][sc] = 'déjà prêt'; continue
+        sk = next((x for x in reserve if x.get('image') == sc), None)
+        if not sk: res['decors'][sc] = 'aucun sketch de la réserve pour le préparer'; continue
+        t1 = time.time()
+        try:
+            with tempfile.TemporaryDirectory(dir=os.environ.get('PRECHAUFFE_DIR') or None) as d:
+                _histoire(d, 'prechauffe-' + sc, [sk]); usine.episode(d)
+                env = dict(PIPER_VOICES=os.environ.get('PIPER_VOICES', ''), **tous)
+                for a in ([os.path.join(MOTEUR, 'voix.py')], [os.path.join(MOTEUR, 'levres.py'), 'timeline.json']):
+                    usine._py(*a, env=env, cwd=d)
+                usine._py(os.path.join(MOTEUR, 'tourne.py'), 'montage.json', os.path.join(d, 'v1'), env=dict(env, ETIREMENT='1', TOURNE_SANS_RENDU='1', TOURNE_PROCS='1'), cwd=d)
+            res['decors'][sc] = f'préparé en {round(time.time() - t1)} s' if _decor_pret(SV, sc) else 'préparation incomplète'
+        except Exception as e:
+            res['decors'][sc] = 'échec : ' + str(e)[:200]
+    res['secondes'] = round(time.time() - t0, 1)
+    return res
+
 if __name__ == '__main__':
     a = sys.argv[1:] or ['catalogue']
     try:
         if a[0] == 'catalogue': print(json.dumps(catalogue(), ensure_ascii=False))
+        elif a[0] == 'prechauffe': print(json.dumps(prechauffe(), ensure_ascii=False))
         elif a[0] == 'controle': print(json.dumps(controle(json.load(open(a[1], encoding='utf-8'))), ensure_ascii=False))
         elif a[0] == 'tourne': print(json.dumps(tourne(json.load(open(a[1], encoding='utf-8')), a[2]), ensure_ascii=False))
         else: raise SystemExit('commande inconnue : ' + a[0])

@@ -41,7 +41,13 @@ Ce guide s'adresse à quelqu'un qui n'est pas développeur. Chaque étape dit qu
 2. Copiez `config.example.env` en `.env`, puis renseignez :
    - `MASSAMBA_BIBLIO` : le dossier de la bibliothèque de la troupe ;
    - `PIPER_VOICES` : le dossier des voix Piper.
-3. Relancez le serveur. Le mode **Sketch V1** apparaît alors dans le Studio de génération.
+3. Relancez le serveur. Le mode **Sketch V1** apparaît alors dans le Studio de génération, et la voie « Sketch de la troupe » dans l'Autopilote.
+4. Au démarrage, le serveur **préchauffe** le moteur : il vérifie une fois les visages de chaque scène prête (quelques minutes la première fois, mémorisé ensuite). Un sketch n'attend donc plus cette étape. `PRECHAUFFE_V1=0` désactive le préchauffage.
+5. Vitesse : le serveur règle un fil de calcul par processus de rendu (`OMP_NUM_THREADS=1`) et un processus par cœur (`TOURNE_PROCS`), comme la fabrique GitHub. Mesure du 23/10/2026 sur 4 cœurs : un sketch neuf de 20 s tourné en 121 s de bout en bout.
+
+### Export H.264 + AAC (ffmpeg)
+
+Si votre navigateur n'a pas d'encodeur H.264 (Chromium libre, certains Linux), le serveur local convertit l'export en MP4 H.264 + AAC avec **ffmpeg** (libx264 + aac), puis le contrôle (ffprobe et décodage intégral). Installez ffmpeg et mettez-le dans le PATH (ou indiquez `FFMPEG=` et `FFPROBE=` dans `.env`). Au démarrage, le terminal affiche `conversion H.264 : ffmpeg … (libx264 + aac)`.
 
 ### Fournisseurs payants (fermés par défaut)
 
