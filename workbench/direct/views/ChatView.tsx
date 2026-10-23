@@ -36,7 +36,10 @@ import {
 } from '../../web/components/ui';
 import { CodeBlock, DiffView, Markdown } from '../../web/components/rich';
 import { cx, fmtCost, fmtDuration, fmtPrice, fmtTokens, shortModel } from '../../web/lib/format';
-import { queueMessage, resolveApproval, resolvePlan, runAgent, stopAgent } from '../lib/agent';
+import { compactSession, queueMessage, resolveApproval, resolvePlan, resolveQuestion, runAgent, stopAgent } from '../lib/agent';
+import { BUILTIN_COMMANDS, expandCommand, harnessOf, instructionFiles, searchSkills, workspaceCommands } from '../lib/harness';
+import { files as wsFiles, getFile } from '../lib/vfs';
+import { mcpState } from '../lib/mcp';
 import { allAgents } from '../lib/roles';
 import { useStore } from '../lib/store';
 import type { Attachment, Item, PermissionMode, Session } from '../lib/types';
@@ -221,6 +224,8 @@ const ItemView = memo(function ItemView({ item, sessionId }: { item: Item; sessi
       return <DesignCard item={item} />;
     case 'plan':
       return <PlanCard item={item} />;
+    case 'question':
+      return <QuestionCard item={item} sessionId={sessionId} />;
     case 'checklist':
       return (
         <div className="my-2 rounded-xl border border-line bg-panel px-3 py-2">
@@ -456,6 +461,42 @@ function ApprovalCard({ item }: { item: Extract<Item, { kind: 'approval' }> }) {
   );
 }
 
+function QuestionCard({ item, sessionId }: { item: Extract<Item, { kind: 'question' }>; sessionId: string }) {
+  const [other, setOther] = useState('');
+  if (item.answer)
+    return (
+      <div className="my-1 px-2 text-[12px] text-faint" data-testid="question-done">
+        ? {item.question} → <span className="text-fg">{item.answer}</span>
+      </div>
+    );
+  return (
+    <div className="wb-in my-2 rounded-xl border border-accent/50 bg-accent-soft p-3" data-testid="question-card">
+      <div className="mb-2 text-[13px] font-semibold">L’agent vous pose une question</div>
+      <div className="mb-2 text-[13.5px]">{item.question}</div>
+      <div className="flex flex-wrap gap-2">
+        {item.options.map((o) => (
+          <Button key={o} size="sm" onClick={() => resolveQuestion(sessionId, item.id, o)} data-testid="question-option">
+            {o}
+          </Button>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <input
+          value={other}
+          onChange={(e) => setOther(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && other.trim() && resolveQuestion(sessionId, item.id, other.trim())}
+          placeholder="Autre réponse…"
+          className="min-w-0 flex-1 rounded-lg border border-line bg-panel px-2.5 py-1.5 text-[13px] outline-none focus:border-accent"
+          data-testid="question-input"
+        />
+        <Button size="sm" variant="primary" disabled={!other.trim()} onClick={() => resolveQuestion(sessionId, item.id, other.trim())}>
+          Répondre
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function PlanCard({ item }: { item: Extract<Item, { kind: 'plan' }> }) {
   const [steps, setSteps] = useState(item.steps);
   const [edit, setEdit] = useState(false);
@@ -535,14 +576,64 @@ function PlanCard({ item }: { item: Extract<Item, { kind: 'plan' }> }) {
 
 // ── composer ─────────────────────────────────────────────────────────────
 
-const SLASH = [
-  { cmd: '/clear', desc: 'Nouvelle session' },
-  { cmd: '/plan', desc: 'Basculer le mode Plan' },
-  { cmd: '/mission', desc: 'Basculer le mode Mission autonome' },
-  { cmd: '/fix', desc: 'Mission « Répare tout »' },
-  { cmd: '/review', desc: 'Faire relire le travail par l’agent Relecteur' },
-  { cmd: '/export', desc: 'Exporter la session (Markdown)' },
-];
+/** Every slash command (harness, 23/10/2026): the app's, the plugins' and the workspace's, then one per skill. */
+function slashCommands(): { cmd: string; desc: string; kind: 'app' | 'command' | 'skill' }[] {
+  const st = useStore.getState();
+  const h = harnessOf(st.settings.harness);
+  const custom = [...workspaceCommands(Object.values(wsFiles())), ...h.commands];
+  return [
+    ...BUILTIN_COMMANDS.map((c) => ({ cmd: c.cmd, desc: c.desc, kind: 'app' as const })),
+    ...custom.map((c) => ({ cmd: `/${c.name}`, desc: `${c.description}${c.argumentHint ? ` — ${c.argumentHint}` : ''} (${c.source})`, kind: 'command' as const })),
+    ...st.skills.filter((s) => s.enabled).map((s) => ({ cmd: `/${s.name}`, desc: s.description.slice(0, 110), kind: 'skill' as const })),
+  ];
+}
+
+/** Local harness answers (no model call): help, skills, hooks, permissions, memory, MCP. */
+function harnessInfo(sid: string, cmd: string, arg: string): boolean {
+  const st = useStore.getState();
+  const h = harnessOf(st.settings.harness);
+  const say = (title: string, lines: string[], detail?: string) =>
+    st.pushItem(sid, { kind: 'intel', id: crypto.randomUUID(), title, tone: 'info', lines, detail });
+  if (cmd === '/help') {
+    const all = slashCommands();
+    say('Commandes du harness', [
+      `${all.filter((c) => c.kind === 'app').length} commandes de l’app, ${all.filter((c) => c.kind === 'command').length} commandes personnalisées, ${all.filter((c) => c.kind === 'skill').length} compétences appelables par /nom.`,
+      'Réglages › Harness : hooks, règles de permission, fichiers d’instructions, compétences toujours actives, pont local (REA et votre PC).',
+    ], all.filter((c) => c.kind !== 'skill').map((c) => `${c.cmd} — ${c.desc}`).join('\n'));
+    return true;
+  }
+  if (cmd === '/skills') {
+    const list = arg ? searchSkills(arg, st.skills, 40) : st.skills;
+    say(`${st.skills.length} compétences installées (${st.skills.filter((s) => s.enabled).length} actives)`, [
+      arg ? `${list.length} résultat(s) pour « ${arg} ».` : `Toujours actives : ${h.alwaysSkills.join(', ') || 'aucune'}.`,
+    ], list.map((s) => `${s.enabled ? '●' : '○'} ${s.name} — ${s.description.slice(0, 140)}`).join('\n'));
+    return true;
+  }
+  if (cmd === '/hooks') {
+    say(`${h.hooks.filter((x) => x.enabled).length} hook(s) actif(s)`, h.hooks.length ? h.hooks.map((x) => `${x.enabled ? '●' : '○'} ${x.event}${x.matcher ? ` [${x.matcher}]` : ''} → ${x.action}${x.message ? ` : ${x.message}` : ''}`) : ['Aucun hook. Réglages › Harness pour en ajouter (ou importer le settings.json de Claude Code).']);
+    return true;
+  }
+  if (cmd === '/permissions') {
+    const p = h.permissions;
+    say('Règles de permission (deny > ask > allow, avant le mode)', [`refuser : ${p.deny.join(' · ') || '—'}`, `demander : ${p.ask.join(' · ') || '—'}`, `autoriser : ${p.allow.join(' · ') || '—'}`]);
+    return true;
+  }
+  if (cmd === '/memory') {
+    const f = instructionFiles(Object.values(wsFiles()));
+    say('Fichiers d’instructions lus à chaque tour', f.length ? f.map((x) => `${x.path} (${x.text.length} car.)`) : ['Aucun : créez MASSAMBA.md (ou CLAUDE.md, AGENTS.md) à la racine de l’espace, ou tapez /init.'], f.map((x) => `── ${x.path}\n${x.text}`).join('\n\n'));
+    return true;
+  }
+  if (cmd === '/mcp') {
+    say('Serveurs MCP', st.mcp.map((m) => `${m.enabled ? '●' : '○'} ${m.name} — ${mcpState(m.name).status}${mcpState(m.name).tools.length ? ` (${mcpState(m.name).tools.length} outils)` : ''}`).concat(st.mcp.some((m) => m.name === 'poste') ? [] : ['Pont local absent : lancez massamba-pont puis Réglages › Harness › Pont local.']));
+    return true;
+  }
+  if (cmd === '/compact') {
+    const r = compactSession(sid);
+    say('Conversation compactée', [`${r.before} → ${r.after} jetons estimés pour l’historique envoyé au modèle.`]);
+    return true;
+  }
+  return false;
+}
 
 /** A link the model wrote to a local file becomes a real download of the workspace file. */
 function resolveFileLink(href: string, sid?: string | null) {
@@ -723,7 +814,7 @@ function Composer({ session }: { session: Session }) {
     }
     if (running) return;
     if (text.startsWith('/')) {
-      const cmd = text.split(/\s/)[0];
+      const cmd = text.split(/\s/)[0] ?? '';
       if (cmd === '/clear') return void (useStore.getState().newSession(), useStore.setState({ draft: '' }));
       if (cmd === '/plan')
         return void useStore.setState({ agentMode: agentMode === 'plan' ? 'chat' : 'plan', draft: '' });
@@ -740,6 +831,29 @@ function Composer({ session }: { session: Session }) {
         return;
       }
       if (cmd === '/export') return void (exportMarkdown(session), useStore.setState({ draft: '' }));
+      const arg = text.slice(cmd.length).trim();
+      if (harnessInfo(session.id, cmd, arg)) return void useStore.setState({ draft: '' });
+      const builtin = BUILTIN_COMMANDS.find((c) => c.cmd === cmd && c.prompt);
+      const st = useStore.getState();
+      const custom = [...workspaceCommands(Object.values(wsFiles())), ...harnessOf(st.settings.harness).commands].find((c) => `/${c.name}` === cmd);
+      const skill = st.skills.find((s) => s.enabled && `/${s.name}` === cmd);
+      const prompt = builtin
+        ? `${builtin.prompt}${arg ? `\n\nPrécision : ${arg}` : ''}`
+        : custom
+          ? expandCommand(custom.body, arg, (p) => {
+              const f = getFile(p);
+              return f && !f.binary ? f.data : undefined;
+            })
+          : skill
+            ? `Charge et suis la compétence « ${skill.name} » (skill.use) pour : ${arg || 'la demande en cours'}`
+            : null;
+      if (prompt) {
+        useStore.setState({ draft: '' });
+        const att = files;
+        setFiles([]);
+        void runAgent(session.id, prompt, att).then(refreshCredits);
+        return;
+      }
       if (cmd === '/review') {
         useStore.setState({ draft: '' });
         patch({ agent: 'reviewer' });
@@ -832,8 +946,8 @@ function Composer({ session }: { session: Session }) {
           className="block w-full resize-none bg-transparent px-4 pt-3 text-[14px] outline-none placeholder:text-faint"
         />
         {draft.startsWith('/') && !draft.includes(' ') && (
-          <div className="mx-3 mb-1 rounded-lg border border-line bg-elev p-1">
-            {SLASH.filter((c) => c.cmd.startsWith(draft)).map((c) => (
+          <div className="mx-3 mb-1 max-h-[280px] overflow-auto rounded-lg border border-line bg-elev p-1" data-testid="slash-menu">
+            {slashCommands().filter((c) => c.cmd.startsWith(draft)).slice(0, 14).map((c) => (
               <button
                 key={c.cmd}
                 className="flex w-full gap-3 rounded-md px-2 py-1 text-left text-[12.5px] hover:bg-hover"

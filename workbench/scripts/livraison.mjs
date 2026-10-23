@@ -25,9 +25,12 @@ if (!fs.existsSync(path.join('dist', APP))) {
 }
 // 23/10/2026 : les scènes de la nouvelle troupe pour le Circuit vidéo (dist/massamba-troupe-film.js, construit par
 // scripts/troupe_film_pack.py depuis la bibliothèque du moteur ; jamais versionné).
-const packs = ['massamba-troupe-film.js'].filter((f) => fs.existsSync(path.join('dist', f)));
+// 23/10/2026 (harness) : toutes les compétences, commandes et agents de la session (dist/massamba-skills*.js, construit
+// par scripts/skills_pack.mjs ; jamais versionné).
+const skillParts = fs.readdirSync('dist').filter((f) => /^massamba-skills(-\d+)?\.js$/.test(f)).sort();
+const packs = ['massamba-troupe-film.js', ...skillParts].filter((f) => fs.existsSync(path.join('dist', f)));
 // v63: the « massamba » MCP server (JEV's tools in Claude Desktop / Claude Code), when built.
-const MCP = ['massamba-jev.mcpb', 'massamba-mcp.mjs'].filter((f) => fs.existsSync(path.join('dist', 'mcp', f)));
+const MCP = ['massamba-jev.mcpb', 'massamba-mcp.mjs', 'massamba-pont.mjs'].filter((f) => fs.existsSync(path.join('dist', 'mcp', f)));
 const files = [APP, ...packs, ...MCP];
 const srcOf = (f) => (MCP.includes(f) ? path.join('dist', 'mcp', f) : path.join('dist', f));
 
@@ -78,6 +81,20 @@ const notice = [
   '- Le devis s affiche avant toute depense ; un plafond par film bloque tout appel qui le depasserait.',
   ...(packs.length
     ? ['- massamba-troupe-film.js (les scenes de la nouvelle troupe) : gardez-le dans ce dossier, a cote de l application.']
+    : []),
+  '',
+  'NOUVEAU DU 23/10/2026 : WORKBENCH = HARNESS COMPLET',
+  ...(skillParts.length
+    ? [`- ${skillParts.join(', ')} : toutes les competences, commandes et agents de la session, installes au demarrage.`]
+    : []),
+  '- Hooks, regles de permission, fichiers d instructions (MASSAMBA.md, CLAUDE.md, AGENTS.md), commandes /…',
+  '  (tapez / dans le chat), formats de sortie libres : Reglages > Harness.',
+  ...(fs.existsSync(path.join('dist', 'mcp', 'massamba-pont.mjs'))
+    ? [
+        '- REA et votre PC dans la Workbench (facultatif) : ouvrez un terminal dans votre dossier de travail et lancez',
+        '  node "<chemin>/massamba-pont.mjs"  (Node 22.19 ou plus pour REA). Le pont affiche un code d appairage :',
+        '  collez-le dans Reglages > Harness > Pont local. Il n ecoute que sur cet ordinateur (127.0.0.1).',
+      ]
     : []),
   '',
   ...(MCP.length

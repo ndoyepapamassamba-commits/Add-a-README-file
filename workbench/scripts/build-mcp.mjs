@@ -23,6 +23,20 @@ await build({
   logLevel: 'warning',
 });
 const code = fs.readFileSync(file);
+// 23/10/2026 : le PONT LOCAL (REA + ce PC pour la Workbench), un seul fichier Node lui aussi.
+const pont = path.join(OUT, 'massamba-pont.mjs');
+await build({
+  entryPoints: ['server/pont/cli.ts'],
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  target: 'node18',
+  outfile: pont,
+  minify: true,
+  legalComments: 'inline',
+  banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
+  logLevel: 'warning',
+});
 
 const TOOLS = [
   ['jev_recherche_web', 'Recherche web gratuite sans clé (Exa, Parallel, Tavily, Firecrawl).'],
@@ -47,4 +61,4 @@ const manifest = {
 };
 const mcpb = zipSync({ 'manifest.json': strToU8(JSON.stringify(manifest, null, 2)), 'server/index.mjs': new Uint8Array(code) }, { level: 9 });
 fs.writeFileSync(path.join(OUT, 'massamba-jev.mcpb'), mcpb);
-console.log(`mcp : ${file} ${(code.length / 1048576).toFixed(1)} Mio · ${path.join(OUT, 'massamba-jev.mcpb')} ${(mcpb.length / 1048576).toFixed(1)} Mio`);
+console.log(`mcp : ${file} ${(code.length / 1048576).toFixed(1)} Mio · ${path.join(OUT, 'massamba-jev.mcpb')} ${(mcpb.length / 1048576).toFixed(1)} Mio · ${pont} ${(fs.statSync(pont).size / 1048576).toFixed(1)} Mio`);

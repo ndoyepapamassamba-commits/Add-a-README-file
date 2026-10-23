@@ -18,6 +18,7 @@ import { probeLibrary } from '../lib/library';
 import { keylessUsage } from '../lib/freeEngines';
 import { BrainSettings } from './BrainSettings';
 import { EconomySettings } from './EconomySettings';
+import { HarnessSettings } from './HarnessSettings';
 
 /** « Tester la recherche gratuite » : each keyless service called from this page, with status, latency and reason. */
 function FreeSearchProbe() {
@@ -347,6 +348,10 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
             />
           </Field>
         </div>
+      </Section>
+
+      <Section title="Harness — compétences, hooks, permissions, pont local (REA)">
+        <HarnessSettings />
       </Section>
 
       <Section title="Économie JEV ÷100 (modèle payant ultra puissant)">

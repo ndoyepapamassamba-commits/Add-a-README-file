@@ -58,10 +58,25 @@ import { seedHits } from '../../server/jev/memory/seed';
 import { ALTERATION } from '../../server/jev/omni/mission';
 import { pilotAnchor } from '../../server/jev/omni/pilot';
 import { THEMES, buildTheme, setActiveTheme, themeOf } from '../../server/services/houseDesign';
-import { LOGO_TOOLS, THEMED_TOOLS, applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, themeAskedByUser, type DeliverableKind } from '../../server/services/premiumDesigns';
+import {
+  LOGO_TOOLS,
+  THEMED_TOOLS,
+  applyWebTheme,
+  deliverableFromCode,
+  deliverableFromText,
+  kindForTool,
+  themeAskedByUser,
+  type DeliverableKind,
+} from '../../server/services/premiumDesigns';
 import { isContinuation, missionOf, resumeText } from '../../server/services/missionResume';
 import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
-import { addImagePageDocx, addImageSlidePptx, addImageToHtml, addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
+import {
+  addImagePageDocx,
+  addImageSlidePptx,
+  addImageToHtml,
+  addLogoToHtml,
+  addLogoToOffice,
+} from '../../server/services/officeLogo';
 import { removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
 import { strFromU8, unzipSync } from 'fflate';
 import { DESIGN_ARCHITECT, needsArchitect } from '../../server/services/designArchitect';
@@ -75,7 +90,13 @@ import { cloneData, dashFit, renderCloneSvg, type CloneData } from '../../server
 import { chatTable, previewData, rasterise } from './designClone';
 import { LOGO_VARIANTS } from '../../server/services/logoHarmony';
 import { excelChart } from '../../server/services/layoutClone';
-import { extractFacts, lessonFrom, memoryBlock, mergeFacts, recall as recallMemory } from '../../server/jev/memory/semantic';
+import {
+  extractFacts,
+  lessonFrom,
+  memoryBlock,
+  mergeFacts,
+  recall as recallMemory,
+} from '../../server/jev/memory/semantic';
 import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
 import type { SkillVersion } from '../../server/jev/fabric/skills';
 import { accountingOf, hashText, type CallKind, type CallRec } from '../../server/jev/science';
@@ -108,14 +129,49 @@ import { isDocument, isImage } from '../../server/services/documentsCore';
 import { LLMError, type ChatMessage, type ContentPart, type ToolCall } from '../../server/llm/types';
 import { complete, friendlyError, getKey } from './llm';
 import { reflexAnswer } from './jevBrain';
-import { connectedTools, ensureConnected, mcpState } from './mcp';
+import { callTool, connectedTools, ensureConnected, mcpState } from './mcp';
+import {
+  catalogFor,
+  evaluateRules,
+  harnessOf,
+  instructionFiles,
+  runHooks,
+  type HookInput,
+  type HookRunners,
+} from './harness';
+import { runCode } from './sandbox';
 import { BUILTIN_PLUGINS, builtinToolNames, builtinTools } from './builtinPlugins';
 import { findAgent, allRoles, findRole } from './roles';
 import { matchSkills } from './skills';
 import { uid, useStore } from './store';
-import { HOUSE_FILES, TOOLS, llmName, mcpTool, portfolioCard, toolDefs, type DirectTool, type ToolCtx } from './tools';
+import {
+  HOUSE_FILES,
+  TOOLS,
+  llmName,
+  mcpTool,
+  portfolioCard,
+  toolDefs,
+  type DirectTool,
+  type ToolCtx,
+} from './tools';
 import type { AgentDef, AgentMode, Attachment, PlanStep, Session } from './types';
-import { acquireScope, writeBytes, bytesOf, chatScope, dataUrl, files, files as filesView, filesFor, getFile, readAsText, scopeGate, sessionAllow, setChatScope, tree, writeText } from './vfs';
+import {
+  acquireScope,
+  writeBytes,
+  bytesOf,
+  chatScope,
+  dataUrl,
+  files,
+  files as filesView,
+  filesFor,
+  getFile,
+  readAsText,
+  scopeGate,
+  sessionAllow,
+  setChatScope,
+  tree,
+  writeText,
+} from './vfs';
 
 const WRITE_TOOLS = new Set(['filesystem.write', 'filesystem.edit', 'filesystem.delete']);
 /** Tools that create files: hidden in SAFE (read-only) mode. */
@@ -135,7 +191,8 @@ const MISSION_ONLY = new Set(['mission.stage', 'mission.report']);
 /** Creates the given .ai/ memory documents when missing (never overwrites). Only the documents actually written are
  *  created: nine empty templates in every chat made the model read them (time) and misreport their content. */
 function ensureAiDocs(only: AiDoc[] = [...AI_DOCS]): void {
-  for (const d of only) if (!getFile(aiDocPath(d))) writeText(aiDocPath(d), aiDocTemplate(d, 'Espace de travail'));
+  for (const d of only)
+    if (!getFile(aiDocPath(d))) writeText(aiDocPath(d), aiDocTemplate(d, 'Espace de travail'));
 }
 function aiDigest(): string {
   const docs: Partial<Record<AiDoc, string>> = {};
@@ -168,14 +225,38 @@ function systemPrompt(o: {
   plugins: { name: string; instructions?: string }[];
   /** OMNIPOTENT fast lane: only identity, role, a 3-line method and permissions (no catalogues). */
   compact?: boolean;
+  /** HARNESS: workspace instruction files (MASSAMBA.md, CLAUDE.md, AGENTS.md) read at every turn. */
+  instructions?: { path: string; text: string }[];
+  /** HARNESS: how many enabled skills exist beyond the catalogue shown (progressive disclosure). */
+  hiddenSkills?: number;
 }): string {
   const has = (n: string) => o.tools.some((t) => t.name === n);
+  // HARNESS: the local bridge is real as soon as its MCP server is connected, even when the fast-lane tool
+  // firewall did not expose mcp.poste.* / mcp.rea.* on this exact turn — so read the connected plugin, not the pack.
+  const plugged = (n: string) => o.plugins.some((p) => p.name === n);
+  const posteOn = has('mcp.poste.bash') || plugged('poste');
+  const reaMachineOn = has('mcp.rea.rea_inspect') || plugged('rea');
   if (o.compact)
     return [
       `You are an expert AI agent inside "MASSAMBA Workbench".`,
       `Role — ${o.agent.name}: ${o.agent.prompt}`,
-      `# How you work\n- Answer directly and concisely in the user's language (French by default), in Markdown.\n- Use a tool only if the answer truly needs it; never invent numbers, sources or file contents.\n- Permissions: ${o.mode.toUpperCase()}.`,
-      ...(o.active.length ? [`# ACTIVE SKILLS — MANDATORY\n${o.active.map((s) => `<skill name="${s.name}">\n${s.body}\n</skill>`).join('\n\n')}`] : []),
+      `# How you work\n- Answer directly and concisely in the user's language (French by default), in Markdown.\n- Use a tool only if the answer truly needs it; never invent numbers, sources or file contents.\n- Output formats are free: deliver in whatever format fits (any extension); the exporters are optional, never required.\n- Permissions: ${o.mode.toUpperCase()}.`,
+      // HARNESS: even on the fast lane, the project's own instruction files and the REA reflex reach the model.
+      ...(o.instructions?.length
+        ? [
+            `# PROJECT INSTRUCTIONS — follow them\n${o.instructions.map((f) => `<instructions file="${f.path}">\n${f.text}\n</instructions>`).join('\n\n')}`,
+          ]
+        : []),
+      ...(has('rea.inspect')
+        ? [
+            `# REA\nBefore guessing how a file, package or binary works, rea.inspect it and reason on the evidence (observed / inferred / unknown).`,
+          ]
+        : []),
+      ...(o.active.length
+        ? [
+            `# ACTIVE SKILLS — MANDATORY\n${o.active.map((s) => `<skill name="${s.name}">\n${s.body}\n</skill>`).join('\n\n')}`,
+          ]
+        : []),
     ].join('\n\n');
   const parts = [
     `You are an expert AI agent inside "MASSAMBA Workbench", a Claude-Code-like workspace that runs in the user's browser.`,
@@ -191,8 +272,20 @@ function systemPrompt(o: {
 - Never reveal hidden reasoning; give conclusions, steps taken and results.`,
     `# Permissions: ${o.mode.toUpperCase()}
 ${o.mode === 'safe' ? 'Read-only: you cannot modify files.' : o.mode === 'normal' ? 'Writes, deletions, code execution and plugin actions need user approval (the UI asks). If denied, adapt — do not retry the same action.' : 'Autonomous: actions run without asking. Stay careful and stay within the request.'}
-Not available here: a real OS shell (npm, git, pip), the local disk outside the workspace, desktop apps. ${has('code.run') ? 'Use code.run (sandboxed JavaScript/Python) for computations.' : ''}${has('terminal.execute') ? ' terminal.execute gives an embedded terminal over the workspace (ls, grep, pipes, redirections, node, python, curl, data).' : ''}${has('browser.open') ? ' browser.* drives an embedded browser: workspace apps are fully interactive (click, type, upload a workspace file, exports captured in downloads/); web pages open read-only. To TEST a generated app: browser.open it, browser.upload the real data file, click every tab and export, then inspect the downloaded files (data.inspect / filesystem.read).' : ''}`,
+${posteOn ? "REAL MACHINE through the local bridge: mcp.poste.bash runs shell commands on the user's computer (git, npm, pip, python, rea…) in the bridge folder; mcp.poste.read_file / write_file / list_files / grep work on that folder." : 'Not available here: a real OS shell (npm, git, pip), the local disk outside the workspace, desktop apps — unless the user starts the local bridge (massamba-pont).'}${reaMachineOn ? " REA on the user's computer: mcp.rea.rea_inspect, mcp.rea.rea_list_tools, mcp.rea.rea_tool_schema, mcp.rea.rea_call." : ''} ${has('code.run') ? 'Use code.run (sandboxed JavaScript/Python) for computations.' : ''}${has('terminal.execute') ? ' terminal.execute gives an embedded terminal over the workspace (ls, grep, pipes, redirections, node, python, curl, data).' : ''}${has('browser.open') ? ' browser.* drives an embedded browser: workspace apps are fully interactive (click, type, upload a workspace file, exports captured in downloads/); web pages open read-only. To TEST a generated app: browser.open it, browser.upload the real data file, click every tab and export, then inspect the downloaded files (data.inspect / filesystem.read).' : ''}`,
   ];
+  // FREE OUTPUT FORMATS (23/10/2026, « enlève les exigences de format de fichier de sortie »).
+  parts.push(
+    `# Output formats — free\nDeliver in whatever format the user asks for or that fits best — any extension (md, txt, csv, json, html, svg, png, pdf, docx, xlsx, pptx, py, ipynb, zip, mp3…). The exporters (report.export, dossier.export, data.export) are optional helpers, never an obligation; code.run can write any binary file with writeFile(path, Uint8Array).`,
+  );
+  if (o.instructions?.length)
+    parts.push(
+      `# PROJECT INSTRUCTIONS — follow them (workspace instruction files, read at every turn)\n${o.instructions.map((f) => `<instructions file="${f.path}">\n${f.text}\n</instructions>`).join('\n\n')}`,
+    );
+  if (has('rea.inspect'))
+    parts.push(
+      `# REA — reverse engineering first\nBefore guessing how a tool, package, app, binary or file format works, take it apart: rea.inspect on a workspace file (in the browser)${reaMachineOn ? ", mcp.rea.* (REA on the user's computer: JS graph, decompilation, WASM, SQLite, Android, network captures)" : ''}. Reason on the evidence: cite the evidence id, separate observed / inferred / unknown. Only legitimate targets (the user's files, open-source software, public client code for interoperability).`,
+    );
   if (has('knowledge.save'))
     parts.push(
       `# LEARNING — SAVE THE USER'S SEARCH TOKENS\n- Check <LEARNED_KNOWLEDGE> first: what it covers is never searched again (web.search also answers from it by itself).\n- After reading a regulation, a procedure, a standard or official documentation, or after solving a non-obvious code problem, call knowledge.save ONCE with the distilled rule (figures, thresholds, steps, the exact fix) and its sources: it becomes a permanent skill of the app.`,
@@ -213,7 +306,7 @@ Not available here: a real OS shell (npm, git, pip), the local disk outside the 
   const others = o.skills.filter((s) => !o.active.some((a) => a.name === s.name));
   if (others.length && has('skill.use'))
     parts.push(
-      `# Skills catalog\nIf a request matches one of these, load it with skill.use BEFORE answering and follow it:\n${others.map((s) => `- ${s.name}: ${s.description.slice(0, 300)}`).join('\n')}`,
+      `# Skills catalog\nIf a request matches one of these, load it with skill.use BEFORE answering and follow it:\n${others.map((s) => `- ${s.name}: ${s.description.slice(0, 300)}`).join('\n')}${o.hiddenSkills && has('skill.search') ? `\n(${o.hiddenSkills} more skills installed — find them with skill.search.)` : ''}`,
     );
   if (has('agent.delegate'))
     parts.push(
@@ -254,11 +347,15 @@ async function userContent(
           parts.push({ type: 'image_url', image_url: { url: dataUrl(f) } });
           notes.push(`Image attached: ${f.path}`);
         } else if (f.mime === 'image/svg+xml' && !f.binary) {
-          notes.push(`SVG image attached: ${f.path}\n<file path="${f.path}">\n${f.data.slice(0, 20_000)}\n</file>`);
+          notes.push(
+            `SVG image attached: ${f.path}\n<file path="${f.path}">\n${f.data.slice(0, 20_000)}\n</file>`,
+          );
         } else if (bridge) {
           // JEV VISION BRIDGE: the chat model stays the same; a small vision model reads the image for it.
           const b = await bridge(f).catch(() => null);
-          notes.push(b ?? `Image ${f.path} attached (this model cannot see images and no vision model is available).`);
+          notes.push(
+            b ?? `Image ${f.path} attached (this model cannot see images and no vision model is available).`,
+          );
         } else notes.push(`Image ${f.path} attached (this model cannot see images).`);
       } else if (isDataFile(f.path)) {
         const ds = data.parseBytes(f.path, bytesOf(f), null);
@@ -309,7 +406,8 @@ async function userContent(
 }
 
 const BRAND_IMAGE = /logo|charte|couleurs?|colou?rs?|brand|marque|identit[ée]|palette|branding/i;
-const ANALYSIS_ASK = /analy|excel|xlsx|classeur|tableau|rapport|report|dashboard|synth[èe]se|provision|portefeuille|donn[ée]es/i;
+const ANALYSIS_ASK =
+  /analy|excel|xlsx|classeur|tableau|rapport|report|dashboard|synth[èe]se|provision|portefeuille|donn[ée]es/i;
 const estimate = (msgs: ChatMessage[]) => Math.ceil(JSON.stringify(msgs).length / 3.6);
 
 /**
@@ -321,7 +419,10 @@ export function trimOldToolOutputs(msgs: ChatMessage[], keepLast = 8, max = 1500
   const keepFrom = Math.max(1, msgs.length - keepLast);
   return msgs.map((m, i) =>
     i < keepFrom && m.role === 'tool' && typeof m.content === 'string' && m.content.length > max
-      ? { ...m, content: `${m.content.slice(0, 900)}\n…[ancienne sortie raccourcie — relancez l'outil si le détail est nécessaire]` }
+      ? {
+          ...m,
+          content: `${m.content.slice(0, 900)}\n…[ancienne sortie raccourcie — relancez l'outil si le détail est nécessaire]`,
+        }
       : m,
   );
 }
@@ -903,7 +1004,7 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
   if (top) {
     const fs = fabricRt.fabricSettings();
     try {
-      stage(sid, "Préparation : registre des capacités…");
+      stage(sid, 'Préparation : registre des capacités…');
       await fabricRt.ensureRegistry();
       fabricPrep = fabricRt.prepare({
         text: inp.text,
@@ -1028,8 +1129,15 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
   // ── MODEL LOCK: a chat never changes model on its own. An explicit choice is kept; « auto » picks ONCE (first request
   // of the chat) and that model stays for the whole conversation. No silent fallback, escalation or downgrade mid-chat.
   const lockOn = top && !experimentRun && st.settings.pinModel !== false;
-  const pinned = inp.session.pinnedModel && models.some((m) => m.id === inp.session.pinnedModel) ? inp.session.pinnedModel : null;
-  const myLock = lockOn ? (inp.session.model && inp.session.model !== 'auto' ? inp.session.model : (pinned ?? sel.model)) : null;
+  const pinned =
+    inp.session.pinnedModel && models.some((m) => m.id === inp.session.pinnedModel)
+      ? inp.session.pinnedModel
+      : null;
+  const myLock = lockOn
+    ? inp.session.model && inp.session.model !== 'auto'
+      ? inp.session.model
+      : (pinned ?? sel.model)
+    : null;
   if (top) modelLock = myLock;
   if (myLock && sel.model !== myLock) {
     sel.model = myLock;
@@ -1037,7 +1145,9 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
   }
   // The fallback chain is used ONLY when the model fails for real (unavailable, no endpoint, provider error): stopping
   // the mission would be worse. Quality-based switches (escalation, apprentice gate, live switch) stay locked.
-  const fallbackChain = [...new Set([st.settings.fallbackModel, ...routedFallbacks].filter((m) => m && m !== sel.model))];
+  const fallbackChain = [
+    ...new Set([st.settings.fallbackModel, ...routedFallbacks].filter((m) => m && m !== sel.model)),
+  ];
   const info = models.find((m) => m.id === sel.model);
   const vision = info?.capabilities.vision ?? hasImages;
   let effort = (inp.effort && inp.effort !== 'auto' ? inp.effort : inp.agent.effort) ?? 'auto';
@@ -1078,7 +1188,12 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
 
   // Skills: pinned + agent's + auto-detected
   const enabled = st.skills.filter((s) => s.enabled);
-  const names = new Set<string>([...(label ? [] : inp.session.pinnedSkills), ...inp.agent.skills]);
+  const hz = harnessOf(st.settings.harness);
+  // ALWAYS-ON skills of the harness (default: REA d'abord), the pinned ones, the agent's, then the detected ones.
+  const names = new Set<string>([
+    ...(label ? [] : [...hz.alwaysSkills, ...inp.session.pinnedSkills]),
+    ...inp.agent.skills,
+  ]);
   if (st.settings.autoSkills) for (const m of matchSkills(inp.text, enabled).slice(0, 3)) names.add(m.name);
   const active = enabled
     .filter((s) => names.has(s.name))
@@ -1094,9 +1209,26 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       }
     }
   if (active.length && !label) push(sid, { kind: 'skills', id: uid(), names: active.map((a) => a.name) });
+  // Agent Skills `allowed-tools`: pre-approved while the skill is active (permission rules of the run).
+  runAllowed.set(
+    sid,
+    enabled.filter((s) => names.has(s.name)).flatMap((s) => s.allowedTools ?? []),
+  );
+  // PROGRESSIVE DISCLOSURE: with hundreds of skills, the catalogue shows those that fit the request (skill.search finds the rest).
+  const catalog = catalogFor(inp.text, enabled, 40, hz.alwaysSkills);
+  const hidden = Math.max(0, enabled.length - catalog.length);
+  const instructions = hz.instructions && !label ? instructionFiles(Object.values(files())) : [];
 
   // JEV TOOL PACK: only the selected tools are exposed; tools.request / ADD TOOL extend it.
-  const packTools: DirectTool[] = jp ? tools.filter((t) => jp!.pre.toolPack.names.includes(t.name)) : [...tools];
+  const packTools: DirectTool[] = jp
+    ? tools.filter((t) => jp!.pre.toolPack.names.includes(t.name))
+    : [...tools];
+  // skill.search joins the pack ONLY when skills are hidden (progressive disclosure); otherwise it is dead weight on
+  // every call. The JEV pack no longer force-feeds it (nor skill.export, a user action) — the firewall keeps packs lean.
+  if (hidden > 0) {
+    const ss = tools.find((t) => t.name === 'skill.search');
+    if (ss && !packTools.includes(ss)) packTools.push(ss);
+  }
   // Cognitive Fabric: the capability registry narrows the exposure to the minimum the mission needs.
   if (jp && fabricOn && fabricPrep?.selection && fabricPrep.selection.exposed > 0) {
     const names = new Set(fabricPrep.selection.selected.map((x) => x.cap.name));
@@ -1154,11 +1286,28 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
     // OMNIPOTENT TOOL FIREWALL (hard): AVAILABLE ≠ EXPOSED. What the model is not shown costs nothing on every call; it can still
     // ask for a family with tools.request, and a call to an allowed tool outside the pack still runs (the pack grows, never blocks).
     if (omni && omni.settings.toolFirewall && omni.lane && !inp.mission) {
-      const keep = new Set(omniRt.filterTools(omni, packTools.map((t) => t.name), inp.text, inp.attachments.length));
+      const keep = new Set(
+        omniRt.filterTools(
+          omni,
+          packTools.map((t) => t.name),
+          inp.text,
+          inp.attachments.length,
+        ),
+      );
       const before = packTools.length;
-      packTools.splice(0, packTools.length, ...packTools.filter((t) => keep.has(t.name) || t.name === 'tools.request'));
+      packTools.splice(
+        0,
+        packTools.length,
+        ...packTools.filter((t) => keep.has(t.name) || t.name === 'tools.request'),
+      );
       if (packTools.length < before)
-        traceAdd({ name: 'JEV_TOOLS', ms: 0, tokens: 0, cost: 0, decision: `OMNIPOTENT pare-feu d'outils : ${packTools.length}/${before} exposés (voie ${omni.lane.lane})` });
+        traceAdd({
+          name: 'JEV_TOOLS',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: `OMNIPOTENT pare-feu d'outils : ${packTools.length}/${before} exposés (voie ${omni.lane.lane})`,
+        });
     }
   }
   const toolTokens = toolDefTokens(toolDefs(packTools));
@@ -1167,10 +1316,14 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
     agent: inp.agent,
     mode: inp.session.mode,
     tools: packTools,
-    skills: enabled,
+    skills: catalog,
+    hiddenSkills: hidden,
+    instructions,
     active,
     agents: allRoles(st.agents),
-    plugins: lane?.minimalPrompt ? [] : plugins.map((p) => ({ name: p.name, instructions: mcpState(p.name).instructions })),
+    plugins: lane?.minimalPrompt
+      ? []
+      : plugins.map((p) => ({ name: p.name, instructions: mcpState(p.name).instructions })),
     compact: Boolean(lane?.minimalPrompt),
   });
   // ── JEV COGNITIVE OS (off by default): diagnosis → protocol → conditioning; only ACTIVE engines touch the prompt. ──
@@ -1193,19 +1346,55 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
   let semMemory = '';
   if (top && !experimentRun) {
     const chatHits = recallMemory(inp.session.memory ?? [], inp.text, { k: 3 });
-    const lessonHits = recallMemory(useStore.getState().lessons, inp.text, { k: 3, tag: profile.type, min: 0.3 });
+    const lessonHits = recallMemory(useStore.getState().lessons, inp.text, {
+      k: 3,
+      tag: profile.type,
+      min: 0.3,
+    });
     const exp = vaultRecall(inp.text);
     // LEARNED KNOWLEDGE (past web searches, filed rules): reused instead of searching again.
     const known = relatedKnowledge(useStore.getState().knowledge, inp.text, 4);
     // JEV SWARM: a heavy request is split by JEV's prescription into sub-agents that run in parallel (agent.delegate).
-    const swarm = inp.depth < MAX_DEPTH && packTools.some((t) => t.name === 'agent.delegate') ? swarmPlan({ text: inp.text, attachments: inp.attachments.length, complexity: dna.complexity, outputs: dna.outputs }) : null;
+    const swarm =
+      inp.depth < MAX_DEPTH && packTools.some((t) => t.name === 'agent.delegate')
+        ? swarmPlan({
+            text: inp.text,
+            attachments: inp.attachments.length,
+            complexity: dna.complexity,
+            outputs: dna.outputs,
+          })
+        : null;
     if (swarm?.heavy) {
-      traceAdd({ name: 'JEV_CHECKPOINT', ms: 0, tokens: 0, cost: 0, decision: `tâche lourde (score ${swarm.score.toFixed(2)} : ${swarm.reasons.join(', ')}) → ${swarm.parts.length} sous-agents en parallèle` });
+      traceAdd({
+        name: 'JEV_CHECKPOINT',
+        ms: 0,
+        tokens: 0,
+        cost: 0,
+        decision: `tâche lourde (score ${swarm.score.toFixed(2)} : ${swarm.reasons.join(', ')}) → ${swarm.parts.length} sous-agents en parallèle`,
+      });
       stage(sid, `JEV découpe la tâche en ${swarm.parts.length} sous-agents parallèles`);
     }
-    semMemory = [memoryBlock(chatHits, [...lessonHits, ...seedHits(inp.text)].slice(0, 3)), exp ? vaultBlock(exp) : '', knowledgeBlock(known), swarm ? swarmBlock(swarm, allRoles(st.agents).map((a) => a.id)) : ''].filter(Boolean).join('\n');
+    semMemory = [
+      memoryBlock(chatHits, [...lessonHits, ...seedHits(inp.text)].slice(0, 3)),
+      exp ? vaultBlock(exp) : '',
+      knowledgeBlock(known),
+      swarm
+        ? swarmBlock(
+            swarm,
+            allRoles(st.agents).map((a) => a.id),
+          )
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
     if (semMemory)
-      traceAdd({ name: 'JEV_CONTEXT', ms: 0, tokens: Math.ceil(semMemory.length / 3.8), cost: 0, decision: `mémoire sémantique : ${chatHits.length} fait(s) du chat, ${lessonHits.length} leçon(s)` });
+      traceAdd({
+        name: 'JEV_CONTEXT',
+        ms: 0,
+        tokens: Math.ceil(semMemory.length / 3.8),
+        cost: 0,
+        decision: `mémoire sémantique : ${chatHits.length} fait(s) du chat, ${lessonHits.length} leçon(s)`,
+      });
   }
   // A design other than the house one was chosen: memories / lessons that prescribe the house palette are dropped,
   // otherwise the model follows its memory (« style maison navy #00415E… ») instead of the user's choice.
@@ -1228,7 +1417,12 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
         const c = designFor(sid);
         if (c?.clone && !experimentRun) {
           const pc = (v: number) => Math.round(v * 100);
-          const panels = c.clone.panels.map((p, i) => `${i + 1}. ${p.kind} at x ${pc(p.box.x)}% y ${pc(p.box.y)}% · ${pc(p.box.w)}×${pc(p.box.h)}% · fill ${p.fill}${p.border ? ` · border ${p.border} ${p.borderWidth}px` : ''} · colours ${p.colors.slice(0, 4).join(' ')}${p.sequential ? ' (dark→light ramp: biggest value darkest)' : ''}`).join('\n');
+          const panels = c.clone.panels
+            .map(
+              (p, i) =>
+                `${i + 1}. ${p.kind} at x ${pc(p.box.x)}% y ${pc(p.box.y)}% · ${pc(p.box.w)}×${pc(p.box.h)}% · fill ${p.fill}${p.border ? ` · border ${p.border} ${p.borderWidth}px` : ''} · colours ${p.colors.slice(0, 4).join(' ')}${p.sequential ? ' (dark→light ramp: biggest value darkest)' : ''}`,
+            )
+            .join('\n');
           return `<DESIGN_CLONE source="${c.source ?? ''}">\nThe user chose this dashboard image and wants a PHOTO-FAITHFUL reproduction with the real data. For Excel / dashboards call data.export (with a query if needed): the app renders the exact reproduction itself (« Tableau de bord » sheet first in the workbook + HTML page), in the measured geometry and colours. For sites / apps, rebuild this exact grid (positions in % of the page, aspect ${c.clone.aspect.toFixed(2)}), page ${c.clone.page}${c.clone.frame ? `, frame ${c.clone.frame.color}` : ''}, title colour ${c.clone.title?.color ?? c.clone.palette.dark}, font ${c.clone.font}:\n${panels}\nNever copy the source's logos, photos or text.\nTOKEN RULES (the reproduction is the app's job, not yours): after EVERY file you write, the app adds it to each xlsx / docx / pptx / html of the turn, and re-adds it intact when you re-save the file. So (1) never build, imitate, read, verify or repair the « Tableau de bord », « Tableau de bord (image) » and « Données du tableau de bord » sheets — openpyxl cannot see their shapes and pictures, they LOOK empty to it, that is normal; (2) write your own analysis sheets in ONE code.run that builds the whole workbook and saves it once; (3) never reopen a delivered file to check it.\n</DESIGN_CLONE>`;
         }
         return c?.layout && !experimentRun
@@ -1236,9 +1430,20 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
           : '';
       })(),
     },
-    { name: 'design_choice', text: (() => { const c = designFor(sid); return c && !experimentRun ? designPrompt(c, runFormats.get(sid)) : ''; })(), pinned: true },
+    {
+      name: 'design_choice',
+      text: (() => {
+        const c = designFor(sid);
+        return c && !experimentRun ? designPrompt(c, runFormats.get(sid)) : '';
+      })(),
+      pinned: true,
+    },
     // ARCHITECTE DESIGNER: imposed on every model for any deliverable (the app then checks it before delivery).
-    { name: 'design_architect', text: !experimentRun && needsArchitect(inp.text, Boolean(designFor(sid))) ? DESIGN_ARCHITECT : '', pinned: true },
+    {
+      name: 'design_architect',
+      text: !experimentRun && needsArchitect(inp.text, Boolean(designFor(sid))) ? DESIGN_ARCHITECT : '',
+      pinned: true,
+    },
     { name: 'doctrine', text: lane?.minimalPrompt ? '' : ENGINE_DOCTRINE },
     { name: 'manual', text: manualPrompt(useStore.getState().manual), pinned: true },
     { name: 'strategy', text: strategy && !lane?.minimalPrompt ? strategyPrompt(dna, strategy) : '' },
@@ -1280,13 +1485,35 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
           const b = await describeImage(f, inp.text, inp.signal);
           if (!b) return null;
           bridgeSpent += b.cost;
-          traceAdd({ name: 'JEV_CONTEXT', ms: 0, tokens: 0, cost: b.cost, decision: `${f.path} lu par ${b.model}${b.cached ? ' (cache, 0 $)' : ''} pour ${sel.model}` });
-          push(sid, { kind: 'intel', id: uid(), title: `JEV VISION BRIDGE — ${f.path.split('/').pop()} lue par ${b.model}`, tone: 'info', lines: [`Le modèle du chat (${sel.model}) ne voit pas les images : il reçoit la description exacte et l’OCR.`, b.cached ? 'Description en cache : 0 $.' : `Coût : ${b.cost.toFixed(5)} $`] });
+          traceAdd({
+            name: 'JEV_CONTEXT',
+            ms: 0,
+            tokens: 0,
+            cost: b.cost,
+            decision: `${f.path} lu par ${b.model}${b.cached ? ' (cache, 0 $)' : ''} pour ${sel.model}`,
+          });
+          push(sid, {
+            kind: 'intel',
+            id: uid(),
+            title: `JEV VISION BRIDGE — ${f.path.split('/').pop()} lue par ${b.model}`,
+            tone: 'info',
+            lines: [
+              `Le modèle du chat (${sel.model}) ne voit pas les images : il reçoit la description exacte et l’OCR.`,
+              b.cached ? 'Description en cache : 0 $.' : `Coût : ${b.cost.toFixed(5)} $`,
+            ],
+          });
           return b.block;
         }
       : undefined;
-  if (inp.attachments.length) stage(sid, `Préparation : lecture de ${inp.attachments.length} pièce(s) jointe(s)…`);
-  const content = await userContent(inp.text, inp.attachments, vision, firstTurn && !lane?.minimalPrompt, bridge);
+  if (inp.attachments.length)
+    stage(sid, `Préparation : lecture de ${inp.attachments.length} pièce(s) jointe(s)…`);
+  const content = await userContent(
+    inp.text,
+    inp.attachments,
+    vision,
+    firstTurn && !lane?.minimalPrompt,
+    bridge,
+  );
   if (firstTurn && !label && !lane?.minimalPrompt) {
     // OMNIPOTENT MEMORY GOVERNOR (hard): only the paragraphs of the project memory that fit the current mission are shown.
     const digest = omni ? omniRt.filterMemory(omni, aiDigest()) : aiDigest();
@@ -1326,7 +1553,10 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
   const messages: ChatMessage[] = [{ role: 'system', content: fullSystem }, ...ctxHist.history, user];
   const persisted: ChatMessage[] = [user];
   // A context budget is a CEILING: 70 % of the window is the old limit, the lane lowers it (6K trivial … 50K critical).
-  const contextBudget = omniRt.omniContextCeiling(omni, Math.min(Math.floor((info?.contextLength || 128_000) * 0.7), 400_000));
+  const contextBudget = omniRt.omniContextCeiling(
+    omni,
+    Math.min(Math.floor((info?.contextLength || 128_000) * 0.7), 400_000),
+  );
   if (top) liveTrace = { goal: inp.text, messages };
   // Shadow monitor (deterministic, free) + evidence corpus of the run.
   let shadow: ShadowMonitor | null = null;
@@ -1618,14 +1848,36 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
   let lastAnchor = 0;
   // JEV Apprentice: one gate pass per fallback attempt (FREE → correction → other FREE → V5); otherwise V5's two passes.
   // OMNIPOTENT lane: a simple request gets at most the passes it needs (a free model keeps ONE quality gate), never a ritual.
-  const apprenticeGates = apprentice && !apprentice.forced && apprentice.plan.use ? Math.max(2, apprentice.plan.attempts.length) : 2;
-  const gateLimit = lane && lane.gates !== null ? (apprentice && !apprentice.forced && apprentice.plan.use ? Math.max(lane.gates, 1) : lane.gates) : apprenticeGates;
-  const reaskOk = (sev?: string) => !lane || lane.verification === 'standard' || lane.verification === 'strong' || lane.verification === 'adversarial' || sev === 'critical';
+  const apprenticeGates =
+    apprentice && !apprentice.forced && apprentice.plan.use
+      ? Math.max(2, apprentice.plan.attempts.length)
+      : 2;
+  const gateLimit =
+    lane && lane.gates !== null
+      ? apprentice && !apprentice.forced && apprentice.plan.use
+        ? Math.max(lane.gates, 1)
+        : lane.gates
+      : apprenticeGates;
+  const reaskOk = (sev?: string) =>
+    !lane ||
+    lane.verification === 'standard' ||
+    lane.verification === 'strong' ||
+    lane.verification === 'adversarial' ||
+    sev === 'critical';
   let nudged = false;
   let continuations = 0;
   // OMNIPOTENT OUTPUT DRIFT GUARD (hard, after the model): a fluent answer that is about another mission, or merely describes a
   // repair it did not make, is NOT delivered. One clean retry packet (capsule + failure signature, never the transcript), max 2.
-  const WRITE_TOOLS_USED = ['filesystem.write', 'filesystem.edit', 'artifact.create', 'data.export', 'report.export', 'dossier.compose', 'dossier.export', 'apex.build_app'];
+  const WRITE_TOOLS_USED = [
+    'filesystem.write',
+    'filesystem.edit',
+    'artifact.create',
+    'data.export',
+    'report.export',
+    'dossier.compose',
+    'dossier.export',
+    'apex.build_app',
+  ];
   const tryDrift = (answer: string): boolean => {
     if (!omni || !top || inp.mission || phase === 'planning' || !answer.trim()) return false;
     const used = [...toolsUsed];
@@ -1636,8 +1888,20 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       toolCalls: used.length,
     });
     if (!d.retry) return false;
-    push(sid, { kind: 'intel', id: uid(), title: `OMNIPOTENT — DRIFT GUARD : réponse rejetée (${omni.driftRetries}/2)`, tone: 'warn', lines: d.report.reasons });
-    traceAdd({ name: 'JEV_CORRECTION', ms: 0, tokens: 0, cost: 0, decision: `drift guard : ${d.report.reasons.join(' ; ')}` });
+    push(sid, {
+      kind: 'intel',
+      id: uid(),
+      title: `OMNIPOTENT — DRIFT GUARD : réponse rejetée (${omni.driftRetries}/2)`,
+      tone: 'warn',
+      lines: d.report.reasons,
+    });
+    traceAdd({
+      name: 'JEV_CORRECTION',
+      ms: 0,
+      tokens: 0,
+      cost: 0,
+      decision: `drift guard : ${d.report.reasons.join(' ; ')}`,
+    });
     const note: ChatMessage = { role: 'user', content: d.retry };
     messages.push(note);
     persisted.push(note);
@@ -1670,10 +1934,19 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
     // what is already done, what remains — so it never wanders off after minutes of work. ~120 tokens, no extra call.
     if (top && step - lastAnchor >= 6 && toolsUsed.size && messages.at(-1)?.role === 'tool') {
       lastAnchor = step;
-      const anchor: ChatMessage = { role: 'user', content: pilotAnchor(inp.text, [...toolsUsed], step, maxSteps) };
+      const anchor: ChatMessage = {
+        role: 'user',
+        content: pilotAnchor(inp.text, [...toolsUsed], step, maxSteps),
+      };
       messages.push(anchor);
       persisted.push(anchor);
-      traceAdd({ name: 'JEV_CHECKPOINT', ms: 0, tokens: 0, cost: 0, decision: `JEV PILOT : ré-ancrage sur l'objectif (étape ${step})` });
+      traceAdd({
+        name: 'JEV_CHECKPOINT',
+        ms: 0,
+        tokens: 0,
+        cost: 0,
+        decision: `JEV PILOT : ré-ancrage sur l'objectif (étape ${step})`,
+      });
     }
     const spentToday = useStore.getState().spend[new Date().toISOString().slice(0, 10)] ?? 0;
     if (ws.budgetDaily > 0 && spentToday >= ws.budgetDaily)
@@ -1754,7 +2027,10 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       toolResults: estimate(callMessages.filter((m) => m.role === 'tool')),
     };
     // Which model is working, and on how much context: a slow first answer is explained, not silent.
-    stage(sid, `${label ? `${label} réfléchit` : 'Réflexion'} — ${model.split('/').pop()} · contexte ≈ ${Math.max(1, Math.round((split.system + split.tools + split.history + split.toolResults) / 1000))}k tokens…`);
+    stage(
+      sid,
+      `${label ? `${label} réfléchit` : 'Réflexion'} — ${model.split('/').pop()} · contexte ≈ ${Math.max(1, Math.round((split.system + split.tools + split.history + split.toolResults) / 1000))}k tokens…`,
+    );
     const setLive = (p: Partial<import('./store').CallLive>) => {
       const cur = useStore.getState().callLive[sid];
       const run = useStore.getState().running[sid];
@@ -1960,7 +2236,11 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       // An empty reply used to end the turn silently (« the model stops »): JEV asks once for the actual answer.
       if (!r.content.trim() && !emptyNudged && phase !== 'planning') {
         emptyNudged = true;
-        const c: ChatMessage = { role: 'user', content: 'Your last reply was empty. Give the final answer to the request now (or call the tool you need).' };
+        const c: ChatMessage = {
+          role: 'user',
+          content:
+            'Your last reply was empty. Give the final answer to the request now (or call the tool you need).',
+        };
         messages.push(c);
         persisted.push(c);
         nextKind = 'continuation';
@@ -2002,13 +2282,17 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
         // Figures computed on the owner's data are ALWAYS checked against the tool results (v62: the ESN « continue »
         // turn wrote 41 629 exposures and 293 095 M of provisions that no query had returned).
         const dataTurn = [...toolsUsed].some((t) => /^(data\.|dossier\.|report\.)/.test(t));
-        const unsupported = (strategy?.verify.evidence || dataTurn) && (dataTurn || (lane?.evidenceReask ?? true)) ? unsupportedNumbers(r.content, evidence) : [];
+        const unsupported =
+          (strategy?.verify.evidence || dataTurn) && (dataTurn || (lane?.evidenceReask ?? true))
+            ? unsupportedNumbers(r.content, evidence)
+            : [];
         if (lane && !lane.evidenceReask) omni!.avoidedReasks++;
         const notes: string[] = [];
         if (alerts.length) {
           showAlerts(alerts);
           // Fast lane: an informational alert is shown, only a CRITICAL one costs a re-ask.
-          if (reaskOk(alerts.some((a) => a.severity === 'critical') ? 'critical' : undefined)) notes.push(shadowMessage(alerts));
+          if (reaskOk(alerts.some((a) => a.severity === 'critical') ? 'critical' : undefined))
+            notes.push(shadowMessage(alerts));
           else omni!.avoidedReasks++;
         }
         if (unsupported.length) {
@@ -2123,7 +2407,13 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
               });
             }
           }
-          if (!gated && q.correct && !unsupported.length && variant === 'full' && reaskOk(q.result.failures.some((f) => f.blocking) ? 'critical' : undefined)) {
+          if (
+            !gated &&
+            q.correct &&
+            !unsupported.length &&
+            variant === 'full' &&
+            reaskOk(q.result.failures.some((f) => f.blocking) ? 'critical' : undefined)
+          ) {
             corrections++;
             corrAdded = true;
             discardedTokens += r.usage.completionTokens;
@@ -2180,7 +2470,8 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       if (top) {
         toolCallTotal++;
         const failed = /^(Error|Denied)/.test(res);
-        if (failed) toolErrorNotes.push(`${call.function.name.replace(/__/g, '.')}: ${redact(res).slice(0, 140)}`);
+        if (failed)
+          toolErrorNotes.push(`${call.function.name.replace(/__/g, '.')}: ${redact(res).slice(0, 140)}`);
         recentErr.push(failed);
         if (recentErr.length > 20) recentErr.shift();
         const t = tools.find((x) => llmName(x.name) === call.function.name || x.name === call.function.name);
@@ -2188,8 +2479,10 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
         const errs = recentErr.filter(Boolean).length;
         if (!stallReason && recentErr.length >= 12 && errs >= 12)
           stallReason = `${errs} erreurs d’outils sur les ${recentErr.length} derniers appels`;
-        else if (!stallReason && readRun >= 30) stallReason = `${readRun} lectures d’affilée sans rien produire`;
-        else if (!stallReason && Date.now() - missionStart > 25 * 60_000) stallReason = `mission en cours depuis plus de 25 minutes`;
+        else if (!stallReason && readRun >= 30)
+          stallReason = `${readRun} lectures d’affilée sans rien produire`;
+        else if (!stallReason && Date.now() - missionStart > 25 * 60_000)
+          stallReason = `mission en cours depuis plus de 25 minutes`;
       }
       if (jp && phase !== 'planning') {
         const used = tools.find(
@@ -2373,7 +2666,13 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       if (!stallReason && maxSteps < ws.maxSteps && progressing) {
         const from = maxSteps;
         maxSteps = Math.min(ws.maxSteps, maxSteps * 2);
-        traceAdd({ name: 'JEV_CHECKPOINT', ms: 0, tokens: 0, cost: 0, decision: `JEV PILOT : le travail progresse, budget d'étapes ${from} → ${maxSteps}` });
+        traceAdd({
+          name: 'JEV_CHECKPOINT',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: `JEV PILOT : le travail progresse, budget d'étapes ${from} → ${maxSteps}`,
+        });
         continue;
       }
       // Hard limit: instead of failing with nothing, deliver what is done (one call, no tools).
@@ -2386,7 +2685,13 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       messages.push(wrap);
       try {
         const w = await complete(
-          { model, messages: compact(messages, contextBudget, inp.text), temperature: ws.temperature ?? undefined, maxTokens: 2_000, signal: inp.signal },
+          {
+            model,
+            messages: compact(messages, contextBudget, inp.text),
+            temperature: ws.temperature ?? undefined,
+            maxTokens: 2_000,
+            signal: inp.signal,
+          },
           { models, fallbacks: [], effort: 'auto', maxRetries: 1 },
         );
         cost += w.cost;
@@ -2401,7 +2706,9 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
         stopReason = 'step_limit';
         break;
       } catch {
-        throw new Error(`Limite de ${maxSteps} étapes atteinte. Augmentez-la dans Paramètres ou répondez « continue ».`);
+        throw new Error(
+          `Limite de ${maxSteps} étapes atteinte. Augmentez-la dans Paramètres ou répondez « continue ».`,
+        );
       }
     }
   }
@@ -2443,7 +2750,9 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       : undefined,
     apprenticeInfo: apprentice ? { prep: apprentice, models: [...usedModels] } : undefined,
     cognitiveInfo: cognitive ?? undefined,
-    omniTag: omni ? omniRt.omniTag(omni, { steps: { used: stepsUsed, cap: lane?.maxSteps ?? null } }) : undefined,
+    omniTag: omni
+      ? omniRt.omniTag(omni, { steps: { used: stepsUsed, cap: lane?.maxSteps ?? null } })
+      : undefined,
     stopReason,
     toolCalls: toolCallTotal,
     toolErrors: toolErrorNotes.slice(-5),
@@ -2526,8 +2835,8 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
 async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp: LoopInput): Promise<string> {
   const st = useStore.getState();
   const sid = inp.session.id;
-  let tool = offered.find((t) => llmName(t.name) === call.function.name || t.name === call.function.name);
-  let name = tool?.name ?? call.function.name.replace(/__/g, '.');
+  const tool = offered.find((t) => llmName(t.name) === call.function.name || t.name === call.function.name);
+  const name = tool?.name ?? call.function.name.replace(/__/g, '.');
   let args: Record<string, unknown> = {};
   try {
     args = call.function.arguments?.trim()
@@ -2536,21 +2845,9 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
   } catch {
     return `Error: arguments are not valid JSON: ${call.function.arguments?.slice(0, 300)}`;
   }
-  // HOUSE FORMATS (consigne du 14/10/2026) : once the request's design gallery opened, EVERY deliverable comes out in the
-  // committee formats — whatever was chosen (theme, catalogue model, design found on the Internet): its colours apply.
-  // A whole-file data.export becomes dossier.export on that file (workbook + the formats chosen in the gallery).
-  let houseNote = '';
-  // A filtered export (query) stays data.export: its committee workbook is built from the filtered rows.
-  if (sid && runHouse.has(sid) && name === 'data.export' && typeof args.path === 'string' && args.path && !args.query) {
-    const house = TOOLS.find((t) => t.name === 'dossier.export');
-    if (house) {
-      const chosen = runFormats.get(sid);
-      args = { data: args.path, sheet: args.sheet, focus: runRequest.get(sid) ?? '', name: args.name, formats: chosen?.length ? chosen.map((f) => (f === 'pdf' ? 'html' : f)) : ['xlsx', 'pptx', 'docx'] };
-      tool = house;
-      name = house.name;
-      houseNote = '\n[format] Livrable produit dans les formats comité (classeur à boutons et sélecteurs, deck, rapport) au design choisi.';
-    }
-  }
+  // FREE OUTPUT FORMATS (23/10/2026, « enlève les exigences de format de fichier de sortie ») : the committee formats are
+  // no longer imposed on every deliverable — a data.export stays a data.export, the model's own code may write any file.
+  const houseNote = '';
   const itemId = uid();
   const lbl = tool?.label(args) ?? name;
   st.pushItem(sid, {
@@ -2573,14 +2870,37 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
       `Error: tool "${name}" is not available${inp.plan ? ' in PLAN MODE (read-only until the plan is approved)' : ''}. Use only the provided tools.`,
     );
 
-  if (sid && runHouse.has(sid) && tool.name === 'code.run' && deliverableFromCode(String(args.code ?? '')))
+  // HARNESS — PreToolUse hooks (may deny, ask, allow or rewrite the arguments), then the permission rules
+  // (deny > ask > allow, Claude Code syntax), then the mode. A skill's `allowed-tools` count as allow rules.
+  const hz = harnessOf(st.settings.harness);
+  const pre = hz.hooks.some((h) => h.event === 'PreToolUse')
+    ? await runHooks(
+        hz.hooks,
+        { event: 'PreToolUse', tool: tool.name, args, sessionId: sid },
+        hookRunners(sid),
+      )
+    : null;
+  if (pre?.args) args = pre.args;
+  if (pre?.decision === 'deny')
     return fail(
-      'error',
-      'livrable → formats comité',
-      'Refused: this chat expects the committee formats chosen in the design gallery. Do not write the Office file with code: call dossier.export with data = the source file (and formats), or dossier.compose then dossier.export when the analysis must be written. Use code.run only for calculations.',
+      'denied',
+      'bloqué par un hook',
+      `Denied by a PreToolUse hook: ${pre.reason ?? ''}. Do not retry it as-is.`,
+    );
+  const rules = { ...hz.permissions, allow: [...hz.permissions.allow, ...(runAllowed.get(sid) ?? [])] };
+  const ruleHit = evaluateRules(rules, tool.name, args);
+  if (ruleHit?.decision === 'deny')
+    return fail(
+      'denied',
+      `règle ${ruleHit.rule}`,
+      `Denied by the permission rule « ${ruleHit.rule} ». Do not retry it as-is.`,
     );
   const grants = st.grants[sid] ?? [];
-  const decision = decide(inp.session.mode, tool, grants.includes(tool.name), args);
+  let decision = decide(inp.session.mode, tool, grants.includes(tool.name), args);
+  if (decision !== 'deny') {
+    if (ruleHit?.decision === 'allow' || pre?.decision === 'allow') decision = 'allow';
+    if (ruleHit?.decision === 'ask' || pre?.decision === 'ask') decision = 'ask';
+  }
   if (decision === 'deny')
     return fail(
       'denied',
@@ -2628,12 +2948,17 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
   // ── PREMIUM DESIGN GALLERY (hard): before ANY deliverable the user picks the design (and the format) on thumbnails.
   // A theme the model passes because the user asked for it in the chat is respected; « pour tout ce chat » is remembered.
   // Python / JS code that writes an Office file is a deliverable too (the model often builds the Excel itself).
-  const dkind = kindForTool(tool.name, args) ?? (tool.name === 'code.run' ? deliverableFromCode(String(args.code ?? '')) : null);
+  const dkind =
+    kindForTool(tool.name, args) ??
+    (tool.name === 'code.run' ? deliverableFromCode(String(args.code ?? '')) : null);
   let designNote = '';
   if (dkind && !experimentRun && useStore.getState().settings.designPicker !== false) {
     let choice = designFor(sid);
     // The model's theme counts only when the user's own words asked for it; otherwise the gallery choice wins.
-    const asked = typeof args.theme === 'string' && args.theme !== 'house' && themeAskedByUser(args, inp.text) ? (args.theme as string) : null;
+    const asked =
+      typeof args.theme === 'string' && args.theme !== 'house' && themeAskedByUser(args, inp.text)
+        ? (args.theme as string)
+        : null;
     if (!choice && !asked && !inp.signal.aborted) {
       const formats =
         tool.name === 'report.export'
@@ -2645,9 +2970,13 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
               : [];
       const chosenFormats =
         tool.name === 'report.export'
-          ? ((args.formats as string[] | undefined)?.length ? (args.formats as string[]) : ['docx'])
+          ? (args.formats as string[] | undefined)?.length
+            ? (args.formats as string[])
+            : ['docx']
           : tool.name === 'dossier.export'
-            ? ((args.formats as string[] | undefined)?.length ? (args.formats as string[]) : ['xlsx', 'pptx', 'docx', 'html'])
+            ? (args.formats as string[] | undefined)?.length
+              ? (args.formats as string[])
+              : ['xlsx', 'pptx', 'docx', 'html']
             : tool.name === 'data.export'
               ? [String(args.format || 'xlsx')]
               : [];
@@ -2679,8 +3008,11 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
         args.clone = choice.clone;
         args.layoutSource = choice.source;
         // Excel keeps one native chart: the first chart kind of the dashboard.
-        const k = choice.clone.panels.find((p) => ['bar', 'hbar', 'line', 'area', 'pie', 'donut'].includes(p.kind))?.kind;
-        if (k && (!args.chart || args.chart === 'none')) args.chart = k === 'line' || k === 'area' ? 'line' : k === 'pie' || k === 'donut' ? 'pie' : 'bar';
+        const k = choice.clone.panels.find((p) =>
+          ['bar', 'hbar', 'line', 'area', 'pie', 'donut'].includes(p.kind),
+        )?.kind;
+        if (k && (!args.chart || args.chart === 'none'))
+          args.chart = k === 'line' || k === 'area' ? 'line' : k === 'pie' || k === 'donut' ? 'pie' : 'bar';
       }
       if (choice.layout && tool.name === 'data.export') {
         args.layout = choice.layout;
@@ -2700,10 +3032,17 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
       // A real website reproduced: its web font and its own colour tokens are available to the page.
       const sl = choice?.layout;
       if (sl?.cssVars && !/data-site-tokens/.test(args.content as string)) {
-        const vars = Object.entries(sl.cssVars).map(([k, v]) => `${k}:${v}`).join(';');
-        const font = sl.fontHref && /^https:\/\/fonts\.googleapis\.com\//.test(sl.fontHref) ? `<link rel="stylesheet" href="${sl.fontHref}">` : '';
+        const vars = Object.entries(sl.cssVars)
+          .map(([k, v]) => `${k}:${v}`)
+          .join(';');
+        const font =
+          sl.fontHref && /^https:\/\/fonts\.googleapis\.com\//.test(sl.fontHref)
+            ? `<link rel="stylesheet" href="${sl.fontHref}">`
+            : '';
         const block = `${font}<style data-site-tokens>:root{${vars}}body{font-family:${(sl.fontStack ?? sl.font).replace(/[<>{};]/g, '')}}</style>`;
-        args.content = /<head[^>]*>/i.test(args.content as string) ? (args.content as string).replace(/<head[^>]*>/i, (m) => `${m}\n${block}`) : `${block}\n${args.content as string}`;
+        args.content = /<head[^>]*>/i.test(args.content as string)
+          ? (args.content as string).replace(/<head[^>]*>/i, (m) => `${m}\n${block}`)
+          : `${block}\n${args.content as string}`;
       }
     }
   }
@@ -2729,11 +3068,15 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     // (top of the page), Excel written by the model's own code (first sheet) — rendered with the chat's data.
     if (out.ok && /^(code\.run|report\.export)$/.test(tool.name)) {
       // Never turns a successful tool into an error: a failure is reported to the model.
-      const r = await applyClone(sid, t0).catch((e: unknown) => ({ n: -1, note: String((e as Error)?.message ?? e).slice(0, 200) }));
+      const r = await applyClone(sid, t0).catch((e: unknown) => ({
+        n: -1,
+        note: String((e as Error)?.message ?? e).slice(0, 200),
+      }));
       if (r.n > 0) {
         out.forModel += `\n[design] DESIGN CHOISI APPLIQUÉ — le classeur s'ouvre sur l'image choisie reconstruite avec les données du chat : ${r.note}. Dites-le à l'utilisateur. Ces feuilles (« Tableau de bord », « Tableau de bord (image) », « Données du tableau de bord ») appartiennent à l'application et sont RÉAPPLIQUÉES INTACTES après chaque enregistrement du classeur : ne les lisez pas, ne les modifiez pas, ne les reconstruisez pas, ne les diagnostiquez pas (openpyxl n'en voit qu'une partie).`;
         out.summary = `${out.summary ? `${out.summary} · ` : ''}design de l'image appliqué (${r.n} fichier(s))`;
-      } else if (r.n < 0) out.forModel += `\n[design] la reproduction de l'image choisie a échoué (${r.note}) — utilisez data.export avec le tableau détaillé pour la produire.`;
+      } else if (r.n < 0)
+        out.forModel += `\n[design] la reproduction de l'image choisie a échoué (${r.note}) — utilisez data.export avec le tableau détaillé pour la produire.`;
     }
     // The user's logo (recoloured to the palette) goes into every deliverable this tool just produced.
     if (out.ok && /^(code\.run|data\.export|report\.export)$/.test(tool.name)) {
@@ -2742,6 +3085,24 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     }
     releaseScope?.();
     out.forModel += designNote + houseNote;
+    // HARNESS — PostToolUse hooks add context to what the model reads (or flag the result).
+    if (hz.hooks.some((h) => h.event === 'PostToolUse')) {
+      const post = await runHooks(
+        hz.hooks,
+        {
+          event: 'PostToolUse',
+          tool: tool.name,
+          args,
+          result: out.forModel.slice(0, 20_000),
+          sessionId: sid,
+        },
+        hookRunners(sid),
+      );
+      if (post.context.length)
+        out.forModel += `\n<hook-context>\n${post.context.join('\n')}\n</hook-context>`;
+      if (post.decision === 'deny')
+        out.forModel += `\n[hook] ${post.reason ?? 'résultat signalé par un hook'}`;
+    }
     st.updateItem(sid, itemId, {
       status: out.ok ? 'ok' : 'error',
       summary: out.summary,
@@ -2765,8 +3126,51 @@ function stage(sid: string, text: string): void {
 /** Design of this chat: remembered for the chat, else chosen for the current request. */
 const runDesign = new Map<string, DesignChoice>();
 const runFormats = new Map<string, string[]>();
-/** Chats whose current request opened the design gallery: every deliverable of the run takes the committee formats. */
-const runHouse = new Set<string>();
+/** Tools pre-approved by the `allowed-tools` of the skills active in a chat's current run. */
+const runAllowed = new Map<string, string[]>();
+/** How hooks run: JavaScript in the sandbox, shell commands on the user's computer through the local bridge. */
+function hookRunners(sid: string): HookRunners {
+  return {
+    js: async (code, input) => {
+      const r = await runCode('javascript', `const input = ${JSON.stringify(input)};\n${code}`, {}, 10_000);
+      if (!r.ok) throw new Error(r.error ?? 'hook JavaScript en échec');
+      try {
+        return r.result ? JSON.parse(r.result) : null;
+      } catch {
+        return null;
+      }
+    },
+    shell:
+      mcpState('poste').status === 'connected'
+        ? async (command, input) => {
+            // Claude Code hooks read their JSON input on stdin.
+            const b64 = btoa(
+              unescape(
+                encodeURIComponent(
+                  JSON.stringify({
+                    ...input,
+                    session_id: sid,
+                    hook_event_name: input.event,
+                    tool_name: input.tool,
+                    tool_input: input.args,
+                  }),
+                ),
+              ),
+            );
+            const res = (await callTool('poste', 'bash', {
+              command: `printf %s '${b64}' | base64 -d | (${command})`,
+              timeout_s: 60,
+            })) as { content?: { text?: string }[] };
+            const text = res.content?.map((c) => c.text ?? '').join('') ?? '';
+            const m = /^exit (-?\d+)\n--- stdout ---\n([\s\S]*?)\n--- stderr ---\n([\s\S]*)$/.exec(text);
+            return m
+              ? { code: Number(m[1]), stdout: m[2]!, stderr: m[3]! }
+              : { code: -1, stdout: '', stderr: text };
+          }
+        : undefined,
+  };
+}
+export type { HookInput };
 const runRequest = new Map<string, string>();
 function designFor(sid: string): DesignChoice | undefined {
   return useStore.getState().sessions.find((x) => x.id === sid)?.design ?? runDesign.get(sid);
@@ -2788,11 +3192,24 @@ async function askDesign(
 ): Promise<{ choice: DesignChoice; formats?: string[] }> {
   const st = useStore.getState();
   const designId = uid();
-  useStore.setState({ status: { ...useStore.getState().status, [sid]: 'Choisissez le design du livrable…' } });
+  useStore.setState({
+    status: { ...useStore.getState().status, [sid]: 'Choisissez le design du livrable…' },
+  });
   const d = await new Promise<{ choice: DesignChoice; formats?: string[]; remember: boolean }>((resolve) => {
     st.pending.designs.set(designId, resolve);
-    signal.addEventListener('abort', () => resolve({ choice: { theme: 'house' }, remember: false, aborted: true } as never), { once: true });
-    st.pushItem(sid, { kind: 'design', id: designId, tool: toolName, deliverable: kind, formats, chosenFormats });
+    signal.addEventListener(
+      'abort',
+      () => resolve({ choice: { theme: 'house' }, remember: false, aborted: true } as never),
+      { once: true },
+    );
+    st.pushItem(sid, {
+      kind: 'design',
+      id: designId,
+      tool: toolName,
+      deliverable: kind,
+      formats,
+      chosenFormats,
+    });
   });
   st.pending.designs.delete(designId);
   // Stopped before choosing: say so (it is not a choice of the house design).
@@ -2814,18 +3231,21 @@ async function askDesign(
       ? d.choice.clone
         ? `Reproduction fidèle du design choisi (${d.choice.clone.panels.length} panneaux)`
         : d.choice.layout?.cssVars
-        ? `Site reproduit — ${host} (couleurs, polices et structure)`
-        : d.choice.layout
-          ? 'Design Internet — mise en page reproduite'
-          : 'Design Internet — couleurs et police'
+          ? `Site reproduit — ${host} (couleurs, polices et structure)`
+          : d.choice.layout
+            ? 'Design Internet — mise en page reproduite'
+            : 'Design Internet — couleurs et police'
       : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
-  const logoLbl = d.choice.logo ? ` · logo ${(LOGO_VARIANTS.find((v) => v.id === d.choice.logo!.variant)?.label ?? '').toLowerCase()}` : '';
+  const logoLbl = d.choice.logo
+    ? ` · logo ${(LOGO_VARIANTS.find((v) => v.id === d.choice.logo!.variant)?.label ?? '').toLowerCase()}`
+    : '';
   st.updateItem(sid, designId, { resolved: `${lbl}${logoLbl}`, chosenFormats: d.formats });
   runDesign.set(sid, d.choice);
   if (d.remember) st.patchSession(sid, { design: d.choice });
   return d;
 }
-const HOUSE_STYLE_LINE = /style maison|house (style|design|palette|charter)|charte maison|GOD 3D|BLUE ECOBANK|00415E|005C83|8CC63F|001B4D|003DA5|C8A951/i;
+const HOUSE_STYLE_LINE =
+  /style maison|house (style|design|palette|charter)|charte maison|GOD 3D|BLUE ECOBANK|00415E|005C83|8CC63F|001B4D|003DA5|C8A951/i;
 /** Palette and font of the chosen design, for code the model writes itself (openpyxl, python-docx, pptx, HTML). */
 function designPrompt(c: DesignChoice, formats?: string[]): string {
   const t = buildTheme(c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never));
@@ -2841,7 +3261,17 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
   if (!c?.clone) return { n: 0, note: '' };
   const pd = previewData(sid, 'Tableau de bord');
   // Never invented figures: the chat's data file, else (workbooks) the detail table of the workbook itself.
-  const targets = Object.values(files()).filter((f) => f.updatedAt >= since && !HOUSE_FILES.has(f.path) && !f.path.startsWith('assets/') && !f.path.startsWith('uploads/') && (/\.xlsx$/i.test(f.path) || (pd.from && (/\.(docx|pptx)$/i.test(f.path) || (/\.html?$/i.test(f.path) && !f.data.includes('data-dash-clone'))))));
+  const targets = Object.values(files()).filter(
+    (f) =>
+      f.updatedAt >= since &&
+      !HOUSE_FILES.has(f.path) &&
+      !f.path.startsWith('assets/') &&
+      !f.path.startsWith('uploads/') &&
+      (/\.xlsx$/i.test(f.path) ||
+        (pd.from &&
+          (/\.(docx|pptx)$/i.test(f.path) ||
+            (/\.html?$/i.test(f.path) && !f.data.includes('data-dash-clone'))))),
+  );
   if (!targets.length) return { n: 0, note: '' };
   const W = 1400;
   const H = Math.round(W / c.clone.aspect);
@@ -2856,8 +3286,17 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
       if (/\.xlsx$/i.test(f.path)) {
         // Re-saved by the model (openpyxl drops shapes and pictures)? Our sheets are removed and applied again, intact.
         // « Tableau de bord » is removed only with OUR data sheet beside it (a user's own sheet of that name is never touched).
-        const wbx = strFromU8(unzipSync(b, { filter: (e) => e.name === 'xl/workbook.xml' })['xl/workbook.xml'] ?? new Uint8Array());
-        const ours = REPRO_SHEETS.filter((x) => wbx.includes(`name="${x}"`) && (x === REPRO_SHEETS[0] || x === REPRO_SHEETS[3] ? wbx.includes(`name="${REPRO_SHEETS[2]}"`) : true));
+        const wbx = strFromU8(
+          unzipSync(b, { filter: (e) => e.name === 'xl/workbook.xml' })['xl/workbook.xml'] ??
+            new Uint8Array(),
+        );
+        const ours = REPRO_SHEETS.filter(
+          (x) =>
+            wbx.includes(`name="${x}"`) &&
+            (x === REPRO_SHEETS[0] || x === REPRO_SHEETS[3]
+              ? wbx.includes(`name="${REPRO_SHEETS[2]}"`)
+              : true),
+        );
         const b0 = ours.length ? removeSheets(b, ours) : null;
         if (b0) b = b0;
         // Excel: ALWAYS a LIVE first sheet on the image's design (shapes, formulas, filters, native charts). Rows: the
@@ -2881,15 +3320,38 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
           }
         }
         out = live?.bytes ?? (ours.length ? b : null);
-        if (!live && unfit) notes.push(`${f.path} : pas de tableau de bord vivant ajouté — ${unfit} ; les feuilles d'analyse restent en tête`);
-        else if (!live) notes.push(`${f.path} : tableau de bord vivant non construit (aucune table de données lisible dans le classeur) — aucune image collée à la place`);
+        if (!live && unfit)
+          notes.push(
+            `${f.path} : pas de tableau de bord vivant ajouté — ${unfit} ; les feuilles d'analyse restent en tête`,
+          );
+        else if (!live)
+          notes.push(
+            `${f.path} : tableau de bord vivant non construit (aucune table de données lisible dans le classeur) — aucune image collée à la place`,
+          );
         else if (from && from !== pd.from) notes.push(`chiffres du tableau de bord tirés de ${from}`);
-        if (live) notes.push(`${f.path} : 1re feuille « Tableau de bord » VIVANTE au design de l'image (${live.kpis} indicateurs en formules, ${live.charts} graphiques Excel, filtres ${live.filters.map((x) => `« ${x} »`).join(', ') || '—'}, ${live.links} bouton(s) de navigation) — aucune image fixe`);
+        if (live)
+          notes.push(
+            `${f.path} : 1re feuille « Tableau de bord » VIVANTE au design de l'image (${live.kpis} indicateurs en formules, ${live.charts} graphiques Excel, filtres ${live.filters.map((x) => `« ${x} »`).join(', ') || '—'}, ${live.links} bouton(s) de navigation) — aucune image fixe`,
+          );
         // Every other sheet (the model's own, the data sheet) in Maison 2.0 with the image's colours and font.
-        const rs = out ? await heavy('restyleWorkbook', out, { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, font: c.clone.font }, new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Sommaire'])) : null;
+        const rs = out
+          ? await heavy(
+              'restyleWorkbook',
+              out,
+              {
+                dark: c.clone.palette.dark,
+                primary: c.clone.palette.primary,
+                accent: c.clone.palette.accent,
+                font: c.clone.font,
+              },
+              new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Sommaire']),
+            )
+          : null;
         if (rs) {
           out = rs.bytes;
-          notes.push(`feuilles ${rs.sheets.map((x) => `« ${x} »`).join(', ')} mises au format Maison 2.0 aux couleurs de l'image`);
+          notes.push(
+            `feuilles ${rs.sheets.map((x) => `« ${x} »`).join(', ')} mises au format Maison 2.0 aux couleurs de l'image`,
+          );
         }
       } else out = /\.docx$/i.test(f.path) ? addImagePageDocx(b, pic) : addImageSlidePptx(b, pic);
       if (out) {
@@ -2915,7 +3377,13 @@ function applyLogo(sid: string, since: number): number {
   const url = `data:image/png;base64,${lf.data}`;
   let n = 0;
   for (const f of Object.values(files())) {
-    if (f.updatedAt < since || HOUSE_FILES.has(f.path) || f.path.startsWith('assets/') || f.path.startsWith('uploads/')) continue;
+    if (
+      f.updatedAt < since ||
+      HOUSE_FILES.has(f.path) ||
+      f.path.startsWith('assets/') ||
+      f.path.startsWith('uploads/')
+    )
+      continue;
     if (f.binary && isOffice(f.path)) {
       const out = addLogoToOffice(f.path, bytesOf(f), logo);
       if (out) {
@@ -2936,32 +3404,76 @@ function applyLogo(sid: string, since: number): number {
 async function finishWorkbooks(sid: string, since: number): Promise<string[]> {
   const c = designFor(sid);
   const design = c?.clone
-    ? buildTheme({ primary: c.clone.palette.primary, accent: c.clone.palette.accent, dark: c.clone.palette.dark, font: c.clone.font })
+    ? buildTheme({
+        primary: c.clone.palette.primary,
+        accent: c.clone.palette.accent,
+        dark: c.clone.palette.dark,
+        font: c.clone.font,
+      })
     : buildTheme(c ? (c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never)) : null);
-  const skip = new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Données du tableau de bord', 'Synthèse 3D', 'Agrégats', 'Sommaire']);
+  const skip = new Set([
+    'Tableau de bord',
+    'Tableau de bord vivant',
+    'Tableau de bord (image)',
+    'Données du tableau de bord',
+    'Synthèse 3D',
+    'Agrégats',
+    'Sommaire',
+  ]);
   const lines: string[] = [];
   // THE IMAGE'S DESIGN ON EVERY PAGE of the other exports (Word, PowerPoint, HTML and the PDF printed from it).
   // A catalogue model: its palette and its page layout (Word / HTML / PowerPoint) on every page.
   const model = modelById(c?.model);
   const mp = model?.palette;
   const skin: Skin | null = mp
-    ? { dark: mp.dark, primary: mp.primary, accent: mp.accent, page: model!.format === 'slides' || !mp.night ? mp.page : '#FFFFFF', font: mp.font, layout: model!.layout }
+    ? {
+        dark: mp.dark,
+        primary: mp.primary,
+        accent: mp.accent,
+        page: model!.format === 'slides' || !mp.night ? mp.page : '#FFFFFF',
+        font: mp.font,
+        layout: model!.layout,
+      }
     : c?.clone
-      ? { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, page: c.clone.page, font: c.clone.font }
+      ? {
+          dark: c.clone.palette.dark,
+          primary: c.clone.palette.primary,
+          accent: c.clone.palette.accent,
+          page: c.clone.page,
+          font: c.clone.font,
+        }
       : c && c.theme === 'custom' && c.colors?.primary
-        ? { dark: c.colors.dark ?? c.colors.primary, primary: c.colors.primary, accent: c.colors.accent ?? c.colors.primary, font: c.colors.font ?? 'Segoe UI' }
+        ? {
+            dark: c.colors.dark ?? c.colors.primary,
+            primary: c.colors.primary,
+            accent: c.colors.accent ?? c.colors.primary,
+            font: c.colors.font ?? 'Segoe UI',
+          }
         : null;
-  const skinDesign = skin ? buildTheme({ primary: skin.primary, accent: skin.accent, dark: skin.dark, font: skin.font }) : null;
+  const skinDesign = skin
+    ? buildTheme({ primary: skin.primary, accent: skin.accent, dark: skin.dark, font: skin.font })
+    : null;
   if (skin && skinDesign)
     for (const f of Object.values(files())) {
-      if (f.updatedAt < since || HOUSE_FILES.has(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
+      if (
+        f.updatedAt < since ||
+        HOUSE_FILES.has(f.path) ||
+        f.path.startsWith('uploads/') ||
+        f.path.startsWith('assets/')
+      )
+        continue;
       // House colours written by the exporters (navy / blue / gold) become the image's first.
-      const base = f.binary && /\.(docx|pptx)$/i.test(f.path) ? (recolorOffice(bytesOf(f), skinDesign)?.bytes ?? bytesOf(f)) : null;
+      const base =
+        f.binary && /\.(docx|pptx)$/i.test(f.path)
+          ? (recolorOffice(bytesOf(f), skinDesign)?.bytes ?? bytesOf(f))
+          : null;
       if (f.binary && /\.docx$/i.test(f.path)) {
         const out = skinDocx(base!, skin);
         if (out) {
           writeBytes(f.path, out, f.mime);
-          lines.push(`${f.path} : chaque page au design de l'image (bandeau d'en-tête, titres, tableaux, police).`);
+          lines.push(
+            `${f.path} : chaque page au design de l'image (bandeau d'en-tête, titres, tableaux, police).`,
+          );
         }
       } else if (f.binary && /\.pptx$/i.test(f.path)) {
         const out = skinPptx(base!, skin);
@@ -2978,7 +3490,15 @@ async function finishWorkbooks(sid: string, since: number): Promise<string[]> {
       }
     }
   for (const f of Object.values(files())) {
-    if (!f.binary || f.updatedAt < since || HOUSE_FILES.has(f.path) || !/\.xlsx$/i.test(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
+    if (
+      !f.binary ||
+      f.updatedAt < since ||
+      HOUSE_FILES.has(f.path) ||
+      !/\.xlsx$/i.test(f.path) ||
+      f.path.startsWith('uploads/') ||
+      f.path.startsWith('assets/')
+    )
+      continue;
     const r = await heavy('maisonBand', bytesOf(f), design, skip);
     if (!r) {
       // Already banded (data.export): the Sommaire sheet is still rebuilt so it lists every sheet of the final workbook.
@@ -2987,11 +3507,20 @@ async function finishWorkbooks(sid: string, since: number): Promise<string[]> {
       continue;
     }
     writeBytes(f.path, r.bytes, f.mime);
-    lines.push(`${f.path} : indicateurs et graphiques placés au-dessus de l'en-tête sur ${r.banded.map((x) => `« ${x} »`).join(', ')} (${r.moved} graphique(s) déplacé(s), ${r.created} créé(s))${r.sparklines ? `, ${r.sparklines} sparkline(s)` : ''}${r.sommaire ? ', feuille « Sommaire » en tête' : ''}.`);
+    lines.push(
+      `${f.path} : indicateurs et graphiques placés au-dessus de l'en-tête sur ${r.banded.map((x) => `« ${x} »`).join(', ')} (${r.moved} graphique(s) déplacé(s), ${r.created} créé(s))${r.sparklines ? `, ${r.sparklines} sparkline(s)` : ''}${r.sommaire ? ', feuille « Sommaire » en tête' : ''}.`,
+    );
   }
   // CONTRÔLE DESIGN AVANT LIVRAISON — last: contrast, columns, page framing, overflowing text, on every deliverable.
   for (const f of Object.values(files())) {
-    if (f.updatedAt < since || HOUSE_FILES.has(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/') || !/\.(xlsx|docx|pptx|html?)$/i.test(f.path)) continue;
+    if (
+      f.updatedAt < since ||
+      HOUSE_FILES.has(f.path) ||
+      f.path.startsWith('uploads/') ||
+      f.path.startsWith('assets/') ||
+      !/\.(xlsx|docx|pptx|html?)$/i.test(f.path)
+    )
+      continue;
     try {
       const r = await heavy('designQA', f.path, f.binary ? bytesOf(f) : f.data);
       if (!r) continue;
@@ -2999,7 +3528,9 @@ async function finishWorkbooks(sid: string, since: number): Promise<string[]> {
         if (typeof r.data === 'string') writeText(f.path, r.data);
         else writeBytes(f.path, r.data, f.mime);
       }
-      lines.push(`${f.path} — contrôle design : ${[...r.fixes, ...r.warnings.map((w) => `⚠ ${w}`)].join(' ; ')}.`);
+      lines.push(
+        `${f.path} — contrôle design : ${[...r.fixes, ...r.warnings.map((w) => `⚠ ${w}`)].join(' ; ')}.`,
+      );
     } catch {
       /* a file the checker cannot read is delivered as is */
     }
@@ -3057,7 +3588,12 @@ async function delegate(
       agentLabel: agent.name,
       // The model the owner chose runs EVERY agent of the mission (only its tokens are spent); a specialist's own
       // model is used only when the chat is in automatic routing.
-      model: st.settings.defaultModel && st.settings.defaultModel !== 'auto' ? parent.model : agent.model?.includes('/') ? agent.model : parent.model,
+      model:
+        st.settings.defaultModel && st.settings.defaultModel !== 'auto'
+          ? parent.model
+          : agent.model?.includes('/')
+            ? agent.model
+            : parent.model,
     });
     st.updateItem(parent.session.id, itemId, { status: 'done', summary: r.text.slice(0, 4000) });
     sub.cost += r.cost;
@@ -3073,7 +3609,62 @@ async function delegate(
 const sub = { cost: 0, tokensIn: 0, tokensOut: 0 };
 
 /** Starts a run in a session (UI entry point). */
+type RunOpts = NonNullable<Parameters<typeof runAgentOnce>[3]>;
+/**
+ * HARNESS turn (23/10/2026): UserPromptSubmit / SessionStart hooks before the mission (block it, or add context the
+ * model reads), the mission itself, then the Stop hooks (a hook that blocks the stop sends the agent back to work with
+ * its reason — twice at most, never a loop).
+ */
 export async function runAgent(
+  sessionId: string,
+  text: string,
+  attachments: Attachment[],
+  opts: RunOpts = {},
+  stopRound = 0,
+): Promise<void> {
+  const st = useStore.getState();
+  const hz = harnessOf(st.settings.harness);
+  const session = st.sessions.find((s) => s.id === sessionId);
+  if (!session || st.running[sessionId] || !hz.hooks.some((h) => h.enabled))
+    return runAgentOnce(sessionId, text, attachments, opts);
+  const runners = hookRunners(sessionId);
+  let prompt = text;
+  if (hz.hooks.some((h) => h.enabled && (h.event === 'UserPromptSubmit' || h.event === 'SessionStart'))) {
+    const outs = [];
+    if (!session.items.some((i) => i.kind === 'user'))
+      outs.push(await runHooks(hz.hooks, { event: 'SessionStart', prompt: text, sessionId }, runners));
+    outs.push(await runHooks(hz.hooks, { event: 'UserPromptSubmit', prompt: text, sessionId }, runners));
+    const blocked = outs.find((o) => o.decision === 'deny');
+    if (blocked) {
+      if (!opts.shown) st.pushItem(sessionId, { kind: 'user', id: uid(), text, attachments, ts: Date.now() });
+      st.pushItem(sessionId, {
+        kind: 'error',
+        id: uid(),
+        text: `Requête bloquée par un hook : ${blocked.reason ?? 'sans motif'}`,
+      });
+      return;
+    }
+    const ctx = outs.flatMap((o) => o.context);
+    if (ctx.length) {
+      if (!opts.shown) st.pushItem(sessionId, { kind: 'user', id: uid(), text, attachments, ts: Date.now() });
+      prompt = `${text}\n\n<hook-context>\n${ctx.join('\n')}\n</hook-context>`;
+      opts = { ...opts, shown: true };
+    }
+  }
+  await runAgentOnce(sessionId, prompt, attachments, opts);
+  if (stopRound >= 2 || !hz.hooks.some((h) => h.enabled && h.event === 'Stop')) return;
+  const items = useStore.getState().sessions.find((s) => s.id === sessionId)?.items ?? [];
+  const last = [...items].reverse().find((i) => i.kind === 'assistant');
+  const stop = await runHooks(
+    hz.hooks,
+    { event: 'Stop', prompt: last && last.kind === 'assistant' ? last.text : '', sessionId },
+    runners,
+  );
+  if (stop.decision === 'deny' && stop.reason)
+    return runAgent(sessionId, `↻ Hook Stop : ${stop.reason}`, [], { mode: opts.mode }, stopRound + 1);
+}
+
+async function runAgentOnce(
   sessionId: string,
   text: string,
   attachments: Attachment[],
@@ -3094,7 +3685,14 @@ export async function runAgent(
   const benchTag = opts.bench ?? null;
   lastPolicy = '';
   modelLock = null;
-  experimentRun = Boolean(opts.bench || opts.fabric || opts.apprentice || opts.cognitive || opts.experiment || opts.jev !== undefined);
+  experimentRun = Boolean(
+    opts.bench ||
+    opts.fabric ||
+    opts.apprentice ||
+    opts.cognitive ||
+    opts.experiment ||
+    opts.jev !== undefined,
+  );
   fabricRun = opts.fabric ?? null;
   apprenticeRun = opts.apprentice ?? null;
   cognitiveRunOpts = opts.cognitive ?? null;
@@ -3139,7 +3737,8 @@ export async function runAgent(
   // JEV L0: requests answered without any model (pure arithmetic, date / time).
   // JEV REFLEXES (v63): ECB rates, CFA conversions, entity cards, definitions — and computations JEV codes, EXECUTES in
   // the sandbox and interprets — answered without the chat model (0 token for the reflexes, a free coder for the code).
-  const reflexOk = jevEnabled() && !attachments.length && (opts.mode ?? st.agentMode) !== 'plan' && !experimentRun;
+  const reflexOk =
+    jevEnabled() && !attachments.length && (opts.mode ?? st.agentMode) !== 'plan' && !experimentRun;
   const direct =
     (reflexOk ? jevRt.directAnswer(text) : null) ??
     (reflexOk ? await reflexAnswer(text, ac.signal).catch(() => null) : null);
@@ -3264,16 +3863,28 @@ export async function runAgent(
   acct.reset(sessionId);
   // PREMIUM DESIGN FIRST: a request that asks for a deliverable (Excel, Word, PPT, PDF, mail, site, app) opens the
   // gallery BEFORE any work — whatever tool the model uses afterwards (native exporter or its own Python code).
-  const wanted = deliverableFromText(text, attachments.map((a) => a.name));
+  const wanted = deliverableFromText(
+    text,
+    attachments.map((a) => a.name),
+  );
   // A new deliverable request picks its design again; « continue » keeps the design chosen for the mission it resumes.
   if (wanted && !resumed) runDesign.delete(sessionId);
-  runHouse.delete(sessionId);
-  if (wanted) {
-    runHouse.add(sessionId);
-    runRequest.set(sessionId, text.slice(0, 300));
-  }
-  if (wanted && !experimentRun && st.settings.designPicker !== false && !designFor(sessionId) && !ac.signal.aborted) {
-    const d = await askDesign(sessionId, ac.signal, 'request', wanted, FORMATS_OF[wanted], FORMATS_OF[wanted].slice(0, 1));
+  if (wanted) runRequest.set(sessionId, text.slice(0, 300));
+  if (
+    wanted &&
+    !experimentRun &&
+    st.settings.designPicker !== false &&
+    !designFor(sessionId) &&
+    !ac.signal.aborted
+  ) {
+    const d = await askDesign(
+      sessionId,
+      ac.signal,
+      'request',
+      wanted,
+      FORMATS_OF[wanted],
+      FORMATS_OF[wanted].slice(0, 1),
+    );
     if (d.formats?.length) runFormats.set(sessionId, d.formats);
   }
   // CHAT-SCOPED MEMORY: from here on, every file read / write / list of the agent is confined to this chat.
@@ -3292,7 +3903,12 @@ export async function runAgent(
   currentPacket = null;
   beginCheckpoint(sessionId, text);
   // Mission boundary: the history firewall reads these marks (the raw history is never deleted).
-  st.patchSession(sessionId, (cur) => ({ turns: [...(cur.turns ?? []), { start: cur.history.length, text: missionTurn.slice(0, 400), at: Date.now() }].slice(-200) }));
+  st.patchSession(sessionId, (cur) => ({
+    turns: [
+      ...(cur.turns ?? []),
+      { start: cur.history.length, text: missionTurn.slice(0, 400), at: Date.now() },
+    ].slice(-200),
+  }));
   let result: LoopResult | null = null;
   let errored = false;
   let failureNote = '';
@@ -3342,7 +3958,13 @@ export async function runAgent(
       try {
         const n = await finishWorkbooks(sessionId, started);
         if (n.length)
-          useStore.getState().pushItem(sessionId, { kind: 'intel', id: uid(), title: 'Design appliqué à tous les livrables', tone: 'info', lines: n });
+          useStore.getState().pushItem(sessionId, {
+            kind: 'intel',
+            id: uid(),
+            title: 'Design appliqué à tous les livrables',
+            tone: 'info',
+            lines: n,
+          });
       } catch {
         /* never blocks the end of the turn */
       }
@@ -3400,19 +4022,26 @@ export async function runAgent(
       verdict: result?.report?.status ?? (errored ? 'ERROR' : (cur.verdict ?? null)),
       lastMode: mode,
       // JEV SEMANTIC MEMORY of this chat: decisions / preferences said, and what was delivered.
-      memory: errored ? cur.memory : mergeFacts(cur.memory ?? [], extractFacts({ request: text, delivered }), 200),
+      memory: errored
+        ? cur.memory
+        : mergeFacts(cur.memory ?? [], extractFacts({ request: text, delivered }), 200),
       // « auto »: the model picked by the first request stays the model of this chat.
       pinnedModel:
         cur.model === 'auto' && result?.models.length && !errored
-          ? (result.fallbacks ? result.models.at(-1) : (cur.pinnedModel ?? result.models[0]))
+          ? result.fallbacks
+            ? result.models.at(-1)
+            : (cur.pinnedModel ?? result.models[0])
           : cur.pinnedModel,
       lastDelivery:
         delivered.length && !errored
           ? {
               start: cur.history.length,
               // An alteration keeps pointing at the files it modifies plus the rest of the same delivery.
-              paths: [...new Set([...delivered, ...(ALTERATION.test(text) ? (cur.lastDelivery?.paths ?? []) : [])])].slice(0, 12),
-              request: ALTERATION.test(text) && cur.lastDelivery ? cur.lastDelivery.request : text.slice(0, 300),
+              paths: [
+                ...new Set([...delivered, ...(ALTERATION.test(text) ? (cur.lastDelivery?.paths ?? []) : [])]),
+              ].slice(0, 12),
+              request:
+                ALTERATION.test(text) && cur.lastDelivery ? cur.lastDelivery.request : text.slice(0, 300),
               at: Date.now(),
             }
           : cur.lastDelivery,
@@ -3420,14 +4049,32 @@ export async function runAgent(
     // LEARNING FROM ALTERATIONS: what the user had to ask after a delivery becomes a lesson for that task family.
     const prevDelivery = session.lastDelivery;
     if (!errored && prevDelivery && ALTERATION.test(text) && !opts.bench && !opts.fabric) {
-      const lesson = lessonFrom({ alteration: text, originalRequest: prevDelivery.request, tag: analyzeTask({ text: prevDelivery.request }).type });
+      const lesson = lessonFrom({
+        alteration: text,
+        originalRequest: prevDelivery.request,
+        tag: analyzeTask({ text: prevDelivery.request }).type,
+      });
       if (lesson) {
         // CONTROLLED SELF-LEARNING: the lesson is a PROPOSAL (security, stability, compatibility, design protection
         // checked) — it changes nothing until the user validates it.
         const s2 = useStore.getState();
         const p = propose(lesson, text, s2.lessons);
-        if (!s2.updates.some((u) => u.fact.text === lesson.text) && !s2.lessons.some((l) => l.text === lesson.text)) s2.setUpdates([...s2.updates, p].slice(-50));
-        s2.pushItem(sessionId, { kind: 'intel', id: uid(), title: 'JEV — mise à jour proposée (en attente de votre validation)', tone: p.status === 'blocked' ? 'warn' : 'info', lines: [lesson.text, ...p.checks.map((c) => `${c.ok ? '✓' : '✗'} ${c.label} : ${c.note}`), 'Validez ou refusez dans JEV Cognitive OS → Vue d’ensemble → Mises à jour proposées. Rien n’est appliqué sans vous.'] });
+        if (
+          !s2.updates.some((u) => u.fact.text === lesson.text) &&
+          !s2.lessons.some((l) => l.text === lesson.text)
+        )
+          s2.setUpdates([...s2.updates, p].slice(-50));
+        s2.pushItem(sessionId, {
+          kind: 'intel',
+          id: uid(),
+          title: 'JEV — mise à jour proposée (en attente de votre validation)',
+          tone: p.status === 'blocked' ? 'warn' : 'info',
+          lines: [
+            lesson.text,
+            ...p.checks.map((c) => `${c.ok ? '✓' : '✗'} ${c.label} : ${c.note}`),
+            'Validez ou refusez dans JEV Cognitive OS → Vue d’ensemble → Mises à jour proposées. Rien n’est appliqué sans vous.',
+          ],
+        });
       }
     }
     // LEARNING: every run feeds the mission ledger (strategy evolution, failure memory,
@@ -3681,7 +4328,8 @@ export async function runAgent(
     }
     // Follow-ups typed while it worked and not taken by a step (a one-call answer): answered right away, in order.
     const rest = takeQueued(sessionId);
-    if (rest.length && !ac.signal.aborted) setTimeout(() => void runAgent(sessionId, rest.join('\n\n'), [], { shown: true }), 0);
+    if (rest.length && !ac.signal.aborted)
+      setTimeout(() => void runAgent(sessionId, rest.join('\n\n'), [], { shown: true }), 0);
   }
 }
 
@@ -3709,7 +4357,29 @@ export function queueMessage(sessionId: string, text: string): void {
   const t = text.trim();
   if (!t) return;
   queued.set(sessionId, [...(queued.get(sessionId) ?? []), t]);
-  useStore.getState().pushItem(sessionId, { kind: 'user', id: uid(), text: t, attachments: [], ts: Date.now() });
+  useStore
+    .getState()
+    .pushItem(sessionId, { kind: 'user', id: uid(), text: t, attachments: [], ts: Date.now() });
+}
+
+/** /compact (harness): the chat history is compressed now (structured summary of the middle), the next turns are lighter. */
+export function compactSession(sid: string): { before: number; after: number } {
+  const st = useStore.getState();
+  const sess = st.sessions.find((s) => s.id === sid);
+  if (!sess) return { before: 0, after: 0 };
+  const before = estimate(sess.history);
+  const next = compact(sess.history, Math.max(2_000, Math.floor(before * 0.3)), sess.title ?? '');
+  st.patchSession(sid, { history: next });
+  return { before, after: estimate(next) };
+}
+
+/** user.ask: the user's answer to a question card; a card left by a stopped mission sends the answer as a new message. */
+export function resolveQuestion(sessionId: string, id: string, answer: string): void {
+  const st = useStore.getState();
+  const waiting = st.pending.questions.get(id);
+  st.updateItem(sessionId, id, { answer });
+  if (waiting) waiting(answer);
+  else void runAgent(sessionId, answer, []);
 }
 
 export function resolveApproval(
@@ -3725,7 +4395,10 @@ export function resolveApproval(
  * stopped (or by a page reload) has nobody waiting: the choice is then kept for the chat and the request is relaunched
  * with it — a click on « Générer » never does nothing.
  */
-export function resolveDesign(id: string, d: { choice: DesignChoice; formats?: string[]; remember: boolean }): 'resumed' | 'relaunched' | 'none' {
+export function resolveDesign(
+  id: string,
+  d: { choice: DesignChoice; formats?: string[]; remember: boolean },
+): 'resumed' | 'relaunched' | 'none' {
   const st = useStore.getState();
   const waiting = st.pending.designs.get(id);
   if (waiting) {
@@ -3735,8 +4408,15 @@ export function resolveDesign(id: string, d: { choice: DesignChoice; formats?: s
   const sess = st.sessions.find((x) => x.items.some((i) => i.id === id));
   if (!sess) return 'none';
   const idx = sess.items.findIndex((i) => i.id === id);
-  const ask = [...sess.items.slice(0, idx)].reverse().find((i) => i.kind === 'user') as Extract<import('./types').Item, { kind: 'user' }> | undefined;
-  const lbl = modelById(d.choice.model) ? `Modèle « ${modelById(d.choice.model)!.name} »` : d.choice.clone ? 'Reproduction fidèle du design choisi' : d.choice.theme === 'custom' ? 'Design Internet' : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
+  const ask = [...sess.items.slice(0, idx)].reverse().find((i) => i.kind === 'user') as
+    Extract<import('./types').Item, { kind: 'user' }> | undefined;
+  const lbl = modelById(d.choice.model)
+    ? `Modèle « ${modelById(d.choice.model)!.name} »`
+    : d.choice.clone
+      ? 'Reproduction fidèle du design choisi'
+      : d.choice.theme === 'custom'
+        ? 'Design Internet'
+        : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
   st.updateItem(sess.id, id, { resolved: `${lbl} — relancé`, chosenFormats: d.formats });
   // The design is kept for the chat (the relaunched request must not ask again), then the request runs again.
   st.patchSession(sess.id, { design: d.choice });

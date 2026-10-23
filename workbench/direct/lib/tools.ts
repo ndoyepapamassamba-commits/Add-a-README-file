@@ -162,6 +162,8 @@ import { keylessSearch } from './freeEngines';
 import { frontendDesignLint, isHtmlDocument, lintReport, lintSummary } from '../../server/services/frontendDesignLint';
 import { diffReport, pixelDiff } from '../../server/services/visualDiff';
 import type { ArtifactDef, PlanStep } from './types';
+import { searchSkills } from './harness';
+import { reaInspect, type ReaMode } from './reaLocal';
 import {
   bytesOf,
   dataUrl,
@@ -1113,7 +1115,7 @@ export const TOOLS: DirectTool[] = [
   {
     name: 'code.run',
     description:
-      'For calculations only — never to build an Office deliverable (report, structured file, workbook, deck): use dossier.export (data = the file) for those. Run JavaScript or Python in an isolated sandbox (no access to the page). Every workspace file is available, binaries included. JS: async code, use console.log; readFile(path) → string for text files, Uint8Array for binaries (PDF, xlsx, docx, images); readBytes(path) → Uint8Array; await readText(path) → extracted text of a PDF / Word / PowerPoint; writeFile(path, string | Uint8Array) saves a file. Python (Pyodide; numpy, pandas, openpyxl, xlrd, pypdf): workspace files are mounted at their path (pd.read_excel works); await read_text(path) gives the text of a PDF / Word file; files written in outputs/ are saved back. If Python is unavailable (blocked network, no offline pack), use JavaScript: it reads the same files.',
+      'Run code for anything: calculations, transformations, and files in ANY format (no format requirement: xlsx, docx, pptx, pdf, png, svg, zip, mp3, ipynb, parquet…; dossier.export / report.export / data.export are optional helpers). Run JavaScript or Python in an isolated sandbox (no access to the page). Every workspace file is available, binaries included. JS: async code, use console.log; readFile(path) → string for text files, Uint8Array for binaries (PDF, xlsx, docx, images); readBytes(path) → Uint8Array; await readText(path) → extracted text of a PDF / Word / PowerPoint; writeFile(path, string | Uint8Array) saves a file. Python (Pyodide; numpy, pandas, openpyxl, xlrd, pypdf): workspace files are mounted at their path (pd.read_excel works); await read_text(path) gives the text of a PDF / Word file; files written in outputs/ are saved back. If Python is unavailable (blocked network, no offline pack), use JavaScript: it reads the same files.',
     parameters: obj(
       {
         language: { type: 'string', enum: ['javascript', 'python'] },
@@ -1444,8 +1446,106 @@ export const TOOLS: DirectTool[] = [
     async run(a) {
       const sk = useStore.getState().skills.find((s) => s.name === S(a.name));
       const t = sk?.files[S(a.path)];
-      if (t === undefined) throw new Error(`Fichier introuvable dans le skill : ${S(a.path)}`);
+      if (t === undefined) {
+        const b = sk?.assets?.[S(a.path)];
+        if (b !== undefined)
+          return ok(`binaire ${Math.round((b.length * 3) / 4)} o`, `Binary file of the skill (${Math.round((b.length * 3) / 4)} bytes). Copy it into the workspace with skill.export to use it (code.run, terminal).`);
+        throw new Error(`Fichier introuvable dans le skill : ${S(a.path)}`);
+      }
       return ok(`${t.length} caractères`, clip(t));
+    },
+  },
+  {
+    name: 'skill.search',
+    description:
+      'Search the installed skills (hundreds: project, organisation, plugins) by words of the task; returns names and descriptions. Then load the best one with skill.use.',
+    parameters: obj({ query: str('Words describing the task') }, ['query']),
+    risk: 'read',
+    readOnly: true,
+    label: (a) => `Chercher une compétence : ${S(a.query)}`,
+    async run(a) {
+      const all = useStore.getState().skills.filter((s) => s.enabled);
+      const hits = searchSkills(S(a.query), all, 15);
+      return ok(
+        `${hits.length} compétence(s)`,
+        hits.length ? hits.map((s) => `- ${s.name}: ${s.description.slice(0, 220)}`).join('\n') : 'No skill matches; answer with your own method.',
+      );
+    },
+  },
+  {
+    name: 'skill.export',
+    description:
+      'Copy every file of a skill (scripts, templates, fonts, images… any format) into the workspace under skills/<name>/, so code.run and the terminal can run or read them.',
+    parameters: obj({ name: str('Skill name') }, ['name']),
+    risk: 'write',
+    readOnly: false,
+    label: (a) => `Copier les fichiers du skill ${S(a.name)}`,
+    async run(a) {
+      const sk = useStore.getState().skills.find((s) => s.name === S(a.name));
+      if (!sk) throw new Error(`Skill inconnu : ${S(a.name)}`);
+      const dir = `skills/${sk.name.replace(/[^\w.-]+/g, '-')}`;
+      writeText(`${dir}/SKILL.md`, sk.body);
+      let n = 1;
+      for (const [p, t] of Object.entries(sk.files)) {
+        writeText(`${dir}/${p}`, t);
+        n++;
+      }
+      for (const [p, b64] of Object.entries(sk.assets ?? {})) {
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        writeBytes(`${dir}/${p}`, bytes);
+        n++;
+      }
+      return ok(`${n} fichier(s) → ${dir}/`, `Copied ${n} file(s) of ${sk.name} to ${dir}/ (SKILL.md, ${Object.keys(sk.files).length} text, ${Object.keys(sk.assets ?? {}).length} binary).`);
+    },
+  },
+  {
+    name: 'rea.inspect',
+    description:
+      'REA (Reverse Engineer Anything) in the browser: reverse-engineer a workspace file WITHOUT running it — ZIP family (docx/xlsx/pptx, apk, jar, ipa, whl, vsix, mcpb, crx), npm .tgz, WebAssembly (sections, imports, exports), SQLite (header, schema), ELF / PE / Mach-O binaries, PDF, images, JavaScript / JSON (imports, exports, API routes, env names, masked secrets). Returns an evidence id and observed / inferred / unknown facts. Modes: overview (default), strings, search (pattern). For deeper analysis (JS graph, decompilation, Frida) use the mcp.rea.* tools of the local bridge when connected.',
+    parameters: obj(
+      { path: str('Workspace file'), mode: { type: 'string', enum: ['overview', 'strings', 'search'] }, pattern: str('Regular expression (mode search)') },
+      ['path'],
+    ),
+    risk: 'read',
+    readOnly: true,
+    label: (a) => `REA ${S(a.path)}`,
+    async run(a) {
+      const f = getFile(normPath(S(a.path)));
+      if (!f) throw new Error(`Fichier introuvable : ${S(a.path)}`);
+      const r = await reaInspect(f.path, bytesOf(f), (S(a.mode) || 'overview') as ReaMode, S(a.pattern));
+      return ok(`${r.format} · ${r.evidenceId.slice(0, 15)}…`, clip(r.text));
+    },
+  },
+  {
+    name: 'user.ask',
+    description:
+      'Ask the user a question and WAIT for the answer (choice among options, or free text). Use it only when a decision genuinely belongs to the user and cannot be inferred; never for permission (the app asks for approvals itself).',
+    parameters: obj(
+      {
+        question: str('The question, complete and self-contained'),
+        options: { type: 'array', items: { type: 'string' }, description: '2 to 6 suggested answers (the user can also type another one)' },
+      },
+      ['question'],
+    ),
+    risk: 'read',
+    readOnly: true,
+    label: (a) => `Question : ${S(a.question).slice(0, 60)}`,
+    async run(a, ctx) {
+      const st = useStore.getState();
+      const id = uid();
+      const options = Array.isArray(a.options) ? (a.options as unknown[]).map(String).slice(0, 6) : [];
+      const answer = await new Promise<string>((resolve) => {
+        st.pending.questions.set(id, resolve);
+        ctx.signal.addEventListener('abort', () => resolve(''), { once: true });
+        st.pushItem(ctx.sessionId, { kind: 'question', id, question: S(a.question), options });
+        useStore.setState({ status: { ...useStore.getState().status, [ctx.sessionId]: 'Une question vous attend…' } });
+      });
+      st.pending.questions.delete(id);
+      if (!answer) return ok('sans réponse', 'The user did not answer (mission stopped). Do not assume an answer.');
+      st.updateItem(ctx.sessionId, id, { answer });
+      return ok(`réponse : ${answer.slice(0, 60)}`, `User answer: ${answer}`);
     },
   },
   {

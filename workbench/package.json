@@ -13,7 +13,7 @@
     "dev:web": "vite",
     "build": "npm run typecheck && npm run build:web && npm run build:server",
     "build:web": "vite build && vite build -c vite.direct.config.ts && node scripts/copy-standalone.mjs",
-    "build:direct": "vite build -c vite.direct.config.ts && node scripts/copy-standalone.mjs && node scripts/build-mcp.mjs && node scripts/livraison.mjs",
+    "build:direct": "vite build -c vite.direct.config.ts && node scripts/copy-standalone.mjs && node scripts/build-mcp.mjs && node scripts/skills_pack.mjs && node scripts/livraison.mjs",
     "build:mcp": "node scripts/build-mcp.mjs",
     "build:direct:single": "vite build -c vite.direct.config.ts && node scripts/copy-standalone.mjs",
     "livraison:envoyee": "node scripts/livraison.mjs --envoyee",

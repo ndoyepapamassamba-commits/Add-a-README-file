@@ -46,6 +46,7 @@ import { hydrate, today, useStore } from './lib/store';
 import type { View } from './lib/types';
 import { ChatView } from './views/ChatView';
 import { PromptStudioView } from './views/PromptStudioView';
+import { autoInstallSkillPack } from './lib/skillPack';
 import { FilmCircuitView } from './views/FilmCircuitView';
 import { CockpitView } from './views/CockpitView';
 import { WorkflowsView } from './views/WorkflowsView';
@@ -110,6 +111,8 @@ export function App() {
         .then((models) => useStore.setState({ models, modelsError: null }))
         .catch((e: Error) => useStore.setState({ modelsError: e.message }));
       void refreshCredits();
+      // Every skill, command and agent of the session (massamba-skills.js next to the app), in the background.
+      void autoInstallSkillPack().catch(() => undefined);
     });
     const t = setInterval(() => void refreshCredits(), 120_000);
     return () => clearInterval(t);

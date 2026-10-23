@@ -47,6 +47,9 @@ const CLAUDE_TOOL_MAP: Record<string, string[]> = {
   webfetch: ['web.fetch'],
   todowrite: ['plan.update'],
   task: ['agent.delegate'],
+  agent: ['agent.delegate'],
+  skill: ['skill.use', 'skill.read', 'skill.search'],
+  askuserquestion: ['user.ask'],
   notebookedit: [],
 };
 

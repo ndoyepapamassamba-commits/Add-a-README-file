@@ -117,6 +117,7 @@ interface Pending {
   approvals: Map<string, (d: { decision: 'approve' | 'deny'; always?: boolean; note?: string }) => void>;
   plans: Map<string, (d: { decision: 'approve' | 'cancel'; steps?: string[] }) => void>;
   designs: Map<string, (d: { choice: import('./types').DesignChoice; formats?: string[]; remember: boolean }) => void>;
+  questions: Map<string, (answer: string) => void>;
 }
 
 export interface State {
@@ -264,7 +265,7 @@ export const useStore = create<State>((set, get) => ({
   toasts: [],
   openFile: null,
   openArtifact: null,
-  pending: { approvals: new Map(), plans: new Map(), designs: new Map() },
+  pending: { approvals: new Map(), plans: new Map(), designs: new Map(), questions: new Map() },
 
   setView: (view) => set({ view }),
   patchSettings: (p) => {

@@ -89,6 +89,8 @@ export type Item =
       resolved?: string;
     }
   | { kind: 'plan'; id: string; summary: string; steps: string[]; resolved?: 'approve' | 'cancel' }
+  /** user.ask (harness, 23/10/2026): a question of the agent, answered in the chat. */
+  | { kind: 'question'; id: string; question: string; options: string[]; answer?: string }
   | { kind: 'checklist'; id: string; steps: PlanStep[] }
   | {
       kind: 'model';
@@ -229,6 +231,13 @@ export interface SkillDef {
   enabled: boolean;
   /** Marketplace category (built-in skills). */
   category?: string;
+  /** Binary files of the skill (images, fonts, templates…) as base64: no file-format requirement (23/10/2026). */
+  assets?: Record<string, string>;
+  /** Where it comes from: projet, utilisateur (consignes), organisation, plugin, ajout. */
+  source?: string;
+  license?: string;
+  /** Agent Skills spec `allowed-tools`: tools pre-approved while the skill is active. */
+  allowedTools?: string[];
 }
 
 export interface AgentDef {
@@ -256,6 +265,8 @@ export interface McpServerDef {
 }
 
 export interface Settings {
+  /** HARNESS (23/10/2026): hooks, permission rules, instruction files, commands, always-on skills, skill pack. */
+  harness?: Partial<import('./harness').HarnessSettings>;
   /** A chat keeps the same model for the whole conversation (default true). */
   pinModel?: boolean;
   /** JEV vision bridge: a text-only model gets an exact description + OCR of images (default true). */
