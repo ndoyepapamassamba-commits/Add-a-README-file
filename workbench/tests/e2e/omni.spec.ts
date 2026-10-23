@@ -18,6 +18,14 @@ test.afterAll(async () => mock?.close());
 test.beforeEach(() => mock.reset());
 test.afterEach(async ({ page }) => page.unrouteAll({ behavior: 'ignoreErrors' }));
 
+/** Réglages › Recherche web : the key slot opens on « Ajouter une clé », takes the key, then « Enregistrer ». */
+async function setTavilyKey(page: Page) {
+  await page.getByTestId('tavily-key-edit').click();
+  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await page.getByTestId('tavily-key-save').click();
+  await expect(page.getByTestId('tavily-key-status')).toBeVisible();
+}
+
 async function open(page: Page) {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -196,7 +204,7 @@ test('free web search: Tavily is called directly from the browser (no relay) and
     });
   });
   await openView(page, 'Réglages');
-  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await setTavilyKey(page);
   await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
@@ -231,7 +239,7 @@ test('premium design gallery: before an Excel deliverable the user picks a desig
     }),
   );
   await openView(page, 'Réglages');
-  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await setTavilyKey(page);
   await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
@@ -386,14 +394,11 @@ test('régression du 15/10/2026 : « donnes moi un fichier excel ultra design »
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Portefeuille');
   const xlsb = Buffer.from(XLSX.write(wb, { type: 'array', bookType: 'xlsb' }) as ArrayBuffer);
-  await page
-    .locator('input[type=file]')
-    .first()
-    .setInputFiles({
-      name: 'ESN_Portfolio_202606-.xlsb',
-      mimeType: 'application/vnd.ms-excel.sheet.binary.macroEnabled.12',
-      buffer: xlsb,
-    });
+  await page.locator('input[type=file]').first().setInputFiles({
+    name: 'ESN_Portfolio_202606-.xlsb',
+    mimeType: 'application/vnd.ms-excel.sheet.binary.macroEnabled.12',
+    buffer: xlsb,
+  });
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
   mock.push(
@@ -471,7 +476,7 @@ test('Internet design → REAL copy: its layout is read, previewed, then rebuilt
     }),
   );
   await openView(page, 'Réglages');
-  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await setTavilyKey(page);
   await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
@@ -835,7 +840,7 @@ test('vision model refusing (« only available on agentic harnesses ») → the 
     }),
   );
   await openView(page, 'Réglages');
-  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await setTavilyKey(page);
   await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
@@ -921,7 +926,7 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
     }),
   );
   await openView(page, 'Réglages');
-  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await setTavilyKey(page);
   await openView(page, 'Chat');
   // The chat's data, attached: the preview shows THESE figures.
   const csv = [
@@ -1073,7 +1078,7 @@ test('CORRIGER À 100 %: the trap thumbnail (outlined title, sidebar, KPI icons 
     }),
   );
   await openView(page, 'Réglages');
-  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await setTavilyKey(page);
   await openView(page, 'Chat');
   const csv = [
     'mois,region,montant,volume',
@@ -1273,7 +1278,7 @@ test('IMAGE DESIGN + Excel written by the model in code: the workbook OPENS on t
     }),
   );
   await openView(page, 'Réglages');
-  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await setTavilyKey(page);
   await openView(page, 'Chat');
   // A workbook like the user's: a summary « Dashboard » sheet first (blocks side by side, TOTAL rows), the detail after.
   await page

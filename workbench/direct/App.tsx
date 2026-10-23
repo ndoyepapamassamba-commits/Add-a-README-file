@@ -47,6 +47,7 @@ import type { View } from './lib/types';
 import { ChatView } from './views/ChatView';
 import { PromptStudioView } from './views/PromptStudioView';
 import { autoInstallSkillPack } from './lib/skillPack';
+import { watchBridge } from './lib/bridge';
 import { FilmCircuitView } from './views/FilmCircuitView';
 import { CockpitView } from './views/CockpitView';
 import { WorkflowsView } from './views/WorkflowsView';
@@ -113,6 +114,8 @@ export function App() {
       void refreshCredits();
       // Every skill, command and agent of the session (massamba-skills.js next to the app), in the background.
       void autoInstallSkillPack().catch(() => undefined);
+      // The local bridge pairs by itself when it runs (beacon next to the app, or the page served by the bridge).
+      void watchBridge().catch(() => undefined);
     });
     const t = setInterval(() => void refreshCredits(), 120_000);
     return () => clearInterval(t);
@@ -219,7 +222,8 @@ function Onboarding({ onDone }: { onDone: () => void }) {
           Utiliser sans clé — modèles gratuits nourris par JEV (0 $)
         </Button>
         <div className="mt-1 text-center text-[11.5px] text-faint">
-          LLM7 et Pollinations sans compte ; vos fichiers restent sur l’ordinateur (modèle intégré au navigateur, à activer dans Réglages). Une clé peut être ajoutée plus tard.
+          LLM7 et Pollinations sans compte ; vos fichiers restent sur l’ordinateur (modèle intégré au
+          navigateur, à activer dans Réglages). Une clé peut être ajoutée plus tard.
         </div>
         <div className="mt-4 rounded-2xl border border-line bg-panel/60 p-4 text-[12.5px] text-muted">
           Conseil : sur openrouter.ai, fixez une <b>limite de dépenses</b> sur cette clé. Vos sessions,
@@ -438,10 +442,19 @@ function Sidebar({
   const session = useStore((s) => s.sessions.find((x) => x.id === s.currentId));
   const running = useStore((s) => s.running);
   const label = compact === 'always' ? 'hidden' : compact === 'below-lg' ? 'hidden lg:inline' : 'inline';
-  const row = compact === 'always' ? 'justify-center' : compact === 'below-lg' ? 'justify-center lg:justify-start' : 'justify-start';
+  const row =
+    compact === 'always'
+      ? 'justify-center'
+      : compact === 'below-lg'
+        ? 'justify-center lg:justify-start'
+        : 'justify-start';
   const busy = Object.keys(running).length;
   return (
-    <nav className="flex w-full min-w-0 flex-col gap-0.5 p-2" data-testid="main-nav" aria-label="Navigation principale">
+    <nav
+      className="flex w-full min-w-0 flex-col gap-0.5 p-2"
+      data-testid="main-nav"
+      aria-label="Navigation principale"
+    >
       <button
         aria-label="Nouvelle session"
         title="Nouvelle session (Ctrl+K)"
@@ -467,13 +480,18 @@ function Sidebar({
           className={cx(
             'relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] transition-colors',
             row,
-            current === g.id ? 'bg-accent-soft font-semibold text-fg' : 'text-muted hover:bg-hover hover:text-fg',
+            current === g.id
+              ? 'bg-accent-soft font-semibold text-fg'
+              : 'text-muted hover:bg-hover hover:text-fg',
           )}
         >
           <span className={cx('shrink-0', current === g.id && 'text-accent')}>{ICONS[g.id]}</span>
           <span className={cx('truncate', label)}>{g.label}</span>
           {g.id === 'chat' && busy > 0 && (
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-ok" title={`${busy} session(s) en cours`} />
+            <span
+              className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-ok"
+              title={`${busy} session(s) en cours`}
+            />
           )}
         </button>
       ))}
@@ -482,7 +500,10 @@ function Sidebar({
         aria-label="Aide & Docs"
         title="Aide & Docs — raccourcis, rubriques, bonnes pratiques"
         onClick={onHelp}
-        className={cx('flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] text-muted hover:bg-hover hover:text-fg', row)}
+        className={cx(
+          'flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] text-muted hover:bg-hover hover:text-fg',
+          row,
+        )}
       >
         <LifeBuoy size={17} className="shrink-0" />
         <span className={label}>Aide & Docs</span>
@@ -491,14 +512,24 @@ function Sidebar({
         aria-label="Projet actuel"
         title={session ? `Projet actuel : ${session.title}` : 'Aucune session ouverte'}
         onClick={() => onGo('chat')}
-        className={cx('mt-1 flex items-center gap-2 rounded-lg border border-line bg-panel/60 px-2 py-1.5 text-left hover:bg-hover', row)}
+        className={cx(
+          'mt-1 flex items-center gap-2 rounded-lg border border-line bg-panel/60 px-2 py-1.5 text-left hover:bg-hover',
+          row,
+        )}
       >
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent">
           {(session?.title ?? 'M').trim().charAt(0).toUpperCase()}
         </span>
-        <span className={cx('min-w-0', compact === 'always' ? 'hidden' : compact === 'below-lg' ? 'hidden lg:block' : 'block')}>
+        <span
+          className={cx(
+            'min-w-0',
+            compact === 'always' ? 'hidden' : compact === 'below-lg' ? 'hidden lg:block' : 'block',
+          )}
+        >
           <span className="block text-[10.5px] uppercase tracking-wide text-faint">Projet actuel</span>
-          <span className="block truncate text-[12.5px] font-medium">{session?.title ?? 'Aucune session'}</span>
+          <span className="block truncate text-[12.5px] font-medium">
+            {session?.title ?? 'Aucune session'}
+          </span>
         </span>
       </button>
       {onToggle && (
@@ -523,10 +554,18 @@ function HelpDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
         <section>
           <h3 className="mb-1.5 font-semibold">Raccourcis</h3>
           <ul className="grid gap-1 sm:grid-cols-2">
-            <li><Kbd>Ctrl</Kbd> + <Kbd>K</Kbd> nouvelle session</li>
-            <li><Kbd>Alt</Kbd> + <Kbd>1</Kbd>…<Kbd>0</Kbd> les dix premières rubriques</li>
-            <li><Kbd>Entrée</Kbd> envoyer · <Kbd>Maj</Kbd> + <Kbd>Entrée</Kbd> nouvelle ligne</li>
-            <li><Kbd>Échap</Kbd> fermer une fenêtre</li>
+            <li>
+              <Kbd>Ctrl</Kbd> + <Kbd>K</Kbd> nouvelle session
+            </li>
+            <li>
+              <Kbd>Alt</Kbd> + <Kbd>1</Kbd>…<Kbd>0</Kbd> les dix premières rubriques
+            </li>
+            <li>
+              <Kbd>Entrée</Kbd> envoyer · <Kbd>Maj</Kbd> + <Kbd>Entrée</Kbd> nouvelle ligne
+            </li>
+            <li>
+              <Kbd>Échap</Kbd> fermer une fenêtre
+            </li>
           </ul>
         </section>
         <section>
@@ -537,7 +576,10 @@ function HelpDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
                 <span className="mt-0.5 text-accent">{ICONS[g.id]}</span>
                 <span>
                   <b>{g.label}</b>
-                  {g.views.length > 1 && <span className="text-faint"> ({g.views.map((v) => v.label).join(' · ')})</span>} — {g.hint}
+                  {g.views.length > 1 && (
+                    <span className="text-faint"> ({g.views.map((v) => v.label).join(' · ')})</span>
+                  )}{' '}
+                  — {g.hint}
                 </span>
               </li>
             ))}
@@ -546,10 +588,22 @@ function HelpDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
         <section>
           <h3 className="mb-1.5 font-semibold">Bien démarrer</h3>
           <ul className="list-disc space-y-1 pl-5 text-muted">
-            <li>Joignez votre fichier (Excel, CSV, PDF, Word) dans le chat, puis dites ce que vous voulez : « analyse », « rapport », « tableau de bord ».</li>
-            <li>Pour un livrable, la galerie de designs s’ouvre d’abord : le design choisi (catalogue ou trouvé sur Internet) s’applique au classeur, au rapport Word et au deck PowerPoint au format comité.</li>
-            <li>Le budget par tâche et par jour (Paramètres) est appliqué par l’app : l’IA s’arrête avant de le dépasser.</li>
-            <li>Vos clés, sessions et fichiers restent dans ce navigateur. « Paramètres › Données » permet de tout sauvegarder.</li>
+            <li>
+              Joignez votre fichier (Excel, CSV, PDF, Word) dans le chat, puis dites ce que vous voulez : «
+              analyse », « rapport », « tableau de bord ».
+            </li>
+            <li>
+              Pour un livrable, la galerie de designs s’ouvre d’abord : le design choisi (catalogue ou trouvé
+              sur Internet) s’applique au classeur, au rapport Word et au deck PowerPoint au format comité.
+            </li>
+            <li>
+              Le budget par tâche et par jour (Paramètres) est appliqué par l’app : l’IA s’arrête avant de le
+              dépasser.
+            </li>
+            <li>
+              Vos clés, sessions et fichiers restent dans ce navigateur. « Paramètres › Données » permet de
+              tout sauvegarder.
+            </li>
           </ul>
         </section>
       </div>
@@ -666,7 +720,9 @@ function SessionList({ embedded, onPicked }: { embedded?: boolean; onPicked?: ()
       data-testid="session-list"
     >
       <div className="space-y-2 p-2">
-        {embedded && <div className="px-1 text-[11px] font-semibold uppercase tracking-wide text-faint">Sessions</div>}
+        {embedded && (
+          <div className="px-1 text-[11px] font-semibold uppercase tracking-wide text-faint">Sessions</div>
+        )}
         <div className="flex flex-wrap items-center gap-1 text-[11.5px]" data-testid="archive-bar">
           <button
             className={cx('rounded px-1.5 py-0.5', !showArchived ? 'bg-hover text-fg' : 'text-muted')}

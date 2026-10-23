@@ -27,12 +27,28 @@ if (!fs.existsSync(path.join('dist', APP))) {
 // scripts/troupe_film_pack.py depuis la bibliothèque du moteur ; jamais versionné).
 // 23/10/2026 (harness) : toutes les compétences, commandes et agents de la session (dist/massamba-skills*.js, construit
 // par scripts/skills_pack.mjs ; jamais versionné).
-const skillParts = fs.readdirSync('dist').filter((f) => /^massamba-skills(-\d+)?\.js$/.test(f)).sort();
+const skillParts = fs
+  .readdirSync('dist')
+  .filter((f) => /^massamba-skills(-\d+)?\.js$/.test(f))
+  .sort();
 const packs = ['massamba-troupe-film.js', ...skillParts].filter((f) => fs.existsSync(path.join('dist', f)));
 // v63: the « massamba » MCP server (JEV's tools in Claude Desktop / Claude Code), when built.
-const MCP = ['massamba-jev.mcpb', 'massamba-mcp.mjs', 'massamba-pont.mjs'].filter((f) => fs.existsSync(path.join('dist', 'mcp', f)));
-const files = [APP, ...packs, ...MCP];
-const srcOf = (f) => (MCP.includes(f) ? path.join('dist', 'mcp', f) : path.join('dist', f));
+const MCP = ['massamba-jev.mcpb', 'massamba-mcp.mjs', 'massamba-pont.mjs'].filter((f) =>
+  fs.existsSync(path.join('dist', 'mcp', f)),
+);
+// 23/10/2026 : le pont local se lance d'un double-clic et la Workbench s'appaire seule (balise au repos + lanceurs).
+const PONT = MCP.includes('massamba-pont.mjs')
+  ? ['massamba-pont-code.js', 'Lancer le pont.cmd', 'lancer-le-pont.command'].filter((f) =>
+      fs.existsSync(f === 'massamba-pont-code.js' ? path.join('dist', f) : path.join('scripts', 'pont', f)),
+    )
+  : [];
+const files = [APP, ...packs, ...MCP, ...PONT];
+const srcOf = (f) =>
+  MCP.includes(f)
+    ? path.join('dist', 'mcp', f)
+    : PONT.includes(f) && f !== 'massamba-pont-code.js'
+      ? path.join('scripts', 'pont', f)
+      : path.join('dist', f);
 
 const errors = [];
 
@@ -50,9 +66,11 @@ for (const f of files) {
   const size = fs.statSync(src).size;
   const sha = createHash('sha256').update(fs.readFileSync(src)).digest('hex');
   rows.push({ f, size, sha });
-  if (size > LIMIT) errors.push(`${f} : ${(size / 1048576).toFixed(1)} Mio dépasse la limite d'envoi de 30 Mio`);
+  if (size > LIMIT)
+    errors.push(`${f} : ${(size / 1048576).toFixed(1)} Mio dépasse la limite d'envoi de 30 Mio`);
   // The packs are split automatically under the limit; the app itself grows with each version.
-  else if (f === APP && size > WARN) console.warn(`livraison : attention, l'app approche la limite (${(size / 1048576).toFixed(1)} Mio)`);
+  else if (f === APP && size > WARN)
+    console.warn(`livraison : attention, l'app approche la limite (${(size / 1048576).toFixed(1)} Mio)`);
 }
 
 // The notice changes only when its text does (no date, no app fingerprint): it is sent again only then.
@@ -80,20 +98,27 @@ const notice = [
   '  Kling, Veo...) : script, une image par plan, plans tournes en parallele, montage MP4 avec sous-titres.',
   '- Le devis s affiche avant toute depense ; un plafond par film bloque tout appel qui le depasserait.',
   ...(packs.length
-    ? ['- massamba-troupe-film.js (les scenes de la nouvelle troupe) : gardez-le dans ce dossier, a cote de l application.']
+    ? [
+        '- massamba-troupe-film.js (les scenes de la nouvelle troupe) : gardez-le dans ce dossier, a cote de l application.',
+      ]
     : []),
   '',
   'NOUVEAU DU 23/10/2026 : WORKBENCH = HARNESS COMPLET',
   ...(skillParts.length
-    ? [`- ${skillParts.join(', ')} : toutes les competences, commandes et agents de la session, installes au demarrage.`]
+    ? [
+        `- ${skillParts.join(', ')} : toutes les competences, commandes et agents de la session, installes au demarrage.`,
+      ]
     : []),
   '- Hooks, regles de permission, fichiers d instructions (MASSAMBA.md, CLAUDE.md, AGENTS.md), commandes /…',
   '  (tapez / dans le chat), formats de sortie libres : Reglages > Harness.',
   ...(fs.existsSync(path.join('dist', 'mcp', 'massamba-pont.mjs'))
     ? [
-        '- REA et votre PC dans la Workbench (facultatif) : ouvrez un terminal dans votre dossier de travail et lancez',
-        '  node "<chemin>/massamba-pont.mjs"  (Node 22.19 ou plus pour REA). Le pont affiche un code d appairage :',
-        '  collez-le dans Reglages > Harness > Pont local. Il n ecoute que sur cet ordinateur (127.0.0.1).',
+        '- REA et votre PC dans la Workbench (facultatif) : double-cliquez « Lancer le pont » (Windows) ou',
+        '  lancer-le-pont.command (Mac) dans CE dossier ; laissez la fenetre ouverte. La Workbench se connecte seule,',
+        '  aucun code a taper (fichier massamba-pont-code.js). Pour donner un autre dossier a l agent : glissez-le sur',
+        '  « Lancer le pont ». Node.js 22.19 ou plus est demande (le lanceur ouvre la page de telechargement sinon).',
+        '  Si Chrome bloque l acces local : icone a gauche de l adresse > Acces au reseau local > Autoriser, ou ouvrez',
+        '  http://127.0.0.1:7821/ (la Workbench servie par le pont). Il n ecoute que sur cet ordinateur (127.0.0.1).',
       ]
     : []),
   '',
@@ -110,7 +135,11 @@ const notice = [
     : []),
 ].join('\r\n');
 fs.writeFileSync(path.join(OUT, 'LISEZ-MOI.txt'), notice);
-rows.push({ f: 'LISEZ-MOI.txt', size: Buffer.byteLength(notice), sha: createHash('sha256').update(notice).digest('hex') });
+rows.push({
+  f: 'LISEZ-MOI.txt',
+  size: Buffer.byteLength(notice),
+  sha: createHash('sha256').update(notice).digest('hex'),
+});
 
 for (const r of rows) console.log(`livraison : ${r.f} ${(r.size / 1048576).toFixed(1)} Mio`);
 if (errors.length) {
@@ -127,7 +156,14 @@ try {
 }
 if (args.has('--envoyee')) {
   fs.mkdirSync(path.dirname(STATE), { recursive: true });
-  fs.writeFileSync(STATE, JSON.stringify({ at: new Date().toISOString(), files: Object.fromEntries(rows.map((r) => [r.f, r.sha])) }, null, 1));
+  fs.writeFileSync(
+    STATE,
+    JSON.stringify(
+      { at: new Date().toISOString(), files: Object.fromEntries(rows.map((r) => [r.f, r.sha])) },
+      null,
+      1,
+    ),
+  );
   console.log(`livraison enregistrée comme envoyée (${rows.length} fichiers) → ${STATE}`);
   process.exit(0);
 }

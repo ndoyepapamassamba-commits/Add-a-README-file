@@ -78,7 +78,8 @@ export const MCP_PRESETS: McpServerDef[] = [
     url: 'https://search.parallel.ai/mcp',
     enabled: true,
     autoApprove: true,
-    description: 'Recherche web Parallel (extraits longs et datés) + lecture de pages (web_fetch) — gratuit, sans clé.',
+    description:
+      'Recherche web Parallel (extraits longs et datés) + lecture de pages (web_fetch) — gratuit, sans clé.',
   },
   {
     name: 'mermaid-chart',
@@ -101,16 +102,20 @@ export const MCP_PRESETS: McpServerDef[] = [
     url: 'https://mcp.figma.com/mcp',
     enabled: false,
     autoApprove: false,
-    needsToken: 'Connexion Figma (OAuth). Le serveur distant Figma peut refuser les appels directs du navigateur : activez-le et testez.',
-    description: 'Design Figma : lire des maquettes, composants et variables pour des exports et pages au design soigné (compte Figma).',
+    needsToken:
+      'Connexion Figma (OAuth). Le serveur distant Figma peut refuser les appels directs du navigateur : activez-le et testez.',
+    description:
+      'Design Figma : lire des maquettes, composants et variables pour des exports et pages au design soigné (compte Figma).',
   },
   {
     name: 'canva',
     url: 'https://mcp.canva.com/mcp',
     enabled: false,
     autoApprove: false,
-    needsToken: 'Connexion Canva (OAuth). Le serveur distant Canva peut refuser les appels directs du navigateur : activez-le et testez.',
-    description: 'Designs Canva : présentations, visuels et documents à partir de modèles de marque (compte Canva).',
+    needsToken:
+      'Connexion Canva (OAuth). Le serveur distant Canva peut refuser les appels directs du navigateur : activez-le et testez.',
+    description:
+      'Designs Canva : présentations, visuels et documents à partir de modèles de marque (compte Canva).',
   },
   {
     name: 'github',
@@ -176,10 +181,15 @@ export async function connect(def: McpServerDef): Promise<McpLive> {
     Object.assign(st, { status: 'connected', client, tools, instructions: client.getInstructions() });
   } catch (err) {
     const msg = (err as Error).message ?? String(err);
+    // A server on THIS computer that does not answer is almost always a server that is not running (or a browser that
+    // blocks local access) — never call that « CORS »: Réglages › Harness diagnoses the local bridge precisely.
+    const local = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])[:/]/i.test(def.url);
     Object.assign(st, {
       status: 'error',
       error: /Failed to fetch|NetworkError|CORS/i.test(msg)
-        ? `${msg} — le serveur refuse peut-être les appels depuis un navigateur (CORS).`
+        ? local
+          ? 'serveur local injoignable (arrêté, ou accès local bloqué par le navigateur)'
+          : `${msg} — le serveur refuse peut-être les appels depuis un navigateur (CORS).`
         : msg,
     });
   }

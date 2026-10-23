@@ -234,13 +234,14 @@ test('REA in the browser on a workspace file, then the REAL local bridge: shell 
     expect(sent(1)).toMatch(/preuve ev_[a-f0-9]{64}/);
     // pairing the bridge from Réglages › Harness
     await openView(page, 'Paramètres');
+    await page.getByTestId('bridge-manual').click();
     await page.getByTestId('bridge-code').fill('E2E-PONT-0001');
     await page.getByTestId('bridge-port').fill(String(port));
     await page.getByTestId('bridge-connect').click();
-    await expect(page.getByTestId('bridge-status')).toContainText('poste — connected · 6 outils', {
+    await expect(page.getByTestId('bridge-status')).toContainText('poste — connecté · 6 outils', {
       timeout: 30_000,
     });
-    await expect(page.getByTestId('bridge-status')).toContainText('rea — connected · 4 outils', {
+    await expect(page.getByTestId('bridge-status')).toContainText('rea — connecté · 4 outils', {
       timeout: 120_000,
     });
     await openView(page, 'Chat');
@@ -262,4 +263,80 @@ test('REA in the browser on a workspace file, then the REAL local bridge: shell 
     pont.kill();
     fs.rmSync(ws, { recursive: true, force: true });
   }
+});
+
+// 23/10/2026 — « il y a énormément dans les réglages des champs vides » + capture « rea — Failed to fetch … (CORS) » avec
+// un code d'appairage vide : le pont s'appaire SEUL (balise massamba-pont-code.js écrite à côté de l'app), la page servie
+// par le pont s'appaire en même origine, et sans pont le diagnostic dit quoi faire au lieu d'un champ vide.
+test('the local bridge pairs by itself: beacon next to the app, page served by the bridge, exact diagnosis', async ({
+  page,
+  context,
+}) => {
+  const app = fs.mkdtempSync(path.join(os.tmpdir(), 'wb-pont-auto-'));
+  const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'wb-pont-ws-'));
+  fs.copyFileSync(APP, path.join(app, 'massamba-workbench-direct.html'));
+  fs.copyFileSync(PONT, path.join(app, 'massamba-pont.mjs'));
+  const port = 7843;
+  // 1) no bridge yet: the diagnosis says how to start it; no empty code field is shown
+  const errors = await open(page, pathToFileURL(path.join(app, 'massamba-workbench-direct.html')).href);
+  await openView(page, 'Paramètres');
+  await expect(page.getByTestId('bridge-diag')).toContainText('Pont non démarré', { timeout: 15_000 });
+  await expect(page.getByTestId('bridge-diag')).toContainText('Lancer le pont');
+  await expect(page.getByTestId('bridge-code')).toHaveCount(0);
+  await expect(page.getByTestId('bridge-manual')).toBeVisible();
+  const env = { ...process.env, PATH: `/opt/node22/bin:${process.env.PATH ?? ''}` };
+  const pont: ChildProcess = spawn(
+    process.execPath,
+    [path.join(app, 'massamba-pont.mjs'), ws, '--port', String(port)],
+    {
+      env,
+      stdio: 'ignore',
+    },
+  );
+  try {
+    // 2) the bridge starts: its beacon appears next to the app, « Réessayer » pairs without typing anything
+    await expect
+      .poll(() => fs.existsSync(path.join(app, 'massamba-pont-code.js')), { timeout: 15_000 })
+      .toBe(true);
+    await page.getByTestId('bridge-detect').click();
+    await expect(page.getByTestId('bridge-status')).toContainText('poste — connecté · 6 outils', {
+      timeout: 30_000,
+    });
+    await expect(page.getByTestId('bridge-diag')).toContainText('Pont connecté');
+    await expect(page.getByTestId('bridge-code')).not.toHaveValue('');
+    await expect(page.getByTestId('bridge-port')).toHaveValue(String(port));
+    // 3) next start of the app: paired at once, in the background
+    await page.reload();
+    await expect(page.getByText('Nouvelle mission')).toBeVisible();
+    await openView(page, 'Paramètres');
+    await expect(page.getByTestId('bridge-status')).toContainText('poste — connecté', { timeout: 30_000 });
+    expect(errors).toEqual([]);
+    // 4) plan B when the browser blocks file:// → 127.0.0.1: the app opened FROM the bridge pairs in the same origin
+    const served = await context.newPage();
+    const errors2 = await open(served, `http://127.0.0.1:${port}/`);
+    expect(served.url()).toContain(`127.0.0.1:${port}/massamba-workbench-direct.html?pont`);
+    await openView(served, 'Paramètres');
+    await expect(served.getByTestId('bridge-status')).toContainText('poste — connecté · 6 outils', {
+      timeout: 30_000,
+    });
+    expect(errors2).toEqual([]);
+    // the code is never handed to another site, and the beacon file is never served
+    const other = await fetch(`http://127.0.0.1:${port}/appairage`, {
+      headers: { 'Sec-Fetch-Site': 'cross-site' },
+    });
+    expect(other.status).toBe(403);
+    const beacon = await fetch(`http://127.0.0.1:${port}/massamba-pont-code.js`, {
+      headers: { 'Sec-Fetch-Site': 'same-origin' },
+    });
+    expect(beacon.status).not.toBe(200);
+  } finally {
+    pont.kill();
+  }
+  // 5) the bridge stopped: the beacon says so (no code left on disk)
+  await expect
+    .poll(() => fs.readFileSync(path.join(app, 'massamba-pont-code.js'), 'utf8'), { timeout: 10_000 })
+    .toContain('"running":false');
+  expect(fs.readFileSync(path.join(app, 'massamba-pont-code.js'), 'utf8')).not.toContain('"code"');
+  fs.rmSync(app, { recursive: true, force: true });
+  fs.rmSync(ws, { recursive: true, force: true });
 });

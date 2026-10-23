@@ -25,3 +25,4 @@ id_rsa*
 
 # film bench work files (frames, masks, measures of local films)
 .filmbench/
+massamba-pont-code.js

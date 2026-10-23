@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   catalogFor,
+  DEFAULT_HARNESS,
+  DEFAULT_HOOKS,
+  DEFAULT_PERMISSIONS,
+  harnessOf,
+  HOOK_PRESETS,
+  isToolEvent,
+  nextHookPreset,
   commandFromMarkdown,
   evaluateRules,
   expandCommand,
@@ -264,5 +271,61 @@ describe('skills without format requirement, pack, progressive catalogue', () =>
     expect(c[0]!.name).toBe('rea-d-abord');
     expect(c.map((s) => s.name)).toContain('excel-pro');
     expect(searchSkills('rétro ingénierie', many)[0]!.name).toBe('rea-d-abord');
+  });
+});
+
+// 23/10/2026 — « il y a énormément dans les réglages des champs vides, il faut les renseigner » : a harness is never
+// empty — safe rules and hooks from the first start, filled once into a harness saved before they existed.
+describe('safe defaults (no empty field in Réglages › Harness)', () => {
+  it('default rules: secrets files refused, destructive commands refused, git push asked, reading allowed', () => {
+    const r = (tool: string, args: Record<string, unknown>) =>
+      evaluateRules(DEFAULT_PERMISSIONS, tool, args)?.decision;
+    expect(r('filesystem.read', { path: '.env' })).toBe('deny');
+    expect(r('filesystem.write', { path: 'config/.env.local' })).toBe('deny');
+    expect(r('mcp.poste.write_file', { path: 'cles/id_rsa' })).toBe('deny');
+    expect(r('terminal.execute', { command: 'rm -rf /' })).toBe('deny');
+    expect(r('mcp.poste.bash', { command: 'git push origin main' })).toBe('ask');
+    expect(r('filesystem.read', { path: 'notes.md' })).toBe('allow');
+    expect(r('rea.inspect', { path: 'uploads/a.wasm' })).toBe('allow');
+    // anything else is left to the permission mode
+    expect(r('filesystem.write', { path: 'outputs/rapport.md' })).toBeUndefined();
+    expect(r('terminal.execute', { command: 'ls -la' })).toBeUndefined();
+  });
+  it('default hooks: a secrets file is refused before the write, sudo is asked, anything else passes', async () => {
+    expect(DEFAULT_HOOKS.map((h) => h.id)).toEqual(['defaut-secrets', 'defaut-sudo']);
+    const pre = (tool: string, args: Record<string, unknown>) =>
+      runHooks(DEFAULT_HOOKS, { event: 'PreToolUse', tool, args, sessionId: 's' });
+    expect((await pre('filesystem.write', { path: 'app/.env' })).decision).toBe('deny');
+    expect((await pre('filesystem.write', { path: 'cle.pem' })).decision).toBe('deny');
+    expect((await pre('filesystem.write', { path: 'envoi.md' })).decision).toBeUndefined();
+    expect((await pre('terminal.execute', { command: 'sudo apt install x' })).decision).toBe('ask');
+    expect((await pre('terminal.execute', { command: 'pseudo-code' })).decision).toBeUndefined();
+  });
+  it('harnessOf: a new harness gets the defaults; an old empty one is filled ONCE; a user choice is kept', () => {
+    expect(harnessOf()).toEqual(DEFAULT_HARNESS);
+    const old = harnessOf({ hooks: [], permissions: { allow: [], ask: [], deny: [] }, alwaysSkills: [] });
+    expect(old.permissions).toEqual(DEFAULT_PERMISSIONS);
+    expect(old.hooks).toEqual(DEFAULT_HOOKS);
+    expect(old.defaultsVersion).toBe(1);
+    // emptied by the user after the defaults: stays empty
+    const emptied = harnessOf({
+      hooks: [],
+      permissions: { allow: [], ask: [], deny: [] },
+      defaultsVersion: 1,
+    });
+    expect(emptied.hooks).toEqual([]);
+    expect(emptied.permissions.deny).toEqual([]);
+    // the user's own rules are never replaced
+    const mine = harnessOf({ permissions: { allow: [], ask: [], deny: ['Bash(curl*)'] } });
+    expect(mine.permissions.deny).toEqual(['Bash(curl*)']);
+  });
+  it('the « new hook » form always starts from a preset not installed yet', () => {
+    expect(nextHookPreset([]).id).toBe(HOOK_PRESETS[0]!.id);
+    expect(nextHookPreset(DEFAULT_HOOKS).id).toBe(HOOK_PRESETS[2]!.id);
+    for (const p of HOOK_PRESETS) {
+      expect(p.label.length).toBeGreaterThan(0);
+      if (isToolEvent(p.hook.event)) expect(p.hook.matcher).toBeTruthy();
+      expect(p.hook.message ?? p.hook.code).toBeTruthy();
+    }
   });
 });

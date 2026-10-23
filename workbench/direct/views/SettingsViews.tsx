@@ -36,24 +36,46 @@ function FreeSearchProbe() {
   };
   return (
     <div className="sm:col-span-2" data-testid="free-search-probe">
-      <Button size="sm" variant="ghost" onClick={() => void run()} disabled={busy} data-testid="free-search-probe-run">
-        <RefreshCw size={13} className={busy ? 'animate-spin' : ''} /> {busy ? 'Test en cours…' : 'Tester tous les services gratuits (recherche, lecture, BCE, modèles, bibliothèque)'}
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() => void run()}
+        disabled={busy}
+        data-testid="free-search-probe-run"
+      >
+        <RefreshCw size={13} className={busy ? 'animate-spin' : ''} />{' '}
+        {busy
+          ? 'Test en cours…'
+          : 'Tester tous les services gratuits (recherche, lecture, BCE, modèles, bibliothèque)'}
       </Button>
       <div className="mt-2 text-[12px] text-muted" data-testid="keyless-usage">
         Ce mois-ci (compté sur cet appareil) :{' '}
         {keylessUsage()
-          .map((u) => `${u.label} ${u.month}${u.resting ? ' (au repos : quota atteint)' : ''}${u.lastQuota ? ` · dernière limite ${new Date(u.lastQuota).toLocaleString('fr-FR')}` : ''}`)
+          .map(
+            (u) =>
+              `${u.label} ${u.month}${u.resting ? ' (au repos : quota atteint)' : ''}${u.lastQuota ? ` · dernière limite ${new Date(u.lastQuota).toLocaleString('fr-FR')}` : ''}`,
+          )
           .join(' · ')}
-        . Aucun de ces moteurs n’est illimité : leurs quotas gratuits s’additionnent, un moteur saturé passe la main au suivant, et une question déjà cherchée est resservie par la mémoire sans nouvel appel.
+        . Aucun de ces moteurs n’est illimité : leurs quotas gratuits s’additionnent, un moteur saturé passe
+        la main au suivant, et une question déjà cherchée est resservie par la mémoire sans nouvel appel.
       </div>
       {rows && (
         <div className="mt-2 text-[12px]">
-          <div className="mb-1 font-medium" data-testid="free-search-probe-summary">{probeSummary(rows)}</div>
+          <div className="mb-1 font-medium" data-testid="free-search-probe-summary">
+            {probeSummary(rows)}
+          </div>
           <table className="w-full">
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} data-testid={`probe-${r.id}`} data-ok={r.ok ? '1' : '0'} className="border-t border-line">
-                  <td className="py-1 pr-2">{r.ok ? '✓' : '✗'} {r.label}</td>
+                <tr
+                  key={r.id}
+                  data-testid={`probe-${r.id}`}
+                  data-ok={r.ok ? '1' : '0'}
+                  className="border-t border-line"
+                >
+                  <td className="py-1 pr-2">
+                    {r.ok ? '✓' : '✗'} {r.label}
+                  </td>
                   <td className="py-1 pr-2 tabular-nums text-muted">{r.status ?? '—'}</td>
                   <td className="py-1 pr-2 tabular-nums text-muted">{r.ms} ms</td>
                   <td className="py-1 pr-2 tabular-nums text-muted">{r.hits} résultat(s)</td>
@@ -215,11 +237,79 @@ function CatalogView({ onBench }: { onBench: () => void }) {
   );
 }
 
+/**
+ * A secret key is never pre-filled (it belongs to the user): instead of an empty box the setting shows its state — the
+ * key kept (masked) or the free path that works without one — and opens the field only on « Ajouter » / « Remplacer ».
+ */
+function KeySlot(p: {
+  label: string;
+  hint?: string;
+  value: string;
+  onSave: (v: string) => void | Promise<void>;
+  placeholder: string;
+  testid: string;
+  /** What runs without a key (shown when there is none). */
+  without: string;
+  /** Plain text value (an URL), not a secret. */
+  plain?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [v, setV] = useState('');
+  return (
+    <Field label={p.label} hint={p.hint}>
+      {open ? (
+        <div className="flex gap-2">
+          <Input
+            type={p.plain ? 'text' : 'password'}
+            autoFocus
+            value={v}
+            onChange={(e) => setV(e.target.value)}
+            placeholder={p.placeholder}
+            data-testid={p.testid}
+          />
+          <Button
+            data-testid={`${p.testid}-save`}
+            disabled={!v.trim()}
+            onClick={async () => {
+              await p.onSave(v.trim());
+              setV('');
+              setOpen(false);
+            }}
+          >
+            Enregistrer
+          </Button>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Annuler
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2 text-[13px]" data-testid={`${p.testid}-status`}>
+          {p.value ? (
+            <span>
+              <KeyRound size={13} className="mr-1 inline text-faint" />
+              {p.plain ? p.value : <span className="font-mono">{maskKey(p.value)}</span>}
+            </span>
+          ) : (
+            <span className="text-ok">✓ {p.without}</span>
+          )}
+          <Button size="sm" variant="ghost" data-testid={`${p.testid}-edit`} onClick={() => setOpen(true)}>
+            {p.value ? 'Remplacer' : p.plain ? 'Renseigner' : 'Ajouter une clé'}
+          </Button>
+          {p.value && (
+            <Button size="sm" variant="ghost" onClick={() => void p.onSave('')}>
+              Retirer
+            </Button>
+          )}
+        </div>
+      )}
+    </Field>
+  );
+}
+
 export function SettingsView({ onLogout }: { onLogout: () => void }) {
   const s = useStore((x) => x.settings);
   const patch = useStore((x) => x.patchSettings);
   const models = useStore((x) => x.models);
-  const [newKey, setNewKey] = useState('');
   const [checking, setChecking] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const modelOptions = [
@@ -249,43 +339,34 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
       </div>
       <Section title="Fournisseur IA — OpenRouter">
         <div className="rounded-xl border border-line bg-panel p-4">
-          <div className="mb-3 flex items-center gap-2 text-[13px]">
-            <KeyRound size={14} className="text-faint" /> Clé enregistrée :{' '}
-            <span className="font-mono">{maskKey(getKey())}</span>
-            <span className="text-faint">
-              ({s.rememberKey ? 'mémorisée sur cet ordinateur' : 'oubliée à la fermeture'})
-            </span>
-          </div>
-          <Field label="Remplacer la clé">
-            <div className="flex gap-2">
-              <Input
-                type="password"
-                value={newKey}
-                onChange={(e) => setNewKey(e.target.value)}
-                placeholder="sk-or-v1-…"
-              />
-              <Button
-                disabled={!newKey.trim().startsWith('sk-') || checking}
-                onClick={async () => {
-                  setChecking(true);
-                  const old = getKey();
-                  setKey(newKey, s.rememberKey);
-                  const st = await provider.keyStatus();
-                  setChecking(false);
-                  if (!st.connected) {
-                    setKey(old, s.rememberKey);
-                    useStore.getState().toast('err', `Clé refusée : ${st.error ?? 'erreur'}`);
-                    return;
-                  }
-                  setNewKey('');
-                  void refreshCredits();
-                  useStore.getState().toast('ok', 'Clé enregistrée');
-                }}
-              >
-                Enregistrer
-              </Button>
-            </div>
-          </Field>
+          <KeySlot
+            label="Clé OpenRouter"
+            hint={s.rememberKey ? 'Mémorisée sur cet ordinateur.' : 'Oubliée à la fermeture de l’onglet.'}
+            value={getKey() ?? ''}
+            placeholder="sk-or-v1-…"
+            testid="openrouter-key"
+            without="modèles gratuits nourris par JEV (sans clé)"
+            onSave={async (v) => {
+              if (!v) return;
+              if (!v.startsWith('sk-')) {
+                useStore.getState().toast('err', 'Une clé OpenRouter commence par « sk-or-v1- ».');
+                return;
+              }
+              setChecking(true);
+              const old = getKey();
+              setKey(v, s.rememberKey);
+              const st = await provider.keyStatus();
+              setChecking(false);
+              if (!st.connected) {
+                setKey(old, s.rememberKey);
+                useStore.getState().toast('err', `Clé refusée : ${st.error ?? 'erreur'}`);
+                return;
+              }
+              void refreshCredits();
+              useStore.getState().toast('ok', 'Clé enregistrée');
+            }}
+          />
+          {checking && <div className="mb-2 text-[12px] text-faint">Vérification de la clé…</div>}
           <Toggle
             checked={s.rememberKey}
             onChange={(v) => {
@@ -320,7 +401,10 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
               options={modelOptions}
             />
           </Field>
-          <Field label="Garder le même modèle pendant toute la discussion" hint="Aucun changement automatique de modèle en cours de chat (routage, escalade, repli). « Auto » choisit une seule fois, au premier message.">
+          <Field
+            label="Garder le même modèle pendant toute la discussion"
+            hint="Aucun changement automatique de modèle en cours de chat (routage, escalade, repli). « Auto » choisit une seule fois, au premier message."
+          >
             <span data-testid="pin-model">
               <Toggle checked={s.pinModel !== false} onChange={(v) => patch({ pinModel: v })} />
             </span>
@@ -364,9 +448,15 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
 
       <Section title="Recherche web">
         <div className="grid gap-x-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2">
-          <Field label="Clé Tavily (facultative)" hint="Sans clé, l’app fait tourner quatre moteurs web gratuits sans compte — Tavily, Parallel Search, Exa et Firecrawl (chacun son quota, un moteur saturé est mis au repos 15 min ; la requête est affinée selon le cas du chat) — puis Wikipédia, Crossref et DuckDuckGo. Une clé (tavily.com → API key tvly-…, 1 000 crédits gratuits par mois, sans carte) donne un quota à vous ; quand il est épuisé, l’app repasse seule sur l’accès sans clé.">
-            <Input type="password" value={s.tavilyKey ?? ''} onChange={(e) => patch({ tavilyKey: e.target.value.trim() })} placeholder="tvly-…" data-testid="tavily-key" />
-          </Field>
+          <KeySlot
+            label="Clé Tavily (facultative)"
+            hint="Sans clé, l’app fait tourner quatre moteurs web gratuits sans compte — Tavily, Parallel Search, Exa et Firecrawl (chacun son quota, un moteur saturé est mis au repos 15 min ; la requête est affinée selon le cas du chat) — puis Wikipédia, Crossref et DuckDuckGo. Une clé (tavily.com → API key tvly-…, 1 000 crédits gratuits par mois, sans carte) donne un quota à vous ; quand il est épuisé, l’app repasse seule sur l’accès sans clé."
+            value={s.tavilyKey ?? ''}
+            onSave={(v) => patch({ tavilyKey: v })}
+            placeholder="tvly-…"
+            testid="tavily-key"
+            without="sans clé : 4 moteurs web gratuits + Wikipédia, Crossref, DuckDuckGo"
+          />
           <Field label="Si la recherche gratuite échoue, utiliser la recherche OpenRouter (payante)">
             <Toggle checked={s.braveFallback !== false} onChange={(v) => patch({ braveFallback: v })} />
           </Field>
@@ -376,17 +466,26 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
 
       <Section title="Thème des exports (Word, Excel, PowerPoint, PDF, mail)">
         <div className="grid gap-x-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2">
-          <Field label="Me faire choisir le design avant chaque livrable" hint="Galerie de designs premium en miniatures (et designs trouvés sur Internet) avant chaque Excel, Word, PowerPoint, PDF, mail, site ou application.">
+          <Field
+            label="Me faire choisir le design avant chaque livrable"
+            hint="Galerie de designs premium en miniatures (et designs trouvés sur Internet) avant chaque Excel, Word, PowerPoint, PDF, mail, site ou application."
+          >
             <Toggle checked={s.designPicker !== false} onChange={(v) => patch({ designPicker: v })} />
           </Field>
-          <Field label="Thème par défaut" hint="Utilisé pour tous les exports. Vous pouvez aussi demander un autre style dans le chat (« fais-le en vert », « style minimal »…).">
+          <Field
+            label="Thème par défaut"
+            hint="Utilisé pour tous les exports. Vous pouvez aussi demander un autre style dans le chat (« fais-le en vert », « style minimal »…)."
+          >
             <Select
               value={s.exportTheme ?? 'house'}
               onChange={(v) => patch({ exportTheme: v })}
               options={Object.entries(THEMES).map(([id, t]) => ({ value: id, label: t.label }))}
             />
           </Field>
-          <Field label="Format des livrables comité (Excel, Word, PowerPoint)" hint="« Format CAC » reprend la mise en page de votre classeur de référence (accueil à tuiles cliquables, menu PAGES, sections numérotées, cartes chiffrées, une couleur par feuille) dans la palette et avec le logo choisis.">
+          <Field
+            label="Format des livrables comité (Excel, Word, PowerPoint)"
+            hint="« Format CAC » reprend la mise en page de votre classeur de référence (accueil à tuiles cliquables, menu PAGES, sections numérotées, cartes chiffrées, une couleur par feuille) dans la palette et avec le logo choisis."
+          >
             <Select
               value={s.exportFormat ?? 'cac'}
               onChange={(v) => patch({ exportFormat: v as 'cac' | 'comite' })}
@@ -428,37 +527,74 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
       <details className="group mb-6 rounded-xl border border-line bg-panel" data-testid="settings-advanced">
         <summary className="cursor-pointer select-none list-none px-4 py-3 text-[13px] font-semibold">
           <span className="mr-1 inline-block transition-transform group-open:rotate-90">›</span> Avancé
-          <span className="ml-2 font-normal text-faint">modèle de secours, autres moteurs de recherche, pont vision, vidéo et 3D</span>
+          <span className="ml-2 font-normal text-faint">
+            modèle de secours, autres moteurs de recherche, pont vision, vidéo et 3D
+          </span>
         </summary>
         <div className="border-t border-line p-4">
-          <div className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-faint">Modèle et recherche</div>
+          <div className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-faint">
+            Modèle et recherche
+          </div>
           <div className="grid gap-x-3 sm:grid-cols-2">
-          <Field label="Modèle de secours" hint="Utilisé seulement si « Garder le même modèle » est désactivé">
-            <Select
-              value={s.fallbackModel}
-              onChange={(v) => patch({ fallbackModel: v })}
-              options={[{ value: '', label: '— aucun —' }, ...modelOptions.slice(1)]}
+            <Field
+              label="Modèle de secours"
+              hint="Seulement si le modèle tombe vraiment en panne (indisponible, erreur du fournisseur). Automatique : le routeur choisit un modèle équivalent."
+            >
+              <Select
+                value={s.fallbackModel}
+                onChange={(v) => patch({ fallbackModel: v })}
+                options={[
+                  { value: '', label: 'Automatique (repli choisi par le routeur)' },
+                  ...modelOptions.slice(1),
+                ]}
+              />
+            </Field>
+            <KeySlot
+              label="Clé Serper (option : résultats Google)"
+              hint="serper.dev → inscription → API key. Requêtes gratuites à l’inscription ; fonctionne directement, sans relais."
+              value={s.serperKey ?? ''}
+              onSave={(v) => patch({ serperKey: v })}
+              placeholder="clé Serper"
+              testid="serper-key"
+              without="non utilisée : les moteurs gratuits suffisent"
             />
-          </Field>
-          <Field label="Clé Serper (option : résultats Google)" hint="serper.dev → inscription → API key. Requêtes gratuites à l’inscription ; fonctionne directement, sans relais.">
-            <Input type="password" value={s.serperKey ?? ''} onChange={(e) => patch({ serperKey: e.target.value.trim() })} placeholder="clé Serper" />
-          </Field>
-          <Field label="Clé Brave Search (option, relais requis)" hint="Brave n’a plus d’offre gratuite (crédits mensuels, carte demandée) et bloque les appels directs du navigateur.">
-            <Input type="password" value={s.braveKey ?? ''} onChange={(e) => patch({ braveKey: e.target.value.trim() })} placeholder="BSA…" data-testid="brave-key" />
-          </Field>
-          <Field label="Relais Brave (URL)" hint="Brave bloque les appels directs d’un navigateur : déployez relay/brave-relay (Supabase) et collez son URL.">
-            <Input value={s.braveRelay ?? ''} onChange={(e) => patch({ braveRelay: e.target.value.trim() })} placeholder="https://xxxx.supabase.co/functions/v1/brave-relay" />
-          </Field>
-          <Field label="Pont vision JEV" hint="Un modèle sans vision reçoit la description exacte et l’OCR de l’image, lue une seule fois par un petit modèle vision (cache).">
-            <Toggle checked={s.visionBridge !== false} onChange={(v) => patch({ visionBridge: v })} />
-          </Field>
-          <Field label="Modèle vision du pont" hint="Vide = gratuit d’abord, puis le moins cher">
-            <Select
-              value={s.visionModel ?? ''}
-              onChange={(v) => patch({ visionModel: v })}
-              options={[{ value: '', label: 'Automatique (le moins cher)' }, ...models.filter((m) => m.capabilities.vision).map((m) => ({ value: m.id, label: shortModel(m.id) }))]}
+            <KeySlot
+              label="Clé Brave Search (option, relais requis)"
+              hint="Brave n’a plus d’offre gratuite (crédits mensuels, carte demandée) et bloque les appels directs du navigateur."
+              value={s.braveKey ?? ''}
+              onSave={(v) => patch({ braveKey: v })}
+              placeholder="BSA…"
+              testid="brave-key"
+              without="non utilisée (payante) : les moteurs gratuits prennent le relais"
             />
-          </Field>
+            <KeySlot
+              label="Relais Brave (URL)"
+              hint="Brave bloque les appels directs d’un navigateur : déployez relay/brave-relay (Supabase) et collez son URL."
+              value={s.braveRelay ?? ''}
+              onSave={(v) => patch({ braveRelay: v })}
+              placeholder="https://xxxx.supabase.co/functions/v1/brave-relay"
+              testid="brave-relay"
+              without="inutile sans clé Brave"
+              plain
+            />
+            <Field
+              label="Pont vision JEV"
+              hint="Un modèle sans vision reçoit la description exacte et l’OCR de l’image, lue une seule fois par un petit modèle vision (cache)."
+            >
+              <Toggle checked={s.visionBridge !== false} onChange={(v) => patch({ visionBridge: v })} />
+            </Field>
+            <Field label="Modèle vision du pont" hint="Automatique : gratuit d’abord, puis le moins cher">
+              <Select
+                value={s.visionModel ?? ''}
+                onChange={(v) => patch({ visionModel: v })}
+                options={[
+                  { value: '', label: 'Automatique (le moins cher)' },
+                  ...models
+                    .filter((m) => m.capabilities.vision)
+                    .map((m) => ({ value: m.id, label: shortModel(m.id) })),
+                ]}
+              />
+            </Field>
           </div>
         </div>
       </details>

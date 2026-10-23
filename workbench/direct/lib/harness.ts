@@ -68,19 +68,132 @@ export interface HarnessSettings {
   alwaysSkills: string[];
   /** Version of the skill pack installed (massamba-skills.js). */
   packVersion?: string;
+  /** Set once the safe defaults below were given (an empty list the user saves afterwards stays empty). */
+  defaultsVersion?: number;
 }
+// SAFE DEFAULTS (23/10/2026, « il y a énormément dans les réglages des champs vides, il faut les renseigner ») : a
+// fresh harness is never empty. Rules guard what a harness must never do silently — secrets files, destructive system
+// commands, publishing — and pre-approve the read-only tools; the two default hooks show the mechanism at work.
+export const DEFAULT_PERMISSIONS: PermissionRules = {
+  deny: [
+    'Read(*.env)',
+    'Read(*.env.*)',
+    'Write(*.env)',
+    'Write(*.env.*)',
+    'Edit(*.env)',
+    'Write(*id_rsa*)',
+    'Bash(rm -rf /)',
+    'Bash(rm -rf ~*)',
+    'Bash(mkfs*)',
+    'Bash(format *)',
+  ],
+  ask: ['Bash(git push*)', 'Bash(npm publish*)', 'Bash(curl * | *sh*)'],
+  allow: [
+    'rea.inspect',
+    'mcp__rea',
+    'skill.*',
+    'filesystem.read',
+    'filesystem.list',
+    'filesystem.search',
+    'web.search',
+    'web.read',
+  ],
+};
+/** Ready-made hooks: the first two are installed by default; all of them pre-fill the « new hook » form. */
+export const HOOK_PRESETS: { id: string; label: string; hook: Omit<HookDef, 'id' | 'enabled'> }[] = [
+  {
+    id: 'secrets',
+    label: 'Fichiers de secrets',
+    hook: {
+      event: 'PreToolUse',
+      matcher: 'Write|Edit',
+      when: '"path":"[^"]*(\\.env(\\.\\w+)?|id_rsa|\\.pem|\\.key)"',
+      action: 'deny',
+      message: 'Fichier de secrets (.env, clé privée) : écriture refusée.',
+    },
+  },
+  {
+    id: 'sudo',
+    label: 'Commandes sudo',
+    hook: {
+      event: 'PreToolUse',
+      matcher: 'Bash',
+      when: '\\bsudo\\b',
+      action: 'ask',
+      message: 'Commande avec sudo : votre accord est demandé.',
+    },
+  },
+  {
+    id: 'sources',
+    label: 'Citer les sources',
+    hook: {
+      event: 'UserPromptSubmit',
+      action: 'context',
+      message: 'Cite tes sources et dis clairement ce que tu n’as pas pu vérifier.',
+    },
+  },
+  {
+    id: 'relire',
+    label: 'Relire avant de conclure',
+    hook: {
+      event: 'Stop',
+      action: 'context',
+      message: 'Avant de conclure : relis la demande et vérifie chaque point livré.',
+    },
+  },
+  {
+    id: 'outputs',
+    label: 'Livrables dans outputs/',
+    hook: {
+      event: 'PreToolUse',
+      matcher: 'Write',
+      when: '"path":"(?!outputs/)',
+      action: 'js',
+      code: 'return { args: { ...input.args, path: "outputs/" + input.args.path } };',
+    },
+  },
+];
+export const DEFAULT_HOOKS: HookDef[] = HOOK_PRESETS.slice(0, 2).map((p) => ({
+  ...p.hook,
+  id: `defaut-${p.id}`,
+  enabled: true,
+}));
 export const DEFAULT_HARNESS: HarnessSettings = {
-  hooks: [],
-  permissions: { allow: [], ask: [], deny: [] },
+  hooks: DEFAULT_HOOKS,
+  permissions: DEFAULT_PERMISSIONS,
   instructions: true,
   commands: [],
   alwaysSkills: ['rea-d-abord'],
+  defaultsVersion: 1,
 };
-export const harnessOf = (h?: Partial<HarnessSettings>): HarnessSettings => ({
-  ...DEFAULT_HARNESS,
-  ...(h ?? {}),
-  permissions: { ...DEFAULT_HARNESS.permissions, ...(h?.permissions ?? {}) },
-});
+export const harnessOf = (h?: Partial<HarnessSettings>): HarnessSettings => {
+  const out: HarnessSettings = {
+    ...DEFAULT_HARNESS,
+    ...(h ?? {}),
+    permissions: { ...DEFAULT_HARNESS.permissions, ...(h?.permissions ?? {}) },
+  };
+  // A harness saved before the safe defaults existed: fill what is still empty, once.
+  if (h && !h.defaultsVersion) {
+    const p = out.permissions;
+    if (!p.allow.length && !p.ask.length && !p.deny.length) out.permissions = DEFAULT_PERMISSIONS;
+    if (!out.hooks.length) out.hooks = DEFAULT_HOOKS;
+    out.defaultsVersion = 1;
+  }
+  return out;
+};
+/** The preset the « new hook » form shows: the first one not installed yet (the form is never empty). */
+export function nextHookPreset(hooks: HookDef[]): (typeof HOOK_PRESETS)[number] {
+  const installed = (p: (typeof HOOK_PRESETS)[number]) =>
+    hooks.some(
+      (h) =>
+        h.event === p.hook.event &&
+        h.action === p.hook.action &&
+        (h.message ?? h.code) === (p.hook.message ?? p.hook.code),
+    );
+  return HOOK_PRESETS.find((p) => !installed(p)) ?? HOOK_PRESETS[0]!;
+}
+/** Tool events take a matcher and an argument filter; the others do not. */
+export const isToolEvent = (e: HookEvent) => e === 'PreToolUse' || e === 'PostToolUse';
 
 // ── tool names: ours ↔ Claude Code's ─────────────────────────────────────────────────────────────────────────────
 /** Claude Code tool names → the Workbench tools they stand for (rules and hooks written for Claude Code work here). */

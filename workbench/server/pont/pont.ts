@@ -16,13 +16,16 @@ import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, type Tool } from '@modelcontextprotocol/sdk/types.js';
 
-export const PONT_VERSION = '1.0.0';
+export const PONT_VERSION = '1.1.0';
+/** Beacon read by the Workbench next to it (zero-typing pairing, exact diagnosis); never served over HTTP. */
+export const BEACON_FILE = 'massamba-pont-code.js';
 const REA_PACKAGE = 'rea-agents@6.5.0';
 const MAX_OUT = 200_000;
 
@@ -34,6 +37,8 @@ export interface PontOptions {
   /** Command line that starts REA's MCP server (default: `rea mcp` when installed, else npx). */
   rea?: string;
   log?: (line: string) => void;
+  /** Folder of the Workbench (where the bridge lives): beacon written there, app served from there. */
+  appDir?: string;
 }
 
 function argv(): PontOptions {
@@ -503,6 +508,71 @@ class ReaProxy {
   }
 }
 
+// ── beacon + the app served by the bridge ─────────────────────────────────────────────────────────────────────────
+/** Writes the beacon the Workbench reads next to it; the code is only there while the bridge runs. */
+export function writeBeacon(o: PontOptions, running: boolean): void {
+  if (!o.appDir) return;
+  const b = running
+    ? { running: true, port: o.port, code: o.code, version: PONT_VERSION, alive: Date.now(), dossier: o.root }
+    : { running: false, port: o.port, version: PONT_VERSION, alive: Date.now() };
+  try {
+    fs.writeFileSync(
+      path.join(o.appDir, BEACON_FILE),
+      `// Écrit par le pont local MASSAMBA : la Workbench s'appaire seule. Le code n'y figure que pendant que le pont tourne.\nwindow.MASSAMBA_PONT=${JSON.stringify(b)};\n`,
+    );
+  } catch {
+    /* read-only folder: pairing by hand still works */
+  }
+}
+const hostOk = (req: http.IncomingMessage, port: number) =>
+  [`127.0.0.1:${port}`, `localhost:${port}`, `[::1]:${port}`].includes(String(req.headers.host ?? ''));
+const APP_FILE = 'massamba-workbench-direct.html';
+const TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+};
+/**
+ * Plan B when the browser blocks a page opened from disk: the bridge serves the Workbench itself (same origin, so no
+ * local-network or CORS check applies). Fetch-metadata resource isolation: a file is given to the bridge's own pages
+ * (same-origin), to the user typing the address (none) or to a navigation — never to a script tag of another site.
+ * Returns true when the request was answered here.
+ */
+function serveApp(req: http.IncomingMessage, res: http.ServerResponse, o: PontOptions): boolean {
+  if (req.method !== 'GET' || !o.appDir) return false;
+  const url = new URL(req.url ?? '/', 'http://x');
+  const site = String(req.headers['sec-fetch-site'] ?? '');
+  const navigate = req.headers['sec-fetch-mode'] === 'navigate';
+  const answer = (status: number, body: string, headers: Record<string, string> = {}) => {
+    res.writeHead(status, { 'content-type': 'text/plain; charset=utf-8', ...headers }).end(body);
+    return true;
+  };
+  if (url.pathname === '/') {
+    if (!hostOk(req, o.port)) return answer(403, 'hôte refusé');
+    if (!fs.existsSync(path.join(o.appDir, APP_FILE)))
+      return answer(404, `${APP_FILE} introuvable à côté du pont`);
+    return answer(302, '', { location: `/${APP_FILE}?pont` });
+  }
+  if (url.pathname === '/appairage') {
+    if (!hostOk(req, o.port) || site !== 'same-origin')
+      return answer(403, 'appairage réservé à la Workbench servie par le pont');
+    return answer(200, JSON.stringify({ port: o.port, code: o.code }), {
+      'content-type': 'application/json',
+      'cache-control': 'no-store',
+    });
+  }
+  const m = /^\/(massamba-[\w.-]+\.(?:html|js))$/.exec(url.pathname);
+  if (!m || m[1] === BEACON_FILE) return false;
+  if (!hostOk(req, o.port)) return answer(403, 'hôte refusé');
+  const file = path.join(o.appDir, m[1]!);
+  const isHtml = file.endsWith('.html');
+  if (!(site === 'same-origin' || site === 'none' || (isHtml && navigate)))
+    return answer(403, 'fichier réservé à la Workbench');
+  if (!fs.existsSync(file)) return answer(404, '');
+  res.writeHead(200, { 'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream' });
+  fs.createReadStream(file).pipe(res);
+  return true;
+}
+
 // ── HTTP: checks, CORS, sessions ──────────────────────────────────────────────────────────────────────────────────
 function cors(req: http.IncomingMessage, res: http.ServerResponse) {
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin ?? '*');
@@ -578,6 +648,7 @@ export function startPont(o: PontOptions): Promise<http.Server> {
     return s;
   };
   const server = http.createServer(async (req, res) => {
+    if (serveApp(req, res, o)) return;
     cors(req, res);
     if (req.method === 'OPTIONS') return void res.writeHead(204).end();
     const bad = checkRequest(req, o);
@@ -593,17 +664,15 @@ export function startPont(o: PontOptions): Promise<http.Server> {
         : null;
     try {
       if (url.pathname === '/statut')
-        return void res
-          .writeHead(200, { 'content-type': 'application/json' })
-          .end(
-            JSON.stringify({
-              pont: PONT_VERSION,
-              dossier: o.root,
-              shell: o.shell,
-              node: process.versions.node,
-              rea: rea.error || 'à la demande',
-            }),
-          );
+        return void res.writeHead(200, { 'content-type': 'application/json' }).end(
+          JSON.stringify({
+            pont: PONT_VERSION,
+            dossier: o.root,
+            shell: o.shell,
+            node: process.versions.node,
+            rea: rea.error || 'à la demande',
+          }),
+        );
       if (!kind) return void res.writeHead(404).end();
       const parsed = req.method === 'POST' ? await body(req) : undefined;
       const sid = String(req.headers['mcp-session-id'] ?? '');
@@ -632,14 +701,34 @@ export function startPont(o: PontOptions): Promise<http.Server> {
   });
   return new Promise((resolve, reject) => {
     server.once('error', reject);
-    server.listen(o.port, '127.0.0.1', () => resolve(server));
+    server.listen(o.port, '127.0.0.1', () => {
+      // Heartbeat: the Workbench tells « bridge stopped » from « browser blocks local access » with it.
+      writeBeacon(o, true);
+      const beat = setInterval(() => writeBeacon(o, true), 5000);
+      beat.unref();
+      server.on('close', () => {
+        clearInterval(beat);
+        writeBeacon(o, false);
+      });
+      resolve(server);
+    });
   });
 }
 
 export async function main(): Promise<void> {
-  const o = argv();
+  const o: PontOptions = { ...argv(), appDir: path.dirname(fileURLToPath(import.meta.url)) };
   if (!fs.existsSync(o.root)) throw new Error(`dossier introuvable : ${o.root}`);
   await startPont(o);
+  const stop = () => {
+    writeBeacon(o, false);
+    process.exit(0);
+  };
+  process.on('SIGINT', stop);
+  process.on('SIGTERM', stop);
+  // Windows: closing the console window is SIGHUP, Ctrl+Pause is SIGBREAK — the beacon must say « stopped » too.
+  process.on('SIGHUP', stop);
+  if (process.platform === 'win32') process.on('SIGBREAK', stop);
+  process.on('exit', () => writeBeacon(o, false));
   const line = '─'.repeat(64);
   process.stdout.write(
     `${[
@@ -652,7 +741,9 @@ export async function main(): Promise<void> {
       ` Shell            : ${o.shell ? 'activé (chaque commande passe par vos règles et votre accord dans la Workbench)' : 'désactivé'}`,
       ` Node             : ${process.versions.node}${Number(process.versions.node.split('.')[0]) < 22 ? '  (REA demande 22.19 ou plus)' : ''}`,
       line,
-      ' Dans la Workbench : Réglages > Harness > Pont local, collez le code. Ctrl+C pour arrêter.',
+      ' La Workbench ouverte depuis ce dossier se connecte seule (aucun code à taper).',
+      ` Si le navigateur bloque l'accès local : ouvrez http://127.0.0.1:${o.port}/`,
+      ' Laissez cette fenêtre ouverte. Ctrl+C pour arrêter.',
       line,
     ].join('\n')}\n`,
   );

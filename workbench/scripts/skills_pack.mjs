@@ -12,6 +12,7 @@
 // Secrets are scrubbed before writing. The output lands in dist/ (ignored by git: the repository is public, some of
 // these skills belong to the user's organisation) and is delivered next to the app, like massamba-troupe-film.js.
 //   node scripts/skills_pack.mjs            (extra roots: MASSAMBA_SKILLS_DIRS=dir1:dir2)
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -196,7 +197,13 @@ for (const f of ls(path.join(REPO, '.claude', 'commands')))
     });
 
 // Parts under the delivery ceiling: the first part carries the counts, the app loads the others by name.
-const version = new Date().toISOString().slice(0, 16);
+// Version = fingerprint of the content (not the build time): an unchanged pack keeps its bytes, so « A ENVOYER » only
+// lists it when a skill, command or agent really changed, and the app reinstalls it only then.
+const version = crypto
+  .createHash('sha256')
+  .update(JSON.stringify({ skills, commands, agents }))
+  .digest('hex')
+  .slice(0, 12);
 const partName = (i) => (i === 0 ? 'massamba-skills.js' : `massamba-skills-${i + 1}.js`);
 const parts = [{ skills: [], commands, agents }];
 let size = Buffer.byteLength(JSON.stringify({ commands, agents }));

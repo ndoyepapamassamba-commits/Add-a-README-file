@@ -19,7 +19,9 @@ await build({
   minify: true,
   legalComments: 'inline',
   // CommonJS dependencies (xlsx, papaparse…) inside an ES module.
-  banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
+  banner: {
+    js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);",
+  },
   logLevel: 'warning',
 });
 const code = fs.readFileSync(file);
@@ -34,7 +36,9 @@ await build({
   outfile: pont,
   minify: true,
   legalComments: 'inline',
-  banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
+  banner: {
+    js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);",
+  },
   logLevel: 'warning',
 });
 
@@ -53,12 +57,29 @@ const manifest = {
   name: 'massamba-jev',
   display_name: 'MASSAMBA — JEV',
   version: '63.0.0',
-  description: 'Les outils de JEV (MASSAMBA Workbench) dans Claude : recherche et lecture Internet gratuites, bibliothèque mondiale, taux BCE + F CFA, fiches d’entreprises, prépublications, analyse locale de fichiers Excel et dossier comité — sans clé, données gardées sur l’ordinateur.',
+  description:
+    'Les outils de JEV (MASSAMBA Workbench) dans Claude : recherche et lecture Internet gratuites, bibliothèque mondiale, taux BCE + F CFA, fiches d’entreprises, prépublications, analyse locale de fichiers Excel et dossier comité — sans clé, données gardées sur l’ordinateur.',
   author: { name: 'MASSAMBA Workbench' },
-  server: { type: 'node', entry_point: 'server/index.mjs', mcp_config: { command: 'node', args: ['${__dirname}/server/index.mjs'] } },
+  server: {
+    type: 'node',
+    entry_point: 'server/index.mjs',
+    mcp_config: { command: 'node', args: ['${__dirname}/server/index.mjs'] },
+  },
   tools: TOOLS.map(([name, description]) => ({ name, description })),
   compatibility: { platforms: ['win32', 'darwin', 'linux'], runtimes: { node: '>=18.0.0' } },
 };
-const mcpb = zipSync({ 'manifest.json': strToU8(JSON.stringify(manifest, null, 2)), 'server/index.mjs': new Uint8Array(code) }, { level: 9 });
+const mcpb = zipSync(
+  { 'manifest.json': strToU8(JSON.stringify(manifest, null, 2)), 'server/index.mjs': new Uint8Array(code) },
+  // Fixed date in the archive: the same code gives the same bytes, so « A ENVOYER » only lists it when it changes.
+  { level: 9, mtime: new Date('2026-01-01T00:00:00Z') },
+);
 fs.writeFileSync(path.join(OUT, 'massamba-jev.mcpb'), mcpb);
-console.log(`mcp : ${file} ${(code.length / 1048576).toFixed(1)} Mio · ${path.join(OUT, 'massamba-jev.mcpb')} ${(mcpb.length / 1048576).toFixed(1)} Mio · ${pont} ${(fs.statSync(pont).size / 1048576).toFixed(1)} Mio`);
+// The bridge's beacon AT REST, delivered next to the app (the bridge overwrites it while it runs): the Workbench reads it
+// silently at start-up and pairs by itself when the bridge runs. Stable content (alive 0) so it is sent only once.
+fs.writeFileSync(
+  path.join('dist', 'massamba-pont-code.js'),
+  '// Écrit par le pont local MASSAMBA : la Workbench s\'appaire seule. Le code n\'y figure que pendant que le pont tourne.\nwindow.MASSAMBA_PONT={"running":false,"port":7821,"alive":0};\n',
+);
+console.log(
+  `mcp : ${file} ${(code.length / 1048576).toFixed(1)} Mio · ${path.join(OUT, 'massamba-jev.mcpb')} ${(mcpb.length / 1048576).toFixed(1)} Mio · ${pont} ${(fs.statSync(pont).size / 1048576).toFixed(1)} Mio`,
+);

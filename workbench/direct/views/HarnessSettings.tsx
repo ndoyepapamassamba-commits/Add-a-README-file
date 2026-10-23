@@ -2,20 +2,30 @@
 // free output formats, instruction files, permission rules, hooks (or the Claude Code settings.json imported as is),
 // and the local bridge that brings REA and the user's own computer to the agent.
 import { useEffect, useMemo, useState } from 'react';
-import { Plug, Trash2, Upload } from 'lucide-react';
+import { Plug, RefreshCw, Trash2, Upload } from 'lucide-react';
 import { Badge, Button, Field, Input, Select, Textarea, Toggle } from '../../web/components/ui';
+import {
+  autoBridge,
+  DEFAULT_PORT,
+  diagnoseBridge,
+  pairBridge,
+  savedPairing,
+  type BridgeDiag,
+} from '../lib/bridge';
 import {
   harnessOf,
   HOOK_EVENTS,
+  HOOK_PRESETS,
   importClaudeSettings,
+  isToolEvent,
+  nextHookPreset,
   type HookAction,
   type HookDef,
   type HookEvent,
 } from '../lib/harness';
-import { connect, disconnect, mcpState, onMcpChange } from '../lib/mcp';
+import { mcpState, onMcpChange } from '../lib/mcp';
 import { installSkillPack, loadSkillPack } from '../lib/skillPack';
 import { useStore } from '../lib/store';
-import type { McpServerDef } from '../lib/types';
 
 const ACTIONS: { value: HookAction; label: string }[] = [
   { value: 'deny', label: 'Refuser' },
@@ -44,59 +54,74 @@ export function HarnessSettings() {
     deny: h.permissions.deny.join('\n'),
   });
   const [always, setAlways] = useState(h.alwaysSkills.join(', '));
-  const [draft, setDraft] = useState<HookDef>({ id: '', event: 'PreToolUse', action: 'deny', enabled: true });
-  const [code, setCode] = useState('');
-  const [pairing, setPairing] = useState('');
-  const [port, setPort] = useState('7821');
+  // The « new hook » form is never empty: it shows the first ready-made hook not installed yet.
+  const presetDraft = (hooks: HookDef[]) => {
+    const p = nextHookPreset(hooks);
+    return {
+      draft: { ...p.hook, id: '', enabled: true } as HookDef,
+      body: p.hook.message ?? p.hook.code ?? p.hook.command ?? '',
+    };
+  };
+  const [draft, setDraft] = useState<HookDef>(() => presetDraft(h.hooks).draft);
+  const [code, setCode] = useState(() => presetDraft(h.hooks).body);
+  const applyPreset = (p: (typeof HOOK_PRESETS)[number]) => {
+    setDraft({ ...p.hook, id: '', enabled: true });
+    setCode(p.hook.message ?? p.hook.code ?? p.hook.command ?? '');
+  };
+  // The pairing saved earlier fills the fields (they were reset to empty at every visit).
+  const saved = savedPairing();
+  const [pairing, setPairing] = useState(saved?.code ?? '');
+  const [port, setPort] = useState(String(saved?.port ?? DEFAULT_PORT));
+  const [manual, setManual] = useState(false);
+  const [diag, setDiag] = useState<BridgeDiag | null>(null);
   const [busy, setBusy] = useState('');
   const [, tick] = useState(0);
   useEffect(() => {
-    const off = onMcpChange(() => tick((n) => n + 1));
+    let alive = true;
+    const refresh = () => void diagnoseBridge().then((d) => alive && setDiag(d));
+    // Opening the settings is also a chance to pair by itself with a bridge that just started.
+    void autoBridge().finally(refresh);
+    const off = onMcpChange(() => {
+      tick((n) => n + 1);
+      refresh();
+    });
     return () => {
+      alive = false;
       off();
     };
   }, []);
   const bridge = useMemo(() => mcp.filter((m) => m.name === 'rea' || m.name === 'poste'), [mcp]);
 
   const pair = async () => {
-    const base = `http://127.0.0.1:${Number(port) || 7821}`;
-    const headers = { Authorization: `Bearer ${pairing.trim()}` };
-    const defs: McpServerDef[] = [
-      {
-        name: 'rea',
-        url: `${base}/rea`,
-        headers,
-        enabled: true,
-        autoApprove: true,
-        description:
-          'REA sur votre ordinateur (pont local) : démontage d’apps, paquets, binaires, WASM, SQLite, captures.',
-      },
-      {
-        name: 'poste',
-        url: `${base}/poste`,
-        headers,
-        enabled: true,
-        autoApprove: false,
-        description:
-          'Votre ordinateur (pont local) : shell réel et fichiers du dossier choisi — chaque action vous est demandée.',
-      },
-    ];
-    useStore.getState().setMcp([...mcp.filter((m) => m.name !== 'rea' && m.name !== 'poste'), ...defs]);
     setBusy('connexion…');
-    for (const d of defs) {
-      await disconnect(d.name);
-      await connect(d);
-    }
+    const ok = await pairBridge(Number(port) || DEFAULT_PORT, pairing.trim());
     setBusy('');
-    const ok = defs.every((d) => mcpState(d.name).status === 'connected');
+    const d = await diagnoseBridge();
+    setDiag(d);
     useStore
       .getState()
       .toast(
         ok ? 'ok' : 'err',
-        ok
-          ? 'Pont local connecté : REA et votre ordinateur sont disponibles pour l’agent.'
-          : `Pont local injoignable : ${mcpState('poste').error ?? mcpState('rea').error ?? 'vérifiez qu’il tourne et le code'}`,
+        ok ? 'Pont local connecté : REA et votre ordinateur sont disponibles pour l’agent.' : d.message,
       );
+  };
+  const detect = async () => {
+    setBusy('recherche du pont…');
+    const ok = await autoBridge();
+    setBusy('');
+    const d = await diagnoseBridge();
+    setDiag(d);
+    if (d.beacon?.code) {
+      setPairing(d.beacon.code);
+      setPort(String(d.beacon.port));
+    }
+    useStore.getState().toast(ok ? 'ok' : 'err', ok ? 'Pont détecté et connecté, sans saisie.' : d.message);
+  };
+  const STATUS: Record<string, string> = {
+    connected: 'connecté',
+    connecting: 'connexion…',
+    disconnected: 'en attente',
+    error: 'injoignable',
   };
 
   return (
@@ -245,24 +270,41 @@ export function HarnessSettings() {
             </div>
           ))}
         </div>
-        <div className="mt-2 grid gap-2 sm:grid-cols-4">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px]" data-testid="hook-presets">
+          <span className="text-faint">Modèles :</span>
+          {HOOK_PRESETS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => applyPreset(p)}
+              className="rounded-full border border-line px-2 py-0.5 hover:bg-hover"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <div className={`mt-2 grid gap-2 ${isToolEvent(draft.event) ? 'sm:grid-cols-4' : 'sm:grid-cols-2'}`}>
           <Select
             value={draft.event}
             onChange={(v) => setDraft({ ...draft, event: v as HookEvent })}
             options={HOOK_EVENTS.map((e) => ({ value: e, label: e }))}
           />
-          <Input
-            placeholder="Outil (ex. Write|Edit, terminal.execute)"
-            value={draft.matcher ?? ''}
-            onChange={(e) => setDraft({ ...draft, matcher: e.target.value })}
-            data-testid="hook-matcher"
-          />
-          <Input
-            placeholder="Si les arguments contiennent (regex)"
-            value={draft.when ?? ''}
-            onChange={(e) => setDraft({ ...draft, when: e.target.value })}
-            data-testid="hook-when"
-          />
+          {isToolEvent(draft.event) && (
+            <>
+              <Input
+                placeholder="Outil (ex. Write|Edit, terminal.execute)"
+                value={draft.matcher ?? ''}
+                onChange={(e) => setDraft({ ...draft, matcher: e.target.value })}
+                data-testid="hook-matcher"
+              />
+              <Input
+                placeholder="Si les arguments contiennent (regex)"
+                value={draft.when ?? ''}
+                onChange={(e) => setDraft({ ...draft, when: e.target.value })}
+                data-testid="hook-when"
+              />
+            </>
+          )}
           <Select
             value={draft.action}
             onChange={(v) => setDraft({ ...draft, action: v as HookAction })}
@@ -291,16 +333,19 @@ export function HarnessSettings() {
               const hook: HookDef = {
                 ...draft,
                 id: `hook-${Date.now().toString(36)}`,
-                matcher: draft.matcher?.trim() || undefined,
-                when: draft.when?.trim() || undefined,
+                matcher: (isToolEvent(draft.event) && draft.matcher?.trim()) || undefined,
+                when: (isToolEvent(draft.event) && draft.when?.trim()) || undefined,
                 ...(draft.action === 'js'
                   ? { code }
                   : draft.action === 'shell'
                     ? { command: code }
                     : { message: code }),
               };
-              save({ hooks: [...h.hooks, hook] });
-              setCode('');
+              const hooks = [...h.hooks, hook];
+              save({ hooks });
+              const next = presetDraft(hooks);
+              setDraft(next.draft);
+              setCode(next.body);
             }}
           >
             Ajouter le hook
@@ -348,40 +393,63 @@ export function HarnessSettings() {
 
       <Field
         label="Pont local — REA et votre ordinateur"
-        hint="Dans un terminal, dans le dossier de travail : node massamba-pont.mjs (livré avec l’application ; Node 22.19+ pour REA). Collez ici le code affiché. Il n’écoute que sur cet ordinateur."
+        hint="Le pont donne à l’agent REA et un vrai terminal sur votre ordinateur. Lancez-le une fois : la Workbench le trouve et s’appaire seule (fichier massamba-pont-code.js déposé à côté de l’application). Il n’écoute que sur cet ordinateur ; chaque commande passe par vos règles et votre accord."
       >
-        <div className="flex flex-wrap gap-2">
-          <Input
-            className="max-w-[220px]"
-            type="password"
-            placeholder="Code d’appairage"
-            value={pairing}
-            onChange={(e) => setPairing(e.target.value)}
-            data-testid="bridge-code"
-          />
-          <Input
-            className="max-w-[90px]"
-            value={port}
-            onChange={(e) => setPort(e.target.value)}
-            data-testid="bridge-port"
-          />
-          <Button
-            size="sm"
-            variant="primary"
-            disabled={!pairing.trim()}
-            onClick={() => void pair()}
-            data-testid="bridge-connect"
-          >
-            <Plug size={13} /> Connecter
+        <div
+          className={`rounded-lg border px-3 py-2 text-[12.5px] ${diag?.state === 'connected' ? 'border-ok/40 text-ok' : diag?.state === 'blocked' || diag?.state === 'badcode' ? 'border-warn/50' : 'border-line'}`}
+          data-testid="bridge-diag"
+        >
+          {diag?.message ?? 'Vérification du pont…'}
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="primary" onClick={() => void detect()} data-testid="bridge-detect">
+            <RefreshCw size={13} /> {bridge.length ? 'Réessayer' : 'Détecter le pont'}
           </Button>
+          {(manual || pairing) && (
+            <>
+              <Input
+                className="max-w-[220px]"
+                type="password"
+                placeholder="Code affiché par le pont"
+                value={pairing}
+                onChange={(e) => setPairing(e.target.value)}
+                data-testid="bridge-code"
+              />
+              <Input
+                className="max-w-[90px]"
+                value={port}
+                onChange={(e) => setPort(e.target.value)}
+                data-testid="bridge-port"
+                aria-label="Port du pont"
+              />
+              <Button
+                size="sm"
+                disabled={!pairing.trim()}
+                onClick={() => void pair()}
+                data-testid="bridge-connect"
+              >
+                <Plug size={13} /> Connecter
+              </Button>
+            </>
+          )}
+          {!manual && !pairing && (
+            <button
+              type="button"
+              className="text-[12px] text-faint underline-offset-2 hover:underline"
+              onClick={() => setManual(true)}
+              data-testid="bridge-manual"
+            >
+              Saisir le code à la main
+            </button>
+          )}
+          {busy && <span className="text-[12px] text-faint">{busy}</span>}
         </div>
         <div className="mt-2 space-y-1 text-[12.5px]" data-testid="bridge-status">
-          {bridge.length === 0 && <div className="text-faint">Pas encore appairé.</div>}
           {bridge.map((m) => (
             <div key={m.name}>
-              <span className="font-mono">{m.name}</span> — {mcpState(m.name).status}
+              <span className="font-mono">{m.name}</span> —{' '}
+              {STATUS[mcpState(m.name).status] ?? mcpState(m.name).status}
               {mcpState(m.name).tools.length ? ` · ${mcpState(m.name).tools.length} outils` : ''}
-              {mcpState(m.name).error ? <span className="text-err"> · {mcpState(m.name).error}</span> : null}
             </div>
           ))}
         </div>
