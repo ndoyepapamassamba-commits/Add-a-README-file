@@ -941,5 +941,15 @@
   "activite": "",
   "genre": "homme",
   "age": 25
+ },
+ "NADÈGE": {
+  "height": 1.64,
+  "voice": "siwis",
+  "pitch": 1.0,
+  "dessin": "scene",
+  "lieux": [],
+  "activite": "",
+  "genre": "femme",
+  "age": 28
  }
 }
