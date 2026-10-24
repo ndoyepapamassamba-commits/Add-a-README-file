@@ -24,6 +24,9 @@ Environ 0,18 $ par sketch.
 - `ecouter.py` : fait écouter un son par Gemini (accent, voix dans une musique, rires).
 - `comparer.py` : comparatif de moteurs vidéo sur un même sketch.
 - `musique.py` : compose une musique de fond avec Lyria 3.
+- `habillage/` : police Poppins (licence OFL), emojis 3D Fluent de Microsoft (licence MIT), boucle de musique
+  `fond_musical.m4a` (Lyria, passage sans voix) et rires `rires/` (générés par Grok).
+- `sortie/` : images, clips et compilations (non suivis par git).
 
 ## Leçons des tests (24/10/2026)
 
@@ -33,9 +36,6 @@ Environ 0,18 $ par sketch.
 - Grok Imagine 1.5 Lite + cette consigne : 7 clips sur 7 jugés ivoiriens / ouest-africains au 2ᵉ test ; Veo 3.1 Lite
   (option `--moteur=veo`) sert de secours, 2,4 fois plus cher.
 - Chaque sketch a une chute propre (`chute`) au lieu du même gros plan choqué.
-- `habillage/` : police Poppins (licence OFL), emojis 3D Fluent de Microsoft (licence MIT), boucle de musique
-  `fond_musical.m4a` (Lyria, passage sans voix) et rires `rires/` (générés par Grok).
-- `sortie/` : images, clips et compilations (non suivis par git).
 
 ## Utilisation
 
