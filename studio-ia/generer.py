@@ -4,6 +4,8 @@
   python3 generer.py images  [ids…]        images de départ (toutes si aucun id)
   python3 generer.py videos  [ids…]        vidéos à partir des images
   python3 generer.py controle [ids…]       transcription + comparaison au dialogue
+  python3 generer.py ecoute [ids…]         accent jugé à l'oreille (Gemini)
+  python3 generer.py reprises [ids…]       ids à refaire : accent « France » ou dialogue mal prononcé
   python3 generer.py planche [ids…]        planches d'images pour la relecture
 
 L'état de chaque sketch est gardé dans sortie/etat.json : une vidéo lancée n'est jamais relancée
@@ -170,6 +172,34 @@ def controler(s):
     print(f"  contrôle {sid} : {score:.0%}  « {entendu} »")
 
 
+QUESTION_ACCENT = ("Écoute les voix de ce sketch. Réponds sur UNE ligne au format : ACCENT=<ivoirien|ouest-africain|"
+                   "africain autre|français de France|autre> ; NATUREL=<note sur 10> ; DRÔLE=<note sur 10> ; remarque courte.")
+
+
+def ecoute(s):
+    """Accent jugé à l'oreille (ecouter.py) ; un clip « français de France » est à refaire."""
+    import ecouter
+    sid = s["id"]
+    chemin = CLIPS / f"{sid}.mp4"
+    if not chemin.exists():
+        return
+    try:
+        avis = ecouter.ecouter(chemin, QUESTION_ACCENT).strip().replace("\n", " ")
+    except Exception as e:
+        print(f"  écoute {sid} ERREUR {e}")
+        return
+    m = re.search(r"ACCENT\s*=\s*([^;]+)", avis)
+    maj_etat(sid, accent=(m.group(1).strip().lower() if m else "?"), avis=avis[:300])
+    print(f"  écoute {sid} : {avis}")
+
+
+def a_refaire(sid, etat):
+    e = etat.get(sid, {})
+    accent = e.get("accent") or ""
+    score = (e.get("controle") or {}).get("score", 1)
+    return (CLIPS / f"{sid}.mp4").exists() and ("france" in accent or accent.startswith("autre") or score < 0.6)
+
+
 def planche(ids):
     from PIL import Image, ImageDraw
     vignettes = [(sid, IMAGES / f"{sid}.jpg") for sid in ids if (IMAGES / f"{sid}.jpg").exists()]
@@ -208,6 +238,12 @@ def main():
     elif action == "controle":
         for s in choisis:
             controler(s)
+    elif action == "ecoute":
+        with ThreadPoolExecutor(4) as ex:
+            list(ex.map(ecoute, choisis))
+    elif action == "reprises":
+        etat = lire_etat()
+        print(" ".join(s["id"] for s in choisis if a_refaire(s["id"], etat)))
     elif action == "planche":
         planche([s["id"] for s in choisis])
     print(f"dépensé (journal) : {or_api.total_depense():.2f} $ ; reste sur la clé : {or_api.reste_cle():.2f} $")

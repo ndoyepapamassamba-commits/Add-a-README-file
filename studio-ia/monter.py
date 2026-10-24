@@ -4,7 +4,7 @@ avec musique de fond (baissée sous les voix) et rires après la chute de chaque
   python3 monter.py audio                      prépare les rires et la boucle de musique (habillage/)
   python3 monter.py segments [ids…]            habille chaque clip (sortie/segments/)
   python3 monter.py compilation NOM ids…       assemble ces clips dans cet ordre (sortie/compilations/NOM.mp4)
-  python3 monter.py compilations               répartit tous les clips prêts en compilations d'au moins 62 s
+  python3 monter.py compilations [noms…]       compilations de sketchs/programme.json (sinon : paquets d'au moins 62 s)
 
 Emojis : Fluent Emoji de Microsoft (licence MIT). Musique : Lyria 3 (composée pour nous). Rires : générés par Grok.
 Les sous-titres prennent l'orthographe du dialogue écrit et le minutage de la transcription (generer.py controle).
@@ -41,7 +41,7 @@ BANDE_H, BANDE_Y = 420, Y_TEXTE - 210
 TAILLE_TEXTE = 92
 COULEURS = [(57, 255, 53), (255, 230, 0), (255, 60, 60), (77, 225, 255)]   # vert, jaune, rouge, cyan
 VOLUME_MUSIQUE, VOLUME_RIRES = 0.22, 0.9
-ENC_V = ["-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p", "-r", str(IPS)]
+ENC_V = ["-c:v", "libx264", "-preset", "medium", "-crf", "22", "-pix_fmt", "yuv420p", "-r", str(IPS)]
 ENC_A = ["-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2"]
 
 # mot (forme normalisée) → emoji ; le dernier groupe de chaque sketch reçoit toujours un emoji de rire
@@ -380,10 +380,21 @@ def main():
     elif action == "compilation":
         compilation(args[0], args[1:])
     elif action == "compilations":
-        prets = sorted(p.stem for p in generer.CLIPS.glob("*.mp4"))
-        durees = {sid: duree_media(generer.CLIPS / f"{sid}.mp4") for sid in prets}
-        for k, paquet in enumerate(repartir(prets, durees), 1):
-            compilation(f"compilation_{k:02d}", paquet)
+        programme = ICI / "sketchs" / "programme.json"
+        if programme.exists():          # ordre choisi : décors et thèmes variés dans chaque compilation
+            for nom, ids in json.loads(programme.read_text()).items():
+                if args and nom not in args:
+                    continue
+                prets = [i for i in ids if (generer.CLIPS / f"{i}.mp4").exists()]
+                manquants = sorted(set(ids) - set(prets))
+                if manquants:
+                    print(f"  {nom} : clips manquants {manquants}")
+                compilation(nom, prets)
+        else:
+            prets = sorted(p.stem for p in generer.CLIPS.glob("*.mp4"))
+            durees = {sid: duree_media(generer.CLIPS / f"{sid}.mp4") for sid in prets}
+            for k, paquet in enumerate(repartir(prets, durees), 1):
+                compilation(f"compilation_{k:02d}", paquet)
 
 
 if __name__ == "__main__":
