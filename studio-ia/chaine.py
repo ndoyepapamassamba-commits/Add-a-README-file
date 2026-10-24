@@ -44,6 +44,7 @@ CX = (SG + SD) / 2
 CYAN, ROSE, JAUNE, VIOLET, OR = (37, 244, 238), (254, 44, 85), (255, 210, 63), (120, 40, 200), (255, 190, 40)
 NUIT_H, NUIT_B = (16, 9, 34), (36, 16, 58)
 ACCROCHE_S, REACTION_S, T_CARTE, FIN_S = 2.5, 2.4, 1.4, 2.6
+MARGE_CHUTE = 2.6                   # temps mort coupé : le clip s'arrête au plus 2,6 s après la dernière réplique
 QUEUE = FIN_S + 1.0                 # dernière image tenue : vote puis carte de fin
 Y_BANDEAU, H_BANDEAU, PAS_BANDEAU = k(214), k(50), 4      # 4 px par image à 30 i/s : défilement sans sous-pixel
 COUL_PERSO = [(255, 128, 190), (255, 200, 80), (110, 225, 150), (120, 180, 255), (90, 225, 230), (255, 160, 100)]
@@ -496,14 +497,17 @@ def lire_scene(clip):
     pre = "crop=ih*4/3:ih," if w / h > 1.5 else ""
     p = subprocess.Popen(["ffmpeg", "-v", "error", "-i", str(clip), "-vf",
                           f"{pre}crop=trunc(ih*{W}/{CH}/2)*2:ih,scale={W}:{CH}:flags=lanczos,fps={IPS}",
-                          "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE)
+                          "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     taille = W * CH * 3
-    while True:
-        b = p.stdout.read(taille)
-        if len(b) < taille:
-            break
-        yield b
-    p.wait()
+    try:
+        while True:
+            b = p.stdout.read(taille)
+            if len(b) < taille:
+                break
+            yield b
+    finally:                            # clip coupé après la chute : le lecteur est arrêté sans bruit
+        p.kill()
+        p.wait()
 
 
 def souffle():
@@ -528,6 +532,7 @@ def compiler(nom, ids):
         rangs = [k_ for k_, (_, txt) in enumerate(s["dialogue"]) for m in txt.split() if generer.normaliser(m)]
         mots = [(m, a, b, rangs[i] if i < len(rangs) else len(s["dialogue"]) - 1) for i, (m, a, b) in enumerate(brut)]
         st = SousTitres(s, mots)
+        d = min(d, st.fin_parole + MARGE_CHUTE)
         apres = T_CARTE if r < len(ids) - 1 else QUEUE
         plan.append({"sid": sid, "s": s, "clip": clip, "debut": t, "duree": d, "apres": apres, "st": st,
                      "chute": t + st.fin_parole, "titre": (s.get("titre") or "").upper()})
@@ -595,7 +600,8 @@ def compiler(nom, ids):
     for i, p in enumerate(plan):
         entrees += ["-i", str(p["clip"])]
         ms = int(p["debut"] * 1000)
-        f.append(f"[{i}:a]loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000,aformat=channel_layouts=stereo,adelay={ms}|{ms}[v{i}]")
+        f.append(f"[{i}:a]atrim=0:{p['duree']:.3f},afade=t=out:st={max(0, p['duree'] - 0.15):.3f}:d=0.15,"
+                 f"loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000,aformat=channel_layouts=stereo,adelay={ms}|{ms}[v{i}]")
     f.append("".join(f"[v{i}]" for i in range(n)) + f"amix=inputs={n}:normalize=0,apad=whole_dur={total:.2f}[voix]")
     base = n
     for i, p in enumerate(plan):

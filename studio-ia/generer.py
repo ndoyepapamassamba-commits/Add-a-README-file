@@ -211,7 +211,9 @@ def a_refaire(sid, etat):
     e = etat.get(sid, {})
     accent = e.get("accent") or ""
     score = (e.get("controle") or {}).get("score", 1)
-    return (CLIPS / f"{sid}.mp4").exists() and ("france" in accent or accent.startswith("autre") or score < 0.6)
+    realisme = (e.get("realisme") or {}).get("ok", True)
+    return (CLIPS / f"{sid}.mp4").exists() and ("france" in accent or accent.startswith("autre") or score < 0.6
+                                                 or not realisme)
 
 
 def planche(ids):
