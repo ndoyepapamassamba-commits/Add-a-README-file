@@ -30,16 +30,21 @@ ETAT = SORTIE / "etat.json"
 MODELE_IMAGE = "google/gemini-3.1-flash-lite-image"
 MODELE_VIDEO = "x-ai/grok-imagine-video-1.5-lite"
 RESOLUTION = "480p"
+# moteur de secours pour les clips dont l'accent reste « France » chez Grok (comparatif du 24/10/2026) ;
+# Veo cadre l'image 4:3 dans du 16:9 : monter.py recadre au centre
+SECOURS = {"modele": "google/veo-3.1-lite", "resolution": "720p", "aspect": "16:9", "durees": [4, 6, 8], "prix": 0.05}
 PRIX_SECONDE, PRIX_IMAGE_ENTREE, PRIX_IMAGE = 0.02, 0.01, 0.034
 PLANCHER = 0.40   # on s'arrête avant que la clé descende sous ce reste (dollars)
 
 STYLE = ("3D animated cartoon still in Pixar/DreamWorks style, West African comedy sketch set in Abidjan, Cote d'Ivoire. "
          "All characters are Black Ivorian people with deep dark-brown skin and African facial features, "
          "big expressive eyes, exaggerated comedic expressions and body language.")
-FINITION = ("Characters fully visible from head to knees, clear readable faces, warm cinematic lighting, "
+FINITION = ("Full-bleed image filling the whole frame edge to edge, no black borders. Characters fully visible from head to knees, clear readable faces, warm cinematic lighting, "
             "vibrant saturated colors, high detail, clean composition, no text, no letters, no logo, no watermark.")
-VOIX = ("Dialogue in French spoken with a strong Ivorian accent from Abidjan, natural African voices: "
-        "Ivorian men's voices for men, Ivorian women's voices for women, children's voices for children. "
+VOIX = ("VOICE DIRECTION (most important): every character speaks French with a heavy, authentic Ivorian accent from "
+        "Abidjan, Cote d'Ivoire - Abidjan street French with Nouchi intonation, West African rhythm and melody, rolled R - "
+        "NOT a Parisian or standard France French accent. Warm, loud, lively, natural voices like real Ivorian people joking "
+        "in the neighborhood: deep Ivorian voices for men, Ivorian women's voices for women, child voices for children. "
         "No background music, no subtitles, no text on screen.")
 
 verrou = threading.Lock()
@@ -61,15 +66,14 @@ def maj_etat(sid, **champs):
 
 
 def mots_dialogue(s):
-    return sum(len(t.split()) for _, t in s["dialogue"])
+    return sum(len(normaliser(t)) for _, t in s["dialogue"])
 
 
 def duree(s):
-    """Environ 2,9 mots par seconde chez Grok, plus le temps de la réaction finale."""
+    """Débit mesuré chez Grok : 2,1 à 3,7 mots par seconde (≈ 3) ; + 2 s pour la chute et la réaction finale."""
     if "duree" in s:
         return s["duree"]
-    m = mots_dialogue(s)
-    return 6 if m <= 14 else 7 if m <= 17 else 8 if m <= 20 else 9 if m <= 23 else 10
+    return min(12, max(6, round(mots_dialogue(s) / 3.0 + 2.0)))
 
 
 def prompt_image(s):
@@ -79,11 +83,12 @@ def prompt_image(s):
 
 def prompt_video(s):
     noms = [p["nom"] for p in s["persos"]]
-    lignes = " ".join(f'{noms[i].upper()}: "{t}"' for i, t in s["dialogue"])
-    return ("Animate this exact image, keep the same characters, faces, skin tones and setting. Static camera, "
+    lignes = " ".join(f'{noms[i].upper()} (heavy Ivorian accent): "{t}"' for i, t in s["dialogue"])
+    chute = s.get("chute") or (f"At the very end, quick cut to a close-up of {noms[s['fin']]}'s face reacting in "
+                               "exaggerated cartoon shock, looking straight into the camera.")
+    return (f"{VOIX} Animate this exact image, keep the same characters, faces, skin tones and setting. Static camera, "
             "Pixar-style 3D cartoon acting, punchy comedic timing, accurate lip-sync: only the character who is "
-            f"speaking moves the lips. {s['jeu']} At the very end, quick cut to a close-up of {noms[s['fin']]}'s face "
-            f"reacting in exaggerated cartoon shock, looking straight into the camera. {VOIX} {lignes}")
+            f"speaking moves the lips. {s['jeu']} {chute} Dialogue (Ivorian accent): {lignes}")
 
 
 def cout_estime(s, image=True, video=True):
@@ -113,7 +118,7 @@ def faire_image(s, refaire=False):
         print(f"  image {sid} ERREUR {e}")
 
 
-def faire_video(s, refaire=False):
+def faire_video(s, refaire=False, secours=False):
     sid = s["id"]
     chemin, image = CLIPS / f"{sid}.mp4", IMAGES / f"{sid}.jpg"
     etat = lire_etat().get(sid, {})
@@ -125,13 +130,18 @@ def faire_video(s, refaire=False):
     job = None if refaire else etat.get("job")
     try:
         if not job:
-            if not assez_de_budget(cout_estime(s, image=False)):
+            if secours:
+                d = min(SECOURS["durees"], key=lambda x: (x < duree(s), abs(x - duree(s))))
+                modele, res, aspect, prix = SECOURS["modele"], SECOURS["resolution"], SECOURS["aspect"], d * SECOURS["prix"]
+            else:
+                d, modele, res, aspect, prix = duree(s), MODELE_VIDEO, RESOLUTION, "4:3", cout_estime(s, image=False)
+            if not assez_de_budget(prix):
                 return
-            job = or_api.video_lancer(MODELE_VIDEO, prompt_video(s), image, duree=duree(s),
-                                      resolution=RESOLUTION, aspect="4:3")
-            maj_etat(sid, job=job, duree=duree(s))
-        cout = or_api.video_attendre(job, chemin, MODELE_VIDEO, ref=sid, pause=10)
-        maj_etat(sid, video=chemin.name, cout_video=cout, controle=None)
+            job = or_api.video_lancer(modele, prompt_video(s), image, duree=d, resolution=res, aspect=aspect)
+            maj_etat(sid, job=job, duree=d, moteur=modele)
+        modele = lire_etat().get(sid, {}).get("moteur", MODELE_VIDEO)
+        cout = or_api.video_attendre(job, chemin, modele, ref=sid, pause=10)
+        maj_etat(sid, video=chemin.name, cout_video=cout, controle=None, accent=None)
         print(f"  vidéo {sid} ok ({cout} $)")
     except Exception as e:
         maj_etat(sid, job=None, erreur=str(e)[:300])
@@ -194,7 +204,7 @@ def main():
             list(ex.map(lambda s: faire_image(s, refaire), choisis))
     elif action == "videos":
         with ThreadPoolExecutor(6) as ex:
-            list(ex.map(lambda s: faire_video(s, refaire), choisis))
+            list(ex.map(lambda s: faire_video(s, refaire, "--moteur=veo" in sys.argv), choisis))
     elif action == "controle":
         for s in choisis:
             controler(s)
