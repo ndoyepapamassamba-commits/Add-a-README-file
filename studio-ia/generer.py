@@ -49,6 +49,20 @@ VOIX = ("VOICE DIRECTION (most important): every character speaks French with a 
         "in the neighborhood: deep Ivorian voices for men, Ivorian women's voices for women, child voices for children. "
         "No background music, no subtitles, no text on screen.")
 
+# RÉALISME (25/10/2026, demande de l'utilisateur : « le plus réaliste possible en évitant des disparitions ou apparitions
+# soudaines, des gestes hors normes, un mauvais enchaînement ») : consigne stricte en tête du prompt vidéo
+REALISME = ("REALISM AND CONTINUITY (strict, as important as the voices): one single continuous shot that starts exactly on "
+            "this image, steady camera, no cuts, no scene change. Every character and every object of the first frame stays "
+            "present and identical for the whole video: nobody and nothing appears, disappears, duplicates, teleports or "
+            "changes face, clothes, hair, size or position suddenly; no new character enters the frame. Natural, physically "
+            "plausible human movement at normal speed, with real weight and balance: hands with five fingers, no extra limbs, "
+            "no stretching, no morphing, no floating objects. Small believable gestures (pointing, shrugging, leaning, hands "
+            "on hips, head turns, facial expressions); only the character who is speaking moves the lips, the others listen "
+            "and react naturally. Each action follows the previous one in a clear logical order, smooth and readable, "
+            "without glitches. The final close-up is a slow smooth camera push-in, never a jump cut.")
+REALISME_IMAGE = ("Realistic natural staging: believable poses, correct anatomy with five fingers per hand, props that are "
+                  "physically plausible and held naturally, characters placed so they can all stay in frame.")
+
 verrou = threading.Lock()
 
 
@@ -80,17 +94,17 @@ def duree(s):
 
 def prompt_image(s):
     persos = " ".join(f"{p['desc'][0].upper() + p['desc'][1:]}, {p['pose']}." for p in s["persos"])
-    return f"{STYLE} Scene: {s['lieu']}. {persos} {FINITION}"
+    return f"{STYLE} Scene: {s['lieu']}. {persos} {REALISME_IMAGE} {FINITION}"
 
 
 def prompt_video(s):
     noms = [p["nom"] for p in s["persos"]]
     lignes = " ".join(f'{noms[i].upper()} (heavy Ivorian accent): "{t}"' for i, t in s["dialogue"])
-    chute = s.get("chute") or (f"At the very end, quick cut to a close-up of {noms[s['fin']]}'s face reacting in "
-                               "exaggerated cartoon shock, looking straight into the camera.")
-    return (f"{VOIX} Animate this exact image, keep the same characters, faces, skin tones and setting. Static camera, "
-            "Pixar-style 3D cartoon acting, punchy comedic timing, accurate lip-sync: only the character who is "
-            f"speaking moves the lips. {s['jeu']} {chute} Dialogue (Ivorian accent): {lignes}")
+    chute = s.get("chute") or (f"At the very end, the camera slowly pushes in to a close-up of {noms[s['fin']]}'s face "
+                               "reacting in cartoon shock, looking straight into the camera.")
+    return (f"{VOIX} {REALISME} Animate this exact image, keep the same characters, faces, skin tones and setting. "
+            "Pixar-style 3D cartoon acting, punchy comedic timing, accurate lip-sync. "
+            f"{s['jeu']} {chute} Dialogue (Ivorian accent): {lignes}")
 
 
 def cout_estime(s, image=True, video=True):
