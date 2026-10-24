@@ -70,7 +70,68 @@ def regarder(sid):
     return ok, avis
 
 
+
+
+# SYNCHRO (25/10/2026, défaut vu par l'utilisateur sur « Papa influenceur » : « la maîtresse parle à un moment à la place de
+# l'enfant » — le zoom final sur la maîtresse partait pendant la dernière réplique de l'enfant) : pour chaque réplique, deux
+# images prises pendant qu'elle est dite, étiquetées avec le personnage qui doit parler.
+QUESTION_SYNCHRO = ("Images extraites d'un plan d'animation 3D, deux par réplique, dans l'ordre. Sur chaque image est écrit "
+                    "le numéro de la réplique et LE PERSONNAGE QUI DOIT PARLER à ce moment. Personnages : {persos}. Pour chaque "
+                    "réplique : le personnage indiqué est-il bien visible et en train de parler (bouche ouverte ou qui bouge) ? "
+                    "Est-ce plutôt un AUTRE personnage qui parle, ou qui est seul en gros plan à sa place ? "
+                    "Réponds sur UNE ligne : SYNCHRO=OK ou SYNCHRO=ERREUR ; puis le numéro de la réplique fautive et ce qu'on voit.")
+
+
+def synchro(sid):
+    import json as _json
+    s = generer.sketchs()[sid]
+    clip = generer.CLIPS / f"{sid}.mp4"
+    d = monter.duree_media(clip)
+    etat = generer.lire_etat().get(sid, {})
+    mots = monter.mots_minutes(s, (etat.get("controle") or {}).get("mots"), d)
+    rangs = [k for k, (_, t) in enumerate(s["dialogue"]) for m in t.split() if generer.normaliser(m)]
+    plages = {}
+    for i, (_, a, b) in enumerate(mots):
+        r = rangs[i] if i < len(rangs) else len(s["dialogue"]) - 1
+        lo, hi = plages.get(r, (a, b))
+        plages[r] = (min(lo, a), max(hi, b))
+    images = []
+    for r in sorted(plages):
+        a, b = plages[r]
+        qui = s["persos"][s["dialogue"][r][0]]["nom"]
+        for f in (0.35, 0.8):
+            t = a + (b - a) * f
+            brut = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{t:.2f}", "-i", str(clip), "-frames:v", "1",
+                                   "-vf", "scale=400:-2", "-f", "image2pipe", "-vcodec", "png", "-"],
+                                  capture_output=True, check=True).stdout
+            im = Image.open(io.BytesIO(brut)).convert("RGB")
+            dr = ImageDraw.Draw(im)
+            dr.rectangle((0, 0, im.width, 18), fill=(0, 0, 0))
+            dr.text((4, 3), f"réplique {r + 1} : {qui} parle ({t:.1f}s)", fill=(255, 255, 0))
+            images.append(im)
+    w, h = images[0].size
+    col = 4
+    feuille = Image.new("RGB", (w * col, h * ((len(images) + col - 1) // col)), "black")
+    for i, im in enumerate(images):
+        feuille.paste(im, ((i % col) * w, (i // col) * h))
+    tampon = io.BytesIO()
+    feuille.save(tampon, format="JPEG", quality=85)
+    corps = {"model": MODELE, "messages": [{"role": "user", "content": [
+        {"type": "text", "text": QUESTION_SYNCHRO.format(persos=" ; ".join(p["nom"] for p in s["persos"]))},
+        {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + base64.b64encode(tampon.getvalue()).decode()}}]}]}
+    r_ = requests.post(f"{or_api.API}/chat/completions", headers=or_api._entetes(), json=corps, timeout=180)
+    r_.raise_for_status()
+    rep = r_.json()
+    or_api.noter_depense("synchro", MODELE, (rep.get("usage") or {}).get("cost"), sid)
+    avis = rep["choices"][0]["message"]["content"].strip().replace("\n", " ")
+    ok = not re.search(r"SYNCHRO\s*=\s*ERREUR", avis)
+    generer.maj_etat(sid, synchro={"ok": ok, "avis": avis[:400]})
+    return ok, avis
+
+
 if __name__ == "__main__":
     for sid in sys.argv[1:]:
         ok, avis = regarder(sid)
         print(f"  regard {sid} : {'garde' if ok else 'REFAIRE'} | {avis[:300]}")
+        ok, avis = synchro(sid)
+        print(f"  synchro {sid} : {'garde' if ok else 'REFAIRE'} | {avis[:300]}")

@@ -97,14 +97,36 @@ def prompt_image(s):
     return f"{STYLE} Scene: {s['lieu']}. {persos} {REALISME_IMAGE} {FINITION}"
 
 
+def voix_de(p):
+    """type de voix d'après la description : enfant, femme ou homme."""
+    d = (p["nom"] + " " + p["desc"]).lower()
+    m = re.search(r"around (\d+)", d)
+    if re.search(r"\b(baby|boy|girl|child|kid|schoolboy|schoolgirl|son|daughter|grandson|granddaughter)\b", d) and \
+            not re.search(r"in (her|his) (20s|30s|40s)", d) or (m and int(m.group(1)) < 15):
+        return "child's voice"
+    if re.search(r"\b(woman|wife|mother|mamie|aunt|sister|lady|grandmother|girlfriend|bride|nurse|seller in her|teacher in her"
+                 r"|her \d0s|in her)\b", d):
+        return "adult woman's voice"
+    return "adult man's voice"
+
+
+# SYNCHRO (25/10/2026, « la maîtresse parle à un moment à la place de l'enfant ») : chaque réplique est attribuée à son
+# personnage et à son type de voix ; la réaction finale et le zoom ne partent qu'APRÈS la dernière réplique
+SYNCHRO = ("SPEAKING ORDER (strict): the numbered lines below are spoken one after another, each ONLY by the character named, "
+           "with that character's own lips moving and the voice type given; all the other characters keep their mouths "
+           "closed while they listen. The final reaction and the camera push-in start only AFTER the last line has been "
+           "completely spoken; during the final close-up nobody speaks and all mouths stay closed.")
+
+
 def prompt_video(s):
     noms = [p["nom"] for p in s["persos"]]
-    lignes = " ".join(f'{noms[i].upper()} (heavy Ivorian accent): "{t}"' for i, t in s["dialogue"])
+    lignes = " ".join(f'Line {k + 1}, spoken only by {noms[i].upper()} ({voix_de(s["persos"][i])}, heavy Ivorian accent): "{t}"'
+                      for k, (i, t) in enumerate(s["dialogue"]))
     chute = s.get("chute") or (f"At the very end, the camera slowly pushes in to a close-up of {noms[s['fin']]}'s face "
                                "reacting in cartoon shock, looking straight into the camera.")
     return (f"{VOIX} {REALISME} Animate this exact image, keep the same characters, faces, skin tones and setting. "
             "Pixar-style 3D cartoon acting, punchy comedic timing, accurate lip-sync. "
-            f"{s['jeu']} {chute} Dialogue (Ivorian accent): {lignes}")
+            f"{s['jeu']} {chute} {SYNCHRO} Dialogue: {lignes}")
 
 
 def cout_estime(s, image=True, video=True):
@@ -212,8 +234,9 @@ def a_refaire(sid, etat):
     accent = e.get("accent") or ""
     score = (e.get("controle") or {}).get("score", 1)
     realisme = (e.get("realisme") or {}).get("ok", True)
+    synchro = (e.get("synchro") or {}).get("ok", True)
     return (CLIPS / f"{sid}.mp4").exists() and ("france" in accent or accent.startswith("autre") or score < 0.6
-                                                 or not realisme)
+                                                 or not realisme or not synchro)
 
 
 def planche(ids):
