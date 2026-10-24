@@ -11,7 +11,12 @@ Fabrique : marque.py, cartes_fx.py, compose.py, branche claude/relaxed-noether-s
 Son : dialogues normalisés, un rire après chaque chute, un souffle à chaque carte, musique baissée sous les voix.
 Le logo et le nom de la chaîne sont lus dans prive/ (avatar.jpg, marque.json), jamais dans le dépôt public.
 
-  python3 chaine.py NOM ids…        → sortie/compilations/NOM.mp4
+  python3 chaine.py NOM ids…                       → sortie/compilations/NOM.mp4 (sketchs dans l'ordre donné)
+  python3 chaine.py --meilleur-d-abord NOM ids…    → ordre DÉCROISSANT : du plus drôle au moins drôle
+ORDRE (règle de l'utilisateur, 26/10/2026) : « le premier sketch doit être celui qui marque et qui est le meilleur toujours,
+et doit inciter à regarder le reste », puis « du plus rigolo au moins rigolo » (toutes les chutes doivent pourtant se valoir
+en humour extrême : un clip nettement en dessous des autres est écarté plutôt que placé en fin). Le classement vient de la
+note d'écoute du clip fini (DRÔLE puis NATUREL, rangée par generer.py ecoute) ; à égalité, l'ordre donné décide.
 """
 import json
 import math
@@ -378,9 +383,12 @@ class SousTitres:
                     vus.add(e)
             em = dict(em)
             lignes = self.disposer(g, em)
+            # un mot très long (« ARTISTE-CHANTEUR ») peut déborder même sur deux lignes : police réduite pour ce groupe
+            large = max(self.largeur(g, l, em) for l in lignes)
+            F = self.F if large <= LARGEUR_SOUS else police(F_SOUS * LARGEUR_SOUS / large)
             qui = s["dialogue"][g[0][3]][0]
             self.groupes.append({"mots": g, "em": em, "lignes": lignes, "couleur": COUL_PERSO[qui % len(COUL_PERSO)],
-                                 "chute": g[0][3] == dernier})
+                                 "chute": g[0][3] == dernier, "F": F})
         for j, gr in enumerate(self.groupes):
             gr["debut"] = gr["mots"][0][1] - 0.05
             suiv = self.groupes[j + 1]["mots"][0][1] - 0.05 if j + 1 < len(self.groupes) else gr["mots"][-1][2] + 0.6
@@ -390,8 +398,8 @@ class SousTitres:
     def texte(self, m):
         return re.sub(r"[.,…]+$", "", m.upper()).replace(" ", " ")
 
-    def largeur(self, g, idx, em):
-        return self.F.getlength(" ".join(self.texte(g[i][0]) for i in idx)) + EMO_W * sum(1 for i in idx if i in em)
+    def largeur(self, g, idx, em, F=None):
+        return (F or self.F).getlength(" ".join(self.texte(g[i][0]) for i in idx)) + EMO_W * sum(1 for i in idx if i in em)
 
     def decouper(self, mots):
         props, cur = [], []
@@ -435,13 +443,14 @@ class SousTitres:
         act = max([i for i, (_, d, _, _) in enumerate(g) if d - 0.02 <= t] or [0])
         im = Image.new("RGBA", (W, H - Y1), (0, 0, 0, 0))
         dr = ImageDraw.Draw(im)
-        sp = self.F.getlength(" ")
+        F = gr["F"]
+        sp = F.getlength(" ")
         y = k(752) - Y1
         for r in gr["lignes"]:
-            x = (W - self.largeur(g, r, em)) / 2
+            x = (W - self.largeur(g, r, em, F)) / 2
             for i in r:
                 w = self.texte(g[i][0])
-                ww = self.F.getlength(w)
+                ww = F.getlength(w)
                 cle = bool(set(generer.normaliser(g[i][0])) & self.cles)
                 if i == act:
                     u = max(0.0, t - g[i][1])
@@ -449,10 +458,10 @@ class SousTitres:
                     pad = k(7) * kk
                     fond_ = SAUMON if (gr["chute"] and cle) else gr["couleur"]
                     dr.rounded_rectangle((x - pad, y - k(3) * kk, x + ww + pad, y + k(47) * kk), radius=k(13), fill=fond_ + (235,))
-                    dr.text((x, y), w, font=self.F, fill=ENCRE)
+                    dr.text((x, y), w, font=F, fill=ENCRE)
                 else:
-                    dr.text((x + k(2), y + k(3)), w, font=self.F, fill=(0, 0, 0, 110))
-                    dr.text((x, y), w, font=self.F, fill=JAUNE_MOT if cle else (255, 255, 255), stroke_width=k(4),
+                    dr.text((x + k(2), y + k(3)), w, font=F, fill=(0, 0, 0, 110))
+                    dr.text((x, y), w, font=F, fill=JAUNE_MOT if cle else (255, 255, 255), stroke_width=k(4),
                             stroke_fill=(24, 12, 34))
                 x += ww
                 if i in em:
@@ -632,5 +641,23 @@ def compiler(nom, ids):
     return sortie
 
 
+def note_ecoute(sid, etat):
+    avis = etat.get(sid, {}).get("avis") or ""
+    d, n = (re.search(rf"{c}\s*=\s*(\d+(?:[.,]\d+)?)", avis) for c in ("DRÔLE", "NATUREL"))
+    return tuple(float(m.group(1).replace(",", ".")) if m else 0.0 for m in (d, n))
+
+
+def meilleur_d_abord(ids):
+    etat = generer.lire_etat()
+    return sorted(ids, key=lambda i: tuple(-x for x in note_ecoute(i, etat)))       # tri stable : à égalité, l'ordre donné
+
+
 if __name__ == "__main__":
-    compiler(sys.argv[1], sys.argv[2:])
+    args = sys.argv[1:]
+    if args and args[0] == "--meilleur-d-abord":
+        nom, ids = args[1], meilleur_d_abord(args[2:])
+        e = generer.lire_etat()
+        print("  ordre :", " ".join(f"{i}({'/'.join(f'{x:g}' for x in note_ecoute(i, e))})" for i in ids))
+    else:
+        nom, ids = args[0], args[1:]
+    compiler(nom, ids)

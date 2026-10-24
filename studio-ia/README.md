@@ -16,17 +16,26 @@ Environ 0,18 $ par sketch.
 
 ## Fichiers
 
-- `sketchs/lot1.json` … `lot4.json` : les 100 sketchs (décor, personnages, poses, dialogue, jeu d'acteur, emoji, mots-clés colorés).
-- `generer.py` : images → vidéos → contrôle. Ne relance jamais une vidéo déjà payée ; s'arrête avant d'épuiser la clé.
-- `monter.py` : fond flou 9:16, sous-titres mot à mot, transitions emoji, compilations ≥ 62 s.
+- `sketchs/lot0.json`, `lot5.json` … `lot8.json` : les sketchs (titre, décor, personnages, poses, dialogue, jeu d'acteur,
+  chute, emoji, mots-clés colorés) ; `programme.json` : composition des compilations ; `archives/` : anciens lots 1 à 4 ;
+  `brouillons/` : candidats soumis au jury avant tournage.
+- `jury.py` : jury d'humour AVANT tournage — classement à l'aveugle des candidats avec la référence de la chaîne mélangée
+  parmi eux, et repérage des blagues ou situations déjà tournées dans tout le catalogue.
+- `generer.py` : images → vidéos → contrôle (dialogue), écoute (accent, notes DRÔLE / NATUREL), reprises. Ne relance jamais
+  une vidéo déjà payée ; s'arrête avant d'épuiser la clé.
+- `regarder.py` : contrôle à l'œil du réalisme (apparition, disparition, fusion de personnages) et de la synchro (le bon
+  personnage parle à l'écran).
+- `verifier.py` : tenues en double sur toute la chaîne, dialogues sans marqueur ivoirien, cohérence du programme.
+- `chaine.py` : montage au design de la chaîne (bandes du haut et du bas, cartes, sous-titres karaoké, vote, carte de fin,
+  rires, musique). `monter.py` : ancien montage à fond flou, dont `chaine.py` reprend les utilitaires.
 - `or_api.py` : appels OpenRouter et journal des dépenses (`sortie/depenses.jsonl`).
 - `transcrire.py` : transcription mot à mot.
 - `ecouter.py` : fait écouter un son par Gemini (accent, voix dans une musique, rires).
 - `comparer.py` : comparatif de moteurs vidéo sur un même sketch.
 - `musique.py` : compose une musique de fond avec Lyria 3.
-- `habillage/` : police Poppins (licence OFL), emojis 3D Fluent de Microsoft (licence MIT), boucle de musique
+- `habillage/` : polices Poppins et Montserrat (licence OFL), emojis 3D Fluent de Microsoft (licence MIT), boucle de musique
   `fond_musical.m4a` (Lyria, passage sans voix) et rires `rires/` (générés par Grok).
-- `sortie/` : images, clips et compilations (non suivis par git).
+- `prive/` (non suivi) : logo et nom de la chaîne ; `sortie/` : images, clips et compilations (non suivis par git).
 
 ## Leçons des tests (24/10/2026)
 
@@ -37,18 +46,30 @@ Environ 0,18 $ par sketch.
   (option `--moteur=veo`) sert de secours, 2,4 fois plus cher.
 - Chaque sketch a une chute propre (`chute`) au lieu du même gros plan choqué.
 
+## Leçons des tests 3 et 4 (25-26/10/2026)
+
+- Personne ne marche pendant qu'il parle (sinon les personnages se déforment ou fusionnent) ; la réaction finale et le zoom
+  ne partent qu'APRÈS la dernière réplique ; celui qui parle garde le visage tourné vers la caméra.
+- Écriture : on ouvre en plein conflit, une chute qui retourne la logique et touche deux cibles (référence : « Papa, qui
+  m'a donné mon intelligence ? — Ça doit être ta mère, moi j'ai encore la mienne »). Le jury IA trie les candidats mais
+  sous-note la référence : il aide à choisir, il ne remplace pas le goût du public.
+- Ordre des compilations (règle de l'utilisateur) : du plus drôle au moins drôle, le meilleur en premier pour accrocher ;
+  toutes les chutes doivent se valoir, un clip nettement en dessous des autres est écarté.
+
 ## Utilisation
 
 ```bash
 pip install faster-whisper requests pillow
-python3 generer.py devis                 # coût estimé de ce qui reste à faire
-python3 generer.py images                # toutes les images (ou des ids : 001 002…)
-python3 generer.py planche               # planches pour relire les images
-python3 generer.py videos                # toutes les vidéos
-python3 generer.py controle              # vérifie que le dialogue est bien prononcé
-python3 monter.py audio                  # rires + boucle de musique (une fois)
-python3 monter.py segments               # habille chaque clip
-python3 monter.py compilations           # compilations d'au moins 62 s
+python3 jury.py sketchs/brouillons/candidats.json 6   # classe les candidats, signale les doublons
+python3 verifier.py                      # tenues en double, marqueurs ivoiriens
+python3 generer.py devis ids…            # coût estimé
+python3 generer.py images ids…           # images, puis : python3 generer.py planche ids…
+python3 generer.py videos ids…           # vidéos (--refaire pour relancer, --moteur=veo en secours)
+python3 generer.py controle ids…         # dialogue bien prononcé
+python3 generer.py ecoute ids…           # accent + notes DRÔLE / NATUREL
+python3 regarder.py ids…                 # réalisme + synchro
+python3 generer.py reprises              # ce qui est à refaire
+python3 chaine.py --meilleur-d-abord NOM ids…   # compilation, du plus drôle au moins drôle
 ```
 
 La clé OpenRouter est lue dans `OPENROUTER_API_KEY` (ou ajoutée par le proxy de la session Claude).
