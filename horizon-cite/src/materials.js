@@ -11,6 +11,9 @@ export const cityUniforms = {
 const VERT_HEAD = `
 attribute float aWin;
 attribute vec2 aWuv;
+#ifdef USE_STATE_ATTR
+attribute vec4 aState;
+#endif
 varying float vWin;
 varying vec2 vWuv;
 varying float vSeed;
@@ -20,16 +23,23 @@ varying vec3 vInstCol;
 const VERT_BODY = `
 vWin = aWin;
 vWuv = aWuv;
-#ifdef USE_INSTANCING_COLOR
-  vInstCol = instanceColor;
+#if defined(USE_STATE_ATTR)
+  // bâtiments fusionnés par zone : état et graine portés par chaque sommet
+  vInstCol = aState.rgb;
+  vColor.rgb *= aState.rgb;
+  vSeed = aState.a;
 #else
-  vInstCol = vec3(1.0);
+  #ifdef USE_INSTANCING_COLOR
+    vInstCol = instanceColor;
+  #else
+    vInstCol = vec3(1.0);
+  #endif
+  vec4 wp0 = modelMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+  #ifdef USE_INSTANCING
+    wp0 = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+  #endif
+  vSeed = fract(sin(dot(floor(wp0.xz), vec2(12.9898, 78.233))) * 43758.5453);
 #endif
-vec4 wp0 = modelMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-#ifdef USE_INSTANCING
-  wp0 = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-#endif
-vSeed = fract(sin(dot(floor(wp0.xz), vec2(12.9898, 78.233))) * 43758.5453);
 `;
 
 const FRAG_HEAD = `
@@ -95,8 +105,9 @@ if (wKind > 0.5) {
 }
 `;
 
-export function makeCityMaterial({ abandoned = false, opacity = 1, color = 0xffffff } = {}) {
+export function makeCityMaterial({ abandoned = false, opacity = 1, color = 0xffffff, chunk = false } = {}) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true, color, transparent: opacity < 1, opacity });
+  if (chunk) mat.defines = { USE_STATE_ATTR: '' };
   const aband = { value: abandoned ? 1 : 0 };
   mat.userData.aband = aband;
   mat.onBeforeCompile = (sh) => {
@@ -112,7 +123,7 @@ export function makeCityMaterial({ abandoned = false, opacity = 1, color = 0xfff
       .replace('#include <color_fragment>', '#include <color_fragment>\n' + FRAG_COLOR)
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n' + FRAG_EMIT);
   };
-  mat.customProgramCacheKey = () => 'city-v4';
+  mat.customProgramCacheKey = () => (chunk ? 'city-v5-chunk' : 'city-v5');
   return mat;
 }
 
@@ -130,6 +141,7 @@ export function infoMaterial(hex) {
 export const MATS = {};
 export function initMaterials() {
   MATS.city = makeCityMaterial();
+  MATS.cityChunk = makeCityMaterial({ chunk: true });
   MATS.abandoned = makeCityMaterial({ abandoned: true });
   MATS.highlight = makeCityMaterial({ color: 0x9fd4ff });
   MATS.bad = makeCityMaterial({ color: 0xff8a8a });

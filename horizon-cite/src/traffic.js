@@ -846,6 +846,7 @@ export class Traffic {
         arr[o + 15] = 1;
       }
       M.mesh.count = M.list.length;
+      M.mesh.visible = M.list.length > 0;
       M.mesh.instanceMatrix.needsUpdate = true;
     }
   }

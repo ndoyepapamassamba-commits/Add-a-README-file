@@ -133,6 +133,8 @@ function boot() {
     if (G.tools) G.tools.update(realDt);
     if (G.ui) G.ui.update(realDt);
     if (G.audio) G.audio.update(realDt);
+    // plages de sommets des bâtiments modifiées pendant l'image
+    G.buildings.flushChunks();
   };
   const loop = (now) => {
     const realDt = Math.max(0, Math.min(0.05, (now - last) / 1000));

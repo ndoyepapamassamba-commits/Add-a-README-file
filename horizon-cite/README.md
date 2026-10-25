@@ -56,7 +56,7 @@ Le code source est découpé en modules dans `src/` (Three.js r160) :
 |---|---|
 | `terrain.js`, `environment.js`, `trees.js` | relief, mer, ciel, lumière, forêts |
 | `roads.js`, `roadmesh.js`, `path.js` | graphe routier, maillages, itinéraires |
-| `zones.js`, `buildings.js`, `buildgen.js`, `materials.js` | zonage, bâtiments, modèles procéduraux, fenêtres en shader |
+| `zones.js`, `buildings.js`, `citychunks.js`, `buildgen.js`, `materials.js` | zonage, bâtiments (fusionnés par zones de terrain), modèles procéduraux, fenêtres en shader |
 | `sim.js`, `fields.js` | simulation, couverture des services |
 | `traffic.js`, `transit.js` | véhicules, lignes de bus |
 | `tools.js`, `placement.js`, `ui.js`, `info.js` | outils, interface, vues d'information |

@@ -150,60 +150,132 @@ export function iconURL(kind) {
   return iconCanvas(kind, 64).toDataURL();
 }
 
+// Toutes les icônes dans un seul maillage instancié : une planche de pictogrammes, un quadrilatère
+// tourné vers la caméra par bâtiment en difficulté, à taille constante à l'écran.
+const KINDS = Object.keys(PROBLEMS);
+const KIND_INDEX = Object.fromEntries(KINDS.map((k, i) => [k, i]));
+const GRID = 4;
+const TILE = 96;
+const CAP = 8192;
+
+const VERT = `
+attribute vec3 aPos;
+attribute float aTile;
+uniform float uScale;
+varying vec2 vUv;
+void main() {
+  vec4 mv = viewMatrix * vec4(aPos, 1.0);
+  mv.xy += position.xy * uScale * -mv.z;
+  gl_Position = projectionMatrix * mv;
+  float col = mod(aTile, ${GRID}.0);
+  float row = floor(aTile / ${GRID}.0);
+  vUv = (vec2(col, ${GRID - 1}.0 - row) + uv) / ${GRID}.0;
+}`;
+
+const FRAG = `
+uniform sampler2D uMap;
+varying vec2 vUv;
+void main() {
+  vec4 c = texture2D(uMap, vUv);
+  if (c.a < 0.02) discard;
+  gl_FragColor = c;
+  #include <colorspace_fragment>
+}`;
+
+function atlasTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = GRID * TILE;
+  const g = c.getContext('2d');
+  KINDS.forEach((k, i) => g.drawImage(iconCanvas(k, TILE), (i % GRID) * TILE, Math.floor(i / GRID) * TILE));
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
 export class Icons {
   constructor(scene) {
     this.scene = scene;
-    this.mats = {};
-    this.sprites = new Map();
+    this.list = new Map();
     this.visible = true;
+    const base = new THREE.PlaneGeometry(1, 1);
+    const geo = new THREE.InstancedBufferGeometry();
+    geo.index = base.index;
+    geo.setAttribute('position', base.attributes.position);
+    geo.setAttribute('uv', base.attributes.uv);
+    this.pos = new Float32Array(CAP * 3);
+    this.tile = new Float32Array(CAP);
+    geo.setAttribute('aPos', new THREE.InstancedBufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('aTile', new THREE.InstancedBufferAttribute(this.tile, 1).setUsage(THREE.DynamicDrawUsage));
+    geo.instanceCount = 0;
+    this.geo = geo;
+    this.mat = new THREE.ShaderMaterial({
+      uniforms: { uMap: { value: atlasTexture() }, uScale: { value: 0.038 } },
+      vertexShader: VERT,
+      fragmentShader: FRAG,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
+    this.mesh = new THREE.Mesh(geo, this.mat);
+    this.mesh.frustumCulled = false;
+    this.mesh.renderOrder = 20;
+    this.mesh.visible = false;
+    scene.add(this.mesh);
+    this.order = [];
     G.on('bld:problem', (b) => this.set(b));
     G.on('bld:removed', (b) => this.remove(b.id));
   }
 
-  mat(kind) {
-    if (!this.mats[kind]) {
-      const t = new THREE.CanvasTexture(iconCanvas(kind));
-      t.colorSpace = THREE.SRGBColorSpace;
-      this.mats[kind] = new THREE.SpriteMaterial({ map: t, sizeAttenuation: false, depthTest: false, transparent: true });
-    }
-    return this.mats[kind];
-  }
-
   set(b) {
     if (!b.problem) return this.remove(b.id);
-    let s = this.sprites.get(b.id);
-    if (!s) {
-      s = new THREE.Sprite(this.mat(b.problem));
-      s.renderOrder = 20;
-      s.scale.set(0.038, 0.038, 1);
-      this.sprites.set(b.id, s);
-      this.scene.add(s);
-    } else s.material = this.mat(b.problem);
-    s.userData.b = b;
+    this.list.set(b.id, b);
   }
 
   remove(id) {
-    const s = this.sprites.get(id);
-    if (s) {
-      this.scene.remove(s);
-      this.sprites.delete(id);
-    }
+    this.list.delete(id);
   }
 
   update(time, camPos) {
-    for (const s of this.sprites.values()) {
-      const b = s.userData.b;
-      const dx = b.x - camPos.x;
-      const dz = b.z - camPos.z;
-      const far = dx * dx + dz * dz > 2600 * 2600;
-      s.visible = this.visible && !far;
-      if (!s.visible) continue;
+    const order = this.order;
+    order.length = 0;
+    if (this.visible) {
+      for (const b of this.list.values()) {
+        const dx = b.x - camPos.x;
+        const dz = b.z - camPos.z;
+        const d = dx * dx + dz * dz;
+        if (d > 2600 * 2600 || !b.problem) continue;
+        b.iconD = d;
+        order.push(b);
+      }
+      // de l'arrière vers l'avant : les icônes proches recouvrent les lointaines
+      order.sort((a, b) => b.iconD - a.iconD);
+    }
+    const n = Math.min(CAP, order.length);
+    for (let i = 0; i < n; i++) {
+      const b = order[i];
       const bob = Math.sin(time * 3 + b.id) * 0.8;
-      s.position.set(b.x, b.y + (b.height || 10) * (b.sy === undefined ? 1 : b.sy) + 7 + bob, b.z);
+      this.pos[i * 3] = b.x;
+      this.pos[i * 3 + 1] = b.y + (b.height || 10) * (b.sy === undefined ? 1 : b.sy) + 7 + bob;
+      this.pos[i * 3 + 2] = b.z;
+      this.tile[i] = KIND_INDEX[b.problem] || 0;
+    }
+    this.geo.instanceCount = n;
+    this.mesh.visible = n > 0;
+    if (n) {
+      const p = this.geo.attributes.aPos;
+      const t = this.geo.attributes.aTile;
+      p.clearUpdateRanges();
+      p.addUpdateRange(0, n * 3);
+      p.needsUpdate = true;
+      t.clearUpdateRanges();
+      t.addUpdateRange(0, n);
+      t.needsUpdate = true;
     }
   }
 
   clear() {
-    for (const id of [...this.sprites.keys()]) this.remove(id);
+    this.list.clear();
+    this.geo.instanceCount = 0;
+    this.mesh.visible = false;
   }
 }

@@ -8,8 +8,11 @@ import { MATS, infoMaterial, cityUniforms } from './materials.js';
 import { heightAt } from './terrain.js';
 import { SpatialHash, obbOverlap, distToObb, obbCorners, mulberry32 } from './util.js';
 import { buildingName } from './names.js';
+import { CityChunks } from './citychunks.js';
 
 const VARIANTS = 6;
+// une case de 8 m chevauche-t-elle l'emprise du bâtiment de plus de 60 cm ?
+const cellOverlaps = (b, c) => obbOverlap(b.obb, { x: c.x, z: c.z, ax: c.ux, az: c.uz, hw: 4, hd: 4 }, 0.6);
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
 const _p = new THREE.Vector3();
@@ -17,7 +20,8 @@ const _s = new THREE.Vector3();
 const _c = new THREE.Color();
 const _up = new THREE.Vector3(0, 1, 0);
 
-// Bâtiments de zone regroupés par modèle : un seul appel de dessin par modèle.
+// Bâtiments de zone en chantier ou en animation, regroupés par modèle : un appel de dessin par modèle.
+// Une fois terminés, ils rejoignent le maillage fusionné de leur zone de terrain (CityChunks).
 // L'état visuel passe par la couleur d'instance (blanc = normal, gris = abandonné, teinte = vue d'info).
 class ZoneBatches {
   constructor(group) {
@@ -36,6 +40,7 @@ class ZoneBatches {
     b.bi = B.list.length;
     B.list.push(b);
     B.mesh.count = B.list.length;
+    B.mesh.visible = true;
   }
   grow(B, cap) {
     const m = new THREE.InstancedMesh(B.geo, MATS.city, cap);
@@ -52,6 +57,7 @@ class ZoneBatches {
       B.mesh.dispose();
     }
     m.count = B.list.length;
+    m.visible = B.list.length > 0;
     B.mesh = m;
     B.cap = cap;
     this.group.add(m);
@@ -71,6 +77,8 @@ class ZoneBatches {
       B.mesh.instanceColor.needsUpdate = true;
     }
     B.mesh.count = B.list.length;
+    // lot vide : pas d'appel de dessin inutile
+    B.mesh.visible = B.list.length > 0;
     b.batch = null;
   }
   matrix(b) {
@@ -124,6 +132,7 @@ export class Buildings {
     this.highlighted = null;
     this.version = 0;
     this.batches = new ZoneBatches(this.group);
+    this.chunks = new CityChunks(this.group, MATS.cityChunk);
     G.on('seg:split', (e) => this.onSplit(e));
     G.on('seg:removed', (seg) => this.onSegRemoved(seg));
     G.on('seg:replaced', (e) => this.onReplaced(e));
@@ -328,6 +337,12 @@ export class Buildings {
       id: opts.id,
     });
     for (const c of cells) c.bld = b.id;
+    // sur une route courbe, l'emprise rectangulaire déborde un peu sur les cases voisines : on les réserve
+    for (const c of G.zones.hash.queryRadius(b.x, b.z, Math.hypot(b.hw, b.hd) + 8)) {
+      if (c.bld || !cellOverlaps(b, c)) continue;
+      c.bld = b.id;
+      b.cells.push(c.id);
+    }
     G.zones.touch();
     this.register(b);
     if (opts.instant) {
@@ -371,14 +386,14 @@ export class Buildings {
     else geoInfo = this.serviceGeo(b.defId);
     b.height = geoInfo.height;
     b.smoke = geoInfo.smoke;
+    b.geo = geoInfo.geo;
     b.sy = b.state === 'building' ? 0.02 : b.rising ? 0.05 : 1;
-    if (b.kind === 'zone' && b.state !== 'burned') {
-      this.batches.add(b, `${b.zone}|${b.level}|${b.w}|${b.d}|${b.seed % VARIANTS}`, geoInfo.geo);
+    if (b.sy >= 1) this.chunks.add(b, b.geo, b.height);
+    else if (b.kind === 'zone' && b.state !== 'burned') {
+      this.batches.add(b, `${b.zone}|${b.level}|${b.w}|${b.d}|${b.seed % VARIANTS}`, b.geo);
       this.batches.matrix(b);
-      this.refreshMaterial(b);
     } else {
-      const mat = this.baseMaterial(b);
-      const m = new THREE.Mesh(geoInfo.geo, mat);
+      const m = new THREE.Mesh(b.geo, MATS.city);
       m.position.set(b.x, b.y, b.z);
       m.rotation.y = b.yaw;
       m.scale.y = b.sy;
@@ -388,15 +403,17 @@ export class Buildings {
       b.mesh = m;
       this.group.add(m);
     }
-    const m = b.mesh;
     if (b.defId === 'wind') {
-      const rot = new THREE.Mesh(this.rotorGeo, m.material);
-      rot.position.set(0, 53.7, -2.7);
+      const rot = new THREE.Mesh(this.rotorGeo, MATS.city);
+      rot.rotation.order = 'YXZ';
+      rot.rotation.y = b.yaw;
       rot.castShadow = true;
-      m.add(rot);
       b.rotor = rot;
-      b.rotSpeed = 1.2 + Math.random() * 0.6;
+      b.rotSpeed = b.rotSpeed || 1.2 + Math.random() * 0.6;
+      this.group.add(rot);
+      this.placeRotor(b);
     }
+    this.refreshMaterial(b);
     if (b.state === 'building') {
       const pad = new THREE.Mesh(this.padGeo, this.padMat);
       pad.scale.set(b.W - 1, 0.4, b.D - 1);
@@ -420,17 +437,42 @@ export class Buildings {
     b.sy = sy;
     if (b.batch) this.batches.matrix(b);
     else if (b.mesh) b.mesh.scale.y = sy;
+    if (b.rotor) this.placeRotor(b);
+  }
+
+  // rotor d'éolienne : maillage séparé qui tourne, placé en haut du mât
+  placeRotor(b) {
+    const r = b.rotor;
+    r.position.set(b.x - 2.7 * Math.sin(b.yaw), b.y + 53.7 * b.sy, b.z - 2.7 * Math.cos(b.yaw));
+    r.scale.y = b.sy;
+  }
+
+  // fin d'animation : le bâtiment rejoint le maillage fusionné de sa zone de terrain
+  settle(b) {
+    if (b.chunk || !b.geo) return;
+    if (b.batch) this.batches.remove(b);
+    if (b.mesh) {
+      this.group.remove(b.mesh);
+      b.mesh = null;
+    }
+    this.setScaleY(b, 1);
+    this.chunks.add(b, b.geo, b.height);
+    this.refreshMaterial(b);
+  }
+
+  flushChunks() {
+    this.chunks.flush();
   }
 
   disposeMesh(b) {
     if (b.batch) this.batches.remove(b);
-    for (const k of ['mesh', 'pad', 'crane']) {
+    if (b.chunk) this.chunks.remove(b);
+    for (const k of ['mesh', 'pad', 'crane', 'rotor']) {
       if (b[k]) {
         this.group.remove(b[k]);
         b[k] = null;
       }
     }
-    b.rotor = null;
   }
 
   baseMaterial(b) {
@@ -440,16 +482,16 @@ export class Buildings {
   }
 
   refreshMaterial(b) {
-    if (b.batch) {
-      if (this.infoFn) this.batches.color(b, this.infoFn(b));
-      else if (this.highlighted === b) this.batches.color(b, this.highlightMat === MATS.bad ? 0xff9a9a : 0xbfe4ff);
-      else if (b.state === 'abandoned') this.batches.color(b, null, 0.44);
-      else this.batches.color(b, null, 1);
-      return;
+    const t = b.chunk ? this.chunks : b.batch ? this.batches : null;
+    if (t) {
+      if (this.infoFn) t.color(b, this.infoFn(b));
+      else if (this.highlighted === b) t.color(b, this.highlightMat === MATS.bad ? 0xff9a9a : 0xbfe4ff);
+      else if (b.state === 'abandoned' || b.state === 'burned') t.color(b, null, 0.44);
+      else t.color(b, null, 1);
     }
-    if (!b.mesh) return;
+    if (!b.mesh && !b.rotor) return;
     const m = this.highlighted === b ? this.highlightMat || MATS.highlight : this.baseMaterial(b);
-    b.mesh.material = m;
+    if (b.mesh) b.mesh.material = m;
     if (b.rotor) b.rotor.material = m;
   }
 
@@ -544,8 +586,7 @@ export class Buildings {
     }
     b.cells = [];
     for (const c of G.zones.hash.queryRadius(b.x, b.z, Math.hypot(b.hw, b.hd) + 8)) {
-      if (c.bld && c.bld !== b.id) continue;
-      if (!obbOverlap(b.obb, { x: c.x, z: c.z, ax: c.ux, az: c.uz, hw: 3.65, hd: 3.65 }, 0.6)) continue;
+      if ((c.bld && c.bld !== b.id) || !cellOverlaps(b, c)) continue;
       c.bld = b.id;
       c.zone = b.zone;
       b.cells.push(c.id);
@@ -674,11 +715,11 @@ export class Buildings {
         if (b.crane) b.crane.rotation.y += realDt * 0.15;
         if (b.progress >= 1) {
           b.state = 'active';
-          this.setScaleY(b, 1);
           if (b.pad) this.group.remove(b.pad);
           if (b.crane) this.group.remove(b.crane);
           b.pad = null;
           b.crane = null;
+          this.settle(b);
           this.version++;
           G.emit('bld:completed', b);
         }
@@ -687,7 +728,10 @@ export class Buildings {
         const p = Math.min(1, b.progress);
         const e = 1 - Math.pow(1 - p, 3);
         this.setScaleY(b, 0.05 + 0.95 * e);
-        if (p >= 1) b.rising = false;
+        if (p >= 1) {
+          b.rising = false;
+          this.settle(b);
+        }
       }
       if (b.rotor && b.state === 'active') b.rotor.rotation.z += realDt * b.rotSpeed * (b.power === false ? 0.2 : 1);
     }
@@ -762,6 +806,7 @@ export class Buildings {
   clear() {
     for (const id of [...this.list.keys()]) this.demolish(id, { quiet: true });
     this.batches.clear();
+    this.chunks.clear();
     this.nextId = 1;
   }
 }
