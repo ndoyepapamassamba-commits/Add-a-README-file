@@ -219,13 +219,22 @@ def ecoute(s):
     chemin = CLIPS / f"{sid}.mp4"
     if not chemin.exists():
         return
-    try:
+    def une_ecoute():
         avis = ecouter.ecouter(chemin, QUESTION_ACCENT).strip().replace("\n", " ")
+        m = re.search(r"ACCENT\s*=\s*([^;]+)", avis)
+        return (m.group(1).strip().lower() if m else "?"), avis
+    try:
+        accent, avis = une_ecoute()
+        # juge capricieux (test 4 : 304 « France » deux fois, puis « ivoirien » pour un « hein » ajouté) : une 2e écoute
+        # (≈ 0,003 $) avant de payer une reprise (≈ 0,25 $) ; le clip n'est refait que si les deux écoutes disent « France »
+        if "france" in accent or accent.startswith("autre"):
+            accent2, avis2 = une_ecoute()
+            if not ("france" in accent2 or accent2.startswith("autre")):
+                accent, avis = accent2, avis2 + " (2e écoute)"
     except Exception as e:
         print(f"  écoute {sid} ERREUR {e}")
         return
-    m = re.search(r"ACCENT\s*=\s*([^;]+)", avis)
-    maj_etat(sid, accent=(m.group(1).strip().lower() if m else "?"), avis=avis[:300])
+    maj_etat(sid, accent=accent, avis=avis[:300])
     print(f"  écoute {sid} : {avis}")
 
 

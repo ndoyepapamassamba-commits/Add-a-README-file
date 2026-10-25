@@ -13,10 +13,11 @@ Le logo et le nom de la chaîne sont lus dans prive/ (avatar.jpg, marque.json), 
 
   python3 chaine.py NOM ids…                       → sortie/compilations/NOM.mp4 (sketchs dans l'ordre donné)
   python3 chaine.py --meilleur-d-abord NOM ids…    → ordre DÉCROISSANT : du plus drôle au moins drôle
+  python3 chaine.py --boucle NOM ids…              → ouverture sur le choc du 1er sketch + raccord de boucle en fin
 ORDRE (règle de l'utilisateur, 26/10/2026) : « le premier sketch doit être celui qui marque et qui est le meilleur toujours,
 et doit inciter à regarder le reste », puis « du plus rigolo au moins rigolo » (toutes les chutes doivent pourtant se valoir
-en humour extrême : un clip nettement en dessous des autres est écarté plutôt que placé en fin). Le classement vient de la
-note d'écoute du clip fini (DRÔLE puis NATUREL, rangée par generer.py ecoute) ; à égalité, l'ordre donné décide.
+en humour extrême : un clip nettement en dessous des autres est écarté plutôt que placé en fin). Les ids sont donnés dans
+l'ordre du jury (texte) ; le classement mêle cette place et la note d'écoute du clip fini (voir score_drole).
 """
 import json
 import math
@@ -51,6 +52,10 @@ NUIT_H, NUIT_B = (16, 9, 34), (36, 16, 58)
 ACCROCHE_S, REACTION_S, T_CARTE, FIN_S = 2.5, 2.4, 1.4, 2.6
 MARGE_CHUTE = 2.6                   # temps mort coupé : le clip s'arrête au plus 2,6 s après la dernière réplique
 QUEUE = FIN_S + 1.0                 # dernière image tenue : vote puis carte de fin
+# --boucle (26/10/2026, « donner envie de tout regarder en boucle ») : la vidéo s'ouvre sur le visage choqué de la fin du
+# 1er sketch (« COMMENT ON EN EST ARRIVÉ LÀ ? »), et la carte de fin se fond dans cette même image : quand TikTok relance
+# la vidéo, le raccord ne se voit pas
+TEASER_S, BOUCLE_S = 1.4, 0.5
 Y_BANDEAU, H_BANDEAU, PAS_BANDEAU = k(214), k(50), 4      # 4 px par image à 30 i/s : défilement sans sous-pixel
 COUL_PERSO = [(255, 128, 190), (255, 200, 80), (110, 225, 150), (120, 180, 255), (90, 225, 230), (255, 160, 100)]
 SAUMON, JAUNE_MOT, ENCRE = (255, 120, 110), (255, 222, 110), (28, 14, 40)
@@ -248,6 +253,20 @@ def haut_accroche(t):
         texte_double(dr, (CX - k(30), k(166)), "C'EST GÂTÉ !", f2, couleur=JAUNE, dec=k(3), ancre="mm")
         e = emoji("rire", max(8, int(k(64) * p)))
         im.alpha_composite(e, (int(CX - k(30) + f2.getlength("C'EST GÂTÉ !") / 2 + k(8)), int(k(166) - e.height / 2)))
+    return im
+
+
+def haut_teaser(u):
+    im = Image.new("RGBA", (W, Y0), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(im)
+    p = pop(u)
+    if p > 0.05:
+        f1, f2 = police(k(30) * p), police(k(40) * p)
+        dr.text((CX, k(112)), "COMMENT ON EN EST", font=f1, fill=(255, 255, 255, 255), anchor="mm",
+                stroke_width=k(4), stroke_fill=(0, 0, 0, 255))
+        texte_double(dr, (CX - k(30), k(166)), "ARRIVÉ LÀ ?", f2, couleur=JAUNE, dec=k(3), ancre="mm")
+        e = emoji("choc", max(8, int(k(64) * p)))
+        im.alpha_composite(e, (int(CX - k(30) + f2.getlength("ARRIVÉ LÀ ?") / 2 + k(8)), int(k(166) - e.height / 2)))
     return im
 
 
@@ -500,12 +519,23 @@ def vote(a, n):
 
 # ---------- assemblage ----------
 
-def lire_scene(clip):
-    """images 1080 × 862 (rgb24) du clip recadré en 5:4 (Veo : image 4:3 dans du 16:9, recadrée d'abord en 4:3)."""
+def filtre_scene(clip):
+    """recadrage en 5:4, 1080 × 862 (Veo : image 4:3 dans du 16:9, recadrée d'abord en 4:3)."""
     w, h = monter.taille_video(clip)
     pre = "crop=ih*4/3:ih," if w / h > 1.5 else ""
-    p = subprocess.Popen(["ffmpeg", "-v", "error", "-i", str(clip), "-vf",
-                          f"{pre}crop=trunc(ih*{W}/{CH}/2)*2:ih,scale={W}:{CH}:flags=lanczos,fps={IPS}",
+    return f"{pre}crop=trunc(ih*{W}/{CH}/2)*2:ih,scale={W}:{CH}:flags=lanczos,fps={IPS}"
+
+
+def scene_a(clip, t):
+    """une image de la scène à l'instant t du clip."""
+    brut = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{max(0.0, t):.3f}", "-i", str(clip), "-vf", filtre_scene(clip),
+                           "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True, check=True).stdout
+    return Image.frombytes("RGB", (W, CH), brut[:W * CH * 3])
+
+
+def lire_scene(clip):
+    """images 1080 × 862 (rgb24) du clip recadré en 5:4."""
+    p = subprocess.Popen(["ffmpeg", "-v", "error", "-i", str(clip), "-vf", filtre_scene(clip),
                           "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     taille = W * CH * 3
     try:
@@ -529,10 +559,11 @@ def souffle():
     return f
 
 
-def compiler(nom, ids):
+def compiler(nom, ids, boucle=False):
     tous = generer.sketchs()
     etat = generer.lire_etat()
-    plan, t = [], 0.0
+    t0 = TEASER_S if boucle else 0.0
+    plan, t = [], t0
     for r, sid in enumerate(ids):
         s = tous[sid]
         clip = generer.CLIPS / f"{sid}.mp4"
@@ -546,7 +577,8 @@ def compiler(nom, ids):
         plan.append({"sid": sid, "s": s, "clip": clip, "debut": t, "duree": d, "apres": apres, "st": st,
                      "chute": t + st.fin_parole, "titre": (s.get("titre") or "").upper()})
         t += d + apres
-    total = t
+    t_fin = t
+    total = t_fin + (BOUCLE_S if boucle else 0.0)
     n = len(plan)
     haut_bg, bas_bg = fond()
     bandeau = Bandeau()
@@ -556,6 +588,22 @@ def compiler(nom, ids):
     enc = subprocess.Popen(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
                             "-r", str(IPS), "-i", "-", *ENC_V, str(video)], stdin=subprocess.PIPE)
     n_img = 0
+    premiere = derniere_img = None
+    if boucle:
+        fige = scene_a(plan[0]["clip"], plan[0]["duree"] - 0.08)          # visage choqué de la fin du 1er sketch
+        for j in range(int(round(TEASER_S * IPS))):
+            u = j / IPS
+            z = 1.0 + 0.12 * u / TEASER_S
+            cw, chh = W / z, CH / z
+            scene = fige.crop((int((W - cw) / 2), int((CH - chh) / 2), int((W + cw) / 2), int((CH + chh) / 2))).resize(
+                (W, CH), Image.LANCZOS)
+            haut = haut_bg.copy()
+            haut.alpha_composite(haut_teaser(u))
+            haut.alpha_composite(bandeau.a(n_img), (0, Y_BANDEAU))
+            img = haut.convert("RGB").tobytes() + scene.tobytes() + bas_bg.convert("RGB").tobytes()
+            premiere = premiere or img
+            enc.stdin.write(img)
+            n_img += 1
     for r, p in enumerate(plan):
         derniere = None
         flux = lire_scene(p["clip"])
@@ -578,13 +626,13 @@ def compiler(nom, ids):
                     scene = scene.convert("RGB")
             # bande du haut
             haut = haut_bg.copy()
-            fin_film = tg >= total - FIN_S
+            fin_film = tg >= t_fin - FIN_S
             if fin_film:
-                haut.alpha_composite(haut_fin(min(1.0, (tg - (total - FIN_S)) / 0.35)))
+                haut.alpha_composite(haut_fin(min(1.0, (tg - (t_fin - FIN_S)) / 0.35)))
             else:
                 reac = next((q for q in plan if q["chute"] <= tg < q["chute"] + REACTION_S), None)
-                if tg < ACCROCHE_S:
-                    haut.alpha_composite(haut_accroche(tg))
+                if t0 <= tg < t0 + ACCROCHE_S:
+                    haut.alpha_composite(haut_accroche(tg - t0))
                 elif reac is not None:
                     haut.alpha_composite(haut_reaction(tg - reac["chute"], plan.index(reac)))
                 else:
@@ -598,9 +646,17 @@ def compiler(nom, ids):
                 c = p["st"].image(j / IPS)
                 if c is not None:
                     bas.alpha_composite(c)
-            elif r == n - 1 and tg >= total - QUEUE:
-                bas.alpha_composite(vote(min(1.0, (tg - (total - QUEUE)) / 0.3), n))
-            enc.stdin.write(haut.convert("RGB").tobytes() + scene.tobytes() + bas.convert("RGB").tobytes())
+            elif r == n - 1 and tg >= t_fin - QUEUE:
+                bas.alpha_composite(vote(min(1.0, (tg - (t_fin - QUEUE)) / 0.3), n))
+            derniere_img = haut.convert("RGB").tobytes() + scene.tobytes() + bas.convert("RGB").tobytes()
+            enc.stdin.write(derniere_img)
+            n_img += 1
+    if boucle:                          # raccord : la carte de fin se fond dans la toute première image
+        a_, b_ = (np.frombuffer(x, np.uint8).astype(np.float32) for x in (derniere_img, premiere))
+        nb = int(round(BOUCLE_S * IPS))
+        for j in range(nb):
+            x = (j + 1) / nb
+            enc.stdin.write((a_ * (1 - x) + b_ * x).astype(np.uint8).tobytes())
             n_img += 1
     enc.stdin.close()
     enc.wait()
@@ -623,12 +679,19 @@ def compiler(nom, ids):
         ms = int((p["debut"] + p["duree"]) * 1000)
         f.append(f"[{base + i}:a]volume=0.5,adelay={ms}|{ms}[s{i}]")
     base += n - 1
+    souffles = [f"[s{i}]" for i in range(n - 1)]
+    if boucle:                          # souffle de « rembobinage » entre l'ouverture et le 1er sketch
+        entrees += ["-i", str(souffle())]
+        ms = int(max(0.0, t0 - 0.25) * 1000)
+        f.append(f"[{base}:a]volume=0.6,adelay={ms}|{ms}[sb]")
+        souffles.append("[sb]")
+        base += 1
     entrees += ["-stream_loop", "-1", "-i", str(monter.MUSIQUE)]
     f.append(f"[{base}:a]atrim=0:{total:.2f},volume={monter.VOLUME_MUSIQUE},afade=t=out:st={total - 1.5:.2f}:d=1.5[mus]")
     f.append("[voix]asplit=2[vx][cle]")
     f.append("[mus][cle]sidechaincompress=threshold=0.03:ratio=6:attack=15:release=350[musb]")
-    f.append("[vx][musb]" + "".join(f"[r{i}]" for i in range(n)) + "".join(f"[s{i}]" for i in range(n - 1)) +
-             f"amix=inputs={2 + n + n - 1}:normalize=0:duration=first,alimiter=limit=0.95[a]")
+    f.append("[vx][musb]" + "".join(f"[r{i}]" for i in range(n)) + "".join(souffles) +
+             f"amix=inputs={2 + n + len(souffles)}:normalize=0:duration=first,alimiter=limit=0.95[a]")
     son = COMPILS / f"{nom}_son.m4a"
     monter.lancer(["ffmpeg", "-v", "error", "-y", *entrees, "-filter_complex", ";".join(f), "-map", "[a]",
                    "-t", f"{total:.2f}", *monter.ENC_A, str(son)])
@@ -647,17 +710,24 @@ def note_ecoute(sid, etat):
     return tuple(float(m.group(1).replace(",", ".")) if m else 0.0 for m in (d, n))
 
 
+def score_drole(i, rang, n, etat):
+    """note d'écoute du clip fini (DRÔLE + NATUREL / 2) + bonus du jury sur le texte : les ids sont donnés dans l'ordre du
+    jury, le premier reçoit +2, le dernier 0 (une seule écoute note bien le jeu des voix mais mal la force de la blague)."""
+    drole, naturel = note_ecoute(i, etat)
+    return drole + naturel / 2 + (2.0 * (1 - rang / (n - 1)) if n > 1 else 0.0)
+
+
 def meilleur_d_abord(ids):
     etat = generer.lire_etat()
-    return sorted(ids, key=lambda i: tuple(-x for x in note_ecoute(i, etat)))       # tri stable : à égalité, l'ordre donné
+    notes = {i: score_drole(i, r, len(ids), etat) for r, i in enumerate(ids)}
+    return sorted(ids, key=lambda i: -notes[i])
 
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    if args and args[0] == "--meilleur-d-abord":
-        nom, ids = args[1], meilleur_d_abord(args[2:])
+    options = [a for a in sys.argv[1:] if a.startswith("--")]
+    nom, *ids = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if "--meilleur-d-abord" in options:
+        ids = meilleur_d_abord(ids)
         e = generer.lire_etat()
-        print("  ordre :", " ".join(f"{i}({'/'.join(f'{x:g}' for x in note_ecoute(i, e))})" for i in ids))
-    else:
-        nom, ids = args[0], args[1:]
-    compiler(nom, ids)
+        print("  ordre :", " ".join(f"{i}({'/'.join(f'{x:g}' for x in note_ecoute(i, e))})" for i in ids))  # notes d'écoute
+    compiler(nom, ids, boucle="--boucle" in options)

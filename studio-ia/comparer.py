@@ -1,6 +1,7 @@
 """Comparatif des moteurs vidéo sur un même sketch : même image, même prompt, accent jugé à l'oreille par ecouter.py.
 
-  python3 comparer.py SKETCH_ID
+  python3 comparer.py SKETCH_ID                              → les moteurs de MOTEURS, 8 s
+  python3 comparer.py SKETCH_ID modele:resolution:format…   → ces moteurs-là, à la durée du sketch
 """
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -20,7 +21,8 @@ MOTEURS = [  # (modèle, résolution, format)
     ("bytedance/seedance-2.0-mini", "480p", "4:3"),
 ]
 QUESTION = ("Écoute les voix de ce sketch. Réponds sur UNE ligne au format : ACCENT=<ivoirien|ouest-africain|"
-            "africain autre|français de France|autre> ; NATUREL=<note sur 10> ; DIALOGUE_COMPLET=<oui|non> ; remarque courte.")
+            "africain autre|français de France|autre> ; NATUREL=<note sur 10> ; DRÔLE=<note sur 10> ; "
+            "DIALOGUE_COMPLET=<oui|non> ; remarque courte.")
 
 
 def essai(sid, modele, resolution, aspect, duree):
@@ -43,7 +45,11 @@ def essai(sid, modele, resolution, aspect, duree):
 
 if __name__ == "__main__":
     sid = sys.argv[1]
-    with ThreadPoolExecutor(len(MOTEURS)) as ex:
-        for ligne in ex.map(lambda m: essai(sid, m[0], m[1], m[2], 8), MOTEURS):
+    moteurs, d = MOTEURS, 8
+    if len(sys.argv) > 2:
+        moteurs = [tuple(a.split(":", 2)) for a in sys.argv[2:]]
+        d = generer.duree(generer.sketchs()[sid])
+    with ThreadPoolExecutor(len(moteurs)) as ex:
+        for ligne in ex.map(lambda m: essai(sid, m[0], m[1], m[2], d), moteurs):
             print(ligne)
     print(f"reste sur la clé : {or_api.reste_cle():.2f} $")

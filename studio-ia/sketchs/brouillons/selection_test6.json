@@ -1,0 +1,202 @@
+[
+{
+"source": "B1 La porte de la douche",
+"titre": "Le réveil sans maquillage",
+"repliques": [
+[
+"FILLE",
+"Maman, le voleur a laissé la télé pour sauter par la fenêtre dêh !"
+],
+[
+"MÈRE",
+"Je t'ai dit de pas sortir sans ta perruque ! Voilà, tu as traumatisé l'enfant d'autrui !"
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"source": "A4 Le témoin de la domestique",
+"titre": "Le poulet caché",
+"repliques": [
+[
+"MADAME",
+"Qui a mangé le poulet que j'ai caché dans le congélateur ?!"
+],
+[
+"BONNE",
+"Madame, je jure c'est pas moi dêh. Patron et moi on était à Bassam toute la journée."
+]
+],
+"plume": "maison"
+},
+{
+"source": "B3 C'est un rêve",
+"titre": "La viande dans la sauce",
+"repliques": [
+[
+"FILS",
+"Papa ! Il y a la viande dans ma sauce dêh !"
+],
+[
+"PAPA",
+"Mange vite avant de te réveiller."
+]
+],
+"plume": "maison"
+},
+{
+"source": "A1 L'intelligence",
+"titre": "Ma beauté vient d'où ?",
+"repliques": [
+[
+"FILLE",
+"Maman, j'ai pris ma beauté de qui ?"
+],
+[
+"MAMAN",
+"De moi, ma fille."
+],
+[
+"FILLE",
+"Ahh… C'est pour ça toi tu as plus rien dêh."
+]
+],
+"plume": "maison"
+},
+{
+"source": "B1 La porte de la douche",
+"titre": "L'infirmière évanouie",
+"repliques": [
+[
+"PATIENT",
+"Docteur, pourquoi votre infirmière-là s'est évanouie ?"
+],
+[
+"DOCTEUR",
+"Elle a vu ta radio, mon vieux. Même ton squelette demandait à manger."
+]
+],
+"plume": "maison"
+},
+{
+"source": "B6 La chanson",
+"titre": "Le fond d'écran",
+"repliques": [
+[
+"COPINE",
+"Chéri, tu as mis ma photo en fond d'écran ?"
+],
+[
+"GARS",
+"Oui bébé. Pour faire peur aux voleurs de téléphone dêh."
+]
+],
+"plume": "maison"
+},
+{
+"source": "B6 La chanson",
+"titre": "Le livre au salon",
+"repliques": [
+[
+"COPINE",
+"Bébé, tu lis quel livre depuis ce matin en souriant comme ça dêh ?"
+],
+[
+"GARÇON",
+"C'est une histoire qui parle exactement de notre couple, ma chérie."
+],
+[
+"COPINE",
+"Wouah, tu es trop romantique ! C'est quoi le titre ?"
+],
+[
+"GARÇON",
+"« Comment survivre en enfer. »"
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"source": "B3 C'est un rêve",
+"titre": "Le pourboire",
+"repliques": [
+[
+"APPRENTI",
+"Chauffeur, le client a donné dix mille et il a dit garde la monnaie dêh !"
+],
+[
+"CHAUFFEUR",
+"Ferme tes yeux, mon petit. C'est le palu qui commence."
+]
+],
+"plume": "maison"
+},
+{
+"source": "B2 Les dents du bébé",
+"titre": "Il a compris",
+"repliques": [
+[
+"FEMME",
+"Chéri, le bébé-là pleure jamais, même quand il a faim dêh !"
+],
+[
+"MARI",
+"Il est malin. Il a déjà compris qu'ici, pleurer sert à rien."
+]
+],
+"plume": "maison"
+},
+{
+"source": "A3 Le passeport pour le village",
+"titre": "La moto du bac",
+"repliques": [
+[
+"PAPA",
+"Si tu as le bac, je t'achète une moto dêh !"
+],
+[
+"FILS",
+"Papa, toi-même tu as le bac ?"
+],
+[
+"PAPA",
+"Bien sûr !"
+],
+[
+"FILS",
+"Et ta moto est où ?"
+]
+],
+"plume": "maison"
+},
+{
+"source": "A7 Le docteur de chaque année",
+"titre": "Trois fois par jour",
+"repliques": [
+[
+"FEMME",
+"Chéri, le docteur dit que je dois manger trois fois par jour dêh."
+],
+[
+"MARI",
+"Ya fohi. On va changer de docteur."
+]
+],
+"plume": "maison"
+},
+{
+"source": "B4 Le mot pauvreté",
+"titre": "Le régime",
+"repliques": [
+[
+"CLIENTE",
+"Docteur, je veux maigrir vite dêh !"
+],
+[
+"DOCTEUR",
+"Tantie, marie un chômeur. C'est le régime le plus rapide d'Abidjan."
+]
+],
+"plume": "maison"
+}
+]

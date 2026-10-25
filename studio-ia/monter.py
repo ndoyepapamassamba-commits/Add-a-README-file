@@ -116,13 +116,16 @@ def preparer_audio():
 
 def mots_minutes(s, transcription, fin_clip):
     """Mots du dialogue écrit avec le minutage des mots entendus (alignement difflib sur les formes normalisées)."""
-    ecrits = []
+    ecrits, ouvrant = [], ""
     for k, (_, t) in enumerate(s["dialogue"]):
         for m in t.split():
-            if ecrits and not norme(m):        # « ! », « ?! », « : » isolés par l'espace français : collés au mot d'avant
+            if not norme(m) and m in ("«", "“", "(", '"'):   # guillemet ouvrant isolé : collé au mot SUIVANT
+                ouvrant += m + " "
+            elif ecrits and not norme(m):        # « ! », « ?! », « : » isolés par l'espace français : collés au mot d'avant
                 ecrits[-1] = (ecrits[-1][0] + " " + m, ecrits[-1][1])
             else:
-                ecrits.append((m, k))
+                ecrits.append((ouvrant + m, k))
+                ouvrant = ""
     entendus = transcription or []
     a = [" ".join(norme(m)) for m, _ in ecrits]
     b = [" ".join(norme(m)) for _, _, m in entendus]
