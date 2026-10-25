@@ -164,6 +164,37 @@ function makeNoiseTexture(maxAniso) {
   return t;
 }
 
+const _tint = new THREE.Color();
+
+// fusion de géométries non indexées aux mêmes attributs ; renvoie les plages de sommets
+function mergeGeos(geos) {
+  let total = 0;
+  for (const g of geos) total += g.attributes.position.count;
+  const sizes = new Map();
+  for (const g of geos) for (const name in g.attributes) sizes.set(name, g.attributes[name].itemSize);
+  const out = new THREE.BufferGeometry();
+  const ranges = [];
+  for (const [name, size] of sizes) {
+    const arr = new Float32Array(total * size);
+    let o = 0;
+    for (const g of geos) {
+      const a = g.attributes[name];
+      const n = g.attributes.position.count;
+      if (a) arr.set(a.array, o * size);
+      else if (name === 'color') arr.fill(1, o * size, (o + n) * size);
+      o += n;
+    }
+    out.setAttribute(name, new THREE.BufferAttribute(arr, size));
+  }
+  let o = 0;
+  for (const g of geos) {
+    ranges.push([o, g.attributes.position.count]);
+    o += g.attributes.position.count;
+  }
+  out.computeBoundingSphere();
+  return { geo: out, ranges };
+}
+
 const COL_ASPHALT = new THREE.Color('#3b3e42');
 const COL_WALK = new THREE.Color('#b4b0a6');
 const COL_CURB = new THREE.Color('#d2cec5');
@@ -235,7 +266,7 @@ export class RoadMeshes {
     for (const id of Object.keys(ROAD_TYPES)) {
       const t = makeRoadTexture(ROAD_TYPES[id], aniso);
       this.textures[id] = t;
-      this.mats[id] = new THREE.MeshLambertMaterial({ map: t, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
+      this.mats[id] = new THREE.MeshLambertMaterial({ map: t, vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
     }
     this.noise = makeNoiseTexture(aniso);
     this.nodeMat = new THREE.MeshLambertMaterial({
@@ -247,8 +278,63 @@ export class RoadMeshes {
     });
     this.ghostMat = new THREE.MeshBasicMaterial({ color: 0x5bc0ff, transparent: true, opacity: 0.55, depthWrite: false });
     this.ghostBad = new THREE.MeshBasicMaterial({ color: 0xff4d4d, transparent: true, opacity: 0.55, depthWrite: false });
-    this.infoMats = new Map();
     this.furniture = new Furniture(scene, this);
+    // routes regroupées par zones de 384 m : un appel de dessin par type de route et par zone
+    this.CH = 384;
+    this.chunks = new Map();
+    this.dirtyChunks = new Set();
+  }
+
+  chunkKey(x, z) {
+    return Math.floor(x / this.CH) + ':' + Math.floor(z / this.CH);
+  }
+
+  chunk(key) {
+    let C = this.chunks.get(key);
+    if (!C) {
+      C = { segs: new Set(), nodes: new Set(), meshes: [] };
+      this.chunks.set(key, C);
+    }
+    return C;
+  }
+
+  flushChunks() {
+    for (const key of this.dirtyChunks) this.rebuildChunk(key);
+    this.dirtyChunks.clear();
+  }
+
+  rebuildChunk(key) {
+    const C = this.chunks.get(key);
+    if (!C) return;
+    for (const m of C.meshes) {
+      this.group.remove(m);
+      m.geometry.dispose();
+    }
+    C.meshes = [];
+    const byType = new Map();
+    for (const seg of C.segs) {
+      if (!byType.has(seg.type)) byType.set(seg.type, []);
+      byType.get(seg.type).push(seg);
+    }
+    for (const [type, segs] of byType) {
+      const { geo, ranges } = mergeGeos(segs.map((sg) => sg.geo));
+      const m = new THREE.Mesh(geo, this.mats[type]);
+      m.receiveShadow = true;
+      this.group.add(m);
+      C.meshes.push(m);
+      segs.forEach((sg, i) => {
+        sg.range = { mesh: m, start: ranges[i][0], count: ranges[i][1] };
+        if (sg.tint !== undefined && sg.tint !== null) this.applyTint(sg, sg.tint);
+      });
+    }
+    if (C.nodes.size) {
+      const { geo } = mergeGeos([...C.nodes].map((n) => n.geo));
+      const m = new THREE.Mesh(geo, this.nodeMat);
+      m.receiveShadow = true;
+      this.group.add(m);
+      C.meshes.push(m);
+    }
+    if (!C.segs.size && !C.nodes.size) this.chunks.delete(key);
   }
 
   // Ruban de chaussée d'un segment entre ses deux rognages
@@ -319,27 +405,31 @@ export class RoadMeshes {
     const s1 = seg.len - seg.trimB;
     if (s1 - s0 < 0.2) return;
     const geo = this.ribbonGeometry(seg, s0, s1, type);
-    const m = new THREE.Mesh(geo, this.mats[seg.type]);
-    m.receiveShadow = true;
-    m.userData.segId = seg.id;
-    seg.mesh = m;
-    this.group.add(m);
+    if (!geo.attributes.color) geo.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(geo.attributes.position.count * 3).fill(1), 3));
+    seg.geo = geo;
+    const mid = this.net.pointAt(seg, seg.len / 2);
+    seg.chunkKey = this.chunkKey(mid.x, mid.z);
+    this.chunk(seg.chunkKey).segs.add(seg);
+    this.dirtyChunks.add(seg.chunkKey);
   }
 
   removeSeg(seg) {
-    if (seg.mesh) {
-      this.group.remove(seg.mesh);
-      seg.mesh.geometry.dispose();
-      seg.mesh = null;
-    }
+    if (!seg.geo) return;
+    const C = this.chunks.get(seg.chunkKey);
+    if (C) C.segs.delete(seg);
+    this.dirtyChunks.add(seg.chunkKey);
+    seg.geo.dispose();
+    seg.geo = null;
+    seg.range = null;
   }
 
   removeNode(node) {
-    if (node.mesh) {
-      this.group.remove(node.mesh);
-      node.mesh.geometry.dispose();
-      node.mesh = null;
-    }
+    if (!node.geo) return;
+    const C = this.chunks.get(node.chunkKey);
+    if (C) C.nodes.delete(node);
+    this.dirtyChunks.add(node.chunkKey);
+    node.geo.dispose();
+    node.geo = null;
   }
 
   // Carrefour : enveloppe d'asphalte, trottoirs d'angle, passages piétons
@@ -504,12 +594,10 @@ export class RoadMeshes {
         }
       }
     }
-    const geo = g.build();
-    const m = new THREE.Mesh(geo, this.nodeMat);
-    m.receiveShadow = true;
-    m.userData.nodeId = node.id;
-    node.mesh = m;
-    this.group.add(m);
+    node.geo = g.build();
+    node.chunkKey = this.chunkKey(node.x, node.z);
+    this.chunk(node.chunkKey).nodes.add(node);
+    this.dirtyChunks.add(node.chunkKey);
   }
 
   // Aperçu translucide pendant le tracé
@@ -520,21 +608,20 @@ export class RoadMeshes {
     return m;
   }
 
-  // Vue d'information : teinte des routes (trafic)
+  // Vue d'information : teinte des routes (trafic), par couleur de sommet dans le maillage regroupé
   setInfoTint(seg, color) {
-    if (!seg.mesh) return;
-    if (color === null) {
-      seg.mesh.material = this.mats[seg.type];
-      return;
-    }
-    const key = seg.type + ':' + color;
-    let m = this.infoMats.get(key);
-    if (!m) {
-      m = this.mats[seg.type].clone();
-      m.color = new THREE.Color(color);
-      this.infoMats.set(key, m);
-    }
-    seg.mesh.material = m;
+    if (seg.tint === color) return;
+    seg.tint = color;
+    if (seg.range) this.applyTint(seg, color);
+  }
+
+  applyTint(seg, color) {
+    const attr = seg.range.mesh.geometry.attributes.color;
+    if (color === null) _tint.setRGB(1, 1, 1);
+    else _tint.setHex(color);
+    const end = seg.range.start + seg.range.count;
+    for (let i = seg.range.start; i < end; i++) attr.setXYZ(i, _tint.r, _tint.g, _tint.b);
+    attr.needsUpdate = true;
   }
 }
 

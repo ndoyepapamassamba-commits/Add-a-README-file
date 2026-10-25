@@ -681,6 +681,8 @@ export class Traffic {
 
   // ---------------------------------------------------------------- routes modifiées
   onRoadsChanged() {
+    // recaler d'abord les arrêts de bus, sinon les bus visant un arrêt déplacé seraient supprimés
+    if (G.transit) G.transit.onRoadsChanged();
     const dead = [];
     for (const [key, slot] of this.slots) {
       if (slot.seg.dead || !G.roads.segs.has(slot.seg.id)) {

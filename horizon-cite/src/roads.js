@@ -29,6 +29,7 @@ export class RoadNetwork {
     this.version = 0;
     this.outsideComps = new Set();
     this.treeGeo = null;
+    this.topoDirty = false;
   }
 
   // ------------------------------------------------------------------ géométrie
@@ -124,6 +125,7 @@ export class RoadNetwork {
     if (id && id >= this.nextNode) this.nextNode = id + 1;
     this.nodes.set(n.id, n);
     this.nodeHash.insertPoint(n, x, z, 0);
+    this.topoDirty = true;
     return n;
   }
 
@@ -132,6 +134,7 @@ export class RoadNetwork {
     this.nodes.delete(n.id);
     this.nodeHash.remove(n);
     this.dirtyNodes.delete(n.id);
+    this.topoDirty = true;
   }
 
   addSegment(a, b, cx, cz, type, id = null) {
@@ -158,6 +161,7 @@ export class RoadNetwork {
     this.indexSeg(seg);
     this.dirtyNodes.add(a.id);
     this.dirtyNodes.add(b.id);
+    this.topoDirty = true;
     this.version++;
     return seg;
   }
@@ -189,6 +193,7 @@ export class RoadNetwork {
     }
     this.meshes.removeSeg(seg);
     seg.dead = true;
+    this.topoDirty = true;
     this.version++;
   }
 
@@ -411,6 +416,13 @@ export class RoadNetwork {
       if (j.kind === 'node' && j.node.segs.length >= 6) return fail('Trop de routes à ce carrefour');
       zoneR.push(Math.min(R, 90));
     }
+    // tronçon entre deux points d'une même route (courbe qui la recoupe) : il doit s'en écarter franchement
+    const segsOf = (j) => (j.kind === 'node' ? j.node.segs : j.kind === 'split' ? [j.seg.id] : []);
+    for (let i = 0; i < js.length - 1; i++) {
+      const A = segsOf(js[i]);
+      const B = segsOf(js[i + 1]);
+      if (A.some((id) => B.includes(id)) && js[i + 1].sNew - js[i].sNew < zoneR[i] + zoneR[i + 1]) return fail("Trop près d'une autre route");
+    }
     // chevauchement d'une route existante
     for (let i = 0; i < pts.length; i++) {
       const s = curve.cum[i];
@@ -468,7 +480,18 @@ export class RoadNetwork {
     for (let i = 0; i < nodes.length - 1; i++) {
       const A = nodes[i].n;
       const B = nodes[i + 1].n;
-      if (A === B || this.segBetween(A, B)) continue;
+      if (A === B) continue;
+      if (this.segBetween(A, B)) {
+        // deux points déjà reliés par une autre route : nœud intermédiaire plutôt qu'un segment en double
+        const tm = (nodes[i].t + nodes[i + 1].t) / 2;
+        const P = qbez(c.ax, c.az, c.cx, c.cz, c.bx, c.bz, tm);
+        const M = this.addNode(P.x, P.z);
+        const c1 = blossom(c, nodes[i].t, tm);
+        const c2 = blossom(c, tm, nodes[i + 1].t);
+        created.push(this.addSegment(A, M, c1.x, c1.z, plan.typeId));
+        created.push(this.addSegment(M, B, c2.x, c2.z, plan.typeId));
+        continue;
+      }
       const ctl = blossom(c, nodes[i].t, nodes[i + 1].t);
       created.push(this.addSegment(A, B, ctl.x, ctl.z, plan.typeId));
     }
@@ -483,7 +506,67 @@ export class RoadNetwork {
     return created;
   }
 
-  upgradeSegment(seg, typeId) {
+  // Contrôles avant amélioration. Une route plus large prend plus de place ; l'autoroute n'a pas de zonage.
+  planUpgrade(seg, typeId) {
+    const res = { valid: true, reason: '', demolish: [] };
+    const fail = (r) => {
+      res.valid = false;
+      res.reason = r;
+      return res;
+    };
+    const type = ROAD_TYPES[typeId];
+    const half = type.width / 2;
+    const wider = half > ROAD_TYPES[seg.type].width / 2;
+    if (G.buildings) {
+      const attached = G.buildings.bySeg.get(seg.id);
+      if (!type.zoning && attached) {
+        for (const id of attached) {
+          const b = G.buildings.get(id);
+          if (!b) continue;
+          if (b.kind === 'service') return fail('Des services sont desservis par cette route');
+          res.demolish.push(b.id);
+        }
+      }
+      if (wider) {
+        const col = G.buildings.collideCorridor(seg.pts, half);
+        if (col.blocked) return fail(col.blocked);
+        for (const id of col.demolish) if (!res.demolish.includes(id)) res.demolish.push(id);
+      }
+    }
+    if (wider) {
+      // distance depuis chaque extrémité en deçà de laquelle la route touche forcément celles du carrefour
+      const endR = (nodeId) => {
+        const node = this.nodes.get(nodeId);
+        const d0 = this.dirAway(seg, nodeId);
+        let R = 0;
+        for (const sid of node.segs) {
+          if (sid === seg.id) continue;
+          const o = this.segs.get(sid);
+          const d = this.dirAway(o, nodeId);
+          const ang = Math.acos(clamp(d0.x * d.x + d0.z * d.z, -1, 1));
+          R = Math.max(R, (ROAD_TYPES[o.type].width / 2 + half) / (ang < Math.PI / 2 ? Math.max(Math.sin(ang), 0.2) : 1) + 2);
+        }
+        return R;
+      };
+      const Ra = endR(seg.a);
+      const Rb = endR(seg.b);
+      for (let i = 0; i < seg.pts.length; i++) {
+        const p = seg.pts[i];
+        const s = seg.cum[i];
+        for (const other of this.segHash.queryRadius(p.x, p.z, half + 20)) {
+          if (other === seg) continue;
+          const atA = other.a === seg.a || other.b === seg.a;
+          const atB = other.a === seg.b || other.b === seg.b;
+          if ((atA && s < Ra) || (atB && s > seg.len - Rb)) continue;
+          const pr = closestOnPolyline(other.pts, other.cum, p.x, p.z);
+          if (pr.d < half + ROAD_TYPES[other.type].width / 2 - 1) return fail("Trop près d'une autre route");
+        }
+      }
+    }
+    return res;
+  }
+
+  upgradeSegment(seg, typeId, demolish = []) {
     const old = seg.type;
     if (old === typeId && typeId !== 'oneway') return 0;
     const A = this.nodes.get(seg.a);
@@ -496,6 +579,7 @@ export class RoadNetwork {
       b = A;
     }
     const cost = old === typeId ? 0 : Math.round(seg.len * ROAD_TYPES[typeId].cost * 0.7);
+    if (G.buildings) for (const id of demolish) G.buildings.demolish(id, { silent: true });
     this.detach(seg);
     const ns = this.addSegment(a, b, seg.cx, seg.cz, typeId);
     G.emit('seg:replaced', { old: seg, seg: ns, reversed: a !== A });
@@ -571,7 +655,10 @@ export class RoadNetwork {
   }
 
   flush() {
-    if (!this.dirtyNodes.size) return;
+    if (!this.dirtyNodes.size && !this.topoDirty) {
+      if (this.meshes.dirtyChunks.size) this.meshes.flushChunks();
+      return;
+    }
     const segsToBuild = new Set();
     for (const nid of this.dirtyNodes) {
       const n = this.nodes.get(nid);
@@ -592,6 +679,8 @@ export class RoadNetwork {
       this.meshes.buildNode(n);
     }
     this.dirtyNodes.clear();
+    this.meshes.flushChunks();
+    this.topoDirty = false;
     this.computeComponents();
     this.meshes.furniture.rebuild(this, this.treeGeo);
     this.version++;
@@ -677,6 +766,8 @@ export class RoadNetwork {
     this.nextNode = 1;
     this.nextSeg = 1;
     this.dirtyNodes.clear();
+    this.meshes.flushChunks();
+    this.topoDirty = false;
     this.meshes.furniture.rebuild(this, this.treeGeo);
   }
 }

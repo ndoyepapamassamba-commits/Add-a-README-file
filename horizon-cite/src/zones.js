@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { G } from './state.js';
 import { ROAD_TYPES, CELL, ZONE_DEPTH, WATER_LEVEL, ZONES } from './config.js';
 import { heightAt, inBuildArea } from './terrain.js';
-import { SpatialHash, closestOnPolyline } from './util.js';
+import { SpatialHash, closestOnPolyline, obbOverlap } from './util.js';
 
 const keyOf = (seg, side, col, row) => seg + '|' + side + '|' + col + '|' + row;
 
@@ -125,8 +125,9 @@ export class Zones {
     return this.key.get(keyOf(segId, side, col, row));
   }
 
-  // Une case à cette position est-elle constructible ?
-  cellValid(x, z, ignore) {
+  // Une case à cette position est-elle constructible ? (ignoreBlds : bâtiments qui ne bloquent pas ;
+  // ux, uz : orientation de la case, pour tester le recouvrement réel avec les cases voisines)
+  cellValid(x, z, ignore, ignoreBlds, ux, uz) {
     if (!inBuildArea(x, z)) return false;
     const h = heightAt(x, z);
     if (h < WATER_LEVEL + 0.9) return false;
@@ -140,15 +141,17 @@ export class Zones {
       const pr = closestOnPolyline(seg.pts, seg.cum, x, z);
       if (pr.d < w + 3.55) return false;
     }
-    for (const c of this.hash.queryRadius(x, z, 8)) {
+    const me = ux === undefined ? null : { x, z, ax: ux, az: uz, hw: 4, hd: 4 };
+    for (const c of this.hash.queryRadius(x, z, 12)) {
       if (c === ignore) continue;
-      if ((c.x - x) ** 2 + (c.z - z) ** 2 < 6.9 * 6.9) return false;
+      // deux grilles qui se rencontrent : pas plus de 1,1 m de recouvrement, quel que soit l'angle
+      if (me ? obbOverlap(me, { x: c.x, z: c.z, ax: c.ux, az: c.uz, hw: 4, hd: 4 }, 1.1) : (c.x - x) ** 2 + (c.z - z) ** 2 < 6.9 * 6.9) return false;
     }
-    if (G.buildings && G.buildings.pointBlocked(x, z, 3.4)) return false;
+    if (G.buildings && G.buildings.pointBlocked(x, z, 3.4, ignoreBlds)) return false;
     return true;
   }
 
-  generate(seg) {
+  generate(seg, ignoreBlds) {
     const type = ROAD_TYPES[seg.type];
     if (!type.zoning) return;
     const net = G.roads;
@@ -168,7 +171,7 @@ export class Zones {
           const d = h + CELL / 2 + row * CELL;
           const x = p.x + rx * d;
           const z = p.z + rz * d;
-          if (!this.cellValid(x, z)) break;
+          if (!this.cellValid(x, z, null, ignoreBlds, p.tx, p.tz)) break;
           this.addCell({ seg: seg.id, side, col, row, s, x, z, ux: p.tx, uz: p.tz });
         }
       }
@@ -211,19 +214,53 @@ export class Zones {
   onReplaced({ old, seg, reversed }) {
     const set = this.bySeg.get(old.id);
     const type = ROAD_TYPES[seg.type];
+    if (type.zoning && ROAD_TYPES[old.type].width === type.width) {
+      if (set) {
+        for (const c of [...set]) {
+          if (reversed) this.reassign(c, seg.id, seg.len - c.s, -c.side, -c.col);
+          else this.reassign(c, seg.id, c.s);
+        }
+      }
+      this.clearAlong(seg);
+      this.generate(seg);
+      return;
+    }
+    // largeur modifiée : nouvelle grille au bord de la nouvelle chaussée, qui reprend les types de zone
+    // (les bâtiments gênants ont été rasés avant le remplacement ; les autres gardent leurs cases)
+    const memo = [];
+    const keep = new Set();
     if (set) {
       for (const c of [...set]) {
-        if (!type.zoning) {
-          this.removeCell(c, false);
-          continue;
-        }
-        if (reversed) this.reassign(c, seg.id, seg.len - c.s, -c.side, -c.col);
-        else this.reassign(c, seg.id, c.s);
+        if (c.zone) memo.push({ x: c.x, z: c.z, row: c.row, zone: c.zone });
+        if (c.bld) keep.add(c.bld);
+        this.removeCell(c, false);
       }
     }
-    // largeur modifiée : retirer ce qui chevauche, compléter le reste
     this.clearAlong(seg);
-    this.generate(seg);
+    if (!type.zoning) return;
+    this.generate(seg, keep);
+    const fresh = this.bySeg.get(seg.id);
+    if (fresh) {
+      for (const c of fresh) {
+        let best = null;
+        let bd = 6 * 6;
+        for (const m of memo) {
+          const d = (m.x - c.x) ** 2 + (m.z - c.z) ** 2;
+          if (d < bd - 1e-6 || (best && Math.abs(d - bd) <= 1e-6 && m.row < best.row)) {
+            bd = d;
+            best = m;
+          }
+        }
+        if (best) c.zone = best.zone;
+      }
+    }
+    if (G.buildings) {
+      for (const id of keep) {
+        const b = G.buildings.get(id);
+        if (b) G.buildings.claimCells(b);
+      }
+    }
+    this.touch();
   }
 
   // ------------------------------------------------------------ pinceaux

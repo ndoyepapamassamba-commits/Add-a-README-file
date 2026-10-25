@@ -518,8 +518,8 @@ export class Buildings {
       G.fx.removeEmitters(b);
       if (!opts.quiet) G.fx.dust(b.x, b.y, b.z, Math.max(b.hw, b.hd));
     }
-    // les cases libérées par un bâtiment de service peuvent être regénérées
-    if (b.kind === 'service' && G.roads) {
+    // les cases bloquées par ce bâtiment (service, ou bâtiment de zone ayant perdu ses cases) peuvent être regénérées
+    if ((b.kind === 'service' || b.cells.length < b.w * b.d) && G.roads) {
       for (const seg of G.roads.segHash.queryRadius(b.x, b.z, Math.hypot(b.hw, b.hd) + 40)) G.zones.generate(seg);
     }
     this.version++;
@@ -528,12 +528,29 @@ export class Buildings {
   }
 
   // ---------------------------------------------------------------- collisions
-  pointBlocked(x, z, r) {
+  pointBlocked(x, z, r, ignore) {
     for (const b of this.hash.queryRadius(x, z, r + 60)) {
-      if (b.kind !== 'service') continue;
+      if (ignore && ignore.has(b.id)) continue;
       if (distToObb(b.obb, x, z) < r) return true;
     }
     return false;
+  }
+
+  // Rattache au bâtiment les cases qu'il recouvre (après une modification de sa route)
+  claimCells(b) {
+    for (const cid of b.cells) {
+      const c = G.zones.cells.get(cid);
+      if (c && c.bld === b.id) c.bld = 0;
+    }
+    b.cells = [];
+    for (const c of G.zones.hash.queryRadius(b.x, b.z, Math.hypot(b.hw, b.hd) + 8)) {
+      if (c.bld && c.bld !== b.id) continue;
+      if (!obbOverlap(b.obb, { x: c.x, z: c.z, ax: c.ux, az: c.uz, hw: 3.65, hd: 3.65 }, 0.6)) continue;
+      c.bld = b.id;
+      c.zone = b.zone;
+      b.cells.push(c.id);
+    }
+    G.zones.touch();
   }
 
   obbBlocked(obb) {
@@ -604,6 +621,15 @@ export class Buildings {
     for (const id of [...set]) {
       const b = this.list.get(id);
       if (!b) continue;
+      if (seg.type === 'highway') {
+        // pas d'accès direct depuis une autoroute
+        if (b.kind === 'zone') this.demolish(b.id, { silent: true });
+        else {
+          this.linkSeg(b, 0);
+          this.reattach(b);
+        }
+        continue;
+      }
       this.linkSeg(b, seg.id);
       if (reversed) {
         b.s = seg.len - b.s;
@@ -620,7 +646,7 @@ export class Buildings {
       if (!b) continue;
       this.linkSeg(b, 0);
       b.cells = b.cells.filter((cid) => G.zones.cells.has(cid));
-      this.reattach(b);
+      if (this.reattach(b) && b.kind === 'zone') this.claimCells(b);
     }
   }
 
@@ -705,8 +731,7 @@ export class Buildings {
       let b;
       if (o.k === 0) {
         const cells = o.c.map((id) => G.zones.cells.get(id)).filter(Boolean);
-        if (!cells.length) continue;
-        b = this.makeRecord({ kind: 'zone', zone: o.zo, level: o.lv, w: o.w, d: o.d, W: o.w * 8, D: o.d * 8, x: o.x, z: o.z, vx: o.vx, vz: o.vz, seg: o.sg, s: o.s, side: o.sd, cells: o.c, seed: o.sd2, id: o.id });
+        b = this.makeRecord({ kind: 'zone', zone: o.zo, level: o.lv, w: o.w, d: o.d, W: o.w * 8, D: o.d * 8, x: o.x, z: o.z, vx: o.vx, vz: o.vz, seg: o.sg, s: o.s, side: o.sd, cells: cells.map((c) => c.id), seed: o.sd2, id: o.id });
         for (const c of cells) c.bld = b.id;
       } else {
         const def = SERVICE_BY_ID[o.df];

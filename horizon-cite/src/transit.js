@@ -307,6 +307,8 @@ export class Transit {
   }
 
   onRoadsChanged() {
+    if (this.roadsVer === G.roads.version) return;
+    this.roadsVer = G.roads.version;
     for (const l of [...this.lines]) {
       let broken = false;
       for (let i = 0; i < l.stops.length; i++) {

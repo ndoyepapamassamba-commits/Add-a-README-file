@@ -91,6 +91,16 @@ export class Sim {
     this.wind = 1;
     this.lists = { all: [], res: [], work: [], com: [], ind: [], office: [], services: [] };
     this.freeSegs = new Set();
+    // l'autoroute de départ reste indestructible, même découpée par un raccordement
+    G.on('seg:split', ({ old, s1, s2 }) => {
+      if (this.freeSegs.delete(old.id)) {
+        this.freeSegs.add(s1.id);
+        this.freeSegs.add(s2.id);
+      }
+    });
+    G.on('seg:replaced', ({ old, seg }) => {
+      if (this.freeSegs.delete(old.id)) this.freeSegs.add(seg.id);
+    });
     this.uniqueHappy = 0;
     this.prevPop = 0;
   }

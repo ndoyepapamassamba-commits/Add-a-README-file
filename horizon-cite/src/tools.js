@@ -160,10 +160,11 @@ export class Tools {
   }
 
   tintSeg(seg, color) {
-    if (this.tintedSeg === seg) return;
+    if (this.tintedSeg === seg && this.tintColor === color) return;
     this.untint();
     if (!seg) return;
     this.tintedSeg = seg;
+    this.tintColor = color;
     G.roads.meshes.setInfoTint(seg, color);
   }
 
@@ -352,9 +353,15 @@ export class Tools {
       if (hit) {
         const same = hit.seg.type === typeId;
         const cost = same ? 0 : Math.round(hit.seg.len * type.cost * 0.7);
-        this.tintSeg(hit.seg, 0x7fd4ff);
-        const txt = same ? (typeId === 'oneway' ? 'Cliquez pour inverser le sens' : 'Déjà de ce type') : `Améliorer en ${type.name}<br><b>${fmtMoney(cost)}</b>`;
-        this.tip(txt, !same && !this.canPay(cost));
+        const up = this.upgradePlan(hit.seg, typeId);
+        const locked = G.sim.freeSegs.has(hit.seg.id);
+        const bad = locked || !up.valid;
+        this.tintSeg(hit.seg, bad ? 0xff6b6b : 0x7fd4ff);
+        let txt = same ? (typeId === 'oneway' ? 'Cliquez pour inverser le sens' : 'Déjà de ce type') : `Améliorer en ${type.name}<br><b>${fmtMoney(cost)}</b>`;
+        if (locked) txt = 'La connexion autoroutière ne peut pas être modifiée';
+        else if (!up.valid) txt = `${up.reason}<br><span class="muted">Améliorer en ${type.name}</span>`;
+        else if (up.demolish.length) txt += `<br><span class="muted">${up.demolish.length} bâtiment${up.demolish.length > 1 ? 's' : ''} à raser</span>`;
+        this.tip(txt, bad || (!same && !this.canPay(cost)));
       } else {
         this.untint();
         this.tip('Survolez une route à améliorer');
@@ -387,6 +394,15 @@ export class Tools {
     else this.tip(`${plan.reason}<br>${len} · ${fmtMoney(plan.cost)}`, true);
   }
 
+  upgradePlan(seg, typeId) {
+    const ver = G.roads.version + ':' + G.buildings.version;
+    const c = this.upCache;
+    if (c && c.seg === seg && c.typeId === typeId && c.ver === ver) return c.plan;
+    const plan = seg.type === typeId ? { valid: true, reason: '', demolish: [] } : G.roads.planUpgrade(seg, typeId);
+    this.upCache = { seg, typeId, ver, plan };
+    return plan;
+  }
+
   showGhost(plan, typeId, valid) {
     this.clearGhost();
     if (!plan || !plan.curve || plan.curve.len < 1) return;
@@ -413,12 +429,18 @@ export class Tools {
         return;
       }
       const cost = hit.seg.type === typeId ? 0 : Math.round(hit.seg.len * type.cost * 0.7);
+      const up = this.upgradePlan(hit.seg, typeId);
+      if (!up.valid) {
+        if (G.ui) G.ui.toast(up.reason, 'bad');
+        if (G.audio) G.audio.play('error');
+        return;
+      }
       if (!this.canPay(cost)) {
         if (G.audio) G.audio.play('error');
         return;
       }
       this.untint();
-      G.roads.upgradeSegment(hit.seg, typeId);
+      G.roads.upgradeSegment(hit.seg, typeId, up.demolish);
       this.pay(cost);
       if (G.audio) G.audio.play('build');
       return;

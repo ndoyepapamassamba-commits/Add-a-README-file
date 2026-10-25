@@ -28,9 +28,10 @@ export function findPath(net, from, to) {
   const g = new Map();
   const prev = new Map();
   const heap = new MinHeap();
-  const target = net.nodes.get(ts.a);
-  const tx = (target.x + net.nodes.get(ts.b).x) / 2;
-  const tz = (target.z + net.nodes.get(ts.b).z) / 2;
+  // heuristique admissible : distance au point d'arrivée à une vitesse supérieure à celle de l'autoroute
+  const goal = net.pointAt(ts, to.s);
+  const tx = goal.x;
+  const tz = goal.z;
   const h = (n) => Math.hypot(n.x - tx, n.z - tz) / 30;
   const push = (nodeId, c, info) => {
     if (c < (g.get(nodeId) ?? Infinity)) {
