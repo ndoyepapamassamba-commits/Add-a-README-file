@@ -21,6 +21,7 @@ import { InfoViews } from './info.js';
 import { Transit } from './transit.js';
 import { Chirper } from './chirper.js';
 import { Audio } from './audio.js';
+import { Pedestrians } from './peds.js';
 import { loadSlot, saveSlot, snapshot, restore, exportCode, importCode } from './save.js';
 
 function loadQuality() {
@@ -67,6 +68,7 @@ function boot() {
   G.fx = new FX(scene);
   G.icons = new Icons(scene);
   G.transit = new Transit(scene);
+  G.peds = new Pedestrians(scene);
   G.info = new InfoViews();
   G.audio = new Audio();
   G.chirper = new Chirper();
@@ -111,6 +113,7 @@ function boot() {
     G.buildings.update(realDt, simDt);
     G.traffic.update(realDt, simDt);
     G.transit.update(simDt);
+    G.peds.update(realDt, simDt);
     G.info.update(realDt);
     G.zones.update();
     G.trees.update();
@@ -156,6 +159,7 @@ function boot() {
 // ---------------------------------------------------------------------------
 G.clearCity = () => {
   G.traffic.clear();
+  if (G.peds) G.peds.clear();
   G.icons.clear();
   G.fx.clear();
   G.buildings.clear();

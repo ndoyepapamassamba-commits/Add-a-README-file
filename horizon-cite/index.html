@@ -76,8 +76,8 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; margin: 0 2px; b
 
 /* ---------- barre du haut ---------- */
 .top-left, .top-right, .top-center { position: fixed; top: max(10px, env(safe-area-inset-top, 0px)); display: flex; gap: 8px; align-items: flex-start; z-index: 15; }
-.top-left { left: max(12px, env(safe-area-inset-left, 0px)); }
-.top-right { right: max(12px, env(safe-area-inset-right, 0px)); }
+.top-left { left: max(16px, env(safe-area-inset-left, 0px)); }
+.top-right { right: max(16px, env(safe-area-inset-right, 0px)); }
 .top-center { left: 50%; transform: translateX(-50%); flex-direction: column; align-items: center; }
 .hud-btn { display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); box-shadow: 0 6px 18px rgba(0,0,0,.35); font-weight: 600; }
 .hud-btn:hover { border-color: var(--accent); }
@@ -103,20 +103,20 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; margin: 0 2px; b
 .empty { padding: 20px 0; text-align: center; color: var(--muted); }
 
 /* ---------- vues d'information ---------- */
-.info-panel { position: fixed; top: 62px; left: max(12px, env(safe-area-inset-left, 0px)); width: 360px; max-width: calc(100vw - 24px); padding: 10px; z-index: 16; }
+.info-panel { position: fixed; top: 62px; left: max(16px, env(safe-area-inset-left, 0px)); width: 360px; max-width: calc(100vw - 24px); padding: 10px; z-index: 16; }
 .ip-head { padding: 2px 4px 8px; }
 .ip-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .ip-grid button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-lo); font-size: 11.5px; text-align: center; line-height: 1.2; }
 .ip-grid button:hover { border-color: var(--accent); }
 .ip-grid button.on { background: var(--accent-deep); border-color: var(--accent); }
-.legend { position: fixed; left: max(12px, env(safe-area-inset-left, 0px)); bottom: 132px; padding: 10px 12px; min-width: 220px; z-index: 14; }
+.legend { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: 132px; padding: 10px 12px; min-width: 220px; z-index: 14; }
 .legend h4 { color: var(--text); }
 .lg-row { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 2px 0; }
 .lg-row i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
 .lg-sum { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* ---------- barre du bas ---------- */
-.bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 0 max(10px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); }
+.bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding-block: 0 max(10px, env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .milestone { position: relative; max-width: 1480px; height: 18px; margin: 0 auto 6px; border-radius: 9px; overflow: hidden; background: rgba(11,18,26,.82); border: 1px solid var(--line); }
 .ms-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #1f5fa6, #46aef6); transition: width .4s; }
 .ms-label { position: relative; font: 600 11px/16px var(--font-display); text-align: center; letter-spacing: .04em; text-shadow: 0 1px 2px rgba(0,0,0,.7); font-variant-numeric: tabular-nums; }
@@ -186,7 +186,7 @@ body.paused::after { content: ""; position: fixed; inset: 0; border: 3px solid r
 .line-row button { margin-left: auto; }
 
 /* ---------- inspecteur ---------- */
-.inspector { position: fixed; top: 62px; right: max(12px, env(safe-area-inset-right, 0px)); width: 340px; max-width: calc(100vw - 24px); max-height: calc(100vh - 240px); overflow-y: auto; padding: 12px 14px; z-index: 17; animation: pop .18s ease-out; }
+.inspector { position: fixed; top: 62px; right: max(16px, env(safe-area-inset-right, 0px)); width: 340px; max-width: calc(100vw - 24px); max-height: calc(100vh - 240px); overflow-y: auto; padding: 12px 14px; z-index: 17; animation: pop .18s ease-out; }
 .in-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
 .in-head h3 { font-size: 17px; text-wrap: balance; }
 .in-head .muted { font-size: 12.5px; }

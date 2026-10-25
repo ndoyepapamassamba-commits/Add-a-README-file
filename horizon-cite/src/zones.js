@@ -102,6 +102,7 @@ export class Zones {
       c.col = col;
       c.ux = -c.ux;
       c.uz = -c.uz;
+      c.mat = null;
       c.vx = -c.uz * c.side;
       c.vz = c.ux * c.side;
     }
@@ -352,27 +353,30 @@ export class Zones {
       this.mesh.renderOrder = 3;
       this.scene.add(this.mesh);
     }
-    const m = new THREE.Matrix4();
-    const ax = new THREE.Vector3();
-    const ay = new THREE.Vector3();
-    const az = new THREE.Vector3();
+    const arr = this.mesh.instanceMatrix.array;
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
-      const e = 3.6;
-      const hu = heightAt(c.x + c.ux * e, c.z + c.uz * e) - heightAt(c.x - c.ux * e, c.z - c.uz * e);
-      const hv = heightAt(c.x + c.vx * e, c.z + c.vz * e) - heightAt(c.x - c.vx * e, c.z - c.vz * e);
-      ax.set(c.ux, hu / (2 * e), c.uz).normalize();
-      az.set(c.vx, hv / (2 * e), c.vz).normalize();
-      ay.crossVectors(az, ax).normalize();
-      m.makeBasis(ax, ay, az);
-      m.setPosition(c.x, c.y + 0.28, c.z);
-      this.mesh.setMatrixAt(i, m);
+      if (!c.mat) c.mat = this.cellMatrix(c);
+      arr.set(c.mat, i * 16);
       const col = c.zone ? this.colors[c.zone] : this.colors[0];
       this.mesh.setColorAt(i, col);
     }
     this.mesh.count = list.length;
     this.mesh.instanceMatrix.needsUpdate = true;
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+  }
+
+  // orientation de la case épousant le relief (calculée une seule fois)
+  cellMatrix(c) {
+    const e = 3.6;
+    const hu = heightAt(c.x + c.ux * e, c.z + c.uz * e) - heightAt(c.x - c.ux * e, c.z - c.uz * e);
+    const hv = heightAt(c.x + c.vx * e, c.z + c.vz * e) - heightAt(c.x - c.vx * e, c.z - c.vz * e);
+    const ax = new THREE.Vector3(c.ux, hu / (2 * e), c.uz).normalize();
+    const az = new THREE.Vector3(c.vx, hv / (2 * e), c.vz).normalize();
+    const ay = new THREE.Vector3().crossVectors(az, ax).normalize();
+    const m = new THREE.Matrix4().makeBasis(ax, ay, az);
+    m.setPosition(c.x, c.y + 0.28, c.z);
+    return Float32Array.from(m.elements);
   }
 
   setShowAll(v) {

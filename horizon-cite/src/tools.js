@@ -64,6 +64,7 @@ export class Tools {
       if (!G.running) return;
       this.mouse.x = e.clientX;
       this.mouse.y = e.clientY;
+      if (e.button === 2) this.rightAt = { x: e.clientX, y: e.clientY };
       if (e.button === 0) {
         this.down = true;
         this.downAt = { x: e.clientX, y: e.clientY };
@@ -73,7 +74,10 @@ export class Tools {
     });
     window.addEventListener('pointerup', (e) => {
       if (e.button === 2) {
-        if (G.cam.drag === null || !this.rightMoved) this.cancel();
+        // un clic droit annule ; un glisser au clic droit fait seulement pivoter la caméra
+        const r = this.rightAt;
+        this.rightAt = null;
+        if (r && Math.hypot(e.clientX - r.x, e.clientY - r.y) < 6) this.cancel();
         return;
       }
       if (e.button !== 0 || !this.down) return;
