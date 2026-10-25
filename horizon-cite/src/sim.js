@@ -725,7 +725,7 @@ export class Sim {
     if (b.kind === 'zone') {
       // déchets
       if (this.unlocked(GATE.garbage)) {
-        b.garbage += occ * 0.03 * dt * (b.zone === 5 ? 1.3 : 1);
+        b.garbage += occ * 0.016 * dt * (b.zone === 5 ? 1.3 : 1);
         if (b.garbage > 3 + occ * 2.4) this.needs.garbage.add(b.id);
         const lim = occ * 9 + 25;
         t.garbage = b.garbage > lim ? (t.garbage || 0) + dt : 0;
@@ -854,9 +854,9 @@ export class Sim {
 
   // Appelé par le trafic quand un véhicule de service atteint sa cible
   serviceArrive(home, target, kind) {
-    const near = G.buildings.hash.queryRadius(target.x, target.z, 70);
+    const near = G.buildings.hash.queryRadius(target.x, target.z, kind === 'garbage' ? 110 : 70);
     if (kind === 'garbage') {
-      let cap = 2200;
+      let cap = 3200;
       for (const t of [target, ...near]) {
         if (t.kind !== 'zone' || cap <= 0) continue;
         const take = Math.min(cap, t.garbage);

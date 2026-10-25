@@ -148,6 +148,49 @@ export class Traffic {
     return { x: p.tx * st.dir, z: p.tz * st.dir };
   }
 
+  // voies compatibles avec le virage suivant (droite : voie extérieure, gauche : voie intérieure)
+  allowedLanes(steps, i) {
+    const st = steps[i];
+    const n = this.laneCount(st.seg, st.dir);
+    if (n <= 1) return [0];
+    if (i >= steps.length - 1) return n === 2 ? [0, 1] : [0, 1];
+    const a = this.endDir(st);
+    const b = this.startDir(steps[i + 1]);
+    const cross = a.x * b.z - a.z * b.x;
+    const dot = a.x * b.x + a.z * b.z;
+    if (dot < -0.6) return [n - 1];
+    if (cross > 0.35) return [0];
+    if (cross < -0.35) return [n - 1];
+    const all = [];
+    for (let k = 0; k < n; k++) all.push(k);
+    return all;
+  }
+
+  // au moment d'atteindre la fin de la voie : la voie suivante la plus dégagée
+  pickNextLane(v) {
+    const i = v.si + 1;
+    const st = v.steps[i];
+    const opts = v.allowed && v.allowed[i] ? v.allowed[i] : (v.allowed = v.allowed || [])[i] = this.allowedLanes(v.steps, i);
+    if (opts.length === 1) return opts[0];
+    let best = v.lanesK[i];
+    let bestRoom = -Infinity;
+    for (const k of opts) {
+      const sl = this.slots.get(st.seg.id + ':' + st.dir + ':' + k);
+      let room = 1e6;
+      if (sl && sl.list.length) {
+        let tail = sl.list[0];
+        for (const o of sl.list) if (o.pos < tail.pos) tail = o;
+        room = tail.pos - tail.len - sl.list.length * 0.5;
+      }
+      if (k === v.lanesK[i]) room += 2;
+      if (room > bestRoom) {
+        bestRoom = room;
+        best = k;
+      }
+    }
+    return best;
+  }
+
   chooseLanes(steps) {
     return steps.map((st, i) => {
       const n = this.laneCount(st.seg, st.dir);
@@ -197,6 +240,8 @@ export class Traffic {
       steps,
       si: 0,
       lanesK: this.chooseLanes(steps),
+      allowed: null,
+      pickedFor: -1,
       pos: 0,
       turn: null,
       slot: null,
@@ -258,6 +303,8 @@ export class Traffic {
     if (!steps) return false;
     this.leaveSlot(v);
     v.steps = steps;
+    v.allowed = null;
+    v.pickedFor = -1;
     v.lanesK = this.chooseLanes(steps);
     v.lanesK[0] = Math.min(v.slot.k, this.laneCount(steps[0].seg, steps[0].dir) - 1);
     const keepPos = v.pos;
@@ -347,6 +394,10 @@ export class Traffic {
       vl = leader.v;
     }
     if (!last) {
+      if (L - v.pos < 45 && v.pickedFor !== v.si) {
+        v.lanesK[v.si + 1] = this.pickNextLane(v);
+        v.pickedFor = v.si;
+      }
       if (!leader) {
         const st = v.steps[v.si + 1];
         const ns = this.slots.get(st.seg.id + ':' + st.dir + ':' + v.lanesK[v.si + 1]);
@@ -393,7 +444,7 @@ export class Traffic {
     v.pos += move;
     if (v.v < 0.2) {
       v.stuck += dt;
-      if (v.stuck > 55) this.pending.push([v, 'despawn']);
+      if (v.stuck > (v.kind === 'service' ? 70 : 40)) this.pending.push([v, 'despawn']);
     } else v.stuck = 0;
     if (last) {
       if (v.endPos - v.pos < 2.2 && v.v < 2.5) this.pending.push([v, 'arrive']);
@@ -475,7 +526,7 @@ export class Traffic {
     else if (hour < 19.5) tod = 1.65;
     else if (hour < 23) tod = 0.85;
     else tod = 0.4;
-    const rate = (S.pop / 900 + S.jobs / 2000) * tod;
+    const rate = (S.pop / 1300 + S.jobs / 3000) * tod;
     this.tripAcc += rate * simDt;
     let guard = 0;
     while (this.tripAcc >= 1 && guard++ < 20) {
@@ -488,12 +539,21 @@ export class Traffic {
     }
   }
 
-  pickActive(list) {
-    for (let k = 0; k < 6; k++) {
+  pickActive(list, near) {
+    let best = null;
+    let bd = Infinity;
+    const tries = near ? 3 : 1;
+    for (let k = 0, found = 0; k < 8 && found < tries; k++) {
       const b = list[Math.floor(Math.random() * list.length)];
-      if (b && b.state === 'active' && b.seg) return b;
+      if (!b || b.state !== 'active' || !b.seg) continue;
+      found++;
+      const d = near ? (b.x - near.x) ** 2 + (b.z - near.z) ** 2 : 0;
+      if (d < bd) {
+        bd = d;
+        best = b;
+      }
     }
-    return null;
+    return best;
   }
 
   spawnTrip(hour) {
@@ -509,7 +569,7 @@ export class Traffic {
     const outside = () => this.outsideAccess();
     if (r < 0.52 && Ls.work.length) {
       const home = this.pickActive(Ls.res);
-      const work = this.pickActive(Ls.work);
+      const work = home && this.pickActive(Ls.work, home);
       if (!home || !work) return;
       const morning = hour > 5 && hour < 12;
       const evening = hour > 15 && hour < 22;
@@ -518,7 +578,7 @@ export class Traffic {
       dest = toWork ? work : home;
     } else if (r < 0.76 && Ls.com.length) {
       const home = this.pickActive(Ls.res);
-      const shop = this.pickActive(Ls.com);
+      const shop = home && this.pickActive(Ls.com, home);
       if (!home || !shop) return;
       if (Math.random() < 0.5) {
         origin = home;
@@ -527,13 +587,13 @@ export class Traffic {
         origin = shop;
         dest = home;
       }
-    } else if (r < 0.9 && (Ls.ind.length || Ls.com.length)) {
+    } else if (r < 0.94 && (Ls.ind.length || Ls.com.length)) {
       // marchandises
       type = Math.random() < 0.6 ? 'truck' : 'van';
       color = 0xffffff;
       const src = Ls.ind.length && Math.random() < 0.75 ? this.pickActive(Ls.ind) : null;
-      const dst = Ls.com.length ? this.pickActive(Ls.com) : null;
-      if (src && dst && Math.random() < 0.6) {
+      const dst = Ls.com.length ? this.pickActive(Ls.com, src) : null;
+      if (src && dst && Math.random() < 0.75) {
         origin = src;
         dest = dst;
       } else if (src && Math.random() < 0.5) {
@@ -676,6 +736,8 @@ export class Traffic {
     }
     v.steps = [{ seg, dir, s0: hit.s, s1: dir === 1 ? seg.len : 0 }];
     v.lanesK = [0];
+    v.allowed = null;
+    v.pickedFor = -1;
     this.enterStep(v, 0, this.toLanePos(this.laneGeo(seg, dir, 0), hit.s));
     v.turn = null;
     if (!this.setPath(v, this.destAccess(v))) this.despawn(v);

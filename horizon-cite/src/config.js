@@ -91,7 +91,7 @@ export const SERVICES = [
   // --- Déchets
   { id: 'landfill', cat: 'garbage', name: 'Décharge', desc: 'Stocke les déchets. Pollue le sol et fait baisser la valeur foncière.',
     cost: 4200, upkeep: 320, w: 40, d: 40, unlock: 1, capacity: 240000, jobs: 20,
-    veh: { type: 'garbage', count: 8, radius: 1600 }, pollution: { r: 120, s: 0.6 } },
+    veh: { type: 'garbage', count: 10, radius: 1600 }, pollution: { r: 120, s: 0.6 } },
   { id: 'incinerator', cat: 'garbage', name: 'Incinérateur', desc: 'Brûle les déchets et produit de l\'électricité.',
     cost: 32000, upkeep: 1300, w: 40, d: 40, unlock: 6, power: 20, jobs: 40, burn: true,
     veh: { type: 'garbage', count: 14, radius: 2400 }, pollution: { r: 200, s: 0.7 } },
