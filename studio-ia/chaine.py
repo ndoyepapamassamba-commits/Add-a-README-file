@@ -572,7 +572,7 @@ def compiler(nom, ids, boucle=False):
         rangs = [k_ for k_, (_, txt) in enumerate(s["dialogue"]) for m in txt.split() if generer.normaliser(m)]
         mots = [(m, a, b, rangs[i] if i < len(rangs) else len(s["dialogue"]) - 1) for i, (m, a, b) in enumerate(brut)]
         st = SousTitres(s, mots)
-        d = min(d, st.fin_parole + MARGE_CHUTE)
+        d = min(d, st.fin_parole + MARGE_CHUTE, s.get("coupe", d))   # « coupe » : clip arrêté avant un défaut tardif
         apres = T_CARTE if r < len(ids) - 1 else QUEUE
         plan.append({"sid": sid, "s": s, "clip": clip, "debut": t, "duree": d, "apres": apres, "st": st,
                      "chute": t + st.fin_parole, "titre": (s.get("titre") or "").upper()})

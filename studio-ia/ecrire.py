@@ -31,6 +31,9 @@ RÉFÉRENCE (la vidéo la plus vue de la chaîne, 2,4 millions de vues) :
 Pourquoi ça marche : situation comprise en une seconde, une question innocente, et une réponse qui RETOURNE LA LOGIQUE
 (« donner » = ne plus avoir) et touche DEUX cibles d'un coup (le fils ET la mère). Aucun mot de trop.
 
+LA BARRE À DÉPASSER (nos sketchs qui ont le mieux battu la référence devant le jury) :
+{exemples}
+
 RÈGLES :
 - Français populaire d'Abidjan dans chaque réplique : « dêh », « -là » (« ton copain-là »), « Tonton », « Tantie »,
   « mon vieux », « vieux père », « ya fohi », « gbê », « on dit quoi », syntaxe ivoirienne (« c'est moi tu as choisi »,
@@ -47,7 +50,8 @@ RÈGLES :
 DÉJÀ TOURNÉES :
 {catalogue}
 
-Écris {n} sketchs ORIGINAUX, tous différents (situations, personnages, lieux variés). Réponds UNIQUEMENT par un tableau
+Écris d'abord pour toi-même trois fois plus d'idées, puis ne garde que les {n} plus EXPLOSIVES : celles dont la chute
+dépasse la barre ci-dessus. Tous différents (situations, personnages, lieux variés). Réponds UNIQUEMENT par un tableau
 JSON : [{{"titre": "…", "repliques": [["RÔLE", "texte"], …]}}, …]"""
 
 
@@ -90,10 +94,24 @@ def reecrire(modele, originaux, k):
     return sketchs
 
 
+# sketchs maison qui ont battu la référence le plus nettement aux jurys des tests 5 et 6 (barre donnée aux plumes)
+EXEMPLES = ["Je rentre chez ma mère dêh ! / Ya fohi. Tiens deux mille pour le woro-woro. / Mais c'est cinq cents seulement ! / "
+            "Prends tes sœurs avec toi.",
+            "Qui a mangé le poulet que j'ai caché dans le congélateur-là ?! / Madame, je jure c'est pas moi dêh. Patron et moi "
+            "on était à Bassam toute la journée.",
+            "Papa, le voleur a laissé la télé et il a sauté par la fenêtre dêh ! / Chérie, je t'ai dit de pas te promener la "
+            "nuit sans ta perruque. Voilà, tu as traumatisé l'enfant d'autrui !",
+            "Papa, pourquoi mon bulletin-là est dans ton dossier de prêt ? / Mon fils, la banque veut savoir si je finance un "
+            "projet sans avenir.",
+            "Maman, j'ai pris ma beauté de qui ? / De moi, ma fille. / Ahh… C'est pour ça toi tu as plus rien dêh.",
+            "Papa ! Il y a la viande dans ma sauce dêh ! / Mange vite avant de te réveiller."]
+
+
 def ecrire(modele, n):
     catalogue = "\n".join(f"- {t}" for _, t in jury.deja_tournes())
     corps = {"model": modele, "temperature": 1.0, "reasoning": {"effort": "low"},
-             "messages": [{"role": "user", "content": CONSIGNE.format(chaine=CHAINE, catalogue=catalogue, n=n)}]}
+             "messages": [{"role": "user", "content": CONSIGNE.format(chaine=CHAINE, catalogue=catalogue, n=n,
+                                                                       exemples="\n".join(f"  {e}" for e in EXEMPLES))}]}
     r = requests.post(f"{or_api.API}/chat/completions", headers=or_api._entetes(), json=corps, timeout=600)
     r.raise_for_status()
     d = r.json()
