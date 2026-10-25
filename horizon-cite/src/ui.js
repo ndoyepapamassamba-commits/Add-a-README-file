@@ -483,7 +483,9 @@ export class UI {
       cam.updateProjectionMatrix();
       const r = G.renderer;
       const prevNight = cityUniforms.uNight.value;
+      const prevInfo = cityUniforms.uInfo.value;
       cityUniforms.uNight.value = 0;
+      cityUniforms.uInfo.value = 0;
       const prevTarget = r.getRenderTarget();
       r.setRenderTarget(this.thumbRT);
       r.setClearColor(0x000000, 0);
@@ -493,6 +495,7 @@ export class UI {
       r.readRenderTargetPixels(this.thumbRT, 0, 0, W, H, px);
       r.setRenderTarget(prevTarget);
       cityUniforms.uNight.value = prevNight;
+      cityUniforms.uInfo.value = prevInfo;
       this.thumbScene.remove(mesh);
       const c = document.createElement('canvas');
       c.width = W;
@@ -804,10 +807,14 @@ export class UI {
   drawHistory() {
     const c = $('#hist');
     if (!c) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    c.width = Math.round(c.clientWidth * dpr) || 680;
+    c.height = Math.round(120 * dpr);
     const g = c.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const H = G.sim.history.slice(-80);
-    const W = c.width;
-    const Hh = c.height;
+    const W = c.width / dpr;
+    const Hh = c.height / dpr;
     g.clearRect(0, 0, W, Hh);
     g.strokeStyle = 'rgba(160,190,220,0.15)';
     g.lineWidth = 1;
@@ -854,7 +861,7 @@ export class UI {
     m.hidden = false;
     m.dataset.kind = kind;
     $('#modal-body').innerHTML = html;
-    $('#modal-body').className = 'panel modal ' + kind;
+    $('#modal-body').className = 'panel modal m-' + kind;
     for (const c of document.querySelectorAll('[data-close]')) c.onclick = () => this.closeModal();
   }
 

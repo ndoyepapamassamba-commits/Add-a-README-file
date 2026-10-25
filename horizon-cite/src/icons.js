@@ -199,7 +199,7 @@ export class Icons {
       s.visible = this.visible && !far;
       if (!s.visible) continue;
       const bob = Math.sin(time * 3 + b.id) * 0.8;
-      s.position.set(b.x, b.y + (b.height || 10) * (b.mesh ? b.mesh.scale.y : 1) + 7 + bob, b.z);
+      s.position.set(b.x, b.y + (b.height || 10) * (b.sy === undefined ? 1 : b.sy) + 7 + bob, b.z);
     }
   }
 

@@ -85,7 +85,7 @@ export const VIEWS = {
   education: {
     name: 'Éducation',
     field: 'edu',
-    color: [160, 110, 220],
+    color: [60, 165, 235],
     legend: [
       ['#4fc85a', 'Très éduqué'],
       ['#e0473f', 'Peu éduqué'],
@@ -253,7 +253,7 @@ export class InfoViews {
               [1, 0x2fbf7f],
             ]));
             col = [c.r * 255, c.g * 255, c.b * 255];
-            val = 0.25 + t * 0.6;
+            val = t * 0.85;
           } else val = clamp(F.g[v.field][i], 0, 1);
           d[i * 4] = col[0];
           d[i * 4 + 1] = col[1];

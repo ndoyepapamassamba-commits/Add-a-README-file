@@ -598,6 +598,22 @@ function glowTexture() {
   return t;
 }
 
+function poolTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grd.addColorStop(0, 'rgba(255,255,255,0.9)');
+  grd.addColorStop(0.35, 'rgba(255,255,255,0.45)');
+  grd.addColorStop(0.7, 'rgba(255,255,255,0.12)');
+  grd.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grd;
+  g.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
 class Furniture {
   constructor(scene, meshes) {
     this.scene = scene;
@@ -621,6 +637,21 @@ class Furniture {
       sizeAttenuation: true,
     });
     this.glow = null;
+    this.pools = null;
+    const poolGeo = new THREE.PlaneGeometry(1, 1);
+    poolGeo.rotateX(-Math.PI / 2);
+    this.poolGeo = poolGeo;
+    this.poolMat = new THREE.MeshBasicMaterial({
+      map: poolTexture(),
+      color: 0xffb468,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -4,
+      polygonOffsetUnits: -8,
+    });
     const lampHead = new THREE.SphereGeometry(0.22, 8, 6);
     this.signalLampGeo = lampHead;
     this.signalLampMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -630,6 +661,7 @@ class Furniture {
   rebuild(net, treeGeo) {
     const lamps = [];
     const glows = [];
+    const pools = [];
     const trees = [];
     for (const seg of net.segs.values()) {
       const type = ROAD_TYPES[seg.type];
@@ -653,6 +685,7 @@ class Furniture {
             const yaw = Math.atan2(rx * side, rz * side);
             lamps.push({ x, y, z, yaw });
             glows.push(x - rx * side * 1.75, y + 7.2, z - rz * side * 1.75);
+            pools.push(x - rx * side * 3.2, y + 0.05, z - rz * side * 3.2, 24);
           }
         }
         if (type.trees) {
@@ -670,6 +703,7 @@ class Furniture {
           for (const side of [1, -1]) {
             lamps.push({ x: p.x, y, z: p.z, yaw: Math.atan2(-rx * side, -rz * side) });
             glows.push(p.x + rx * side * 1.75, y + 7.2, p.z + rz * side * 1.75);
+            pools.push(p.x + rx * side * 6, y + 0.05, p.z + rz * side * 6, 26);
           }
         }
       }
@@ -699,6 +733,20 @@ class Furniture {
     this.glow.frustumCulled = false;
     this.glow.renderOrder = 6;
     this.scene.add(this.glow);
+
+    // halos de lumière au sol (visibles la nuit)
+    const np = pools.length / 4;
+    this.pools = this.instanced(this.pools, this.poolGeo, this.poolMat, np, false);
+    this.pools.renderOrder = 4;
+    this.pools.castShadow = false;
+    for (let i = 0; i < np; i++) {
+      const r = pools[i * 4 + 3];
+      m.compose(v.set(pools[i * 4], pools[i * 4 + 1], pools[i * 4 + 2]), q.identity(), v.clone().set(r, 1, r));
+      this.pools.setMatrixAt(i, m);
+    }
+    this.pools.count = np;
+    this.pools.instanceMatrix.needsUpdate = true;
+    this.pools.computeBoundingSphere();
 
     // arbres d'alignement
     if (treeGeo) {
@@ -779,6 +827,8 @@ class Furniture {
   setNight(night) {
     this.glowMat.opacity = night * 0.95;
     this.glow && (this.glow.visible = night > 0.02);
+    this.poolMat.opacity = night * 0.55;
+    if (this.pools) this.pools.visible = night > 0.02;
   }
 
   setSignalColor(i, color) {

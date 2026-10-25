@@ -21,7 +21,7 @@ import { InfoViews } from './info.js';
 import { Transit } from './transit.js';
 import { Chirper } from './chirper.js';
 import { Audio } from './audio.js';
-import { loadSlot } from './save.js';
+import { loadSlot, saveSlot, snapshot, restore, exportCode, importCode } from './save.js';
 
 function loadQuality() {
   try {
@@ -122,9 +122,11 @@ function boot() {
     const night = G.env.night;
     cityUniforms.uNight.value = night;
     const hour = G.env.cycle * 24;
-    cityUniforms.uLit.value = hour > 17 || hour < 1 ? 0.62 : hour < 5 ? 0.22 : hour < 8 ? 0.45 : 0.3;
+    cityUniforms.uLit.value = hour > 17 || hour < 1 ? 0.5 : hour < 5 ? 0.2 : hour < 8 ? 0.38 : 0.3;
+    G.zones.mat.color.setScalar(1 - night * 0.72);
+    G.zones.mat.opacity = G.zones.showAll ? 0.95 : 0.6;
     G.roads.meshes.furniture.setNight(night);
-    renderer.toneMappingExposure = 1.0 + night * 0.35;
+    renderer.toneMappingExposure = 1.0 + night * 0.25;
     if (G.tools) G.tools.update(realDt);
     if (G.ui) G.ui.update(realDt);
     if (G.audio) G.audio.update(realDt);
@@ -147,6 +149,7 @@ function boot() {
     const n = Math.round(seconds / dt);
     for (let i = 0; i < n; i++) step(dt);
   };
+  G.saveApi = { loadSlot, saveSlot, snapshot, restore, exportCode, importCode };
   window.HC = G;
 }
 

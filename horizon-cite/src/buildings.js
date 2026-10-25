@@ -4,12 +4,104 @@ import * as THREE from 'three';
 import { G } from './state.js';
 import { SERVICE_BY_ID, ROAD_TYPES, ZONES } from './config.js';
 import { genZoneBuilding, genService, genRotor, genCrane, BGeo, PAL } from './buildgen.js';
-import { MATS, infoMaterial } from './materials.js';
+import { MATS, infoMaterial, cityUniforms } from './materials.js';
 import { heightAt } from './terrain.js';
 import { SpatialHash, obbOverlap, distToObb, obbCorners, mulberry32 } from './util.js';
 import { buildingName } from './names.js';
 
 const VARIANTS = 6;
+const _m = new THREE.Matrix4();
+const _q = new THREE.Quaternion();
+const _p = new THREE.Vector3();
+const _s = new THREE.Vector3();
+const _c = new THREE.Color();
+const _up = new THREE.Vector3(0, 1, 0);
+
+// Bâtiments de zone regroupés par modèle : un seul appel de dessin par modèle.
+// L'état visuel passe par la couleur d'instance (blanc = normal, gris = abandonné, teinte = vue d'info).
+class ZoneBatches {
+  constructor(group) {
+    this.group = group;
+    this.map = new Map();
+  }
+  add(b, key, geo) {
+    let B = this.map.get(key);
+    if (!B) {
+      B = { key, geo, mesh: null, list: [], cap: 0 };
+      this.map.set(key, B);
+      this.grow(B, 4);
+    }
+    if (B.list.length >= B.cap) this.grow(B, B.cap * 2);
+    b.batch = B;
+    b.bi = B.list.length;
+    B.list.push(b);
+    B.mesh.count = B.list.length;
+  }
+  grow(B, cap) {
+    const m = new THREE.InstancedMesh(B.geo, MATS.city, cap);
+    m.frustumCulled = false;
+    m.castShadow = true;
+    m.receiveShadow = true;
+    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3).fill(1), 3);
+    m.instanceColor.setUsage(THREE.DynamicDrawUsage);
+    if (B.mesh) {
+      m.instanceMatrix.array.set(B.mesh.instanceMatrix.array.subarray(0, B.list.length * 16));
+      m.instanceColor.array.set(B.mesh.instanceColor.array.subarray(0, B.list.length * 3));
+      this.group.remove(B.mesh);
+      B.mesh.dispose();
+    }
+    m.count = B.list.length;
+    B.mesh = m;
+    B.cap = cap;
+    this.group.add(m);
+  }
+  remove(b) {
+    const B = b.batch;
+    if (!B) return;
+    const last = B.list.pop();
+    if (last !== b) {
+      B.list[b.bi] = last;
+      last.bi = b.bi;
+      const a = B.mesh.instanceMatrix.array;
+      a.copyWithin(b.bi * 16, B.list.length * 16, B.list.length * 16 + 16);
+      const c = B.mesh.instanceColor.array;
+      c.copyWithin(b.bi * 3, B.list.length * 3, B.list.length * 3 + 3);
+      B.mesh.instanceMatrix.needsUpdate = true;
+      B.mesh.instanceColor.needsUpdate = true;
+    }
+    B.mesh.count = B.list.length;
+    b.batch = null;
+  }
+  matrix(b) {
+    const B = b.batch;
+    if (!B) return;
+    _q.setFromAxisAngle(_up, b.yaw);
+    _m.compose(_p.set(b.x, b.y, b.z), _q, _s.set(1, b.sy, 1));
+    B.mesh.setMatrixAt(b.bi, _m);
+    B.mesh.instanceMatrix.needsUpdate = true;
+  }
+  color(b, hex, scale = 1) {
+    const B = b.batch;
+    if (!B) return;
+    if (hex === null) _c.setRGB(scale, scale, scale);
+    else _c.setHex(hex);
+    B.mesh.setColorAt(b.bi, _c);
+    B.mesh.instanceColor.needsUpdate = true;
+  }
+  clear() {
+    for (const B of this.map.values()) {
+      this.group.remove(B.mesh);
+      B.mesh.dispose();
+    }
+    this.map.clear();
+  }
+  stats() {
+    let n = 0;
+    for (const B of this.map.values()) if (B.list.length) n++;
+    return n;
+  }
+}
 
 export class Buildings {
   constructor(scene) {
@@ -31,6 +123,7 @@ export class Buildings {
     this.infoFn = null;
     this.highlighted = null;
     this.version = 0;
+    this.batches = new ZoneBatches(this.group);
     G.on('seg:split', (e) => this.onSplit(e));
     G.on('seg:removed', (seg) => this.onSegRemoved(seg));
     G.on('seg:replaced', (e) => this.onReplaced(e));
@@ -278,17 +371,26 @@ export class Buildings {
     else geoInfo = this.serviceGeo(b.defId);
     b.height = geoInfo.height;
     b.smoke = geoInfo.smoke;
-    const mat = this.baseMaterial(b);
-    const m = new THREE.Mesh(geoInfo.geo, mat);
-    m.position.set(b.x, b.y, b.z);
-    m.rotation.y = b.yaw;
-    m.castShadow = true;
-    m.receiveShadow = true;
-    m.userData.bid = b.id;
-    b.mesh = m;
-    this.group.add(m);
+    b.sy = b.state === 'building' ? 0.02 : b.rising ? 0.05 : 1;
+    if (b.kind === 'zone' && b.state !== 'burned') {
+      this.batches.add(b, `${b.zone}|${b.level}|${b.w}|${b.d}|${b.seed % VARIANTS}`, geoInfo.geo);
+      this.batches.matrix(b);
+      this.refreshMaterial(b);
+    } else {
+      const mat = this.baseMaterial(b);
+      const m = new THREE.Mesh(geoInfo.geo, mat);
+      m.position.set(b.x, b.y, b.z);
+      m.rotation.y = b.yaw;
+      m.scale.y = b.sy;
+      m.castShadow = true;
+      m.receiveShadow = true;
+      m.userData.bid = b.id;
+      b.mesh = m;
+      this.group.add(m);
+    }
+    const m = b.mesh;
     if (b.defId === 'wind') {
-      const rot = new THREE.Mesh(this.rotorGeo, mat);
+      const rot = new THREE.Mesh(this.rotorGeo, m.material);
       rot.position.set(0, 53.7, -2.7);
       rot.castShadow = true;
       m.add(rot);
@@ -311,11 +413,17 @@ export class Buildings {
         b.crane = cr;
         this.group.add(cr);
       }
-      m.scale.y = 0.02;
-    } else if (b.rising) m.scale.y = 0.05;
+    }
+  }
+
+  setScaleY(b, sy) {
+    b.sy = sy;
+    if (b.batch) this.batches.matrix(b);
+    else if (b.mesh) b.mesh.scale.y = sy;
   }
 
   disposeMesh(b) {
+    if (b.batch) this.batches.remove(b);
     for (const k of ['mesh', 'pad', 'crane']) {
       if (b[k]) {
         this.group.remove(b[k]);
@@ -332,8 +440,15 @@ export class Buildings {
   }
 
   refreshMaterial(b) {
+    if (b.batch) {
+      if (this.infoFn) this.batches.color(b, this.infoFn(b));
+      else if (this.highlighted === b) this.batches.color(b, this.highlightMat === MATS.bad ? 0xff9a9a : 0xbfe4ff);
+      else if (b.state === 'abandoned') this.batches.color(b, null, 0.44);
+      else this.batches.color(b, null, 1);
+      return;
+    }
     if (!b.mesh) return;
-    const m = this === null ? null : this.highlighted === b ? (this.highlightMat || MATS.highlight) : this.baseMaterial(b);
+    const m = this.highlighted === b ? this.highlightMat || MATS.highlight : this.baseMaterial(b);
     b.mesh.material = m;
     if (b.rotor) b.rotor.material = m;
   }
@@ -348,6 +463,7 @@ export class Buildings {
 
   setInfoFn(fn) {
     this.infoFn = fn;
+    cityUniforms.uInfo.value = fn ? 1 : 0;
     for (const b of this.list.values()) this.refreshMaterial(b);
   }
 
@@ -528,11 +644,11 @@ export class Buildings {
       if (b.state === 'building') {
         b.progress += simDt / b.buildTime;
         const p = Math.min(1, b.progress);
-        if (b.mesh) b.mesh.scale.y = 0.02 + 0.98 * (p < 0.7 ? p * 0.35 / 0.7 : 0.35 + ((p - 0.7) / 0.3) * 0.65);
+        this.setScaleY(b, 0.02 + 0.98 * (p < 0.7 ? (p * 0.35) / 0.7 : 0.35 + ((p - 0.7) / 0.3) * 0.65));
         if (b.crane) b.crane.rotation.y += realDt * 0.15;
         if (b.progress >= 1) {
           b.state = 'active';
-          b.mesh.scale.y = 1;
+          this.setScaleY(b, 1);
           if (b.pad) this.group.remove(b.pad);
           if (b.crane) this.group.remove(b.crane);
           b.pad = null;
@@ -544,7 +660,7 @@ export class Buildings {
         b.progress += realDt / b.buildTime;
         const p = Math.min(1, b.progress);
         const e = 1 - Math.pow(1 - p, 3);
-        if (b.mesh) b.mesh.scale.y = 0.05 + 0.95 * e;
+        this.setScaleY(b, 0.05 + 0.95 * e);
         if (p >= 1) b.rising = false;
       }
       if (b.rotor && b.state === 'active') b.rotor.rotation.z += realDt * b.rotSpeed * (b.power === false ? 0.2 : 1);
@@ -620,6 +736,7 @@ export class Buildings {
 
   clear() {
     for (const id of [...this.list.keys()]) this.demolish(id, { quiet: true });
+    this.batches.clear();
     this.nextId = 1;
   }
 }

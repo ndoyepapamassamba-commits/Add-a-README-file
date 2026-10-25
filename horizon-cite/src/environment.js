@@ -5,9 +5,9 @@ import { WATER_LEVEL, TERRAIN_HALF } from './config.js';
 
 // Images clés en fonction de l'élévation du soleil (sinus de l'angle)
 const KEYS = [
-  { e: -1.0, zen: 0x02040b, hor: 0x0a0f1d, sun: 0x5d73b8, sunI: 0.32, sky: 0x1a2440, gnd: 0x0c0d12, hemiI: 0.55 },
-  { e: -0.18, zen: 0x050a18, hor: 0x141a2e, sun: 0x6a7fc0, sunI: 0.3, sky: 0x1e2a48, gnd: 0x0e0f14, hemiI: 0.55 },
-  { e: -0.05, zen: 0x152038, hor: 0x5a4458, sun: 0xff8a5a, sunI: 0.15, sky: 0x3a3c5a, gnd: 0x1c1a1e, hemiI: 0.6 },
+  { e: -1.0, zen: 0x030712, hor: 0x0e1628, sun: 0x7d93d8, sunI: 0.62, sky: 0x2c3c66, gnd: 0x1a1d28, hemiI: 0.95 },
+  { e: -0.18, zen: 0x060c1c, hor: 0x182034, sun: 0x8095d0, sunI: 0.58, sky: 0x2e3e68, gnd: 0x1b1e28, hemiI: 0.92 },
+  { e: -0.05, zen: 0x182440, hor: 0x5e4a60, sun: 0xffa070, sunI: 0.35, sky: 0x464a6a, gnd: 0x22202a, hemiI: 0.8 },
   { e: 0.04, zen: 0x31477a, hor: 0xf09a62, sun: 0xff9f5e, sunI: 1.3, sky: 0x8d8aa0, gnd: 0x3a322a, hemiI: 0.8 },
   { e: 0.16, zen: 0x3d6fb8, hor: 0xe6c7a2, sun: 0xffd2a0, sunI: 2.3, sky: 0xa4b8d6, gnd: 0x4a4136, hemiI: 0.95 },
   { e: 0.4, zen: 0x3e78cc, hor: 0xbcd6ee, sun: 0xfff1dd, sunI: 2.9, sky: 0xb7cdea, gnd: 0x5a5040, hemiI: 1.05 },
@@ -96,24 +96,22 @@ float vnoise(vec2 p) {
   vec2 u = f * f * (3.0 - 2.0 * f);
   return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
 }
-// Vagues : chaque bande de fréquence s'efface avec la distance pour éviter le moiré
+// Vagues : bruit multi-échelle (pas de bandes), chaque octave s'efface avec la distance
+vec2 ngrad(vec2 p) {
+  float c = vnoise(p);
+  return vec2(vnoise(p + vec2(0.3, 0.0)) - c, vnoise(p + vec2(0.0, 0.3)) - c) / 0.3;
+}
 vec2 waveGrad(vec2 p, float t, float d) {
+  float w1 = 1.0 - smoothstep(700.0, 2600.0, d);
+  float w2 = 1.0 - smoothstep(260.0, 1000.0, d);
+  float w3 = 1.0 - smoothstep(90.0, 360.0, d);
   vec2 g = vec2(0.0);
-  float w0 = 1.0 - smoothstep(900.0, 2200.0, d);
-  float w1 = 1.0 - smoothstep(350.0, 900.0, d);
-  float w2 = 1.0 - smoothstep(160.0, 420.0, d);
-  float w3 = 1.0 - smoothstep(70.0, 200.0, d);
-  g += vec2(0.8, 0.6) * cos(dot(p, vec2(0.8, 0.6)) * 0.07 + t * 0.8) * 0.12 * w0;
-  g += vec2(-0.5, 0.86) * cos(dot(p, vec2(-0.5, 0.86)) * 0.16 + t * 1.2) * 0.10 * w1;
-  g += vec2(0.95, -0.3) * cos(dot(p, vec2(0.95, -0.3)) * 0.37 + t * 1.8) * 0.07 * w2;
-  g += vec2(0.2, 0.98) * cos(dot(p, vec2(0.2, 0.98)) * 0.9 + t * 2.6) * 0.045 * w3;
-  float n1 = vnoise(p * 0.05 + t * 0.06);
-  float n2 = vnoise(p * 0.05 + vec2(5.2, 1.3) + t * 0.06);
-  g += (vec2(n1, n2) - 0.5) * 0.07 * w0;
-  float n3 = vnoise(p * 0.3 + t * 0.3);
-  float n4 = vnoise(p * 0.3 + vec2(2.7, 8.1) - t * 0.3);
-  g += (vec2(n3, n4) - 0.5) * 0.12 * w2;
-  return g;
+  g += ngrad(p * 0.02 + vec2(t * 0.03, t * 0.021)) * (0.9 * 0.02) * w1;
+  g += ngrad(p * 0.021 * vec2(1.0, 1.3) - vec2(t * 0.02, -t * 0.03)) * (0.7 * 0.021) * w1;
+  g += ngrad(p * 0.075 + vec2(-t * 0.09, t * 0.06)) * (0.28 * 0.075) * w2;
+  g += ngrad(p * 0.27 + vec2(t * 0.35, t * 0.22)) * (0.07 * 0.27) * w3;
+  g += vec2(0.6, 0.8) * cos(dot(p, vec2(0.6, 0.8)) * 0.22 + t * 1.3) * 0.012 * w2;
+  return g * 2.2;
 }
 void main() {
   vec3 V = normalize(cameraPosition - vWorld);

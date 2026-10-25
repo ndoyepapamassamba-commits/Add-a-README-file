@@ -408,7 +408,7 @@ export class Sim {
         const before = Math.floor(b.occ);
         const inc = Math.max(1, cap * 0.22) * (0.4 + D.R / 110) * (0.6 + Math.random() * 0.6);
         b.occ = Math.min(cap, b.occ + inc);
-        if (Math.floor(b.occ) > before && G.traffic && Math.random() < 0.22) G.traffic.spawnMoving(b);
+        if (Math.floor(b.occ) > before && G.traffic && Math.random() < (b.zone === 1 ? 0.3 : 0.12)) G.traffic.spawnMoving(b);
         b.age = b.age * (before / Math.max(1, b.occ));
       } else if (b.happy < 22 && b.occ > 0) {
         b.occ = Math.max(0, b.occ - Math.max(1, cap * 0.1));

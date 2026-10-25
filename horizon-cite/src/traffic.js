@@ -228,7 +228,7 @@ export class Traffic {
     v.slot = slot;
     v.pos = pos;
     v.ci = 0;
-    v.maxV = ROAD_TYPES[st.seg.type].speed * SPEED_K * (TYPE_SPEED[v.type] || 1);
+    v.maxV = ROAD_TYPES[st.seg.type].speed * SPEED_K * (TYPE_SPEED[v.type] || 1) * (v.phase === 'go' && (v.svc === 'fire' || v.svc === 'sick') ? 1.25 : 1);
     v.endPos = si === v.steps.length - 1 ? this.toLanePos(slot.geo, st.s1) : slot.geo.len;
     v.nextTurnLen = 8;
     slot.list.push(v);
@@ -272,7 +272,8 @@ export class Traffic {
       const s = n.signal;
       if (!s) continue;
       s.timer += dt;
-      if (!s.amber && s.timer > GREEN) {
+      const green = s.green ? s.green[s.phase] : GREEN;
+      if (!s.amber && s.timer > green) {
         s.amber = true;
         s.timer = 0;
       } else if (s.amber && s.timer > AMBER) {
@@ -361,7 +362,8 @@ export class Traffic {
       }
       const node = G.roads.nodes.get(slot.node);
       const sig = node && node.signal;
-      if (sig && v.pos > -0.5) {
+      const urgent = v.kind === 'service' && (v.svc === 'fire' || v.svc === 'sick' || v.svc === 'crime') && v.phase === 'go';
+      if (sig && v.pos > -0.5 && !urgent) {
         const grp = sig.groups[slot.seg.id];
         const toLine = L - 1.2 - v.pos;
         const green = sig.phase === grp && !sig.amber;
@@ -372,7 +374,8 @@ export class Traffic {
         }
       }
     } else {
-      const sg = v.endPos - v.pos;
+      // la destination est un point d'arrêt : on compense la distance de sécurité du modèle
+      const sg = v.endPos - v.pos + 1.6;
       if (sg < gap) {
         gap = sg;
         vl = 0;
@@ -393,7 +396,7 @@ export class Traffic {
       if (v.stuck > 55) this.pending.push([v, 'despawn']);
     } else v.stuck = 0;
     if (last) {
-      if (v.endPos - v.pos < 1.0 && v.v < 2.5) this.pending.push([v, 'arrive']);
+      if (v.endPos - v.pos < 2.2 && v.v < 2.5) this.pending.push([v, 'arrive']);
     } else if (v.pos >= L) this.pending.push([v, 'advance']);
   }
 
@@ -472,7 +475,7 @@ export class Traffic {
     else if (hour < 19.5) tod = 1.65;
     else if (hour < 23) tod = 0.85;
     else tod = 0.4;
-    const rate = (S.pop / 520 + S.jobs / 1100) * tod;
+    const rate = (S.pop / 900 + S.jobs / 2000) * tod;
     this.tripAcc += rate * simDt;
     let guard = 0;
     while (this.tripAcc >= 1 && guard++ < 20) {
@@ -565,6 +568,9 @@ export class Traffic {
   }
 
   spawnMoving(b) {
+    let moving = 0;
+    for (const v of this.vehicles) if (v.kind === 'moving') moving++;
+    if (moving > 8 + G.sim.stats.pop / 400) return null;
     const from = this.outsideAccess();
     const to = this.accessOf(b);
     if (!from || !to || from.seg.comp !== to.seg.comp) return null;

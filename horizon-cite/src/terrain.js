@@ -353,7 +353,7 @@ uniform float uGrid;`
           `#include <color_fragment>
 if (uOverlayOn > 0.5) {
   float g = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
-  vec3 grey = vec3(g * 0.55 + 0.32);
+  vec3 grey = vec3(0.6, 0.65, 0.7) * (g * 0.5 + 0.55);
   vec2 ouv = (vWXZ - uOverlayRect.xy) / uOverlayRect.zw;
   vec4 o = vec4(0.0);
   if (ouv.x > 0.0 && ouv.x < 1.0 && ouv.y > 0.0 && ouv.y < 1.0) o = texture2D(uOverlay, ouv);

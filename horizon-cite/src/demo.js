@@ -98,9 +98,16 @@ export function buildDemoCity() {
     else c.zone = 1;
   }
   zoneAlong(avenue, 3, 2);
-  zoneRect(-300, -310, -150, -200, 2);
+  zoneRect(-560, -310, -470, -200, 5);
+  zoneRect(-560, -200, -500, -110, 5);
+  zoneRect(-150, -130, -40, 40, 3);
+  zoneRect(-460, 60, -360, 160, 4);
+  zoneRect(-300, -310, -230, -200, 2);
+  zoneRect(-230, -310, -150, -200, 6);
   zoneRect(-230, -80, -150, 0, 6);
+  zoneRect(-470, -200, -380, -110, 6);
   zoneRect(-420, -110, -360, -20, 4);
+  zoneRect(-330, 60, -250, 160, 3);
   G.zones.touch();
   // services
   serviceAt('coal', -620, -110);

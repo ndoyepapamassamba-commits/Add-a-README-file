@@ -535,7 +535,9 @@ export class RoadNetwork {
   setupSignal(node) {
     const segs = node.segs.map((id) => this.segs.get(id)).filter(Boolean);
     const k = segs.length;
-    const needs = k >= 3 && (k >= 4 || segs.some((s) => s.type === 'medium' || s.type === 'large' || s.type === 'highway'));
+    // comme dans l'original : pas de feux entre petites rues, feux dès qu'une route plus large est concernée
+    const big = segs.filter((s) => s.type === 'medium' || s.type === 'large' || s.type === 'highway').length;
+    const needs = k >= 3 && big >= 1 && (k >= 4 || big >= 2 || segs.some((s) => s.type === 'large'));
     if (!needs) {
       node.signal = null;
       return;
@@ -558,8 +560,14 @@ export class RoadNetwork {
       node.signal = null;
       return;
     }
+    // durée du vert proportionnelle au nombre de voies du groupe (les grands axes passent plus longtemps)
+    const green = [8, 8];
+    for (const s of segs) {
+      const t = ROAD_TYPES[s.type];
+      green[groups[s.id]] = Math.max(green[groups[s.id]], 8 + 3.5 * Math.max(t.lanes[0], t.lanes[1]));
+    }
     const prev = node.signal;
-    node.signal = { groups, phase: prev ? prev.phase : 0, timer: prev ? prev.timer : Math.random() * 12, amber: false };
+    node.signal = { groups, green, phase: prev ? prev.phase : 0, timer: prev ? prev.timer : Math.random() * 12, amber: false };
   }
 
   flush() {

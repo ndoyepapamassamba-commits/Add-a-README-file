@@ -235,7 +235,10 @@ export class Trees {
   }
 
   setInfoMode(on) {
-    this.material.color.setScalar(on ? 0.75 : 1);
+    if (this.material.vertexColors === !on) return;
+    this.material.vertexColors = !on;
+    this.material.color.set(on ? 0xc9d0d7 : 0xffffff);
+    this.material.needsUpdate = true;
   }
 
   // Données de sauvegarde : arbres plantés et arbres d'origine supprimés

@@ -149,7 +149,7 @@ export class FX {
   }
 
   update(realDt, simDt, camPos, uScale) {
-    const day = G.env ? 1 - G.env.night * 0.75 : 1;
+    const day = G.env ? 1 - G.env.night * 0.86 : 1;
     this.smoke.uniforms.uLight.value = day;
     this.smoke.uniforms.uScale.value = uScale;
     this.fire.uniforms.uScale.value = uScale;

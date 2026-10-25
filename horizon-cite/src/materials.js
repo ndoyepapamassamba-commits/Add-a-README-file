@@ -5,6 +5,7 @@ import * as THREE from 'three';
 export const cityUniforms = {
   uNight: { value: 0 },
   uLit: { value: 0.55 },
+  uInfo: { value: 0 },
 };
 
 const VERT_HEAD = `
@@ -13,11 +14,17 @@ attribute vec2 aWuv;
 varying float vWin;
 varying vec2 vWuv;
 varying float vSeed;
+varying vec3 vInstCol;
 `;
 
 const VERT_BODY = `
 vWin = aWin;
 vWuv = aWuv;
+#ifdef USE_INSTANCING_COLOR
+  vInstCol = instanceColor;
+#else
+  vInstCol = vec3(1.0);
+#endif
 vec4 wp0 = modelMatrix * vec4(0.0, 0.0, 0.0, 1.0);
 #ifdef USE_INSTANCING
   wp0 = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
@@ -29,6 +36,8 @@ const FRAG_HEAD = `
 uniform float uNight;
 uniform float uLit;
 uniform float uAband;
+uniform float uInfo;
+varying vec3 vInstCol;
 varying float vWin;
 varying vec2 vWuv;
 varying float vSeed;
@@ -43,7 +52,12 @@ const FRAG_COLOR = `
 float wLit = 0.0;
 vec3 wCol = vec3(1.0, 0.8, 0.55);
 float wKind = floor(vWin + 0.5);
-if (wKind > 0.5 && wKind < 4.5) {
+// couleur d'instance sombre = bâtiment abandonné (pas de lumière)
+float aband = max(uAband, step(vInstCol.r + vInstCol.g + vInstCol.b, 1.45));
+if (uInfo > 0.5) {
+  diffuseColor.rgb = vInstCol;
+  wKind = 0.0;
+} else if (wKind > 0.5 && wKind < 4.5) {
   vec2 g = vWuv;
   vec2 f = fract(g);
   vec2 cid = floor(g);
@@ -60,13 +74,13 @@ if (wKind > 0.5 && wKind < 4.5) {
   float mask = mix(cover, m, aa);
   float r = hWin(cid);
   float on = step(r, uLit * (wKind > 2.5 && wKind < 3.5 ? 1.7 : 1.0));
-  wLit = on * mask * (1.0 - uAband);
+  wLit = on * mask * (1.0 - aband);
   if (hWin(cid + 7.3) > 0.72) wCol = vec3(0.86, 0.93, 1.0);
   vec3 glass = mix(vec3(0.13, 0.17, 0.23), vec3(0.32, 0.4, 0.5), clamp(hWin(cid + 1.7) * 0.5 + 0.2, 0.0, 1.0));
   if (wKind > 1.5 && wKind < 2.5) glass = vec3(0.2, 0.3, 0.4);
   diffuseColor.rgb = mix(diffuseColor.rgb, glass, mask);
 }
-if (uAband > 0.5) {
+if (uAband > 0.5 && uInfo < 0.5) {
   float gr = dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11));
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(gr), 0.75) * 0.55;
 }
@@ -74,8 +88,8 @@ if (uAband > 0.5) {
 
 const FRAG_EMIT = `
 if (wKind > 0.5) {
-  if (wKind < 4.5) totalEmissiveRadiance += wCol * wLit * uNight * 1.25;
-  else if (wKind < 5.5) totalEmissiveRadiance += diffuseColor.rgb * (0.15 + uNight * 2.4) * (1.0 - uAband);
+  if (wKind < 4.5) totalEmissiveRadiance += wCol * wLit * uNight * (wKind > 1.5 && wKind < 2.5 ? 0.42 : 0.8);
+  else if (wKind < 5.5) totalEmissiveRadiance += diffuseColor.rgb * (0.15 + uNight * 2.4) * (1.0 - aband);
   else if (wKind < 6.5) totalEmissiveRadiance += vec3(1.0, 0.95, 0.82) * (0.25 + uNight * 3.0);
   else if (wKind < 7.5) totalEmissiveRadiance += vec3(1.0, 0.12, 0.06) * (0.2 + uNight * 1.6);
 }
@@ -89,6 +103,7 @@ export function makeCityMaterial({ abandoned = false, opacity = 1, color = 0xfff
     sh.uniforms.uNight = cityUniforms.uNight;
     sh.uniforms.uLit = cityUniforms.uLit;
     sh.uniforms.uAband = aband;
+    sh.uniforms.uInfo = cityUniforms.uInfo;
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\n' + VERT_HEAD)
       .replace('#include <begin_vertex>', '#include <begin_vertex>\n' + VERT_BODY);
@@ -97,7 +112,7 @@ export function makeCityMaterial({ abandoned = false, opacity = 1, color = 0xfff
       .replace('#include <color_fragment>', '#include <color_fragment>\n' + FRAG_COLOR)
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n' + FRAG_EMIT);
   };
-  mat.customProgramCacheKey = () => 'city-v3';
+  mat.customProgramCacheKey = () => 'city-v4';
   return mat;
 }
 
