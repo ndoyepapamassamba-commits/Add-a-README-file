@@ -277,6 +277,16 @@ def main():
         total = sum(cout_estime(s, image=not (IMAGES / f"{s['id']}.jpg").exists()) for s in reste)
         secs = sum(duree(s) for s in reste)
         print(f"{len(reste)} clips à faire, {secs} s de vidéo, coût estimé {total:.2f} $ ; clé : {or_api.reste_cle():.2f} $")
+        # MODE ÉCONOMIQUE (26/10/2026, « je dépense beaucoup et je ne gagne pas assez ») : la vidéo Grok fait ~80 % de la
+        # dépense et les compilations dépassaient 62 s de 10 à 28 s ; on vise 62-68 s. Durée finale estimée avec --boucle :
+        # clips (≈ 0,8 s coupée chacun) + ouverture 1,4 s + cartes 1,4 s + queue 3,6 s + raccord 0,5 s (écart mesuré < 1 s)
+        if ids:
+            n = len(choisis)
+            finale = sum(duree(s) - 0.8 for s in choisis) + 1.4 + 1.4 * (n - 1) + 3.6 + 0.5
+            avis = ("TROP COURT : ajoute un sketch" if finale < 62 else
+                    f"{finale - 62:.0f} s de trop : un sketch de moins suffirait" if min(duree(s) for s in choisis) + 0.6 <= finale - 62
+                    else "bien dosé")
+            print(f"compilation estimée : {finale:.0f} s (minimum 62 s) → {avis}")
     elif action == "images":
         with ThreadPoolExecutor(4) as ex:
             list(ex.map(lambda s: faire_image(s, refaire), choisis))
