@@ -50,8 +50,10 @@ RÈGLES :
 DÉJÀ TOURNÉES :
 {catalogue}
 
-Écris d'abord pour toi-même trois fois plus d'idées, puis ne garde que les {n} plus EXPLOSIVES : celles dont la chute
-dépasse la barre ci-dessus. Tous différents (situations, personnages, lieux variés). Réponds UNIQUEMENT par un tableau
+LÂCHE-TOI : plus absurde, plus féroce, plus inattendu que la barre ci-dessus, des chutes qui font crier de rire, des
+retournements que personne n'a jamais vus, des situations d'Abidjan d'aujourd'hui (TikTok, mobile money, influenceurs,
+maquis, gbaka, coupures, tontine, belle-famille). Écris d'abord pour toi-même trois fois plus d'idées, puis ne garde que
+les {n} plus EXPLOSIVES : celles dont la chute dépasse la barre. Tous différents (situations, personnages, lieux variés). Réponds UNIQUEMENT par un tableau
 JSON : [{{"titre": "…", "repliques": [["RÔLE", "texte"], …]}}, …]"""
 
 
@@ -99,12 +101,16 @@ EXEMPLES = ["Je rentre chez ma mère dêh ! / Ya fohi. Tiens deux mille pour le 
             "Prends tes sœurs avec toi.",
             "Qui a mangé le poulet que j'ai caché dans le congélateur-là ?! / Madame, je jure c'est pas moi dêh. Patron et moi "
             "on était à Bassam toute la journée.",
-            "Papa, le voleur a laissé la télé et il a sauté par la fenêtre dêh ! / Chérie, je t'ai dit de pas te promener la "
-            "nuit sans ta perruque. Voilà, tu as traumatisé l'enfant d'autrui !",
-            "Papa, pourquoi mon bulletin-là est dans ton dossier de prêt ? / Mon fils, la banque veut savoir si je finance un "
-            "projet sans avenir.",
-            "Maman, j'ai pris ma beauté de qui ? / De moi, ma fille. / Ahh… C'est pour ça toi tu as plus rien dêh.",
-            "Papa ! Il y a la viande dans ma sauce dêh ! / Mange vite avant de te réveiller."]
+            "Pourquoi tu filmes ma colère-là ?! / Papa dit qu'il va envoyer ça à ton papa dêh. / Pour faire quoi ? / Service "
+            "après-vente. Il dit ton produit-là est gâté.",
+            "Chéri, tu sens le parfum de femme ! Tu quittes où ?! / Dans le woro-woro dêh, on était trop serrés ! / Papa, "
+            "pourtant tu as pris ta voiture ce matin dêh.",
+            "Papa, mon fiancé a une Mercedes dêh ! / Le papier est à son nom ? / Non, c'est au nom de son oncle. / L'oncle-là "
+            "est libre ? On change de cible.",
+            "Tantie, pourquoi mon garba coûte plus cher que son garba-là ?! / Lui, il mange. Toi, tu filmes dêh. Tu loues mon "
+            "décor.",
+            "Pourquoi ma photo-là est dans le carton des choses inutiles ?! / Pardon papa dêh. Je savais pas comment te faire "
+            "entrer dedans."]
 
 
 def ecrire(modele, n):

@@ -72,6 +72,17 @@ Environ 0,18 $ par sketch.
   et fond la carte de fin dans cette image, pour que la relance de TikTok soit sans couture.
 - Le sketch 302 n'est pas à publier : 504 « D'où vient ma beauté ? » repose sur la même chute.
 
+## Leçons des tests 7 et 8 (26/10/2026)
+
+- Barre montante : les plumes reçoivent en exemple les meilleures chutes déjà validées, et le jury mélange aux candidats
+  la référence ET les meilleurs sketchs du test précédent (« BARRE ») ; on ne tourne que ce qui passe devant.
+- Classiques mondiaux : les palmarès (Fringe d'Édimbourg, LaughLab) sont surtout des jeux de mots anglais intraduisibles ;
+  ce qui se transpose, c'est le mécanisme des classiques (Henny Youngman « la même femme depuis cinquante ans », le fou à
+  contresens, Tommy Cooper, Rodney Dangerfield) avec une situation d'Abidjan.
+- Écartés par prudence de monétisation : une chute sur une chirurgie des fesses (contenu jugé suggestif par TikTok).
+- Mise en scène : deux mains déjà prises = aucun geste de plus (sinon un bras en trop) ; un accessoire tenu doit être
+  « un seul » (sinon il se dédouble) ; un personnage qui parle ne boit pas (sa bouche doit rester visible).
+
 ## Utilisation
 
 ```bash
