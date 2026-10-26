@@ -1,0 +1,220 @@
+[
+{
+"titre": "Le recrutement",
+"repliques": [
+[
+"PATRON",
+"Tu veux mon poste maintenant, mon gars ?!"
+],
+[
+"EMPLOYÉ",
+"Non, patron. Votre salaire-là seulement."
+],
+[
+"PATRON",
+"Et moi, je mange quoi dêh ?"
+],
+[
+"EMPLOYÉ",
+"Vos conseils-là : faut être passionné."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le supplément",
+"repliques": [
+[
+"CLIENT",
+"Tantie, pourquoi tu ajoutes piment ? J'ai pas demandé dêh !"
+],
+[
+"VENDEUSE",
+"Ton patron-là arrive. Faut que tes larmes aient une explication."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le transfert",
+"repliques": [
+[
+"PÈRE",
+"Mon fils, pourquoi tu m'envoies cent francs seulement ?!"
+],
+[
+"FILS",
+"Papa, c'est pour vérifier le numéro-là."
+],
+[
+"PÈRE",
+"C'est bon dêh !"
+],
+[
+"FILS",
+"Ya fohi. Rends maintenant."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le doublage",
+"repliques": [
+[
+"INFLUENCEUSE",
+"Pourquoi tu commentes « maman » sous mes vidéos-là ?!"
+],
+[
+"FILS",
+"Pardon maman dêh."
+],
+[
+"INFLUENCEUSE",
+"Tu gâtes ma marque !"
+],
+[
+"FILS",
+"Ya fohi, grande sœur. Mon argent de récré ?"
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le donateur",
+"repliques": [
+[
+"PÈRE",
+"Pourquoi tu bloques mon plus gros donateur-là ?!"
+],
+[
+"FILS",
+"Papa, son pseudo, c'est « propriétaire » dêh."
+],
+[
+"PÈRE",
+"Débloque, mon fils ! Pour une fois, c'est lui qui paie !"
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le témoin gênant",
+"repliques": [
+[
+"MÈRE",
+"Mon fils, ton papa m'a dit qu'il dormait chez Tonton Yao hier."
+],
+[
+"FILS",
+"C'est vrai maman ! Même Tantie Clarisse a dormi avec nous dêh."
+],
+[
+"PÈRE",
+"…Petit, va faire tes devoirs !"
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"titre": "Portion enfant",
+"repliques": [
+[
+"CLIENT",
+"Patron, ce poulet-là est trop petit !"
+],
+[
+"PATRON",
+"C'est une portion enfant, mon vieux."
+],
+[
+"CLIENT",
+"J'ai quarante-deux ans dêh !"
+],
+[
+"PATRON",
+"Ton argent aussi. Il marche pas encore."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Le bon modèle",
+"repliques": [
+[
+"CLIENTE",
+"Couturière, pourquoi tu as cousu deux robes-là ?!"
+],
+[
+"COUTURIÈRE",
+"Une pour toi, Tantie."
+],
+[
+"CLIENTE",
+"Et l'autre, dêh ?"
+],
+[
+"COUTURIÈRE",
+"Pour la taille que tu m'as annoncée."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "La Mercedes du voisin",
+"repliques": [
+[
+"FILS",
+"Papa, pourquoi le voisin a une Mercedes et nous on a rien dêh ?"
+],
+[
+"PAPA",
+"Lui, il a travaillé dur."
+],
+[
+"FILS",
+"Et toi ?"
+],
+[
+"PAPA",
+"Moi, je l'ai applaudi."
+]
+],
+"plume": "maison"
+},
+{
+"titre": "Le pourboire",
+"repliques": [
+[
+"APPRENTI",
+"Chauffeur, le client a donné dix mille et il a dit garde la monnaie dêh !"
+],
+[
+"CHAUFFEUR",
+"Ferme tes yeux, mon petit. C'est le palu qui commence."
+]
+],
+"plume": "maison"
+},
+{
+"titre": "BARRE test 7 — Maman est fâchée",
+"repliques": [
+[
+"MAMAN",
+"Pourquoi tu filmes ma colère-là ?!"
+],
+[
+"FILS",
+"Papa dit qu'il va envoyer ça à ton papa dêh."
+],
+[
+"MAMAN",
+"Pour faire quoi ?"
+],
+[
+"FILS",
+"Service après-vente. Il dit ton produit-là est gâté."
+]
+],
+"plume": "barre"
+}
+]

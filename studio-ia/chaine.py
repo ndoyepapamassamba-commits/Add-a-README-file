@@ -14,6 +14,7 @@ Le logo et le nom de la chaîne sont lus dans prive/ (avatar.jpg, marque.json), 
   python3 chaine.py NOM ids…                       → sortie/compilations/NOM.mp4 (sketchs dans l'ordre donné)
   python3 chaine.py --meilleur-d-abord NOM ids…    → ordre DÉCROISSANT : du plus drôle au moins drôle
   python3 chaine.py --boucle NOM ids…              → ouverture sur le choc du 1er sketch + raccord de boucle en fin
+  python3 chaine.py --rejouer NOM ids…             → transitions gratuites : replay de la chute + RIRE-O-MÈTRE
 ORDRE (règle de l'utilisateur, 26/10/2026) : « le premier sketch doit être celui qui marque et qui est le meilleur toujours,
 et doit inciter à regarder le reste », puis « du plus rigolo au moins rigolo » (toutes les chutes doivent pourtant se valoir
 en humour extrême : un clip nettement en dessous des autres est écarté plutôt que placé en fin). Les ids sont donnés dans
@@ -56,6 +57,10 @@ QUEUE = FIN_S + 1.0                 # dernière image tenue : vote puis carte de
 # 1er sketch (« COMMENT ON EN EST ARRIVÉ LÀ ? »), et la carte de fin se fond dans cette même image : quand TikTok relance
 # la vidéo, le raccord ne se voit pas
 TEASER_S, BOUCLE_S = 1.4, 0.5
+# --rejouer (26/10/2026, « 3 ou 4 clips avec une transition entre les vidéos qui captent… casse le coût ») : après chaque
+# chute, transition fabriquée ici, sans rien payer : REPLAY de la dernière réplique (zoom, sous-titres, son), puis le
+# RIRE-O-MÈTRE qui s'affole avec l'appel à commenter, puis la carte du sketch suivant ; moins de clips payés pour 62 s
+REJOUE_MAX, METRE_S = 3.0, 1.6
 Y_BANDEAU, H_BANDEAU, PAS_BANDEAU = k(214), k(50), 4      # 4 px par image à 30 i/s : défilement sans sous-pixel
 COUL_PERSO = [(255, 128, 190), (255, 200, 80), (110, 225, 150), (120, 180, 255), (90, 225, 230), (255, 160, 100)]
 SAUMON, JAUNE_MOT, ENCRE = (255, 120, 110), (255, 222, 110), (28, 14, 40)
@@ -267,6 +272,85 @@ def haut_teaser(u):
         texte_double(dr, (CX - k(30), k(166)), "ARRIVÉ LÀ ?", f2, couleur=JAUNE, dec=k(3), ancre="mm")
         e = emoji("choc", max(8, int(k(64) * p)))
         im.alpha_composite(e, (int(CX - k(30) + f2.getlength("ARRIVÉ LÀ ?") / 2 + k(8)), int(k(166) - e.height / 2)))
+    return im
+
+
+def haut_rejoue(u):
+    im = Image.new("RGBA", (W, Y0), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(im)
+    p = pop(u)
+    if p > 0.05:
+        f = police(k(42) * p)
+        e = emoji("mdr", max(8, int(k(80) * p)))
+        larg = e.width + k(12) + f.getlength("REVOIS LA CHUTE !")
+        x0 = CX - larg / 2
+        im.alpha_composite(e, (int(x0), int(k(150) - e.height / 2)))
+        texte_double(dr, (x0 + e.width + k(12), k(150)), "REVOIS LA CHUTE !", f, couleur=JAUNE, dec=k(3), ancre="lm")
+    return im
+
+
+def haut_metre(u):
+    im = Image.new("RGBA", (W, Y0), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(im)
+    p = pop(u)
+    if p > 0.05:
+        texte_double(dr, (CX, k(150)), "RIRE-O-MÈTRE", police(k(44) * p), dec=k(3), ancre="mm")
+    return im
+
+
+def scene_rejoue(img, u, R):
+    """image du replay : léger zoom qui avance + badge REPLAY rouge qui clignote."""
+    z = 1.08 + 0.10 * u / max(R, 0.1)
+    cw, chh = W / z, CH / z
+    im = img.crop((int((W - cw) / 2), int((CH - chh) / 2), int((W + cw) / 2), int((CH + chh) / 2))).resize(
+        (W, CH), Image.LANCZOS).convert("RGBA")
+    dr = ImageDraw.Draw(im)
+    if int(u * 3) % 2 == 0:
+        dr.rounded_rectangle((k(18), k(16), k(150), k(52)), radius=k(8), fill=ROSE + (235,))
+        dr.ellipse((k(28), k(28), k(40), k(40)), fill=(255, 255, 255, 255))
+        dr.text((k(48), k(34)), "REPLAY", font=police(k(20)), fill=(255, 255, 255, 255), anchor="lm")
+    return im.convert("RGB")
+
+
+def scene_metre(fond_img, u):
+    """RIRE-O-MÈTRE sur la dernière image assombrie : la jauge se remplit, déborde, puis « MORT DE RIRE 💀 »."""
+    arr = (np.asarray(fond_img, dtype=np.float32) * 0.45).astype(np.uint8)
+    im = Image.fromarray(arr, "RGB").convert("RGBA")
+    dr = ImageDraw.Draw(im)
+    x0, x1, y0, y1 = k(60), W - k(60), CH * 0.40, CH * 0.40 + k(56)
+    dr.rounded_rectangle((x0, y0, x1, y1), radius=k(28), fill=(255, 255, 255, 40), outline=(255, 255, 255, 230), width=k(4))
+    plein = min(1.0, 1 - (1 - min(1.0, u / 0.8)) ** 3)
+    if plein > 0.02:
+        xa = x0 + k(6) + (x1 - x0 - k(12)) * plein
+        for i in range(int(xa - x0 - k(6))):
+            c = tuple(int(JAUNE[j] + (ROSE[j] - JAUNE[j]) * i / max(1, x1 - x0)) for j in range(3))
+            dr.line((x0 + k(6) + i, y0 + k(6), x0 + k(6) + i, y1 - k(6)), fill=c + (255,))
+    for i, cran in enumerate(("PETIT RIRE", "FOU RIRE", "MAX")):
+        xc = x0 + (x1 - x0) * (i + 1) / 3.2
+        dr.text((xc, y0 - k(18)), cran, font=police(k(15), b"Bold"), fill=(255, 255, 255, 220), anchor="mm")
+    if u > 0.85:
+        q = pop(u - 0.85)
+        f = police(k(46) * max(q, 0.01))
+        e = emoji("crane", max(8, int(k(84) * q)))
+        larg = f.getlength("MORT DE RIRE") + k(12) + e.width
+        xm = CX - larg / 2
+        ym = CH * 0.66
+        texte_double(dr, (xm, ym), "MORT DE RIRE", f, couleur=JAUNE, dec=k(3), ancre="lm")
+        im.alpha_composite(e, (int(xm + f.getlength("MORT DE RIRE") + k(12)), int(ym - e.height / 2)))
+    return im.convert("RGB")
+
+
+def bas_commente(u):
+    im = Image.new("RGBA", (W, H - Y1), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(im)
+    p = pop(u)
+    if p > 0.05:
+        dr.text((CX, k(60)), "TU AS RI ?", font=police(k(34) * p), fill=(255, 255, 255, 255), anchor="mm",
+                stroke_width=k(3), stroke_fill=(0, 0, 0, 255))
+        appel, taille = "ÉCRIS « DÊH » EN COMMENTAIRE", k(30)
+        while police(taille).getlength(appel) > W - k(40):       # la phrase tient dans la largeur, même au rebond
+            taille -= 2
+        texte_double(dr, (CX, k(112)), appel, police(taille * min(p, 1.0)), couleur=JAUNE, dec=k(2), ancre="mm")
     return im
 
 
@@ -533,9 +617,10 @@ def scene_a(clip, t):
     return Image.frombytes("RGB", (W, CH), brut[:W * CH * 3])
 
 
-def lire_scene(clip):
-    """images 1080 × 862 (rgb24) du clip recadré en 5:4."""
-    p = subprocess.Popen(["ffmpeg", "-v", "error", "-i", str(clip), "-vf", filtre_scene(clip),
+def lire_scene(clip, debut=None, duree=None):
+    """images 1080 × 862 (rgb24) du clip recadré en 5:4 (ou d'une fenêtre [debut, debut + duree] du clip)."""
+    fenetre = (["-ss", f"{debut:.3f}", "-t", f"{duree:.3f}"] if debut is not None else [])
+    p = subprocess.Popen(["ffmpeg", "-v", "error", *fenetre, "-i", str(clip), "-vf", filtre_scene(clip),
                           "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     taille = W * CH * 3
     try:
@@ -559,7 +644,7 @@ def souffle():
     return f
 
 
-def compiler(nom, ids, boucle=False):
+def compiler(nom, ids, boucle=False, rejouer=False):
     tous = generer.sketchs()
     etat = generer.lire_etat()
     t0 = TEASER_S if boucle else 0.0
@@ -573,9 +658,16 @@ def compiler(nom, ids, boucle=False):
         mots = [(m, a, b, rangs[i] if i < len(rangs) else len(s["dialogue"]) - 1) for i, (m, a, b) in enumerate(brut)]
         st = SousTitres(s, mots)
         d = min(d, st.fin_parole + MARGE_CHUTE, s.get("coupe", d))   # « coupe » : clip arrêté avant un défaut tardif
-        apres = T_CARTE if r < len(ids) - 1 else QUEUE
+        R, r0 = 0.0, 0.0
+        if rejouer:                     # fenêtre du replay : la dernière réplique, 3 s au plus
+            derniere_rep = len(s["dialogue"]) - 1
+            a_l = min([a for (_, a, _, rg) in mots if rg == derniere_rep] or [st.fin_parole - 1.5])
+            r1 = min(d, st.fin_parole + 0.45)
+            r0 = max(0.0, a_l - 0.15, r1 - REJOUE_MAX)
+            R = r1 - r0
+        apres = (R + METRE_S + T_CARTE if rejouer else T_CARTE) if r < len(ids) - 1 else R + QUEUE
         plan.append({"sid": sid, "s": s, "clip": clip, "debut": t, "duree": d, "apres": apres, "st": st,
-                     "chute": t + st.fin_parole, "titre": (s.get("titre") or "").upper()})
+                     "chute": t + st.fin_parole, "titre": (s.get("titre") or "").upper(), "R": R, "r0": r0})
         t += d + apres
     t_fin = t
     total = t_fin + (BOUCLE_S if boucle else 0.0)
@@ -609,16 +701,30 @@ def compiler(nom, ids, boucle=False):
         flux = lire_scene(p["clip"])
         nb_clip = int(round(p["duree"] * IPS))
         nb_apres = int(round(p["apres"] * IPS))
+        flux_r = rejouee = None
+        R = p["R"]
         for j in range(nb_clip + nb_apres):
             tg = n_img / IPS
+            u = (j - nb_clip) / IPS
+            phase = "clip" if j < nb_clip else ("rejoue" if u < R else ("metre" if rejouer and r < n - 1 and u < R + METRE_S
+                                                                         else "suite"))
             if j < nb_clip:
                 b = next(flux, None)
                 if b is not None:
                     derniere = b
                 scene = Image.frombytes("RGB", (W, CH), derniere)
+            elif phase == "rejoue":
+                if flux_r is None:
+                    flux_r = lire_scene(p["clip"], p["r0"], R + 0.2)
+                b = next(flux_r, None)
+                if b is not None:
+                    rejouee = b
+                scene = scene_rejoue(Image.frombytes("RGB", (W, CH), rejouee or derniere), u, R)
+            elif phase == "metre":
+                scene = scene_metre(Image.frombytes("RGB", (W, CH), rejouee or derniere), u - R)
             else:
                 scene = Image.frombytes("RGB", (W, CH), derniere)
-                u = (j - nb_clip) / IPS
+                u = u - R - (METRE_S if rejouer and r < n - 1 else 0.0)
                 if r < n - 1:
                     arr = (np.asarray(scene, dtype=np.float32) * 0.62).astype(np.uint8)
                     scene = Image.fromarray(arr, "RGB").convert("RGBA")
@@ -629,6 +735,12 @@ def compiler(nom, ids, boucle=False):
             fin_film = tg >= t_fin - FIN_S
             if fin_film:
                 haut.alpha_composite(haut_fin(min(1.0, (tg - (t_fin - FIN_S)) / 0.35)))
+            elif phase == "rejoue":
+                haut.alpha_composite(haut_rejoue((j - nb_clip) / IPS))
+                haut.alpha_composite(bandeau.a(n_img), (0, Y_BANDEAU))
+            elif phase == "metre":
+                haut.alpha_composite(haut_metre((j - nb_clip) / IPS - R))
+                haut.alpha_composite(bandeau.a(n_img), (0, Y_BANDEAU))
             else:
                 reac = next((q for q in plan if q["chute"] <= tg < q["chute"] + REACTION_S), None)
                 if t0 <= tg < t0 + ACCROCHE_S:
@@ -646,6 +758,12 @@ def compiler(nom, ids, boucle=False):
                 c = p["st"].image(j / IPS)
                 if c is not None:
                     bas.alpha_composite(c)
+            elif phase == "rejoue":
+                c = p["st"].image(p["r0"] + (j - nb_clip) / IPS)
+                if c is not None:
+                    bas.alpha_composite(c)
+            elif phase == "metre":
+                bas.alpha_composite(bas_commente((j - nb_clip) / IPS - R))
             elif r == n - 1 and tg >= t_fin - QUEUE:
                 bas.alpha_composite(vote(min(1.0, (tg - (t_fin - QUEUE)) / 0.3), n))
             derniere_img = haut.convert("RGB").tobytes() + scene.tobytes() + bas.convert("RGB").tobytes()
@@ -676,10 +794,22 @@ def compiler(nom, ids, boucle=False):
     base += n
     for i, p in enumerate(plan[:-1]):
         entrees += ["-i", str(souffle())]
-        ms = int((p["debut"] + p["duree"]) * 1000)
+        ms = int((p["debut"] + p["duree"] + (p["R"] + METRE_S if rejouer else 0.0)) * 1000)
         f.append(f"[{base + i}:a]volume=0.5,adelay={ms}|{ms}[s{i}]")
     base += n - 1
     souffles = [f"[s{i}]" for i in range(n - 1)]
+    if rejouer:                         # replay : la réplique rejouée, un souffle de rembobinage avant, un rire après
+        for i, p in enumerate(plan):
+            debut_r = p["debut"] + p["duree"]
+            entrees += ["-i", str(p["clip"]), "-i", str(souffle()), "-i", str(monter.RIRES[(i + 2) % len(monter.RIRES)])]
+            ms, ms_s, ms_r = (int(x * 1000) for x in (debut_r, max(0.0, debut_r - 0.2), debut_r + p["R"] - 0.25))
+            f.append(f"[{base}:a]atrim={p['r0']:.3f}:{p['r0'] + p['R']:.3f},asetpts=PTS-STARTPTS,"
+                     f"afade=t=out:st={max(0, p['R'] - 0.2):.3f}:d=0.2,loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000,"
+                     f"aformat=channel_layouts=stereo,adelay={ms}|{ms}[rj{i}]")
+            f.append(f"[{base + 1}:a]volume=0.6,adelay={ms_s}|{ms_s}[rs{i}]")
+            f.append(f"[{base + 2}:a]volume={monter.VOLUME_RIRES},aresample=48000,adelay={ms_r}|{ms_r}[rr{i}]")
+            souffles += [f"[rj{i}]", f"[rs{i}]", f"[rr{i}]"]
+            base += 3
     if boucle:                          # souffle de « rembobinage » entre l'ouverture et le 1er sketch
         entrees += ["-i", str(souffle())]
         ms = int(max(0.0, t0 - 0.25) * 1000)
@@ -730,4 +860,4 @@ if __name__ == "__main__":
         ids = meilleur_d_abord(ids)
         e = generer.lire_etat()
         print("  ordre :", " ".join(f"{i}({'/'.join(f'{x:g}' for x in note_ecoute(i, e))})" for i in ids))  # notes d'écoute
-    compiler(nom, ids, boucle="--boucle" in options)
+    compiler(nom, ids, boucle="--boucle" in options, rejouer="--rejouer" in options)

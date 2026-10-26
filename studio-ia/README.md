@@ -83,6 +83,15 @@ Environ 0,18 $ par sketch.
 - Mise en scène : deux mains déjà prises = aucun geste de plus (sinon un bras en trop) ; un accessoire tenu doit être
   « un seul » (sinon il se dédouble) ; un personnage qui parle ne boit pas (sa bouche doit rester visible).
 
+## Mode économique (test 9, 26/10/2026)
+
+- 80 % de la dépense est la vidéo Grok : on paie le moins de secondes possible. `generer.py devis ids…` estime la durée
+  finale de la compilation avant de payer (écart mesuré < 1 s).
+- `chaine.py --rejouer` : 4 clips payés suffisent pour dépasser 62 s ; entre deux sketchs, transition fabriquée sans
+  frais : REPLAY de la chute (zoom, son, sous-titres), RIRE-O-MÈTRE (« MORT DE RIRE 💀 ») avec l'appel « TU AS RI ? ÉCRIS
+  « DÊH » EN COMMENTAIRE », puis la carte du sketch suivant. Test 9 : 64,1 s pour environ 1,1 $ (contre environ 3 $).
+- Les sketchs validés par le jury mais non tournés forment une réserve : pas de frais d'écriture pour la vidéo suivante.
+
 ## Utilisation
 
 ```bash
@@ -100,6 +109,7 @@ python3 generer.py reprises              # ce qui est à refaire
 python3 ecrire.py --reecrire prive/originaux_top.json sketchs/brouillons/reecritures.json 2
 python3 jury.py --groupes prive/originaux_top.json sketchs/brouillons/reecritures.json 2
 python3 chaine.py --meilleur-d-abord --boucle NOM ids…   # ids dans l'ordre du jury ; du plus drôle au moins drôle
+python3 chaine.py --meilleur-d-abord --boucle --rejouer NOM ids…   # mode économique : 4 clips + transitions gratuites
 ```
 
 La clé OpenRouter est lue dans `OPENROUTER_API_KEY` (ou ajoutée par le proxy de la session Claude).
