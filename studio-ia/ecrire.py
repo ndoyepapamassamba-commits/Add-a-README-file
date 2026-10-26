@@ -50,6 +50,8 @@ RÈGLES :
 DÉJÀ TOURNÉES :
 {catalogue}
 
+EXTRÊMEMENT DRÔLE, c'est la seule chose qui compte : le public doit hurler de rire et partager tout de suite. Chaque chute
+doit être un vrai coup de massue, avec si possible une RELANCE (dernière réplique de 6 mots max) qui achève tout le monde.
 LÂCHE-TOI : plus absurde, plus féroce, plus inattendu que la barre ci-dessus, des chutes qui font crier de rire, des
 retournements que personne n'a jamais vus, des situations d'Abidjan d'aujourd'hui (TikTok, mobile money, influenceurs,
 maquis, gbaka, coupures, tontine, belle-famille). Écris d'abord pour toi-même trois fois plus d'idées, puis ne garde que
@@ -110,7 +112,13 @@ EXEMPLES = ["Je rentre chez ma mère dêh ! / Ya fohi. Tiens deux mille pour le 
             "Tantie, pourquoi mon garba coûte plus cher que son garba-là ?! / Lui, il mange. Toi, tu filmes dêh. Tu loues mon "
             "décor.",
             "Pourquoi ma photo-là est dans le carton des choses inutiles ?! / Pardon papa dêh. Je savais pas comment te faire "
-            "entrer dedans."]
+            "entrer dedans.",
+            "Ma sœur, pourquoi tu pries fort comme ça devant ma porte-là ?! / On a dit de chasser les démons de la pauvreté "
+            "dêh ! / Ya fohi. Entre dans la chambre, il est couché.",
+            "Tonton, cinquante ans de mariage ! C'est quoi votre secret ? / J'aime la même femme depuis cinquante ans. / "
+            "Ehh, c'est trop beau ! / Si ma femme apprend ça, elle va me tuer dêh.",
+            "Tantie, pourquoi tu ajoutes piment ? J'ai pas demandé dêh ! / Ton patron-là arrive. Faut que tes larmes aient "
+            "une explication."]
 
 
 def ecrire(modele, n):

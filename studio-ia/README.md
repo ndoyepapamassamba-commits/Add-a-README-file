@@ -92,6 +92,20 @@ Environ 0,18 $ par sketch.
   « DÊH » EN COMMENTAIRE », puis la carte du sketch suivant. Test 9 : 64,1 s pour environ 1,1 $ (contre environ 3 $).
 - Les sketchs validés par le jury mais non tournés forment une réserve : pas de frais d'écriture pour la vidéo suivante.
 
+## Gags 3D libres de droit (test 10, 26/10/2026)
+
+- `chaine.py --rejouer` insère, si le sketch a un champ `"gag": [nom, légende]`, un extrait de film de la Blender
+  Foundation après le replay, avec une légende façon mème (« PAPA EN CHERCHANT SA CEINTURE : »), des émojis qui rient et
+  le crédit obligatoire « (CC BY) Blender Foundation | studio.blender.org » (aussi sur l'écran final). Gags : `GAGS` dans
+  chaine.py. Ne sont utilisés que les films dont la licence est vérifiée : Big Buck Bunny (CC BY) et Caminandes 3
+  « Llamigos » (licence « Attribution » sur video.blender.org) ; Caminandes 1 est écarté (licence non précisée).
+- Téléchargement (dans `sortie/blender_cc/`, hors dépôt) :
+  `https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_640x360.m4v.zip` (à décompresser) et
+  `https://archive.org/download/caminandes-3-llamigos/1_Caminandes3_Llamigos_720p_vp8.ogv` (à renommer `caminandes3.ogv`).
+- Format : 3 clips payés + transitions (replay, gag, RIRE-O-MÈTRE, carte) = 63,4 s pour environ 0,9 $ de production.
+- Dans la description TikTok, ajouter : « Extraits 3D : Big Buck Bunny, Caminandes 3 — (CC BY) Blender Foundation |
+  studio.blender.org ».
+
 ## Utilisation
 
 ```bash

@@ -60,7 +60,92 @@ TEASER_S, BOUCLE_S = 1.4, 0.5
 # --rejouer (26/10/2026, « 3 ou 4 clips avec une transition entre les vidéos qui captent… casse le coût ») : après chaque
 # chute, transition fabriquée ici, sans rien payer : REPLAY de la dernière réplique (zoom, sous-titres, son), puis le
 # RIRE-O-MÈTRE qui s'affole avec l'appel à commenter, puis la carte du sketch suivant ; moins de clips payés pour 62 s
-REJOUE_MAX, METRE_S = 3.0, 1.6
+REJOUE_MAX, METRE_S = 3.0, 2.0
+# GAGS 3D LIBRES DE DROIT (26/10/2026, « des animations 3D libres de droit et extrêmement drôles se mélangeant avec le
+# sketch ») : extraits de films de la Blender Foundation sous licence CC BY (usage commercial permis, crédit obligatoire),
+# insérés après le replay avec une légende façon mème. Seuls les films à la licence vérifiée : Big Buck Bunny (CC BY) et
+# Caminandes 3 « Llamigos » (licence « Attribution » sur video.blender.org). Les films sont téléchargés dans
+# sortie/blender_cc/ (hors dépôt) : voir README.
+CC_DIR = generer.SORTIE / "blender_cc"
+CREDIT_CC = "(CC BY) Blender Foundation | studio.blender.org"
+GAGS = {  # nom : (fichier, début, durée prise, vitesse, titre du film)
+    "glissade": ("caminandes3.ogv", 13.5, 4.0, 1.0, "Caminandes 3 : Llamigos"),
+    "lama_choc": ("caminandes3.ogv", 34.0, 3.0, 1.0, "Caminandes 3 : Llamigos"),
+    "yeux_fous": ("BigBuckBunny_640x360.m4v", 480.4, 1.5, 0.6, "Big Buck Bunny"),
+    "lapin_choc": ("BigBuckBunny_640x360.m4v", 196.6, 3.0, 1.0, "Big Buck Bunny"),
+    "lapin_colere": ("BigBuckBunny_640x360.m4v", 233.0, 4.0, 1.0, "Big Buck Bunny"),
+}
+
+
+def duree_gag(nom):
+    _, _, d, v, _ = GAGS[nom]
+    return d / v
+
+
+def lire_gag(nom):
+    f, debut, d, v, _ = GAGS[nom]
+    clip = CC_DIR / f
+    p = subprocess.Popen(["ffmpeg", "-v", "error", "-ss", f"{debut:.3f}", "-t", f"{d + 0.2:.3f}", "-i", str(clip), "-vf",
+                          f"setpts={1 / v:.4f}*PTS," + filtre_scene(clip), "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+                         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    taille = W * CH * 3
+    try:
+        while True:
+            b = p.stdout.read(taille)
+            if len(b) < taille:
+                break
+            yield b
+    finally:
+        p.kill()
+        p.wait()
+
+
+def haut_legende(txt, u):
+    """légende façon mème au-dessus du gag : blanche, contour noir, sur deux lignes au plus."""
+    im = Image.new("RGBA", (W, Y0), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(im)
+    p = min(pop(u), 1.0)
+    if p > 0.05:
+        taille = k(40)
+        while police(taille).getlength(txt) > 2 * (W - k(60)) and taille > k(24):
+            taille -= 2
+        f = police(taille * p)
+        mots, lignes = txt.split(), [""]
+        for m in mots:
+            essai = (lignes[-1] + " " + m).strip()
+            if f.getlength(essai) <= W - k(60) or not lignes[-1]:
+                lignes[-1] = essai
+            else:
+                lignes.append(m)
+        y = k(150) - (len(lignes) - 1) * taille * 0.55
+        for li in lignes[:2]:
+            dr.text((CX, y), li, font=f, fill=(255, 255, 255, 255), anchor="mm", stroke_width=k(4), stroke_fill=(0, 0, 0, 255))
+            y += taille * 1.1
+    return im
+
+
+def scene_gag(b, film):
+    im = Image.frombytes("RGB", (W, CH), b).convert("RGBA")
+    dr = ImageDraw.Draw(im)
+    txt = f"{film} · {CREDIT_CC}"
+    f = police(k(11), b"Bold")
+    dr.rounded_rectangle((k(10), CH - k(30), k(22) + f.getlength(txt), CH - k(10)), radius=k(6), fill=(0, 0, 0, 140))
+    dr.text((k(16), CH - k(20)), txt, font=f, fill=(255, 255, 255, 230), anchor="lm")
+    return im.convert("RGB")
+
+
+def bas_rires(u):
+    """trois émojis qui rient et jaillissent l'un après l'autre sous le gag."""
+    im = Image.new("RGBA", (W, H - Y1), (0, 0, 0, 0))
+    for i, nom in enumerate(("rire", "mdr", "crane")):
+        q = pop(u - 0.15 * i)
+        if q > 0.05:
+            e = emoji(nom, max(8, int(k(110) * q)))
+            x = CX + (i - 1) * k(150)
+            im.alpha_composite(e, (int(x - e.width / 2), int(k(110) - e.height / 2)))
+    return im
+
+
 Y_BANDEAU, H_BANDEAU, PAS_BANDEAU = k(214), k(50), 4      # 4 px par image à 30 i/s : défilement sans sous-pixel
 COUL_PERSO = [(255, 128, 190), (255, 200, 80), (110, 225, 150), (120, 180, 255), (90, 225, 230), (255, 160, 100)]
 SAUMON, JAUNE_MOT, ENCRE = (255, 120, 110), (255, 222, 110), (28, 14, 40)
@@ -665,9 +750,12 @@ def compiler(nom, ids, boucle=False, rejouer=False):
             r1 = min(d, st.fin_parole + 0.45)
             r0 = max(0.0, a_l - 0.15, r1 - REJOUE_MAX)
             R = r1 - r0
-        apres = (R + METRE_S + T_CARTE if rejouer else T_CARTE) if r < len(ids) - 1 else R + QUEUE
+        gag = s.get("gag") if rejouer else None          # [nom du gag, légende]
+        G = duree_gag(gag[0]) if gag else 0.0
+        apres = (R + G + METRE_S + T_CARTE if rejouer else T_CARTE) if r < len(ids) - 1 else R + G + QUEUE
         plan.append({"sid": sid, "s": s, "clip": clip, "debut": t, "duree": d, "apres": apres, "st": st,
-                     "chute": t + st.fin_parole, "titre": (s.get("titre") or "").upper(), "R": R, "r0": r0})
+                     "chute": t + st.fin_parole, "titre": (s.get("titre") or "").upper(), "R": R, "r0": r0,
+                     "gag": gag, "G": G})
         t += d + apres
     t_fin = t
     total = t_fin + (BOUCLE_S if boucle else 0.0)
@@ -701,13 +789,13 @@ def compiler(nom, ids, boucle=False, rejouer=False):
         flux = lire_scene(p["clip"])
         nb_clip = int(round(p["duree"] * IPS))
         nb_apres = int(round(p["apres"] * IPS))
-        flux_r = rejouee = None
-        R = p["R"]
+        flux_r = rejouee = flux_g = None
+        R, G = p["R"], p["G"]
         for j in range(nb_clip + nb_apres):
             tg = n_img / IPS
             u = (j - nb_clip) / IPS
-            phase = "clip" if j < nb_clip else ("rejoue" if u < R else ("metre" if rejouer and r < n - 1 and u < R + METRE_S
-                                                                         else "suite"))
+            phase = ("clip" if j < nb_clip else "rejoue" if u < R else "gag" if u < R + G else
+                     "metre" if rejouer and r < n - 1 and u < R + G + METRE_S else "suite")
             if j < nb_clip:
                 b = next(flux, None)
                 if b is not None:
@@ -720,11 +808,18 @@ def compiler(nom, ids, boucle=False, rejouer=False):
                 if b is not None:
                     rejouee = b
                 scene = scene_rejoue(Image.frombytes("RGB", (W, CH), rejouee or derniere), u, R)
+            elif phase == "gag":
+                if flux_g is None:
+                    flux_g = lire_gag(p["gag"][0])
+                b = next(flux_g, None)
+                if b is not None:
+                    gag_img = b
+                scene = scene_gag(gag_img, GAGS[p["gag"][0]][4])
             elif phase == "metre":
-                scene = scene_metre(Image.frombytes("RGB", (W, CH), rejouee or derniere), u - R)
+                scene = scene_metre(Image.frombytes("RGB", (W, CH), rejouee or derniere), u - R - G)
             else:
                 scene = Image.frombytes("RGB", (W, CH), derniere)
-                u = u - R - (METRE_S if rejouer and r < n - 1 else 0.0)
+                u = u - R - G - (METRE_S if rejouer and r < n - 1 else 0.0)
                 if r < n - 1:
                     arr = (np.asarray(scene, dtype=np.float32) * 0.62).astype(np.uint8)
                     scene = Image.fromarray(arr, "RGB").convert("RGBA")
@@ -738,8 +833,11 @@ def compiler(nom, ids, boucle=False, rejouer=False):
             elif phase == "rejoue":
                 haut.alpha_composite(haut_rejoue((j - nb_clip) / IPS))
                 haut.alpha_composite(bandeau.a(n_img), (0, Y_BANDEAU))
+            elif phase == "gag":
+                haut.alpha_composite(haut_legende(p["gag"][1], (j - nb_clip) / IPS - R))
+                haut.alpha_composite(bandeau.a(n_img), (0, Y_BANDEAU))
             elif phase == "metre":
-                haut.alpha_composite(haut_metre((j - nb_clip) / IPS - R))
+                haut.alpha_composite(haut_metre((j - nb_clip) / IPS - R - G))
                 haut.alpha_composite(bandeau.a(n_img), (0, Y_BANDEAU))
             else:
                 reac = next((q for q in plan if q["chute"] <= tg < q["chute"] + REACTION_S), None)
@@ -762,10 +860,15 @@ def compiler(nom, ids, boucle=False, rejouer=False):
                 c = p["st"].image(p["r0"] + (j - nb_clip) / IPS)
                 if c is not None:
                     bas.alpha_composite(c)
+            elif phase == "gag":
+                bas.alpha_composite(bas_rires((j - nb_clip) / IPS - R))
             elif phase == "metre":
-                bas.alpha_composite(bas_commente((j - nb_clip) / IPS - R))
+                bas.alpha_composite(bas_commente((j - nb_clip) / IPS - R - G))
             elif r == n - 1 and tg >= t_fin - QUEUE:
                 bas.alpha_composite(vote(min(1.0, (tg - (t_fin - QUEUE)) / 0.3), n))
+                if any(q["gag"] for q in plan):         # crédit CC BY des extraits 3D, exigé par la licence
+                    ImageDraw.Draw(bas).text((CX, k(190)), f"Extraits 3D : {CREDIT_CC}", font=police(k(13), b"Bold"),
+                                             fill=(255, 255, 255, 200), anchor="mm")
             derniere_img = haut.convert("RGB").tobytes() + scene.tobytes() + bas.convert("RGB").tobytes()
             enc.stdin.write(derniere_img)
             n_img += 1
@@ -794,7 +897,7 @@ def compiler(nom, ids, boucle=False, rejouer=False):
     base += n
     for i, p in enumerate(plan[:-1]):
         entrees += ["-i", str(souffle())]
-        ms = int((p["debut"] + p["duree"] + (p["R"] + METRE_S if rejouer else 0.0)) * 1000)
+        ms = int((p["debut"] + p["duree"] + (p["R"] + p["G"] + METRE_S if rejouer else 0.0)) * 1000)
         f.append(f"[{base + i}:a]volume=0.5,adelay={ms}|{ms}[s{i}]")
     base += n - 1
     souffles = [f"[s{i}]" for i in range(n - 1)]
@@ -810,6 +913,18 @@ def compiler(nom, ids, boucle=False, rejouer=False):
             f.append(f"[{base + 2}:a]volume={monter.VOLUME_RIRES},aresample=48000,adelay={ms_r}|{ms_r}[rr{i}]")
             souffles += [f"[rj{i}]", f"[rs{i}]", f"[rr{i}]"]
             base += 3
+            if p["gag"]:                  # gag 3D : son du film (ralenti si besoin), puis un rire du public
+                fichier, debut_g, d_g, v_g, _ = GAGS[p["gag"][0]]
+                debut_gag = debut_r + p["R"]
+                entrees += ["-ss", f"{debut_g:.3f}", "-t", f"{d_g:.3f}", "-i", str(CC_DIR / fichier),
+                            "-i", str(monter.RIRES[(i + 1) % len(monter.RIRES)])]
+                ms_g, ms_rg = int(debut_gag * 1000), int((debut_gag + 0.4) * 1000)
+                tempo = f"atempo={v_g:.3f}," if abs(v_g - 1.0) > 1e-3 else ""
+                f.append(f"[{base}:a]{tempo}volume=0.7,aresample=48000,aformat=channel_layouts=stereo,"
+                         f"adelay={ms_g}|{ms_g}[gg{i}]")
+                f.append(f"[{base + 1}:a]volume={monter.VOLUME_RIRES * 0.8:.2f},aresample=48000,adelay={ms_rg}|{ms_rg}[gr{i}]")
+                souffles += [f"[gg{i}]", f"[gr{i}]"]
+                base += 2
     if boucle:                          # souffle de « rembobinage » entre l'ouverture et le 1er sketch
         entrees += ["-i", str(souffle())]
         ms = int(max(0.0, t0 - 0.25) * 1000)

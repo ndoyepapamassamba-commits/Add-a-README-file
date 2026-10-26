@@ -1,0 +1,1184 @@
+[
+{
+"titre": "Compte bloqué",
+"repliques": [
+[
+"PAPA",
+"Je viens retirer mon argent-là, ma fille dêh !"
+],
+[
+"AGENTE",
+"Papa ?! Toi ici ? Compte-là est bloqué."
+],
+[
+"PAPA",
+"Bloqué par qui-là, hein ?!"
+],
+[
+"AGENTE",
+"Par moi. Cantine non payée dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Le dessin du salaire",
+"repliques": [
+[
+"MAMAN",
+"Pourquoi papa est minuscule sur ton dessin-là ?!"
+],
+[
+"FILS",
+"C'est pas lui, maman. C'est son salaire dêh."
+],
+[
+"MAMAN",
+"Et lui-même-là, il est où ?!"
+],
+[
+"FILS",
+"Y avait plus de place, maman dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "L'oncle directeur",
+"repliques": [
+[
+"CANDIDAT",
+"Je viens pour le poste. Mon oncle est directeur dêh."
+],
+[
+"PATRON",
+"C'est moi le directeur-là."
+],
+[
+"CANDIDAT",
+"Ahh, mon oncle-là aussi est comédien."
+],
+[
+"PATRON",
+"Va jouer dehors, artiste dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "La bonne cible",
+"repliques": [
+[
+"MAITRE",
+"Ton fils-là copie sur la fille devant dêh !"
+],
+[
+"PAPA",
+"Il vise bien sa cible dêh."
+],
+[
+"MAMAN",
+"Comme toi, mon vieux. Moi j'étais devant."
+],
+[
+"FILS",
+"Donc on t'a copiée, maman dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Minuit au portail",
+"repliques": [
+[
+"GARDIEN",
+"Minuit passé, ton père-là a dit ferme dêh !"
+],
+[
+"FILS",
+"Ouvre seulement, tonton."
+],
+[
+"GARDIEN",
+"Après minuit, tu es plus son fils-là."
+],
+[
+"FILS",
+"Lui aussi est au maquis dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Les valises qui restent",
+"repliques": [
+[
+"GENDRE",
+"Tantie, tes valises-là, tu pars enfin dêh !"
+],
+[
+"BELLE-MERE",
+"Non, mon fils. Je range pour rester dêh."
+],
+[
+"FEMME",
+"Rester où, maman-là ?!"
+],
+[
+"BELLE-MERE",
+"Ici. Toi, chéri, dehors dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Le pain du forfait",
+"repliques": [
+[
+"MAMAN",
+"Pourquoi tu as vendu ton pain-là ?!"
+],
+[
+"FILS",
+"Pour acheter forfait, maman dêh."
+],
+[
+"MAMAN",
+"Tu as appelé qui avec ça-là ?!"
+],
+[
+"FILS",
+"Toi. Pour dire j'ai faim dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Le docteur virus",
+"repliques": [
+[
+"TONTON",
+"Docteur, ma tension-là monte sans raison !"
+],
+[
+"DOCTEUR",
+"Tu sens le maquis, mon vieux dêh."
+],
+[
+"SERVEUSE",
+"C'est vous qui avez payé hier dêh."
+],
+[
+"DOCTEUR",
+"Donc c'est moi le virus-là."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Cherche un travail",
+"repliques": [
+[
+"VOISIN",
+"C'est quoi ton code wifi-là, mon vieux ?!"
+],
+[
+"LUI",
+"Cherche un travail, mon frère dêh."
+],
+[
+"VOISIN",
+"Tu insultes les voisins maintenant-là ?!"
+],
+[
+"FEMME",
+"Non. C'est pour mon mari dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Le filtre bonheur",
+"repliques": [
+[
+"MAMAN",
+"Pourquoi je suis pas dans ta story-là ?!"
+],
+[
+"FILLE",
+"Tu étais en cuisine, maman dêh."
+],
+[
+"MAMAN",
+"Et ton père-là, il est où ?!"
+],
+[
+"FILLE",
+"Coupé. Il gâtait le bonheur dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Le reçu du fiancé",
+"repliques": [
+[
+"FILLE",
+"Papa, voici le père de mon fiancé dêh !"
+],
+[
+"PAPA",
+"Enchanté, mon vieux. Entre seulement dêh."
+],
+[
+"MONSIEUR",
+"Bienvenu ? Tu me dois le loyer-là."
+],
+[
+"FILLE",
+"Donc fiancé-là, c'est le reçu."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Le frigo branché",
+"repliques": [
+[
+"FILLE",
+"Maman, le frigo-là grogne toute la nuit !"
+],
+[
+"MAMAN",
+"Lui au moins, il travaille, ma fille dêh."
+],
+[
+"PAPA",
+"Pas comme certaines personnes ici-là."
+],
+[
+"MAMAN",
+"Comme toi. Lui est branché dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Contact urgence",
+"repliques": [
+[
+"FEMME",
+"Pourquoi belle-maman et moi, on est Urgence-là ?!"
+],
+[
+"MARI",
+"Quand vous appelez, je cours, chérie dêh."
+],
+[
+"FEMME",
+"Tu cours vers où-là ?!"
+],
+[
+"MARI",
+"Dehors. L'urgence c'est sortir dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Le vote du pouce",
+"repliques": [
+[
+"PAPA",
+"Qui m'a viré du groupe famille-là ?!"
+],
+[
+"FILLE",
+"C'était un vote, papa. Unanimité dêh."
+],
+[
+"PAPA",
+"Vous êtes combien contre moi-là ?!"
+],
+[
+"MAMAN",
+"Ton pouce a voté, dormeur dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "La portion espoir",
+"repliques": [
+[
+"CLIENT",
+"Tantie, pourquoi mon attiéké-là est minuscule ?!"
+],
+[
+"TANTIE",
+"Portion espoir. Ta femme a déjà mangé dêh."
+],
+[
+"CLIENT",
+"Mangé où-là ? Chez nous y a rien !"
+],
+[
+"TANTIE",
+"Ici depuis midi. Même le dessert dêh."
+]
+],
+"plume": "x-ai/grok-4.7"
+},
+{
+"titre": "Le groupe des anciens",
+"repliques": [
+[
+"MÈRE",
+"Pourquoi tu as ajouté mon mari dans le groupe de tes ex-là ?!"
+],
+[
+"COIFFEUSE",
+"Tantie, c'est les clients qui paient plus dêh."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le remboursement",
+"repliques": [
+[
+"PÈRE",
+"Pourquoi tu rembourses les cadeaux de mariage-là ?!"
+],
+[
+"FILLE",
+"Papa, fiancé-là est reparti chez son ex."
+],
+[
+"PÈRE",
+"Rembourse pas dêh ! On cherche un remplaçant."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le meilleur employé",
+"repliques": [
+[
+"EMPLOYÉ",
+"Patron, pourquoi ma photo-là est affichée chez votre concurrent ?!"
+],
+[
+"PATRON",
+"Depuis tu travailles ici, leurs ventes montent dêh."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le direct",
+"repliques": [
+[
+"MÈRE",
+"Tu filmes encore notre dispute-là ?!"
+],
+[
+"FILS",
+"Maman, les abonnés demandent papa."
+],
+[
+"PÈRE",
+"Enfin, mes supporters dêh !"
+],
+[
+"FILS",
+"Non, ils cherchent le responsable dêh."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "L'adresse de livraison",
+"repliques": [
+[
+"MARI",
+"Pourquoi tu donnes notre adresse-là à tous mes créanciers ?!"
+],
+[
+"FEMME",
+"Chéri, quand ils viennent, tu fais semblant de balayer. Maison est propre dêh."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "La vraie influence",
+"repliques": [
+[
+"INFLUENCEUSE",
+"Tantie, mes abonnés vont remplir ton maquis-là !"
+],
+[
+"GÉRANTE",
+"Appelle-les dêh. Depuis midi, c'est toi seule qui remplis les assiettes."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "La caution",
+"repliques": [
+[
+"LOCATAIRE",
+"Tonton, pourquoi tu demandes trois cautions pour ce studio-là ?!"
+],
+[
+"PROPRIÉTAIRE",
+"Une pour maison, deux pour supporter ma femme dêh."
+],
+[
+"PROPRIÉTAIRE",
+"Moi-même, je te rejoins bientôt dêh."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le contact d'urgence",
+"repliques": [
+[
+"PÈRE",
+"Pourquoi ton contact d'urgence-là, c'est le boutiquier ?!"
+],
+[
+"FILS",
+"Papa, lui au moins, quand je tombe, il dit : relève-toi. Toi, tu demandes si téléphone est cassé dêh."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "La promotion",
+"repliques": [
+[
+"APPRENTI",
+"Patron, pourquoi mon salaire-là est toujours zéro ?!"
+],
+[
+"MÉCANICIEN",
+"Tu es encore en formation, mon petit."
+],
+[
+"APPRENTI",
+"Donc tes clients-là financent mes erreurs dêh ?"
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le mauvais numéro",
+"repliques": [
+[
+"MARI",
+"Chérie, tu as envoyé mon argent au mauvais numéro dêh !"
+],
+[
+"FEMME",
+"Non, c'est mon autre numéro-là."
+],
+[
+"MARI",
+"Depuis quand, dêh ?"
+],
+[
+"FEMME",
+"Depuis tes primes existent, mon vieux."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le soutien scolaire",
+"repliques": [
+[
+"PÈRE",
+"Pourquoi le répétiteur-là demande augmentation ?!"
+],
+[
+"FILS",
+"Papa, maintenant il m'enseigne et il soigne son stress dêh."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "La caméra de surveillance",
+"repliques": [
+[
+"PATRON",
+"Gardien, pourquoi caméra-là filme seulement ta chaise vide ?!"
+],
+[
+"GARDIEN",
+"Patron, vous avez dit de surveiller mon poste dêh."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le panier familial",
+"repliques": [
+[
+"MÈRE",
+"Pourquoi tu comptes mes morceaux de viande-là ?!"
+],
+[
+"FILS",
+"Maman, papa dit que c'est toi notre inflation dêh."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "La réservation",
+"repliques": [
+[
+"CLIENT",
+"Tantie, pourquoi tu demandes acompte avant mon rendez-vous amoureux ?!"
+],
+[
+"SERVEUSE",
+"Ton rendez-vous-là vient de réserver aussi."
+],
+[
+"CLIENT",
+"Avec moi, dêh ?"
+],
+[
+"SERVEUSE",
+"Non, mon vieux. Après toi."
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "Le comité d'accueil",
+"repliques": [
+[
+"MÈRE",
+"Pourquoi tes beaux-parents ont créé un groupe sans nous-là ?!"
+],
+[
+"FILLE",
+"Maman, ils préparent la dot dêh."
+],
+[
+"PÈRE",
+"Nom du groupe-là ?"
+],
+[
+"FILLE",
+"« Opération : faut négocier les défauts. »"
+]
+],
+"plume": "openai/gpt-6.1-sol"
+},
+{
+"titre": "L'avance sur héritage",
+"repliques": [
+[
+"PÈRE",
+"Pourquoi tu as vendu ma télé-là ?!"
+],
+[
+"FILS",
+"Papa, c'est une avance sur mon héritage dêh."
+],
+[
+"PÈRE",
+"Mais je suis pas encore mort !"
+],
+[
+"FILS",
+"J'ai gardé le carton pour toi."
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"titre": "Le loyer d'Abobo",
+"repliques": [
+[
+"PROPRIÉTAIRE",
+"Six mois de loyer impayé ! Je vais appeler la police dêh !"
+],
+[
+"LOCATAIRE",
+"Ya fohi, Tonton. Au moins là-bas, le toit coule pas."
+],
+[
+"FEMME",
+"Et puis ils nourrissent gratuit dêh !"
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"titre": "Le transfert Wave",
+"repliques": [
+[
+"COPINE",
+"Bébé, tu as envoyé cinquante mille par erreur dêh !"
+],
+[
+"HOMME",
+"C'est pas erreur. C'est pour ton transport."
+],
+[
+"COPINE",
+"Pour aller où ?"
+],
+[
+"HOMME",
+"Hors de ma vie. Bon voyage !"
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"titre": "La monnaie du gbaka",
+"repliques": [
+[
+"PASSAGÈRE",
+"Apprenti, ma monnaie de cent francs ! Tu descends où ?!"
+],
+[
+"APPRENTI",
+"Tantie, j'ai pas monnaie. Prends le volant, moi je descends."
+],
+[
+"CHAUFFEUR",
+"Moi aussi je descends. Bonne route !"
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"titre": "L'influenceuse au maquis",
+"repliques": [
+[
+"INFLUENCEUSE",
+"J'ai cent mille abonnés dêh, je paie pas le poulet !"
+],
+[
+"SERVEUSE",
+"Ya fohi. Appelle-les, ils vont venir laver les assiettes avec toi."
+],
+[
+"CLIENT",
+"Donne-lui l'éponge VIP dêh !"
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"titre": "Les urgences",
+"repliques": [
+[
+"MARI",
+"Docteur, ma femme a avalé une pièce de cent francs !"
+],
+[
+"DOCTEUR",
+"L'opération coûte cent mille, mon vieux."
+],
+[
+"MARI",
+"On laisse. Elle devient ma tirelire."
+],
+[
+"FEMME",
+"Avale ton billet toi-même dêh !"
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"titre": "Délestage au salon",
+"repliques": [
+[
+"CLIENTE",
+"Y a coupure de la CIE et tu me tresses dans le noir ?!"
+],
+[
+"COIFFEUSE",
+"Ma sœur, c'est mieux dêh. Avec ta tête-là, la lumière gâte tout."
+],
+[
+"VOISINE",
+"Même le miroir a dit merci."
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"titre": "La réunion de tontine",
+"repliques": [
+[
+"PRÉSIDENTE",
+"Ma sœur, on t'a renvoyée de la tontine des femmes mariées !"
+],
+[
+"FEMME",
+"Mais je suis mariée dêh !"
+],
+[
+"PRÉSIDENTE",
+"Oui, mais avec le mari de la trésorière."
+],
+[
+"TRÉSORIÈRE",
+"Rembourse mes cotisations et le monsieur !"
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"titre": "Bouchon sur le 3e pont",
+"repliques": [
+[
+"PATRON",
+"Tu es où ?! La réunion a commencé depuis huit heures !"
+],
+[
+"EMPLOYÉ",
+"Patron, y a gros embouteillage sur le pont dêh !"
+],
+[
+"FEMME",
+"Chéri, tu dors encore au lit !"
+],
+[
+"PATRON",
+"Dis-lui de se pousser, j'arrive !"
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"titre": "Le garba de la honte",
+"repliques": [
+[
+"VENDEUR",
+"Ton crédit de garba fait quinze mille ! Je crie ça dehors !"
+],
+[
+"CLIENT",
+"Crie, vieux père. La fille que je drague croit que je jeûne."
+],
+[
+"FILLE",
+"Depuis deux mois tu mens dêh ?!"
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"titre": "Le CV du chômeur",
+"repliques": [
+[
+"MÈRE",
+"Quarante ans, pas de travail ! Tu fais quoi sur ton ordinateur-là ?!"
+],
+[
+"FILS",
+"Maman, je mets mon CV à jour dêh !"
+],
+[
+"PÈRE",
+"Tu ajoutes quoi ? Année de sommeil ?"
+]
+],
+"plume": "google/gemini-4-argon"
+},
+{
+"titre": "Le miroir honnête",
+"repliques": [
+[
+"CLIENTE",
+"Tantie, ton miroir-là dit je suis laide dêh !"
+],
+[
+"TANTIE",
+"C'est un miroir normal, ma fille."
+],
+[
+"CLIENTE",
+"Il ne ment jamais ?"
+],
+[
+"TANTIE",
+"Si. Quand tu n'es pas devant."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "Le détecteur",
+"repliques": [
+[
+"MARI",
+"Pourquoi tu as fixé un détecteur de fumée au-dessus du lit ?"
+],
+[
+"FEMME",
+"Pour détecter tes mensonges."
+],
+[
+"MARI",
+"Il sonne !"
+],
+[
+"FEMME",
+"C'est normal, tu es là."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "La photo floue",
+"repliques": [
+[
+"FEMME",
+"Chéri, ma photo-là est floue sur ton téléphone !"
+],
+[
+"MARI",
+"C'est le mode économie d'énergie."
+],
+[
+"FEMME",
+"Et la photo de ton ex est nette ?"
+],
+[
+"MARI",
+"Elle, elle consomme moins."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "Les condoléances",
+"repliques": [
+[
+"TANTIE",
+"Tonton, tu pleures trop aux enterrements !"
+],
+[
+"TONTON",
+"C'est pour les dettes du défunt, ma sœur."
+],
+[
+"TANTIE",
+"Comment ?"
+],
+[
+"TONTON",
+"Je pleure qu'il est parti avec mon argent."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "Le contact Sodeci",
+"repliques": [
+[
+"CHÉRIE",
+"Chéri, pourquoi ton téléphone a un contact nommé 'Cantine' ?"
+],
+[
+"CHÉRI",
+"C'est mon estomac, bébé."
+],
+[
+"CHÉRIE",
+"Et 'Sodeci' ?"
+],
+[
+"CHÉRI",
+"C'est ma belle-mère. Elle coupe tout."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "Le testament",
+"repliques": [
+[
+"PÈRE",
+"Mon fils, je t'ai laissé la maison dans mon testament."
+],
+[
+"FILS",
+"Merci papa !"
+],
+[
+"PÈRE",
+"Avec les dettes du loyer."
+],
+[
+"FILS",
+"Même la maison-là, c'est une location ?"
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "Le sosie",
+"repliques": [
+[
+"FEMME",
+"Chéri, j'ai vu ton sosie au maquis avec une fille !"
+],
+[
+"MARI",
+"C'était moi, bébé. La fille, c'est ta sœur."
+],
+[
+"FEMME",
+"Ma sœur ?!"
+],
+[
+"MARI",
+"Oui, elle a dit c'est toi le cadeau."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "La dot en nature",
+"repliques": [
+[
+"PÈRE",
+"Tu as apporté combien pour ma fille ?"
+],
+[
+"PRÉTENDANT",
+"Un sac de riz et un bidon d'huile."
+],
+[
+"PÈRE",
+"Et l'argent ?"
+],
+[
+"PRÉTENDANT",
+"C'est le riz qui va le produire, Tonton."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "Le frigo cadenassé",
+"repliques": [
+[
+"MARI",
+"Pourquoi il y a un cadenas sur le frigo ?"
+],
+[
+"FEMME",
+"C'est pour protéger la nourriture."
+],
+[
+"MARI",
+"De qui ?"
+],
+[
+"FEMME",
+"De toi, chéri. Tu manges trop."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "Le chien nommé Tonton",
+"repliques": [
+[
+"FILS",
+"Papa, pourquoi tu as nommé le chien Tonton ?"
+],
+[
+"PÈRE",
+"Parce qu'il mange beaucoup et ne paie pas de loyer."
+],
+[
+"FILS",
+"Comme Tonton Koffi ?"
+],
+[
+"PÈRE",
+"Non, lui il paie en conseils."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "Le photographe",
+"repliques": [
+[
+"CLIENT",
+"Pourquoi tu m'as coupé la tête sur la photo ?"
+],
+[
+"PHOTOGRAPHE",
+"C'est le cadrage artistique."
+],
+[
+"CLIENT",
+"On voit que le ventre !"
+],
+[
+"PHOTOGRAPHE",
+"C'est la chose la plus photogénique."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "Le micro-ondes",
+"repliques": [
+[
+"MARI",
+"Chérie, pourquoi le fer à repasser est dans le micro-ondes ?"
+],
+[
+"FEMME",
+"C'est un nouveau mode : défroissage rapide."
+],
+[
+"MARI",
+"Il y a pas ce mode !"
+],
+[
+"FEMME",
+"Maintenant oui, et aussi le mode incendie."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "Le poulet au salon",
+"repliques": [
+[
+"TANTIE",
+"Pourquoi tu mets le poulet au salon ?"
+],
+[
+"CLIENTE",
+"La Sodeci a coupé le frigo."
+],
+[
+"TANTIE",
+"Il est mort déjà."
+],
+[
+"CLIENTE",
+"Oui, mais il attend l'électricité pour ressusciter."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "Le deuil des lunettes",
+"repliques": [
+[
+"TANTIE",
+"Pourquoi tu portes des lunettes noires pendant l'enterrement ?"
+],
+[
+"TONTON",
+"C'est pour que les condoléances ne me trouvent pas."
+],
+[
+"TANTIE",
+"Comment ?"
+],
+[
+"TONTON",
+"Je dois de l'argent au défunt."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "Le code wifi",
+"repliques": [
+[
+"FILS",
+"Papa, c'est quoi le mot de passe wifi ?"
+],
+[
+"PÈRE",
+"FinDuMois2023"
+],
+[
+"FILS",
+"On est en 2025 dêh."
+],
+[
+"PÈRE",
+"C'est pour te rappeler qu'on n'a pas changé."
+]
+],
+"plume": "deepseek/deepseek-v4-pro-0813"
+},
+{
+"titre": "BARRE test 7 — Maman est fâchée",
+"repliques": [
+[
+"MAMAN",
+"Pourquoi tu filmes ma colère-là ?!"
+],
+[
+"FILS",
+"Papa dit qu'il va envoyer ça à ton papa dêh."
+],
+[
+"MAMAN",
+"Pour faire quoi ?"
+],
+[
+"FILS",
+"Service après-vente. Il dit ton produit-là est gâté."
+]
+],
+"plume": "barre"
+},
+{
+"titre": "BARRE test 9 — Le pourboire",
+"repliques": [
+[
+"APPRENTI",
+"Chauffeur ! Le client a donné dix mille et il a dit garde la monnaie dêh !"
+],
+[
+"CHAUFFEUR",
+"Ferme tes yeux, mon petit. C'est le palu qui commence."
+]
+],
+"plume": "barre"
+},
+{
+"titre": "BARRE test 9 — Le piment",
+"repliques": [
+[
+"CLIENT",
+"Tantie, pourquoi tu ajoutes piment ? J'ai pas demandé dêh !"
+],
+[
+"VENDEUSE",
+"Ton patron-là arrive. Faut que tes larmes aient une explication."
+]
+],
+"plume": "barre"
+}
+]
