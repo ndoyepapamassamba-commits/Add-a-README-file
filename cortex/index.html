@@ -880,12 +880,41 @@ window.addEventListener('beforeunload', () => {
   }
 });
 
-/* Clé API : localStorage (jamais exposée au bac à sable, d'origine opaque) */
+/* Stockage web tolérant : certains contextes (aperçu intégré, iframe sandbox, navigation privée stricte)
+   interdisent localStorage. On bascule alors sur une mémoire de session, sans planter l'application. */
+const memStore = new Map();
+const Store = {
+  ok: true,
+  _area(session) { return session ? window.sessionStorage : window.localStorage; },
+  get(k, session = false) {
+    try { const v = this._area(session).getItem(k); return v ?? memStore.get((session ? 's:' : 'l:') + k) ?? null; }
+    catch { this.ok = false; return memStore.get((session ? 's:' : 'l:') + k) ?? null; }
+  },
+  set(k, v, session = false) {
+    memStore.set((session ? 's:' : 'l:') + k, String(v));
+    try { this._area(session).setItem(k, String(v)); return true; } catch { this.ok = false; return false; }
+  },
+  del(k, session = false) {
+    memStore.delete((session ? 's:' : 'l:') + k);
+    try { this._area(session).removeItem(k); } catch { this.ok = false; }
+  },
+  probe() {
+    try { localStorage.setItem('cortex.probe', '1'); const ok = localStorage.getItem('cortex.probe') === '1'; localStorage.removeItem('cortex.probe'); this.ok = ok; }
+    catch { this.ok = false; }
+    return this.ok;
+  },
+};
+
+/* Clé API : stockage web (jamais exposé au bac à sable, d'origine opaque) */
 const KEY_LS = 'cortex.apiKey';
-function getApiKey() { return localStorage.getItem(KEY_LS) || sessionStorage.getItem(KEY_LS) || ''; }
+/* Retire espaces, retours à la ligne et caractères invisibles souvent collés avec la clé */
+function cleanKey(k) { return String(k || '').replace(/[\s\u200B-\u200D\u2060\uFEFF\u00A0]+/g, '').replace(/^["'«»“”]+|["'«»“”]+$/g, '').replace(/^Bearer/i, ''); }
+function getApiKey() { return Store.get(KEY_LS) || Store.get(KEY_LS, true) || ''; }
 function setApiKey(k, remember = true) {
-  localStorage.removeItem(KEY_LS); sessionStorage.removeItem(KEY_LS);
-  if (k) (remember ? localStorage : sessionStorage).setItem(KEY_LS, k.trim());
+  Store.del(KEY_LS); Store.del(KEY_LS, true);
+  k = cleanKey(k);
+  if (k) return Store.set(KEY_LS, k, !remember);
+  return true;
 }
 
 /* ============================== 03 · VALEURS PAR DÉFAUT ============================== */
@@ -1120,19 +1149,31 @@ const OR = {
     if (json) h['Content-Type'] = 'application/json';
     return h;
   },
-  async request(path, { method = 'GET', body, signal, raw = false, retries, auth = true } = {}) {
+  async request(path, { method = 'GET', body, signal, raw = false, retries, auth = true, timeout = 90000 } = {}) {
     const maxRetries = retries ?? S.settings.harness.retries ?? 2;
     let attempt = 0;
     for (;;) {
       let resp;
+      // Délai max pour obtenir les en-têtes de réponse (le flux lui-même n'est pas limité)
+      const ctrl = new AbortController();
+      const onAbort = () => ctrl.abort();
+      signal?.addEventListener('abort', onAbort, { once: true });
+      let timedOut = false;
+      const timer = setTimeout(() => { timedOut = true; ctrl.abort(); }, timeout);
       try {
         const headers = this.headers(!!body);
         if (!auth) delete headers.Authorization;
-        resp = await fetch(this.base + path, { method, headers, body: body ? JSON.stringify(body) : undefined, signal });
+        resp = await fetch(this.base + path, { method, headers, body: body ? JSON.stringify(body) : undefined, signal: ctrl.signal });
       } catch (e) {
-        if (signal?.aborted || e.name === 'AbortError') throw e;
+        if (signal?.aborted) throw e;
         if (attempt < maxRetries) { attempt++; await sleep(800 * 2 ** attempt); continue; }
-        throw new ApiError('Réseau injoignable : ' + (e.message || e) + ' (connexion internet ? bloqueur ?)', 0);
+        if (timedOut) throw new ApiError(`OpenRouter ne répond pas (délai de ${Math.round(timeout / 1000)} s dépassé) — vérifiez votre connexion internet, un pare-feu, un VPN ou une extension de blocage.`, 408);
+        const msg = String(e.message || e);
+        if (/ISO-8859-1|Invalid value|non ISO/i.test(msg)) throw new ApiError('La clé API contient des caractères invalides (copier-coller ?) : recopiez-la depuis openrouter.ai/settings/keys.', 400);
+        throw new ApiError('Impossible de joindre OpenRouter : ' + msg + ' — connexion internet, pare-feu, VPN ou bloqueur de publicités ?', 0);
+      } finally {
+        // L'écouteur d'annulation reste attaché : il doit aussi interrompre la lecture du flux
+        clearTimeout(timer);
       }
       if (resp.ok) return raw ? resp : resp.json();
       let payload = null;
@@ -1190,7 +1231,11 @@ const OR = {
     DB.put('kv', { id: 'models', ts: S.modelsLoadedAt, data: S.models }).catch(() => {});
     return S.models;
   },
-  async keyInfo() { return (await this.request('/key', { retries: 0 })).data; },
+  async keyInfo() {
+    const j = await this.request('/key', { retries: 0, timeout: 20000 });
+    if (!j || !j.data) throw new ApiError('Réponse inattendue d\'OpenRouter lors de la vérification de la clé.', 0);
+    return j.data;
+  },
   async credits() { return (await this.request('/credits', { retries: 0 })).data; },
   async complete(body, signal) {
     return this.request('/chat/completions', { method: 'POST', body: { ...body, stream: false, usage: { include: true } }, signal });
@@ -1386,14 +1431,14 @@ const OAuth = {
   async start() {
     const v = this.b64url(crypto.getRandomValues(new Uint8Array(32)));
     const ch = this.b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)));
-    sessionStorage.setItem('cortex.pkce', v);
+    Store.set('cortex.pkce', v, true);
     const cb = location.origin + location.pathname;
     location.href = `https://openrouter.ai/auth?callback_url=${encodeURIComponent(cb)}&code_challenge=${ch}&code_challenge_method=S256`;
   },
   async finish() {
     const p = new URLSearchParams(location.search);
     const code = p.get('code');
-    const v = sessionStorage.getItem('cortex.pkce');
+    const v = Store.get('cortex.pkce', true);
     if (!code || !v) return false;
     history.replaceState(null, '', location.pathname + location.hash);
     try {
@@ -1401,7 +1446,7 @@ const OAuth = {
       const j = await r.json();
       if (!j.key) throw new Error(j.error?.message || 'Réponse inattendue');
       setApiKey(j.key, true);
-      sessionStorage.removeItem('cortex.pkce');
+      Store.del('cortex.pkce', true);
       toast('Connecté à OpenRouter ✔', 'ok');
       return true;
     } catch (e) { toast('Connexion OpenRouter échouée : ' + e.message, 'err', 6000); return false; }
@@ -3597,7 +3642,7 @@ function openChat(id) {
   S.currentChatId = id;
   S.ui.stick = true;
   S.ui.editing = null;
-  localStorage.setItem('cortex.lastChat', id);
+  Store.set('cortex.lastChat', id);
   $('#app').classList.remove('mobile-open');
   renderChatView();
   renderChatList();
@@ -3981,7 +4026,7 @@ function renderComposer() {
     </div>
     <div class="comp-hint hide-sm">${S.settings.sendKey === 'enter' ? 'Entrée pour envoyer · Maj+Entrée nouvelle ligne' : `${MOD}+Entrée pour envoyer`} · <kbd>/</kbd> prompts · <kbd>${MOD}</kbd><kbd>K</kbd> commandes · Les IA peuvent se tromper.</div>`;
   const inp = $('#input');
-  inp.value = localStorage.getItem('cortex.draft') || '';
+  inp.value = Store.get('cortex.draft') || '';
   inp.addEventListener('input', () => { autoGrow(); updateTokHint(); slashCheck(); saveDraft(); });
   inp.addEventListener('keydown', onInputKey);
   inp.addEventListener('paste', (e) => {
@@ -3994,7 +4039,7 @@ function renderComposer() {
   comp.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length) { e.preventDefault(); addAttachments([...e.dataTransfer.files]); } });
   autoGrow(); updateTokHint();
 }
-const saveDraft = debounce(() => localStorage.setItem('cortex.draft', $('#input')?.value || ''), 400);
+const saveDraft = debounce(() => Store.set('cortex.draft', $('#input')?.value || ''), 400);
 function autoGrow() {
   const t = $('#input');
   if (!t) return;
@@ -4085,7 +4130,7 @@ async function sendFromComposer(textOverride) {
   const atts = S.ui.attachments;
   S.ui.attachments = [];
   renderAttachments();
-  if (textOverride == null) { inp.value = ''; autoGrow(); updateTokHint(); localStorage.removeItem('cortex.draft'); }
+  if (textOverride == null) { inp.value = ''; autoGrow(); updateTokHint(); Store.del('cortex.draft'); }
   closeSlash();
   S.ui.stick = true;
   if (!col('chats').has(chat.id)) col('chats').set(chat.id, chat);
@@ -5452,26 +5497,17 @@ const SETTINGS_TABS = {
   },
   api(m) {
     const key = getApiKey();
-    const remembered = !!localStorage.getItem(KEY_LS);
+    const remembered = !!Store.get(KEY_LS);
     m.innerHTML = `<h3>Clé API OpenRouter</h3><p class="lead">Une seule clé donne accès à plus de 400 modèles (OpenAI, Anthropic, Google, Meta, Mistral, DeepSeek, xAI, Qwen…). Elle est stockée uniquement dans ce navigateur et envoyée seulement à openrouter.ai.</p>
       ${ui.field('Clé API', `<div class="row"><input class="inp mono" type="password" id="ak" value="${esc(key)}" placeholder="sk-or-v1-…" autocomplete="off"><button class="btn" id="ak-show" title="Afficher">${icon('eye', 'sm')}</button></div>`, `Créez une clé sur <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">openrouter.ai/settings/keys</a>. Astuce : fixez une limite de dépense sur la clé.`)}
       <label class="row small" style="margin-bottom:14px"><input type="checkbox" id="ak-rem" ${remembered || !key ? 'checked' : ''} style="accent-color:var(--accent)"> Mémoriser sur cet appareil (sinon : effacée à la fermeture de l'onglet)</label>
       <div class="row wrap"><button class="btn primary" id="ak-save">${icon('check', 'sm')} Enregistrer et tester</button>${/^https?:/.test(location.protocol) ? `<button class="btn" id="ak-oauth">${icon('link', 'sm')} Se connecter avec OpenRouter</button>` : ''}${key ? `<button class="btn danger" id="ak-del">${icon('trash', 'sm')} Retirer la clé</button>` : ''}</div>
       <div id="ak-info" style="margin-top:16px"></div>`;
     m.querySelector('#ak-show').onclick = () => { const i = $('#ak'); i.type = i.type === 'password' ? 'text' : 'password'; };
-    m.querySelector('#ak-save').onclick = async () => {
-      const k = $('#ak').value.trim();
-      if (!k) return toast('Saisissez une clé', 'err');
-      setApiKey(k, $('#ak-rem').checked);
-      const box = $('#ak-info');
-      box.innerHTML = '<span class="spin"></span> Vérification…';
-      try {
-        const info = await OR.keyInfo();
-        box.innerHTML = `<div class="note" style="background:var(--success-soft);color:var(--success)">${icon('check', 'sm')} Clé valide — ${esc(info.label || '')} · dépensé ${fmtCost(info.usage, true)}${info.limit_remaining != null ? ' · restant ' + fmtCost(info.limit_remaining, true) : ''}${info.is_free_tier ? ' · offre gratuite' : ''}</div>`;
-        toast('Clé enregistrée ✔', 'ok');
-        renderRail(); renderMessages();
-      } catch (e) { box.innerHTML = `<div class="err-box">${icon('alert', 'sm')}<div>${esc(e.message)}</div></div>`; }
-    };
+    const btn = m.querySelector('#ak-save');
+    const save = () => saveAndVerifyKey($('#ak').value, $('#ak-rem').checked, $('#ak-info'), btn).then((ok) => { if (ok) { $('#ak').value = getApiKey(); } });
+    btn.onclick = save;
+    m.querySelector('#ak').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
     m.querySelector('#ak-oauth')?.addEventListener('click', () => OAuth.start());
     m.querySelector('#ak-del')?.addEventListener('click', async () => { if (await confirmDialog('Retirer la clé API de ce navigateur ?', { danger: true, ok: 'Retirer' })) { setApiKey(''); renderPage(); renderRail(); } });
   },
@@ -5598,7 +5634,7 @@ const SETTINGS_TABS = {
       if (!(await confirmDialog('Tout effacer (conversations, agents, fichiers, mémoire, réglages, clé API) ?', { danger: true, ok: 'Tout effacer' }))) return;
       for (const s of STORES) await DB.clear(s);
       setApiKey('');
-      localStorage.removeItem('cortex.draft'); localStorage.removeItem('cortex.lastChat');
+      Store.del('cortex.draft'); Store.del('cortex.lastChat');
       location.reload();
     };
   },
@@ -5690,6 +5726,53 @@ function mergeSettings(saved) {
   return out;
 }
 
+/* ---------------- Enregistrement + diagnostic de la clé ---------------- */
+async function saveAndVerifyKey(raw, remember, box, btn) {
+  const step = (state, text) => `<div class="row small" style="align-items:flex-start;margin:4px 0"><span style="flex:none;width:18px;text-align:center">${state === 'ok' ? '✅' : state === 'err' ? '❌' : state === 'warn' ? '⚠️' : '<span class="spin"></span>'}</span><span>${text}</span></div>`;
+  const render = (lines) => { if (box) box.innerHTML = `<div class="card" style="padding:10px 14px">${lines.join('')}</div>`; };
+  const label = btn?.innerHTML;
+  try {
+    const k = cleanKey(raw);
+    if (!k) { render([step('err', 'Aucune clé saisie. Collez la clé copiée depuis openrouter.ai/settings/keys.')]); return false; }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Vérification…'; }
+    const lines = [];
+    if (k !== String(raw).trim()) lines.push(step('warn', 'Espaces ou caractères invisibles retirés de la clé collée.'));
+    if (!/^sk-or-/.test(k)) lines.push(step('warn', `La clé ne commence pas par « sk-or- » (${esc(k.slice(0, 6))}…) : est-ce bien une clé OpenRouter ?`));
+    const stored = setApiKey(k, remember);
+    lines.push(stored ? step('ok', remember ? 'Clé enregistrée dans ce navigateur.' : "Clé enregistrée pour cette session (jusqu'à la fermeture de l'onglet).")
+      : step('warn', "Le navigateur bloque le stockage local (aperçu intégré, mode privé strict ?) : la clé est gardée seulement jusqu'au rechargement. Ouvrez le fichier directement dans Chrome ou Edge pour la mémoriser."));
+    lines.push(step('wait', 'Connexion à OpenRouter et vérification de la clé…'));
+    render(lines);
+    renderRail();
+    try {
+      const info = await OR.keyInfo();
+      lines.pop();
+      lines.push(step('ok', 'OpenRouter joignable.'));
+      lines.push(step('ok', `Clé acceptée${info.label ? ' (' + esc(info.label) + ')' : ''} · dépensé ${fmtCost(info.usage || 0, true)}${info.limit_remaining != null ? ' · <b>crédit restant ' + fmtCost(info.limit_remaining, true) + '</b>' : ''}${info.is_free_tier ? ' · offre gratuite (modèles :free limités)' : ''}.`));
+      if (info.limit_remaining != null && info.limit_remaining <= 0) lines.push(step('warn', 'Crédit épuisé : seuls les modèles gratuits (:free) fonctionneront.'));
+      render(lines);
+      toast('Clé enregistrée et vérifiée ✔', 'ok');
+      renderMessages();
+      return true;
+    } catch (e) {
+      lines.pop();
+      if (e.status === 401 || e.status === 403) {
+        lines.push(step('ok', 'OpenRouter joignable.'));
+        lines.push(step('err', `Clé refusée par OpenRouter (${e.status}) : elle est incorrecte, désactivée ou supprimée. Créez-en une nouvelle sur <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">openrouter.ai/settings/keys</a> et recollez-la en entier.`));
+      } else lines.push(step('err', esc(e.message || String(e))));
+      render(lines);
+      toast('Vérification de la clé impossible', 'err');
+      return false;
+    }
+  } catch (e) {
+    console.error(e);
+    render([step('err', 'Erreur inattendue : ' + esc(e.message || String(e)))]);
+    return false;
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = label; }
+  }
+}
+
 /* ---------------- Accueil / configuration de la clé ---------------- */
 function openOnboarding() {
   const httpOk = /^https?:/.test(location.protocol);
@@ -5704,19 +5787,8 @@ function openOnboarding() {
   });
   m.overlay.querySelector('.modal-f [data-close]').onclick = () => m.close();
   const save = async () => {
-    const k = $('#ob-key').value.trim();
-    const msg = $('#ob-msg');
-    if (!/^sk-/.test(k)) { msg.innerHTML = `<span style="color:var(--danger)">Une clé OpenRouter commence par « sk-or- ».</span>`; return; }
-    setApiKey(k, true);
-    msg.innerHTML = '<span class="spin"></span> Vérification…';
-    try {
-      const info = await OR.keyInfo();
-      msg.innerHTML = `<span style="color:var(--success)">✔ Clé valide${info.limit_remaining != null ? ' — crédit restant ' + fmtCost(info.limit_remaining, true) : ''}</span>`;
-      S.settings.onboarded = true; saveSettings();
-      renderRail(); renderMessages();
-      setTimeout(() => m.close(), 700);
-      $('#input')?.focus();
-    } catch (e) { msg.innerHTML = `<span style="color:var(--danger)">${esc(e.message)}</span>`; }
+    const ok = await saveAndVerifyKey($('#ob-key').value, true, $('#ob-msg'), m.el.querySelector('#ob-save'));
+    if (ok) { S.settings.onboarded = true; saveSettings(); setTimeout(() => { m.close(); $('#input')?.focus(); }, 1400); }
   };
   m.el.querySelector('#ob-save').onclick = save;
   m.el.querySelector('#ob-key').addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); });
@@ -6006,11 +6078,17 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.key === '/' && !typing && !mod && !modalStack.length) { e.preventDefault(); $('#input')?.focus(); }
 });
-window.addEventListener('unhandledrejection', (e) => {
-  const r = e.reason;
-  if (r?.name === 'AbortError') return;
-  console.error(r);
-});
+let lastErrToast = 0;
+function reportError(err) {
+  const msg = String(err?.message || err || '');
+  if (!msg || err?.name === 'AbortError' || /ResizeObserver|Script error/i.test(msg)) return;
+  console.error(err);
+  if (now() - lastErrToast < 3000) return;
+  lastErrToast = now();
+  toast('Erreur inattendue : ' + truncate(msg, 160), 'err', 6000);
+}
+window.addEventListener('unhandledrejection', (e) => reportError(e.reason));
+window.addEventListener('error', (e) => reportError(e.error || e.message));
 
 /* ---------- Démarrage ---------- */
 async function boot() {
@@ -6049,7 +6127,7 @@ async function boot() {
     updateJump();
   }, { passive: true });
   await OAuth.finish();
-  const last = localStorage.getItem('cortex.lastChat');
+  const last = Store.get('cortex.lastChat');
   if (last && col('chats').has(last) && Object.keys(col('chats').get(last).nodes).length) openChat(last);
   else newChatView();
   if (!window.marked || !window.DOMPurify) toast('Bibliothèques d\'affichage non chargées (hors ligne ?) : rendu simplifié.', 'err', 6000);
@@ -6059,6 +6137,7 @@ async function boot() {
     if (c && !Object.keys(c.nodes).length) renderMessages();
     if (S.ui.page === 'models') renderPage();
   }).catch((e) => toast('Catalogue des modèles indisponible : ' + e.message, 'err', 5000));
+  if (!Store.probe() || DB.memory) toast("Stockage du navigateur indisponible : rien ne sera conservé après rechargement. Ouvrez le fichier directement dans Chrome, Edge ou Firefox.", 'err', 9000);
   if (!getApiKey()) openOnboarding();
   if ('speechSynthesis' in window) speechSynthesis.getVoices();
 }
