@@ -32,6 +32,50 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
 - Palette de commandes `Ctrl+K`, raccourcis clavier, thème clair/sombre, interface mobile.
 - Export Markdown / HTML / JSON / PDF (impression). Import des exports **ChatGPT** et **TypingMind**.
 
+### Fichiers téléchargeables (sorties) — tous formats
+- **Excel premium** (`.xlsx`) : titre, en-têtes stylés, filtres, volets figés, statuts colorés avec liste
+  déroulante, feuille **Synthèse** d'avancement calculée par formules, impression paysage.
+- **Word** (`.docx`), **PDF**, **PowerPoint** (`.pptx` 16:9 avec graphiques natifs modifiables, tableaux,
+  illustrations, notes d'orateur), **vidéos** MP4/WebM (diaporamas animés), **images** (génération
+  **gratuite** FLUX ou OpenRouter), **QR codes**, **modèles 3D** `.glb` / `.obj` / `.stl`.
+- Chaque réponse affiche une carte **« Fichiers produits »** : aperçu, **Télécharger**, tout en `.zip`.
+- Les liens inventés par les modèles (`sandbox:/mnt/data/…`) sont **réparés** automatiquement en vrais
+  téléchargements ; les liens vers des fichiers inexistants sont signalés.
+- Tout tableau d'une réponse : **Copier / CSV / Excel** ; toute réponse : export **Word / PDF / Excel / Markdown**.
+- Python installe seul les paquets manquants (openpyxl, python-docx, python-pptx, fpdf2…) ; tout fichier
+  écrit dans l'espace de travail devient téléchargeable.
+
+### Entrées — tous formats
+- Images, **vidéos** (images clés extraites), **audio** (transcrit si le modèle ne l'entend pas), PDF, Word,
+  Excel, **PowerPoint**, **zip**, code, CSV… ; chaque pièce jointe est aussi copiée dans `uploads/` pour Python.
+- **Pont de modalités** : un modèle « vision » décrit images et vidéos aux modèles qui ne les voient pas.
+
+### Skills (savoir-faire chargeables)
+- 11 skills intégrés : Excel, Word, PDF, PowerPoint, Vidéo, **Blender & 3D**, **Développement (mode Cursor)**,
+  **API gratuites**, Contrôle visuel, Analyse de données, **REA — Risk Exposure Amount (Bâle)**.
+- Activation **automatique** selon votre message, ou à la demande (`load_skill`) : le skill injecte sa méthode
+  et **active ses outils** en cours d'exécution.
+- Import de vos skills au format **SKILL.md** (Claude, Cursor…), `.zip` (avec fichiers) ou `.json` ; éditeur intégré.
+
+### Code (façon Cursor) et vérification visuelle
+- Page **Code** : éditeur **Monaco** (celui de VS Code), onglets, exécution JS / Python / HTML,
+  **modifications par l'IA en diff** (accepter / rejeter), corriger, expliquer, commenter, générer des tests.
+- Outil **visual_check** : rend une page, un graphique, un Excel, un Word, un PowerPoint, un PDF ou une vidéo,
+  en fait une **capture d'écran** avec les **erreurs JavaScript**, et la transmet au modèle (ou la fait décrire
+  par un modèle vision) — l'équivalent navigateur d'un Node.js + Playwright.
+- `run_javascript` : paquets **npm** via `await import('https://esm.sh/paquet')`.
+
+### Blender & 3D
+- Outil **create_3d** : scène Three.js interactive, export **GLB automatique** (Blender : Fichier › Importer ›
+  glTF 2.0), boutons **OBJ / STL** (impression 3D) / PNG, capture renvoyée au modèle.
+- Le skill Blender écrit aussi des **scripts Blender Python (bpy)** prêts à exécuter dans Blender.
+
+### API gratuites (sans clé)
+Outil **free_api** : météo et qualité de l'air, géocodage, fiches pays, jours fériés, **Banque mondiale**,
+taux de change (dont XOF), cryptomonnaies, Wikipédia / Wikidata, publications (Crossref, OpenAlex), livres,
+npm, PyPI, GitHub, lever du soleil, horaires de prière, Coran, séismes, NASA, traduction, dictionnaire,
+Open Food Facts, espèces (GBIF), QR codes, images gratuites…
+
 ### Harness d'agents
 - **Boucle agentique** : le modèle enchaîne appels d'outils → observation → nouvelle étape, jusqu'à la fin
   de la tâche (nombre d'étapes et **budget en $ par réponse** plafonnés).
@@ -51,6 +95,9 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
 - **Trace d'exécution** : chronologie de chaque appel (modèle, outil, hook), durées, tokens, coûts,
   requêtes et réponses brutes.
 - Garde-fou **anti-boucle**, nouvelles tentatives automatiques (429/5xx), **repli** des modèles gratuits saturés.
+- **Détecteur de boucles de répétition** : un modèle qui « radote » (raisonnement ou réponse qui se répète)
+  est interrompu puis relancé en mode réponse directe.
+- **Réparation automatique** des arguments JSON mal formés par les petits modèles.
 
 ### Multi-modèles
 - **Comparaison** côte à côte de 2 à 4 modèles sur le même message.
@@ -66,7 +113,14 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
 - Profil & instructions personnalisées transmis à tous les agents.
 
 ### Suivi des coûts
-- Coût et tokens par message, par conversation, par modèle et par jour ; solde OpenRouter ; export CSV.
+- **Solde OpenRouter** affiché en permanence dans la barre de gauche (vert / orange / rouge), détail au clic
+  (crédits, consommation du jour et du mois, limite de la clé), actualisé après chaque réponse.
+- Coût et tokens par message, par conversation, par modèle et par jour ; export CSV.
+
+## ℹ️ Limites d'une application navigateur
+Node.js, Cursor et Blender sont des logiciels de bureau : ils ne peuvent pas s'exécuter dans une page web.
+Cortex fournit leurs équivalents dans le navigateur (exécution JS/Python isolée + captures d'écran,
+éditeur Monaco avec diff IA, scènes 3D exportées en GLB/OBJ/STL et scripts Blender Python).
 
 ## 🔒 Sécurité & confidentialité
 - Conversations, fichiers, mémoire et documents : stockés **localement** (IndexedDB). Aucune télémétrie.
@@ -88,8 +142,10 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
 | 📊 Analyste de données | Python, graphiques, analyses |
 | 🧭 Orchestrateur | Planifie et délègue à des sous-agents |
 | ✍️ Rédacteur | Écriture française soignée |
-| 🎨 Studio Image | Génération d'images |
-| 🎓 Professeur | Pédagogie, quiz interactifs |
+| 🎨 Studio Image | Images (gratuites ou premium) et vidéos |
+| 🎓 Professeur | Pédagogie, quiz interactifs, présentations |
+| 📑 Studio Office | Excel, Word, PowerPoint, PDF professionnels vérifiés visuellement |
+| 🧊 Studio 3D | Scènes 3D exportables vers Blender, scripts bpy |
 
 Créez les vôtres dans **Agents** (instructions, modèle, outils, connaissances, paramètres, amorces).
 
