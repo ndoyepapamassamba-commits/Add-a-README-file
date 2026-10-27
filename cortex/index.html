@@ -308,6 +308,57 @@ kbd{font-family:var(--mono);font-size:.75em;padding:1px 6px;border-radius:6px;bo
 .comp-att .x{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
 .comp-att .x:hover{background:var(--bg-hover);color:var(--text)}
 .comp-hint{font-size:.74em;color:var(--faint);text-align:center;padding-top:8px}
+.status-line{display:flex;align-items:center;gap:6px;font-size:.74em;color:var(--muted);padding:7px 4px 0;font-family:var(--mono);white-space:nowrap;min-width:0}
+.status-line button{font:inherit;background:none;border:0;color:inherit;cursor:pointer;padding:2px 6px;border-radius:6px}
+.status-line button:hover{background:var(--panel-2);color:var(--text)}
+.status-line .sl-mode{font-weight:700;color:var(--text-2)}
+.status-line .sl-mode.m-auto{color:var(--warning)}.status-line .sl-mode.m-plan{color:var(--accent)}.status-line .sl-mode.m-readonly{color:var(--success)}
+.status-line .sl-dot{color:var(--faint)}.status-line .sl-model{max-width:220px;flex:0 0 auto}.status-line .sl-warn{color:var(--danger)}
+.status-line>*{flex:none}.status-line .sl-smart{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}.status-line .grow{flex:1 1 0;min-width:0}
+.status-line .sl-smart{color:var(--accent)}
+.status-line kbd{font-size:.9em;padding:0 4px}
+details.superseded{margin:4px 0 8px;border:1px dashed var(--border-2);border-radius:10px;opacity:.75}
+details.superseded>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:.82em;color:var(--muted)}
+details.superseded>summary::-webkit-details-marker{display:none}
+details.superseded>summary .chev{margin-left:auto}
+details.superseded>.md{padding:4px 14px 10px}
+.plan-card{border:1.5px solid var(--accent);background:var(--accent-soft);border-radius:12px;padding:12px 14px;margin:8px 0}
+.plan-card .md{font-size:.95em}
+.rea-body{font-size:.9em;padding:2px 2px 4px}.rea-body .md h1{font-size:1.1em}.rea-body .md h2{font-size:1em;margin-top:10px}
+.tc-peek{display:none}
+.tool.guru-plan{margin-top:6px}
+.xp-card{border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--panel)}
+.xp-card.fail{border-color:color-mix(in srgb,var(--danger) 40%,var(--border))}
+.xp-steps,.xp-lessons{margin:6px 0 0 30px;padding-left:16px;color:var(--text-2)}
+.xp-lessons{list-style:none;padding-left:0}.xp-lessons li{display:flex;gap:6px;align-items:flex-start;margin:2px 0}
+.ctx-bar.big{height:10px;border-radius:6px}
+/* Affichage « Terminal » (style Claude Code) */
+body.term .step .tool{border:0;background:none;box-shadow:none;margin:2px 0;border-radius:0}
+body.term .step .tool:not(details)>div{padding:4px 0 4px 18px!important}
+body.term .step .tool:not(details) .ticon{display:none}
+body.term .step .tool:not(details) b.small{font-family:var(--mono)}
+body.term .step .tool:not(details) b.small::before{content:'⏺ ';color:var(--success)}
+body.term .step .tool>summary{font-family:var(--mono);font-size:.82em;padding:3px 0;color:var(--text)}
+body.term .step .tool>summary .ticon{display:none}
+body.term .step .tool>summary::before{content:'⏺';color:var(--success);margin-right:2px}
+body.term .step .tool.error>summary::before,body.term .step .tool.denied>summary::before{color:var(--danger)}
+body.term .step .tool.running>summary::before{color:var(--warning);animation:pulse 1s infinite}
+body.term .step .tool>summary .tname{font-weight:700}
+body.term .step .tool>summary .targs{color:var(--muted)}
+body.term .step .tool>summary .targs::before{content:'('}body.term .step .tool>summary .targs::after{content:')'}
+body.term .step .tool>summary .badge{display:none}
+body.term .tc-peek{display:block;font-family:var(--mono);font-size:.78em;color:var(--muted);padding:0 0 4px 18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.term .tc-peek.error,body.term .tc-peek.denied{color:var(--danger)}
+body.term .step .tool .tbody{border-left:2px solid var(--border);margin-left:6px;padding-left:12px}
+body.term .todo-list{font-family:var(--mono);font-size:.85em;gap:1px}
+body.term .todo-list .box{border:0;width:auto;height:auto;background:none!important;color:var(--text)}
+body.term .todo-list li .box::before{content:'☐'}body.term .todo-list li.completed .box::before{content:'☒'}body.term .todo-list li.in_progress .box::before{content:'◼';color:var(--accent)}
+body.term .todo-list li .box svg{display:none}
+body.term .todo-list li.in_progress{font-weight:700}
+body.term .thinking>summary{font-family:var(--mono);font-size:.8em}
+body.term .thinking>summary::before{content:'✻';color:var(--accent)}
+body.term .thinking>summary svg:first-child{display:none}
+@keyframes pulse{50%{opacity:.35}}
 .rec{color:#fff!important;background:var(--danger)!important;animation:pulse 1.4s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--danger) 50%,transparent)}70%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
 .jump{position:absolute;left:50%;transform:translateX(-50%);bottom:170px;width:38px;height:38px;border-radius:50%;background:var(--panel);border:1px solid var(--border);box-shadow:var(--shadow);display:grid;place-items:center;color:var(--text-2);z-index:5}
@@ -540,6 +591,13 @@ kbd{font-family:var(--mono);font-size:.75em;padding:1px 6px;border-radius:6px;bo
 .theme-card{display:flex;flex-direction:column;gap:6px;align-items:flex-start;padding:10px;border:1.5px solid var(--border);border-radius:12px;background:var(--panel);text-align:left;cursor:pointer}
 .theme-card:hover{border-color:var(--border-2)}.theme-card.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .theme-card .sw{display:flex;gap:3px}.theme-card .sw i{width:26px;height:18px;border-radius:5px;display:block;border:1px solid rgba(0,0,0,.08)}
+.pop.design{width:min(440px,calc(100vw - 16px));overflow:auto}
+.design-pop{padding:14px 16px}
+.design-pop .dp-sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:12px 0 6px}
+.theme-grid.compact{grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:6px}
+.theme-grid.compact .theme-card{padding:7px 8px;gap:4px;border-radius:10px}
+.theme-grid.compact .theme-card .sw i{width:18px;height:13px;border-radius:4px}
+.brand-logo.sm{width:130px;height:60px;padding:6px;border-radius:10px}
 </style>
 </head>
 <body>
@@ -851,6 +909,7 @@ const ICONS = {
   link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
   server: '<rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01M6 18h.01"/>',
   scale: '<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM7 21h10M12 3v18M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>',
+  palette: '<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.13-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.56-2.5 5.56-5.55C21.97 6.01 17.46 2 12 2z"/>',
   trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
   wand: '<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72ZM14 7l3 3M5 6v4M19 14v4M10 2v2M7 8H3M21 16h-4M11 3H9"/>',
   python: '<path d="M12 2c-4 0-4 1.8-4 1.8V6h4v1H5.5S2 6.6 2 12s3 5.3 3 5.3h1.8v-2.5S6.7 12 9.5 12h4.3s2.7 0 2.7-2.6V4.6S16.9 2 12 2Z"/><path d="M12 22c4 0 4-1.8 4-1.8V18h-4v-1h6.5s3.5.4 3.5-5-3-5.3-3-5.3h-1.8v2.5s.1 2.8-2.7 2.8h-4.3s-2.7 0-2.7 2.6v4.8S7.1 22 12 22Z"/>',
@@ -877,7 +936,7 @@ function modelLogo(modelId, size = 28) {
 }
 
 /* ============================== 02 · STOCKAGE ============================== */
-const STORES = ['kv', 'chats', 'agents', 'prompts', 'tools', 'kbcols', 'kbdocs', 'memories', 'files', 'folders', 'usage', 'mcp', 'skills'];
+const STORES = ['kv', 'chats', 'agents', 'prompts', 'tools', 'kbcols', 'kbdocs', 'memories', 'files', 'folders', 'usage', 'mcp', 'skills', 'experiences'];
 const DB = {
   db: null,
   memory: null, // repli en mémoire si IndexedDB indisponible
@@ -885,7 +944,7 @@ const DB = {
     if (!('indexedDB' in window)) { this.memory = {}; return; }
     try {
       this.db = await new Promise((res, rej) => {
-        const req = indexedDB.open('cortex-studio', 2);
+        const req = indexedDB.open('cortex-studio', 3);
         req.onupgradeneeded = () => {
           const db = req.result;
           for (const s of STORES) if (!db.objectStoreNames.contains(s)) db.createObjectStore(s, { keyPath: 'id' });
@@ -1040,6 +1099,7 @@ const DEFAULT_SETTINGS = {
     maxSteps: 25, toolTimeout: 60, maxToolChars: 24000, parallelTools: true, permissionMode: 'ask',
     budgetPerRun: 0.5, retries: 3, autoCompact: true, compactAt: 0.7, keepRecent: 6, contextLimit: 0,
     injectDate: true, middleOut: false, loopGuard: true, subagentDepth: 2, freeFallback: true, loopDetect: true, autoSkills: true, toolSearch: true,
+    reaFirst: true, learn: true, boosters: true, guru: 'auto', freeReview: true, boostFreeOnly: true, display: 'cards',
   },
   toolPerms: {},
   provider: { sort: '', dataCollection: 'allow', zdr: false, allowFallbacks: true, ignore: '' },
@@ -2239,12 +2299,18 @@ async function recolorLogo(im, hex, mode = 'palette') {
   const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, im.w, im.h);
   const d = ctx.getImageData(0, 0, im.w, im.h), px = d.data;
   const h = String(hex).replace('#', ''), tr = parseInt(h.slice(0, 2), 16), tg = parseInt(h.slice(2, 4), 16), tb = parseInt(h.slice(4, 6), 16);
+  // Luminance de référence = ton principal du logo (10e centile des pixels colorés) : il prend EXACTEMENT la couleur
+  // de la palette ; les tons plus clairs deviennent des nuances de cette couleur (détails conservés).
+  const lums = [];
+  for (let i = 0; i < px.length; i += 16) if (px[i + 3] > 128) { const L = (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) / 255; if (L <= 0.93) lums.push(L); }
+  lums.sort((x, y) => x - y);
+  const L0 = Math.min(0.6, lums.length ? lums[Math.floor(lums.length * 0.1)] : 0.08);
   for (let i = 0; i < px.length; i += 4) {
     if (!px[i + 3]) continue;
     const L = (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) / 255;
     if (mode === 'blanc') { px[i] = px[i + 1] = px[i + 2] = 255; if (L > 0.93) px[i + 3] = 0; continue; }
     if (L > 0.93) { if (mode === 'mono') px[i + 3] = 0; continue; } // fonds blancs : conservés (palette) ou retirés (mono)
-    const t = mode === 'mono' ? 0 : Math.min(0.85, Math.max(0, (L - 0.08) / 0.92) * 0.85);
+    const t = mode === 'mono' ? 0 : Math.min(0.85, Math.max(0, (L - L0) / (0.93 - L0)) * 0.85);
     px[i] = Math.round(tr + (255 - tr) * t); px[i + 1] = Math.round(tg + (255 - tg) * t); px[i + 2] = Math.round(tb + (255 - tb) * t);
   }
   ctx.putImageData(d, 0, 0);
@@ -2449,29 +2515,36 @@ const Office = {
     // Index des styles (cellXfs) :
     // 0 défaut · 1 en-tête · 2 corps · 3 corps zébré · 4 titre · 5 sous-titre · 6 nombre · 7 nombre zébré
     // 8 centré · 9 centré zébré · 10 pourcentage · 11 pourcentage zébré · 12 total texte · 13 total nombre · 14 total %
+    // 15 % à 2 décimales · 16 idem zébré · 17 total % 2 déc. · 18 décimal 2 déc. · 19 idem zébré · 20 total décimal
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.##"/><numFmt numFmtId="165" formatCode="0%"/></numFmts>
+<numFmts count="3"><numFmt numFmtId="164" formatCode="#,##0.##"/><numFmt numFmtId="165" formatCode="0%"/><numFmt numFmtId="166" formatCode="0.00%"/></numFmts>
 <fonts count="6"><font><sz val="10"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="17"/><color rgb="FF${accent}"/><name val="Calibri"/><family val="2"/></font><font><i/><sz val="10"/><color rgb="FF595959"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="10"/><name val="Calibri"/><family val="2"/></font><font><sz val="10"/><color rgb="FF000000"/><name val="Calibri"/><family val="2"/></font></fonts>
 <fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF${accent}"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF${T.light}"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF${T.soft}"/><bgColor indexed="64"/></patternFill></fill></fills>
 <borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border>${border}</borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="15">
+<cellXfs count="21">
 <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
 <xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
 <xf numFmtId="0" fontId="5" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
 <xf numFmtId="0" fontId="5" fillId="3" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
 <xf numFmtId="0" fontId="2" fillId="0" borderId="2" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
 <xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
-<xf numFmtId="164" fontId="5" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment vertical="top"/></xf>
-<xf numFmtId="164" fontId="5" fillId="3" borderId="1" xfId="0" applyNumberFormat="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="top"/></xf>
+<xf numFmtId="3" fontId="5" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment vertical="top"/></xf>
+<xf numFmtId="3" fontId="5" fillId="3" borderId="1" xfId="0" applyNumberFormat="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="top"/></xf>
 <xf numFmtId="0" fontId="5" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf>
 <xf numFmtId="0" fontId="5" fillId="3" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf>
 <xf numFmtId="165" fontId="5" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf>
 <xf numFmtId="165" fontId="5" fillId="3" borderId="1" xfId="0" applyNumberFormat="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf>
 <xf numFmtId="0" fontId="4" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
-<xf numFmtId="164" fontId="4" fillId="4" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"/>
+<xf numFmtId="3" fontId="4" fillId="4" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"/>
 <xf numFmtId="165" fontId="4" fillId="4" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="166" fontId="5" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top"/></xf>
+<xf numFmtId="166" fontId="5" fillId="3" borderId="1" xfId="0" applyNumberFormat="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top"/></xf>
+<xf numFmtId="166" fontId="4" fillId="4" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right"/></xf>
+<xf numFmtId="4" fontId="5" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment vertical="top"/></xf>
+<xf numFmtId="4" fontId="5" fillId="3" borderId="1" xfId="0" applyNumberFormat="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="top"/></xf>
+<xf numFmtId="4" fontId="4" fillId="4" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"/>
 </cellXfs>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 <dxfs count="${this.STATUS_COLORS.length}">${dxfs}</dxfs>
@@ -2484,6 +2557,8 @@ const Office = {
     const s = v == null ? '' : String(v);
     if (/^=[A-Z]/.test(s)) return { f: s.slice(1) };
     if (/^-?\d{1,15}([.,]\d+)?$/.test(s.trim()) && !/^0\d/.test(s.trim())) return { n: parseFloat(s.trim().replace(',', '.')) };
+    const pm = s.trim().match(/^(-?\d{1,6}(?:[.,]\d+)?)\s?%$/);
+    if (pm) return { n: parseFloat(pm[1].replace(',', '.')) / 100, pct: true };
     return { s };
   },
   sheetXML(sh, idx) {
@@ -2496,8 +2571,20 @@ const Office = {
       const lens = [String(h).length + 2, ...R.map((r) => String(r[c] ?? '').length)];
       if (c === statusIdx) lens.push(...(sh.status_values || []).map((v) => String(v).length + 3), 14);
       const avg = lens.reduce((a, b) => a + b, 0) / lens.length;
-      return clamp(Math.round(Math.max(Math.min(Math.max(...lens), 60), avg * 1.15, 8)), 8, 60);
+      const numeric = R.length && R.every((r) => r[c] == null || r[c] === '' || this.cellValue(r[c]).n != null || this.cellValue(r[c]).f != null);
+      return clamp(Math.round(Math.max(Math.min(Math.max(...lens), 60), avg * 1.15, numeric ? 11 : 8)), 8, 60);
     })).map((w) => clamp(+w || 12, 4, 120));
+    // Format de chaque colonne numérique : pourcentage (fractions sous un en-tête de taux), entier ou décimal
+    const PCT_HEAD = /%|\bpd\b|\blgd\b|\bccf\b|taux|ratio|\bpart\b|marge|rendement|croissance|variation|evolution|pourcent|proportion|share|rate|yield|probabilit|couverture|utilisation|ecart/i;
+    const colFmt = H.map((h, c) => {
+      const vals = R.map((row) => this.cellValue(row[c])).map((v) => (v.n != null ? v.n : v.cached)).filter((x) => typeof x === 'number' && isFinite(x));
+      if (!vals.length) return 'gen';
+      if (R.some((row) => this.cellValue(row[c]).pct)) return 'pct';
+      if (PCT_HEAD.test(normalizeText(h)) && vals.every((x) => Math.abs(x) <= 1.5) && vals.some((x) => !Number.isInteger(x))) return 'pct';
+      if (vals.every((x) => Number.isInteger(x))) return 'int';
+      return vals.every((x) => Math.abs(x) < 0.1) ? 'gen' : 'dec';
+    });
+    const TOTAL_RE = /^(total|sous-total|sous total|grand total|somme|ensemble|moyenne|portefeuille total|total portefeuille)\b/i;
     let r = 1;
     const rowsXML = [];
     const merges = [];
@@ -2528,16 +2615,20 @@ const Office = {
     R.forEach((row, k) => {
       r++;
       const zebra = k % 2 === 1;
-      const isTotal = sh.totalRow && k === R.length - 1;
+      const isTotal = (sh.totalRow && k === R.length - 1) || TOTAL_RE.test(String(row[0] ?? '').trim()) || (!String(row[0] ?? '').trim() && TOTAL_RE.test(String(row[1] ?? '').trim()));
       let lines = 1;
       const cells = [];
       for (let c = 0; c < nCols; c++) {
         const val = row[c];
         const v = this.cellValue(val);
         let st;
-        if (isTotal) st = v.pct ? 14 : v.f != null || v.n != null ? 13 : 12;
-        else if (v.pct) st = zebra ? 11 : 10;
-        else if (v.n != null || (v.f != null && !v.pct)) st = zebra ? 7 : 6;
+        const num = v.n != null || v.f != null;
+        const fmt = v.pct ? 'pct2' : num ? (colFmt[c] === 'pct' ? 'pct2' : colFmt[c]) : 'txt';
+        if (isTotal) st = fmt === 'pct2' ? 17 : fmt === 'dec' ? 20 : num ? 13 : 12;
+        else if (fmt === 'pct2') st = zebra ? 16 : 15;
+        else if (fmt === 'dec') st = zebra ? 19 : 18;
+        else if (fmt === 'gen') st = zebra ? 3 : 2;
+        else if (num) st = zebra ? 7 : 6;
         else st = centerCols.has(c) ? (zebra ? 9 : 8) : (zebra ? 3 : 2);
         if (v.s) lines = Math.max(lines, ...v.s.split('\n').map((ln) => Math.ceil((ln.length || 1) / Math.max(4, widths[c] * 1.18))));
         cells.push(cell(this.colName(c) + r, val, st));
@@ -4036,7 +4127,7 @@ const FREE_API_TOOL = {
 /* ============================== 08c · SKILLS (savoir-faire chargeables à la demande) ==============================
    Un skill = des instructions expertes (Markdown) + des outils à activer + éventuellement des fichiers (modèles, scripts).
    Compatible avec le format SKILL.md (en-tête YAML name/description) : import d'un .md, d'un .zip ou d'un .json. */
-const SKILLS_VERSION = 5;
+const SKILLS_VERSION = 6;
 const BUILTIN_SKILLS = [
   {
     id: 'skill-excel', emoji: '📗', name: 'excel', title: 'Excel premium',
@@ -4180,7 +4271,7 @@ L'utilisateur dispose aussi de la page « Code » (éditeur Monaco, comme VS Cod
     id: 'skill-rea', emoji: '🔍', name: 'rea', title: 'REA — Reverse Engineer Anything',
     description: 'Rétro-ingénierie méthodique de tout objet autorisé (page web, application, document, modèle Excel, rapport, vidéo, processus) : constats vu / déduit / inconnu, puis reconstruction testée.',
     triggers: '\\b(rea|reverse[- ]?engineer\\w*|retro[- ]?ingenierie|ingenierie inverse|decortique\\w*)\\b',
-    tools: ['fetch_url', 'web_search', 'web_screenshot', 'visual_check', 'python', 'run_javascript', 'read_file', 'list_files', 'write_file', 'create_artifact', 'todo_write', 'create_word', 'tool_workshop', 'github_explore'],
+    tools: ['fetch_url', 'web_search', 'web_screenshot', 'visual_check', 'python', 'run_javascript', 'read_file', 'list_files', 'write_file', 'create_artifact', 'todo_write', 'create_word', 'tool_workshop', 'github_explore', 'discover_tools', 'connect_mcp', 'experience'],
     content: `## Cadre (obligatoire)
 - Uniquement sur ce que l'utilisateur possède, a le droit d'examiner, ou qui est public (pages web, documents reçus, ses propres fichiers et sorties).
 - Jamais de contournement de protection, de licence, d'authentification ou de DRM. On ne copie ni code ni actifs protégés : on reproduit un comportement, une méthode ou une structure.
@@ -4205,6 +4296,8 @@ L'utilisateur dispose aussi de la page « Code » (éditeur Monaco, comme VS Cod
 - tool_workshop list → inspect l'outil visé : comprends ses entrées, ses limites et ses erreurs possibles.
 - Conçois une version améliorée (plus robuste, plus complète, mieux documentée) et crée-la avec tool_workshop create (nom distinct, ex. <outil>_plus) ; teste-la avec tool_workshop test sur plusieurs cas, y compris des cas limites ; corrige avec update jusqu'à réussite.
 - Pour s'inspirer d'un projet open source : github_explore readme → tree → read des fichiers clés ; reproduis le comportement en respectant la licence (pas de copie brute de code non libre).
+- Chercher partout un outil existant : discover_tools (catalogue Cortex, registre officiel des serveurs MCP, annuaire des API publiques gratuites, GitHub, npm). Serveur MCP distant sans clé → connect_mcp (ses outils sont activés aussitôt) ; API publique → tool_workshop create pour l'envelopper ; paquet npm → run_javascript avec import('https://esm.sh/<paquet>').
+- Mémoriser : après usage réussi, experience add (titre, leçon : quel outil, quels paramètres, quels pièges) — REA le retrouvera à la prochaine tâche similaire.
 ## Livrable
 Rapport structuré : objectif · cible et périmètre · tableau des constats (Constat | Statut VU / DÉDUIT / INCONNU | Preuve) · mécanisme expliqué simplement · reconstruction et résultats des tests · limites et inconnues · prochaines étapes. Propose de le livrer avec create_word.
 Avant de conclure, reprends la question de départ : répondue, partiellement répondue ou non résolue — ne déclare jamais complète une analyse qui laisse des questions ouvertes.
@@ -4395,19 +4488,41 @@ async function resolveLogo(a, ctx) {
   if (b.logo && b.auto !== false) { const im = await Office.image(b.logo, 700); if (im) return { logo: im, src: 'logo de la charte (Réglages › Profil)' }; }
   return { logo: null };
 }
-/* Style d'un livrable : thème premium + logo (recoloré selon la palette si demandé) */
+/* Dernier message de l'utilisateur (normalisé) : sert à savoir s'il a lui-même demandé un thème, une couleur, un logo d'origine… */
+function lastUserText(ctx) {
+  if (!ctx?.chat || !ctx.node?.parentId) return '';
+  const u = pathTo(ctx.chat, ctx.node.parentId).filter((n) => n.role === 'user').pop();
+  return normalizeText(u?.content || '');
+}
+const COLOR_WORDS = /#[0-9a-f]{6}\b|\b(couleur|teinte|vert|verte|rouge|bleu|bleue|orange|violet|jaune|noir|gris|rose|marron|dore|turquoise|sarcelle|marine|bordeaux|kaki|beige|charte)\b/;
+/* Design effectif d'un livrable. Priorité : choix fait dans Cortex (bouton Design, re-rendu) > demande explicite
+   dans le message > choix du modèle > défaut. Le logo prend la couleur de la palette sauf demande contraire. */
+function designChoice(a, ctx) {
+  if (ctx?.design) return { theme: ctx.design.theme || '', accent: null, mode: ctx.design.logoMode || 'palette', by: 'utilisateur' };
+  const said = lastUserText(ctx);
+  const userTheme = S.settings.docTheme || '';
+  const userMode = S.settings.brand?.logoMode || 'palette';
+  const themeName = normalizeText(a.theme || '');
+  const named = themeName && (said.includes(themeName) || (THEMES[themeName] && said.includes(normalizeText(THEMES[themeName].label.split(' ')[0]))));
+  const modeAsked = a.logo_color && a.logo_color !== userMode && ({ original: /origin|vraies couleurs|couleurs du logo/, mono: /mono|silhouette|uni\b/, blanc: /blanc|negatif/, palette: /palette|couleur du theme/ }[a.logo_color] || /$^/).test(said);
+  const mode = modeAsked ? a.logo_color : userMode;
+  if (userTheme) return { theme: named ? a.theme : userTheme, accent: COLOR_WORDS.test(said) ? a.accent : null, mode, by: named ? 'demande' : 'réglage' };
+  return { theme: a.theme || '', accent: a.accent, mode, by: 'modèle' };
+}
+/* Style d'un livrable : thème premium + logo (recoloré selon la palette) */
 async function docStyle(a, ctx) {
   const L = await resolveLogo(a, ctx);
-  let theme = a.theme, logo = L.logo;
-  const fromLogo = normalizeText(a.theme || (S.settings.docTheme === 'logo' ? 'logo' : '')) === 'logo';
+  const D = designChoice(a, ctx);
+  let theme = D.theme, logo = L.logo;
+  const fromLogo = normalizeText(theme || '') === 'logo';
   if (fromLogo && logo) {
     const [c1, c2] = await logoColors(logo);
     if (c1) { theme = derivedTheme(c1, 'Couleurs du logo'); if (c2) theme.accent = c2; }
   }
-  const T = resolveTheme(theme, a.accent);
-  const mode = a.logo_color || S.settings.brand?.logoMode || 'palette';
-  if (logo && !fromLogo && mode !== 'original') logo = await recolorLogo(logo, T.primary, mode);
-  const note = `design « ${T.label || T.name} »` + (logo ? `, logo intégré (${L.src}${!fromLogo && mode !== 'original' ? ', aux couleurs de la palette' : ''})` : '');
+  const T = resolveTheme(theme, D.accent);
+  if (logo && !fromLogo && D.mode !== 'original') logo = await recolorLogo(logo, D.mode === 'blanc' ? 'FFFFFF' : T.primary, D.mode);
+  const note = `design « ${T.label || T.name} »` + (logo ? `, logo intégré (${L.src}${fromLogo ? ', palette tirée du logo' : D.mode !== 'original' ? ', aux couleurs de la palette' : ", couleurs d'origine"})` : '');
+  if (ctx?.tc) ctx.tc.design = { theme: typeof theme === 'object' ? 'logo' : T.name || theme, logoMode: D.mode };
   return { theme: T, logo, note };
 }
 const FILE_NAME_PARAM = { type: 'string', description: 'Nom du fichier sans extension, explicite (ex. Registre_Collecte_Risque_Credit_2026)' };
@@ -4482,6 +4597,8 @@ const DELIVERABLE_TOOLS = [
       if (!sheets.length && a.headers && a.rows) sheets = [{ name: a.title || 'Feuille 1', title: a.title, headers: a.headers, rows: a.rows, status_column: a.status_column, group_by: a.group_by }];
       if (!sheets.length && a.source_file) sheets = (await sheetsFromFile(a.source_file)).map((s, i) => ({ ...s, title: i === 0 ? a.title || s.name : s.name }));
       if (!sheets.length) throw new Error('Aucune donnée : fournis sheets (headers + rows) ou source_file.');
+      // Titre du classeur repris sur la première feuille si elle n'en a pas
+      if (a.title && !sheets[0].title) sheets[0] = { ...sheets[0], title: a.title, subtitle: sheets[0].subtitle || a.subtitle };
       ctx.progress('Génération du classeur…');
       const st = await docStyle(a, ctx);
       const blob = await Office.xlsx(sheets, { title: a.title, theme: st.theme, logo: st.logo });
@@ -5314,7 +5431,7 @@ const TOOLBOX = [
       const f = wsFile(a.path), from = extOf(f.id), to = String(a.to).toLowerCase().replace(/^\./, '').replace('jpeg', 'jpg'), base = baseOf(f.id);
       const out = (ext) => outPath(a, base, ext);
       const done = (p, extra = '') => ({ text: `Converti : ${f.id} → ${p}${extra}`, files: [p] });
-      const st = { theme: resolveTheme(a.theme) };
+      const st = { theme: resolveTheme(designChoice(a, ctx).theme) };
       if (['xlsx', 'xls', 'xlsm', 'ods', 'csv', 'tsv', 'json'].includes(from)) {
         const sheets = await sheetsFromFile(f.id);
         const first = sheets[0] || { headers: [], rows: [] };
@@ -5399,7 +5516,8 @@ const TOOLBOX = [
     parameters: { type: 'object', properties: { file_name: FILE_NAME_PARAM, type: { type: 'string' }, title: { type: 'string' }, subtitle: { type: 'string' }, labels: { type: 'array', items: { type: 'string' } }, series: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, values: { type: 'array', items: { type: 'number' } }, type: { type: 'string' }, axis: { type: 'string', enum: ['left', 'right'] } } } }, x_label: { type: 'string' }, y_label: { type: 'string' }, unit: { type: 'string', description: 'ex. %, FCFA, Md' }, stacked: { type: 'boolean' }, show_values: { type: 'boolean' }, theme: THEME_PARAM, width: { type: 'integer' }, height: { type: 'integer' } }, required: ['labels', 'series'] },
     args: (a) => `${a.type || 'bar'} · ${a.title || a.file_name || ''}`,
     async run(a, ctx) {
-      const T = resolveTheme(a.theme);
+      const D = designChoice(a, ctx), T = resolveTheme(D.theme, D.accent);
+      if (ctx?.tc) ctx.tc.design = { theme: T.name || D.theme, logoMode: D.mode };
       const url = await renderChart(a, T, { width: clamp(+a.width || 1200, 500, 2400), height: clamp(+a.height || 675, 300, 1600) });
       const p = 'exports/' + safeFileName(a.file_name || a.title || 'graphique', 'png');
       writeWorkspaceFile(p, url, 'base64');
@@ -5889,6 +6007,350 @@ const GITHUB_EXPLORE = {
 };
 for (const t of [TOOL_WORKSHOP, GITHUB_EXPLORE]) { BUILTIN_TOOLS.push(t); TOOLS.set(t.name, t); }
 
+/* ============================== 08g · REA EN PREMIER, EXPÉRIENCE, BOOSTERS DES MODÈLES GRATUITS ==============================
+   - REA : analyse préalable automatique de chaque tâche (expériences utiles, outils activés, méthode).
+   - Expérience : chaque tâche outillée est mémorisée (étapes, outils, erreurs corrigées, leçons) et réutilisée.
+   - Boosters (réservés aux modèles gratuits par défaut) : réflexion structurée, conseil d'experts gratuits,
+     vérification critique, réflexion profonde par le plus puissant modèle gratuit.
+   - Découverte d'outils sur Internet (registre MCP, API publiques, GitHub, npm) et branchement de serveurs MCP. */
+
+/* ---------- Suggestion d'outils à partir d'un texte ---------- */
+const TOOL_STOP = new Set(['des', 'les', 'une', 'pour', 'avec', 'faire', 'dans', 'sur', 'par', 'qui', 'que', 'est', 'aux', 'son', 'ses', 'mon', 'mes', 'the', 'and', 'for', 'with', 'veux', 'creer', 'besoin', 'outil', 'outils', 'fichier', 'fichiers', 'cette', 'ces', 'tout', 'tous', 'moi', 'nous', 'vous', 'mettre', 'donne', 'donner']);
+function suggestTools(text, k = 5, exclude = new Set()) {
+  const words = normalizeText(text).split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !TOOL_STOP.has(w)).map((w) => w.replace(/s$/, ''));
+  if (!words.length) return [];
+  return [...TOOLS.values()].filter((t) => !exclude.has(t.name) && !['find_tools', 'rea'].includes(t.name) && toolPerm(t) !== 'off').map((t) => {
+    const head = normalizeText(`${t.name} ${t.title}`), body = normalizeText(`${t.summary || ''} ${typeof t.description === 'string' ? t.description : ''}`);
+    return [t, words.reduce((sc, w) => sc + (head.includes(w) ? 3 : 0) + (body.includes(w) ? 1 : 0), 0)];
+  }).filter((x) => x[1] >= 3).sort((x, y) => y[1] - x[1]).slice(0, k).map((x) => x[0]);
+}
+
+/* ---------- Mémoire d'expérience ---------- */
+const Experience = {
+  list() { return [...col('experiences').values()].sort((a, b) => b.createdAt - a.createdAt); },
+  save(e) { col('experiences').set(e.id, e); persist('experiences', e); S.onExperience?.(); },
+  remove(id) { col('experiences').delete(id); DB.del('experiences', id); S.onExperience?.(); },
+  text(e) { return `${e.title || ''} ${e.task || ''} ${e.summary || ''} ${(e.lessons || []).join(' ')} ${(e.tools || []).join(' ')}`; },
+  search(q, k = 3) {
+    const all = this.list();
+    if (!all.length || !String(q || '').trim()) return [];
+    return bm25Search(all.map((e) => ({ id: e.id, text: this.text(e), e })), q, k).filter((r) => r.score > 0.5).map((r) => r.doc.e);
+  },
+  brief(e) { return `- ${e.title || truncate(e.task, 80)} (${new Date(e.createdAt).toLocaleDateString('fr-FR')}${e.success === false ? ', échec' : ''}) — outils : ${(e.tools || []).join(' → ') || 'aucun'}${(e.lessons || []).length ? '\n  Leçons : ' + e.lessons.slice(0, 4).join(' · ') : ''}`; },
+  /* Enregistre l'expérience d'une réponse (heuristique immédiate, puis synthèse par un modèle gratuit) */
+  async record(chat, node, task) {
+    if (S.settings.harness.learn === false) return;
+    const calls = [];
+    const walk = (steps) => { for (const s of steps || []) { if (s.synthetic) continue; for (const t of s.toolCalls || []) { calls.push(t); if (t.sub) walk(t.sub.steps); } } };
+    walk(node.steps);
+    // Rien à apprendre d'un tour de planification (mode plan) ou d'un tour sans vrai travail outillé
+    if (!calls.length || calls.some((t) => t.name === 'propose_plan')) return;
+    const TRIVIAL = new Set(['todo_write', 'think', 'rea', 'experience', 'find_tools', 'load_skill', 'ask_user', 'memory_search']);
+    if (!calls.some((t) => !TRIVIAL.has(t.name)) && !(node.reviewIssues || []).length) return;
+    // Suite d'une tâche (« Plan approuvé… », « continue ») : on rattache l'expérience à la demande d'origine
+    if (task.length < 160 && chat) {
+      const users = pathTo(chat, node.parentId).filter((n) => n.role === 'user');
+      const prev = users[users.length - 2];
+      if (prev && (/^plan approuv|^continue|^vas-y|^ok\b|^oui\b|^go\b/i.test(task.trim()) || task.length < 40)) task = `${prev.content} → ${task}`;
+    }
+    const tools = [...new Set(calls.map((t) => t.name))];
+    const lessons = [];
+    calls.forEach((t, i) => {
+      if (t.status !== 'error') return;
+      const fixed = calls.slice(i + 1).find((x) => x.name === t.name && x.status === 'done');
+      lessons.push(`${t.name} : ${truncate(String(t.result || '').replace(/^Erreur : /, '').split('\n')[0], 140)}${fixed ? ` → corrigé avec ${truncate(fixed.args || '', 120)}` : ''}`);
+    });
+    for (const x of node.reviewIssues || []) lessons.push('Relecture : ' + truncate(x, 200));
+    const final = [...node.steps].reverse().find((s) => s.content)?.content || '';
+    const e = { id: uid('xp'), task: truncate(task, 600), title: truncate(task.replace(/\s+/g, ' '), 90), summary: truncate(final.replace(/\s+/g, ' '), 400), tools, lessons, files: nodeFiles(node), model: node.model, success: node.status === 'done', chatId: chat.id, createdAt: now(), uses: 0 };
+    this.save(e);
+    if (calls.length < 2 && !(node.reviewIssues || []).length) return;
+    try {
+      const tr = calls.slice(0, 40).map((t) => `${t.name}(${truncate(t.args || '', 200)}) → ${t.status} : ${truncate(String(t.result || '').replace(/\s+/g, ' '), 220)}`).join('\n');
+      const r = await quickComplete([
+        { role: 'system', content: "Tu transformes l'exécution d'un agent en EXPÉRIENCE réutilisable pour de futures tâches similaires. Réponds uniquement en JSON : {\"titre\": \"6 à 10 mots\", \"resume\": \"ce qui a été fait et le résultat, 2 phrases\", \"etapes\": [\"étape clé avec l'outil utilisé\"], \"lecons\": [\"règle concrète et réutilisable (paramètres qui marchent, pièges à éviter)\"]}" },
+        { role: 'user', content: `Tâche : ${truncate(task, 1500)}\n\nAppels d'outils :\n${tr}\n\nRéponse finale : ${truncate(final, 1500)}` },
+      ], { model: fastModel(), maxTokens: 900, kind: 'experience', extra: noReasoning(fastModel()) });
+      const j = safeJSON((r.text.match(/\{[\s\S]*\}/) || [])[0] || '');
+      if (j) { Object.assign(e, { title: truncate(j.titre || e.title, 100), summary: truncate(j.resume || e.summary, 500), steps: (j.etapes || []).slice(0, 10).map(String), lessons: [...new Set([...(j.lecons || []).slice(0, 8).map(String), ...lessons])].slice(0, 10) }); this.save(e); }
+    } catch {}
+  },
+};
+
+/* ---------- REA : analyse préalable de chaque tâche ---------- */
+const Rea = {
+  brief(task, tools) {
+    const t0 = performance.now();
+    const have = new Set(tools.map((t) => t.name));
+    const xps = Experience.search(task, 3);
+    for (const e of xps) { e.uses = (e.uses || 0) + 1; persist('experiences', e); }
+    const fromXp = xps.flatMap((e) => e.tools || []).filter((n) => TOOLS.has(n) && !have.has(n));
+    const sugg = [...new Set([...suggestTools(task, 5, have).map((t) => t.name), ...fromXp])].slice(0, 7).map((n) => TOOLS.get(n)).filter((t) => t && toolPerm(t) !== 'off');
+    const skills = Skills.autoFor(task);
+    const lines = [`# REA — analyse préalable de la tâche`, `Tâche : ${truncate(task.replace(/\s+/g, ' '), 400)}`];
+    lines.push(xps.length ? `\n## Expériences similaires (${xps.length}) — réutilise ce qui a marché, évite les erreurs notées\n` + xps.map((e) => Experience.brief(e) + (e.steps?.length ? '\n  Étapes : ' + e.steps.slice(0, 5).join(' ; ') : '')).join('\n') : '\n## Expériences similaires : aucune (première fois — cette tâche sera mémorisée).');
+    if (sugg.length) lines.push(`\n## Outils pertinents activés pour cette tâche\n` + sugg.map((t) => `- ${t.name} : ${truncate(String(t.summary || ''), 120)}`).join('\n'));
+    if (skills.length) lines.push(`\n## Skills chargés : ${skills.map((s) => s.title || s.name).join(', ')}`);
+    lines.push(`\n## Méthode REA à appliquer
+1. Cadrer : reformule l'objectif exact et le livrable attendu (format, niveau de détail). Une question à la fois si la tâche est large.
+2. Router : choisis les outils adaptés à la cible (ci-dessus, ou find_tools). Si aucun ne convient : discover_tools (registre MCP, API publiques, GitHub, npm) puis connect_mcp ou tool_workshop create — l'outil sera réutilisable.
+3. Résumer d'abord : rassemble les faits (lecture, recherche) avant de produire.
+4. Étiqueter : distingue ce qui est VU (sourcé), DÉDUIT et INCONNU ; ne présente jamais une déduction comme un fait.
+5. Reconstruire et tester : produis le livrable, vérifie-le (calculs, visual_check, relecture), corrige, puis conclus.`);
+    return { text: lines.join('\n'), added: sugg, ms: Math.round(performance.now() - t0), xps: xps.length };
+  },
+};
+const REA_TOOL = {
+  name: 'rea', title: 'REA — analyse de la tâche', icon: 'search', group: 'agent', perm: 'auto',
+  summary: 'Méthode REA : analyse une (sous-)tâche, retrouve les expériences passées et active les outils pertinents.',
+  description: "Analyse REA d'une tâche ou sous-tâche : expériences passées similaires (ce qui a marché, erreurs à éviter), outils pertinents (activés automatiquement) et méthode. Cortex l'exécute déjà au début de chaque tâche ; rappelle-le pour une nouvelle sous-tâche importante.",
+  parameters: { type: 'object', properties: { task: { type: 'string' } }, required: ['task'] },
+  args: (a) => truncate(a.task || '', 90),
+  async run(a, ctx) {
+    const b = Rea.brief(a.task || '', [...(ctx.toolsNow?.() || [])]);
+    if (ctx.addTools && b.added.length) ctx.addTools(b.added.map((t) => t.name));
+    return b.text;
+  },
+};
+const EXPERIENCE_TOOL = {
+  name: 'experience', title: 'Mémoire d\'expérience', icon: 'trophy', group: 'knowledge', perm: 'auto', write: true,
+  summary: 'Consulte ou enrichit la mémoire d\'expérience de Cortex (procédures qui marchent, pièges, outils trouvés).',
+  description: "Mémoire d'expérience de Cortex (savoir-faire procédural partagé par tous les agents). Actions : search (query), list, add (title, lesson, tools : enregistre une procédure ou une leçon réutilisable, ex. un outil trouvé sur Internet et la façon de l'utiliser).",
+  parameters: { type: 'object', properties: { action: { type: 'string', enum: ['search', 'list', 'add'] }, query: { type: 'string' }, title: { type: 'string' }, lesson: { type: 'string' }, tools: { type: 'array', items: { type: 'string' } } }, required: ['action'] },
+  args: (a) => `${a.action} ${a.query || a.title || ''}`,
+  async run(a) {
+    if (a.action === 'add') {
+      if (!a.lesson) throw new Error('lesson requis');
+      const e = { id: uid('xp'), title: truncate(a.title || a.lesson, 100), task: a.title || '', summary: a.lesson, lessons: [a.lesson], tools: a.tools || [], manual: true, success: true, createdAt: now(), uses: 0 };
+      Experience.save(e);
+      return 'Expérience enregistrée : ' + e.title;
+    }
+    const list = a.action === 'search' ? Experience.search(a.query || '', 8) : Experience.list().slice(0, 15);
+    return list.length ? list.map((e) => Experience.brief(e)).join('\n') : 'Aucune expérience correspondante.';
+  },
+};
+
+/* ---------- Boosters de raisonnement (modèles gratuits) ---------- */
+/* Modèles gratuits par rôle (filtrés selon le catalogue réel ; complétés automatiquement par les autres modèles gratuits) */
+const FREE_TIERS = {
+  deep: ['nvidia/nemotron-3-ultra-550b-a55b:free', 'thinkingmachines/inkling:free', 'dots-studio/dots-3-note-preview:free', 'google/gemma-4-31b-it:free', 'poolside/laguna-s-2.1:free'],
+  experts: ['nvidia/nemotron-3-ultra-550b-a55b:free', 'thinkingmachines/inkling:free', 'google/gemma-4-31b-it:free', 'dots-studio/dots-3-note-preview:free', 'poolside/laguna-s-2.1:free', 'recursive/flint-v1.0:free', 'nvidia/nemotron-3.5-super-vl:free'],
+  fast: ['nvidia/nemotron-3.5-lightning:free', 'google/gemma-4-26b-a4b-it:free', 'thinkingmachines/inkling-small:free', 'poolside/laguna-xs-2.1:free', 'nvidia/nemotron-3.5-super-vl:free'],
+};
+const NOT_CHAT = /safety|guard|lyria|embed|whisper|tts|image|moderation|rerank/i;
+function freeModels(tier = 'experts', n = 3, exclude = []) {
+  const ex = new Set(exclude.filter(Boolean));
+  const listed = (FREE_TIERS[tier] || []).filter((m) => S.modelMap.has(m) && !ex.has(m));
+  const extra = S.models.filter((m) => isFreeModel(m) && m.id !== 'openrouter/free' && !NOT_CHAT.test(m.id) && !ex.has(m.id) && !listed.includes(m.id) && (m.context_length || 0) >= 32000)
+    .sort((a, b) => (b.context_length || 0) - (a.context_length || 0)).map((m) => m.id);
+  const out = [...listed, ...extra].slice(0, n);
+  return out.length ? out : ['openrouter/free'];
+}
+const freeExperts = (n = 3, exclude = []) => freeModels('experts', n, exclude);
+const deepModel = (exclude = []) => freeModels('deep', 1, exclude)[0];
+const fastModel = (exclude = []) => freeModels('fast', 1, exclude)[0];
+const boostAllowed = (model) => S.settings.harness.boostFreeOnly === false || isFreeModel(model) || /:free$/.test(model || '');
+const timed = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('délai dépassé')), ms))]);
+async function askModel(model, messages, { maxTokens = 2500, signal, effort, timeout = 120000 } = {}) {
+  const extra = effort && modelSupports(model, 'reasoning') ? { reasoning: { effort } } : {};
+  const r = await timed(quickComplete(messages, { model, maxTokens, temperature: 0.4, signal, kind: 'boost', extra }), timeout);
+  if (!String(r.text || '').trim()) throw new Error('réponse vide');
+  return r.text;
+}
+const BOOSTERS = [
+  {
+    name: 'think', title: 'Réfléchir', icon: 'brain', group: 'agent', perm: 'auto', booster: true,
+    summary: 'Espace de réflexion structurée (hypothèses, plan, vérifications) avant d\'agir.',
+    description: "Utilise cet outil pour réfléchir de façon structurée avant une décision difficile : décomposer le problème, lister hypothèses et contraintes, vérifier un raisonnement ou des calculs, choisir la prochaine action. N'obtient aucune information nouvelle ; sert uniquement à raisonner proprement. Utilise-le notamment après des résultats d'outils complexes.",
+    parameters: { type: 'object', properties: { thought: { type: 'string' } }, required: ['thought'] },
+    args: (a) => truncate(a.thought || '', 90),
+    async run() { return 'Réflexion notée. Poursuis avec l\'action la plus pertinente.'; },
+  },
+  {
+    name: 'ask_experts', title: 'Conseil d\'experts', icon: 'network', group: 'agent', perm: 'auto', booster: true, timeout: 0,
+    summary: 'Pose une question difficile à plusieurs modèles gratuits en parallèle, puis synthétise le consensus (réduit les erreurs de raisonnement).',
+    description: "Soumet une question difficile (raisonnement, calcul, analyse, choix) à 3 modèles gratuits différents en parallèle, puis un arbitre compare leurs réponses, corrige les erreurs et rend la meilleure réponse avec les points de désaccord. À utiliser pour les étapes où une erreur coûterait cher. Fournis tout le contexte nécessaire dans question (les experts ne voient pas la conversation).",
+    parameters: { type: 'object', properties: { question: { type: 'string' }, context: { type: 'string' }, experts: { type: 'integer', description: '2 à 5 (défaut 3)' } }, required: ['question'] },
+    args: (a) => truncate(a.question || '', 90),
+    async run(a, ctx) {
+      const models = freeExperts(clamp(+a.experts || 3, 2, 5), [ctx.model]);
+      ctx.progress('Consultation de ' + models.map(modelShort).join(', ') + '…');
+      const q = `${a.context ? 'Contexte :\n' + a.context + '\n\n' : ''}Question : ${a.question}\n\nRaisonne étape par étape, vérifie tes calculs, puis donne ta réponse finale clairement.`;
+      const res = await Promise.allSettled(models.map((m) => askModel(m, [{ role: 'user', content: q }], { signal: ctx.signal, maxTokens: 3000, effort: 'medium', timeout: 90000 })));
+      const ok = res.map((r, i) => ({ m: models[i], t: r.status === 'fulfilled' ? r.value : null })).filter((x) => x.t);
+      if (!ok.length) throw new Error('Aucun expert n\'a répondu (' + res.map((r) => r.reason?.message).filter(Boolean).join(' ; ') + ')');
+      const judge = deepModel([ctx.model]);
+      ctx.progress('Arbitrage par ' + modelShort(judge) + '…');
+      const synth = await askModel(judge, [{ role: 'user', content: `Tu es l'arbitre d'un conseil d'experts. Question :\n${q}\n\n${ok.map((x, i) => `### Expert ${i + 1}\n${truncate(x.t, 6000)}`).join('\n\n')}\n\nCompare les réponses, identifie les erreurs (calculs, logique, faits), puis rends : 1) la meilleure réponse finale, corrigée ; 2) le niveau de consensus ; 3) les désaccords éventuels. Sois concis.` }], { signal: ctx.signal, maxTokens: 3000, timeout: 90000 }).catch(() => null);
+      return `Conseil de ${ok.length} expert(s) gratuits (${ok.map((x) => modelShort(x.m)).join(', ')})${synth ? ', arbitré par ' + modelShort(judge) : ''} :\n\n${synth || ok.map((x, i) => `Expert ${i + 1} : ${truncate(x.t, 3000)}`).join('\n\n')}`;
+    },
+  },
+  {
+    name: 'verify_answer', title: 'Vérification critique', icon: 'shield', group: 'agent', perm: 'auto', booster: true, timeout: 0,
+    summary: 'Un autre modèle gratuit relit une réponse ou un raisonnement de façon critique (exactitude, calculs, complétude) avant livraison.',
+    description: "Fait relire de façon critique une réponse, un calcul, un code ou un plan par un autre modèle gratuit : exactitude, logique, calculs, complétude par rapport à la demande, cohérence. Renvoie un verdict et la liste des problèmes à corriger. Utilise-le avant de livrer un résultat important.",
+    parameters: { type: 'object', properties: { request: { type: 'string', description: 'La demande initiale' }, answer: { type: 'string', description: 'La réponse ou le travail à vérifier' }, criteria: { type: 'string' } }, required: ['answer'] },
+    args: (a) => truncate(a.answer || '', 80),
+    async run(a, ctx) {
+      const v = await critique(a.request || '', a.answer, { criteria: a.criteria, exclude: [ctx.model], signal: ctx.signal });
+      return `Vérification par ${modelShort(v.model)} : ${v.ok ? '✅ aucun problème bloquant' : '⚠️ à corriger'}\n${v.issues.length ? v.issues.map((x, i) => `${i + 1}. ${x}`).join('\n') : ''}${v.note ? '\n' + v.note : ''}`;
+    },
+  },
+  {
+    name: 'deep_think', title: 'Réflexion profonde', icon: 'sparkles', group: 'agent', perm: 'auto', booster: true, timeout: 0,
+    summary: 'Confie un problème difficile au plus puissant modèle gratuit de raisonnement (effort maximal).',
+    description: "Confie un problème difficile (raisonnement multi-étapes, mathématiques, stratégie, architecture, analyse fine) au plus puissant modèle gratuit disponible, avec un effort de raisonnement élevé, et renvoie sa solution détaillée. Fournis tout le contexte nécessaire.",
+    parameters: { type: 'object', properties: { problem: { type: 'string' }, context: { type: 'string' } }, required: ['problem'] },
+    args: (a) => truncate(a.problem || '', 90),
+    async run(a, ctx) {
+      const m = deepModel([ctx.model]);
+      ctx.progress('Réflexion profonde avec ' + modelShort(m) + '…');
+      const t = await askModel(m, [{ role: 'user', content: `${a.context ? 'Contexte :\n' + a.context + '\n\n' : ''}Problème : ${a.problem}\n\nRésous-le rigoureusement : décompose, raisonne étape par étape, vérifie chaque calcul et chaque hypothèse, envisage les cas limites, puis donne une solution finale claire et justifiée.` }], { signal: ctx.signal, maxTokens: 6000, effort: 'high', timeout: 180000 });
+      return `Solution (${modelShort(m)}) :\n\n${t}`;
+    },
+  },
+];
+/* ---------- GURU : stratégie experte par le plus puissant modèle gratuit, exécutée ensuite par le modèle choisi ---------- */
+const COMPLEX_RE = /analys|strateg|calcul|plan\b|rapport|excel|tableau|word|pdf|powerpoint|present|compar|optimis|diagnos|modeli|code|program|script|budget|risque|financ|juridi|contrat|audit|synthe|recherch|evalu|projet|architect|prevision|kpi|bilan|politique|procedure|memoire|these|dossier|business|marketing|scenario|probleme|demontr|preuve|equation|algorith|debug|bug/;
+const Guru = {
+  needed(task, nAtt = 0) {
+    const mode = S.settings.harness.guru || 'auto';
+    if (mode === 'off' || !String(task || '').trim()) return false;
+    if (mode === 'always') return true;
+    const t = normalizeText(task);
+    return t.length > 220 || (nAtt > 0 && t.length > 60) || (t.length > 80 && COMPLEX_RE.test(t));
+  },
+  prompt(task, { tools = [], context = '', rea = '' } = {}) {
+    return `Tu es GURU, stratège et expert de très haut niveau dans tous les domaines (finance, risque, droit, data, ingénierie, code, rédaction, design de documents). Un agent d'exécution va réaliser la tâche ci-dessous ; il dispose des outils : ${tools.map((t) => t.name).join(', ') || 'aucun'}. Ta mission : lui donner la stratégie qui produira un résultat de niveau expert, juste du premier coup.
+${context ? `\nContexte de la conversation (extrait) :\n${context}\n` : ''}${rea ? `\nExpériences passées utiles :\n${rea}\n` : ''}
+TÂCHE :
+${truncate(task, 6000)}
+
+Réponds en Markdown, de façon dense et concrète (450 mots maximum) :
+## Objectif et livrable
+Ce que l'utilisateur veut vraiment, format et niveau de qualité attendus, critères de réussite.
+## Raisonnement expert
+Les concepts, règles, formules, chiffres de référence ou bonnes pratiques du domaine à appliquer ; les hypothèses à poser explicitement.
+## Pièges à éviter
+Erreurs fréquentes, ambiguïtés, oublis typiques.
+## Plan d'exécution
+Étapes numérotées, avec l'outil à utiliser à chaque étape et les contrôles (calculs refaits avec python, vérification visuelle, relecture).
+## Contrôle qualité final
+Checklist courte à valider avant de livrer.`;
+  },
+  /* Plan d'exécution (étapes numérotées) et checklist qualité extraits de la stratégie */
+  parse(text) {
+    const section = (re) => { const m = String(text || '').split(/\n(?=#{2,3}\s)/).find((b) => re.test(normalizeText(b.split('\n')[0]))); return m ? m.split('\n').slice(1) : []; };
+    const clean = (x) => x.replace(/\*\*|__|`/g, '').replace(/\s+/g, ' ').trim();
+    const steps = section(/plan d.?execution|plan|etapes/).map((l) => (l.match(/^\s*\d+[.)]\s+(.+)/) || [])[1]).filter(Boolean).map(clean).slice(0, 12);
+    const checklist = section(/controle qualite|checklist/).map((l) => (l.match(/^\s*(?:[-*•]|\d+[.)]|\[ ?\])\s+(.+)/) || [])[1]).filter(Boolean).map(clean).slice(0, 12);
+    return { steps, checklist };
+  },
+  async strategy(task, { model, tools, context, rea, signal } = {}) {
+    const tried = [model];
+    let lastErr;
+    for (let k = 0; k < 2; k++) {
+      const m = deepModel(tried);
+      tried.push(m);
+      try { return { model: m, text: await askModel(m, [{ role: 'user', content: this.prompt(task, { tools, context, rea }) }], { signal, maxTokens: 5000, effort: 'high', timeout: 150000 }) }; }
+      catch (e) { lastErr = e; if (signal?.aborted) throw e; }
+    }
+    throw lastErr || new Error('Guru indisponible');
+  },
+};
+BOOSTERS.push({
+  name: 'guru', title: 'Guru — stratégie experte', icon: 'sparkles', group: 'agent', perm: 'auto', booster: true, timeout: 0,
+  summary: "Demande au plus puissant modèle gratuit la stratégie experte d'une (sous-)tâche : raisonnement du domaine, pièges, plan, contrôle qualité.",
+  description: "Consulte GURU (le plus puissant modèle gratuit de raisonnement, effort élevé) pour obtenir la stratégie experte d'une tâche ou sous-tâche difficile : raisonnement et règles du domaine, pièges à éviter, plan d'exécution avec outils, checklist qualité. Fournis tout le contexte utile.",
+  parameters: { type: 'object', properties: { task: { type: 'string' }, context: { type: 'string' } }, required: ['task'] },
+  args: (a) => truncate(a.task || '', 90),
+  async run(a, ctx) {
+    ctx.progress('Le Guru réfléchit…');
+    const g = await Guru.strategy(a.task, { model: ctx.model, tools: ctx.toolsNow?.() || [], context: a.context, signal: ctx.signal });
+    return `Stratégie du Guru (${modelShort(g.model)}) :\n\n${g.text}`;
+  },
+});
+
+/* Critique d'une réponse par un autre modèle gratuit : { ok, issues[], model } */
+async function critique(request, answer, { criteria, exclude = [], signal, fast = false, timeout = 90000 } = {}) {
+  const model = fast ? fastModel(exclude) : freeExperts(1, exclude)[0];
+  const t = await askModel(model, [{ role: 'user', content: `Tu es un relecteur expert, exigeant et factuel. Vérifie le travail ci-dessous par rapport à la demande : exactitude des faits et des calculs (refais-les), logique, complétude (rien d'oublié), respect du format demandé, cohérence.${criteria ? '\nCritères supplémentaires : ' + criteria : ''}\n\nDemande :\n${truncate(request, 4000)}\n\nTravail à vérifier :\n${truncate(answer, 12000)}\n\nRéponds UNIQUEMENT en JSON : {"ok": true|false, "issues": ["problème précis et comment le corriger"]}. ok=true s'il n'y a aucun problème significatif (ignore les détails de style).` }], { signal, maxTokens: 1500, timeout });
+  const j = safeJSON((t.match(/\{[\s\S]*\}/) || [])[0] || '');
+  if (j && typeof j.ok === 'boolean') return { ok: j.ok || !(j.issues || []).length, issues: (j.issues || []).map(String).slice(0, 8), model };
+  return { ok: !/probl|erreur|incorrect|manque/i.test(t), issues: [], note: truncate(t, 1500), model };
+}
+
+/* ---------- Découverte d'outils sur Internet ---------- */
+let publicApisCache = null;
+const DISCOVER_TOOLS = {
+  name: 'discover_tools', title: 'Découvrir des outils', icon: 'globe', group: 'agent', perm: 'auto',
+  summary: 'Cherche partout des outils pour la tâche : catalogue Cortex, serveurs MCP publics (registre officiel), API gratuites, projets GitHub, paquets npm.',
+  description: "Cherche des outils pour la tâche en cours : 1) catalogue interne de Cortex, 2) registre officiel des serveurs MCP (serveurs distants branchables tout de suite avec connect_mcp), 3) annuaire des API publiques gratuites (utilisables via tool_workshop create ou http_request), 4) dépôts GitHub, 5) paquets npm (importables dans run_javascript via esm.sh). Décris le besoin en mots-clés anglais de préférence.",
+  parameters: { type: 'object', properties: { query: { type: 'string' }, sources: { type: 'array', items: { type: 'string', enum: ['cortex', 'mcp', 'apis', 'github', 'npm'] } } }, required: ['query'] },
+  args: (a) => a.query,
+  async run(a, ctx) {
+    const src = new Set(a.sources?.length ? a.sources : ['cortex', 'mcp', 'apis', 'github', 'npm']);
+    const q = String(a.query || '').trim();
+    const out = [];
+    const job = async (name, fn) => { try { const r = await fn(); if (r) out.push(r); } catch (e) { out.push(`## ${name}\n(indisponible : ${e.message})`); } };
+    await Promise.all([
+      src.has('cortex') && job('Cortex', async () => { const t = suggestTools(q, 6); return t.length ? `## Outils déjà disponibles dans Cortex\n` + t.map((x) => `- ${x.name} : ${truncate(String(x.summary || ''), 110)}`).join('\n') : null; }),
+      src.has('mcp') && job('Serveurs MCP', async () => {
+        const j = await getJSON(`https://registry.modelcontextprotocol.io/v0/servers?search=${encodeURIComponent(q)}&limit=30`, { signal: ctx.signal });
+        const seen = new Set();
+        const rows = (j.servers || []).map((x) => x.server).filter((s) => { if (seen.has(s.name)) return false; seen.add(s.name); return true; })
+          .map((s) => ({ s, r: (s.remotes || []).find((r) => /streamable-http|http/.test(r.type || '') && !(r.headers || []).some((h) => h.isRequired)) })).filter((x) => x.r).slice(0, 8);
+        return rows.length ? `## Serveurs MCP distants (branchables avec connect_mcp)\n` + rows.map(({ s, r }) => `- ${s.title || s.name} — ${truncate(s.description || '', 140)}\n  url : ${r.url}`).join('\n') : '## Serveurs MCP : aucun serveur distant sans clé pour cette recherche.';
+      }),
+      src.has('apis') && job('API publiques', async () => {
+        if (!publicApisCache) publicApisCache = await (await fetch('https://raw.githubusercontent.com/public-apis/public-apis/master/README.md', { signal: ctx.signal })).text();
+        const words = normalizeText(q).split(/\s+/).filter((w) => w.length > 2);
+        const hits = publicApisCache.split('\n').filter((l) => /^\|\s*\[/.test(l)).map((l) => [l, words.filter((w) => normalizeText(l).includes(w)).length]).filter((x) => x[1]).sort((x, y) => y[1] - x[1]).slice(0, 10)
+          .map(([l]) => { const c = l.split('|').map((x) => x.trim()); const m = c[1].match(/\[([^\]]+)\]\(([^)]+)\)/); return `- ${m ? m[1] : c[1]} — ${c[2]} (auth : ${c[3] || '?'}, HTTPS : ${c[4] || '?'}, CORS : ${c[5] || '?'})${m ? '\n  ' + m[2] : ''}`; });
+        return hits.length ? `## API publiques gratuites (annuaire public-apis)\n${hits.join('\n')}` : null;
+      }),
+      src.has('github') && job('GitHub', async () => {
+        const j = await getJSON('https://api.github.com/search/repositories?per_page=6&sort=stars&q=' + encodeURIComponent(q), { signal: ctx.signal });
+        return j.items?.length ? `## Projets GitHub\n` + j.items.map((r) => `- ${r.full_name} ★${r.stargazers_count} · ${r.language || '?'} · licence ${r.license?.spdx_id || '?'} — ${truncate(r.description || '', 110)}`).join('\n') : null;
+      }),
+      src.has('npm') && job('npm', async () => {
+        const j = await getJSON('https://registry.npmjs.org/-/v1/search?size=6&text=' + encodeURIComponent(q), { signal: ctx.signal });
+        return j.objects?.length ? `## Paquets npm (dans run_javascript : await import('https://esm.sh/<paquet>'))\n` + j.objects.map((o) => `- ${o.package.name}@${o.package.version} — ${truncate(o.package.description || '', 110)}`).join('\n') : null;
+      }),
+    ].filter(Boolean));
+    return clip(`Recherche d'outils pour « ${q} » :\n\n${out.join('\n\n')}\n\nÉtapes suivantes : connect_mcp (serveur MCP), tool_workshop create (envelopper une API), github_explore (démonter un projet), puis experience add pour mémoriser ce qui marche.`);
+  },
+};
+const CONNECT_MCP = {
+  name: 'connect_mcp', title: 'Brancher un serveur MCP', icon: 'server', group: 'agent', perm: 'ask', write: true,
+  summary: 'Branche un serveur MCP distant (URL) et active ses outils immédiatement ; il reste disponible ensuite dans Outils › MCP.',
+  description: "Branche un serveur MCP distant (transport HTTP, ex. trouvé avec discover_tools) et active ses outils pour la tâche en cours. Les données envoyées à ces outils partent chez un service tiers : ne l'utilise que si c'est utile, et jamais pour des données confidentielles sans accord de l'utilisateur.",
+  parameters: { type: 'object', properties: { url: { type: 'string' }, name: { type: 'string' } }, required: ['url'] },
+  args: (a) => a.url,
+  async run(a, ctx) {
+    const url = String(a.url || '').trim();
+    if (!/^https:\/\//i.test(url)) throw new Error('URL https attendue');
+    let srv = [...col('mcp').values()].find((s) => s.url === url);
+    if (!srv) { srv = { id: uid('mcp'), name: a.name || new URL(url).hostname.replace(/^mcp\.|^www\./, ''), url, headers: '', enabled: true, perm: 'ask', createdAt: now(), addedBy: 'agent' }; col('mcp').set(srv.id, srv); }
+    const tools = await refreshMcpTools(srv);
+    const added = ctx.addTools ? ctx.addTools(['mcp:' + srv.id]) : [];
+    Experience.save({ id: uid('xp'), title: `Serveur MCP « ${srv.name} »`, task: 'Outil trouvé sur Internet', summary: `${url} — ${tools.length} outils : ${tools.map((t) => t.name).join(', ')}`, lessons: [`Pour ${tools.slice(0, 4).map((t) => t.name).join(', ')} : connect_mcp ${url}`], tools: ['connect_mcp'], success: true, manual: true, createdAt: now(), uses: 0 });
+    return `Serveur MCP « ${srv.name} » branché (${tools.length} outils) et mémorisé :\n${tools.map((t) => `- ${t.name} : ${truncate(t.description || '', 110)}`).join('\n')}\nOutils activés : ${added.join(', ') || '(déjà actifs)'}.`;
+  },
+};
+
+/* ---------- Mode plan (comme Claude Code) ---------- */
+const PROPOSE_PLAN = {
+  name: 'propose_plan', title: 'Proposer un plan', icon: 'list', group: 'agent', perm: 'auto',
+  summary: 'Mode plan : présente le plan détaillé à l\'utilisateur pour approbation avant toute modification.',
+  description: "En mode plan : après avoir analysé (lecture, recherche, sans rien modifier), présente le plan d'action détaillé et numéroté (étapes, outils, fichiers concernés, livrables, risques) pour approbation. L'exécution reprend quand l'utilisateur approuve.",
+  parameters: { type: 'object', properties: { plan: { type: 'string', description: 'Plan en Markdown' } }, required: ['plan'] },
+  args: () => 'plan proposé',
+  async run(a) { return { text: "Plan présenté à l'utilisateur. Attends sa décision : ne fais rien d'autre.", plan: String(a.plan || ''), stopRun: true }; },
+};
+
+for (const t of [REA_TOOL, EXPERIENCE_TOOL, ...BOOSTERS, DISCOVER_TOOLS, CONNECT_MCP, PROPOSE_PLAN]) { BUILTIN_TOOLS.push(t); TOOLS.set(t.name, t); }
+
 /* ============================== 09 · MOTEUR (HARNESS) ============================== */
 
 /* ---------- Arbre de messages (branches) ---------- */
@@ -5943,7 +6405,7 @@ function removeNode(chat, nodeId) {
 function nodeText(n) {
   if (!n) return '';
   if (n.role === 'user') return n.content || '';
-  return (n.steps || []).map((s) => s.content || '').filter(Boolean).join('\n\n');
+  return (n.steps || []).filter((s) => !s.superseded && !s.synthetic).map((s) => s.content || '').filter(Boolean).join('\n\n');
 }
 function chatBusy(chat) { for (const r of S.running.values()) if (r.chatId === chat.id) return true; return false; }
 
@@ -6029,6 +6491,7 @@ function stepsToMessages(steps, withReasoning) {
   // Images produites par les outils (captures, rendus 3D) : transmises au modèle pendant le tour en cours (2 dernières étapes)
   const seeSteps = withReasoning ? new Set(steps.filter((s) => (s.toolCalls || []).some((t) => t.seeImages && t.display?.images?.length)).slice(-2)) : new Set();
   for (const s of steps) {
+    if (s.synthetic) { if (withReasoning && s.inject) out.push({ role: 'user', content: s.inject }); continue; }
     const tcs = (s.toolCalls || []).filter((t) => t.name);
     if (!s.content && !tcs.length) continue;
     const m = { role: 'assistant', content: s.content || '' };
@@ -6075,7 +6538,7 @@ function estMessages(msgs) {
 }
 const FS_TOOLS = ['list_files', 'read_file', 'write_file', 'edit_file', 'grep_files', 'python'];
 const DELIVERABLE_TOOL_NAMES = ['create_excel', 'create_word', 'create_pdf', 'create_powerpoint', 'create_video', 'create_3d', 'generate_image', 'python', 'write_file'];
-async function buildSystem(chat, c, query, { summary, tools = [], sub = false, skills = [] } = {}) {
+async function buildSystem(chat, c, query, { summary, tools = [], sub = false, skills = [], rea = '', guru = null } = {}) {
   const sec = { base: fillVars(c.systemPrompt || '', { model: modelName(c.model) }) };
   const ctx = [];
   if (S.settings.harness.injectDate) ctx.push(`Date et heure actuelles : ${new Date().toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })} (fuseau ${Intl.DateTimeFormat().resolvedOptions().timeZone}).`);
@@ -6105,7 +6568,7 @@ Tu disposes d'outils (${tools.map((t) => t.name).join(', ')}). Travaille de faç
 - Livre un résultat complet et directement utilisable : aucune donnée omise, aucun « … », aucun espace réservé.
 - Structure claire (titres, listes, tableaux), chiffres exacts avec unités, vocabulaire professionnel, français soigné.
 - Pour un livrable, utilise les outils de création (design premium automatique) plutôt que du texte brut ; ajoute le logo et le thème demandés.
-- Avant de conclure, vérifie ton travail (relecture, calculs, visual_check pour un rendu visuel) et corrige.${isFreeModel(c.model) ? '\n- Procède étape par étape : un appel d\'outil à la fois quand les étapes dépendent les unes des autres ; relis les résultats d\'outils avant de continuer.' : ''}`;
+- Avant de conclure, vérifie ton travail (relecture, calculs, visual_check pour un rendu visuel) et corrige.${isFreeModel(c.model) ? '\n- Procède étape par étape : un appel d\'outil à la fois quand les étapes dépendent les unes des autres ; relis les résultats d\'outils avant de continuer.\n- Tout calcul non trivial (sommes, moyennes, pourcentages, ratios, dates, statistiques) se fait avec python ou run_javascript, jamais de tête ; recopie ensuite les résultats exacts.\n- Distingue ce qui est vérifié de ce qui est supposé ; n\'invente ni chiffre, ni source, ni référence.' : ''}`;
   }
   const names = tools.map((t) => t.name);
   if (names.some((n) => DELIVERABLE_TOOL_NAMES.includes(n))) {
@@ -6119,7 +6582,17 @@ Design : paramètre theme (executif, prestige, emeraude, graphite, bordeaux, oce
   const proj = ['CORTEX.md', 'AGENTS.md', 'CLAUDE.md'].map((n) => readWorkspaceFile(n)).find((f) => f && f.encoding !== 'base64' && f.content.trim());
   if (proj && tools.length) sec.project = `# Instructions du projet (${proj.id})\n${truncate(proj.content, 8000)}`;
   if (summary) sec.summary = '# Résumé de la conversation antérieure (compactée)\n' + summary;
-  const text = [sec.base, sec.context, sec.project, sec.memory, sec.kb, sec.todos, sec.files, sec.tools, sec.quality, sec.deliver, sec.skills, sec.skillsActive, sec.summary].filter(Boolean).join('\n\n');
+  if (guru?.text) sec.guru = `# Stratégie experte du Guru (${modelShort(guru.model)}) — à suivre\nUn modèle de raisonnement plus puissant a analysé la tâche. Applique son raisonnement expert, évite les pièges listés, suis son plan d'exécution et valide sa checklist avant de livrer. Si un point te paraît faux, vérifie-le (outil ou calcul) plutôt que de le suivre aveuglément.${guru.planned ? " Son plan d'exécution est chargé dans ta liste de tâches (# Plan en cours) : exécute les étapes dans l'ordre et mets la liste à jour avec todo_write (in_progress puis completed) au fil de l'exécution ; ne livre qu'une fois toutes les étapes terminées et la checklist qualité validée." : ''}\n\n${guru.text}`;
+  if (rea) sec.rea = rea + "\n\n(Cette analyse REA a été exécutée par Cortex au début de la tâche et est visible par l'utilisateur ; suis-la.)";
+  if (names.includes('ask_experts')) sec.boost = `# Boosters de raisonnement (réservés aux modèles gratuits)
+- think : réfléchis par écrit avant toute décision difficile ou après un résultat d'outil complexe.
+- ask_experts : pour une étape critique (calcul, analyse, choix, diagnostic), consulte 3 modèles gratuits en parallèle et obtiens la synthèse arbitrée.
+- deep_think : problème très difficile → le plus puissant modèle gratuit de raisonnement le résout.
+- verify_answer : avant de livrer un résultat important, fais-le relire de façon critique, puis corrige.
+Utilise-les quand la qualité en dépend ; inutile pour une tâche simple. Objectif : un résultat de niveau expert, rapidement.`;
+  if (S.settings.harness.permissionMode === 'plan' && tools.length && !sub) sec.plan = `# MODE PLAN (actif)
+Tu es en mode plan : n'effectue AUCUNE modification (pas d'écriture de fichier, pas de livrable, pas d'action externe). Analyse d'abord (lecture de fichiers, recherche, questions), puis appelle propose_plan avec un plan détaillé et numéroté : objectif, étapes, outils, fichiers concernés, livrables, risques. L'exécution commencera quand l'utilisateur aura approuvé le plan.`;
+  const text = [sec.base, sec.context, sec.project, sec.memory, sec.kb, sec.todos, sec.files, sec.tools, sec.quality, sec.boost, sec.deliver, sec.skills, sec.skillsActive, sec.rea, sec.guru, sec.plan, sec.summary].filter(Boolean).join('\n\n');
   return { text, sec };
 }
 function contextLimit(model) {
@@ -6228,7 +6701,7 @@ function buildBody(o, messages, toolDefs) {
   else if (p.reasoning && modelSupports(o.model, 'reasoning')) {
     if (p.reasoning === 'off') { if (!getModel(o.model)?.reasoning?.mandatory) body.reasoning = { enabled: false }; }
     else body.reasoning = { effort: p.reasoning };
-  }
+  } else if (o.effortBoost && !o.depth && modelSupports(o.model, 'reasoning')) body.reasoning = { effort: o.effortBoost };
   if (toolDefs.length) {
     body.tools = toolDefs.map(toolSchema);
     if (o.forceFinal) body.tool_choice = 'none';
@@ -6287,7 +6760,7 @@ async function agentLoop(o) {
   const maxSteps = o.maxSteps || H.maxSteps || 25;
   const canTools = modelSupports(o.model, 'tools');
   if (o.tools.length && !canTools) o.run.note(`${modelShort(o.model)} ne prend pas en charge les outils : réponse sans outils.`);
-  o.toolMap = new Map(canTools ? o.tools.map((t) => [t.name, t]) : []);
+  o.toolMap = o.toolMap?.size && canTools ? new Map([...o.tools.map((t) => [t.name, t]), ...o.toolMap]) : new Map(canTools ? o.tools.map((t) => [t.name, t]) : []);
   let lastSig = '', repeats = 0, loopRetried = false;
   for (let i = 0; ; i++) {
     if (o.signal.aborted) break;
@@ -6374,6 +6847,7 @@ async function agentLoop(o) {
     repeats = sig === lastSig ? repeats + 1 : 0;
     lastSig = sig;
     await executeToolCalls(step.toolCalls, o);
+    if (o.stopAfter) { o.onUpdate(); break; }
     if (H.loopGuard && repeats >= 2) {
       for (const t of step.toolCalls) t.result = (t.result || '') + "\n\n[Harness] ⚠️ Cet appel identique a été répété 3 fois de suite. Change d'approche ou termine la tâche.";
       o.run.note('Boucle détectée : appels identiques répétés');
@@ -6509,6 +6983,7 @@ async function runToolCall(tc, o) {
     openArtifact: (path) => S.onArtifact?.(path, o.chat),
     update: o.onUpdate,
     model: o.model,
+    toolsNow: () => [...o.toolMap.values()],
     addTools: (ids) => { const added = []; if (!modelSupports(o.model, 'tools')) return added; for (const t of resolveTools(ids)) if (!o.toolMap.has(t.name)) { o.toolMap.set(t.name, t); added.push(t.name); } return added; },
   };
   try {
@@ -6522,7 +6997,8 @@ async function runToolCall(tc, o) {
       if (typeof h === 'string') text = h;
     }
     const display = {};
-    for (const k of ['images', 'files', 'sources', 'todos', 'artifact']) if (out[k] && (!Array.isArray(out[k]) || out[k].length)) display[k] = out[k];
+    for (const k of ['images', 'files', 'sources', 'todos', 'artifact', 'plan']) if (out[k] && (!Array.isArray(out[k]) || out[k].length)) display[k] = out[k];
+    if (out.stopRun) o.stopAfter = true;
     const extra = Object.keys(display).length ? { display } : {};
     if (out.modelImages?.length && display.images?.length) extra.seeImages = true;
     finish(out.error ? 'error' : 'done', text, extra);
@@ -6536,7 +7012,8 @@ async function authorize(tool, tc, args, o) {
   const perm = toolPerm(tool);
   if (perm === 'off') return { ok: false, reason: "Outil désactivé par l'utilisateur." };
   if (mode === 'readonly' && tool.write) return { ok: false, reason: "Mode lecture seule : les actions de modification sont bloquées. Décris plutôt à l'utilisateur ce que tu ferais." };
-  if (mode === 'auto' || perm === 'auto' || S.sessionAllow.has(tool.name)) return { ok: true };
+  if (mode === 'plan' && (tool.write || tool.name === 'spawn_agent') && o.depth === 0) return { ok: false, reason: "Mode plan : aucune modification n'est autorisée avant l'approbation du plan. Termine l'analyse (lecture, recherche) puis appelle propose_plan avec ton plan détaillé." };
+  if (mode === 'auto' || mode === 'plan' || perm === 'auto' || S.sessionAllow.has(tool.name)) return { ok: true };
   tc.status = 'awaiting';
   tc.parsed = args;
   o.onUpdate();
@@ -6670,18 +7147,76 @@ async function runAssistant(chat, node, opts = {}) {
       if (skills.length) tracer.note('Skill(s) activé(s) : ' + skills.map((x) => x.name).join(', '));
     }
     node.skills = skills.map((x) => x.name);
+    // Outils du harness : REA, expérience, découverte d'outils ; boosters de raisonnement pour les modèles gratuits ; mode plan
+    const H = S.settings.harness;
+    const toolsOK = tools.length > 0 && modelSupports(model, 'tools') && !opts.custom;
+    const task = userNode?.content || '';
+    const addTool = (t) => { if (t && toolPerm(t) !== 'off' && !tools.some((x) => x.name === t.name)) tools.push(t); };
+    let rea = null;
+    if (toolsOK) {
+      if (H.boosters !== false && boostAllowed(model)) BOOSTERS.forEach(addTool);
+      [REA_TOOL, EXPERIENCE_TOOL, DISCOVER_TOOLS].forEach(addTool);
+      if (H.permissionMode === 'plan') addTool(PROPOSE_PLAN);
+      // REA en premier : analyse préalable visible (expériences passées, outils activés, méthode)
+      if (H.reaFirst !== false && task.trim() && !node.steps.length) {
+        rea = Rea.brief(task, tools);
+        rea.added.forEach(addTool);
+        node.steps.push({ id: uid('s'), synthetic: 'rea', content: '', toolCalls: [{ id: uid('rea'), name: 'rea', args: JSON.stringify({ task: truncate(task, 300) }), parsed: { task: truncate(task, 300) }, status: 'done', result: rea.text, durationMs: rea.ms, startedAt: now() }], status: 'done', startedAt: now() });
+        tracer.note(`REA : ${rea.xps} expérience(s), ${rea.added.length} outil(s) activé(s)`);
+        onUpdate();
+      }
+    }
+    // GURU : sur une tâche complexe, le plus puissant modèle gratuit de raisonnement écrit la stratégie experte que le modèle exécute
+    let guru = null;
+    // (pas de Guru ni de relecture en mode Comparer / Arène : la comparaison des modèles doit rester équitable)
+    const complex = !opts.custom && !userNode?.compare && boostAllowed(model) && H.boosters !== false && Guru.needed(task, (userNode?.attachments || []).length);
+    // Suite d'une tâche déjà stratégisée (ex. « Plan approuvé », « continue ») : on garde la stratégie précédente
+    const prevA = path.slice(0, -1).reverse().find((n) => n.role === 'assistant');
+    const prevGuru = prevA?.steps?.find((x) => x.synthetic === 'guru' && x.toolCalls[0]?.status === 'done');
+    if (complex && prevGuru && task.length < 200) {
+      const res = prevGuru.toolCalls[0].result;
+      guru = { model: (res.match(/^Stratégie du Guru \((.+?)\) :/) || [])[1] || 'Guru', text: res.replace(/^Stratégie du Guru \((.+?)\) :\n+/, ''), carried: true, planned: !!chat.todos?.some((t) => t.status !== 'completed') };
+      node.guruChecklist = prevA.guruChecklist;
+    }
+    if (complex && !guru && !node.steps.some((x) => x.synthetic === 'guru')) {
+      const t0 = now();
+      const st = { id: uid('s'), synthetic: 'guru', content: '', toolCalls: [{ id: uid('gu'), name: 'guru', args: JSON.stringify({ task: truncate(task, 300) }), parsed: { task: truncate(task, 300) }, status: 'running', progress: 'Le Guru élabore la stratégie experte…', startedAt: t0 }], status: 'done', startedAt: t0 };
+      node.steps.push(st); onUpdate();
+      const gtc = st.toolCalls[0];
+      try {
+        const context = path.slice(-5, -1).map((n) => `${n.role === 'user' ? 'Utilisateur' : 'Assistant'} : ${truncate(nodeText(n), 700)}`).join('\n');
+        const xp = rea?.xps ? Experience.search(task, 2).map((e) => Experience.brief(e)).join('\n') : '';
+        guru = await Guru.strategy(task, { model, tools, context, rea: xp, signal: ctrl.signal });
+        gtc.status = 'done'; gtc.result = `Stratégie du Guru (${modelShort(guru.model)}) :\n\n${guru.text}`;
+        // Exécution propre : le plan du Guru devient la liste de tâches visible, que le modèle met à jour au fil de l'eau
+        const P = Guru.parse(guru.text);
+        node.guruChecklist = P.checklist;
+        if (toolsOK && P.steps.length >= 2 && TOOLS.has('todo_write') && toolPerm(TOOLS.get('todo_write')) !== 'off') {
+          addTool(TOOLS.get('todo_write'));
+          chat.todos = P.steps.map((x, i) => ({ id: i + 1, content: truncate(x, 160), status: i === 0 ? 'in_progress' : 'pending' }));
+          gtc.display = { todos: chat.todos.map((t) => ({ ...t })) };
+          guru.planned = true;
+          S.onTodos?.(chat);
+        }
+        tracer.note('Guru : stratégie par ' + modelShort(guru.model));
+      } catch (e) {
+        if (ctrl.signal.aborted) throw e;
+        gtc.status = 'error'; gtc.result = `Guru indisponible (${e.message}) : exécution directe.`;
+      }
+      delete gtc.progress; gtc.durationMs = now() - t0; onUpdate();
+    }
     let system, history;
     if (opts.custom) ({ system, history } = opts.custom);
     else {
       await bridgeAttachments(chat, path, model, tracer, ctrl.signal);
       let h = buildHistory(chat, path, model);
-      let sys = await buildSystem(chat, c, userNode?.content || '', { summary: h.summary, tools, skills });
+      let sys = await buildSystem(chat, c, userNode?.content || '', { summary: h.summary, tools, skills, rea: rea?.text, guru });
       const limit = contextLimit(model) - Math.max(+c.params.max_tokens || 0, 4096);
       let est = estTokens(sys.text) + estMessages(h.messages) + estTokens(JSON.stringify(tools.map(toolSchema)));
       if (S.settings.harness.autoCompact && est > limit * S.settings.harness.compactAt && path.length > (S.settings.harness.keepRecent || 6) + 1) {
         if (await compactChat(chat, path, tracer)) {
           h = buildHistory(chat, path, model);
-          sys = await buildSystem(chat, c, userNode?.content || '', { summary: h.summary, tools, skills });
+          sys = await buildSystem(chat, c, userNode?.content || '', { summary: h.summary, tools, skills, rea: rea?.text, guru });
           est = estTokens(sys.text) + estMessages(h.messages);
         }
       }
@@ -6696,7 +7231,12 @@ async function runAssistant(chat, node, opts = {}) {
     }
     const notes = [];
     Checkpoints.begin(node.id);
-    await agentLoop({ chat, node, steps: node.steps, model, cfg: c, system, history, tools, depth: 0, signal: ctrl.signal, run: tracer, onUpdate, maxSteps: c.maxSteps, notes });
+    const loopOpts = { chat, node, steps: node.steps, model, cfg: c, system, history, tools, depth: 0, signal: ctrl.signal, run: tracer, onUpdate, maxSteps: c.maxSteps, notes, effortBoost: complex ? 'medium' : null };
+    await agentLoop(loopOpts);
+    // Relecture critique (Reflexion) : un autre modèle gratuit vérifie, puis une passe de correction si nécessaire
+    if (toolsOK && !ctrl.signal.aborted && !loopOpts.stopAfter && H.freeReview !== false && boostAllowed(model) && H.permissionMode !== 'plan' && !userNode?.compare) {
+      await reviewPass(node, task, { ...loopOpts, maxSteps: 8, stopAfter: false }, tracer, complex).catch((e) => tracer.note('Relecture ignorée : ' + e.message));
+    }
     node.notes.push(...notes);
     node.status = ctrl.signal.aborted ? 'stopped' : 'done';
     if (Hooks.has('onAfterResponse')) {
@@ -6722,7 +7262,40 @@ async function runAssistant(chat, node, opts = {}) {
     S.onNodeUpdate?.(chat, node, true);
     S.onRunState?.(chat);
     if (document.hidden && node.status !== 'stopped') attention(node.status === 'error' ? 'Erreur de génération' : 'Réponse prête', chat, true);
+    // Mémoire d'expérience : la tâche outillée est enregistrée (en arrière-plan) pour les prochaines fois
+    if (node.status === 'done' && !opts.custom && !opts.noTools) {
+      const u = chat.nodes[node.parentId];
+      if (u?.role === 'user') Experience.record(chat, node, u.content || '').catch((e) => console.warn('expérience', e));
+    }
   }
+}
+/* Relecture critique d'une réponse (modèles gratuits) : verdict par un modèle rapide, correction en une passe */
+async function reviewPass(node, task, o, tracer, complex = false) {
+  const last = [...node.steps].reverse().find((s) => s.content && !s.synthetic);
+  const files = nodeFiles(node);
+  const work = node.steps.filter((s) => !s.synthetic).flatMap((s) => s.toolCalls || []);
+  // Relecture des tâches complexes et des livrables uniquement (pas des réponses courtes ou simples)
+  if (!last || !task.trim() || (!files.length && (!complex || last.content.length < 400))) return;
+  const t0 = now();
+  const made = work.filter((t) => DELIVERABLE_TOOL_NAMES.includes(t.name) || /^create_/.test(t.name)).map((t) => `${t.name}(${truncate(t.args || '', 5000)}) → ${truncate(String(t.result || '').split('\n')[0], 200)}`).join('\n');
+  const answer = last.content + (made ? `\n\n--- Livrables produits (arguments des outils) ---\n${made}` : '');
+  const v = await critique(task, answer, { exclude: [o.model], timeout: 90000, signal: o.signal, criteria: node.guruChecklist?.length ? 'checklist qualité de la stratégie : ' + node.guruChecklist.join(' ; ') : '' });
+  if (v.issues.length && !v.ok) node.reviewIssues = v.issues;
+  const step = { id: uid('s'), synthetic: 'review', content: '', toolCalls: [{ id: uid('rv'), name: 'verify_answer', args: JSON.stringify({ answer: 'réponse finale' }), parsed: { answer: 'réponse finale' }, status: 'done', result: '', durationMs: now() - t0, startedAt: t0 }], status: 'done', startedAt: t0 };
+  const tc = step.toolCalls[0];
+  if (v.ok || !v.issues.length) {
+    tc.result = `Relecture par ${modelShort(v.model)} : ✅ aucun problème bloquant.`;
+    node.steps.push(step); o.onUpdate();
+    tracer.note('Relecture critique : OK');
+    return;
+  }
+  tc.result = `Relecture par ${modelShort(v.model)} : ${v.issues.length} point(s) à corriger\n` + v.issues.map((x, i) => `${i + 1}. ${x}`).join('\n');
+  step.inject = `[Harness — relecture critique par un autre modèle]\nProblèmes relevés dans ta réponse :\n${v.issues.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n\nVérifie chaque point. Corrige ceux qui sont fondés (refais les fichiers concernés avec les mêmes noms si nécessaire) et ignore ceux qui sont erronés. Puis donne la réponse finale COMPLÈTE et corrigée (elle remplace la précédente), sans mentionner cette relecture sauf pour un changement important.`;
+  last.superseded = true;
+  node.steps.push(step); o.onUpdate();
+  tracer.note(`Relecture critique : ${v.issues.length} correction(s) demandée(s)`);
+  await agentLoop(o);
+  if (!node.steps.slice(node.steps.indexOf(step) + 1).some((s) => s.content)) delete last.superseded;
 }
 /* Envoie un message utilisateur et lance la/les réponse(s) */
 async function sendUserMessage(chat, text, attachments = [], { models } = {}) {
@@ -6842,6 +7415,7 @@ function toast(msg, type = 'info', ms = 2600) {
   t.innerHTML = (type === 'err' ? icon('alert', 'sm') : type === 'ok' ? icon('check', 'sm') : icon('info', 'sm')) + `<span>${esc(msg)}</span>`;
   root.appendChild(t);
   setTimeout(() => { t.style.transition = 'opacity .25s, transform .25s'; t.style.opacity = '0'; t.style.transform = 'translateY(6px)'; setTimeout(() => t.remove(), 260); }, ms);
+  return t;
 }
 
 /* Fenêtres modales empilables */
@@ -7029,6 +7603,7 @@ const RAIL = [
   { id: 'models', label: 'Modèles', icon: 'cpu' },
   { id: 'kb', label: 'Savoir', icon: 'db' },
   { id: 'memory', label: 'Mémoire', icon: 'brain' },
+  { id: 'experience', label: 'Expérience', icon: 'trophy' },
   { id: 'files', label: 'Fichiers', icon: 'files' },
   { id: 'usage', label: 'Usage', icon: 'chart' },
 ];
@@ -7562,7 +8137,7 @@ function producedFilesHTML(n) {
   if (!files.length) return '';
   return `<div class="out-files"><div class="of-head">${icon('download', 'sm')}<b>Fichiers produits</b><span class="faint small">${files.length}</span><span class="grow"></span>${files.length > 1 ? `<button class="btn sm" data-act="node-zip" data-id="${n.id}">${icon('download', 'sm')} Tout (.zip)</button>` : ''}</div>
     ${files.map((p) => { const f = readWorkspaceFile(p); return `<div class="of-item">${fileBadge(p)}<div class="grow" style="min-width:0"><div class="of-name ellipsis" title="${esc(p)}">${esc(p.split('/').pop())}</div><div class="faint xs ellipsis">${esc(p)} · ${fmtBytes(f.size)}</div></div>
-      <button class="icon-btn sm" data-act="preview-file" data-path="${esc(p)}" title="Aperçu">${icon('eye', 'sm')}</button><button class="btn sm primary" data-act="dl-file" data-path="${esc(p)}">${icon('download', 'sm')} Télécharger</button></div>`; }).join('')}</div>`;
+      ${producerOf(n, p) ? `<button class="icon-btn sm" data-act="restyle-file" data-id="${n.id}" data-path="${esc(p)}" title="Changer le design (thème, couleur du logo)">${icon('palette', 'sm')}</button>` : ''}<button class="icon-btn sm" data-act="preview-file" data-path="${esc(p)}" title="Aperçu">${icon('eye', 'sm')}</button><button class="btn sm primary" data-act="dl-file" data-path="${esc(p)}">${icon('download', 'sm')} Télécharger</button></div>`; }).join('')}</div>`;
 }
 function stepsHTML(steps, running, keyBase) {
   let html = '';
@@ -7576,7 +8151,8 @@ function stepsHTML(steps, running, keyBase) {
       const open = S.ui.open[k] ?? live;
       html += `<details class="thinking" data-ok="${k}" ${open ? 'open' : ''}><summary>${icon('brain', 'sm')} ${live ? 'Réflexion en cours… <span class="spin"></span>' : `Réflexion${s.duration ? ` · ${fmtDur((s.ttft && s.content ? s.duration : s.duration))}` : ''}`}<span class="chev">${icon('down', 'sm')}</span></summary><div class="th-body">${esc(s.reasoning)}</div></details>`;
     }
-    if (s.content) html += mdSlot('st-' + s.id, s.content, streaming && !(s.toolCalls || []).length);
+    if (s.content && s.superseded) html += `<details class="superseded"><summary>${icon('undo', 'sm')} Première version — corrigée après relecture critique<span class="chev">${icon('down', 'sm')}</span></summary>${mdSlot('st-' + s.id, s.content, false)}</details>`;
+    else if (s.content) html += mdSlot('st-' + s.id, s.content, streaming && !(s.toolCalls || []).length);
     for (const img of s.images || []) html += `<img class="gen-img" src="${esc(img)}" alt="Image générée" data-act="zoom">`;
     for (const tc of s.toolCalls || []) html += toolCardHTML(tc, streaming);
     html += '</div>';
@@ -7596,12 +8172,20 @@ function toolCardHTML(tc, streaming) {
   const parsed = tc.parsed || safeJSON(tc.args) || {};
   let argSum = '';
   try { argSum = meta.args(parsed) || ''; } catch { argSum = ''; }
+  if (tc.name === 'rea' && tc.result) { const xp = (tc.result.match(/Expériences similaires \((\d+)\)/) || [])[1] || 0, nt = (tc.result.match(/\n- [a-z_0-9]+ :/g) || []).length; argSum = `${xp} expérience(s) · ${nt} outil(s) activé(s) · méthode`; }
+  if (tc.name === 'guru' && tc.result && tc.status === 'done') argSum = 'stratégie experte · ' + ((tc.result.match(/^Stratégie du Guru \((.+?)\) :/) || [])[1] || '');
+  if (tc.name === 'verify_answer' && tc.result && /^Relecture par/.test(tc.result)) argSum = tc.result.split('\n')[0].replace(/^Relecture par /, '');
   const [stLabel, stCls] = TC_STATUS[tc.status] || ['', ''];
   const k = 'tc-' + tc.id;
   // Cartes spéciales : plan de tâches et question
   if (tc.name === 'todo_write' && tc.status === 'done' && tc.display?.todos) {
     const t = tc.display.todos;
     return `<div class="tool"><div style="padding:10px 14px"><div class="row" style="margin-bottom:6px"><span class="ticon">${icon('todo', 'sm')}</span><b class="small">Plan</b><span class="badge">${t.filter((x) => x.status === 'completed').length}/${t.length}</span></div>${todoListHTML(t)}</div></div>`;
+  }
+  if (tc.name === 'propose_plan' && tc.display?.plan) {
+    const d = tc.planDecision;
+    return `<div class="plan-card"><div class="row" style="margin-bottom:8px"><span class="ticon">${icon('list', 'sm')}</span><b class="small grow">Plan proposé</b>${d ? `<span class="badge ok">${icon('check', 'xs')} ${esc(d)}</span>` : '<span class="badge warn">en attente de votre décision</span>'}</div>${mdSlot('plan-' + tc.id, tc.display.plan, false)}
+      ${d ? '' : `<div class="row wrap" style="margin-top:12px"><button class="btn sm primary" data-act="plan-approve" data-id="${tc.id}" data-mode="auto">${icon('zap', 'sm')} Approuver et exécuter</button><button class="btn sm" data-act="plan-approve" data-id="${tc.id}" data-mode="ask">${icon('shield', 'sm')} Approuver (confirmer chaque action)</button><button class="btn sm ghost" data-act="plan-revise" data-id="${tc.id}">${icon('edit', 'sm')} Modifier le plan</button></div>`}</div>`;
   }
   if (tc.name === 'ask_user' && tc.status === 'asking' && tc.question) {
     return `<div class="ask-card"><div class="q">${icon('question', 'sm')} ${esc(tc.question.q)}</div>
@@ -7627,15 +8211,19 @@ function toolCardHTML(tc, streaming) {
     const sub = tc.sub;
     body += `<div class="tlabel">Sous-agent ${esc(sub.emoji || '')} ${esc(sub.agent || '')} · ${esc(modelShort(sub.model))}${sub.durationMs ? ' · ' + fmtDur(sub.durationMs) : ''}</div><div class="sub-run">${stepsHTML(sub.steps || [], sub.status === 'running', 'sub')}${sub.status === 'running' && !(sub.steps || []).length ? '<div class="typing"><i></i><i></i><i></i></div>' : ''}</div>`;
   }
-  if (tc.result != null && !(tc.sub && tc.status === 'done')) body += `<div class="tlabel">Résultat${tc.durationMs ? ' · ' + fmtDur(tc.durationMs) : ''}</div><pre class="tpre">${esc(truncate(tc.result, 6000))}</pre>`;
+  if (tc.result != null && ['rea', 'guru'].includes(tc.name) && tc.status === 'done') body += `<div class="rea-body">${mdSlot('rea-' + tc.id, tc.result, false)}</div>`;
+  else if (tc.result != null && !(tc.sub && tc.status === 'done')) body += `<div class="tlabel">Résultat${tc.durationMs ? ' · ' + fmtDur(tc.durationMs) : ''}</div><pre class="tpre">${esc(truncate(tc.result, 6000))}</pre>`;
   for (const img of tc.display?.images || []) body += `<img class="gen-img" src="${esc(img)}" alt="" data-act="zoom">`;
   if (tc.display?.files?.length) body += `<div class="chips">${tc.display.files.map((f) => `<button class="chip" data-act="open-file" data-path="${esc(f)}">${icon('file', 'xs')} ${esc(f)}</button>`).join('')}</div>`;
   if (tc.display?.artifact) body += `<button class="btn sm" data-act="open-artifact" data-path="${esc(tc.display.artifact)}">${icon('eye', 'sm')} Ouvrir l'aperçu</button>`;
   const imgsOutside = (tc.display?.images || []).length && !open ? (tc.display.images.map((img) => `<img class="gen-img" src="${esc(img)}" alt="" data-act="zoom">`).join('')) : '';
+  const peekSrc = tc.status === 'running' ? tc.progress || 'en cours…' : String(tc.result || '').replace(/^(Stratégie du Guru|Relecture par)[^\n]*\n+/, '').split('\n').find((l) => l.trim() && !/^#/.test(l)) || '';
+  const peek = tc.status === 'pending' ? '' : `<div class="tc-peek ${tc.status}">⎿ ${esc(truncate(peekSrc.replace(/[#*`]/g, '').trim(), 160))}</div>`;
+  const plan = tc.name === 'guru' && tc.display?.todos?.length ? `<div class="tool guru-plan"><div style="padding:10px 14px"><div class="row" style="margin-bottom:6px"><span class="ticon">${icon('todo', 'sm')}</span><b class="small">Plan d'exécution du Guru</b><span class="badge">${tc.display.todos.length} étapes</span></div>${todoListHTML(tc.display.todos)}</div></div>` : '';
   return `<details class="tool ${tc.status}" data-ok="${k}" ${open ? 'open' : ''}>
     <summary><span class="ticon">${tc.status === 'running' ? '<span class="spin"></span>' : icon(meta.icon, 'sm')}</span><span class="tname">${esc(meta.title)}</span><span class="targs">${esc(argSum)}</span>
     ${stLabel && tc.status !== 'done' ? `<span class="badge ${stCls}">${stLabel}</span>` : ''}${tc.status === 'done' ? `<span class="badge ok">${icon('check', 'xs')}${tc.durationMs != null ? ' ' + fmtDur(tc.durationMs) : ''}</span>` : ''}<span class="chev">${icon('down', 'sm')}</span></summary>
-    <div class="tbody">${body}</div></details>${imgsOutside}`;
+    <div class="tbody">${body}</div></details>${peek}${plan}${imgsOutside}`;
 }
 function todoListHTML(todos) {
   return `<ul class="todo-list">${todos.map((t) => `<li class="${t.status}"><span class="box">${t.status === 'completed' ? icon('check', 'xs') : ''}</span><span>${esc(t.content)}</span></li>`).join('')}</ul>`;
@@ -7701,7 +8289,7 @@ S.onNodeUpdate = (chat, node, final) => {
 };
 S.onStructure = (chat) => { if (chat.id === S.currentChatId) { renderMessages(); renderHeader(); scrollToBottom(true); } renderChatList(); };
 const balanceAfterRun = debounce(() => { if (!S.running.size) Balance.refresh(true); }, 4000);
-S.onRunState = (chat) => { if (chat.id === S.currentChatId) { updateSendBtn(); renderHeader(); } renderChatList(); balanceAfterRun(); };
+S.onRunState = (chat) => { if (chat.id === S.currentChatId) { updateSendBtn(); renderHeader(); renderStatusLine(); } renderChatList(); balanceAfterRun(); };
 S.onChatsChanged = () => { renderChatList(); renderHeader(); };
 S.onTodos = (chat) => { if (chat.id === S.currentChatId && S.ui.inspectorOpen) renderInspectorSoon(); };
 S.onTrace = (chatId) => { if (chatId === S.currentChatId && S.ui.inspectorOpen && S.ui.inspectorTab === 'trace') renderInspectorSoon(); };
@@ -7729,7 +8317,7 @@ function renderComposer() {
   w.innerHTML = `<div class="model-bar" id="modelBar"></div>
     <div class="composer" id="composer">
       <div class="comp-atts" id="compAtts"></div>
-      <div style="position:relative" id="inputWrap"><textarea id="input" rows="1" placeholder="Écrivez un message…  ( / pour les prompts )" aria-label="Message"></textarea></div>
+      <div style="position:relative" id="inputWrap"><textarea id="input" rows="1" placeholder="${S.settings.harness.permissionMode === 'plan' ? 'Décrivez la tâche : Cortex analyse puis propose un plan à approuver…' : 'Écrivez un message…  ( / pour les commandes )'}" aria-label="Message"></textarea></div>
       <div class="comp-row">
         <button class="icon-btn" data-act="comp-plus" title="Plus d'options">${icon('plus')}</button>
         <button class="icon-btn" data-act="attach" title="Joindre des fichiers (images, PDF, Word, Excel, code…)">${icon('clip')}</button>
@@ -7741,7 +8329,7 @@ function renderComposer() {
         <button class="send-btn" id="sendBtn" data-act="send" title="Envoyer (Entrée)">${icon('send')}</button>
       </div>
     </div>
-    <div class="comp-hint hide-sm">${S.settings.sendKey === 'enter' ? 'Entrée pour envoyer · Maj+Entrée nouvelle ligne' : `${MOD}+Entrée pour envoyer`} · <kbd>/</kbd> prompts · <kbd>${MOD}</kbd><kbd>K</kbd> commandes · Les IA peuvent se tromper.</div>`;
+    <div class="status-line" id="statusLine"></div>`;
   const inp = $('#input');
   inp.value = Store.get('cortex.draft') || '';
   inp.addEventListener('input', () => { autoGrow(); updateTokHint(); slashCheck(); saveDraft(); });
@@ -7769,7 +8357,7 @@ function updateTokHint() {
   if (el) el.textContent = t.length > 20 ? `~${fmtTokens(estTokens(t))} tokens` : '';
 }
 const EFFORT_LABELS = { '': 'Auto', off: 'Désactivé', minimal: 'Minimal', low: 'Faible', medium: 'Moyen', high: 'Élevé', xhigh: 'Très élevé', max: 'Maximum', none: 'Aucun' };
-const MODE_LABELS = { ask: ['Demander', 'shield', ''], auto: ['Auto', 'zap', 'warn'], readonly: ['Lecture seule', 'eye', 'on'] };
+const MODE_LABELS = { ask: ['Demander', 'shield', ''], auto: ['Auto', 'zap', 'warn'], plan: ['Plan', 'list', 'on'], readonly: ['Lecture seule', 'eye', 'on'] };
 function renderModelBar() {
   const bar = $('#modelBar');
   if (!bar) return;
@@ -7786,8 +8374,9 @@ function renderModelBar() {
     <button class="pill ${tools.length ? '' : ''} ${noTools ? 'warn' : ''}" data-act="pick-tools" title="${noTools ? 'Ce modèle ne prend pas en charge les outils' : 'Outils actifs'}">${icon('wrench', 'sm')}${tools.length} outil${tools.length > 1 ? 's' : ''}</button>
     <button class="pill ${c.web ? 'on' : ''}" data-act="toggle-web" title="Recherche web intégrée au modèle (plugin OpenRouter, ~0,02 $/requête)">${icon('globe', 'sm')}<span class="hide-sm">Web</span></button>
     ${modelSupports(c.model, 'reasoning') ? `<button class="pill ${effort && effort !== 'off' ? 'on' : ''}" data-act="pick-effort" title="Effort de raisonnement">${icon('brain', 'sm')}<span class="hide-sm">${EFFORT_LABELS[effort] || effort}</span></button>` : ''}
-    <button class="pill ${mCls}" data-act="pick-mode" title="Mode de permission des outils">${icon(mIcon, 'sm')}<span class="hide-sm">${mLabel}</span></button>
+    <button class="pill ${S.settings.docTheme ? 'on' : ''}" data-act="pick-design" title="Design des fichiers produits : thème, couleur du logo, logo">${icon('palette', 'sm')}<span class="hide-sm">${S.settings.docTheme ? esc(designLabel()) : 'Design'}</span></button>
     ${(chat?.kb || c.agent?.kb || []).length ? `<span class="pill on" title="Base de connaissances attachée">${icon('db', 'sm')}${(c.kb || []).length}</span>` : ''}`;
+  renderStatusLine();
 }
 function updateSendBtn() {
   const b = $('#sendBtn');
@@ -7882,6 +8471,7 @@ async function sendFromComposer(textOverride) {
 }
 function onInputKey(e) {
   if (slashKey(e)) return;
+  if (e.key === 'Tab' && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); cycleMode(); return; }
   if (e.key === 'Enter' && !e.isComposing) {
     const sendCombo = S.settings.sendKey === 'enter' ? !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey : (e.ctrlKey || e.metaKey);
     if (sendCombo || (S.settings.sendKey === 'enter' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); sendFromComposer(); }
@@ -7906,7 +8496,7 @@ const SLASH_CMDS = [
 let slashState = null;
 function slashCheck() {
   const t = $('#input').value;
-  const m = /^\/(\S*)$/.exec(t);
+  const m = /^\/(\S*)$/.exec(t);  // (les commandes avec argument s'exécutent à l'envoi)
   if (!m) { closeSlash(); return; }
   const q = m[1];
   const prompts = [...col('prompts').values()].map((p) => ({ type: 'prompt', p, label: p.title, hint: '/' + (p.command || slugify(p.title)), score: fuzzyScore(q, (p.command || '') + ' ' + p.title + ' ' + (p.category || '')) }));
@@ -7944,7 +8534,7 @@ function pickSlash() {
 async function runSlashCommand(text) {
   const name = text.slice(1).split(/\s/)[0];
   const c = SLASH_CMDS.find((x) => x.cmd === name);
-  if (c) { c.run(); return true; }
+  if (c) { $('#input').value = ''; c.run(text.slice(name.length + 1).trim()); return true; }
   const p = [...col('prompts').values()].find((x) => x.command === name);
   if (p) { usePrompt(p); return true; }
   return false;
@@ -8192,13 +8782,15 @@ function effortMenu(anchor) {
   ], { side: 'top' });
 }
 function modeMenu(anchor) {
-  const set = (v) => { S.settings.harness.permissionMode = v; saveSettings(); renderModelBar(); };
+  const set = (v) => setMode(v);
   const cur = S.settings.harness.permissionMode;
   showMenu(anchor, [
     { header: 'Permissions des outils' },
     { label: 'Demander (selon chaque outil)', icon: 'shield', checked: cur === 'ask', action: () => set('ask') },
     { label: 'Auto — tout autoriser', icon: 'zap', checked: cur === 'auto', action: () => set('auto') },
+    { label: 'Plan — analyser puis proposer un plan à approuver', icon: 'list', checked: cur === 'plan', action: () => set('plan') },
     { label: 'Lecture seule — bloquer les écritures', icon: 'eye', checked: cur === 'readonly', action: () => set('readonly') },
+    '-', { label: 'Maj+Tab dans la zone de saisie : Demander → Auto → Plan', icon: 'info', disabled: true },
   ], { side: 'top' });
 }
 async function compactNow() {
@@ -8376,6 +8968,279 @@ async function runCodeBlock(btn) {
     const r = await Sandbox.runJS(code);
     out.textContent = [...(r.logs || []), r.ok ? (r.result !== undefined ? '→ ' + r.result : '') : '❌ ' + r.error].filter(Boolean).join('\n') || '(aucune sortie)';
   }
+}
+
+/* ---------- Mode plan : approbation ---------- */
+function findToolCall(chat, id) {
+  for (const n of Object.values(chat?.nodes || {})) for (const st of n.steps || []) for (const tc of st.toolCalls || []) if (tc.id === id) return tc;
+  return null;
+}
+function approvePlan(id, mode) {
+  const chat = currentChat(), tc = findToolCall(chat, id);
+  if (!chat || !tc || chatBusy(chat)) return;
+  tc.planDecision = mode === 'auto' ? 'approuvé — exécution automatique' : 'approuvé';
+  S.settings.harness.permissionMode = mode === 'auto' ? 'auto' : 'ask';
+  saveSettings(); renderModelBar(); saveChat(chat);
+  sendUserMessage(chat, "Plan approuvé. Exécute-le maintenant, étape par étape, jusqu'au livrable final, puis vérifie le résultat.");
+}
+function revisePlan(id) {
+  const inp = $('#input');
+  if (!inp) return;
+  inp.placeholder = 'Que faut-il changer dans le plan ? (le mode plan reste actif)';
+  inp.focus();
+}
+
+/* ============================== 12b · DESIGN DES LIVRABLES (thème, couleur du logo, logo) ==============================
+   Accessible depuis la barre du compositeur (« Design ») et sur chaque fichier produit (« Changer le design » :
+   le fichier est régénéré instantanément avec la nouvelle palette, sans rappeler le modèle). */
+const RESTYLABLE = new Set(['create_excel', 'create_word', 'create_pdf', 'create_powerpoint', 'create_html_report', 'create_chart']);
+const LOGO_MODES = [['palette', 'Couleur de la palette'], ['original', "D'origine"], ['mono', 'Monochrome'], ['blanc', 'Blanc']];
+function designThemes(withAuto = true) {
+  const b = S.settings.brand || {};
+  return [
+    ...(withAuto ? [['', { label: 'Automatique (le modèle choisit)', auto: true }]] : []),
+    ...Object.entries(THEMES),
+    ...(b.color ? [['marque', derivedTheme(String(b.color).replace('#', ''), 'Charte de la marque')]] : []),
+    ['logo', { label: 'Couleurs du logo', fromLogo: true }],
+  ];
+}
+function designLabel(k = S.settings.docTheme || '') {
+  if (!k) return 'Auto';
+  if (k === 'logo') return 'Couleurs du logo';
+  if (k === 'marque') return 'Charte';
+  return (THEMES[k]?.label || k).split(' (')[0];
+}
+function themeSwatch(k, t) {
+  if (t.auto) return `<span class="sw"><i style="background:linear-gradient(135deg,#${THEMES.executif.primary} 50%,#${THEMES.emeraude.primary} 50%)"></i><i style="background:linear-gradient(135deg,#${THEMES.bordeaux.primary} 50%,#${THEMES.prestige.accent} 50%)"></i></span>`;
+  if (t.fromLogo) return '<span class="sw"><i style="background:conic-gradient(#e11d48,#f59e0b,#16a34a,#2563eb,#e11d48)"></i></span>';
+  return `<span class="sw">${[t.primary, t.secondary, t.accent, t.light].map((c) => `<i style="background:#${c}"></i>`).join('')}</span>`;
+}
+/* Logo de référence pour l'aperçu : charte, sinon dernière image « logo » de l'espace de travail */
+async function previewLogo(src) {
+  const ref = src || S.settings.brand?.logo || [...col('files').keys()].filter((p) => /^uploads\/.*\.(png|jpe?g|webp|svg)$/i.test(p)).sort((a, b) => /logo/i.test(b) - /logo/i.test(a) || (col('files').get(b).updatedAt || 0) - (col('files').get(a).updatedAt || 0))[0];
+  return ref ? Office.image(ref, 420) : null;
+}
+/* Popover de choix du design. cur = { theme, logoMode } ; onPick(design) appelé à chaque choix */
+function designPop(anchor, { cur, onPick, title = 'Design des fichiers produits', sub = '', auto = true, logoSrc, apply } = {}) {
+  const st = { theme: cur?.theme ?? '', logoMode: cur?.logoMode || 'palette' };
+  const b = S.settings.brand || {};
+  const pop = showPop(anchor, `<div class="design-pop">
+    <div class="row" style="margin-bottom:4px">${icon('palette')}<b class="grow">${esc(title)}</b></div>
+    ${sub ? `<div class="faint xs" style="margin-bottom:8px">${esc(sub)}</div>` : ''}
+    <div class="theme-grid compact">${designThemes(auto).map(([k, t]) => `<button class="theme-card ${st.theme === k ? 'on' : ''}" data-dtheme="${esc(k)}">${themeSwatch(k, t)}<span class="xs">${esc(t.label)}</span></button>`).join('')}</div>
+    <div class="dp-sec">Couleur du logo</div>
+    <div class="seg" id="dp-mode">${LOGO_MODES.map(([v, l]) => `<button data-v="${v}" class="${st.logoMode === v ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div class="row" style="gap:12px;margin-top:10px;align-items:center">
+      <div class="brand-logo sm"><img id="dp-prev" alt="" style="display:none"><span class="faint xs" id="dp-none">Aucun logo</span></div>
+      <div class="col" style="gap:6px">
+        <button class="btn sm" id="dp-up">${icon('upload', 'sm')} ${b.logo ? 'Changer le logo' : 'Ajouter mon logo'}</button>
+        ${b.logo ? `<label class="row xs"><input type="checkbox" id="dp-auto" ${b.auto !== false ? 'checked' : ''} style="accent-color:var(--accent)"> Sur tous les documents</label>` : ''}
+      </div>
+    </div>
+    ${apply ? `<button class="btn primary sm" id="dp-apply" style="margin-top:12px;width:100%;justify-content:center">${icon('refresh', 'sm')} ${esc(apply)}</button>` : `<div class="faint xs" style="margin-top:10px">Votre choix s'impose aux modèles (sauf si vous demandez autre chose dans votre message). « Automatique » laisse le modèle choisir.</div>`}
+  </div>`, { side: 'top', cls: 'design' });
+  let logoIm = null;
+  const preview = async () => {
+    const img = pop.querySelector('#dp-prev'), none = pop.querySelector('#dp-none');
+    logoIm ||= await previewLogo(logoSrc).catch(() => null);
+    if (!logoIm) { img.style.display = 'none'; none.style.display = ''; return; }
+    const T = resolveTheme(st.theme === 'logo' ? '' : st.theme || S.settings.docTheme || '');
+    const out = st.theme === 'logo' || st.logoMode === 'original' ? logoIm : await recolorLogo(logoIm, T.primary, st.logoMode);
+    img.src = out.dataURL; img.style.display = ''; none.style.display = 'none';
+    img.parentElement.style.background = st.logoMode === 'blanc' ? '#' + T.primary : '#fff';
+  };
+  const fire = () => { if (!apply) onPick?.({ ...st }); preview(); };
+  pop.querySelectorAll('[data-dtheme]').forEach((x) => (x.onclick = () => { st.theme = x.dataset.dtheme; pop.querySelectorAll('[data-dtheme]').forEach((y) => y.classList.toggle('on', y === x)); fire(); }));
+  pop.querySelectorAll('#dp-mode [data-v]').forEach((x) => (x.onclick = () => { st.logoMode = x.dataset.v; pop.querySelectorAll('#dp-mode [data-v]').forEach((y) => y.classList.toggle('on', y === x)); fire(); }));
+  pop.querySelector('#dp-up').onclick = () => pickFiles(async (fs) => {
+    const f = fs[0]; if (!f) return;
+    const raw = /svg/.test(f.type) || /\.svg$/i.test(f.name) ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(await readFile(f)) : await readFile(f, 'dataURL');
+    const im = await Office.image(raw, 600);
+    if (!im) return toast('Image illisible', 'err');
+    S.settings.brand = { ...(S.settings.brand || {}), logo: im.dataURL, auto: true };
+    saveSettings(); logoIm = null; logoSrc = null; preview(); toast('Logo enregistré : il sera intégré aux documents', 'ok');
+  }, 'image/*');
+  pop.querySelector('#dp-auto')?.addEventListener('change', (e) => { S.settings.brand.auto = e.target.checked; saveSettings(); });
+  pop.querySelector('#dp-apply')?.addEventListener('click', () => { closePop(); onPick?.({ ...st }); });
+  preview();
+  return pop;
+}
+/* Bouton « Design » du compositeur : réglage global */
+function openDesignPicker(anchor) {
+  designPop(anchor, {
+    cur: { theme: S.settings.docTheme || '', logoMode: S.settings.brand?.logoMode || 'palette' },
+    onPick: (d) => { S.settings.docTheme = d.theme; S.settings.brand = { ...(S.settings.brand || {}), logoMode: d.logoMode }; saveSettings(); renderModelBar(); },
+  });
+}
+/* Appel d'outil qui a produit un fichier */
+function producerOf(n, path) {
+  let hit = null;
+  const walk = (steps) => { for (const s of steps || []) for (const tc of s.toolCalls || []) { if ((tc.display?.files || []).includes(path) && RESTYLABLE.has(tc.name)) hit = tc; if (tc.sub) walk(tc.sub.steps); } };
+  walk(n?.steps);
+  return hit;
+}
+/* Régénère un fichier avec un autre design (sans modèle) */
+async function restyleFile(chat, n, path, design) {
+  const tc = producerOf(n, path), tool = tc && TOOLS.get(tc.name);
+  if (!tool) return toast('Ce fichier ne peut pas être régénéré automatiquement : demandez-le au modèle.', 'err', 5000);
+  const args = deepClone(tc.parsed || safeJSON(tc.args) || {});
+  const ctx = {
+    signal: new AbortController().signal, chat, node: n, tc: { id: tc.id, name: tc.name }, depth: 0, cfg: cfg(chat), model: n.model, design,
+    run: { note() {}, begin: () => ({ end() {} }), addUsage() {} }, progress: () => {}, cost() {}, ask: async () => '', openArtifact() {}, update() {}, addTools: () => [],
+  };
+  const t = toast('Application du design…', 'info', 60000);
+  try {
+    const res = await tool.run(args, ctx);
+    const files = (typeof res === 'object' && res.files) || [];
+    tc.design = ctx.tc.design || design;
+    if (files[0] && files[0] !== path) { tc.display.files = [...new Set([...(tc.display.files || []), files[0]])]; }
+    saveChat(chat);
+    renderMessages();
+    t?.remove?.();
+    toast(`Design « ${designLabel(design.theme)} » appliqué${design.logoMode !== 'original' ? ' (logo aux couleurs de la palette)' : ''} ✔`, 'ok', 4000);
+  } catch (e) { t?.remove?.(); toast('Échec : ' + e.message, 'err', 6000); }
+}
+function openRestyle(anchor, nodeId, path) {
+  const chat = currentChat(), n = chat?.nodes[nodeId];
+  const tc = producerOf(n, path);
+  if (!tc) return toast('Ce fichier ne peut pas être régénéré automatiquement.', 'err');
+  const a = tc.parsed || safeJSON(tc.args) || {};
+  designPop(anchor, {
+    title: 'Changer le design', sub: path.split('/').pop(), auto: false, apply: 'Appliquer au fichier',
+    cur: { theme: tc.design?.theme || S.settings.docTheme || 'executif', logoMode: tc.design?.logoMode || S.settings.brand?.logoMode || 'palette' },
+    logoSrc: typeof a.logo === 'string' && a.logo && !/^(aucun|none|non|no|false|sans)$/i.test(a.logo) ? a.logo : null,
+    onPick: (d) => restyleFile(chat, n, path, d),
+  });
+}
+
+/* ============================== 12c · EXPÉRIENCE « CLAUDE CODE » ==============================
+   Ligne d'état (mode · modèle · contexte · coût · intelligence active), Maj+Tab pour changer de mode
+   (Demander → Auto → Plan), commandes slash avancées, affichage « Terminal » des étapes. */
+const MODE_CYCLE = ['ask', 'auto', 'plan'];
+const MODE_GLYPH = { ask: ['⏵', 'Demander avant les actions sensibles'], auto: ['⏵⏵', 'Auto — tout autoriser'], plan: ['⏸', 'Mode plan — analyse puis plan à approuver'], readonly: ['◉', 'Lecture seule'] };
+function setMode(m) {
+  S.settings.harness.permissionMode = m;
+  saveSettings(); renderModelBar();
+  const inp = $('#input');
+  if (inp) inp.placeholder = m === 'plan' ? 'Décrivez la tâche : Cortex analyse puis propose un plan à approuver…' : 'Écrivez un message…  ( / pour les commandes )';
+}
+function cycleMode() {
+  const cur = S.settings.harness.permissionMode;
+  setMode(MODE_CYCLE[(MODE_CYCLE.indexOf(cur) + 1) % MODE_CYCLE.length]);
+  toast(MODE_GLYPH[S.settings.harness.permissionMode][1]);
+}
+function chatStats(chat) {
+  const c = cfg(chat);
+  const path = chat ? pathTo(chat, chat.leafId) : [];
+  const lastA = [...path].reverse().find((n) => n.role === 'assistant' && n.steps?.length);
+  const lastStep = lastA?.steps?.filter((s) => s.usage).pop();
+  const used = lastStep?.usage ? lastStep.usage.prompt + lastStep.usage.completion : lastA?.ctx?.est || 0;
+  const cost = chat ? Object.values(chat.nodes).reduce((a, n) => a + (n.usage?.cost || 0), 0) : 0;
+  return { c, used, lim: contextLimit(c.model), cost, lastA };
+}
+function renderStatusLine() {
+  const el = $('#statusLine');
+  if (!el) return;
+  const chat = currentChat();
+  const H = S.settings.harness;
+  const mode = H.permissionMode;
+  const st = chatStats(chat);
+  const model = st.c.model;
+  const free = boostAllowed(model);
+  const smart = [H.reaFirst !== false && 'REA', free && H.boosters !== false && H.guru !== 'off' && 'Guru', free && H.boosters !== false && 'boosters', free && H.freeReview !== false && 'relecture', H.learn !== false && `${col('experiences')?.size || 0} exp.`].filter(Boolean);
+  const pct = Math.round((st.used / st.lim) * 100);
+  el.innerHTML = `<button class="sl-mode m-${mode}" data-act="pick-mode" title="${esc(MODE_GLYPH[mode]?.[1] || '')} — Maj+Tab pour changer">${MODE_GLYPH[mode]?.[0] || '⏵'} ${esc((MODE_LABELS[mode] || MODE_LABELS.ask)[0])} <span class="faint">(Maj+Tab)</span></button>
+    <span class="sl-dot">·</span><span class="ellipsis sl-model" title="${esc(model)}">${esc(modelShort(model))}</span>
+    ${st.used ? `<span class="sl-dot">·</span><span class="${pct > 85 ? 'sl-warn' : ''}" title="${fmtTokens(st.used)} / ${fmtTokens(st.lim)} tokens">contexte ${pct} %</span>` : ''}
+    <span class="sl-dot">·</span><span>${fmtCost(st.cost, true)}</span>
+    ${smart.length ? `<span class="sl-dot hide-sm">·</span><button class="sl-smart hide-sm" data-act="open-harness" title="Intelligence active (Réglages › Harness)">✦ ${esc(smart.join(' · '))}</button>` : ''}
+    <span class="grow"></span><button class="sl-help hide-sm" data-act="cc-help" title="Commandes / et raccourcis">? aide</button>`;
+}
+/* Commandes slash supplémentaires (inspirées de Claude Code) */
+SLASH_CMDS.push(
+  { cmd: 'init', desc: 'Créer CORTEX.md : instructions permanentes du projet (analyse de l\'espace de travail)', run: () => sendCmd("Analyse l'espace de travail (list_files, read_file sur les fichiers clés) et rédige CORTEX.md à la racine avec write_file : objectif du projet, contexte métier, structure des fichiers, conventions (nommage, langue, ton), préférences de livrables (thème de design, logo, formats), commandes et outils utiles, règles à toujours respecter. S'il existe déjà, améliore-le. Sois concret et concis.") },
+  { cmd: 'plan', desc: 'Mode plan : analyse puis plan à approuver avant toute action (/plan <tâche>)', run: (arg) => { setMode('plan'); if (arg) sendCmd(arg); else toast('Mode plan activé : décrivez la tâche'); } },
+  { cmd: 'auto', desc: 'Mode auto : exécuter sans demander', run: () => { setMode('auto'); toast('Mode auto'); } },
+  { cmd: 'demander', desc: 'Mode demander : confirmation des actions sensibles', run: () => { setMode('ask'); toast('Mode demander'); } },
+  { cmd: 'cost', desc: 'Coût, tokens et modèles de la conversation', run: () => costReport() },
+  { cmd: 'context', desc: 'Utilisation du contexte (sections, outils, historique)', run: () => contextReport() },
+  { cmd: 'clear', desc: 'Repartir de zéro (nouvelle conversation)', run: () => newChatView() },
+  { cmd: 'review', desc: 'Relecture critique de la dernière réponse et des fichiers, puis corrections', run: () => sendCmd("Fais une relecture critique et exigeante de ta dernière réponse et des fichiers produits : exactitude (refais les calculs avec python), complétude par rapport à ma demande, cohérence, qualité du design. Utilise verify_answer ou ask_experts si disponibles. Corrige tout ce qui doit l'être (mêmes noms de fichiers), puis résume les corrections.") },
+  { cmd: 'guru', desc: 'Stratégie experte par le Guru avant exécution (/guru <tâche>)', run: (arg) => sendCmd((arg || 'la tâche en cours') + "\n\n[Consulte d'abord le Guru (outil guru) pour la stratégie experte, puis exécute-la proprement en suivant son plan et sa checklist.]") },
+  { cmd: 'experts', desc: 'Soumettre une question à un conseil de modèles gratuits (/experts <question>)', run: (arg) => sendCmd(`Utilise ask_experts pour répondre de façon fiable à : ${arg || 'la question précédente'}`) },
+  { cmd: 'memory', desc: 'Mémoire à long terme', run: () => openPage('memory') },
+  { cmd: 'experience', desc: "Mémoire d'expérience (savoir-faire appris par Cortex)", run: () => openPage('experience') },
+  { cmd: 'skills', desc: 'Skills', run: () => openPage('skills') },
+  { cmd: 'tools', desc: 'Outils et serveurs MCP', run: () => openPage('tools') },
+  { cmd: 'design', desc: 'Design des fichiers (thème, couleur du logo)', run: () => openDesignPicker($('[data-act="pick-design"]') || $('#input')) },
+  { cmd: 'terminal', desc: 'Basculer l\'affichage des étapes : cartes / terminal (style Claude Code)', run: () => setDisplay(S.settings.harness.display === 'terminal' ? 'cards' : 'terminal') },
+  { cmd: 'help', desc: 'Aide : commandes et raccourcis', run: () => ccHelp() },
+);
+function sendCmd(text) {
+  const chat = currentChat() || null;
+  if (chat && chatBusy(chat)) return toast('Attendez la fin de la réponse');
+  const inp = $('#input');
+  if (!inp) return;
+  inp.value = text;
+  sendFromComposer();
+}
+function setDisplay(v) {
+  S.settings.harness.display = v;
+  saveSettings();
+  document.body.classList.toggle('term', v === 'terminal');
+  toast(v === 'terminal' ? 'Affichage terminal (style Claude Code)' : 'Affichage en cartes');
+}
+function costReport() {
+  const chat = currentChat();
+  if (!chat) return toast('Aucune conversation');
+  const byModel = new Map();
+  let total = 0, pt = 0, ctk = 0, n = 0;
+  for (const node of Object.values(chat.nodes)) {
+    if (node.role !== 'assistant') continue;
+    n++;
+    for (const s of node.steps || []) {
+      if (!s.usage) continue;
+      const m = s.model || node.model;
+      const e = byModel.get(m) || { cost: 0, p: 0, c: 0, calls: 0 };
+      e.cost += s.usage.cost || 0; e.p += s.usage.prompt || 0; e.c += s.usage.completion || 0; e.calls++;
+      byModel.set(m, e);
+    }
+    total += node.usage?.cost || 0; pt += node.usage?.prompt || 0; ctk += node.usage?.completion || 0;
+  }
+  const dur = Object.values(chat.nodes).reduce((a, x) => a + (x.durationMs || 0), 0);
+  openModal({
+    title: 'Coût de la conversation', iconName: 'dollar',
+    body: `<div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:14px">${[['Coût total', fmtCost(total, true)], ['Tokens envoyés', fmtTokens(pt)], ['Tokens générés', fmtTokens(ctk)], ['Réponses', n], ['Durée cumulée', fmtDur(dur)]].map(([k, v]) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
+      <table class="tbl"><thead><tr><th>Modèle</th><th>Appels</th><th>Tokens</th><th>Coût</th></tr></thead><tbody>${[...byModel].map(([m, e]) => `<tr><td class="mono xs">${esc(m)}${isFreeModel(m) ? ' <span class="badge ok">gratuit</span>' : ''}</td><td>${e.calls}</td><td>${fmtTokens(e.p)} → ${fmtTokens(e.c)}</td><td>${fmtCost(e.cost, true)}</td></tr>`).join('') || '<tr><td colspan="4" class="faint">Aucun appel</td></tr>'}</tbody></table>
+      <p class="faint xs" style="margin-top:10px">Les boosters (Guru, experts, relecture, expérience) utilisent des modèles gratuits : ils consomment du quota de requêtes gratuites OpenRouter, pas de crédit.</p>`,
+  });
+}
+function contextReport() {
+  const chat = currentChat();
+  if (!chat) return toast('Aucune conversation');
+  const st = chatStats(chat);
+  const ctx = st.lastA?.ctx;
+  const LBL = { base: 'Instructions de l\'agent', context: 'Contexte (date, profil)', project: 'CORTEX.md (projet)', memory: 'Mémoire', kb: 'Base de connaissances', todos: 'Plan en cours', files: 'Espace de fichiers', tools: 'Fonctionnement agent', quality: 'Exigence premium', boost: 'Boosters', deliver: 'Livrables', skills: 'Liste des skills', skillsActive: 'Skills actifs', rea: 'Analyse REA', guru: 'Stratégie du Guru', plan: 'Mode plan', summary: 'Résumé (compaction)' };
+  const rows = ctx ? [...Object.entries(ctx.sec || {}).filter(([, v]) => v).map(([k, v]) => [LBL[k] || k, v]), ['Schémas des outils', ctx.tools], ['Historique', ctx.history]] : [];
+  const tot = rows.reduce((a, r) => a + (r[1] || 0), 0) || 1;
+  openModal({
+    title: 'Utilisation du contexte', iconName: 'layers',
+    body: `<div class="row" style="justify-content:space-between;margin-bottom:8px"><b>${fmtTokens(st.used)} / ${fmtTokens(st.lim)} tokens</b><span class="faint small">${Math.round((st.used / st.lim) * 100)} % · ${esc(modelShort(st.c.model))}</span></div>
+      <div class="ctx-bar big"><i style="width:${Math.max(1, Math.min(100, (st.used / st.lim) * 100))}%"></i></div>
+      ${rows.length ? `<table class="tbl" style="margin-top:14px"><tbody>${rows.sort((a, b) => b[1] - a[1]).map(([k, v]) => `<tr><td>${esc(k)}</td><td style="width:45%"><div class="ctx-bar"><i style="width:${Math.max(1, (v / tot) * 100)}%"></i></div></td><td class="mono xs" style="text-align:right">${fmtTokens(v)}</td></tr>`).join('')}</tbody></table>` : '<p class="faint">Envoyez un message pour voir la répartition.</p>'}
+      <div class="row" style="margin-top:12px"><button class="btn sm" data-r="compact">${icon('layers', 'sm')} Compacter maintenant</button></div>`,
+  }).el.querySelector('[data-r="compact"]')?.addEventListener('click', () => { closeTopModal(); compactNow(); });
+}
+function closeTopModal() { modalStack[modalStack.length - 1]?.close(); }
+function ccHelp() {
+  const cmds = SLASH_CMDS.map((c) => `<tr><td class="mono small">/${esc(c.cmd)}</td><td class="small">${esc(c.desc)}</td></tr>`).join('');
+  const keys = [['Maj+Tab', 'Changer de mode : Demander → Auto → Plan'], ['Entrée / Maj+Entrée', 'Envoyer / nouvelle ligne'], ['Échap', 'Interrompre la génération'], ['↑ (champ vide)', 'Modifier le dernier message'], [`${MOD}+K`, 'Palette de commandes'], [`${MOD}+Maj+O`, 'Nouvelle conversation'], [`${MOD}+.`, 'Panneau inspecteur (trace, plan, fichiers)'], ['Alt+R', 'Régénérer la dernière réponse']];
+  openModal({
+    title: 'Aide — commandes et raccourcis', iconName: 'terminal',
+    body: `<p class="small muted">Cortex fonctionne comme Claude Code : REA analyse chaque tâche, le Guru écrit la stratégie des tâches complexes, l'agent l'exécute avec ses outils, coche son plan, puis une relecture critique vérifie le résultat. Tout ce qui est appris est mémorisé dans l'Expérience.</p>
+      <h4 style="margin:14px 0 6px">Raccourcis</h4><table class="tbl"><tbody>${keys.map(([k, v]) => `<tr><td><kbd>${esc(k)}</kbd></td><td class="small">${esc(v)}</td></tr>`).join('')}</tbody></table>
+      <h4 style="margin:14px 0 6px">Commandes</h4><table class="tbl"><tbody>${cmds}</tbody></table>`,
+  });
 }
 
 /* ============================== 13 · INSPECTEUR ============================== */
@@ -9350,6 +10215,16 @@ const SETTINGS_TABS = {
         ${n('h-retries', 'Nouvelles tentatives (429/5xx)', H.retries, 'min="0" max="6"', 'Avec attente exponentielle.')}
         ${n('h-depth', 'Profondeur des sous-agents', H.subagentDepth, 'min="1" max="4"', 'Un sous-agent peut-il en lancer d\'autres ?')}
       </div>
+      <h3 style="margin-top:12px">Intelligence des modèles (REA, Guru, boosters)</h3>
+      <div class="card" style="padding:0 14px;margin-bottom:12px">
+        ${ui.toggleRow('h-rea', 'REA en premier sur chaque tâche', 'Analyse préalable visible : expériences passées similaires, outils pertinents activés, méthode REA', H.reaFirst !== false)}
+        ${ui.toggleRow('h-learn', "Mémoire d'expérience", "Chaque tâche outillée est mémorisée (étapes, outils, erreurs corrigées, leçons) et réutilisée par REA", H.learn !== false)}
+        ${ui.toggleRow('h-boost', 'Boosters de raisonnement', 'Guru (stratégie experte par le plus puissant modèle gratuit), conseil d\'experts, réflexion profonde, vérification critique', H.boosters !== false)}
+        ${ui.toggleRow('h-review', 'Relecture critique automatique', 'Après la réponse, un autre modèle gratuit la vérifie ; une passe de correction est lancée si nécessaire', H.freeReview !== false)}
+        ${ui.toggleRow('h-freeonly', 'Boosters réservés aux modèles gratuits', 'Désactivez pour en faire profiter aussi les modèles payants (les boosters utilisent toujours des modèles gratuits)', H.boostFreeOnly !== false)}
+      </div>
+      ${ui.field('Guru (stratégie experte avant exécution)', ui.seg('h-guru', [['auto', 'Tâches complexes'], ['always', 'Toujours'], ['off', 'Jamais']], H.guru || 'auto'), 'Le plus puissant modèle gratuit de raisonnement (effort élevé) analyse la tâche et écrit la stratégie que le modèle choisi exécute avec ses outils. Chaque booster consomme des requêtes gratuites (quota OpenRouter : 50/jour sans crédit, 1 000/jour avec 10 $ de crédit).')}
+      ${ui.field('Affichage des étapes de l\'agent', ui.seg('h-disp', [['cards', 'Cartes'], ['terminal', 'Terminal (style Claude Code)']], H.display || 'cards'), 'Terminal : lignes compactes ⏺ outil(arguments) / ⎿ résultat, plan en cases ☐ ☒, police à chasse fixe. Aussi : commande /terminal.')}
       <h3 style="margin-top:12px">Gestion du contexte</h3>
       <div class="card" style="padding:0 14px;margin-bottom:12px">
         ${ui.toggleRow('h-compact', 'Compaction automatique', 'Résume l\'historique ancien quand le contexte se remplit (garde les derniers échanges intacts)', H.autoCompact)}
@@ -9384,7 +10259,9 @@ const SETTINGS_TABS = {
     num('h-ctx', (v) => { H.contextLimit = Math.max(0, v || 0); });
     num('h-webn', (v) => { S.settings.webMaxResults = clamp(v || 5, 1, 10); });
     const tg = (id, k) => { m.querySelector('#' + id).onchange = (e) => { H[k] = e.target.checked; saveSettings(); }; };
-    tg('h-compact', 'autoCompact'); tg('h-middle', 'middleOut'); tg('h-date', 'injectDate'); tg('h-par', 'parallelTools'); tg('h-loop', 'loopGuard'); tg('h-free', 'freeFallback'); tg('h-rep', 'loopDetect'); tg('h-skills', 'autoSkills'); tg('h-tsearch', 'toolSearch');
+    tg('h-compact', 'autoCompact'); tg('h-middle', 'middleOut'); tg('h-date', 'injectDate'); tg('h-par', 'parallelTools'); tg('h-loop', 'loopGuard'); tg('h-free', 'freeFallback'); tg('h-rep', 'loopDetect'); tg('h-skills', 'autoSkills'); tg('h-tsearch', 'toolSearch'); tg('h-rea', 'reaFirst'); tg('h-learn', 'learn'); tg('h-boost', 'boosters'); tg('h-review', 'freeReview'); tg('h-freeonly', 'boostFreeOnly');
+    bindSeg(m, 'h-guru', (v) => { H.guru = v; saveSettings(); });
+    bindSeg(m, 'h-disp', (v) => { H.display = v; saveSettings(); document.body.classList.toggle('term', v === 'terminal'); });
     bindRange(m, 'h-at', (v) => { H.compactAt = +v; saveSettings(); }, (v) => Math.round(v * 100) + ' %');
     m.querySelector('#h-proxy').onchange = (e) => { S.settings.readerProxy = e.target.value.trim(); saveSettings(); };
     bindSeg(m, 'h-search', (v) => { S.settings.searchEngine = v; saveSettings(); });
@@ -9420,8 +10297,8 @@ const SETTINGS_TABS = {
       </div>
       <label class="row small" style="margin:12px 0"><input type="checkbox" id="br-auto" ${s.brand?.auto !== false ? 'checked' : ''} style="accent-color:var(--accent)"> Ajouter automatiquement ce logo à tous les documents générés</label>
       ${ui.field('Couleur du logo dans les documents', ui.seg('br-mode', [['palette', 'Couleur de la palette'], ['original', "D'origine"], ['mono', 'Monochrome'], ['blanc', 'Blanc']], s.brand?.logoMode || 'palette'), 'Avec « Couleur de la palette », le logo prend la teinte du thème choisi (détails conservés).')}
-      <div class="field"><label>Design premium des documents (Excel, Word, PDF, PowerPoint, rapports HTML)</label>
-        <div class="theme-grid">${[...Object.entries(THEMES), ...(s.brand?.color ? [['marque', derivedTheme(String(s.brand.color).replace('#', ''), 'Charte de la marque')]] : []), ...(s.brand?.logo ? [['logo', { label: 'Couleurs du logo', primary: '888888', secondary: 'AAAAAA', accent: 'CCCCCC', light: 'F3F3F3' }]] : [])].map(([k, t]) => `<button class="theme-card ${(s.docTheme || (s.brand?.color ? 'marque' : 'executif')) === k ? 'on' : ''}" data-dtheme="${k}"><span class="sw">${k === 'logo' ? '<i style="background:conic-gradient(#e11d48,#f59e0b,#16a34a,#2563eb,#e11d48)"></i>' : [t.primary, t.secondary, t.accent, t.light].map((c) => `<i style="background:#${c}"></i>`).join('')}</span><span class="small">${esc(t.label)}</span></button>`).join('')}</div></div>
+      <div class="field"><label>Design premium des documents (Excel, Word, PDF, PowerPoint, rapports HTML) — aussi accessible depuis le bouton « Design » au-dessus de la zone de saisie</label>
+        <div class="theme-grid">${designThemes(true).map(([k, t]) => `<button class="theme-card ${(s.docTheme || '') === k ? 'on' : ''}" data-dtheme="${esc(k)}">${themeSwatch(k, t)}<span class="small">${esc(t.label)}</span></button>`).join('')}</div></div>
       ${s.brand?.logo ? `<div class="row wrap" style="gap:14px;align-items:center"><span class="small muted">Aperçu du logo avec le thème :</span><div class="brand-logo"><img id="br-prev" alt="Aperçu"></div></div>` : ''}
       ${ui.field('Couleur principale des documents', `<div class="row"><input type="color" id="br-col" value="#${esc((s.brand?.color || '1F4E79').replace('#', ''))}" style="width:48px;height:34px;border:0;background:none"><span class="faint small">Laissez la couleur par défaut (bleu 1F4E79) ou reprenez celle de votre logo.</span></div>`)}`;
     m.querySelector('#pf-n').onchange = (e) => { s.userName = e.target.value.trim(); saveSettings(); };
@@ -9970,6 +10847,51 @@ async function showDiff(path, before, after) {
   modified.onDidChangeContent(() => { if (IDE.pendingDiff) IDE.pendingDiff.text = modified.getValue(); });
 }
 
+/* ---------------- Mémoire d'expérience (savoir-faire procédural appris par Cortex) ---------------- */
+PAGES.experience = {
+  title: "Mémoire d'expérience", icon: 'trophy',
+  render(b) {
+    const q = S.ui.xpQ || '';
+    const all = Experience.list();
+    const list = q.trim() ? Experience.search(q, 50) : all;
+    const H = S.settings.harness;
+    b.innerHTML = `<p class="lead">Chaque tâche réalisée avec des outils est mémorisée : étapes qui ont marché, outils utilisés, erreurs corrigées, leçons tirées de la relecture critique. REA retrouve ces expériences au début de chaque nouvelle tâche similaire : Cortex s'améliore à l'usage.</p>
+      <div class="card" style="padding:0 14px;margin-bottom:14px">${ui.toggleRow('xp-on', 'Apprentissage activé', 'Enregistrer automatiquement l\'expérience de chaque tâche outillée', H.learn !== false)}${ui.toggleRow('xp-rea', 'REA en premier sur chaque tâche', 'Analyse préalable : expériences similaires, outils activés, méthode', H.reaFirst !== false)}</div>
+      <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:14px">${[['Expériences', all.length], ['Réussites', all.filter((e) => e.success !== false).length], ['Leçons', all.reduce((a, e) => a + (e.lessons || []).length, 0)], ['Réutilisations', all.reduce((a, e) => a + (e.uses || 0), 0)]].map(([k, v]) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
+      <div class="row" style="margin-bottom:12px"><input class="inp" id="xp-new" placeholder="Ajouter une leçon (ex. « Pour les registres Excel : colonne Statut + regroupement par Domaine »)"><button class="btn primary" data-xp="add">${icon('plus', 'sm')} Ajouter</button></div>
+      <div class="row wrap" style="margin-bottom:12px"><label class="search" style="max-width:320px">${icon('search', 'sm')}<input id="xp-q" value="${esc(q)}" placeholder="Rechercher une expérience…"></label><span class="grow"></span>
+        <button class="btn sm" data-xp="export" title="Exporter">${icon('download', 'sm')}</button><button class="btn sm" data-xp="import" title="Importer">${icon('upload', 'sm')}</button><button class="btn sm danger" data-xp="wipe">${icon('trash', 'sm')} Tout effacer</button></div>
+      <div class="xp-list">${list.map((e) => `<div class="xp-card ${e.success === false ? 'fail' : ''}">
+        <div class="row" style="gap:8px;align-items:flex-start"><span class="ticon">${icon(e.manual ? 'bulb' : 'trophy', 'sm')}</span><div class="grow" style="min-width:0"><b class="small">${esc(e.title || truncate(e.task, 90))}</b>
+          <div class="xs faint">${fmtRel(e.createdAt)}${e.model ? ' · ' + esc(modelShort(e.model)) : ''}${e.uses ? ` · réutilisée ${e.uses}×` : ''}${e.success === false ? ' · <span style="color:var(--danger)">échec</span>' : ''}</div></div>
+          ${e.chatId && col('chats').has(e.chatId) ? `<button class="icon-btn sm" data-xp="open" data-id="${e.chatId}" title="Ouvrir la conversation">${icon('chat', 'sm')}</button>` : ''}<button class="icon-btn sm" data-xp="del" data-id="${e.id}" title="Supprimer">${icon('trash', 'sm')}</button></div>
+        ${e.summary ? `<div class="small" style="margin:6px 0 0 30px">${esc(truncate(e.summary, 400))}</div>` : ''}
+        ${(e.tools || []).length ? `<div class="chips" style="margin:6px 0 0 30px">${e.tools.map((t) => `<span class="chip xs mono">${esc(t)}</span>`).join('')}</div>` : ''}
+        ${(e.steps || []).length ? `<ol class="xp-steps small">${e.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
+        ${(e.lessons || []).length ? `<ul class="xp-lessons small">${e.lessons.map((x) => `<li>${icon('bulb', 'xs')} ${esc(x)}</li>`).join('')}</ul>` : ''}
+      </div>`).join('') || `<div class="empty-s">${q ? 'Aucune expérience correspondante.' : 'Aucune expérience pour l\'instant : elles se constituent automatiquement à chaque tâche réalisée avec des outils.'}</div>`}</div>`;
+    b.querySelector('#xp-on').onchange = (e) => { H.learn = e.target.checked; saveSettings(); };
+    b.querySelector('#xp-rea').onchange = (e) => { H.reaFirst = e.target.checked; saveSettings(); };
+    b.querySelector('#xp-q').addEventListener('input', debounce((e) => { S.ui.xpQ = e.target.value; renderPage(); const i = $('#xp-q'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250));
+    b.querySelector('#xp-new').addEventListener('keydown', (e) => { if (e.key === 'Enter') b.querySelector('[data-xp="add"]').click(); });
+    b.onclick = async (e) => {
+      const el = e.target.closest('[data-xp]');
+      if (!el) return;
+      const a = el.dataset.xp;
+      if (a === 'add') { const v = $('#xp-new').value.trim(); if (v) { Experience.save({ id: uid('xp'), title: truncate(v, 100), task: '', summary: v, lessons: [v], tools: [], manual: true, success: true, createdAt: now(), uses: 0 }); renderPage(); } }
+      if (a === 'del') { Experience.remove(el.dataset.id); renderPage(); }
+      if (a === 'open') { closePage(); openChat(el.dataset.id); }
+      if (a === 'export') download('cortex-experience.json', JSON.stringify(Experience.list(), null, 2), 'application/json');
+      if (a === 'import') pickFiles(async (fs) => {
+        try { const arr = JSON.parse(await readFile(fs[0])); let n = 0; for (const x of Array.isArray(arr) ? arr : []) if (x && x.id && (x.summary || x.lessons)) { Experience.save(x); n++; } toast(`${n} expérience(s) importée(s)`, 'ok'); renderPage(); }
+        catch (err) { toast('Import impossible : ' + err.message, 'err'); }
+      }, '.json');
+      if (a === 'wipe' && await confirmDialog("Effacer toute la mémoire d'expérience ?", { danger: true, ok: 'Effacer' })) { col('experiences').clear(); await DB.clear('experiences'); renderPage(); }
+    };
+  },
+};
+S.onExperience = () => { if (S.ui.page === 'experience') renderPageSoon(); renderStatusLine?.(); };
+
 /* ============================== 15 · PALETTE DE COMMANDES ============================== */
 function paletteCommands() {
   const chat = currentChat();
@@ -10088,6 +11010,10 @@ const ACTIONS = {
   'toggle-web': () => { const chat = ensureChat(); chat.web = !cfg(chat).web; if (Object.keys(chat.nodes).length) saveChat(chat); renderModelBar(); toast(chat.web ? 'Recherche web intégrée activée' : 'Recherche web intégrée désactivée'); },
   'pick-effort': (el) => effortMenu(el),
   'pick-mode': (el) => modeMenu(el),
+  'pick-design': (el) => openDesignPicker(el),
+  'open-harness': () => { S.ui.setTab = 'harness'; openPage('settings'); },
+  'cc-help': () => ccHelp(),
+  'restyle-file': (el) => openRestyle(el, el.dataset.id, el.dataset.path),
   'comp-plus': (el) => showMenu(el, [
     { label: 'Joindre des fichiers', icon: 'clip', action: () => pickFiles(addAttachments) },
     { label: 'Insérer un prompt', icon: 'book', action: () => openPromptLib(el) },
@@ -10128,6 +11054,8 @@ const ACTIONS = {
   approve: (el) => resolveApproval(el.dataset.id, true),
   'approve-always': (el) => resolveApproval(el.dataset.id, true, true),
   deny: async (el) => { const r = await promptDialog('Refuser l\'appel', '', { placeholder: 'Raison ou consigne pour l\'agent (facultatif)', ok: 'Refuser' }); if (r !== null) S.approvals.get(el.dataset.id)?.({ ok: false, reason: r.trim() }); },
+  'plan-approve': (el) => approvePlan(el.dataset.id, el.dataset.mode),
+  'plan-revise': (el) => revisePlan(el.dataset.id),
   answer: (el) => S.questions.get(el.dataset.id)?.(el.dataset.v),
   'answer-free': (el) => { const v = $(`[data-answer-for="${el.dataset.id}"]`)?.value.trim(); if (v) S.questions.get(el.dataset.id)?.(v); },
   'open-file': (el) => openFileEditor(el.dataset.path),
@@ -10316,6 +11244,7 @@ async function boot() {
     if (dirty) persist('chats', c);
   }
   applyTheme();
+  document.body.classList.toggle('term', S.settings.harness.display === 'terminal');
   renderRail();
   renderSidebar();
   renderComposer();

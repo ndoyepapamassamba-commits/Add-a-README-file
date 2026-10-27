@@ -54,7 +54,14 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
 - PowerPoint : mises en page **chiffres clés**, **intercalaires**, **comparatif deux colonnes**, **frise**, **citation**.
 - **Rapport HTML premium** (tableau de bord : synthèse, cartes de chiffres clés, graphiques, tableaux, encadrés),
   imprimable en PDF. Le design est appliqué par les outils : la qualité ne dépend pas du modèle.
-- Charte réglable dans Réglages › Profil (logo, couleur, thème, couleur du logo avec aperçu).
+- **Bouton « Design »** au-dessus de la zone de saisie : choix du thème, de la couleur du logo et du logo, avec
+  aperçu. **Votre choix s'impose aux modèles** (sauf si votre message demande autre chose) ; « Automatique » les laisse choisir.
+- Le **ton principal du logo prend exactement la couleur de la palette** (les nuances plus claires deviennent des teintes).
+- **« Changer le design »** sur chaque fichier produit : le fichier est régénéré instantanément dans une autre palette,
+  sans rappeler le modèle.
+- Excel : formats automatiques (pourcentages à 2 décimales pour PD, LGD, taux, parts ; entiers et décimaux séparés),
+  **lignes Total** mises en valeur.
+- Charte aussi réglable dans Réglages › Profil.
 
 ### Boîte à outils complète (≈ 55 outils)
 PDF (fusion, découpe, extraction, rotation, filigrane, numérotation, formulaires, PDF ↔ images), conversions
@@ -72,7 +79,27 @@ d'outils** : le modèle peut démonter un outil (schéma, code source), en crée
 - Aucun service gratuit n'est « illimité » contractuellement : la combinaison de plusieurs sources évite qu'un
   quota unique bloque Cortex.
 
-### Modèles gratuits « niveau premium »
+### Modèles gratuits « niveau premium » : REA, Guru et boosters
+- **REA en premier sur chaque tâche** : analyse préalable visible (expériences passées similaires, outils pertinents
+  activés d'office, méthode cadrer → router → résumer → étiqueter → reconstruire et tester).
+- **Guru** : sur une tâche complexe, le plus puissant modèle gratuit de raisonnement (effort élevé) rédige la
+  **stratégie experte** (objectif, raisonnement du domaine, pièges, plan d'exécution, checklist qualité) ; le modèle
+  choisi l'**exécute proprement** : le plan devient une liste de tâches cochée au fil de l'eau.
+- **Boosters réservés aux modèles gratuits** (activables pour les payants) : `think` (réflexion structurée),
+  `ask_experts` (3 modèles gratuits en parallèle + arbitre), `deep_think` (problème difficile confié au plus puissant
+  modèle gratuit), `verify_answer` (relecture critique), `guru` (stratégie d'une sous-tâche).
+- **Relecture critique automatique** : un autre modèle gratuit vérifie la réponse et les livrables (contre la checklist
+  du Guru) ; une passe de correction est lancée si nécessaire, la première version reste consultable.
+- Calculs obligatoirement faits par Python / JavaScript, effort de raisonnement renforcé sur les tâches complexes.
+- **Mémoire d'expérience** : chaque tâche outillée est mémorisée (étapes, outils, erreurs corrigées, leçons de la
+  relecture) et réutilisée par REA — page **Expérience**.
+- **Découverte d'outils sur Internet** (`discover_tools`) : catalogue Cortex, registre officiel des serveurs MCP, annuaire
+  des API publiques gratuites, GitHub, npm ; `connect_mcp` branche un serveur MCP distant (ex. DeepWiki, Context7) et
+  active ses outils aussitôt.
+- Exemple mesuré (Nemotron 3.5 Super gratuit) : analyse de perte attendue d'un portefeuille + Excel + note — stratégie
+  du Guru (formule Bâle, HHI, pièges), calculs vérifiés, erreur détectée et corrigée seul, relecture validée (224 s, 0 $).
+- Chaque booster consomme des **requêtes gratuites** OpenRouter (50/jour sans crédit, 1 000/jour avec 10 $ de crédit) :
+  tout est réglable dans Réglages › Harness › Intelligence des modèles.
 - Arguments d'outils mal formés **réparés** (JSON) et **normalisés** (noms de paramètres approximatifs, types).
 - Détecteur de boucles, skills experts injectés automatiquement, consignes de qualité, vérification visuelle.
 - Exemple mesuré : fusion de PDF + filigrane par un modèle gratuit passée de 113 s (5 erreurs) à 14 s (0 erreur).
@@ -121,8 +148,14 @@ Open Food Facts, espèces (GBIF), QR codes, images gratuites…
   (lire / écrire / modifier / chercher), **artefacts** (pages HTML, SVG, Mermaid affichés en direct),
   **plan de tâches** (todo), **question à l'utilisateur**, mémoire, base de connaissances, génération d'images.
 - **Sous-agents** : un orchestrateur délègue des sous-tâches à des agents spécialisés **en parallèle**.
-- **Permissions** : mode *Demander* / *Auto* / *Lecture seule*, permission par outil, validation avec
-  **arguments modifiables** avant exécution.
+- **Permissions** : mode *Demander* / *Auto* / *Plan* / *Lecture seule* (**Maj+Tab** pour changer), permission par
+  outil, validation avec **arguments modifiables** avant exécution.
+- **Mode Plan** (comme Claude Code) : l'agent analyse sans rien modifier puis présente son plan ; boutons
+  « Approuver et exécuter » / « Approuver (confirmer chaque action) » / « Modifier le plan ».
+- **Ligne d'état** : mode · modèle · contexte % · coût · intelligence active (REA, Guru, boosters, relecture, expériences).
+- **Affichage Terminal** (style Claude Code) : `⏺ Outil(arguments)` / `⎿ résultat`, plan en cases ☐ ☒ (commande `/terminal`).
+- **Commandes** : `/init` (CORTEX.md), `/plan`, `/review`, `/guru`, `/experts`, `/cost`, `/context`, `/clear`,
+  `/experience`, `/memory`, `/skills`, `/tools`, `/design`, `/terminal`, `/help`…
 - **Hooks** JavaScript : réécrire les requêtes, bloquer un appel d'outil, masquer des données dans les
   résultats, post-traiter les réponses.
 - **Serveurs MCP** (Model Context Protocol, transport HTTP) et **outils personnalisés** en JavaScript
@@ -194,7 +227,8 @@ Créez les vôtres dans **Agents** (instructions, modèle, outils, connaissances
 
 | Touche | Action |
 |---|---|
-| `/` | Aller à la zone de saisie (ou ouvrir les prompts) |
+| `/` | Aller à la zone de saisie (ou ouvrir les commandes et prompts) |
+| `Maj Tab` | Changer de mode : Demander → Auto → Plan |
 | `Ctrl/⌘ K` | Palette de commandes |
 | `Ctrl/⌘ Maj O` | Nouvelle conversation |
 | `Échap` | Arrêter la génération |
