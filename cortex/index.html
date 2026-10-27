@@ -3744,7 +3744,7 @@ const FREE_API_TOOL = {
 /* ============================== 08c · SKILLS (savoir-faire chargeables à la demande) ==============================
    Un skill = des instructions expertes (Markdown) + des outils à activer + éventuellement des fichiers (modèles, scripts).
    Compatible avec le format SKILL.md (en-tête YAML name/description) : import d'un .md, d'un .zip ou d'un .json. */
-const SKILLS_VERSION = 3;
+const SKILLS_VERSION = 4;
 const BUILTIN_SKILLS = [
   {
     id: 'skill-excel', emoji: '📗', name: 'excel', title: 'Excel premium',
@@ -3885,29 +3885,51 @@ L'utilisateur dispose aussi de la page « Code » (éditeur Monaco, comme VS Cod
 5. Conclus par 3 à 5 enseignements chiffrés et des recommandations.`,
   },
   {
-    id: 'skill-rea', emoji: '🏦', name: 'rea', title: 'REA — Risk Exposure Amount (Bâle)',
-    description: 'Calcul et analyse du REA / RWA (actifs pondérés) et des ratios de solvabilité : risque de crédit, marché, opérationnel.',
-    triggers: '\\b(rea|trea|rwa|risk exposure amount|actifs? ponderes?|expositions? ponderees?|ratio de solvabilite|ratios? prudentiels?|fonds propres (de base|reglementaires)|bale (ii|iii|2|3)|basel|cet1|tier ?1)\\b',
+    id: 'skill-rea', emoji: '🔍', name: 'rea', title: 'REA — Reverse Engineer Anything',
+    description: 'Rétro-ingénierie méthodique de tout objet autorisé (page web, application, document, modèle Excel, rapport, vidéo, processus) : constats vu / déduit / inconnu, puis reconstruction testée.',
+    triggers: '\\b(rea|reverse[- ]?engineer\\w*|retro[- ]?ingenierie|ingenierie inverse|decortique\\w*)\\b',
+    tools: ['fetch_url', 'web_search', 'visual_check', 'python', 'run_javascript', 'read_file', 'list_files', 'write_file', 'create_artifact', 'todo_write', 'create_word'],
+    content: `## Cadre (obligatoire)
+- Uniquement sur ce que l'utilisateur possède, a le droit d'examiner, ou qui est public (pages web, documents reçus, ses propres fichiers et sorties).
+- Jamais de contournement de protection, de licence, d'authentification ou de DRM. On ne copie ni code ni actifs protégés : on reproduit un comportement, une méthode ou une structure.
+## Méthode REA en 5 étapes
+1. **Cadrer une seule fonctionnalité** ou question précise (« comment ce rapport calcule-t-il le taux de couverture ? », « comment ce menu s'anime-t-il ? »). Si la demande est trop large, propose de la découper (todo_write).
+2. **Router selon le type de cible** :
+   - page ou application web → fetch_url, visual_check (captures + erreurs JavaScript), observation du comportement ;
+   - document (Excel, Word, PowerPoint, PDF) → read_file (texte), python (formules, structure, mise en forme via openpyxl / python-docx / python-pptx), visual_check ;
+   - sortie à imiter (rapports, présentations, vidéos, posts) → analyser plusieurs exemples réussis et en extraire les constantes (structure, ton, rythme, mise en forme, longueur) ;
+   - produit, processus ou modèle économique → web_search et sources publiques ;
+   - fichier de données au format inconnu → python (en-têtes, structure, statistiques).
+3. **Résumer d'abord** : une fiche courte « ce qui marche / comment / ce qui reste inconnu », enregistrée avec write_file (rea/<cible>-resume.md) et réutilisée au lieu de tout réanalyser.
+4. **Étiqueter chaque constat** :
+   - ✅ VU : observé, avec sa preuve (fichier et ligne, capture, URL, cellule) ;
+   - 🔶 DÉDUIT : hypothèse étayée, à ne jamais utiliser comme un fait ;
+   - ❓ INCONNU : non observable avec les moyens disponibles.
+5. **Reconstruire et tester** : construis ta propre version (code, modèle Excel, gabarit de rapport, prompt, skill…), définis des cas de test, compare au comportement d'origine (visual_check, calculs) et itère jusqu'à ce qu'il corresponde.
+## Livrable
+Rapport structuré : objectif · cible et périmètre · tableau des constats (Constat | Statut VU / DÉDUIT / INCONNU | Preuve) · mécanisme expliqué simplement · reconstruction et résultats des tests · limites et inconnues · prochaines étapes. Propose de le livrer avec create_word.
+Avant de conclure, reprends la question de départ : répondue, partiellement répondue ou non résolue — ne déclare jamais complète une analyse qui laisse des questions ouvertes.
+## Au-delà du navigateur
+Pour les applications installées, exécutables ou captures réseau, l'outil officiel REA (github.com/morluto/rea, licence MIT) s'utilise en local avec Claude Code, Cursor ou Codex, sur des logiciels que l'on possède ou que l'on est autorisé à examiner.`,
+  },
+  {
+    id: 'skill-rwa', emoji: '🏦', name: 'rwa-bale', title: 'Ratios prudentiels (RWA, Bâle)',
+    description: 'Calcul et analyse des actifs pondérés (RWA) et des ratios de solvabilité : risque de crédit, de marché et opérationnel.',
+    triggers: '\\b(rwa|actifs? ponderes?|expositions? ponderees?|ratio de solvabilite|ratios? prudentiels?|fonds propres (de base|reglementaires)|bale (ii|iii|2|3)|basel|cet1|tier ?1)\\b',
     tools: ['create_excel', 'run_javascript', 'python'],
     content: `## Définition
-REA total (Total Risk Exposure Amount, ≈ RWA) = REA crédit + REA marché + REA opérationnel (+ CVA le cas échéant).
-Ratios : CET1 / REA, Tier 1 / REA, Fonds propres totaux / REA. Exigence en fonds propres = REA × taux minimal.
+Total des actifs pondérés (RWA) = RWA crédit + RWA marché + RWA opérationnel. Ratios : CET1 / RWA, Tier 1 / RWA, fonds propres totaux / RWA.
 ## Risque de crédit — approche standard (pondérations de référence Bâle II/III, à confirmer selon le référentiel applicable, ex. dispositif prudentiel UMOA/BCEAO)
-REA = Σ (EAD après atténuation × pondération). EAD hors bilan = montant × CCF.
+RWA = Σ (exposition après atténuation × pondération) ; hors bilan = montant × facteur de conversion (CCF).
 - Souverains : AAA à AA- 0 % · A+ à A- 20 % · BBB 50 % · BB+ à B- 100 % · < B- 150 % · non notés 100 %.
 - Entreprises : AAA à AA- 20 % · A 50 % · BBB+ à BB- 100 % · < BB- 150 % · non notées 100 %.
-- Clientèle de détail éligible 75 % · Immobilier résidentiel garanti 35 % · Immobilier commercial 100 %.
+- Clientèle de détail éligible 75 % · immobilier résidentiel garanti 35 % · immobilier commercial 100 %.
 - Créances en souffrance (> 90 jours) : 150 % si provisions spécifiques < 20 % de l'encours, 100 % au-delà.
-- CCF (Bâle II) : engagements révocables sans condition 0 % · lettres de crédit commerciales courtes 20 % · engagements ≤ 1 an 20 %, > 1 an 50 % · garanties de bonne fin / performance 50 % · substituts de crédit (cautions financières, avals) 100 %.
-- Atténuation : sûretés financières éligibles (décote), garanties (substitution de la pondération du garant).
-## Risque opérationnel — approche indicateur de base
-Exigence = 15 % × moyenne des produits nets bancaires annuels positifs des 3 dernières années ; REA = exigence × 12,5.
-## Risque de marché : REA = exigence en fonds propres × 12,5.
-## Règles de travail
-- Ne jamais inventer de seuils réglementaires : demande ou cite le texte applicable (minima, coussins de conservation/contracyclique/systémique) et la date de version.
-- Calcule avec run_javascript ou python (traçabilité), présente un tableau par catégorie d'exposition (EAD, pondération, REA, % du total), puis les ratios et la marge de solvabilité (excédent/déficit de fonds propres).
-- Livrable : create_excel avec une feuille « REA crédit » détaillée, une feuille « Synthèse REA et ratios », et les hypothèses en tête.
-- Signale les sensibilités : effet d'une dégradation de notation, d'une hausse des créances en souffrance, d'un tirage des engagements hors bilan.`,
+## Risque opérationnel — indicateur de base : exigence = 15 % × moyenne des produits nets bancaires positifs des 3 dernières années ; RWA = exigence × 12,5.
+## Règles
+- Ne jamais inventer de seuils réglementaires : demande ou cite le texte applicable et sa date.
+- Calcule avec run_javascript ou python, présente un tableau par catégorie (exposition, pondération, RWA, % du total), puis les ratios et la marge de solvabilité.
+- Livrable : create_excel avec le détail, la synthèse des ratios et les hypothèses.`,
   },
 ];
 

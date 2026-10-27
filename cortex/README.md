@@ -51,8 +51,13 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
 - **Pont de modalités** : un modèle « vision » décrit images et vidéos aux modèles qui ne les voient pas.
 
 ### Skills (savoir-faire chargeables)
-- 11 skills intégrés : Excel, Word, PDF, PowerPoint, Vidéo, **Blender & 3D**, **Développement (mode Cursor)**,
-  **API gratuites**, Contrôle visuel, Analyse de données, **REA — Risk Exposure Amount (Bâle)**.
+- 12 skills intégrés : **REA — Reverse Engineer Anything**, Excel, Word, PDF, PowerPoint, Vidéo,
+  **Blender & 3D**, **Développement (mode Cursor)**, **API gratuites**, Contrôle visuel, Analyse de données,
+  Ratios prudentiels (RWA, Bâle).
+- **REA** applique la méthode de rétro-ingénierie en 5 étapes (une fonctionnalité à la fois, choix des outils
+  selon la cible, résumé d'abord, constats étiquetés ✅ vu / 🔶 déduit / ❓ inconnu, reconstruction testée),
+  uniquement sur ce que l'on possède, a le droit d'examiner ou qui est public. Inspiré de
+  [morluto/rea](https://github.com/morluto/rea) (MIT) ; l'outil officiel s'utilise en local avec Claude Code, Cursor…
 - Activation **automatique** selon votre message, ou à la demande (`load_skill`) : le skill injecte sa méthode
   et **active ses outils** en cours d'exécution.
 - Import de vos skills au format **SKILL.md** (Claude, Cursor…), `.zip` (avec fichiers) ou `.json` ; éditeur intégré.
