@@ -14,6 +14,7 @@ Aucun serveur, aucun abonnement. Tu ouvres, tu mets en ligne gratuitement, tu ve
 | **`images/`** | Les photos produits (`p1.jpg` … `p15.jpg`). Voir `images/README.md`. |
 | **`FOURNISSEURS.md`** | 📇 Répertoire de **grossistes & fournisseurs** (local Dakar + import). |
 | **`README.md`** | Ce guide. |
+| **`cortex/`** | 🧠 **Cortex Studio** : gestionnaire de LLM et harness d'agents IA via OpenRouter (un seul fichier HTML). Voir [`cortex/README.md`](cortex/README.md). |
 
 > Le panier est **partagé** entre les pages (il se souvient de tes articles d'une page à l'autre).
 
