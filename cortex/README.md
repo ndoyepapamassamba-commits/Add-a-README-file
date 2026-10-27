@@ -45,13 +45,45 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
 - Python installe seul les paquets manquants (openpyxl, python-docx, python-pptx, fpdf2…) ; tout fichier
   écrit dans l'espace de travail devient téléchargeable.
 
+### Designs « ultra premium » (tous les modèles, même gratuits)
+- **7 thèmes** cohérents pour Excel, Word, PDF, PowerPoint et rapports HTML : Exécutif, Prestige (marine et or),
+  Émeraude, Graphite, Bordeaux, Océan, Sahel — plus **Marque** (votre couleur) et **Logo** (palette extraite du logo).
+- **Logo intégré** partout (en-tête de chaque feuille Excel, en-tête Word, PDF, couverture et diapositives PowerPoint,
+  bandeau HTML), **recoloré dans la couleur de la palette** si vous le souhaitez (ou d'origine, monochrome, blanc).
+- Word / PDF : **page de couverture**, **sommaire automatique**, images et graphiques insérés depuis le Markdown.
+- PowerPoint : mises en page **chiffres clés**, **intercalaires**, **comparatif deux colonnes**, **frise**, **citation**.
+- **Rapport HTML premium** (tableau de bord : synthèse, cartes de chiffres clés, graphiques, tableaux, encadrés),
+  imprimable en PDF. Le design est appliqué par les outils : la qualité ne dépend pas du modèle.
+- Charte réglable dans Réglages › Profil (logo, couleur, thème, couleur du logo avec aperçu).
+
+### Boîte à outils complète (≈ 55 outils)
+PDF (fusion, découpe, extraction, rotation, filigrane, numérotation, formulaires, PDF ↔ images), conversions
+(Excel/CSV/JSON/Markdown/Word/PDF/HTML/images/Mermaid), retouche d'images, **graphiques** et **diagrammes** en PNG/SVG,
+**OCR** de scans, transcription audio, **e-mails .eml prêts pour Outlook** (avec pièces jointes), **invitations .ics**,
+**SQL sur fichiers Excel/CSV**, recherche dans l'historique des conversations, **recherche d'images libres**,
+**captures de sites web**, **recherche approfondie** multi-sources, archives ZIP, téléchargements, et l'**atelier
+d'outils** : le modèle peut démonter un outil (schéma, code source), en créer une version améliorée et la tester.
+- **Recherche d'outils par le modèle** (`find_tools`, comme dans Claude Code) : chaque agent garde une liste courte et
+  active lui-même ce qui lui manque ; un outil appelé sans avoir été chargé est **activé automatiquement**.
+
+### Internet gratuit, sans clé
+- `web_search` gratuit par défaut : DuckDuckGo (direct ou via le lecteur Jina), Mojeek, Wikipédia, actualités GDELT,
+  avec **lecture des meilleures pages** — bascule automatique d'un moteur à l'autre. Option OpenRouter (payante).
+- Aucun service gratuit n'est « illimité » contractuellement : la combinaison de plusieurs sources évite qu'un
+  quota unique bloque Cortex.
+
+### Modèles gratuits « niveau premium »
+- Arguments d'outils mal formés **réparés** (JSON) et **normalisés** (noms de paramètres approximatifs, types).
+- Détecteur de boucles, skills experts injectés automatiquement, consignes de qualité, vérification visuelle.
+- Exemple mesuré : fusion de PDF + filigrane par un modèle gratuit passée de 113 s (5 erreurs) à 14 s (0 erreur).
+
 ### Entrées — tous formats
 - Images, **vidéos** (images clés extraites), **audio** (transcrit si le modèle ne l'entend pas), PDF, Word,
   Excel, **PowerPoint**, **zip**, code, CSV… ; chaque pièce jointe est aussi copiée dans `uploads/` pour Python.
 - **Pont de modalités** : un modèle « vision » décrit images et vidéos aux modèles qui ne les voient pas.
 
 ### Skills (savoir-faire chargeables)
-- 12 skills intégrés : **REA — Reverse Engineer Anything**, Excel, Word, PDF, PowerPoint, Vidéo,
+- 12 skills intégrés (REA enrichi : atelier d'outils et exploration de projets open source GitHub) : **REA — Reverse Engineer Anything**, Excel, Word, PDF, PowerPoint, Vidéo,
   **Blender & 3D**, **Développement (mode Cursor)**, **API gratuites**, Contrôle visuel, Analyse de données,
   Ratios prudentiels (RWA, Bâle).
 - **REA** applique la méthode de rétro-ingénierie en 5 étapes (une fonctionnalité à la fois, choix des outils
@@ -103,6 +135,10 @@ Open Food Facts, espèces (GBIF), QR codes, images gratuites…
 - **Détecteur de boucles de répétition** : un modèle qui « radote » (raisonnement ou réponse qui se répète)
   est interrompu puis relancé en mode réponse directe.
 - **Réparation automatique** des arguments JSON mal formés par les petits modèles.
+- **Points de restauration** : chaque réponse mémorise l'état des fichiers qu'elle modifie ; menu « Annuler les
+  modifications de fichiers ».
+- **Instructions de projet** : un fichier `CORTEX.md` (ou `AGENTS.md`) dans l'espace de travail est lu par tous les agents.
+- `fetch_url` lit aussi les PDF/Word/Excel en ligne et peut répondre à une question ciblée sur une page.
 
 ### Multi-modèles
 - **Comparaison** côte à côte de 2 à 4 modèles sur le même message.
