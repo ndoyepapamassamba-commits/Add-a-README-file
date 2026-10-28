@@ -825,7 +825,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-28 20:46 UTC', stamp: 202610282046, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-28 20:54 UTC', stamp: 202610282054, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -9991,6 +9991,8 @@ const LocalModels = {
     if (this.engines.has(modelId)) return this.engines.get(modelId);
     const p = (async () => {
       const lib = await this.webllmLib();
+      // Un seul modèle résident à la fois : les autres sont déchargés de la mémoire graphique (ils restent en cache disque)
+      for (const [id, prev] of [...this.engines]) { if (id === modelId) continue; this.engines.delete(id); this.ready.delete(id); try { const e = await prev; if (e && e.unload) await e.unload(); } catch (e) {} }
       const res = await this.resolveWebllmId(modelId);
       const eng = await lib.CreateMLCEngine(res.id, { initProgressCallback: (r) => { this.progress = { model: res.id, text: r.text, pct: r.progress }; S.onLocalProgress?.(this.progress); } });
       this.ready.add(modelId); this.progress = null; S.onLocalProgress?.(null);
