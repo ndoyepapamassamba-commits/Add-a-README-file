@@ -122,7 +122,9 @@ d'outils** : le modèle peut démonter un outil (schéma, code source), en crée
 - **Fournisseurs qui suppriment des paramètres** : certains fournisseurs d'OpenRouter perdent les paramètres de type
   liste ou objet des appels d'outil (constaté : Morph et InferenceNet pour DeepSeek V4.1 Flash — `create_excel` arrivait
   sans `sheets`). Cortex détecte l'appel incomplet, **écarte ce fournisseur pour ce modèle** (mémorisé 7 jours) et
-  relance l'étape à l'identique ; l'erreur restante éventuelle liste les paramètres reçus et les CSV disponibles.
+  relance l'étape (4 fois au plus) ; dès la 2e perte, il demande au modèle de passer les données en texte (`sources`,
+  chaînes JSON), ce que tous les fournisseurs transmettent. L'erreur restante éventuelle liste les paramètres reçus et
+  les CSV disponibles. Mesuré en réel (DeepSeek V4.1 Flash) : Morph puis Relace écartés, classeur premium livré, 0,05 $.
 - **Appels d'outil écrits en texte** (`<tool_call><function=…>`, JSON « Hermes », bloc de code JSON) par certains modèles
   gratuits : Cortex les **exécute** au lieu de les afficher.
 - **Garde anti-fichier halluciné** : une réponse qui annonce un fichier « créé » qui n'existe pas est retirée et le

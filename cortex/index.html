@@ -8485,7 +8485,7 @@ const Hooks = {
 const ProviderQuirks = {
   KEY: 'cortex.providerQuirks', TTL: 7 * 864e5,
   load() { try { return JSON.parse(localStorage.getItem(this.KEY) || '{}') || {}; } catch { return {}; } },
-  list(model) { const q = this.load()[model] || {}, t = Date.now(); return Object.keys(q).filter((p) => t - q[p].at < this.TTL).sort((x, y) => q[y].at - q[x].at).slice(0, 4); },
+  list(model) { const q = this.load()[model] || {}, t = Date.now(); return Object.keys(q).filter((p) => t - q[p].at < this.TTL).sort((x, y) => q[y].at - q[x].at).slice(0, 8); },
   add(model, provider, reason) {
     if (!model || !provider) return;
     const all = this.load();
@@ -8685,12 +8685,15 @@ async function agentLoop(o) {
     o.run.addUsage(usage, res.model || o.model, o.depth ? 'subagent' : 'chat');
     // Fournisseur qui a supprimé des paramètres (listes/objets) : appel reçu sans ses données → fournisseur écarté
     // pour ce modèle et étape relancée à l'identique (2 fois au plus par réponse)
-    if (step.toolCalls.length && res.provider && !o.signal.aborted && (o.dropRetries || 0) < 2) {
+    if (step.toolCalls.length && res.provider && !o.signal.aborted) {
       const lost = step.toolCalls.map((t) => ({ name: t.name, missing: droppedParams(o.toolMap.get(t.name) || TOOLS.get(t.name), t.args) })).filter((x) => x.missing.length);
-      if (lost.length) {
+      const what = lost.map((x) => `${x.missing.join(', ')} (${x.name})`).join(' ; ');
+      // Le fournisseur fautif est toujours écarté pour la suite, même quand les relances sont épuisées
+      if (lost.length) ProviderQuirks.add(o.model, res.provider, what);
+      if (lost.length && (o.dropRetries || 0) < 4) {
         o.dropRetries = (o.dropRetries || 0) + 1;
-        const what = lost.map((x) => `${x.missing.join(', ')} (${x.name})`).join(' ; ');
-        ProviderQuirks.add(o.model, res.provider, what);
+        // Dès la 2e perte : consigne de passer les données en TEXTE (paramètres que tous les fournisseurs transmettent)
+        if (o.dropRetries >= 2) o.nudge = `[Harness] Les fournisseurs de ce modèle suppriment les paramètres de type liste/objet de tes appels d'outil (perdu : ${what}). Refais l'appel en passant ces données sous forme de TEXTE : pour create_excel, sources: "exports/a.csv, exports/b.csv" (ou un motif comme exports/x_*.csv) — une feuille par fichier — et kpis / insights / charts en chaînes JSON ; pour les autres outils, la liste en chaîne JSON.`;
         step.superseded = 'provider';
         step.lostParams = { provider: res.provider, calls: lost };
         step.toolCalls = [];
