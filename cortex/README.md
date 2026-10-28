@@ -134,6 +134,8 @@ d'outils** : le modèle peut démonter un outil (schéma, code source), en crée
 - **Livrable demandé mais non produit** : si l'utilisateur a demandé un fichier (Excel, Word, PowerPoint, PDF) et que la
   réponse se termine sans l'avoir créé — ou si le modèle annonce « je crée maintenant le classeur » puis s'arrête —,
   Cortex le relance une fois pour qu'il le produise réellement.
+- Un appel d'outil auquel manque un paramètre obligatoire (ex. `write_file` sans `content`) est refusé avec un message
+  clair au lieu de produire un fichier vide.
 - **Appels d'outil écrits en texte** (`<tool_call><function=…>`, JSON « Hermes », bloc de code JSON) par certains modèles
   gratuits : Cortex les **exécute** au lieu de les afficher.
 - **Garde anti-fichier halluciné** : une réponse qui annonce un fichier « créé » qui n'existe pas est retirée et le
@@ -201,7 +203,9 @@ d'outils** : le modèle peut démonter un outil (schéma, code source), en crée
   largeurs, formats de nombre, statuts colorés, barres d'avancement, logo) et ses **graphiques natifs sont dessinés**
   à partir des données du fichier — le modèle voit le livrable tel qu'Excel l'affiche (`page` = n° de feuille, ou
   `sheet` = nom de la feuille).
-- `run_javascript` : paquets **npm** via `await import('https://esm.sh/paquet')`.
+- `run_javascript` : paquets **npm** via `await import('https://esm.sh/paquet')` ; `writeFile('exports/table.csv', csv)`
+  enregistre directement dans l'espace de travail et `readFile(chemin)` lit un fichier texte cité dans le code — les
+  tables calculées n'ont plus à être recopiées par le modèle.
 
 ### Blender & 3D
 - Outil **create_3d** : scène Three.js interactive, export **GLB automatique** (Blender : Fichier › Importer ›

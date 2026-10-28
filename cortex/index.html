@@ -1638,8 +1638,31 @@ const __fmt = (v) => {
 for (const k of ['log', 'info', 'warn', 'error', 'debug', 'table']) console[k] = (...a) => { if (__logs.length < 2000) __logs.push((k === 'error' ? '[erreur] ' : k === 'warn' ? '[alerte] ' : '') + a.map(__fmt).join(' ')); };
 const fetchJSON = async (u, o) => { const r = await fetch(u, o); if (!r.ok) throw new Error('HTTP ' + r.status + ' sur ' + u); return r.json(); };
 const fetchText = async (u, o) => { const r = await fetch(u, o); if (!r.ok) throw new Error('HTTP ' + r.status + ' sur ' + u); return r.text(); };
+// Fichiers : writeFile(chemin, contenu) enregistre dans l'espace de travail (CSV, JSON, texte, octets) ;
+// readFile(chemin) lit un fichier texte de l'espace cité dans le code
+let __out = [], __in = {};
+const __norm = (p) => String(p || '').trim().replace(/^\\.?\\/+/, '').replace(/^workspace\\//, '');
+function writeFile(p, c) {
+  if (p && typeof p === 'object') { c = p.content; p = p.path; }
+  p = __norm(p);
+  if (!p) throw new Error('writeFile(chemin, contenu) : chemin manquant');
+  let enc = 'utf8';
+  if (c instanceof ArrayBuffer) c = new Uint8Array(c);
+  if (c instanceof Uint8Array) { let s = ''; for (let i = 0; i < c.length; i++) s += String.fromCharCode(c[i]); c = btoa(s); enc = 'base64'; }
+  else if (typeof c !== 'string') c = JSON.stringify(c, null, 2);
+  __out = __out.filter((f) => f.path !== p);
+  __out.push({ path: p, content: c, encoding: enc });
+  return 'Fichier écrit : ' + p;
+}
+function readFile(p) {
+  p = __norm(p && typeof p === 'object' ? p.path : p);
+  if (Object.prototype.hasOwnProperty.call(__in, p)) return __in[p];
+  throw new Error('readFile : ' + p + ' introuvable (seuls les fichiers texte de l\\'espace de travail cités dans le code sont lisibles)');
+}
+const write_file = writeFile, saveFile = writeFile, read_file = readFile;
 self.onmessage = async (e) => {
-  const { code, args, mode } = e.data;
+  const { code, args, mode, files } = e.data;
+  __out = []; __in = files || {};
   try {
     const AF = Object.getPrototypeOf(async function () {}).constructor;
     let fn;
@@ -1647,9 +1670,9 @@ self.onmessage = async (e) => {
     if (!fn) fn = new AF('args', code);
     const result = await fn(args);
     if (mode === 'raw') { try { self.postMessage({ ok: true, value: result, logs: __logs }); } catch { self.postMessage({ ok: true, value: JSON.parse(JSON.stringify(result)), logs: __logs }); } }
-    else self.postMessage({ ok: true, result: result === undefined ? undefined : __fmt(result), logs: __logs });
+    else self.postMessage({ ok: true, result: result === undefined ? undefined : __fmt(result), logs: __logs, files: __out });
   } catch (err) {
-    self.postMessage({ ok: false, error: (err && (err.stack || err.message)) || String(err), logs: __logs });
+    self.postMessage({ ok: false, error: (err && (err.stack || err.message)) || String(err), logs: __logs, files: __out });
   }
 };`;
 
@@ -1858,7 +1881,7 @@ const Sandbox = {
       this.frame.contentWindow.postMessage({ id, kind, payload }, '*');
     });
   },
-  runJS(code, args = {}, opts = {}) { return this.exec('js', { code, args, mode: opts.mode }, { timeout: opts.timeout || S.settings.harness.toolTimeout * 1000, signal: opts.signal }); },
+  runJS(code, args = {}, opts = {}) { return this.exec('js', { code, args, mode: opts.mode, files: opts.files }, { timeout: opts.timeout || S.settings.harness.toolTimeout * 1000, signal: opts.signal }); },
   runPy(code, opts = {}) {
     const { files, keep } = workspaceForPython(code, this.pySent);
     // Analyse de données : 3 min minimum (lecture d'un gros classeur, pandas…)
@@ -4866,17 +4889,30 @@ const BUILTIN_TOOLS = [
   {
     name: 'run_javascript', title: 'Exécuter du JavaScript', icon: 'js', group: 'code', perm: 'auto',
     summary: 'Exécute du JS dans un worker isolé (calculs, transformation de données, fetch).',
-    description: "Exécute du code JavaScript (ES2022, async/await autorisé) dans un worker isolé, sans DOM. Utilise console.log() pour afficher ou `return` pour renvoyer une valeur ; une expression seule est aussi renvoyée. fetch(), fetchJSON(url) et fetchText(url) sont disponibles. Paquets npm : `const _ = (await import('https://esm.sh/lodash@4')).default;` (n'importe quel paquet via esm.sh). Idéal pour les calculs exacts (pour les grands entiers, utilise BigInt : 123n * 456n).",
+    description: "Exécute du code JavaScript (ES2022, async/await autorisé) dans un worker isolé, sans DOM. Utilise console.log() pour afficher ou `return` pour renvoyer une valeur ; une expression seule est aussi renvoyée. fetch(), fetchJSON(url) et fetchText(url) sont disponibles. Paquets npm : `const _ = (await import('https://esm.sh/lodash@4')).default;` (n'importe quel paquet via esm.sh). Idéal pour les calculs exacts (pour les grands entiers, utilise BigInt : 123n * 456n). Fichiers : writeFile('exports/table.csv', contenu) enregistre directement dans l'espace de travail (CSV, JSON, texte ; idéal pour préparer les tables de create_excel sans les recopier) ; readFile('exports/x.csv') lit un fichier texte de l'espace cité dans le code.",
     parameters: { type: 'object', properties: { code: { type: 'string', description: 'Code JavaScript' } }, required: ['code'] },
     args: (a) => truncate((a.code || '').split('\n')[0], 80),
     async run(a, ctx) {
-      const r = await Sandbox.runJS(a.code || '', {}, { signal: ctx.signal });
+      // Fichiers texte de l'espace cités dans le code : lisibles avec readFile()
+      const code = String(a.code || '');
+      const input = {};
+      let size = 0;
+      for (const f of col('files').values()) {
+        if (f.encoding === 'base64' || size > 20e6) continue;
+        if (code.includes(f.id) || code.includes(f.id.split('/').pop())) { input[f.id] = f.content || ''; size += (f.content || '').length; }
+      }
+      const r = await Sandbox.runJS(code, {}, { signal: ctx.signal, files: input });
       const parts = [];
       if (r.logs?.length) parts.push('Console :\n' + r.logs.join('\n'));
       if (r.ok && r.result !== undefined) parts.push('Résultat : ' + r.result);
       if (!r.ok) parts.push('Erreur : ' + r.error);
+      let files = [];
+      if (r.files?.length) {
+        if (S.settings.harness.permissionMode === 'readonly') parts.push('(mode lecture seule : fichiers non enregistrés)');
+        else { files = r.files.map((f) => { writeWorkspaceFile(f.path, f.encoding === 'base64' ? 'data:' + mimeFromName(f.path) + ';base64,' + f.content : f.content, f.encoding); return normPath(f.path); }); parts.push('Fichiers écrits : ' + files.join(', ')); }
+      }
       if (!parts.length) parts.push('(exécuté sans sortie — utilisez console.log ou return)');
-      return { text: clip(parts.join('\n\n')), error: !r.ok };
+      return { text: clip(parts.join('\n\n')), files, error: !r.ok };
     },
   },
   {
@@ -5484,7 +5520,7 @@ const FREE_API_TOOL = {
 /* ============================== 08c · SKILLS (savoir-faire chargeables à la demande) ==============================
    Un skill = des instructions expertes (Markdown) + des outils à activer + éventuellement des fichiers (modèles, scripts).
    Compatible avec le format SKILL.md (en-tête YAML name/description) : import d'un .md, d'un .zip ou d'un .json. */
-const SKILLS_VERSION = 8;
+const SKILLS_VERSION = 9;
 const BUILTIN_SKILLS = [
   {
     id: 'skill-excel', emoji: '📗', name: 'excel', title: 'Excel premium',
@@ -5493,7 +5529,7 @@ const BUILTIN_SKILLS = [
     tools: ['create_excel', 'visual_check'],
     content: `## Méthode
 1. Structure les données avant de générer : une ligne = un élément (document, tâche, client…), une colonne = un attribut. Colonnes types d'un registre : Réf., Section/Catégorie, Élément/Document, Description, Responsable, Échéance, Statut, Commentaires.
-2. Appelle **create_excel** (outil natif, jamais en texte) avec TOUTES les lignes (jamais d'échantillon, jamais « … »). Données volumineuses ou calculées en Python : écris un CSV par feuille (df.to_csv('exports/x_top50.csv', index=False)) puis appelle create_excel avec sources: "exports/x_*.csv" (texte : une feuille par fichier, le plus fiable) ou sheets[].source_file ; tuiles, lecture et graphiques de la synthèse : kpis, insights, charts au niveau du classeur — ne génère JAMAIS le livrable avec openpyxl (il perdrait le design premium).
+2. Appelle **create_excel** (outil natif, jamais en texte) avec TOUTES les lignes (jamais d'échantillon, jamais « … »). Données volumineuses ou calculées en Python : écris un CSV par feuille directement depuis le code (python : df.to_csv('exports/x_top50.csv', index=False) ; JavaScript : writeFile('exports/x_top50.csv', csv)) — ne recopie jamais une table dans write_file puis appelle create_excel avec sources: "exports/x_*.csv" (texte : une feuille par fichier, le plus fiable) ou sheets[].source_file ; tuiles, lecture et graphiques de la synthèse : kpis, insights, charts au niveau du classeur — ne génère JAMAIS le livrable avec openpyxl (il perdrait le design premium).
 3. Registre/suivi : status_column + status_values (cycle complet) → tableau de bord automatique, statuts colorés, liste déroulante, feuille Paramètres. N'utilise PAS status_column pour une colonne de commentaires.
 4. group_by = une catégorie qui se répète (Rubrique, Segment…), jamais un identifiant unique.
 5. Analyse chiffrée : kpis (3 à 6 chiffres clés, valeurs déjà formatées « 1 013,4 Mrd », « 2,07 % »), insights (3 à 5 constats), charts natifs (bar, column, line, pie, doughnut : { type, title, labels, series: [{ name, values }] }), une colonne Unité si les unités varient.
@@ -9039,6 +9075,8 @@ async function runToolCall(tc, o) {
   }
   const argFixes = normalizeArgs(tool, args);
   if (argFixes.length) o.run.note(`Arguments de ${tc.name} corrigés : ${argFixes.join(', ')}`);
+  const lacking = (tool.parameters?.required || []).filter((k) => (args[k] === undefined || args[k] === null) && !['file_name', 'title', 'subtitle', 'name'].includes(k));
+  if (lacking.length) return finish('error', `Paramètre(s) obligatoire(s) manquant(s) pour ${tc.name} : ${lacking.join(', ')} (reçu : ${Object.keys(args).join(', ') || 'rien'}).${truncatedArgs ? ' Ta sortie a été coupée : refais l\'appel en plus petit (découpe le contenu, ou écris le fichier avec python / run_javascript writeFile).' : " Renvoie l'appel complet."}`);
   if (Hooks.has('onToolCall')) {
     const h = await Hooks.run('onToolCall', { name: tc.name, args }, o.run);
     if (h?.deny) return finish('denied', 'Bloqué par la politique (hook) : ' + h.deny);
