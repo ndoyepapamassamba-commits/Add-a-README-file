@@ -825,7 +825,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-28 20:35 UTC', stamp: 202610282035, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-28 20:39 UTC', stamp: 202610282039, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -10055,7 +10055,8 @@ function localModelsHTML() {
   const browser = LocalModels.webgpu
     ? `<div class="card" style="margin:10px 0;background:var(--accent-soft)"><b>${icon('zap', 'sm')} Sans rien installer : un modèle dans votre navigateur (WebGPU disponible)</b>
         <p class="small muted" style="margin:6px 0 8px">Le modèle est téléchargé une seule fois (quelques Go, mis en cache) puis tourne sur votre carte graphique. Vos données ne quittent pas l'ordinateur. Comptez 2 à 10 minutes de téléchargement la première fois.</p>
-        <div class="row wrap" style="gap:8px;align-items:center"><select id="lm-pick" class="sel" style="min-width:300px">${WEBLLM_PICKS.map(([id, lab]) => `<option value="${esc(id)}" ${cur === 'webllm/' + id ? 'selected' : ''}>${esc(lab)}</option>`).join('')}</select><button class="btn sm primary" data-lm="webllm-pick">${icon('download', 'sm')} Télécharger et utiliser</button>${readyList.length ? `<span class="small" style="color:var(--ok,#16a34a)">✅ prêt : ${readyList.map((x) => esc(x)).join(', ')}</span>` : ''}</div>
+        <div class="row wrap" style="gap:8px;align-items:center"><select id="lm-pick" class="sel" style="min-width:300px">${WEBLLM_PICKS.map(([id, lab]) => `<option value="${esc(id)}" ${cur === 'webllm/' + id ? 'selected' : ''}>${esc(lab)}</option>`).join('')}</select><button class="btn sm primary" data-lm="webllm-pick">${icon('download', 'sm')} Télécharger et utiliser</button></div>
+        ${readyList.length ? `<div class="row wrap" style="gap:8px;align-items:center;margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff;border:1px solid var(--ok,#16a34a)"><b style="color:var(--ok,#16a34a)">✅ Prêt dans votre navigateur : ${readyList.map((x) => esc(x.replace(/-q4f16_1-MLC$/, ''))).join(', ')}</b>${readyList.map((x) => `<button class="btn sm primary" data-lm="use" data-id="${esc(x)}">${icon('chat', 'sm')} Discuter avec ${esc(x.replace(/-q4f16_1-MLC$/, ''))}</button>`).join('')}<span class="small muted">Le modèle est aussi dans le sélecteur de la conversation, onglet « Local / Navigateur ».</span></div>` : ''}
         <div id="lm-progress" class="small muted" style="margin-top:8px;${p ? '' : 'display:none'}"><div style="height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-bottom:4px"><div id="lm-bar" style="height:100%;width:${p ? Math.round((p.pct || 0) * 100) : 0}%;background:var(--accent);transition:width .3s"></div></div><span id="lm-ptext">${p ? esc(p.text || '') : ''}</span></div></div>`
     : `<p class="small muted"><b>WebGPU indisponible ici</b> : impossible d'exécuter un modèle dans ce navigateur. Mettez Chrome ou Edge à jour (WebGPU est inclus depuis Chrome 113 / Edge 113) ou utilisez un serveur local ci-dessous.</p>`;
   const diag = err ? `<div class="card" style="border-color:var(--danger);margin:8px 0"><b style="color:var(--danger)">${esc(err.title)}</b><ol class="small" style="margin:6px 0 0 18px;padding:0">${(err.steps || []).map((x) => `<li style="margin:3px 0">${esc(x)}</li>`).join('')}</ol></div>` : '';
@@ -10087,6 +10088,7 @@ function bindLocalModels(b) {
     if (el.dataset.lm === 'test') { c.url = b.querySelector('#lm-url').value.trim(); c.key = b.querySelector('#lm-key').value.trim(); el.disabled = true; try { const l = await LocalModels.refresh(); toast(`${l.length} modèle(s) local(aux) disponibles`, 'ok'); } catch (er) { c.enabled = false; saveSettings(); toast(c.lastError ? c.lastError.title : 'Serveur local : ' + er.message, 'err', 8000); } renderPage(); }
     if (el.dataset.lm === 'webllm') loadWebllm(el.dataset.id, el);
     if (el.dataset.lm === 'webllm-pick') loadWebllm(b.querySelector('#lm-pick').value, el);
+    if (el.dataset.lm === 'use') { useLocalModelNow('webllm/' + el.dataset.id); try { closePage(); } catch (e2) {} toast('Modèle du navigateur sélectionné : écrivez votre message.', 'ok', 5000); }
   });
   b.addEventListener('change', (e) => { if (e.target.id === 'lm-booster') { LocalModels.cfg().booster = e.target.checked; saveSettings(); } });
 }
