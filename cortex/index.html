@@ -6027,7 +6027,7 @@ function expandSources(v) {
   return [...new Set(out)];
 }
 function prettySheetName(p) {
-  const n = p.split('/').pop().replace(/\.[^.]+$/, '').replace(/^(x|tab|table|df|t|data|out|res)[_-]/i, '').replace(/[_-]+/g, ' ').trim()
+  const n = p.split('/').pop().replace(/\.[^.]+$/, '').replace(/^(x|tab|table|df|t|data|out|output|res|export|exports|tmp)[_-]/i, '').replace(/[_-]+/g, ' ').trim()
     .replace(/\b(kpis?|orr|frr|ifrs\s?9?|npl|npe|hhi|pdo|sic|ead|lgd|pd|ecl|bceao|uemoa|ca|pnb|rh)\b/gi, (m) => m.toUpperCase()).replace(/(\d+(?:[.,]\d+)?)\s?pct\b/gi, '$1 %');
   return (n.charAt(0).toUpperCase() + n.slice(1)).slice(0, 31) || 'Feuille';
 }
