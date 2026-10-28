@@ -74,6 +74,12 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
   ligne par ligne selon la colonne Unité (« 18 978 contrats », « 1 013,36 Mrd XOF », « 0,137 indice »), nombres saisis
   à la française (« 16 444 », « 987,35 ») reconnus, mentions « n.s. » tolérées dans une colonne de pourcentages,
   tuiles réparties en grilles équilibrées, logo de l'espace de travail repris quand son nom évoque l'organisation.
+- **Contrôle de cohérence des échéanciers** : solde de début = solde de fin précédent, début − amortissement = fin,
+  amortissement + intérêts = échéance ; toute incohérence est signalée au modèle avec la première ligne fautive
+  (« 15 209 518 − 209 518 = 15 000 000 ≠ 14 790 482 ») pour qu'il corrige avant de livrer.
+- Tableaux essentiellement chiffrés (simulation, synthèse) : une colonne « Statut » de contrôle (« Vérifié ») ne
+  déclenche plus de tableau de bord de registre ; en-têtes techniques rendus lisibles (« Capital_Restant_Début » →
+  « Capital restant début », « Coût_pct » → « Coût (%) ») ; colonnes `_pct` au format pourcentage.
 
 ### Designs « ultra premium » (tous les modèles, même gratuits)
 - **7 thèmes** cohérents pour Excel, Word, PDF, PowerPoint et rapports HTML : Exécutif, Prestige (marine et or),
@@ -125,6 +131,9 @@ d'outils** : le modèle peut démonter un outil (schéma, code source), en crée
   relance l'étape (4 fois au plus) ; dès la 2e perte, il demande au modèle de passer les données en texte (`sources`,
   chaînes JSON), ce que tous les fournisseurs transmettent. L'erreur restante éventuelle liste les paramètres reçus et
   les CSV disponibles. Mesuré en réel (DeepSeek V4.1 Flash) : Morph puis Relace écartés, classeur premium livré, 0,05 $.
+- **Livrable demandé mais non produit** : si l'utilisateur a demandé un fichier (Excel, Word, PowerPoint, PDF) et que la
+  réponse se termine sans l'avoir créé — ou si le modèle annonce « je crée maintenant le classeur » puis s'arrête —,
+  Cortex le relance une fois pour qu'il le produise réellement.
 - **Appels d'outil écrits en texte** (`<tool_call><function=…>`, JSON « Hermes », bloc de code JSON) par certains modèles
   gratuits : Cortex les **exécute** au lieu de les afficher.
 - **Garde anti-fichier halluciné** : une réponse qui annonce un fichier « créé » qui n'existe pas est retirée et le
@@ -190,7 +199,8 @@ d'outils** : le modèle peut démonter un outil (schéma, code source), en crée
   par un modèle vision) — l'équivalent navigateur d'un Node.js + Playwright.
 - **Aperçu Excel fidèle** : le classeur est lu directement (polices, remplissages en dégradé, bordures, fusions,
   largeurs, formats de nombre, statuts colorés, barres d'avancement, logo) et ses **graphiques natifs sont dessinés**
-  à partir des données du fichier — le modèle voit le livrable tel qu'Excel l'affiche (`page` = n° de feuille).
+  à partir des données du fichier — le modèle voit le livrable tel qu'Excel l'affiche (`page` = n° de feuille, ou
+  `sheet` = nom de la feuille).
 - `run_javascript` : paquets **npm** via `await import('https://esm.sh/paquet')`.
 
 ### Blender & 3D

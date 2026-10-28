@@ -2690,7 +2690,7 @@ const Office = {
       return clamp(Math.round(Math.max(Math.min(Math.max(...lens), 60), avg * 1.15, numeric ? 11 : 8)), 8, 60);
     })).map((w) => clamp(+w || 12, 4, 120));
     // Format de chaque colonne numérique : pourcentage (fractions sous un en-tête de taux), entier ou décimal
-    const PCT_HEAD = /%|\bpd\b|\blgd\b|\bccf\b|taux|ratio|\bpart\b|marge|rendement|croissance|variation|evolution|pourcent|proportion|share|rate|yield|probabilit|couverture|utilisation|ecart/i;
+    const PCT_HEAD = /%|pct|\bpd\b|\blgd\b|\bccf\b|taux|ratio|\bpart\b|marge|rendement|croissance|variation|evolution|pourcent|proportion|share|rate|yield|probabilit|couverture|utilisation|ecart/i;
     const colFmt = H.map((h, c) => {
       const vals = R.map((row) => this.cellValue(row[c])).map((v) => (v.n != null ? v.n : v.cached)).filter((x) => typeof x === 'number' && isFinite(x));
       if (!vals.length) return 'gen';
@@ -3540,7 +3540,7 @@ window.addEventListener('load',function(){setTimeout(function(){
     return null;
   },
   /* Rend un fichier en image ; renvoie { image, errors, note } */
-  async renderFile(path, { page = 1, width = 1280 } = {}) {
+  async renderFile(path, { page = 1, width = 1280, sheet } = {}) {
     const f = readWorkspaceFile(path);
     if (!f) throw new Error('Fichier introuvable : ' + normPath(path) + ' (utilise list_files)');
     const ext = (f.id.split('.').pop() || '').toLowerCase();
@@ -3561,7 +3561,7 @@ window.addEventListener('load',function(){setTimeout(function(){
       return { image: await Media.contactSheet(v.frames.map((x) => x.data)), note: `Vidéo ${fmtDur(v.duration * 1000)}, ${v.width}×${v.height} — planche de 6 images` };
     }
     this.lastNote = ''; this.lastWidth = 0;
-    let html = await this.fileToHTML(f, { page });
+    let html = await this.fileToHTML(f, { page, sheet });
     const xnote = this.lastNote;
     if (this.lastWidth) width = clamp(this.lastWidth + 30, width, 2400);
     let wait = 1200;
@@ -3716,6 +3716,13 @@ class XlSheet {
 }
 
 /* ---------- Graphiques natifs (anneau par statut, barres empilées par groupe × statut) ---------- */
+/* En-tête technique (« Capital_Restant_Début », « Coût_pct ») → libellé lisible (« Capital restant début », « Coût (%) ») */
+function prettyHead(h) {
+  const s = String(h ?? '');
+  if (!s.includes('_') || /\s/.test(s) || !/[a-zà-ÿ]/.test(s)) return s;
+  const t = s.replace(/_pct$/i, ' (%)').replace(/_(mois|ans|jours|j|fcfa|xof|eur|usd)$/i, (m, u) => ` (${/^(fcfa|xof|eur|usd)$/i.test(u) ? u.toUpperCase() : u.toLowerCase()})`).replace(/_+/g, ' ').trim();
+  return t.split(' ').map((w, i) => (i > 0 && /^[A-ZÀ-Ý][a-zà-ÿ]+$/.test(w) ? w.toLowerCase() : w)).join(' ');
+}
 /* Longueur affichée d'une valeur selon son format Excel (décimales, milliers, %, suffixe entre guillemets) */
 function shownLen(v, fmt = '') {
   if (typeof v !== 'number') return String(v ?? '').length;
@@ -3926,6 +3933,13 @@ Office.xlsx = async function (sheets, opts = {}) {
       const avgL = vals.reduce((a, v) => a + v.length, 0) / Math.max(1, vals.length);
       const known = vals.filter((v) => statusKind(v) !== 'other' || declared.includes(v)).length / Math.max(1, vals.length);
       if (!vals.length || avgL > 28 || known < 0.5) si = -1;
+      // Tableau essentiellement numérique (simulation, échéancier, synthèse chiffrée) : une colonne « Statut » de contrôle
+      // (« Vérifié », « Calculé ») ne fait pas un registre de suivi → pas de tableau de bord par statut
+      if (si >= 0 && !declared.filter(Boolean).length) {
+        const numCols = headers.filter((_, c) => c !== si && rows.length && rows.filter((r) => Office.cellValue(r[c]).n != null).length >= rows.length * 0.8).length;
+        const distinct = new Set(vals).size;
+        if (numCols >= Math.max(1, (headers.length - 1) * 0.5) && (distinct < 2 || (oi < 0 && dueIdx < 0))) si = -1;
+      }
     }
     if (gi >= 0 && rows.length > 5 && new Set(rows.map((r) => String(r[gi] ?? '').trim())).size > rows.length * 0.7) gi = -1;
     const M = { raw, name: Office.sheetName(raw.name || raw.title || 'Données', used), title: raw.title || title || raw.name || 'Données', subtitle: raw.subtitle, headers, rows, si, gi, oi: oi === si || oi === gi ? -1 : oi, dueIdx, recvIdx, lateIdx };
@@ -3975,7 +3989,7 @@ Office.xlsx = async function (sheets, opts = {}) {
       return 'auto';
     });
     // Formats numériques par colonne
-    const PCT_HEAD = /%|\bpd\b|\blgd\b|\bccf\b|taux|ratio|\bpart\b|marge|rendement|croissance|variation|evolution|pourcent|proportion|share|rate|yield|probabilit|couverture|utilisation|ecart/;
+    const PCT_HEAD = /%|pct|\bpd\b|\blgd\b|\bccf\b|taux|ratio|\bpart\b|marge|rendement|croissance|variation|evolution|pourcent|proportion|share|rate|yield|probabilit|couverture|utilisation|ecart/;
     const cv = (v) => Office.cellValue(v);
     const colFmt = H.map((h, c) => {
       if (role[c] !== 'auto' && role[c] !== 'ref') return role[c];
@@ -4062,7 +4076,7 @@ Office.xlsx = async function (sheets, opts = {}) {
     }
     const hr = r;
     X.heights[hr] = Math.max(24, 13 * Math.max(...H.map((h, c) => Math.ceil((String(h).length + 2) / Math.max(4, W[c] * 1.05)))) + 8);
-    H.forEach((h, c) => X.set(c, hr, (isEdit(c) ? '✎ ' : '') + h, headCell(isEdit(c), ['status', 'ref', 'date', 'late', 'int', 'dec', 'pct'].includes(kinds[c]) ? 'center' : 'left')));
+    H.forEach((h, c) => X.set(c, hr, (isEdit(c) ? '✎ ' : '') + prettyHead(h), headCell(isEdit(c), ['status', 'ref', 'date', 'late', 'int', 'dec', 'pct'].includes(kinds[c]) ? 'center' : 'left')));
     const first = hr + 1;
     const colL = (c) => Office.colName(c);
     R.forEach((row, k) => {
@@ -4701,10 +4715,11 @@ const XlsxPreview = {
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">${tt}${out}${leg}</svg>`;
   },
   /* Document HTML complet : une feuille (page = n° de feuille à partir de 1) */
-  async html(bytes, { page = 1 } = {}) {
+  async html(bytes, { page = 1, sheet } = {}) {
     const book = await this.open(bytes);
     if (!book.sheets.length) throw new Error('classeur sans feuille visible');
-    const i = clamp((+page || 1) - 1, 0, book.sheets.length - 1);
+    let i = clamp((+page || 1) - 1, 0, book.sheets.length - 1);
+    if (sheet) { const k = normalizeText(sheet).replace(/[^a-z0-9]+/g, ''); const j = book.sheets.findIndex((s) => normalizeText(s.name).replace(/[^a-z0-9]+/g, '') === k); const j2 = j >= 0 ? j : book.sheets.findIndex((s) => normalizeText(s.name).replace(/[^a-z0-9]+/g, '').includes(k)); if (j2 >= 0) i = j2; }
     const body = await this.sheetHTML(book, i);
     const tabs = book.sheets.map((s, k) => `<span style="padding:4px 12px;border:1px solid #D1D5DB;border-top:0;${k === i ? 'background:#fff;font-weight:700;color:#111' : 'background:#F3F4F6;color:#6B7280'}">${esc(s.name)}</span>`).join('');
     const doc = `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:12px;background:#fff;font-family:Calibri,'Segoe UI',Arial,sans-serif}td{overflow:hidden;padding:0 3px;line-height:1.15}</style></head><body>${body}<div style="margin-top:10px;font-size:12px;display:flex;gap:2px">${tabs}</div></body></html>`;
@@ -5908,6 +5923,46 @@ function findDataFileFor(name) {
   const m = k2.length >= 4 ? files.filter((p) => loose(base(p)) === k2) : [];
   return m.length === 1 ? m[0] : null;
 }
+/* Contrôle de cohérence d'un échéancier / tableau de soldes : début − remboursé = fin, début = fin précédente,
+   remboursé + intérêts = échéance. Renvoie les anomalies trouvées (le classeur est produit, le modèle est alerté). */
+function scheduleChecks(sh) {
+  const H = (sh.headers || []).map((h) => normalizeText(String(h)).replace(/[_\s]+/g, ' '));
+  const R = sh.rows || [];
+  if (R.length < 2) return [];
+  const col = (re, not) => H.findIndex((h) => re.test(h) && !(not && not.test(h)));
+  const start = col(/\b(debut|initial|ouverture|opening|beginning)\b/, /date|jour|heure|periode|age\b/);
+  const end = col(/\b(fin|final|cloture|closing|ending)\b|restant(?! debut)|solde apres|crd(?! debut)/, /\bdebut\b|initial|ouverture|opening|date|jour|heure|periode|age\b/);
+  const princ = col(/rembourse|amortissement|principal/, /total|cumul/);
+  const intr = col(/interet|interest/, /total|cumul/);
+  const pay = col(/mensualite|echeance|annuite|payment|versement/, /total|cumul|brut|date|\bn\b|numero/);
+  const num = (v) => { const x = Office.cellValue(v); return x.n != null ? x.n : x.cached != null ? x.cached : null; };
+  const fmt = (v) => Math.round(v).toLocaleString('fr-FR').replace(/ /g, ' ');
+  const out = [];
+  const check = (label, test) => {
+    let bad = 0, first = null;
+    for (let i = 0; i < R.length; i++) { const r = test(i); if (r && !r.ok) { bad++; first ||= { i, ...r }; } }
+    if (bad) out.push(`${label} faux sur ${bad} ligne(s) (ligne ${first.i + 1} : ${first.msg})`);
+  };
+  const tol = (a) => Math.max(2, Math.abs(a) * 1e-6);
+  const hs = sh.headers;
+  if (start >= 0 && end >= 0 && start !== end && princ >= 0) check(`« ${hs[start]} » − « ${hs[princ]} » = « ${hs[end]} »`, (i) => {
+    const a = num(R[i][start]), b = num(R[i][princ]), c = num(R[i][end]);
+    if (a == null || b == null || c == null) return null;
+    return { ok: Math.abs(a - b - c) <= tol(a), msg: `${fmt(a)} − ${fmt(b)} = ${fmt(a - b)} ≠ ${fmt(c)}` };
+  });
+  if (start >= 0 && end >= 0 && start !== end) check(`« ${hs[start]} » = « ${hs[end]} » de la ligne précédente`, (i) => {
+    if (!i) return null;
+    const a = num(R[i][start]), c = num(R[i - 1][end]);
+    if (a == null || c == null) return null;
+    return { ok: Math.abs(a - c) <= tol(a), msg: `${fmt(a)} ≠ ${fmt(c)}` };
+  });
+  if (princ >= 0 && intr >= 0 && pay >= 0) check(`« ${hs[princ]} » + « ${hs[intr]} » = « ${hs[pay]} »`, (i) => {
+    const b = num(R[i][princ]), n = num(R[i][intr]), p = num(R[i][pay]);
+    if (b == null || n == null || p == null) return null;
+    return { ok: Math.abs(b + n - p) <= tol(p), msg: `${fmt(b)} + ${fmt(n)} = ${fmt(b + n)} ≠ ${fmt(p)}` };
+  });
+  return out;
+}
 /* sources : chemins de fichiers en texte (virgules, retours à la ligne, motifs *) → liste de fichiers de l'espace */
 function expandSources(v) {
   if (v == null || v === '') return [];
@@ -6074,6 +6129,8 @@ const DELIVERABLE_TOOLS = [
       if (!sheets.length) {
         const got = Object.keys(a).filter((k) => a[k] != null && a[k] !== '');
         const avail = dataFilesHint();
+        const missing = [...new Set([...expandSources(a.sources ?? a.source_files ?? a.files), ...(Array.isArray(rawSheets) ? rawSheets : []).map((x) => x && typeof x === 'object' ? x.source_file : null), a.source_file].filter((p) => p && !/[*?]/.test(p) && !readWorkspaceFile(p)))];
+        if (missing.length) throw new Error(`Fichier(s) de données introuvable(s) : ${missing.join(', ')} — ils n'existent pas (encore) dans l'espace de travail. Crée-les d'abord (python : df.to_csv('exports/…csv', index=False)), vérifie avec list_files, puis rappelle create_excel.${dataFilesHint().length ? ` Fichiers de données disponibles : ${dataFilesHint().join(', ')}.` : ''}`);
         throw new Error(`Aucune donnée reçue (paramètres reçus : ${got.join(', ') || 'aucun'}). Fournis les données par l'un de ces moyens : sources (texte, le plus fiable : chemins séparés par des virgules ou motif, ex. "exports/x_*.csv" → une feuille par fichier), sheets ([{ name, source_file }] ou headers + rows), table (Markdown/CSV) ou source_file.${avail.length ? ` Fichiers de données disponibles : ${avail.join(', ')}.` : ''} Si tu avais bien envoyé sheets, il a été perdu en route : renvoie-le en chaîne JSON ou utilise sources.`);
       }
       // kpis / insights / charts passés au niveau du classeur : appliqués à la feuille de synthèse (ou à la première)
@@ -6084,13 +6141,16 @@ const DELIVERABLE_TOOLS = [
       }
       // Titre du classeur repris sur la première feuille si elle n'en a pas
       if (a.title && !sheets[0].title) sheets[0] = { ...sheets[0], title: a.title, subtitle: sheets[0].subtitle || a.subtitle };
+      // Contrôles de cohérence des échéanciers (soldes, remboursements, échéances)
+      const checks = sheets.flatMap((s) => scheduleChecks(s).map((m) => `« ${s.name || s.title || 'feuille'} » : ${m}`));
       ctx.progress('Génération du classeur premium…');
       const st = await docStyle(a, ctx);
       const blob = await Office.xlsx(sheets, { title: a.title, theme: st.theme, logo: st.logo, org: a.org, confidentiality: a.confidentiality, dashboard: a.dashboard, subtitle: a.subtitle });
       const path = await saveExport(a.file_name || a.title || 'classeur', blob, 'xlsx');
       const m = blob.meta || {};
       const desc = `onglets : ${(m.sheets || []).join(', ')} — ` + sheets.map((s) => `« ${s.name || 'Feuille'} » ${(s.rows || []).length} lignes × ${(s.headers || []).length} colonnes`).join(', ') + (m.dashboard ? `, tableau de bord automatique (${m.charts} graphique(s) natif(s))` : '') + ', ' + st.note;
-      return { text: deliverableText('Classeur Excel', path, desc + ', ' + fmtBytes(blob.size)) + (notes.length ? '\nNotes : ' + notes.join(' ; ') + '.' : ''), files: [path] };
+      const warn = checks.length ? `⚠️ CONTRÔLE DE COHÉRENCE — calculs incohérents dans les données fournies : ${checks.slice(0, 6).join(' ; ')}. Corrige le calcul (python), vérifie-le, puis régénère le classeur ; ne dis pas que les montants sont vérifiés tant que ce contrôle n'est pas propre.\n` : '';
+      return { text: warn + deliverableText('Classeur Excel', path, desc + ', ' + fmtBytes(blob.size)) + (notes.length ? '\nNotes : ' + notes.join(' ; ') + '.' : ''), files: [path] };
     },
   },
   {
@@ -6255,6 +6315,7 @@ Exemple : const m = new THREE.Mesh(new THREE.TorusKnotGeometry(1, .3, 200, 32), 
         html: { type: 'string', description: 'Ou : HTML complet à rendre directement' },
         question: { type: 'string', description: 'Ce qu\'il faut vérifier en particulier' },
         page: { type: 'integer', description: 'Page (PDF) ou n° de feuille (Excel : aperçu fidèle avec styles, logo et graphiques natifs dessinés)' },
+        sheet: { type: 'string', description: 'Excel : nom de la feuille à afficher (prioritaire sur page)' },
         width: { type: 'integer', description: 'Largeur de la fenêtre en px (défaut 1280 ; 390 pour mobile)' },
       },
     },
@@ -6271,7 +6332,7 @@ Exemple : const m = new THREE.Mesh(new THREE.TorusKnotGeometry(1, .3, 200, 32), 
       } else {
         if (!a.path) throw new Error('Fournis path (fichier) ou html.');
         const p = resolveWorkspacePath(a.path) || a.path;
-        shot = await Visual.renderFile(p, { page: a.page, width });
+        shot = await Visual.renderFile(p, { page: a.page, width, sheet: a.sheet });
         label = p;
       }
       const img = await Visual.downscale(shot.image, 1280, 0.8);
@@ -7947,7 +8008,7 @@ Ce que l'utilisateur veut vraiment, format et niveau de qualité attendus, crit�
 ## Raisonnement expert
 Les concepts, règles, formules, chiffres de référence ou bonnes pratiques du domaine à appliquer ; les hypothèses à poser explicitement.
 ## Pièges à éviter
-Erreurs fréquentes, ambiguïtés, oublis typiques.
+Erreurs fréquentes, ambiguïtés, oublis typiques. Respecte le périmètre demandé : n'ajoute aucune hypothèse non demandée (frais, assurance, taxes, scénarios en plus) aux résultats principaux — au besoin en option séparée et signalée. Pour un échéancier ou des soldes : solde de début = solde de fin de la période précédente, début − amortissement = fin, amortissement + intérêts = échéance, solde final nul.
 ## Plan d'exécution
 Étapes numérotées, avec l'outil à utiliser à chaque étape (et ses paramètres clés) et les contrôles (calculs refaits avec python, vérification visuelle, relecture).
 ## Contrôle qualité final
@@ -8494,6 +8555,30 @@ const ProviderQuirks = {
   },
   clear() { try { localStorage.removeItem(this.KEY); } catch {} },
 };
+/* Fichier demandé par l'utilisateur dans son dernier message (« génère un fichier Excel », « exporte en PDF »…)
+   et pas encore produit pendant cette réponse → { label, tool } ; sinon null */
+const DELIVERABLES = [
+  { re: /excel|xlsx|classeur|tableur/, ext: 'xlsx', label: 'Excel', tool: 'create_excel' },
+  { re: /powerpoint|pptx|diaporama|presentation|slides?/, ext: 'pptx', label: 'PowerPoint', tool: 'create_powerpoint' },
+  { re: /\bword\b|docx/, ext: 'docx', label: 'Word', tool: 'create_word' },
+  { re: /\bpdf\b/, ext: 'pdf', label: 'PDF', tool: 'create_pdf' },
+];
+function wantedDeliverable(o) {
+  const u = pathTo(o.chat, o.node.parentId).filter((n) => n.role === 'user').pop();
+  const t = normalizeText(u?.content || '');
+  if (!t) return null;
+  const KIND = 'excel|xlsx|classeur|tableur|word|docx|powerpoint|pptx|diaporama|presentation|pdf';
+  const asks = new RegExp(`\\b(fichier|classeur|document|rapport|livrable|presentation|diaporama|tableau|version|export)\\b[^.?!]{0,40}\\b(${KIND})\\b|\\b(en|un|une|au format|format|sous forme d'?u?n?e?)\\s+(${KIND})\\b|\\b(${KIND})\\s+(premium|complet|detaille|telechargeable)`).test(t);
+  const verb = /(gen[eè]re|\bcree|creer|produi|\bfai[st]\b|fais-moi|fournis|exporte|livre|retourne|renvoie|\bdonne|prepare|envoie|ou est|ou se trouve|telecharg|\bveux\b|voudrais|besoin|transforme|convertis|redige|construi|\bsors\b|\bmets\b)/.test(t);
+  if (!asks || !verb || /(joint|attache|ci-joint|piece jointe)\b/.test(t) && !/(retourne|renvoie|genere|produi|livre|exporte)/.test(t)) return null;
+  const d = DELIVERABLES.find((x) => x.re.test(t));
+  if (!d || !TOOLS.has(d.tool)) return null;
+  const made = (o.steps || []).some((s) => (s.toolCalls || []).some((tc) => (tc.display?.files || []).some((f) => String(f).toLowerCase().endsWith('.' + d.ext)) || (tc.name === d.tool && tc.status === 'done')));
+  if (made) return null;
+  // « Où est le fichier ? » alors qu'il existe déjà : le modèle peut répondre avec le lien
+  if (/ou est|ou se trouve|lien/.test(t) && pathTo(o.chat, o.node.parentId).some((n) => n.role === 'assistant' && nodeFiles(n).some((p) => String(p).toLowerCase().endsWith('.' + d.ext)))) return null;
+  return d;
+}
 /* Paramètres complexes attendus mais absents d'un appel d'outil (signe d'un fournisseur qui les a supprimés) */
 const DATA_KEYS = { create_excel: ['sheets', 'table', 'source_file', 'sources', 'csv', 'data', 'rows'] };
 function droppedParams(tool, raw) {
@@ -8714,6 +8799,19 @@ async function agentLoop(o) {
         o.nudge = `[Harness] Vérification : ${miss.map((x) => `« ${x} »`).join(', ')} n'existe pas dans l'espace de travail — le fichier n'a PAS été créé (aucun appel d'outil n'a abouti). Crée-le maintenant réellement avec l'outil adapté (create_excel, create_word…, en passant les données par table ou source_file si elles sont volumineuses), vérifie qu'il apparaît, puis donne la réponse finale. Ne dis jamais qu'un fichier existe sans l'avoir créé.`;
         o.run.note('Fichier annoncé mais inexistant : ' + miss.join(', '));
         continue;
+      }
+      // Livrable demandé mais non produit pendant cette réponse, ou action annoncée sans être exécutée : le modèle est relancé une fois
+      if (o.tools.length && !o.depth && !o.signal.aborted && !o.forceFinal && !(o.deliverChecks >= 1)) {
+        const want = wantedDeliverable(o);
+        const announced = !want && /\b(je (vais|cr[ée]e|g[ée]n[èe]re|lance|construis|assemble|passe [àa]|m'en occupe|commence|r[ée]dige|produis)|maintenant,? je|j'assemble|je cr[ée]e maintenant)\b[^.!?]{0,160}[.:…]?\s*$/i.test(String(step.content || '').trim().slice(-220));
+        if (want || announced) {
+          o.deliverChecks = 1;
+          o.nudge = want
+            ? `[Harness] L'utilisateur a demandé un fichier ${want.label} et aucun n'a été produit pendant cette réponse. Produis-le maintenant avec ${want.tool} (données : sources: "exports/….csv", sheets ou table), vérifie qu'il est bien créé, puis réponds avec son lien. Si la demande ne portait pas sur un fichier à produire, ignore ce message et termine.`
+            : "[Harness] Tu as annoncé une action sans l'exécuter. Exécute-la maintenant (appel d'outil), puis donne la réponse finale ; si elle n'est plus nécessaire, réponds directement.";
+          o.run.note(want ? `Livrable ${want.label} demandé mais non produit : modèle relancé` : 'Action annoncée sans être exécutée : modèle relancé');
+          continue;
+        }
       }
       break;
     }
