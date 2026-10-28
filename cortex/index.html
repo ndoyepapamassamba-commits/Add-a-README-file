@@ -825,7 +825,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-28 20:12 UTC', stamp: 202610282012, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-28 20:31 UTC', stamp: 202610282031, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -9933,18 +9933,43 @@ const LocalModels = {
     return out;
   },
   attach() { const keep = S.models.filter((m) => !m.local); const mine = this.entries(); S.models = [...keep, ...mine]; S.modelMap = new Map(S.models.map((m) => [m.id, m])); },
-  /* Serveur local : liste des modèles disponibles (/v1/models) */
+  /* Serveur local : liste des modèles disponibles (/v1/models) ; en cas d'échec, diagnostic précis (serveur absent ou CORS) */
   async refresh({ signal } = {}) {
     const c = this.cfg(); const base = String(c.url || '').replace(/\/+$/, '');
     if (!base) throw new Error('URL du serveur local vide');
-    const r = await fetch(base + '/models', { headers: c.key ? { Authorization: 'Bearer ' + c.key } : {}, signal });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    let r;
+    try { r = await fetch(base + '/models', { headers: c.key ? { Authorization: 'Bearer ' + c.key } : {}, signal, cache: 'no-store' }); }
+    catch (e) { if (signal?.aborted) throw e; const d = await this.diagnose(base); c.lastError = d; saveSettings(); throw new Error(d.title + ' ' + d.steps.join(' ')); }
+    if (!r.ok) { const d = { kind: 'http', title: `Le serveur répond mais renvoie HTTP ${r.status}.`, steps: [r.status === 401 || r.status === 403 ? 'Vérifiez la clé (LM Studio et vLLM peuvent en exiger une).' : 'Vérifiez l\'URL de l\'API : elle doit se terminer par /v1 (ex. http://localhost:11434/v1).'] }; c.lastError = d; saveSettings(); throw new Error(d.title + ' ' + d.steps.join(' ')); }
     const j = await r.json();
     c.models = (j.data || j.models || []).map((m) => ({ id: m.id || m.name, context_length: m.context_length || m.max_context_length || 32768 })).filter((m) => m.id);
-    c.enabled = true; c.lastSync = now();
+    c.enabled = true; c.lastSync = now(); c.lastError = null;
     if (c.models.length && !getApiKey() && !/^(local|webllm)\//.test(S.settings.defaultModel || '')) S.settings.defaultModel = 'local/' + c.models[0].id;
     saveSettings(); this.attach();
     return c.models;
+  },
+  /* « Failed to fetch » ne dit rien : on distingue serveur absent, origine refusée (CORS) et page https → réseau local */
+  async diagnose(base) {
+    let root = base; try { root = new URL(base).origin + '/'; } catch (e) {}
+    let up = false;
+    try { await fetch(root, { mode: 'no-cors', cache: 'no-store' }); up = true; } catch (e) { up = false; }
+    const isOllama = /:11434\b/.test(base), isLm = /:1234\b/.test(base), https = location.protocol === 'https:', file = location.protocol === 'file:';
+    if (!up) return { kind: 'down', title: `Aucun serveur ne répond à ${root} : rien n'écoute sur ce port.`, steps: isOllama ? ['1) Installez Ollama (ollama.com/download) et lancez-le (icône dans la barre des tâches, ou « ollama serve »).', '2) Téléchargez un modèle : ollama pull qwen3:8b (ou gpt-oss:20b avec 16 Go de RAM).', '3) Cliquez de nouveau sur « Tester ».'] : isLm ? ['1) Dans LM Studio : onglet Developer › Start Server (port 1234) et chargez un modèle.', '2) Activez « Enable CORS » dans les réglages du serveur.', '3) Cliquez de nouveau sur « Tester ».'] : ['Vérifiez que le serveur est lancé et que le port de l\'URL est le bon.'] };
+    const origin = file ? 'null (page ouverte en fichier local)' : location.origin;
+    const ollamaSteps = ['Ollama refuse l\'origine de cette page : autorisez-la avec la variable OLLAMA_ORIGINS (le plus simple : *).', `Windows : fermez Ollama (barre des tâches), puis dans un terminal : setx OLLAMA_ORIGINS "*" — relancez Ollama.`, `macOS : launchctl setenv OLLAMA_ORIGINS "*" puis relancez l'application Ollama.`, `Linux (service) : systemctl edit ollama.service → [Service] Environment="OLLAMA_ORIGINS=*" → systemctl daemon-reload && systemctl restart ollama.`];
+    const steps = isOllama ? ollamaSteps : isLm ? ['LM Studio : Developer › Settings › « Enable CORS », puis relancez le serveur.'] : ['Le serveur doit renvoyer les en-têtes CORS pour l\'origine ' + origin + ' (ex. Access-Control-Allow-Origin: *).'];
+    if (https) steps.push('Page ouverte en https : Chrome demande l\'autorisation « accéder aux appareils du réseau local » — acceptez-la (icône à gauche de l\'adresse).');
+    return { kind: 'cors', title: `Le serveur ${root} répond, mais il refuse les requêtes venant de Cortex (origine ${origin}).`, steps };
+  },
+  /* Catalogue WebLLM : identifiants vérifiés à l'exécution contre la liste préconstruite de la bibliothèque */
+  async webllmLib() { if (!this.webgpu) throw new ApiError("WebGPU indisponible dans ce navigateur : mettez Chrome ou Edge à jour (ou utilisez un serveur local Ollama).", 0); this.lib ||= await import(this.WEBLLM_URL); return this.lib; },
+  async resolveWebllmId(id) {
+    const lib = await this.webllmLib(); const list = (lib.prebuiltAppConfig && lib.prebuiltAppConfig.model_list) || [];
+    if (!list.length || list.some((m) => m.model_id === id)) return { id, size: (list.find((m) => m.model_id === id) || {}).vram_required_MB || null };
+    const base = id.replace(/-q4f16_1-MLC$/, '').toLowerCase();
+    const alt = list.find((m) => m.model_id.toLowerCase().startsWith(base) && /q4f16_1/.test(m.model_id)) || list.find((m) => m.model_id.toLowerCase().includes(base.split('-')[0]));
+    if (!alt) throw new ApiError(`Modèle « ${id} » absent de cette version de WebLLM. Disponibles : ${list.slice(0, 12).map((m) => m.model_id).join(', ')}…`, 0);
+    return { id: alt.model_id, size: alt.vram_required_MB || null, substituted: true };
   },
   cleanBody(body) { const b = { ...body }; for (const k of ['usage', 'provider', 'transforms', 'plugins', 'route', 'reasoning', 'include_reasoning', 'repetition_penalty', 'top_k', 'min_p', 'models', 'web_search_options']) delete b[k]; return b; },
   /* Requête vers le serveur local (même contrat que OR.request : raw → Response en flux, sinon JSON) */
@@ -9959,17 +9984,19 @@ const LocalModels = {
     if (!resp.ok) { let msg = 'HTTP ' + resp.status; try { const j = await resp.json(); msg = j.error?.message || j.error || msg; } catch (e) {} throw new ApiError('Serveur local : ' + (typeof msg === 'string' ? msg : JSON.stringify(msg)), resp.status); }
     return raw ? resp : resp.json();
   },
-  /* WebLLM : chargement du moteur (téléchargement du modèle la première fois), progression visible */
+  /* WebLLM : chargement du moteur (téléchargement du modèle la première fois, mis en cache par le navigateur), progression visible */
+  ready: new Set(),
   async engine(modelId) {
     if (this.engines.has(modelId)) return this.engines.get(modelId);
-    if (!this.webgpu) throw new ApiError("WebGPU indisponible dans ce navigateur : impossible d'exécuter un modèle dans le navigateur (utilisez Chrome/Edge récents, ou un serveur local Ollama).", 0);
     const p = (async () => {
-      this.lib ||= await import(this.WEBLLM_URL);
-      const eng = await this.lib.CreateMLCEngine(modelId, { initProgressCallback: (r) => { this.progress = { model: modelId, text: r.text, pct: r.progress }; S.onLocalProgress?.(this.progress); if (r.progress >= 1) setTimeout(() => { this.progress = null; S.onLocalProgress?.(null); }, 1500); } });
+      const lib = await this.webllmLib();
+      const res = await this.resolveWebllmId(modelId);
+      const eng = await lib.CreateMLCEngine(res.id, { initProgressCallback: (r) => { this.progress = { model: res.id, text: r.text, pct: r.progress }; S.onLocalProgress?.(this.progress); } });
+      this.ready.add(modelId); this.progress = null; S.onLocalProgress?.(null);
       return eng;
     })();
     this.engines.set(modelId, p);
-    try { return await p; } catch (e) { this.engines.delete(modelId); this.progress = null; throw new ApiError('Chargement du modèle impossible : ' + e.message, 0); }
+    try { return await p; } catch (e) { this.engines.delete(modelId); this.progress = null; S.onLocalProgress?.(null); throw new ApiError('Chargement du modèle impossible : ' + (e && e.message || e), 0); }
   },
   /* Outils pour un modèle sans function calling natif : protocole en texte, compris par Cortex (parseTextToolCalls) */
   textTools(messages, tools) {
@@ -10020,23 +10047,38 @@ const LocalModels = {
   setModels = function (list, ts) { setM(list, ts); LocalModels.attach(); };
 }
 /* Carte de réglages (page Modèles) */
+const WEBLLM_PICKS = [['Qwen3-4B-q4f16_1-MLC', 'Qwen3 4B — conseillé (≈ 2,5 Go, 6 Go de RAM/VRAM)'], ['Qwen3-1.7B-q4f16_1-MLC', 'Qwen3 1.7B — léger (≈ 1,2 Go)'], ['Qwen3-8B-q4f16_1-MLC', 'Qwen3 8B — plus fort (≈ 5 Go, 8 Go de VRAM)'], ['Qwen2.5-7B-Instruct-q4f16_1-MLC', 'Qwen2.5 7B Instruct (≈ 4,5 Go)'], ['Mistral-7B-Instruct-v0.3-q4f16_1-MLC', 'Mistral 7B Instruct v0.3 (≈ 4,5 Go)'], ['DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC', 'DeepSeek-R1 distill 7B — raisonnement (≈ 4,5 Go)']];
 function localModelsHTML() {
-  const c = LocalModels.cfg(); const p = LocalModels.progress;
-  const rows = LOCAL_CATALOG.map((m) => `<tr><td><b>${esc(m.name)}</b><div class="small muted">${esc(m.note || '')}</div></td><td class="small">${esc(m.license)}</td><td class="small">${esc(m.ram)}</td><td class="small mono">${m.ollama ? `ollama pull ${esc(m.ollama)}` : '—'}</td><td>${m.webllm && LocalModels.webgpu ? `<button class="btn sm" data-lm="webllm" data-id="${esc(m.webllm)}">${icon('download', 'sm')} Dans le navigateur</button>` : ''}</td></tr>`).join('');
+  const c = LocalModels.cfg(); const p = LocalModels.progress; const err = c.lastError; const cur = S.settings.defaultModel || '';
+  const rows = LOCAL_CATALOG.map((m) => `<tr><td><b>${esc(m.name)}</b><div class="small muted">${esc(m.note || '')}</div></td><td class="small">${esc(m.license)}</td><td class="small">${esc(m.ram)}</td><td class="small mono">${m.ollama ? `ollama pull ${esc(m.ollama)}` : '—'}</td><td>${m.webllm && LocalModels.webgpu ? `<button class="btn sm" data-lm="webllm" data-id="${esc(m.webllm)}">${icon('download', 'sm')} Navigateur</button>` : ''}</td></tr>`).join('');
+  const readyList = [...LocalModels.ready];
+  const browser = LocalModels.webgpu
+    ? `<div class="card" style="margin:10px 0;background:var(--accent-soft)"><b>${icon('zap', 'sm')} Sans rien installer : un modèle dans votre navigateur (WebGPU disponible)</b>
+        <p class="small muted" style="margin:6px 0 8px">Le modèle est téléchargé une seule fois (quelques Go, mis en cache) puis tourne sur votre carte graphique. Vos données ne quittent pas l'ordinateur. Comptez 2 à 10 minutes de téléchargement la première fois.</p>
+        <div class="row wrap" style="gap:8px;align-items:center"><select id="lm-pick" class="sel" style="min-width:300px">${WEBLLM_PICKS.map(([id, lab]) => `<option value="${esc(id)}" ${cur === 'webllm/' + id ? 'selected' : ''}>${esc(lab)}</option>`).join('')}</select><button class="btn sm primary" data-lm="webllm-pick">${icon('download', 'sm')} Télécharger et utiliser</button>${readyList.length ? `<span class="small" style="color:var(--ok,#16a34a)">✅ prêt : ${readyList.map((x) => esc(x)).join(', ')}</span>` : ''}</div>
+        <div id="lm-progress" class="small muted" style="margin-top:8px;${p ? '' : 'display:none'}"><div style="height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-bottom:4px"><div id="lm-bar" style="height:100%;width:${p ? Math.round((p.pct || 0) * 100) : 0}%;background:var(--accent);transition:width .3s"></div></div><span id="lm-ptext">${p ? esc(p.text || '') : ''}</span></div></div>`
+    : `<p class="small muted"><b>WebGPU indisponible ici</b> : impossible d'exécuter un modèle dans ce navigateur. Mettez Chrome ou Edge à jour (WebGPU est inclus depuis Chrome 113 / Edge 113) ou utilisez un serveur local ci-dessous.</p>`;
+  const diag = err ? `<div class="card" style="border-color:var(--danger);margin:8px 0"><b style="color:var(--danger)">${esc(err.title)}</b><ol class="small" style="margin:6px 0 0 18px;padding:0">${(err.steps || []).map((x) => `<li style="margin:3px 0">${esc(x)}</li>`).join('')}</ol></div>` : '';
   return `<div class="card" style="margin-bottom:14px" id="lm-card"><div class="row"><b class="grow">${icon('cpu', 'sm')} Modèles locaux — gratuits, téléchargeables, licence Apache 2.0 / MIT</b></div>
-    <p class="small muted">Cortex fonctionne sans le cloud : un serveur local (Ollama, LM Studio, llama.cpp, vLLM — API compatible OpenAI) ou un modèle exécuté dans le navigateur (WebLLM, WebGPU${LocalModels.webgpu ? ' disponible' : ' <b>indisponible ici</b>'}). Les modèles locaux apparaissent ensuite dans le sélecteur comme « Local · … » et « Navigateur · … », et bénéficient de tout le harness (outils, cerveau, Guru).</p>
-    <div class="row wrap" style="gap:8px;align-items:flex-end">${ui.field('Serveur local (URL de l\'API)', `<input id="lm-url" value="${esc(c.url || '')}" placeholder="http://localhost:11434/v1" style="width:260px">`)}${ui.field('Clé (si requise)', `<input id="lm-key" type="password" value="${esc(c.key || '')}" style="width:140px">`)}<button class="btn sm" data-lm="test">${icon('refresh', 'sm')} Tester et lister les modèles</button><label class="row small"><input type="checkbox" id="lm-booster" ${c.booster ? 'checked' : ''} style="accent-color:var(--accent)"> Utiliser aussi comme Guru / relecteur</label></div>
-    <div class="small muted" style="margin:6px 0 10px">${c.enabled && c.models?.length ? `${c.models.length} modèle(s) sur le serveur : ${c.models.map((m) => m.id).join(', ')}` : 'Aucun serveur connecté. Ollama : <span class="mono">OLLAMA_ORIGINS=* ollama serve</span> puis <span class="mono">ollama pull gpt-oss:20b</span>.'}${p ? `<div style="margin-top:6px"><b>Chargement ${esc(p.model)}</b> — ${esc(p.text || '')}</div>` : ''}</div>
+    <p class="small muted">Cortex fonctionne sans le cloud et sans clé : soit un modèle exécuté dans le navigateur (WebLLM), soit un serveur local (Ollama, LM Studio, llama.cpp, vLLM — API compatible OpenAI). Les modèles locaux apparaissent ensuite dans le sélecteur (« Navigateur · … », « Local · … ») et bénéficient de tout le harness (outils, cerveau, Guru).</p>
+    ${browser}
+    <div class="card" style="margin:10px 0"><b>${icon('server', 'sm')} Serveur local (Ollama, LM Studio…)</b>
+    <div class="row wrap" style="gap:8px;align-items:flex-end;margin-top:6px">${ui.field('URL de l\'API', `<input id="lm-url" value="${esc(c.url || '')}" placeholder="http://localhost:11434/v1" style="width:260px">`)}${ui.field('Clé (si requise)', `<input id="lm-key" type="password" value="${esc(c.key || '')}" style="width:140px">`)}<button class="btn sm" data-lm="test">${icon('refresh', 'sm')} Tester et lister les modèles</button><label class="row small"><input type="checkbox" id="lm-booster" ${c.booster ? 'checked' : ''} style="accent-color:var(--accent)"> Utiliser aussi comme Guru / relecteur</label></div>
+    <div class="small muted" style="margin:6px 0 4px">${c.enabled && c.models?.length ? `✅ ${c.models.length} modèle(s) sur le serveur : ${c.models.map((m) => esc(m.id)).join(', ')}` : 'Aucun serveur connecté. Ollama : installez-le (ollama.com), lancez-le, autorisez Cortex avec OLLAMA_ORIGINS=* puis <span class="mono">ollama pull qwen3:8b</span>.'}</div>${diag}</div>
     <details><summary class="small">Catalogue conseillé (licences permissives)</summary><table class="tbl" style="margin-top:8px"><tr><th>Modèle</th><th>Licence</th><th>Mémoire</th><th>Serveur local</th><th>Navigateur</th></tr>${rows}</table></details></div>`;
 }
 function bindLocalModels(b) {
+  S.onLocalProgress = (p) => { const box = document.querySelector('#lm-progress'); if (!box) return; if (!p) { box.style.display = 'none'; renderPageSoon(); return; } box.style.display = ''; const bar = box.querySelector('#lm-bar'), t = box.querySelector('#lm-ptext'); if (bar) bar.style.width = Math.round((p.pct || 0) * 100) + '%'; if (t) t.textContent = p.text || ''; };
+  if (b.__lmBound) return; b.__lmBound = true;
+  const loadWebllm = async (id, btn) => { if (btn) btn.disabled = true; toast('Téléchargement du modèle dans le navigateur (une seule fois)…', 'info', 6000); try { await LocalModels.engine(id); S.settings.defaultModel = 'webllm/' + id; saveSettings(); toast('Modèle prêt et choisi par défaut : ' + id, 'ok', 6000); } catch (er) { toast(er.message, 'err', 10000); } renderPage(); };
   b.addEventListener('click', async (e) => {
     const el = e.target.closest('[data-lm]'); if (!el) return;
     const c = LocalModels.cfg();
-    if (el.dataset.lm === 'test') { c.url = b.querySelector('#lm-url').value.trim(); c.key = b.querySelector('#lm-key').value.trim(); el.disabled = true; try { const l = await LocalModels.refresh(); toast(`${l.length} modèle(s) local(aux) disponibles`, 'ok'); } catch (er) { c.enabled = false; saveSettings(); toast('Serveur local : ' + er.message, 'err', 7000); } renderPage(); }
-    if (el.dataset.lm === 'webllm') { const id = el.dataset.id; toast('Téléchargement du modèle dans le navigateur (une seule fois)…', 'info', 5000); try { await LocalModels.engine(id); toast('Modèle prêt : ' + id, 'ok'); S.settings.defaultModel = 'webllm/' + id; saveSettings(); } catch (er) { toast(er.message, 'err', 8000); } renderPage(); }
+    if (el.dataset.lm === 'test') { c.url = b.querySelector('#lm-url').value.trim(); c.key = b.querySelector('#lm-key').value.trim(); el.disabled = true; try { const l = await LocalModels.refresh(); toast(`${l.length} modèle(s) local(aux) disponibles`, 'ok'); } catch (er) { c.enabled = false; saveSettings(); toast(c.lastError ? c.lastError.title : 'Serveur local : ' + er.message, 'err', 8000); } renderPage(); }
+    if (el.dataset.lm === 'webllm') loadWebllm(el.dataset.id, el);
+    if (el.dataset.lm === 'webllm-pick') loadWebllm(b.querySelector('#lm-pick').value, el);
   });
-  b.querySelector('#lm-booster')?.addEventListener('change', (e) => { LocalModels.cfg().booster = e.target.checked; saveSettings(); });
+  b.addEventListener('change', (e) => { if (e.target.id === 'lm-booster') { LocalModels.cfg().booster = e.target.checked; saveSettings(); } });
 }
 
 /* ============================== 08q · MESSAGERIE (Gmail, Outlook, fichiers .eml) ==============================
