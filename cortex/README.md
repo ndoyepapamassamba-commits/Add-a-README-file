@@ -80,6 +80,8 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
 - Tableaux essentiellement chiffrés (simulation, synthèse) : une colonne « Statut » de contrôle (« Vérifié ») ne
   déclenche plus de tableau de bord de registre ; en-têtes techniques rendus lisibles (« Capital_Restant_Début » →
   « Capital restant début », « Coût_pct » → « Coût (%) ») ; colonnes `_pct` au format pourcentage.
+  Une colonne « Échéance » n'est traitée comme une date que si elle contient des dates (« Echeance_FCFA » reste un
+  montant : plus de colonne Retard ni de tableau de bord de suivi sur un échéancier de prêt).
 
 ### Designs « ultra premium » (tous les modèles, même gratuits)
 - **7 thèmes** cohérents pour Excel, Word, PDF, PowerPoint et rapports HTML : Exécutif, Prestige (marine et or),

@@ -3939,6 +3939,11 @@ Office.xlsx = async function (sheets, opts = {}) {
     let oi = find(raw.owner_column, /owner|responsable|porteur|proprietaire|assign|en charge|interlocuteur|referent|pilote/);
     let dueIdx = find(raw.due_column, /echeance|deadline|due date|date limite|date cible|date butoir/);
     let recvIdx = find(null, /reception|recu le|date de reception|received|date de remise/);
+    // Une « échéance » n'est une date que si ses valeurs en sont (« Echeance_FCFA » = montant de l'échéance d'un prêt)
+    const dateLike = (v) => v instanceof Date || (typeof v === 'number' ? Number.isInteger(v) && v >= 20000 && v <= 60000 : /^\s*(\d{4}-\d{1,2}-\d{1,2}|\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{1,2}\s+\p{L}+\.?\s+\d{4})/u.test(String(v ?? '')));
+    const isDateCol = (i) => { if (i < 0) return false; const t = normalizeText(headers[i]); if (/fcfa|xof|eur\b|usd|montant|amount|mensualite|somme|valeur|\(.*(f|€|\$).*\)/.test(t)) return false; const v = rows.map((r) => r[i]).filter((x) => x != null && String(x).trim() !== ''); return v.length > 0 && v.filter(dateLike).length >= v.length * 0.6; };
+    if (dueIdx >= 0 && !isDateCol(dueIdx)) dueIdx = -1;
+    if (recvIdx >= 0 && !isDateCol(recvIdx)) recvIdx = -1;
     let lateIdx = headers.findIndex((h) => /retard/.test(normalizeText(h)));
     // Retard (j) calculé automatiquement si une échéance existe
     if (si >= 0 && dueIdx >= 0 && lateIdx < 0) {
@@ -3961,7 +3966,7 @@ Office.xlsx = async function (sheets, opts = {}) {
       if (si >= 0 && !declared.filter(Boolean).length) {
         const numCols = headers.filter((_, c) => c !== si && rows.length && rows.filter((r) => Office.cellValue(r[c]).n != null).length >= rows.length * 0.8).length;
         const distinct = new Set(vals).size;
-        if (numCols >= Math.max(1, (headers.length - 1) * 0.5) && (distinct < 2 || (oi < 0 && dueIdx < 0))) si = -1;
+        if (numCols >= Math.max(1, (headers.length - 1) * 0.5) && (distinct < 2 || (oi < 0 && dueIdx < 0) || (oi < 0 && numCols >= (headers.length - 1) * 0.6))) si = -1;
       }
     }
     if (gi >= 0 && rows.length > 5 && new Set(rows.map((r) => String(r[gi] ?? '').trim())).size > rows.length * 0.7) gi = -1;
@@ -4001,6 +4006,7 @@ Office.xlsx = async function (sheets, opts = {}) {
   const buildData = (M) => {
     const X = new XlSheet(M.name); X.tab = C.banner;
     const H = M.headers, R = M.rows, n = H.length, last = n - 1;
+    const looksDate = (i) => { const v = R.map((r) => r[i]).filter((x) => x != null && String(x).trim() !== ''); return v.length > 0 && v.filter((x) => x instanceof Date || (typeof x === 'number' ? Number.isInteger(x) && x >= 20000 && x <= 60000 : /^\s*(\d{4}-\d{1,2}-\d{1,2}|\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{1,2}\s+\p{L}+\.?\s+\d{4})/u.test(String(x)))).length >= v.length * 0.6; };
     const role = H.map((h, i) => {
       const t = normalizeText(h);
       if (i === M.si) return 'status';
@@ -4008,7 +4014,7 @@ Office.xlsx = async function (sheets, opts = {}) {
       if (i === M.gi) return 'group';
       if (i === M.oi) return 'owner';
       if (i <= 1 && /^(ref|n|no|num|numero|#|id|code|n°)\.?$|^ref\b/.test(t)) return 'ref';
-      if (i === M.dueIdx || i === M.recvIdx || /^date|\bdate\b|echeance/.test(t)) return 'date';
+      if (i === M.dueIdx || i === M.recvIdx || (/^date|\bdate\b|echeance/.test(t) && !/fcfa|xof|eur\b|usd|montant|amount|mensualite/.test(t) && looksDate(i))) return 'date';
       return 'auto';
     });
     // Formats numériques par colonne
@@ -4897,9 +4903,12 @@ const BUILTIN_TOOLS = [
       const code = String(a.code || '');
       const input = {};
       let size = 0;
-      for (const f of col('files').values()) {
-        if (f.encoding === 'base64' || size > 20e6) continue;
-        if (code.includes(f.id) || code.includes(f.id.split('/').pop())) { input[f.id] = f.content || ''; size += (f.content || '').length; }
+      const cited = (f) => code.includes(f.id) || code.includes(f.id.split('/').pop());
+      for (const f of [...col('files').values()].filter((x) => x.encoding !== 'base64').sort((x, y) => (cited(y) - cited(x)) || ((y.updatedAt || 0) - (x.updatedAt || 0)))) {
+        const n = (f.content || '').length;
+        if (!cited(f) && size + n > 8e6) continue;
+        if (size + n > 20e6) break;
+        input[f.id] = f.content || ''; size += n;
       }
       const r = await Sandbox.runJS(code, {}, { signal: ctx.signal, files: input });
       const parts = [];
@@ -8834,6 +8843,13 @@ async function agentLoop(o) {
         step.superseded = 'claim';
         o.nudge = `[Harness] Vérification : ${miss.map((x) => `« ${x} »`).join(', ')} n'existe pas dans l'espace de travail — le fichier n'a PAS été créé (aucun appel d'outil n'a abouti). Crée-le maintenant réellement avec l'outil adapté (create_excel, create_word…, en passant les données par table ou source_file si elles sont volumineuses), vérifie qu'il apparaît, puis donne la réponse finale. Ne dis jamais qu'un fichier existe sans l'avoir créé.`;
         o.run.note('Fichier annoncé mais inexistant : ' + miss.join(', '));
+        continue;
+      }
+      // Réponse finale vide après un travail outillé : le modèle est relancé une fois pour rédiger sa réponse
+      if (!String(step.content || '').trim() && !o.depth && !o.signal.aborted && !o.emptyChecks && o.steps.some((s) => (s.toolCalls || []).length)) {
+        o.emptyChecks = 1;
+        o.nudge = "[Harness] Ta réponse est vide. Rédige maintenant la réponse finale pour l'utilisateur : ce qui a été fait, les résultats clés et les liens des fichiers produits (format [nom](workspace:chemin)).";
+        o.run.note('Réponse finale vide : modèle relancé');
         continue;
       }
       // Livrable demandé mais non produit pendant cette réponse, ou action annoncée sans être exécutée : le modèle est relancé une fois
