@@ -825,7 +825,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-28 20:54 UTC', stamp: 202610282054, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-28 21:06 UTC', stamp: 202610282106, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -9921,15 +9921,15 @@ function localMode() { return !!(S.settings.localServer && S.settings.localServe
 const LocalModels = {
   WEBLLM_URL: 'https://esm.run/@mlc-ai/web-llm@0.2.79',
   engines: new Map(), lib: null, progress: null,
-  cfg() { return S.settings.localServer || (S.settings.localServer = { url: 'http://localhost:11434/v1', key: '', enabled: false, booster: false }); },
+  cfg() { const c = S.settings.localServer || (S.settings.localServer = { url: 'http://localhost:11434/v1', key: '', enabled: false, booster: false, ctx: 8192 }); if (!c.ctx) c.ctx = 8192; return c; },
   get webgpu() { return !!navigator.gpu; },
   entry(id, name, extra) { return Object.assign({ id, name, local: true, pricing: { prompt: '0', completion: '0' }, context_length: 32768, supported_parameters: ['tools', 'temperature', 'max_tokens', 'top_p', 'seed', 'stop'], architecture: { modality: 'text->text', input_modalities: ['text'], output_modalities: ['text'] }, description: 'Modèle local : vos données ne quittent pas votre ordinateur.' }, extra || {}); },
   /* Entrées à ajouter au catalogue de Cortex : serveur local (liste en cache) et WebLLM (si WebGPU) */
   entries() {
     const out = [];
     const c = this.cfg();
-    if (c.enabled) for (const m of c.models || []) out.push(this.entry('local/' + m.id, 'Local · ' + m.id, { context_length: m.context_length || 32768, local_server: true }));
-    if (this.webgpu) for (const m of LOCAL_CATALOG) if (m.webllm) out.push(this.entry('webllm/' + m.webllm, 'Navigateur · ' + m.name, { context_length: 16384, webllm: true, license: m.license, ram: m.ram }));
+    if (c.enabled) for (const m of c.models || []) out.push(this.entry('local/' + m.id, 'Local · ' + m.id, { context_length: c.ctx || 8192, local_server: true }));
+    if (this.webgpu) for (const m of LOCAL_CATALOG) if (m.webllm) out.push(this.entry('webllm/' + m.webllm, 'Navigateur · ' + m.name, { context_length: c.ctx || 8192, webllm: true, license: m.license, ram: m.ram }));
     return out;
   },
   attach() { const keep = S.models.filter((m) => !m.local); const mine = this.entries(); S.models = [...keep, ...mine]; S.modelMap = new Map(S.models.map((m) => [m.id, m])); },
@@ -9994,7 +9994,7 @@ const LocalModels = {
       // Un seul modèle résident à la fois : les autres sont déchargés de la mémoire graphique (ils restent en cache disque)
       for (const [id, prev] of [...this.engines]) { if (id === modelId) continue; this.engines.delete(id); this.ready.delete(id); try { const e = await prev; if (e && e.unload) await e.unload(); } catch (e) {} }
       const res = await this.resolveWebllmId(modelId);
-      const eng = await lib.CreateMLCEngine(res.id, { initProgressCallback: (r) => { this.progress = { model: res.id, text: r.text, pct: r.progress }; S.onLocalProgress?.(this.progress); } });
+      const eng = await lib.CreateMLCEngine(res.id, { initProgressCallback: (r) => { this.progress = { model: res.id, text: r.text, pct: r.progress }; S.onLocalProgress?.(this.progress); } }, { context_window_size: this.cfg().ctx || 8192 });
       this.ready.add(modelId); this.progress = null; S.onLocalProgress?.(null);
       return eng;
     })();
@@ -10004,7 +10004,7 @@ const LocalModels = {
   /* Outils pour un modèle sans function calling natif : protocole en texte, compris par Cortex (parseTextToolCalls) */
   textTools(messages, tools) {
     if (!tools?.length) return messages;
-    const spec = tools.map((t) => `- ${t.function.name} : ${truncate(String(t.function.description || ''), 300)}\n  paramètres : ${JSON.stringify(t.function.parameters || {})}`).join('\n');
+    const spec = tools.map((t) => { const P = t.function.parameters || {}; const req = P.required || []; const ps = Object.entries(P.properties || {}).slice(0, 10).map(([k, v]) => `${k}${req.includes(k) ? '*' : ''}: ${v.type || 'any'}${v.enum ? ' (' + v.enum.slice(0, 6).join('|') + ')' : ''}`).join(', '); return `- ${t.function.name}(${ps}) : ${truncate(String(t.function.description || ''), 160)}`; }).join('\n');
     const instr = `\n\n# Outils (appel écrit en texte)\nTu disposes des outils ci-dessous. Pour en appeler un, réponds UNIQUEMENT par un bloc :\n\`\`\`json\n{"tool": "nom_de_l_outil", "arguments": { … }}\n\`\`\`\nUn seul appel par réponse, sans autre texte ; tu recevras ensuite le résultat et tu continueras. Quand la tâche est finie, réponds normalement, sans bloc.\n${spec}`;
     const out = messages.map((m) => {
       if (m.role === 'tool') return { role: 'user', content: `Résultat de l'outil (${m.name || 'outil'}) :\n${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}` };
@@ -10067,7 +10067,8 @@ function localModelsHTML() {
     <p class="small muted">Cortex fonctionne sans le cloud et sans clé : soit un modèle exécuté dans le navigateur (WebLLM), soit un serveur local (Ollama, LM Studio, llama.cpp, vLLM — API compatible OpenAI). Les modèles locaux apparaissent ensuite dans le sélecteur (« Navigateur · … », « Local · … ») et bénéficient de tout le harness (outils, cerveau, Guru).</p>
     ${browser}
     <div class="card" style="margin:10px 0"><b>${icon('server', 'sm')} Serveur local (Ollama, LM Studio…)</b>
-    <div class="row wrap" style="gap:8px;align-items:flex-end;margin-top:6px">${ui.field('URL de l\'API', `<input id="lm-url" value="${esc(c.url || '')}" placeholder="http://localhost:11434/v1" style="width:260px">`)}${ui.field('Clé (si requise)', `<input id="lm-key" type="password" value="${esc(c.key || '')}" style="width:140px">`)}<button class="btn sm" data-lm="test">${icon('refresh', 'sm')} Tester et lister les modèles</button><label class="row small"><input type="checkbox" id="lm-booster" ${c.booster ? 'checked' : ''} style="accent-color:var(--accent)"> Utiliser aussi comme Guru / relecteur</label></div>
+    <div class="row wrap" style="gap:8px;align-items:flex-end;margin-top:6px">${ui.field('URL de l\'API', `<input id="lm-url" value="${esc(c.url || '')}" placeholder="http://localhost:11434/v1" style="width:260px">`)}${ui.field('Clé (si requise)', `<input id="lm-key" type="password" value="${esc(c.key || '')}" style="width:140px">`)}<button class="btn sm" data-lm="test">${icon('refresh', 'sm')} Tester et lister les modèles</button>${ui.field('Fenêtre de contexte', `<select id="lm-ctx" class="sel">${[4096, 8192, 16384, 32768].map((n) => `<option value="${n}" ${(c.ctx || 8192) === n ? 'selected' : ''}>${n.toLocaleString('fr-FR')} tokens</option>`).join('')}</select>`)}<label class="row small"><input type="checkbox" id="lm-booster" ${c.booster ? 'checked' : ''} style="accent-color:var(--accent)"> Utiliser aussi comme Guru / relecteur</label></div>
+    <div class="small muted" style="margin-top:4px">Les modèles locaux reçoivent un prompt condensé (mode léger) pour tenir dans cette fenêtre. Plus grande fenêtre = plus de mémoire graphique (navigateur) ; pour Ollama, fixez aussi OLLAMA_CONTEXT_LENGTH=${c.ctx || 8192}.</div>
     <div class="small muted" style="margin:6px 0 4px">${c.enabled && c.models?.length ? `✅ ${c.models.length} modèle(s) sur le serveur : ${c.models.map((m) => esc(m.id)).join(', ')}` : 'Aucun serveur connecté. Ollama : installez-le (ollama.com), lancez-le, autorisez Cortex avec OLLAMA_ORIGINS=* puis <span class="mono">ollama pull qwen3:8b</span>.'}</div>${diag}</div>
     <details><summary class="small">Catalogue conseillé (licences permissives)</summary><table class="tbl" style="margin-top:8px"><tr><th>Modèle</th><th>Licence</th><th>Mémoire</th><th>Serveur local</th><th>Navigateur</th></tr>${rows}</table></details></div>`;
 }
@@ -10093,7 +10094,7 @@ function bindLocalModels(b) {
     if (el.dataset.lm === 'webllm-pick') loadWebllm(b.querySelector('#lm-pick').value, el);
     if (el.dataset.lm === 'use') { useLocalModelNow('webllm/' + el.dataset.id); try { closePage(); } catch (e2) {} toast('Modèle du navigateur sélectionné : écrivez votre message.', 'ok', 5000); }
   });
-  b.addEventListener('change', (e) => { if (e.target.id === 'lm-booster') { LocalModels.cfg().booster = e.target.checked; saveSettings(); } });
+  b.addEventListener('change', async (e) => { if (e.target.id === 'lm-booster') { LocalModels.cfg().booster = e.target.checked; saveSettings(); } if (e.target.id === 'lm-ctx') { LocalModels.cfg().ctx = +e.target.value || 8192; saveSettings(); LocalModels.attach(); for (const [id, p] of [...LocalModels.engines]) { LocalModels.engines.delete(id); LocalModels.ready.delete(id); try { const eng = await p; if (eng && eng.unload) await eng.unload(); } catch (er) {} } toast('Fenêtre de contexte : ' + LocalModels.cfg().ctx + ' tokens (le modèle du navigateur sera rechargé au prochain message)', 'ok', 5000); } });
 }
 
 /* ============================== 08q · MESSAGERIE (Gmail, Outlook, fichiers .eml) ==============================
@@ -10587,7 +10588,7 @@ function estMessages(msgs) {
 const FS_TOOLS = ['list_files', 'read_file', 'write_file', 'edit_file', 'grep_files', 'python'];
 const dedicatedNames = (names) => ['create_excel', 'create_word', 'create_pdf', 'create_powerpoint', 'create_html_report'].filter((n) => names.includes(n));
 const DELIVERABLE_TOOL_NAMES = ['create_excel', 'create_word', 'create_pdf', 'create_powerpoint', 'create_video', 'create_3d', 'generate_image', 'python', 'write_file'];
-async function buildSystem(chat, c, query, { summary, tools = [], sub = false, skills = [], rea = '', guru = null, research = '' } = {}) {
+async function buildSystem(chat, c, query, { summary, tools = [], sub = false, skills = [], rea = '', guru = null, research = '', compact = false } = {}) {
   const sec = { base: fillVars(c.systemPrompt || '', { model: modelName(c.model) }) };
   const ctx = [];
   if (S.settings.harness.injectDate) ctx.push(`Date et heure actuelles : ${new Date().toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })} (fuseau ${Intl.DateTimeFormat().resolvedOptions().timeZone}).`);
@@ -10648,12 +10649,51 @@ Mise en forme : sobre par défaut. Applique la charte que l'utilisateur demande 
 Utilise-les quand la qualité en dépend ; inutile pour une tâche simple. Objectif : un résultat de niveau expert, rapidement.`;
   if (S.settings.harness.permissionMode === 'plan' && tools.length && !sub) sec.plan = `# MODE PLAN (actif)
 Tu es en mode plan : n'effectue AUCUNE modification (pas d'écriture de fichier, pas de livrable, pas d'action externe). Analyse d'abord (lecture de fichiers, recherche, questions), puis appelle propose_plan avec un plan détaillé et numéroté : objectif, étapes, outils, fichiers concernés, livrables, risques. L'exécution commencera quand l'utilisateur aura approuvé le plan.`;
+  if (compact) compactSections(sec, tools, skills);
   const text = [sec.base, sec.context, sec.project, sec.memory, sec.kb, sec.todos, sec.files, sec.tools, sec.quality, sec.boost, sec.methods, sec.deliver, sec.empreinte, sec.skills, sec.skillsActive, sec.research, sec.rea, sec.guru, sec.plan, sec.summary].filter(Boolean).join('\n\n');
   return { text, sec };
 }
 function contextLimit(model) {
   const lim = S.settings.harness.contextLimit;
   return Math.max(4000, Math.min(modelCtx(model), lim > 0 ? lim : Infinity));
+}
+/* ---------- Mode léger : modèles locaux et petites fenêtres de contexte (≤ 8k) ----------
+   Le prompt système complet de Cortex et les schémas de ses outils dépassent 10k tokens : un modèle local (fenêtre 4-8k)
+   reçoit une version condensée (sections essentielles, outils limités, schémas élagués) pour que tout tienne. */
+const isCompactModel = (model) => !!(getModel(model)?.local) || contextLimit(model) <= 8192;
+function compactSections(sec, tools, skills) {
+  if (sec.base) sec.base = truncate(sec.base, 2500);
+  if (sec.tools) sec.tools = `# Agent (mode léger)\nOutils : ${tools.map((t) => t.name).join(', ')}. Un appel d'outil à la fois ; lis son résultat avant de continuer ; n'invente jamais un résultat. Tout calcul par code (python ou run_javascript). Fichier produit : ouvre-le (read_file) avant de conclure.`;
+  if (sec.quality) sec.quality = "# Réponse finale\nRésultat en 2 ou 3 phrases, puis Résultats (chiffres), Fichiers, Méthode, Contrôles, Points d'attention. Aucun chiffre inventé, aucun « … ».";
+  delete sec.methods; delete sec.boost; delete sec.empreinte;
+  if (sec.deliver) sec.deliver = '# Fichiers\nQuand un fichier est demandé, produis-le réellement (create_excel / create_word / python dans exports/). Mise en forme sobre par défaut.';
+  if (sec.skills) sec.skills = skills.length ? '' : truncate(sec.skills, 600);
+  if (sec.skillsActive) sec.skillsActive = truncate(sec.skillsActive, 4000);
+  if (sec.kb) sec.kb = truncate(sec.kb, 2500);
+  if (sec.memory) sec.memory = truncate(sec.memory, 1500);
+  if (sec.files) sec.files = truncate(sec.files, 800);
+  if (sec.research) sec.research = truncate(sec.research, 1800);
+  if (sec.guru) sec.guru = truncate(sec.guru, 1500);
+  if (sec.summary) sec.summary = truncate(sec.summary, 1500);
+  if (sec.project) sec.project = truncate(sec.project, 1500);
+  if (sec.rea) sec.rea = truncate(sec.rea, 800);
+}
+function compactTools(tools, task, contract) {
+  const CORE = ['read_file', 'write_file', 'list_files', 'python', 'run_javascript', 'web_search', 'fetch_url', 'todo_write'];
+  const FMT = { xlsx: 'create_excel', docx: 'create_word', pptx: 'create_powerpoint', pdf: 'create_pdf', html: 'create_html_report', png: 'create_chart', csv: 'write_file', eml: 'draft_email' };
+  const SKIP = new Set(['ask_experts', 'deep_think', 'think', 'verify_answer', 'find_tools', 'load_skill', 'discover_tools', 'rea', 'experience', 'design_studio', 'spawn_agent', 'tool_workshop', 'github_explore', 'connect_mcp']);
+  const want = new Set(CORE); for (const f of contract?.formats || []) if (FMT[f]) want.add(FMT[f]);
+  try { for (const t of suggestTools(task, 3)) want.add(t.name); } catch (e) {}
+  const byName = new Map(tools.map((t) => [t.name, t]));
+  const kept = []; for (const n of want) if (byName.has(n) && !SKIP.has(n)) kept.push(byName.get(n));
+  for (const t of tools) if (kept.length < 8 && !kept.includes(t) && !SKIP.has(t.name)) kept.push(t);
+  tools.splice(0, tools.length, ...kept.slice(0, 10));
+  return tools;
+}
+function compactToolSchema(t) {
+  const prune = (sch, depth) => { if (!sch || typeof sch !== 'object') return sch; const o = {}; if (sch.type) o.type = sch.type; if (sch.enum) o.enum = sch.enum.slice(0, 12); if (sch.description) o.description = truncate(String(sch.description), depth ? 70 : 90); if (sch.items && depth < 3) o.items = prune(sch.items, depth + 1); if (sch.properties && depth < 3) { const req = sch.required || []; const keys = [...req, ...Object.keys(sch.properties).filter((k) => !req.includes(k))].slice(0, 12); o.properties = {}; for (const k of keys) if (sch.properties[k]) o.properties[k] = prune(sch.properties[k], depth + 1); if (req.length) o.required = req.filter((k) => keys.includes(k)); } return o; };
+  const full = toolSchema(t); const p = prune(full.function.parameters || { type: 'object', properties: {} }, 0); if (!p.type) p.type = 'object';
+  return { type: 'function', function: { name: full.function.name, description: truncate(String(full.function.description || ''), 260), parameters: p } };
 }
 
 /* ---------- Points de restauration des fichiers (annuler les modifications d'une réponse) ---------- */
@@ -10814,7 +10854,8 @@ function buildBody(o, messages, toolDefs) {
     else body.reasoning = { effort: p.reasoning };
   } else if (o.effortBoost && !o.depth && modelSupports(o.model, 'reasoning')) body.reasoning = { effort: o.effortBoost };
   if (toolDefs.length) {
-    body.tools = toolDefs.map(toolSchema);
+    if (o.compact && !body.max_tokens) body.max_tokens = Math.min(2048, Math.floor(contextLimit(o.model) / 3));
+    body.tools = toolDefs.map(o.compact ? compactToolSchema : toolSchema);
     if (o.forceFinal) body.tool_choice = 'none';
     if (!S.settings.harness.parallelTools && modelSupports(o.model, 'parallel_tool_calls')) body.parallel_tool_calls = false;
   }
@@ -11461,8 +11502,8 @@ async function runAssistant(chat, node, opts = {}) {
     // Skills : load_skill disponible dès qu'il y a des outils ; activation automatique selon le message
     let skills = [];
     if (tools.length && Skills.enabled().length) {
-      if (!tools.some((t) => t.name === 'load_skill') && toolPerm(LOAD_SKILL_TOOL) !== 'off') tools.push(LOAD_SKILL_TOOL);
-      if (S.settings.harness.toolSearch !== false && !tools.some((t) => t.name === 'find_tools') && toolPerm(FIND_TOOLS_TOOL) !== 'off') tools.push(FIND_TOOLS_TOOL);
+      if (!isCompactModel(model) && !tools.some((t) => t.name === 'load_skill') && toolPerm(LOAD_SKILL_TOOL) !== 'off') tools.push(LOAD_SKILL_TOOL);
+      if (!isCompactModel(model) && S.settings.harness.toolSearch !== false && !tools.some((t) => t.name === 'find_tools') && toolPerm(FIND_TOOLS_TOOL) !== 'off') tools.push(FIND_TOOLS_TOOL);
       skills = Skills.autoFor(userNode?.content || '');
       for (const sk of skills) for (const t of resolveTools(sk.tools || [])) if (!tools.some((x) => x.name === t.name)) tools.push(t);
       if (skills.length) tracer.note('Skill(s) activé(s) : ' + skills.map((x) => x.name).join(', '));
@@ -11472,9 +11513,10 @@ async function runAssistant(chat, node, opts = {}) {
     const H = S.settings.harness;
     const toolsOK = tools.length > 0 && modelSupports(model, 'tools') && !opts.custom;
     const task = userNode?.content || '';
+    const compact = isCompactModel(model); node.compact = compact;
     const addTool = (t) => { if (t && toolPerm(t) !== 'off' && !tools.some((x) => x.name === t.name)) tools.push(t); };
     let rea = null;
-    if (toolsOK) {
+    if (toolsOK && !compact) {
       if (H.boosters !== false && boostAllowed(model)) BOOSTERS.forEach(addTool);
       [REA_TOOL, EXPERIENCE_TOOL, DISCOVER_TOOLS].forEach(addTool);
       if (tools.some((t) => /^create_/.test(t.name))) addTool(DESIGN_STUDIO);
@@ -11493,6 +11535,7 @@ async function runAssistant(chat, node, opts = {}) {
     if (toolsOK && task.trim() && !node.steps.some((x) => x.synthetic === 'cerveau')) {
       const t1 = now();
       contract = Mind.contract(task, { attachments: userNode?.attachments || [], tools }); node.contract = contract;
+      if (compact) { compactTools(tools, task, contract); tracer.note('Mode léger (modèle local / petite fenêtre) : ' + tools.length + ' outils, prompt condensé'); }
       const st = { id: uid('s'), synthetic: 'cerveau', content: '', toolCalls: [{ id: uid('mi'), name: 'cerveau', args: JSON.stringify({ task: truncate(task, 120) }), parsed: { task: truncate(task, 120) }, status: 'running', progress: 'Cortex comprend la demande et rassemble le contexte…', startedAt: t1 }], status: 'done', startedAt: t1 };
       node.steps.push(st); onUpdate();
       const mtc = st.toolCalls[0];
@@ -11504,7 +11547,7 @@ async function runAssistant(chat, node, opts = {}) {
     // GURU : sur une tâche complexe, le plus puissant modèle gratuit de raisonnement écrit la stratégie experte que le modèle exécute
     let guru = null;
     // (pas de Guru ni de relecture en mode Comparer / Arène : la comparaison des modèles doit rester équitable)
-    const complex = !opts.custom && !userNode?.compare && boostAllowed(model) && H.boosters !== false && Guru.needed(task, (userNode?.attachments || []).length);
+    const complex = !opts.custom && !userNode?.compare && boostAllowed(model) && H.boosters !== false && !(compact && !getApiKey()) && Guru.needed(task, (userNode?.attachments || []).length);
     // Suite d'une tâche déjà stratégisée (ex. « Plan approuvé », « continue ») : on garde la stratégie précédente
     const prevA = path.slice(0, -1).reverse().find((n) => n.role === 'assistant');
     const prevGuru = prevA?.steps?.find((x) => x.synthetic === 'guru' && x.toolCalls[0]?.status === 'done');
@@ -11546,13 +11589,13 @@ async function runAssistant(chat, node, opts = {}) {
     else {
       await bridgeAttachments(chat, path, model, tracer, ctrl.signal);
       let h = buildHistory(chat, path, model);
-      let sys = await buildSystem(chat, c, userNode?.content || '', { summary: h.summary, tools, skills, rea: rea?.text, guru, research: pre?.text || '' });
-      const limit = contextLimit(model) - Math.max(+c.params.max_tokens || 0, 4096);
-      let est = estTokens(sys.text) + estMessages(h.messages) + estTokens(JSON.stringify(tools.map(toolSchema)));
+      let sys = await buildSystem(chat, c, userNode?.content || '', { summary: h.summary, tools, skills, rea: rea?.text, guru, research: pre?.text || '', compact });
+      const limit = contextLimit(model) - (compact ? Math.min(Math.max(+c.params.max_tokens || 0, 1536), Math.floor(contextLimit(model) / 3)) : Math.max(+c.params.max_tokens || 0, 4096));
+      let est = estTokens(sys.text) + estMessages(h.messages) + estTokens(JSON.stringify(tools.map(compact ? compactToolSchema : toolSchema)));
       if (S.settings.harness.autoCompact && est > limit * S.settings.harness.compactAt && path.length > (S.settings.harness.keepRecent || 6) + 1) {
         if (await compactChat(chat, path, tracer)) {
           h = buildHistory(chat, path, model);
-          sys = await buildSystem(chat, c, userNode?.content || '', { summary: h.summary, tools, skills, rea: rea?.text, guru, research: pre?.text || '' });
+          sys = await buildSystem(chat, c, userNode?.content || '', { summary: h.summary, tools, skills, rea: rea?.text, guru, research: pre?.text || '', compact });
           est = estTokens(sys.text) + estMessages(h.messages);
         }
       }
@@ -11562,12 +11605,12 @@ async function runAssistant(chat, node, opts = {}) {
         est -= estMessages([dropped]);
         if (!node.notes.includes('trunc')) { node.notes.push('trunc'); tracer.note('Historique tronqué pour tenir dans le contexte'); }
       }
-      node.ctx = { est, limit: contextLimit(model), sec: Object.fromEntries(Object.entries(sys.sec).map(([k, v]) => [k, estTokens(v)])), history: estMessages(h.messages), tools: estTokens(JSON.stringify(tools.map(toolSchema))) };
+      node.ctx = { est, limit: contextLimit(model), sec: Object.fromEntries(Object.entries(sys.sec).map(([k, v]) => [k, estTokens(v)])), history: estMessages(h.messages), tools: estTokens(JSON.stringify(tools.map(compact ? compactToolSchema : toolSchema))) };
       system = sys.text; history = h.messages;
     }
     const notes = [];
     Checkpoints.begin(node.id);
-    const loopOpts = { chat, node, steps: node.steps, model, cfg: c, system, history, tools, depth: 0, signal: ctrl.signal, run: tracer, onUpdate, maxSteps: c.maxSteps, notes, effortBoost: complex ? 'medium' : null };
+    const loopOpts = { chat, node, steps: node.steps, model, cfg: c, system, history, tools, depth: 0, compact, signal: ctrl.signal, run: tracer, onUpdate, maxSteps: c.maxSteps, notes, effortBoost: complex ? 'medium' : null };
     await agentLoop(loopOpts);
     // CERVEAU : vérification sur preuves (livrables, fichiers, chiffres, erreurs d'outils) puis correction si nécessaire — pour tous les modèles
     if (toolsOK && !ctrl.signal.aborted && !loopOpts.stopAfter && contract && H.audit !== false && H.permissionMode !== 'plan' && !userNode?.compare && ['analyse', 'livrable', 'code', 'recherche'].includes(contract.kind)) {
