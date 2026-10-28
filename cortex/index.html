@@ -825,7 +825,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-28 19:54 UTC', stamp: 202610281954, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-28 20:01 UTC', stamp: 202610282001, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -5332,14 +5332,33 @@ function customToolDef(t) {
     name: fnSafe(t.name), title: t.name, icon: 'wrench', group: 'custom', perm: t.perm || 'auto', kind: 'custom', ref: 'custom:' + t.id,
     summary: t.description, description: t.description, parameters: safeJSON(t.parameters, { type: 'object', properties: {} }) || { type: 'object', properties: {} },
     args: (a) => truncate(JSON.stringify(a), 90),
-    async run(a, ctx) {
-      const r = await Sandbox.runJS(t.code, a, { signal: ctx.signal, mode: 'raw' });
-      if (!r.ok) throw new Error(r.error + (r.logs?.length ? '\n' + r.logs.join('\n') : ''));
-      const v = r.value;
-      const text = v === undefined ? '(aucun résultat)' : typeof v === 'string' ? v : JSON.stringify(v, null, 2);
-      return clip(text + (r.logs?.length ? '\n\nConsole :\n' + r.logs.join('\n') : ''));
-    },
+    async run(a, ctx) { return runCustomTool(t, a, ctx); },
   };
+}
+/* Exécution d'un outil personnalisé selon son moteur : worker JS (défaut), Studio (DOM, canvas, kit cx) ou Python */
+async function runCustomTool(t, a, ctx) {
+  const rt = t.runtime || 'js';
+  t.uses = (t.uses || 0) + 1; t.lastUsed = now();
+  if (rt === 'studio') {
+    const r = await studioExec('const args = ' + JSON.stringify(a || {}) + ';\n' + t.code, ctx);
+    if (r.error) throw new Error(r.text);
+    return { text: r.text, files: r.files };
+  }
+  if (rt === 'python') {
+    const r = await Sandbox.runPy('import json\nargs = json.loads(' + JSON.stringify(JSON.stringify(a || {})) + ')\n' + t.code, { signal: ctx.signal, onProgress: (p) => ctx.progress?.(p) });
+    const parts = [];
+    if (r.stdout?.trim()) parts.push(r.stdout.trimEnd());
+    if (r.ok && r.result != null) parts.push('Résultat : ' + r.result);
+    if (!r.ok) throw new Error((r.error || 'erreur Python') + (r.stderr ? '\n' + r.stderr : ''));
+    let files = [];
+    if (r.files?.length && S.settings.harness.permissionMode !== 'readonly') { files = absorbPyFiles(r.files); parts.push('Fichiers écrits : ' + files.join(', ')); }
+    return { text: clip(parts.join('\n\n') || '(exécuté sans sortie)'), files, images: (r.images || []).map((b) => 'data:image/png;base64,' + b) };
+  }
+  const r = await Sandbox.runJS(t.code, a, { signal: ctx.signal, mode: 'raw' });
+  if (!r.ok) throw new Error(r.error + (r.logs?.length ? '\n' + r.logs.join('\n') : ''));
+  const v = r.value;
+  const text = v === undefined ? '(aucun résultat)' : typeof v === 'string' ? v : JSON.stringify(v, null, 2);
+  return clip(text + (r.logs?.length ? '\n\nConsole :\n' + r.logs.join('\n') : ''));
 }
 function mcpToolDefs(srv) {
   return (srv.tools || []).filter((t) => !(srv.disabled || []).includes(t.name)).map((t) => ({
@@ -5372,6 +5391,8 @@ function resolveTools(ids) {
     else if (id.startsWith('custom:')) { const t = col('tools').get(id.slice(7)); if (t && t.enabled !== false) add(customToolDef(t)); }
     else if (id.startsWith('mcp:')) { const s = col('mcp').get(id.slice(4)); if (s && s.enabled !== false) mcpToolDefs(s).forEach(add); }
   }
+  // Outils forgés par Cortex avec activation globale : disponibles dans toutes les conversations outillées
+  if (out.length) for (const t of col('tools').values()) if (t.auto && t.enabled !== false) add(customToolDef(t));
   return out;
 }
 function toolPerm(t) { return S.settings.toolPerms[t.name] || t.perm || 'auto'; }
@@ -7674,8 +7695,8 @@ async function freeWebSearch(q, { n = 6, news = false, read = 3, signal } = {}) 
 const TOOL_WORKSHOP = {
   name: 'tool_workshop', title: 'Atelier d\'outils (REA)', icon: 'wrench', group: 'agent', perm: 'auto', write: true,
   summary: 'Démonte un outil de Cortex (schéma, code source), puis crée, teste et améliore des outils personnalisés utilisables immédiatement.',
-  description: "Atelier d'outils, pour appliquer la méthode REA aux outils eux-mêmes. Actions : list (tous les outils), inspect (name : schéma, permissions et code source), create / update (name, description, parameters JSON Schema, code : corps d'une fonction async JavaScript qui reçoit args et peut utiliser fetch, fetchJSON(url), fetchText(url) ; return du résultat), test (name, args), delete (outil personnalisé). Un outil créé est activé tout de suite pour l'agent et réutilisable ensuite par tous les agents. Le code s'exécute dans un bac à sable isolé (pas d'accès aux données de l'utilisateur ni à sa clé).",
-  parameters: { type: 'object', properties: { action: { type: 'string', enum: ['list', 'inspect', 'create', 'update', 'test', 'delete'] }, name: { type: 'string' }, description: { type: 'string' }, parameters: { type: 'object' }, code: { type: 'string' }, args: { type: 'object' } }, required: ['action'] },
+  description: "Forge d'outils : Cortex démonte, crée, teste et conserve ses propres outils. Actions : list (tous les outils) ; inspect (name : schéma, permissions, code) ; create / update (name, description, parameters JSON Schema, code, runtime = js | studio | python, tests = [{args, expect}], auto = true pour le rendre disponible dans toutes les conversations) ; test (name, args — ou sans args pour rejouer les tests enregistrés) ; delete. Moteurs : js (worker isolé : corps d'une fonction async recevant args, fetch, fetchJSON(url), fetchText(url), return du résultat) ; studio (navigateur isolé avec DOM, canvas, bibliothèques d'export et kit de design cx — variable args, writeFile/readFile) ; python (Pyodide, dict args injecté, print ou valeur finale). Un outil créé est utilisable tout de suite et réutilisable ensuite ; après un échec, corrige-le avec update plutôt que de recommencer à la main.",
+  parameters: { type: 'object', properties: { action: { type: 'string', enum: ['list', 'inspect', 'create', 'update', 'test', 'delete'] }, name: { type: 'string' }, description: { type: 'string' }, parameters: { type: 'object' }, code: { type: 'string' }, runtime: { type: 'string', enum: ['js', 'studio', 'python'] }, tests: { type: 'array', items: { type: 'object', properties: { args: { type: 'object' }, expect: { type: 'string', description: 'texte attendu dans le résultat' } } } }, auto: { type: 'boolean', description: 'disponible dans toutes les conversations (défaut : oui)' }, args: { type: 'object' } }, required: ['action'] },
   args: (a) => `${a.action}${a.name ? ' ' + a.name : ''}`,
   async run(a, ctx) {
     const findCustom = (n) => [...col('tools').values()].find((t) => t.name === n || fnSafe(t.name) === n || t.id === n);
@@ -7702,16 +7723,22 @@ const TOOL_WORKSHOP = {
         const ex = findCustom(a.name);
         if (a.action === 'create' && ex) throw new Error('Un outil personnalisé porte déjà ce nom : utilise update.');
         const t = ex || { id: uid('t'), createdAt: now(), enabled: true, perm: 'auto', author: 'agent' };
-        Object.assign(t, { name: fnSafe(a.name).slice(0, 60), description: a.description || t.description || a.name, parameters: JSON.stringify(a.parameters || safeJSON(t.parameters) || { type: 'object', properties: {} }, null, 2), code: a.code, updatedAt: now() });
+        Object.assign(t, { name: fnSafe(a.name).slice(0, 60), description: a.description || t.description || a.name, parameters: JSON.stringify(a.parameters || safeJSON(t.parameters) || { type: 'object', properties: {} }, null, 2), code: a.code, runtime: ['js', 'studio', 'python'].includes(a.runtime) ? a.runtime : t.runtime || 'js', tests: Array.isArray(a.tests) ? a.tests.slice(0, 8) : t.tests || [], auto: a.auto != null ? !!a.auto : t.auto != null ? t.auto : true, updatedAt: now() });
         col('tools').set(t.id, t); persist('tools', t);
         const added = ctx.addTools ? ctx.addTools(['custom:' + t.id]) : [];
-        return { text: `Outil « ${t.name} » ${a.action === 'create' ? 'créé' : 'mis à jour'}${added.length ? ' et activé (utilisable dès maintenant)' : ''}. Teste-le avec action test.` };
+        return { text: `Outil « ${t.name} » (${t.runtime}) ${a.action === 'create' ? 'créé' : 'mis à jour'}${t.auto ? ', disponible dans toutes les conversations' : added.length ? ' et activé (utilisable dès maintenant)' : ''}. Teste-le avec action test${(t.tests || []).length ? ' (' + t.tests.length + ' test(s) enregistré(s))' : ''}.` };
       }
       case 'test': {
         const c = findCustom(a.name);
         if (!c) throw new Error('Outil personnalisé introuvable : ' + a.name);
-        const r = await Sandbox.runJS(c.code, a.args || {}, { signal: ctx.signal, mode: 'raw' });
-        return `${r.ok ? '✅ Réussi' : '❌ Échec'}\n${r.ok ? 'Résultat : ' + truncate(typeof r.value === 'string' ? r.value : JSON.stringify(r.value, null, 2), 6000) : 'Erreur : ' + r.error}${r.logs?.length ? '\nConsole :\n' + r.logs.join('\n') : ''}`;
+        const cases = a.args ? [{ args: a.args }] : (c.tests || []).length ? c.tests : [{ args: {} }];
+        const out = [];
+        for (const tc of cases) {
+          try { const r = await runCustomTool(c, tc.args || {}, ctx); const text = typeof r === 'string' ? r : r.text; const ok = !tc.expect || String(text).includes(tc.expect); out.push(`${ok ? '✅' : '❌'} ${truncate(JSON.stringify(tc.args || {}), 80)} → ${truncate(String(text), 1500)}${tc.expect && !ok ? `\n   attendu : « ${tc.expect} »` : ''}`); c.lastTest = { at: now(), ok }; }
+          catch (e) { out.push(`❌ ${truncate(JSON.stringify(tc.args || {}), 80)} → erreur : ${truncate(e.message, 600)}`); c.lastTest = { at: now(), ok: false, error: e.message }; }
+        }
+        col('tools').set(c.id, c); persist('tools', c);
+        return out.join('\n\n') + (out.some((x) => x.startsWith('❌')) ? "\n\nCorrige l'outil avec update, puis reteste." : '');
       }
       case 'delete': {
         const c = findCustom(a.name);
@@ -7890,7 +7917,7 @@ const NOT_CHAT = /safety|guard|lyria|embed|whisper|tts|image|moderation|rerank/i
 function freeModels(tier = 'experts', n = 3, exclude = []) {
   const ex = new Set(exclude.filter(Boolean));
   const listed = (FREE_TIERS[tier] || []).filter((m) => S.modelMap.has(m) && !ex.has(m));
-  const extra = S.models.filter((m) => isFreeModel(m) && m.id !== 'openrouter/free' && !NOT_CHAT.test(m.id) && !ex.has(m.id) && !listed.includes(m.id) && (m.context_length || 0) >= 32000)
+  const extra = S.models.filter((m) => isFreeModel(m) && m.id !== 'openrouter/free' && (!m.local || S.settings.localServer?.booster) && !NOT_CHAT.test(m.id) && !ex.has(m.id) && !listed.includes(m.id) && (m.context_length || 0) >= 32000)
     .sort((a, b) => (b.context_length || 0) - (a.context_length || 0)).map((m) => m.id);
   const out = [...listed, ...extra].slice(0, n);
   return out.length ? out : ['openrouter/free'];
@@ -9814,6 +9841,197 @@ function bindUpdateCard(m) {
   m.querySelector('#upd-auto')?.addEventListener('change', (e) => { S.settings.autoUpdateCheck = e.target.checked; saveSettings(); });
 }
 
+/* ============================== 08o · APPRENTISSAGE CONTINU ==============================
+   Après chaque tâche : les préférences durables exprimées par l'utilisateur rejoignent la mémoire (profil) ;
+   une tâche outillée complexe, réussie et vérifiée devient un skill réutilisable rédigé par un modèle gratuit
+   (modifiable dans Skills). L'expérience (outils, leçons) est déjà mémorisée par Experience.record.        */
+const TRIVIAL_TOOLS = new Set(['todo_write', 'think', 'rea', 'experience', 'find_tools', 'load_skill', 'ask_user', 'memory_search', 'memory_save', 'session_search', 'cerveau', 'verification', 'guru', 'verify_answer']);
+const jaccard = (a, b) => { const A = new Set(tokenizeFr(a)), B = new Set(tokenizeFr(b)); if (!A.size || !B.size) return 0; let n = 0; for (const t of A) if (B.has(t)) n++; return n / (A.size + B.size - n); };
+const Learn = {
+  PREF_RE: /\b(je pr[ée]f[èe]re|j'aime|je n'aime pas|je veux toujours|toujours|jamais|appelle[- ]moi|mon (?:nom|pr[ée]nom|entreprise|poste|[ée]quipe|service|m[ée]tier) (?:est|c'est|:)|je suis (?:le|la|un|une|responsable|charg[ée]|analyste|directeur|directrice|chef)|nous (?:utilisons|travaillons)|on utilise|notre (?:charte|logo|banque|entreprise|soci[ée]t[ée])|d[ée]sormais|dor[ée]navant|[àa] partir de maintenant|par d[ée]faut|retiens que|souviens-toi|n'oublie pas)\b/i,
+  async after(chat, node, task) {
+    if (S.settings.harness.learn === false) return;
+    try { this.profile(task); } catch (e) { console.warn('profil', e); }
+    try { await this.maybeSkill(chat, node, task); } catch (e) { console.warn('skill appris', e); }
+  },
+  /* Profil : préférences durables → mémoire (catégorie profil), sans doublon */
+  profile(text) {
+    const t = String(text || '').trim();
+    if (t.length < 12 || t.length > 2000 || !this.PREF_RE.test(t)) return [];
+    const sentences = t.split(/(?<=[.!?\n])\s+/).map((s) => s.trim()).filter((s) => this.PREF_RE.test(s) && s.length >= 12 && s.length <= 280 && !/\?$/.test(s));
+    const made = [];
+    for (const s of sentences.slice(0, 3)) {
+      if (Memory.list().some((m) => jaccard(m.content, s) >= 0.6)) continue;
+      made.push(Memory.add('Préférence exprimée : ' + s, 'profil'));
+    }
+    if (made.length) toast('Cortex a retenu : ' + truncate(made[0].content.replace(/^Préférence exprimée : /, ''), 80), 'info', 4000);
+    return made;
+  },
+  /* Skill appris : tâche outillée complexe, réussie, vérifiée et nouvelle → SKILL.md rédigé par un modèle gratuit */
+  async maybeSkill(chat, node, task) {
+    if (!chat || !node || node.status !== 'done' || S.settings.harness.learnSkills === false) return null;
+    const calls = []; const walk = (steps) => { for (const s of steps || []) { if (s.synthetic) continue; for (const t of s.toolCalls || []) { calls.push(t); if (t.sub) walk(t.sub.steps); } } }; walk(node.steps);
+    const real = calls.filter((t) => !TRIVIAL_TOOLS.has(t.name));
+    if (real.length < 4) return null;
+    if (real.filter((t) => t.status === 'error').length > real.length / 2) return null;
+    const final = [...node.steps].reverse().find((s) => s.content && !s.synthetic)?.content || '';
+    if (final.length < 200 || String(task || '').length < 20) return null;
+    if ((node.audit || []).some((c) => c.ok === false)) return null;
+    if (Skills.list().some((s) => s.learned && jaccard((s.title || '') + ' ' + (s.triggers || '') + ' ' + (s.description || ''), task) >= 0.35)) return null;
+    const tr = real.slice(0, 30).map((t) => `${t.name}(${truncate(String(t.args || ''), 160)}) → ${t.status}`).join('\n');
+    const model = fastModel();
+    const r = await quickComplete([
+      { role: 'system', content: "Tu rédiges un SKILL réutilisable (standard agentskills.io) à partir d'une tâche qu'un agent vient de réussir. Réponds uniquement en JSON : {\"name\": \"slug-court\", \"title\": \"titre de 4 à 8 mots\", \"description\": \"quand utiliser ce skill, en une phrase\", \"triggers\": \"mots-clés séparés par des virgules\", \"content\": \"markdown avec les sections ## Quand l'utiliser, ## Étapes (outils et paramètres précis, dans l'ordre), ## Pièges et contrôles, ## Format du résultat\"}. Concret et générique : noms d'outils et paramètres, vérifications ; aucune donnée personnelle, aucun chiffre propre à la tâche. En français." },
+      { role: 'user', content: `Tâche : ${truncate(task, 1200)}\n\nOutils appelés :\n${tr}\n\nRéponse finale (extrait) : ${truncate(final, 1500)}` },
+    ], { model, maxTokens: 1400, kind: 'learn', extra: noReasoning(model) });
+    const j = safeJSON((String(r.text || '').match(/\{[\s\S]*\}/) || [])[0] || '');
+    if (!j || !j.content || !j.name) return null;
+    const sk = Skills.addImported({ name: 'appris-' + slugify(String(j.name)).slice(0, 40), title: truncate(String(j.title || j.name), 80), emoji: '🧠', description: truncate(String(j.description || ''), 300), triggers: truncate(String(j.triggers || ''), 300), tools: [...new Set(real.map((t) => t.name))].filter((n) => TOOLS.has(n)).slice(0, 12), content: String(j.content).slice(0, 12000), learned: true, learnedFrom: { chatId: chat.id, nodeId: node.id, at: now(), model } }, null, 'appris');
+    toast(`Cortex a appris un skill : ${sk.title} (Skills › modifiable)`, 'ok', 6000);
+    return sk;
+  },
+};
+
+/* ============================== 08p · MODÈLES LOCAUX (licence Apache 2.0, téléchargeables) ==============================
+   Deux voies pour un Cortex indépendant du cloud :
+   - un serveur local compatible OpenAI (Ollama, LM Studio, llama.cpp, vLLM…) : modèles « local/<nom> » ;
+   - WebLLM : le modèle tourne dans le navigateur (WebGPU), téléchargé une fois : modèles « webllm/<id> ».
+   Les deux passent par le même client (OR.request) : flux SSE, outils (natifs ou écrits en texte), Guru, cerveau…  */
+const LOCAL_CATALOG = [
+  { name: 'gpt-oss 20B (OpenAI)', license: 'Apache 2.0', ram: '16 Go', ollama: 'gpt-oss:20b', note: 'raisonnement et outils, très bon généraliste' },
+  { name: 'gpt-oss 120B (OpenAI)', license: 'Apache 2.0', ram: '80 Go', ollama: 'gpt-oss:120b', note: 'niveau o4-mini, station de travail' },
+  { name: 'Qwen3 30B-A3B (MoE)', license: 'Apache 2.0', ram: '24 Go', ollama: 'qwen3:30b-a3b', note: 'rapide pour sa taille, outils, pensée' },
+  { name: 'Qwen3 8B', license: 'Apache 2.0', ram: '8 Go', ollama: 'qwen3:8b', webllm: 'Qwen3-8B-q4f16_1-MLC', note: 'bon équilibre, outils' },
+  { name: 'Qwen3 4B', license: 'Apache 2.0', ram: '4 Go', ollama: 'qwen3:4b', webllm: 'Qwen3-4B-q4f16_1-MLC', note: 'portable' },
+  { name: 'Qwen3 1.7B', license: 'Apache 2.0', ram: '2 Go', ollama: 'qwen3:1.7b', webllm: 'Qwen3-1.7B-q4f16_1-MLC', note: 'léger' },
+  { name: 'Qwen2.5 7B Instruct', license: 'Apache 2.0', ram: '8 Go', ollama: 'qwen2.5:7b', webllm: 'Qwen2.5-7B-Instruct-q4f16_1-MLC', note: 'éprouvé' },
+  { name: 'Mistral Small 3.2 24B', license: 'Apache 2.0', ram: '24 Go', ollama: 'mistral-small3.2', note: 'excellent en français, outils, vision' },
+  { name: 'Mistral 7B Instruct v0.3', license: 'Apache 2.0', ram: '8 Go', ollama: 'mistral:7b', webllm: 'Mistral-7B-Instruct-v0.3-q4f16_1-MLC', note: 'classique' },
+  { name: 'Devstral Small 24B (code)', license: 'Apache 2.0', ram: '24 Go', ollama: 'devstral', note: 'agent de code' },
+  { name: 'SmolLM3 3B', license: 'Apache 2.0', ram: '3 Go', ollama: 'smollm3', note: 'petit, multilingue' },
+  { name: 'OLMo 2 13B', license: 'Apache 2.0', ram: '12 Go', ollama: 'olmo2:13b', note: 'entièrement ouvert (données incluses)' },
+  { name: 'DeepSeek-R1 distill Qwen 7B', license: 'MIT', ram: '8 Go', ollama: 'deepseek-r1:7b', webllm: 'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC', note: 'raisonnement' },
+  { name: 'Phi-4 14B', license: 'MIT', ram: '12 Go', ollama: 'phi4', note: 'raisonnement, maths' },
+];
+const LocalModels = {
+  WEBLLM_URL: 'https://esm.run/@mlc-ai/web-llm@0.2.79',
+  engines: new Map(), lib: null, progress: null,
+  cfg() { return S.settings.localServer || (S.settings.localServer = { url: 'http://localhost:11434/v1', key: '', enabled: false, booster: false }); },
+  get webgpu() { return !!navigator.gpu; },
+  entry(id, name, extra) { return Object.assign({ id, name, local: true, pricing: { prompt: '0', completion: '0' }, context_length: 32768, supported_parameters: ['tools', 'temperature', 'max_tokens', 'top_p', 'seed', 'stop'], architecture: { modality: 'text->text', input_modalities: ['text'], output_modalities: ['text'] }, description: 'Modèle local : vos données ne quittent pas votre ordinateur.' }, extra || {}); },
+  /* Entrées à ajouter au catalogue de Cortex : serveur local (liste en cache) et WebLLM (si WebGPU) */
+  entries() {
+    const out = [];
+    const c = this.cfg();
+    if (c.enabled) for (const m of c.models || []) out.push(this.entry('local/' + m.id, 'Local · ' + m.id, { context_length: m.context_length || 32768, local_server: true }));
+    if (this.webgpu) for (const m of LOCAL_CATALOG) if (m.webllm) out.push(this.entry('webllm/' + m.webllm, 'Navigateur · ' + m.name, { context_length: 16384, webllm: true, license: m.license, ram: m.ram }));
+    return out;
+  },
+  attach() { const keep = S.models.filter((m) => !m.local); const mine = this.entries(); S.models = [...keep, ...mine]; S.modelMap = new Map(S.models.map((m) => [m.id, m])); },
+  /* Serveur local : liste des modèles disponibles (/v1/models) */
+  async refresh({ signal } = {}) {
+    const c = this.cfg(); const base = String(c.url || '').replace(/\/+$/, '');
+    if (!base) throw new Error('URL du serveur local vide');
+    const r = await fetch(base + '/models', { headers: c.key ? { Authorization: 'Bearer ' + c.key } : {}, signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    c.models = (j.data || j.models || []).map((m) => ({ id: m.id || m.name, context_length: m.context_length || m.max_context_length || 32768 })).filter((m) => m.id);
+    c.enabled = true; c.lastSync = now(); saveSettings(); this.attach();
+    return c.models;
+  },
+  cleanBody(body) { const b = { ...body }; for (const k of ['usage', 'provider', 'transforms', 'plugins', 'route', 'reasoning', 'include_reasoning', 'repetition_penalty', 'top_k', 'min_p', 'models', 'web_search_options']) delete b[k]; return b; },
+  /* Requête vers le serveur local (même contrat que OR.request : raw → Response en flux, sinon JSON) */
+  async server({ body, signal, raw, timeout = 120000 }) {
+    const c = this.cfg(); const base = String(c.url || '').replace(/\/+$/, '');
+    const b = this.cleanBody(body); b.model = String(body.model).replace(/^local\//, '');
+    const ctrl = new AbortController(); signal?.addEventListener('abort', () => ctrl.abort(), { once: true }); const timer = setTimeout(() => ctrl.abort(), timeout);
+    let resp;
+    try { resp = await fetch(base + '/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(c.key ? { Authorization: 'Bearer ' + c.key } : {}) }, body: JSON.stringify(b), signal: ctrl.signal }); }
+    catch (e) { clearTimeout(timer); if (signal?.aborted) throw e; throw new ApiError(`Serveur local injoignable (${base}) : vérifiez qu'il tourne (Ollama, LM Studio, llama.cpp) et qu'il autorise cette origine (Ollama : OLLAMA_ORIGINS=* ; LM Studio : activer CORS).`, 0); }
+    clearTimeout(timer);
+    if (!resp.ok) { let msg = 'HTTP ' + resp.status; try { const j = await resp.json(); msg = j.error?.message || j.error || msg; } catch (e) {} throw new ApiError('Serveur local : ' + (typeof msg === 'string' ? msg : JSON.stringify(msg)), resp.status); }
+    return raw ? resp : resp.json();
+  },
+  /* WebLLM : chargement du moteur (téléchargement du modèle la première fois), progression visible */
+  async engine(modelId) {
+    if (this.engines.has(modelId)) return this.engines.get(modelId);
+    if (!this.webgpu) throw new ApiError("WebGPU indisponible dans ce navigateur : impossible d'exécuter un modèle dans le navigateur (utilisez Chrome/Edge récents, ou un serveur local Ollama).", 0);
+    const p = (async () => {
+      this.lib ||= await import(this.WEBLLM_URL);
+      const eng = await this.lib.CreateMLCEngine(modelId, { initProgressCallback: (r) => { this.progress = { model: modelId, text: r.text, pct: r.progress }; S.onLocalProgress?.(this.progress); if (r.progress >= 1) setTimeout(() => { this.progress = null; S.onLocalProgress?.(null); }, 1500); } });
+      return eng;
+    })();
+    this.engines.set(modelId, p);
+    try { return await p; } catch (e) { this.engines.delete(modelId); this.progress = null; throw new ApiError('Chargement du modèle impossible : ' + e.message, 0); }
+  },
+  /* Outils pour un modèle sans function calling natif : protocole en texte, compris par Cortex (parseTextToolCalls) */
+  textTools(messages, tools) {
+    if (!tools?.length) return messages;
+    const spec = tools.map((t) => `- ${t.function.name} : ${truncate(String(t.function.description || ''), 300)}\n  paramètres : ${JSON.stringify(t.function.parameters || {})}`).join('\n');
+    const instr = `\n\n# Outils (appel écrit en texte)\nTu disposes des outils ci-dessous. Pour en appeler un, réponds UNIQUEMENT par un bloc :\n\`\`\`json\n{"tool": "nom_de_l_outil", "arguments": { … }}\n\`\`\`\nUn seul appel par réponse, sans autre texte ; tu recevras ensuite le résultat et tu continueras. Quand la tâche est finie, réponds normalement, sans bloc.\n${spec}`;
+    const out = messages.map((m) => {
+      if (m.role === 'tool') return { role: 'user', content: `Résultat de l'outil (${m.name || 'outil'}) :\n${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}` };
+      if (m.role === 'assistant' && Array.isArray(m.tool_calls) && m.tool_calls.length) return { role: 'assistant', content: (m.content ? m.content + '\n' : '') + m.tool_calls.map((tc) => '```json\n' + JSON.stringify({ tool: tc.function?.name, arguments: safeJSON(tc.function?.arguments) || tc.function?.arguments || {} }) + '\n```').join('\n') };
+      if (Array.isArray(m.content)) return { ...m, content: m.content.map((p) => (p.type === 'text' ? p.text : p.type === 'image_url' ? '[image]' : '')).join('\n') };
+      return m;
+    });
+    const i = out.findIndex((m) => m.role === 'system');
+    if (i >= 0) out[i] = { ...out[i], content: out[i].content + instr }; else out.unshift({ role: 'system', content: instr.trim() });
+    return out;
+  },
+  async webllm({ body, signal, raw }) {
+    const modelId = String(body.model).replace(/^webllm\//, '');
+    const eng = await this.engine(modelId);
+    const messages = this.textTools(body.messages, body.tools);
+    const req = { messages, stream: true, stream_options: { include_usage: true }, temperature: body.temperature ?? 0.5, max_tokens: Math.min(+body.max_tokens || 2048, 4096), top_p: body.top_p };
+    const it = await eng.chat.completions.create(req);
+    const id = uid('webllm-');
+    if (!raw) { let content = '', usage = null, finish = 'stop'; for await (const ch of it) { if (signal?.aborted) break; const d = ch.choices?.[0]?.delta; if (d?.content) content += d.content; if (ch.usage) usage = ch.usage; if (ch.choices?.[0]?.finish_reason) finish = ch.choices[0].finish_reason; } return { id, model: body.model, choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: finish }], usage }; }
+    const enc = new TextEncoder();
+    const stream = new ReadableStream({ async start(controller) {
+      try { for await (const ch of it) { if (signal?.aborted) break; const chunk = { id, model: body.model, provider: 'WebLLM', choices: (ch.choices || []).map((c) => ({ index: c.index || 0, delta: c.delta || {}, finish_reason: c.finish_reason || null })), usage: ch.usage || undefined }; controller.enqueue(enc.encode('data: ' + JSON.stringify(chunk) + '\n\n')); } controller.enqueue(enc.encode('data: [DONE]\n\n')); }
+      catch (e) { controller.enqueue(enc.encode('data: ' + JSON.stringify({ error: { message: e.message, code: 0 } }) + '\n\n')); }
+      controller.close();
+    } });
+    return new Response(stream, { status: 200, headers: { 'content-type': 'text/event-stream' } });
+  },
+};
+/* Aiguillage : les modèles local/… et webllm/… sont servis sans passer par OpenRouter */
+{
+  const orRequest = OR.request.bind(OR);
+  OR.request = function (path, opts = {}) {
+    const m = opts.body && opts.body.model;
+    if (path === '/chat/completions' && typeof m === 'string') {
+      if (m.startsWith('local/')) return LocalModels.server(opts);
+      if (m.startsWith('webllm/')) return LocalModels.webllm(opts);
+    }
+    return orRequest(path, opts);
+  };
+  const orLoad = OR.loadModels.bind(OR);
+  OR.loadModels = async function (force) { try { await orLoad(force); } finally { LocalModels.attach(); } return S.models; };
+  const setM = setModels;
+  setModels = function (list, ts) { setM(list, ts); LocalModels.attach(); };
+}
+/* Carte de réglages (page Modèles) */
+function localModelsHTML() {
+  const c = LocalModels.cfg(); const p = LocalModels.progress;
+  const rows = LOCAL_CATALOG.map((m) => `<tr><td><b>${esc(m.name)}</b><div class="small muted">${esc(m.note || '')}</div></td><td class="small">${esc(m.license)}</td><td class="small">${esc(m.ram)}</td><td class="small mono">${m.ollama ? `ollama pull ${esc(m.ollama)}` : '—'}</td><td>${m.webllm && LocalModels.webgpu ? `<button class="btn sm" data-lm="webllm" data-id="${esc(m.webllm)}">${icon('download', 'sm')} Dans le navigateur</button>` : ''}</td></tr>`).join('');
+  return `<div class="card" style="margin-bottom:14px" id="lm-card"><div class="row"><b class="grow">${icon('cpu', 'sm')} Modèles locaux — gratuits, téléchargeables, licence Apache 2.0 / MIT</b></div>
+    <p class="small muted">Cortex fonctionne sans le cloud : un serveur local (Ollama, LM Studio, llama.cpp, vLLM — API compatible OpenAI) ou un modèle exécuté dans le navigateur (WebLLM, WebGPU${LocalModels.webgpu ? ' disponible' : ' <b>indisponible ici</b>'}). Les modèles locaux apparaissent ensuite dans le sélecteur comme « Local · … » et « Navigateur · … », et bénéficient de tout le harness (outils, cerveau, Guru).</p>
+    <div class="row wrap" style="gap:8px;align-items:flex-end">${ui.field('Serveur local (URL de l\'API)', `<input id="lm-url" value="${esc(c.url || '')}" placeholder="http://localhost:11434/v1" style="width:260px">`)}${ui.field('Clé (si requise)', `<input id="lm-key" type="password" value="${esc(c.key || '')}" style="width:140px">`)}<button class="btn sm" data-lm="test">${icon('refresh', 'sm')} Tester et lister les modèles</button><label class="row small"><input type="checkbox" id="lm-booster" ${c.booster ? 'checked' : ''} style="accent-color:var(--accent)"> Utiliser aussi comme Guru / relecteur</label></div>
+    <div class="small muted" style="margin:6px 0 10px">${c.enabled && c.models?.length ? `${c.models.length} modèle(s) sur le serveur : ${c.models.map((m) => m.id).join(', ')}` : 'Aucun serveur connecté. Ollama : <span class="mono">OLLAMA_ORIGINS=* ollama serve</span> puis <span class="mono">ollama pull gpt-oss:20b</span>.'}${p ? `<div style="margin-top:6px"><b>Chargement ${esc(p.model)}</b> — ${esc(p.text || '')}</div>` : ''}</div>
+    <details><summary class="small">Catalogue conseillé (licences permissives)</summary><table class="tbl" style="margin-top:8px"><tr><th>Modèle</th><th>Licence</th><th>Mémoire</th><th>Serveur local</th><th>Navigateur</th></tr>${rows}</table></details></div>`;
+}
+function bindLocalModels(b) {
+  b.addEventListener('click', async (e) => {
+    const el = e.target.closest('[data-lm]'); if (!el) return;
+    const c = LocalModels.cfg();
+    if (el.dataset.lm === 'test') { c.url = b.querySelector('#lm-url').value.trim(); c.key = b.querySelector('#lm-key').value.trim(); el.disabled = true; try { const l = await LocalModels.refresh(); toast(`${l.length} modèle(s) local(aux) disponibles`, 'ok'); } catch (er) { c.enabled = false; saveSettings(); toast('Serveur local : ' + er.message, 'err', 7000); } renderPage(); }
+    if (el.dataset.lm === 'webllm') { const id = el.dataset.id; toast('Téléchargement du modèle dans le navigateur (une seule fois)…', 'info', 5000); try { await LocalModels.engine(id); toast('Modèle prêt : ' + id, 'ok'); S.settings.defaultModel = 'webllm/' + id; saveSettings(); } catch (er) { toast(er.message, 'err', 8000); } renderPage(); }
+  });
+  b.querySelector('#lm-booster')?.addEventListener('change', (e) => { LocalModels.cfg().booster = e.target.checked; saveSettings(); });
+}
+
 /* ============================== 09 · MOTEUR (HARNESS) ============================== */
 
 /* ---------- Arbre de messages (branches) ---------- */
@@ -11021,7 +11239,7 @@ async function runAssistant(chat, node, opts = {}) {
     // Mémoire d'expérience : la tâche outillée est enregistrée (en arrière-plan) pour les prochaines fois
     if (node.status === 'done' && !opts.custom && !opts.noTools) {
       const u = chat.nodes[node.parentId];
-      if (u?.role === 'user') Experience.record(chat, node, u.content || '').catch((e) => console.warn('expérience', e));
+      if (u?.role === 'user') { Experience.record(chat, node, u.content || '').catch((e) => console.warn('expérience', e)); Learn.after(chat, node, u.content || '').catch((e) => console.warn('apprentissage', e)); }
     }
   }
 }
@@ -13698,7 +13916,8 @@ PAGES.models = {
     else if (st.sort === 'name') list.sort((a, c) => a.name.localeCompare(c.name));
     else if (st.sort === 'elo') list.sort((a, c) => (S.settings.elo[c.id]?.r || 0) - (S.settings.elo[a.id]?.r || 0));
     const elo = Object.entries(S.settings.elo).sort((a, c) => c[1].r - a[1].r);
-    b.innerHTML = `<div class="row wrap" style="margin-bottom:10px"><label class="search" style="max-width:420px">${icon('search', 'sm')}<input id="mq" value="${esc(st.q)}" placeholder="Rechercher parmi ${S.models.length} modèles…"></label>
+    const lmCard = localModelsHTML();
+    b.innerHTML = lmCard + `<div class="row wrap" style="margin-bottom:10px"><label class="search" style="max-width:420px">${icon('search', 'sm')}<input id="mq" value="${esc(st.q)}" placeholder="Rechercher parmi ${S.models.length} modèles…"></label>
         ${ui.select('msort', [['default', 'Tri : pertinence'], ['new', 'Plus récents'], ['price', 'Prix croissant'], ['price-desc', 'Prix décroissant'], ['ctx', 'Contexte le plus long'], ['name', 'Nom'], ['elo', 'Classement arène']], st.sort).replace('class="sel"', 'class="sel" style="width:auto"')}
         <span class="grow"></span><span class="small muted">${S.modelsLoadedAt ? 'Catalogue mis à jour ' + fmtRel(S.modelsLoadedAt) : ''}</span><button class="btn sm" data-mm="refresh">${icon('refresh', 'sm')} Actualiser</button></div>
       <div class="chips" style="margin-bottom:14px">${[['fav', '★ Favoris'], ['free', 'Gratuits'], ['tools', 'Outils'], ['vision', 'Vision'], ['reasoning', 'Raisonnement'], ['image', 'Génère des images'], ['long', 'Contexte ≥ 200k']].map(([k, l]) => `<button class="chip ${st.f.has(k) ? 'on' : ''}" data-mf="${k}">${l}</button>`).join('')}</div>
@@ -13713,6 +13932,7 @@ PAGES.models = {
     const q = b.querySelector('#mq');
     q.addEventListener('input', debounce(() => { st.q = q.value; renderPage(); const i = $('#mq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250));
     b.querySelector('#msort').onchange = (e) => { st.sort = e.target.value; renderPage(); };
+    bindLocalModels(b);
     b.onclick = async (e) => {
       const f = e.target.closest('[data-mf]');
       if (f) { st.f.has(f.dataset.mf) ? st.f.delete(f.dataset.mf) : st.f.add(f.dataset.mf); renderPage(); return; }
