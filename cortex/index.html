@@ -825,7 +825,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-28 20:05 UTC', stamp: 202610282005, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-28 20:09 UTC', stamp: 202610282009, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -10198,6 +10198,142 @@ function bindMailSettings(m) {
   for (const id of ['ml-gcid', 'ml-mcid', 'ml-mten']) m.querySelector('#' + id)?.addEventListener('change', (e) => { const c = Mail.cfg(); if (id === 'ml-gcid') c.googleClientId = e.target.value.trim(); if (id === 'ml-mcid') c.msClientId = e.target.value.trim(); if (id === 'ml-mten') c.msTenant = e.target.value.trim() || 'common'; saveSettings(); });
 }
 
+/* ============================== 08r · CONNAISSANCES DISTILLÉES ==============================
+   Méthodes expertes tirées des sessions de construction de Cortex (génériques, sans donnée personnelle) :
+   elles rejoignent le référentiel du Guru et sont injectées quand la tâche s'y rapporte.                  */
+GURU_PLAYBOOKS.push(
+  {
+    id: 'portefeuille-credit', title: 'Analyse d\'un portefeuille de crédit (banque)',
+    re: /portefeuille|encours|creances|impay|npl|provision|classification|degradation|exposition|concentration|comite|risque de credit|credit risk|ifrs ?9|bceao|stage/,
+    text: `- Périmètre d'abord : date d'arrêté, unité (XOF, M XOF), exclusions, définition des statuts (sain / vigilance / douteux / contentieux ; stages IFRS 9) — à lire dans les données ou les règles du skill chargé, jamais à inventer.
+- Chiffres clés à produire par code (python/run_javascript) : encours total, nombre de dossiers, ventilation par segment / secteur / gestionnaire, top 10-20 expositions et part cumulée (concentration), impayés et taux (impayés / encours), classification et provisions (couverture = provisions / créances classées), mouvements vs période précédente, retards par tranche de jours.
+- Contrôles obligatoires : total = somme des segments ; pourcentages recalculés et sommés à 100 % ; taux cohérents (≤ 100 %) ; mêmes totaux dans chaque feuille / graphique ; chiffres de la réponse tracés dans les résultats d'outils.
+- Livrable : tableau de bord (tuiles, graphiques), une feuille par angle (segments, top expositions, retards, provisions), lecture rédigée (constats chiffrés, risques, recommandations), points d'attention (données manquantes, hypothèses).
+- Pièges : prendre un montant pour un taux (0,048 vs 4,8 %), mélanger encours et impayés, oublier les dossiers sans segment, ne pas dater l'arrêté, inventer une charte graphique.`,
+  },
+  {
+    id: 'simulation-pret', title: 'Simulation de prêt et échéancier',
+    re: /pret|prêt|emprunt|echeanc|mensualit|annuit|amortissement|taux d'interet|taux nominal|credit immobilier|credit auto|remboursement/,
+    text: `- Formule annuité constante : m = C·r / (1 − (1+r)^−n) avec r = taux périodique (taux annuel / 12 pour des mensualités), n = nombre d'échéances. Calculer par code, jamais de tête.
+- Échéancier complet (une ligne par période) : n°, date, capital début, intérêts, amortissement, mensualité, capital fin ; dernier capital fin = 0 (à 1 unité près : ajuster la dernière ligne).
+- Contrôles : Σ amortissements = capital emprunté ; Σ intérêts = Σ mensualités − capital ; mensualité constante (hors assurance) ; cohérence entre la feuille synthèse et l'échéancier.
+- Scénarios : comparer plusieurs taux / durées dans un tableau (mensualité, coût total du crédit, intérêts) ; indiquer les hypothèses (assurance, frais, différé).
+- Rendu Excel : colonnes numériques formatées (montants #,##0 ; taux en %), dates jj/mm/aaaa, pas de statut ni de registre sur un échéancier ; 60 lignes = 60 mois, aucun « … ».`,
+  },
+  {
+    id: 'registre-suivi', title: 'Registre de suivi et de collecte',
+    re: /registre|suivi|collecte|checklist|liste de documents|demande de documents|owner|responsable|statut|relance|audit|revue documentaire/,
+    text: `- Structure : n°, catégorie, élément demandé, responsable (owner), échéance, statut (à faire / en cours / reçu / validé / bloqué), date de réception, commentaire.
+- Les statuts viennent de l'utilisateur ou des données ; par défaut « à faire ». Colonnes à renseigner marquées ✎, listes déroulantes de statuts, filtre automatique, ligne de synthèse (compte par statut).
+- Lecture : nombre d'éléments par responsable et par statut, retards, prochaines relances.`,
+  },
+  {
+    id: 'fichiers-donnees', title: 'Exploiter les fichiers fournis (Excel, CSV, PDF)',
+    re: /fichier|ci-joint|joint|xlsx|xlsb|csv|feuille|onglet|colonne|extrait|pdf|donnees|données|import/,
+    text: `- Lire d'abord (read_file ou python/pandas) : nom des onglets, ligne d'en-tête réelle (souvent pas la première), types des colonnes, lignes vides, totaux déjà présents (à exclure des sommes), dates en texte ou en nombres Excel.
+- Normaliser : libellés (accents, casse, espaces), montants en nombres (séparateurs d'espace / virgule), dates en vrai type date ; garder une colonne « source » si plusieurs fichiers.
+- Ne jamais recopier des chiffres à la main : les agrégats sortent du code et sont réinjectés dans create_excel via sources (CSV écrits dans exports/) ou via run_studio.
+- Nommer les onglets d'après leur contenu (pas d'export_x, df, tmp) ; un titre, une date d'arrêté et l'unité sur chaque feuille.`,
+  },
+  {
+    id: 'modele-gratuit', title: 'Travailler avec un modèle gratuit ou local',
+    re: /modele gratuit|modele local|modèle gratuit|modèle local|ollama|webllm|hors ligne|offline|lm studio/,
+    text: `- Une étape à la fois : un appel d'outil, lecture attentive du résultat, puis l'étape suivante ; aucun appel d'outil écrit en texte sauf si le modèle n'a pas d'appel natif (bloc json {"tool", "arguments"}).
+- Tous les calculs par code ; recopier les résultats exacts ; aucun chiffre inventé, aucun « … », aucune donnée abrégée.
+- Fichiers produits : les ouvrir (read_file, visual_check) et corriger avant de livrer ; le harness vérifie ensuite sur preuves.
+- Si un outil échoue deux fois : changer d'approche (autre outil, découper, données plus petites) plutôt que de répéter.`,
+  },
+  {
+    id: 'design-styles', title: 'Design des documents : sobre par défaut, styles sur demande',
+    re: /design|style|charte|premium|couleur|logo|theme|thème|habillage|mise en forme|esthetique|élégant|elegant|joli|beau/,
+    text: `- Par défaut, mise en forme sobre et lisible. Un style ne s'applique que si l'utilisateur le demande (theme=…) ou si un skill chargé l'impose.
+- Styles disponibles : intégrés (revue, executif, prestige, emeraude, graphite, bordeaux, ocean, sahel) ou créés par Cortex avec style_manage (graines : primaire, secondaire, accent, relief 3d/soft/flat) puis aperçu (style_manage preview + visual_check) avant adoption.
+- Pack premium cohérent (Excel + PowerPoint + Word + mail) en un appel : run_studio avec cx.use('<style>') puis cx.deliver({...}) ; logo de la charte repris automatiquement.
+- Kit d'export d'un skill (ex. GOD 3D) : useSkill('<skill>') dans run_studio ; c'est le skill qui définit le rendu.`,
+  },
+  {
+    id: 'verification', title: 'Vérifier avant de livrer',
+    re: /verifie|vérifie|controle|contrôle|exact|juste|fiable|recoup|audit|qualite|qualité/,
+    text: `- Chaque chiffre de la réponse doit être traçable : résultat d'outil, donnée fournie ou calcul montré. Sinon, le recalculer ou le retirer.
+- Seconde méthode pour les chiffres clés : total = somme des parties, ratio recalculé, solde final = 0, pourcentages à 100 %.
+- Fichiers : ouverts et regardés (visual_check) ; en-têtes, formats, totaux, onglets, logo/charte conformes à la demande.
+- Réponse structurée : résultat, méthode et hypothèses, contrôles effectués, points d'attention, suites proposées.`,
+  }
+);
+
+/* ============================== 08s · STUDIO MULTIMÉDIA ==============================
+   Images et vidéos : génération (gratuite ou via OpenRouter), rétro-ingénierie d'un rendu (un modèle de vision
+   gratuit reconstitue la recette : sujet, style, composition, lumière, palette, prompt reproductible, paramètres)
+   mémorisée comme skill « recette », et transformation d'une image en prompt vidéo (mouvement, caméra, durée)
+   prêt pour create_video (diaporama animé local) ou pour un générateur vidéo externe.                        */
+const RECIPE_PROMPT = `Analyse cette image comme un directeur artistique et un ingénieur de prompt. Déduis comment le générateur (ou le photographe/illustrateur) a procédé. Réponds UNIQUEMENT en JSON :
+{"sujet": "ce que montre l'image", "type": "photo | illustration | 3D | peinture | pixel art | logo | infographie | capture", "style": "références de style, rendu, époque, artistes ou mouvements évoqués", "composition": "cadrage, plan, angle, règle des tiers, profondeur", "lumiere": "type, direction, ambiance, heure", "palette": ["#hex", "#hex", "#hex", "#hex", "#hex"], "camera": "focale, ouverture, objectif (si photo) ou techniques de rendu (si image de synthèse)", "details": "textures, matières, éléments secondaires, texte lisible", "ambiance": "émotion, atmosphère", "prompt_en": "prompt complet en anglais (60 à 120 mots) qui reproduit fidèlement l'image", "negative_en": "ce qu'il faut éviter", "parametres": {"ratio": "16:9 | 1:1 | 9:16 | 4:3 | 3:4", "modele_probable": "FLUX | SDXL | Midjourney | DALL·E | photo réelle | inconnu", "guidance": null, "steps": null}, "notes": "comment le générateur a probablement construit l'image (étapes, techniques)"}`;
+const VIDEO_PROMPT = `À partir de cette image, conçois un plan vidéo court. Réponds UNIQUEMENT en JSON :
+{"scene": "description de la scène", "mouvement": "ce qui bouge dans l'image (sujet, éléments, ambiance)", "camera": "mouvement de caméra (travelling, zoom lent, panoramique, orbite…)", "duree_s": 6, "ambiance": "rythme, émotion, son suggéré", "prompt_en": "prompt image-to-video complet en anglais (40 à 90 mots) décrivant le mouvement, la caméra, l'éclairage et le style", "negative_en": "à éviter (déformations, texte, flou)", "diapositives": [{"titre": "titre court", "texte": "légende d'une ligne", "duree": 6}]}`;
+async function imageDataFor(a) {
+  if (a.data && /^data:image\//.test(a.data)) return { data: a.data, label: 'image fournie' };
+  if (a.url && /^https?:/.test(a.url)) { const r = await fetch(a.url); if (!r.ok) throw new Error('Image inaccessible (HTTP ' + r.status + ')'); const b = await r.blob(); if (!b.type.startsWith('image/')) throw new Error('Ce lien ne renvoie pas une image'); return { data: await blobToDataURL(b), label: a.url }; }
+  const p = a.path || a.image || a.file; if (!p) throw new Error('Indique path (image de l\'espace), url ou data');
+  const f = readWorkspaceFile(p); if (!f) throw new Error('Image introuvable : ' + p);
+  if (f.encoding !== 'base64' || !/^data:image\//.test(f.content)) throw new Error('Ce fichier n\'est pas une image : ' + p);
+  return { data: f.content, label: p };
+}
+async function visionJSON(image, prompt, signal) {
+  const model = visionModel();
+  const r = await quickComplete([{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: image } }] }], { model, maxTokens: 1600, kind: 'vision', signal, extra: noReasoning(model) });
+  const j = safeJSON((String(r.text || '').match(/\{[\s\S]*\}/) || [])[0] || '');
+  if (!j) throw new Error('Le modèle de vision n\'a pas renvoyé de JSON exploitable : ' + truncate(r.text || '', 200));
+  return { j, model };
+}
+function recipeMarkdown(j, label, model) {
+  const pal = (j.palette || []).map((c) => '`' + c + '`').join(' ');
+  return `## Quand l'utiliser\nPour reproduire ou décliner le rendu de « ${label} » (${j.type || 'image'}).\n\n## Recette\n- Sujet : ${j.sujet || ''}\n- Style : ${j.style || ''}\n- Composition : ${j.composition || ''}\n- Lumière : ${j.lumiere || ''}\n- Palette : ${pal}\n- Caméra / rendu : ${j.camera || ''}\n- Détails : ${j.details || ''}\n- Ambiance : ${j.ambiance || ''}\n\n## Prompt reproductible (anglais)\n${j.prompt_en || ''}\n\nÀ éviter : ${j.negative_en || '—'}\n\n## Paramètres\n${JSON.stringify(j.parametres || {})}\n\n## Comment le générateur a procédé\n${j.notes || ''}\n\n## Étapes dans Cortex\n1. generate_image { prompt: <prompt ci-dessus adapté>, aspect_ratio: ${(j.parametres && j.parametres.ratio) || '1:1'} }\n2. image_recipe sur le résultat pour comparer et corriger le prompt (écart de style, de lumière, de composition).\n3. video_prompt pour l'animer si besoin.\n\n(recette déduite par ${modelShort(model)})`;
+}
+const MEDIA_TOOLS = [
+  {
+    name: 'image_recipe', title: "Recette d'une image", icon: 'image', group: 'media', perm: 'auto', write: true,
+    summary: "Comprend comment une image a été produite (vision gratuite) : style, composition, lumière, palette, prompt reproductible ; mémorisée comme recette réutilisable.",
+    description: "Rétro-ingénierie d'une image (générée ou non) : un modèle de vision reconstitue la recette — sujet, style, composition, lumière, palette, caméra/rendu, prompt anglais reproductible, paramètres et la façon dont le générateur a probablement procédé. Paramètres : path (image de l'espace, ex. exports/image.png), url ou data ; save (défaut oui) enregistre la recette comme skill « recette-… » réutilisable (Skills) ; name pour la nommer. Utilise-le après chaque génération importante pour apprendre à reproduire ou décliner le rendu.",
+    parameters: { type: 'object', properties: { path: { type: 'string' }, url: { type: 'string' }, data: { type: 'string' }, name: { type: 'string' }, save: { type: 'boolean' } }, required: [] },
+    args: (a) => a.path || a.url || (a.data ? 'image fournie' : ''),
+    async run(a, ctx) {
+      const { data, label } = await imageDataFor(a); ctx.progress('Analyse de l\'image par un modèle de vision…');
+      const { j, model } = await visionJSON(data, RECIPE_PROMPT, ctx.signal);
+      let saved = '';
+      if (a.save !== false && Skills?.addImported) { const base = slugify(String(a.name || j.sujet || label.split('/').pop()).slice(0, 50)) || 'image'; const sk = Skills.addImported({ name: 'recette-' + base, title: 'Recette : ' + truncate(String(a.name || j.sujet || base), 60), emoji: '🎨', description: truncate(`Reproduire le rendu « ${j.sujet || base} » (${j.type || 'image'}, ${j.style || ''})`, 280), triggers: truncate([j.type, j.style, j.sujet].filter(Boolean).join(', '), 200), tools: ['generate_image', 'image_recipe', 'video_prompt'], content: recipeMarkdown(j, label, model), learned: true, recipe: j, learnedFrom: { image: label, at: now(), model } }, null, 'recette'); saved = `\n\nRecette enregistrée comme skill « ${sk.name} » (réutilisable : load_skill).`; }
+      return { text: `Recette de « ${label} » (vision : ${modelShort(model)}) :\n\n${recipeMarkdown(j, label, model)}${saved}\n\nPour reproduire : generate_image { prompt: "${truncate(String(j.prompt_en || '').replace(/"/g, '\\"'), 400)}", aspect_ratio: "${(j.parametres && j.parametres.ratio) || '1:1'}" }`, recipe: j };
+    },
+  },
+  {
+    name: 'video_prompt', title: 'Prompt vidéo depuis une image', icon: 'video', group: 'media', perm: 'auto',
+    summary: "Transforme une image en plan vidéo : mouvement, caméra, durée, prompt image-to-video, et diapositives prêtes pour create_video.",
+    description: "Conçoit, à partir d'une image (path de l'espace, url ou data), un plan vidéo court : ce qui bouge, mouvement de caméra, durée, ambiance, prompt image-to-video en anglais (utilisable avec un générateur vidéo externe : Veo, Kling, Runway, Pika, Sora…) et des diapositives prêtes pour create_video (rendu local gratuit : effet Ken Burns sur l'image, titres animés). Enchaîne avec create_video { slides:[{ title, text, duration, image: <path> }] } pour produire le fichier tout de suite.",
+    parameters: { type: 'object', properties: { path: { type: 'string' }, url: { type: 'string' }, data: { type: 'string' }, intention: { type: 'string', description: 'ce que la vidéo doit raconter (optionnel)' } }, required: [] },
+    args: (a) => a.path || a.url || '',
+    async run(a, ctx) {
+      const { data, label } = await imageDataFor(a); ctx.progress('Conception du plan vidéo…');
+      const { j, model } = await visionJSON(data, VIDEO_PROMPT + (a.intention ? `\nIntention de l'utilisateur : ${a.intention}` : ''), ctx.signal);
+      const slides = (j.diapositives || [{ titre: j.scene, texte: '', duree: j.duree_s || 6 }]).slice(0, 6).map((s) => ({ title: s.titre || '', text: s.texte || '', duration: Math.max(2, Math.min(20, +s.duree || 6)), image: a.path || undefined }));
+      return { text: `Plan vidéo pour « ${label} » (${modelShort(model)}) :\n- Scène : ${j.scene || ''}\n- Mouvement : ${j.mouvement || ''}\n- Caméra : ${j.camera || ''}\n- Durée : ${j.duree_s || 6} s · Ambiance : ${j.ambiance || ''}\n\nPrompt image-to-video (anglais) :\n${j.prompt_en || ''}\n\nÀ éviter : ${j.negative_en || '—'}\n\nRendu local immédiat : create_video { file_name: "${slugify(label.split('/').pop().replace(/\.[^.]+$/, '')) || 'video'}", slides: ${JSON.stringify(slides)} }`, plan: j, slides };
+    },
+  },
+];
+for (const t of MEDIA_TOOLS) { BUILTIN_TOOLS.push(t); TOOLS.set(t.name, t); }
+/* generate_image : option learn → la recette du rendu est déduite et mémorisée dans la foulée */
+{
+  const gi = TOOLS.get('generate_image');
+  if (gi) {
+    const run = gi.run.bind(gi);
+    gi.parameters.properties.learn = { type: 'boolean', description: "après génération, déduire et mémoriser la recette du rendu (image_recipe) pour savoir la reproduire" };
+    gi.description += " Option learn: true → Cortex analyse ensuite l'image produite (vision gratuite) et mémorise la recette (style, composition, prompt reproductible).";
+    gi.run = async (a, ctx) => {
+      const r = await run(a, ctx);
+      if (a.learn && r && r.files && r.files[0]) { try { ctx.progress('Apprentissage de la recette…'); const rec = await TOOLS.get('image_recipe').run({ path: r.files[0], name: a.file_name || truncate(a.prompt, 40) }, ctx); r.text += '\n\n' + rec.text; } catch (e) { r.text += '\n\n(recette non déduite : ' + e.message + ')'; } }
+      return r;
+    };
+  }
+}
+
 /* ============================== 09 · MOTEUR (HARNESS) ============================== */
 
 /* ---------- Arbre de messages (branches) ---------- */
@@ -10430,7 +10566,7 @@ Quand l'utilisateur demande un fichier, produis un VRAI fichier${dedicated.lengt
 Mise en forme : sobre par défaut. Applique la charte que l'utilisateur demande ou que le skill chargé définit (ex. kit d'export d'un skill exécuté avec run_studio) ; n'invente pas de charte. Thème (theme) et logo seulement sur demande ; graphiques avec create_chart ; rapports et tableaux de bord HTML avec create_html_report.`;
   }
   if (dedicatedNames(names).length && fingerprintBrief()) sec.empreinte = `# Design choisi par l'utilisateur\n${fingerprintBrief()}\nS'il exprime un autre goût (« plus sobre », « en vert », « comme ce fichier »), utilise design_studio.`;
-  const pbs = tools.length && !sub ? playbooksFor(query, 2) : [];
+  const pbs = tools.length && !sub ? playbooksFor(query, 3) : [];
   if (pbs.length) sec.methods = '# Méthodes expertes (référentiel Cortex)\n' + pbs.map((p) => `## ${p.title}\n${p.text}`).join('\n');
   if (names.includes('load_skill')) sec.skills = Skills.promptList();
   if (skills.length) sec.skillsActive = skills.map((s) => Skills.block(s)).join('\n\n');
