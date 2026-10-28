@@ -45,6 +45,26 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
 - Python installe seul les paquets manquants (openpyxl, python-docx, python-pptx, fpdf2…) ; tout fichier
   écrit dans l'espace de travail devient téléchargeable.
 
+### Empreintes premium (design imposé à tous les livrables, même par les modèles gratuits)
+- Une **empreinte** est un système de design complet : bandeau sombre avec logo et **ligne d'accent**, tuiles d'indicateurs
+  en dégradé, bandeaux de section soulignés, en-têtes de tableau en dégradé, lignes alternées, **statuts colorés**,
+  polices (Segoe UI + Consolas), pied de page « organisation · titre · diffusion | page x / y ». Le design est appliqué
+  par les outils : le modèle ne s'occupe que des données.
+- Empreinte par défaut **« Revue premium — pétrole et lime »**, reproduite d'un registre de revue de crédit de référence
+  (le design, pas les données).
+- **Excel** : tableau de bord automatique dès qu'il y a une colonne Statut (tuile Total, une tuile par statut, En retard,
+  Avancement ; section Lecture avec constats chiffrés ; **graphiques natifs** anneau par statut et barres empilées par owner ;
+  synthèses par rubrique et par owner en formules, barres d'avancement), registre (colonnes **✎ à renseigner**, statuts
+  colorés + liste déroulante, séparateurs de rubriques, **Retard (j)** calculé, échéances dépassées en rouge, filtres,
+  volets figés), feuille **Paramètres** (mode d'emploi, statuts et définitions, rubriques, owners).
+- **Word, PDF, PowerPoint, HTML** au même langage : bandeau titre, tuiles, sections, tableaux à statuts colorés, lignes Total,
+  pied de page.
+- **Copier le design d'un fichier** (bouton Design) : Excel, Word, PowerPoint ou image de référence → nouvelle empreinte
+  (palette, accent, polices détectés).
+- **Créer une empreinte avec le Guru** en décrivant vos goûts ; **👍/👎** sur chaque fichier produit : un 👎 commenté fait
+  affiner l'empreinte par le Guru puis régénère le fichier. Outil `design_studio` pour les modèles (list, create, import,
+  update, apply, feedback).
+
 ### Designs « ultra premium » (tous les modèles, même gratuits)
 - **7 thèmes** cohérents pour Excel, Word, PDF, PowerPoint et rapports HTML : Exécutif, Prestige (marine et or),
   Émeraude, Graphite, Bordeaux, Océan, Sahel — plus **Marque** (votre couleur) et **Logo** (palette extraite du logo).
@@ -78,6 +98,17 @@ d'outils** : le modèle peut démonter un outil (schéma, code source), en crée
   avec **lecture des meilleures pages** — bascule automatique d'un moteur à l'autre. Option OpenRouter (payante).
 - Aucun service gratuit n'est « illimité » contractuellement : la combinaison de plusieurs sources évite qu'un
   quota unique bloque Cortex.
+
+### Guru 100 % gratuit (aucun appel payant)
+- **Course** entre les deux plus puissants modèles gratuits de raisonnement : la première stratégie complète gagne ;
+  repli sur un modèle gratuit rapide. Une stratégie déjà réussie pour une tâche proche est **réutilisée instantanément**.
+- **Méthodes expertes intégrées** (livrables premium, risque de crédit UEMOA/BCEAO/Bâle/IFRS 9, analyse de données,
+  rédaction, stratégie, code, recherche, juridique OHADA) injectées selon la tâche, avec l'empreinte imposée.
+- Outils du Guru pour les modèles gratuits : `ask_guru` (question difficile), `guru_code` (le Guru écrit le code Python et
+  Cortex l'exécute), et **reprise automatique** : un outil qui échoue deux fois est corrigé et exécuté par le Guru.
+- Robustesse : coupure du fournisseur en cours de réponse (« Provider timed out ») → nouvelle tentative, puis bascule sur
+  un autre modèle gratuit ; réparateur JSON renforcé (guillemets internes non échappés, virgules manquantes, sorties
+  tronquées, littéraux Python) ; `create_excel` accepte aussi un tableau Markdown ou CSV (`table`).
 
 ### Modèles gratuits « niveau premium » : REA, Guru et boosters
 - **REA en premier sur chaque tâche** : analyse préalable visible (expériences passées similaires, outils pertinents
