@@ -3963,10 +3963,12 @@ Office.xlsx = async function (sheets, opts = {}) {
       if (!vals.length || avgL > 28 || known < 0.5) si = -1;
       // Tableau essentiellement numérique (simulation, échéancier, synthèse chiffrée) : une colonne « Statut » de contrôle
       // (« Vérifié », « Calculé ») ne fait pas un registre de suivi → pas de tableau de bord par statut
-      if (si >= 0 && !declared.filter(Boolean).length) {
+      // (même si le modèle a déclaré des statuts ; seul dashboard: true explicite force le tableau de bord)
+      if (si >= 0 && opts.dashboard !== true) {
         const numCols = headers.filter((_, c) => c !== si && rows.length && rows.filter((r) => Office.cellValue(r[c]).n != null).length >= rows.length * 0.8).length;
         const distinct = new Set(vals).size;
-        if (numCols >= Math.max(1, (headers.length - 1) * 0.5) && (distinct < 2 || (oi < 0 && dueIdx < 0) || (oi < 0 && numCols >= (headers.length - 1) * 0.6))) si = -1;
+        const decl = declared.filter(Boolean).length > 0;
+        if (numCols >= Math.max(1, (headers.length - 1) * 0.5) && ((!decl && distinct < 2) || (oi < 0 && dueIdx < 0) || (oi < 0 && numCols >= (headers.length - 1) * 0.6))) si = -1;
       }
     }
     if (gi >= 0 && rows.length > 5 && new Set(rows.map((r) => String(r[gi] ?? '').trim())).size > rows.length * 0.7) gi = -1;
