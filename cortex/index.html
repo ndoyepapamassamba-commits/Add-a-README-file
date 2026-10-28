@@ -1700,8 +1700,15 @@ const PIPMAP = { docx: 'python-docx', pptx: 'python-pptx', fpdf: 'fpdf2', PIL: '
 async function autoInstall(p, code, id) {
   let missing = [];
   try { p.globals.set('_cx_src', code); const r = p.runPython(MISSING); missing = r && r.toJs ? r.toJs() : []; if (r && r.destroy) r.destroy(); } catch (e) { return; }
+  // Moteurs optionnels de pandas (non importés explicitement) : .xlsb → pyxlsb, Excel → openpyxl, .xls → xlrd, .ods → odfpy
+  const eng = [];
+  if (/\\.xlsb\\b|pyxlsb/.test(code)) eng.push('pyxlsb');
+  if (/\\.xls['"]/.test(code)) eng.push('xlrd');
+  if (/\\.ods\\b|engine\\s*=\\s*['"]odf/.test(code)) eng.push('odf');
+  if (/to_excel|ExcelWriter|\\.xlsx\\b|\\.xlsm\\b/.test(code) || (/read_excel|ExcelFile/.test(code) && !eng.length)) eng.push('openpyxl');
+  if (eng.length) { try { const r = p.runPython('import importlib.util as _u\\n[_m for _m in ' + JSON.stringify(eng) + ' if _u.find_spec(_m) is None]'); const more = r && r.toJs ? r.toJs() : []; if (r && r.destroy) r.destroy(); for (const m of more) if (!missing.includes(m)) missing.push(m); } catch (e) {} }
   if (!missing.length) return;
-  const pkgs = missing.map((m) => PIPMAP[m] || m);
+  const pkgs = missing.map((m) => (m === 'odf' ? 'odfpy' : PIPMAP[m] || m));
   self.postMessage({ id, progress: 'Installation automatique : ' + pkgs.join(', ') + '…' });
   await p.loadPackage('micropip');
   const mp = p.pyimport('micropip');
@@ -2121,7 +2128,7 @@ function chunkText(text, size = 1200, overlap = 180) {
   return chunks;
 }
 /* Extraction de texte depuis un fichier (txt, md, code, pdf, docx, xlsx, html) */
-async function extractText(file) {
+async function extractText(file, opts = {}) {
   const name = file.name || 'fichier';
   const ext = (name.split('.').pop() || '').toLowerCase();
   if (ext === 'pdf' || file.type === 'application/pdf') {
@@ -2149,10 +2156,15 @@ async function extractText(file) {
     const r = await mammoth.extractRawText({ arrayBuffer: await readFile(file, 'arrayBuffer') });
     return r.value;
   }
-  if (['xlsx', 'xls', 'ods'].includes(ext)) {
+  if (['xlsx', 'xls', 'xlsm', 'xlsb', 'ods'].includes(ext)) {
     await loadScript(LIBS.xlsx);
     const wb = XLSX.read(await readFile(file, 'arrayBuffer'), { type: 'array' });
-    return wb.SheetNames.map((n) => `## Feuille : ${n}\n` + XLSX.utils.sheet_to_csv(wb.Sheets[n])).join('\n\n');
+    const dims = wb.SheetNames.map((n) => { const r = wb.Sheets[n]['!ref'] ? XLSX.utils.decode_range(wb.Sheets[n]['!ref']) : null; return r ? { n, rows: r.e.r - r.s.r + 1, cols: r.e.c - r.s.c + 1 } : { n, rows: 0, cols: 0 }; });
+    const cells = dims.reduce((a, d) => a + d.rows * d.cols, 0);
+    if (opts.full || cells <= 30000) return wb.SheetNames.map((n) => `## Feuille : ${n}\n` + XLSX.utils.sheet_to_csv(wb.Sheets[n])).join('\n\n');
+    // Gros classeur : aperçu structuré (le détail s'analyse avec Python, sans saturer le contexte du modèle)
+    const eng = ext === 'xlsb' ? ", engine='pyxlsb'" : ext === 'ods' ? ", engine='odf'" : '';
+    return `# Classeur volumineux « ${file.name} » (${dims.map((d) => `${d.n} : ${d.rows} lignes × ${d.cols} colonnes`).join(' ; ')})\nAperçu ci-dessous (25 premières lignes par feuille). Pour l'analyse complète, utilise python : pd.read_excel('uploads/${file.name}', sheet_name='…'${eng}).\n\n` + dims.map((d) => { const aoa = XLSX.utils.sheet_to_json(wb.Sheets[d.n], { header: 1, defval: '' }).slice(0, 26); return `## Feuille : ${d.n} (${d.rows} lignes × ${d.cols} colonnes)\n` + aoa.map((r) => r.map((c) => (/[",\n]/.test(String(c)) ? '"' + String(c).replace(/"/g, '""') + '"' : c)).join(',')).join('\n') + (d.rows > 26 ? `\n… (${d.rows - 26} lignes de plus)` : ''); }).join('\n\n');
   }
   const text = await readFile(file, 'text');
   if (['html', 'htm'].includes(ext)) return htmlToText(text).text;
@@ -3679,9 +3691,10 @@ class XlSheet {
 /* ---------- Graphiques natifs (anneau par statut, barres empilées par groupe × statut) ---------- */
 const XlChart = {
   txPr(sz, color, font, b = false) { return `<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="${sz}"${b ? ' b="1"' : ''}><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:latin typeface="${xmlEsc(font)}"/></a:defRPr></a:pPr><a:endParaRPr lang="fr-FR"/></a:p></c:txPr>`; },
-  frame(fp, plot, legend = true) {
+  frame(fp, plot, legend = true, title = '') {
+    const tt = title ? `<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1100" b="1"/></a:pPr><a:r><a:rPr lang="fr-FR" sz="1100" b="1"><a:solidFill><a:srgbClr val="${fp.colors.banner}"/></a:solidFill><a:latin typeface="${xmlEsc(fp.fonts.body)}"/></a:rPr><a:t>${xmlEsc(title)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title><c:autoTitleDeleted val="0"/>` : '<c:autoTitleDeleted val="1"/>';
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/><c:chart><c:autoTitleDeleted val="1"/><c:plotArea><c:layout/>${plot}<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr></c:plotArea>${legend ? `<c:legend><c:legendPos val="b"/><c:overlay val="0"/>${this.txPr(900, fp.colors.muted, fp.fonts.body)}</c:legend>` : ''}<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart><c:spPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln w="9525"><a:solidFill><a:srgbClr val="${fp.colors.grid}"/></a:solidFill></a:ln></c:spPr>${this.txPr(900, fp.colors.text, fp.fonts.body)}</c:chartSpace>`;
+<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/><c:chart>${tt}<c:plotArea><c:layout/>${plot}<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr></c:plotArea>${legend ? `<c:legend><c:legendPos val="b"/><c:overlay val="0"/>${this.txPr(900, fp.colors.muted, fp.fonts.body)}</c:legend>` : ''}<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart><c:spPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln w="9525"><a:solidFill><a:srgbClr val="${fp.colors.grid}"/></a:solidFill></a:ln></c:spPr>${this.txPr(900, fp.colors.text, fp.fonts.body)}</c:chartSpace>`;
   },
   strLit(arr) { return `<c:strLit><c:ptCount val="${arr.length}"/>${arr.map((x, i) => `<c:pt idx="${i}"><c:v>${xmlEsc(String(x))}</c:v></c:pt>`).join('')}</c:strLit>`; },
   numRef(f, vals) { return `<c:numRef><c:f>${xmlEsc(f)}</c:f><c:numCache><c:formatCode>General</c:formatCode><c:ptCount val="${vals.length}"/>${vals.map((v, i) => `<c:pt idx="${i}"><c:v>${+v || 0}</c:v></c:pt>`).join('')}</c:numCache></c:numRef>`; },
@@ -3691,12 +3704,47 @@ const XlChart = {
     const dl = `<c:dLbls><c:numFmt formatCode="0;;;" sourceLinked="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${this.txPr(1000, 'FFFFFF', fp.fonts.body, true)}<c:showLegendKey val="0"/><c:showVal val="1"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="0"/><c:showBubbleSize val="0"/><c:showLeaderLines val="0"/></c:dLbls>`;
     return this.frame(fp, `<c:doughnutChart><c:varyColors val="1"/><c:ser><c:idx val="0"/><c:order val="0"/><c:tx><c:v>Statut</c:v></c:tx>${dpts}${dl}<c:cat>${catRef ? this.strRef(catRef, labels) : this.strLit(labels)}</c:cat><c:val>${this.numRef(ref, vals)}</c:val></c:ser><c:firstSliceAng val="0"/><c:holeSize val="55"/></c:doughnutChart>`);
   },
+  generic(fp, { type = 'bar', title = '', catRef, cats, series, palette }) {
+    const round = type === 'pie' || type === 'doughnut';
+    const dl = (pos) => `<c:dLbls><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${this.txPr(900, round ? 'FFFFFF' : fp.colors.text, fp.fonts.body, round)}${pos ? `<c:dLblPos val="${pos}"/>` : ''}<c:showLegendKey val="0"/><c:showVal val="1"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="0"/><c:showBubbleSize val="0"/>${round ? '<c:showLeaderLines val="0"/>' : ''}</c:dLbls>`;
+    if (round) {
+      const se = series[0];
+      const dpts = cats.map((_, i) => `<c:dPt><c:idx val="${i}"/><c:bubble3D val="0"/><c:spPr><a:solidFill><a:srgbClr val="${palette[i % palette.length]}"/></a:solidFill><a:ln w="19050"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln></c:spPr></c:dPt>`).join('');
+      const ser = `<c:ser><c:idx val="0"/><c:order val="0"/><c:tx><c:v>${xmlEsc(se.name)}</c:v></c:tx>${dpts}${dl('')}<c:cat>${this.strRef(catRef, cats)}</c:cat><c:val>${this.numRef(se.ref, se.vals)}</c:val></c:ser>`;
+      return this.frame(fp, type === 'pie' ? `<c:pieChart><c:varyColors val="1"/>${ser}<c:firstSliceAng val="0"/></c:pieChart>` : `<c:doughnutChart><c:varyColors val="1"/>${ser}<c:firstSliceAng val="0"/><c:holeSize val="55"/></c:doughnutChart>`, true, title);
+    }
+    const isLine = type === 'line', horiz = type === 'bar';
+    const ser = series.map((se, i) => `<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:v>${xmlEsc(se.name)}</c:v></c:tx><c:spPr>${isLine ? `<a:ln w="28575" cap="rnd"><a:solidFill><a:srgbClr val="${se.color}"/></a:solidFill></a:ln>` : `<a:solidFill><a:srgbClr val="${se.color}"/></a:solidFill>`}</c:spPr>${isLine ? `<c:marker><c:symbol val="circle"/><c:size val="6"/><c:spPr><a:solidFill><a:srgbClr val="${se.color}"/></a:solidFill></c:spPr></c:marker>` : '<c:invertIfNegative val="0"/>'}${series.length === 1 && cats.length <= 14 ? dl(isLine ? 't' : 'outEnd') : ''}<c:cat>${this.strRef(catRef, cats)}</c:cat><c:val>${this.numRef(se.ref, se.vals)}</c:val>${isLine ? '<c:smooth val="0"/>' : ''}</c:ser>`).join('');
+    const ax = `<c:catAx><c:axId val="6001"/><c:scaling><c:orientation val="${horiz ? 'maxMin' : 'minMax'}"/></c:scaling><c:delete val="0"/><c:axPos val="${horiz ? 'l' : 'b'}"/><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="${fp.colors.rule}"/></a:solidFill></a:ln></c:spPr>${this.txPr(900, fp.colors.text, fp.fonts.body)}<c:crossAx val="6002"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx><c:valAx><c:axId val="6002"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="${horiz ? 't' : 'l'}"/><c:majorGridlines><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="${fp.colors.grid}"/></a:solidFill></a:ln></c:spPr></c:majorGridlines><c:numFmt formatCode="#,##0.##" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr>${this.txPr(850, fp.colors.muted, fp.fonts.body)}<c:crossAx val="6001"/><c:crosses val="${horiz ? 'max' : 'autoZero'}"/><c:crossBetween val="between"/></c:valAx>`;
+    const plot = isLine ? `<c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/>${ser}<c:marker val="1"/><c:axId val="6001"/><c:axId val="6002"/></c:lineChart>` : `<c:barChart><c:barDir val="${horiz ? 'bar' : 'col'}"/><c:grouping val="clustered"/><c:varyColors val="0"/>${ser}<c:gapWidth val="60"/><c:axId val="6001"/><c:axId val="6002"/></c:barChart>`;
+    return this.frame(fp, plot + ax, series.length > 1, title);
+  },
   stackedBar(fp, { catRef, cats, series }) {
     const ser = series.map((s, i) => `<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:v>${xmlEsc(s.name)}</c:v></c:tx><c:spPr><a:solidFill><a:srgbClr val="${s.color}"/></a:solidFill><a:ln w="6350"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln></c:spPr><c:invertIfNegative val="0"/><c:cat>${this.strRef(catRef, cats)}</c:cat><c:val>${this.numRef(s.ref, s.vals)}</c:val></c:ser>`).join('');
     const ax = `<c:catAx><c:axId val="5001"/><c:scaling><c:orientation val="maxMin"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="${fp.colors.rule}"/></a:solidFill></a:ln></c:spPr>${this.txPr(900, fp.colors.text, fp.fonts.body)}<c:crossAx val="5002"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx><c:valAx><c:axId val="5002"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="t"/><c:majorGridlines><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="${fp.colors.grid}"/></a:solidFill></a:ln></c:spPr></c:majorGridlines><c:numFmt formatCode="0" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr>${this.txPr(850, fp.colors.muted, fp.fonts.body)}<c:crossAx val="5001"/><c:crosses val="max"/><c:crossBetween val="between"/><c:majorUnit val="1"/></c:valAx>`;
     return this.frame(fp, `<c:barChart><c:barDir val="bar"/><c:grouping val="stacked"/><c:varyColors val="0"/>${ser}<c:gapWidth val="45"/><c:overlap val="100"/><c:axId val="5001"/><c:axId val="5002"/></c:barChart>${ax}`);
   },
 };
+
+const hex6c = (v) => (/^#?[0-9a-f]{6}$/i.test(String(v || '').trim()) ? String(v).trim().replace('#', '').toUpperCase() : null);
+/* Normalisation d'un graphique décrit par un modèle : { type, title, labels, series[{ name, values }] } */
+function normChart(c) {
+  if (typeof c === 'string') c = parseLooseValue(c);
+  if (!c || typeof c !== 'object') return null;
+  const type = /pie|camembert|secteur/i.test(c.type || '') ? 'pie' : /donut|doughnut|anneau/i.test(c.type || '') ? 'doughnut' : /line|courbe|ligne/i.test(c.type || '') ? 'line' : /column|colonne|histogram|vertical/i.test(c.type || '') ? 'column' : 'bar';
+  let labels = c.labels || c.categories || c.x, series = c.series;
+  if (!labels && c.data && typeof c.data === 'object' && !Array.isArray(c.data)) {
+    labels = Object.keys(c.data);
+    const first = c.data[labels[0]];
+    if (first && typeof first === 'object') { const names = [...new Set(labels.flatMap((l) => Object.keys(c.data[l] || {})))]; series = names.map((nm) => ({ name: nm, values: labels.map((l) => +c.data[l]?.[nm] || 0) })); }
+    else series = [{ name: c.series_name || 'Valeur', values: labels.map((l) => +c.data[l] || 0) }];
+  }
+  if (!series && Array.isArray(c.values)) series = [{ name: c.series_name || 'Valeur', values: c.values }];
+  if (!series && Array.isArray(c.data) && c.data.length && typeof c.data[0] === 'object') { const ks = Object.keys(c.data[0]); const lk = ks.find((k) => typeof c.data[0][k] === 'string') || ks[0]; labels = c.data.map((d) => d[lk]); series = ks.filter((k) => k !== lk).map((k) => ({ name: k, values: c.data.map((d) => +d[k] || 0) })); }
+  if (!Array.isArray(labels) || !Array.isArray(series) || !labels.length || !series.length) return null;
+  series = series.map((se) => ({ name: String(se.name || se.label || ''), values: (se.values || se.data || []).map((v) => +String(v).replace(/[\s ]/g, '').replace(',', '.') || 0) }));
+  return { type, title: c.title || '', labels: labels.slice(0, 40).map(String), series: series.slice(0, 8) };
+}
 
 /* ---------- Logo pour bandeau sombre : carte blanche arrondie si le logo est transparent, coins arrondis sinon ---------- */
 Office.logoCard = async function (im, fp) {
@@ -3760,6 +3808,7 @@ Office.xlsx = async function (sheets, opts = {}) {
   const S_ = {
     bannerFill: st.s({ fill: C.banner }),
     title: st.s({ font: { sz: fp.size.title, b: true, color: 'FFFFFF' }, fill: C.banner, v: 'bottom', indent: 1 }),
+    titleWrap: st.s({ font: { sz: fp.size.title, b: true, color: 'FFFFFF' }, fill: C.banner, v: 'center', indent: 1, wrap: true }),
     subtitle: st.s({ font: { sz: fp.size.subtitle, i: true, color: C.subtitle }, fill: C.banner, border: { b: ['thick', C.accent] }, v: 'center', indent: 1 }),
     bannerEdge: st.s({ fill: C.banner, border: { b: ['thick', C.accent] } }),
     section: st.s({ font: { sz: fp.size.section, b: true, color: 'FFFFFF' }, fill: C.banner, border: { b: ['thick', C.accent] }, indent: 0 }),
@@ -3775,8 +3824,16 @@ Office.xlsx = async function (sheets, opts = {}) {
   const drawBanner = (X, c1, c2, ttl, sub) => {
     X.heights[1] = 34; X.heights[2] = 26;
     for (let c = 0; c < c1; c++) { X.set(c, 1, null, S_.bannerFill); X.set(c, 2, null, S_.bannerEdge); }
-    X.merge(c1, 1, c2, 1, up(ttl), S_.title);
-    X.merge(c1, 2, c2, 2, sub || '', S_.subtitle);
+    // Colonnes laissées libres pour le logo (aligné à droite) : le titre s'arrête avant
+    const colsPx = X.widths.map((w) => xlColPx(w || 8.43));
+    let cEnd = c2;
+    if (banner) { const lw = Math.round(62 * banner.ratio) + 16; let acc = 0; while (cEnd > c1 && acc + (colsPx[cEnd] || 64) <= lw) acc += colsPx[cEnd--] || 64; if (acc < lw && cEnd > c1) cEnd--; }
+    let wPx = 0; for (let c = c1; c <= cEnd; c++) wPx += colsPx[c] || 64;
+    const tl = Math.ceil((up(ttl).length * 12.5) / Math.max(120, wPx - 16));
+    if (tl > 1) X.heights[1] = Math.min(64, 20 * tl + 10);
+    X.merge(c1, 1, cEnd, 1, up(ttl), tl > 1 ? S_.titleWrap : S_.title);
+    X.merge(c1, 2, cEnd, 2, sub || '', S_.subtitle);
+    for (let c = cEnd + 1; c <= c2; c++) { X.set(c, 1, null, S_.bannerFill); X.set(c, 2, null, S_.bannerEdge); }
     if (banner) X.pics.push({ img: banner, rightOfCol: c2, row: 0, hPx: 62, top: 9 });
   };
   const section = (X, c1, c2, r, text) => { X.heights[r] = 20; X.merge(c1, r, c2, r, up(text), S_.section); };
@@ -3789,7 +3846,7 @@ Office.xlsx = async function (sheets, opts = {}) {
       const L = ['medium', lum(col) > 0.55 ? C.accentDark : C.accent], R = ['medium', dark(col, 0.45)];
       const c2 = c + (t.span || 1) - 1;
       X.merge(c, r, c2, r, up(t.label), st.s({ font: { sz: fp.size.caption, b: true, color: capFg }, fill: [lite(col, 0.38), lite(col, 0.15), col], border: { l: L, r: R, t: ['thin', lite(col, 0.5)] }, h: 'left', wrap: true, indent: 1 }));
-      X.merge(c, r + 1, c2, r + 1, t.value, st.s({ font: { sz: fp.size.kpi, b: true, color: fg, mono: true }, fill: col, border: { l: L, r: R }, h: 'left', indent: 1, fmt: t.fmt || '0' }));
+      X.merge(c, r + 1, c2, r + 1, t.value, st.s({ font: { sz: t.vsz || fp.size.kpi, b: true, color: fg, mono: true }, fill: col, border: { l: L, r: R }, h: 'left', indent: 1, fmt: t.fmt || '0' }));
       X.merge(c, r + 2, c2, r + 2, t.caption ?? '', st.s({ font: { sz: fp.size.caption, i: true, color: capFg }, fill: [col, col, dark(col, 0.3)], border: { l: L, r: R, b: ['thick', dark(col, 0.5)] }, h: 'left', indent: 1, fmt: t.capFmt || '@' }));
       c = c2 + 1;
     }
@@ -3823,6 +3880,15 @@ Office.xlsx = async function (sheets, opts = {}) {
       [si, gi, oi, dueIdx, recvIdx] = [si, gi, oi, dueIdx, recvIdx].map((i) => (i < 0 ? i : sh(i)));
       lateIdx = at;
     } else lateIdx = -1;
+    // Garde-fous : une « colonne statut » de commentaires libres ou un regroupement à valeurs uniques n'ont pas de sens
+    if (si >= 0) {
+      const vals = rows.map((r) => String(r[si] ?? '').trim()).filter(Boolean);
+      const declared = (raw.status_values || []).map((x) => String(x).trim());
+      const avgL = vals.reduce((a, v) => a + v.length, 0) / Math.max(1, vals.length);
+      const known = vals.filter((v) => statusKind(v) !== 'other' || declared.includes(v)).length / Math.max(1, vals.length);
+      if (!vals.length || avgL > 28 || known < 0.5) si = -1;
+    }
+    if (gi >= 0 && rows.length > 5 && new Set(rows.map((r) => String(r[gi] ?? '').trim())).size > rows.length * 0.7) gi = -1;
     const M = { raw, name: Office.sheetName(raw.name || raw.title || 'Données', used), title: raw.title || title || raw.name || 'Données', subtitle: raw.subtitle, headers, rows, si, gi, oi: oi === si || oi === gi ? -1 : oi, dueIdx, recvIdx, lateIdx };
     M.itemLabel = raw.item_label || 'éléments';
     M.groupLabel = raw.group_by || 'Groupe';
@@ -3876,7 +3942,7 @@ Office.xlsx = async function (sheets, opts = {}) {
       if (role[c] !== 'auto' && role[c] !== 'ref') return role[c];
       const vals = R.map((r) => cv(r[c])).map((v) => (v.n != null ? v.n : v.cached)).filter((x) => typeof x === 'number' && isFinite(x));
       const filled = R.filter((r) => String(r[c] ?? '').trim() !== '').length;
-      if (!vals.length || vals.length < filled * 0.8) return role[c] === 'ref' ? 'ref' : 'text';
+      if (!vals.length || vals.length < filled * (H.some((h) => /^(unite|unit|devise)$/.test(normalizeText(h).trim())) ? 0.5 : 0.8)) return role[c] === 'ref' ? 'ref' : 'text';
       if (role[c] === 'ref') return 'ref';
       if (R.some((r) => cv(r[c]).pct)) return 'pct';
       if (PCT_HEAD.test(normalizeText(h)) && vals.every((x) => Math.abs(x) <= 1.5) && vals.some((x) => !Number.isInteger(x))) return 'pct';
@@ -3895,6 +3961,8 @@ Office.xlsx = async function (sheets, opts = {}) {
       return 'text';
     };
     const kinds = H.map((_, c) => kindOf(c));
+    const unitIdx = H.findIndex((h) => /^(unite|unites|unit|units|devise|monnaie)$/.test(normalizeText(h).trim()));
+    const unitFmt = (u, v) => { const t = normalizeText(String(u ?? '')); if (/%|pourcent/.test(t)) return '#,##0.00'; if (/index|indice|ratio|coef|\bx\b/.test(t)) return '0.000'; if (/nb|nombre|count|unite/.test(t)) return '#,##0'; if (/xof|fcfa|cfa|eur|usd|\$|€|mrd|mds|md\b|\bm\b|k\b|montant/.test(t)) return Number.isInteger(v) || Math.abs(v) >= 1000 ? '#,##0' : '#,##0.00'; return null; };
     const editable = new Set((M.raw.editable_columns || []).map((x) => normalizeText(x)));
     const isEdit = (c) => (editable.size ? editable.has(normalizeText(H[c])) : ['status', 'date', 'comment'].includes(kinds[c]) && c !== M.lateIdx);
     // Largeurs
@@ -3909,7 +3977,7 @@ Office.xlsx = async function (sheets, opts = {}) {
       if (k === 'main') return clamp(Math.round(L * 0.75 + 12), 30, 52);
       if (k === 'comment') return clamp(Math.round(L * 0.6 + 14), 22, 44);
       if (k === 'meta') return clamp(Math.round(L * 0.75 + 6), 12, 24);
-      if (['int', 'dec', 'pct'].includes(k)) return clamp(Math.max(String(h).length + 3, 11), 10, 18);
+      if (['int', 'dec', 'pct'].includes(k)) { const ml = Math.max(0, ...R.map((r) => { const x = cv(r[c]); const nv = x.n ?? x.cached; return typeof nv === 'number' ? String(Math.round(Math.abs(nv))).length * 1.34 + (Number.isInteger(nv) ? 1 : 4) : String(r[c] ?? '').length; })); return clamp(Math.max(String(h).length + 3, 11, Math.ceil(ml) + 2), 10, 24); }
       return clamp(Math.round(Math.min(mx, L * 1.4) + 4), 10, 34);
     }).map((w, c) => (M.raw.widths?.[c] ? +M.raw.widths[c] : w));
     X.widths = W;
@@ -3920,10 +3988,29 @@ Office.xlsx = async function (sheets, opts = {}) {
     let r = 4;
     // Tuiles éventuelles (feuilles sans tableau de bord)
     if (M.raw.kpis?.length && !(wantDash && M === mainM)) {
-      const list = M.raw.kpis.slice(0, 8).map((k, i) => ({ label: k.label, value: typeof k.value === 'number' ? k.value : cv(k.value).n ?? String(k.value ?? ''), caption: k.caption || '', color: k.color && /^#?[0-9a-f]{6}$/i.test(k.color) ? k.color.replace('#', '').toUpperCase() : [C.banner, fp.status.doing, fp.status.partial, fp.status.received, fp.status.progress, fp.status.waiting, fp.status.blocked, C.group][i % 8], span: 1, fmt: k.format || (typeof k.value === 'number' && !Number.isInteger(k.value) ? (Math.abs(k.value) <= 1.5 && /%|taux|ratio|part/i.test(k.label) ? '0.0%' : '#,##0.00') : '#,##0') }));
+      const pal = [C.banner, fp.status.doing, fp.status.partial, fp.status.received, fp.status.progress, fp.status.waiting, fp.status.blocked, C.group];
+      const list = M.raw.kpis.slice(0, 12).map((k, i) => ({ label: k.label, value: typeof k.value === 'number' ? k.value : String(k.value ?? ''), caption: k.caption || '', color: hex6c(k.color) || pal[i % pal.length], fmt: k.format || (typeof k.value === 'number' ? (!Number.isInteger(k.value) && Math.abs(k.value) <= 1.5 && /%|taux|ratio|part|couverture/i.test(k.label) ? '0.0%' : Number.isInteger(k.value) ? '#,##0' : '#,##0.00') : '@') }));
+      const perRow = Math.max(1, Math.min(n >= 2 ? n : 1, list.length <= n ? list.length : Math.ceil(list.length / Math.ceil(list.length / n))));
       r = 5; X.heights[4] = 6;
-      tiles(X, r, 0, list.map((t, i) => ({ ...t, span: list.length < n ? Math.floor(n / list.length) + (i < n % list.length ? 1 : 0) : 1 })));
-      r += 4; X.heights[r - 1] = 8;
+      for (let i = 0; i < list.length; i += perRow) {
+        const chunk = list.slice(i, i + perRow), m = chunk.length;
+        // Colonnes réparties en groupes contigus de largeurs voisines (une tuile par groupe)
+        const wpx = W.map((w) => xlColPx(w)), total = wpx.reduce((a, b) => a + b, 0);
+        const spans = []; let cI = 0, acc = 0;
+        for (let j = 0; j < m; j++) {
+          let span = 0, wsum = 0;
+          const target = (total * (j + 1)) / m - acc;
+          while (cI < n && (span === 0 || (wsum + wpx[cI] / 2 <= target && n - cI > m - j - 1))) { wsum += wpx[cI++]; span++; }
+          if (j === m - 1) while (cI < n) { wsum += wpx[cI++]; span++; }
+          acc += wsum; spans.push(span);
+        }
+        chunk.forEach((t, j) => { let w = 0; for (let c = 0, k0 = spans.slice(0, j).reduce((a, b) => a + b, 0); c < spans[j]; c++) w += wpx[k0 + c]; const len = String(typeof t.value === 'number' ? t.value.toLocaleString('fr-FR') : t.value).length; t.vsz = clamp(Math.floor((w - 14) / Math.max(1, len) / 1.15), 11, fp.size.kpi); });
+        tiles(X, r, 0, chunk.map((t, j) => ({ ...t, span: spans[j] })));
+        const lines = Math.max(1, ...chunk.map((t, j) => { let w = 0; for (let c = 0; c < spans[j]; c++) w += W[spans.slice(0, j).reduce((a, b) => a + b, 0) + c] || 10; return Math.ceil(String(t.label).length / Math.max(6, w * 1.35)); }));
+        X.heights[r] = Math.max(26, 11 * lines + 8);
+        r += 3;
+      }
+      r += 1; X.heights[r - 1] = 8;
     }
     const hr = r;
     X.heights[hr] = Math.max(24, 13 * Math.max(...H.map((h, c) => Math.ceil((String(h).length + 2) / Math.max(4, W[c] * 1.05)))) + 8);
@@ -3957,7 +4044,8 @@ Office.xlsx = async function (sheets, opts = {}) {
         else if (['int', 'dec', 'pct'].includes(kd)) {
           const x = cv(v);
           if (x.n != null) v = x.n;
-          o = { ...base, font: { sz: fp.size.body, b: isTotal, color: C.text, mono: true }, h: 'right', fmt: kd === 'pct' ? '0.00%' : kd === 'dec' ? '#,##0.00' : '#,##0', wrap: false };
+          const uf = unitIdx >= 0 && typeof v === 'number' ? unitFmt(row[unitIdx], v) : null;
+          o = { ...base, font: { sz: fp.size.body, b: isTotal, color: C.text, mono: true }, h: 'right', fmt: uf || (kd === 'pct' ? '0.00%' : kd === 'dec' ? '#,##0.00' : '#,##0'), wrap: false };
         } else if (kd === 'meta' || kd === 'comment') o = { ...base, font: { sz: fp.size.small, color: C.muted, b: isTotal } };
         else o = { ...base, font: { sz: fp.size.body, color: C.text, b: isTotal } };
         if ((v == null || v === '') && fp.style.emptyDash && !isEdit(c) && !['ref'].includes(kd)) { v = '—'; o = { ...o, font: { ...o.font, color: C.faint, b: false } }; }
@@ -3972,7 +4060,7 @@ Office.xlsx = async function (sheets, opts = {}) {
     X.filter = R.length ? `A${hr}:${colL(last)}${lastRow}` : null;
     const keyCols = (kinds[0] === 'ref' ? 1 : 0) + (kinds[1] === 'group' || (kinds[0] === 'ref' && kinds[1] === 'main') ? 1 : 0);
     X.freeze = { r: hr, c: keyCols };
-    X.printRows = [1, hr];
+    X.printRows = hr > 5 ? [hr, hr] : [1, hr];
     // Statuts : couleurs (mise en forme conditionnelle) + liste déroulante
     if (M.si >= 0) {
       const sc = colL(M.si), rng = `${sc}${first}:${sc}${Math.max(lastRow, first + 200)}`;
@@ -3993,6 +4081,32 @@ Office.xlsx = async function (sheets, opts = {}) {
       const rs = lastRow + 2;
       section(X, 0, last, rs, M.raw.insights_title || 'Lecture');
       bullets(X, 0, last, rs + 1, M.raw.insights.map(String), Math.max(40, W.reduce((a, b) => a + b, 0) * 1.2));
+    }
+    // Graphiques natifs demandés (bar, column, line, pie, doughnut) : données écrites sous les graphiques, référencées
+    const reqCharts = (Array.isArray(M.raw.charts) ? M.raw.charts : []).map(normChart).filter(Boolean).slice(0, 6);
+    if (reqCharts.length) {
+      let rr = X.lastRow + 2;
+      section(X, 0, last, rr, M.raw.charts_title || 'Graphiques');
+      const colsPx = W.map((w) => xlColPx(w));
+      const totalPx = colsPx.reduce((a, b) => a + b, 0), halfPx = totalPx / 2;
+      let acc = 0, mid = 0; while (mid < n && acc + colsPx[mid] < halfPx) acc += colsPx[mid++];
+      const chartRows = 17, top = rr + 1;
+      reqCharts.forEach((ch, k) => { const rowTop = top + Math.floor(k / 2) * (chartRows + 1); const left = k % 2 === 0 || n < 4; ch.anchor = { from: [left ? 0 : Math.max(1, mid), rowTop - 1], to: [left ? (n < 4 ? n : Math.max(1, mid)) : n, rowTop - 1 + chartRows] }; });
+      const nRows = Math.ceil(reqCharts.length / (n < 4 ? 1 : 2));
+      for (let k = 0; k < nRows * (chartRows + 1); k++) X.heights[top + k] = 15;
+      let dr = top + nRows * (chartRows + 1) + 1;
+      section(X, 0, last, dr, 'Données des graphiques'); dr += 1;
+      const pal = [C.banner, fp.status.doing, C.accent, fp.status.partial, fp.status.received, fp.status.waiting, fp.status.blocked, C.group];
+      for (const ch of reqCharts) {
+        const nc = Math.min(ch.series.length, Math.max(1, last));
+        X.set(0, dr, ch.title || 'Série', headCell(false));
+        ch.series.slice(0, nc).forEach((se, j) => X.set(1 + j, dr, se.name || `Série ${j + 1}`, headCell(false, 'center')));
+        const h0 = dr;
+        ch.labels.forEach((lb, i) => { const z = i % 2 ? C.zebra : 'FFFFFF', b = bodyBorder(false); X.set(0, dr + 1 + i, String(lb), st.s({ font: { color: C.text }, fill: z, border: b, indent: 1 })); ch.series.slice(0, nc).forEach((se, j) => X.set(1 + j, dr + 1 + i, +se.values[i] || 0, st.s({ font: { color: C.text, mono: true }, fill: z, border: b, h: 'right', fmt: Number.isInteger(+se.values[i]) ? '#,##0' : '#,##0.00' }))); });
+        const q = xlQ(X.name), r1 = h0 + 1, r2 = h0 + ch.labels.length;
+        charts.push({ sheet: X, from: ch.anchor.from, to: ch.anchor.to, xml: XlChart.generic(fp, { type: ch.type, title: ch.title, catRef: `${q}!$A$${r1}:$A$${r2}`, cats: ch.labels.map(String), series: ch.series.slice(0, nc).map((se, j) => ({ name: se.name || `Série ${j + 1}`, color: pal[j % pal.length], ref: `${q}!$${Office.colName(1 + j)}$${r1}:$${Office.colName(1 + j)}$${r2}`, vals: ch.labels.map((_, i) => +se.values[i] || 0) })), palette: pal }) });
+        dr = r2 + 2;
+      }
     }
     M.first = first; M.lastRow = lastRow; M.X = X; M.kinds = kinds;
     return X;
@@ -4245,7 +4359,7 @@ function resolveWorkspacePath(p) {
   return tail[0] || null;
 }
 /* Texte d'un fichier binaire de l'espace (Excel, Word, PowerPoint, PDF, zip) */
-async function workspaceBinaryText(f) { return universalText(dataURLtoBlob(f.content), f.id.split('/').pop()); }
+async function workspaceBinaryText(f, opts) { return universalText(dataURLtoBlob(f.content), f.id.split('/').pop(), opts); }
 function deleteWorkspaceFile(path) { path = normPath(path); if (typeof Checkpoints !== 'undefined' && Checkpoints.active.size) Checkpoints.record(path, col('files').get(path)); col('files').delete(path); DB.del('files', path); S.onFiles?.(); }
 function globToRegex(g) { return new RegExp('^' + g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '\u0000').replace(/\*/g, '[^/]*').replace(/\?/g, '.').replace(/\u0000/g, '.*') + '$'); }
 function clip(text, max) {
@@ -4365,6 +4479,7 @@ const BUILTIN_TOOLS = [
     parameters: { type: 'object', properties: { code: { type: 'string', description: 'Code Python' } }, required: ['code'] },
     args: (a) => truncate((a.code || '').split('\n').find((l) => l.trim() && !l.trim().startsWith('#')) || '', 80),
     async run(a, ctx) {
+      if (!String(a.code || '').trim()) throw new Error("paramètre code vide : tes arguments ne sont pas arrivés (souvent : code trop long ou JSON cassé par des guillemets). Renvoie le code complet dans le paramètre code ; pour un long traitement, découpe-le en plusieurs appels (les variables Python persistent entre les appels).");
       const r = await Sandbox.runPy(a.code || '', { signal: ctx.signal, onProgress: (p) => ctx.progress(p) });
       const parts = [];
       if (r.stdout?.trim()) parts.push('stdout :\n' + r.stdout.trimEnd());
@@ -4376,7 +4491,11 @@ const BUILTIN_TOOLS = [
       let files = [];
       if (r.files?.length) {
         if (S.settings.harness.permissionMode === 'readonly') parts.push('(mode lecture seule : fichiers non enregistrés)');
-        else { files = absorbPyFiles(r.files); parts.push('Fichiers écrits : ' + files.join(', ')); }
+        else {
+          files = absorbPyFiles(r.files); parts.push('Fichiers écrits : ' + files.join(', '));
+          const xl = files.filter((f) => /\.xlsx$/i.test(f));
+          if (xl.length && TOOLS.has('create_excel')) parts.push(`[Cortex] ${xl.join(', ')} n'a pas le design premium imposé. Pour le livrer, appelle create_excel avec source_file: "${xl[0]}" (toutes les feuilles sont reprises avec l'empreinte : bandeau, logo, formats, tuiles, graphiques) — ou mieux : prépare les données en CSV avec Python et passe-les à create_excel (source_file par feuille).`);
+        }
       }
       if (!parts.length) parts.push('(exécuté sans sortie)');
       return { text: clip(parts.join('\n\n')), images, files, error: !r.ok };
@@ -4406,7 +4525,7 @@ const BUILTIN_TOOLS = [
       if (!f) throw new Error(`Fichier introuvable : ${normPath(a.path)}. Utilise list_files.`);
       let content = f.content;
       if (f.encoding === 'base64') {
-        const t = await workspaceBinaryText(f).catch((e) => { throw new Error('Lecture impossible : ' + e.message); });
+        const t = await workspaceBinaryText(f, { full: !!a.start_line }).catch((e) => { throw new Error('Lecture impossible : ' + e.message); });
         if (t == null) return `${f.id} est un fichier binaire (${f.mime}, ${fmtBytes(f.size)}) — utilisable depuis Python ; visual_check permet de le voir.`;
         content = `[Texte extrait de ${f.id}]\n` + t;
       }
@@ -4958,7 +5077,7 @@ const FREE_API_TOOL = {
 /* ============================== 08c · SKILLS (savoir-faire chargeables à la demande) ==============================
    Un skill = des instructions expertes (Markdown) + des outils à activer + éventuellement des fichiers (modèles, scripts).
    Compatible avec le format SKILL.md (en-tête YAML name/description) : import d'un .md, d'un .zip ou d'un .json. */
-const SKILLS_VERSION = 6;
+const SKILLS_VERSION = 7;
 const BUILTIN_SKILLS = [
   {
     id: 'skill-excel', emoji: '📗', name: 'excel', title: 'Excel premium',
@@ -4967,12 +5086,13 @@ const BUILTIN_SKILLS = [
     tools: ['create_excel', 'visual_check'],
     content: `## Méthode
 1. Structure les données avant de générer : une ligne = un élément (document, tâche, client…), une colonne = un attribut. Colonnes types d'un registre : Réf., Section/Catégorie, Élément/Document, Description, Responsable, Échéance, Statut, Commentaires.
-2. Appelle **create_excel** en UNE fois avec TOUTES les lignes (jamais d'échantillon, jamais « … »). Pour des données calculées en Python, écris un CSV puis passe source_file.
-3. Mets status_column (ex. « Statut ») avec des status_values claires (ex. Non démarré, En cours, En revue, Complété, Bloqué, Non applicable) : couleurs automatiques + liste déroulante.
-4. Mets group_by (ex. « Section » ou « Responsable ») pour obtenir la feuille « Synthèse » d'avancement avec formules COUNTIF.
-5. Références : codes courts et triables (A.1, A.2, B.1…). Dates au format AAAA-MM-JJ ou JJ/MM/AAAA. Montants en nombres (pas de texte).
-6. Formules : écris-les comme chaînes commençant par = (ex. "=SUM(E5:E40)").
-7. Termine en résumant le contenu (nombre de lignes, onglets) ; le bouton de téléchargement apparaît seul. Ne fabrique jamais de lien sandbox:/.
+2. Appelle **create_excel** (outil natif, jamais en texte) avec TOUTES les lignes (jamais d'échantillon, jamais « … »). Données volumineuses ou calculées en Python : écris un CSV par feuille (df.to_csv('exports/top50.csv', index=False)) puis passe sheets[].source_file — ne génère JAMAIS le livrable avec openpyxl (il perdrait le design premium).
+3. Registre/suivi : status_column + status_values (cycle complet) → tableau de bord automatique, statuts colorés, liste déroulante, feuille Paramètres. N'utilise PAS status_column pour une colonne de commentaires.
+4. group_by = une catégorie qui se répète (Rubrique, Segment…), jamais un identifiant unique.
+5. Analyse chiffrée : kpis (3 à 6 chiffres clés, valeurs déjà formatées « 1 013,4 Mrd », « 2,07 % »), insights (3 à 5 constats), charts natifs (bar, column, line, pie, doughnut : { type, title, labels, series: [{ name, values }] }), une colonne Unité si les unités varient.
+6. Références : codes courts et triables (A.1, A.2, B.1…). Dates au format AAAA-MM-JJ ou JJ/MM/AAAA. Montants en nombres (pas de texte).
+7. Formules : écris-les comme chaînes commençant par = (ex. "=SUM(E5:E40)").
+8. Termine seulement quand create_excel a répondu « Classeur Excel créé » ; résume le contenu (onglets, lignes). Ne fabrique jamais de lien sandbox:/ et n'annonce jamais un fichier non créé.
 ## Qualité « premium »
 - Titre explicite + sous-titre (périmètre, date d'arrêté). Responsables nommés exactement comme fournis par l'utilisateur.
 - Une seule information par cellule ; pas de cellules fusionnées dans les données.
@@ -5095,7 +5215,7 @@ L'utilisateur dispose aussi de la page « Code » (éditeur Monaco, comme VS Cod
 1. Charge les fichiers (uploads/… ou exports/…) avec pandas ; affiche df.shape, df.dtypes, df.head() et les valeurs manquantes.
 2. Nettoie (types, doublons, dates) en expliquant chaque choix.
 3. Analyse : agrégats, tendances, ratios, top/flop, tests si pertinent. Graphiques matplotlib lisibles (titre, axes, unités) : ils s'affichent automatiquement.
-4. Livrables : tableau final → df.to_csv('exports/resultats.csv', index=False) puis create_excel(source_file='exports/resultats.csv', …) pour une version mise en forme.
+4. Livrables : un CSV par tableau final (df.to_csv('exports/synthese.csv', index=False), exports/top20.csv…), puis create_excel avec sheets[].source_file + kpis + insights + charts. Jamais de classeur livrable écrit avec openpyxl (design premium perdu). Pour des gros fichiers (.xlsb, 18 000 lignes), garde les calculs en Python et ne passe à create_excel que les tableaux de synthèse (≤ 10 000 lignes par feuille).
 5. Conclus par 3 à 5 enseignements chiffrés et des recommandations.`,
   },
   {
@@ -5358,6 +5478,29 @@ async function docStyle(a, ctx) {
 }
 const FILE_NAME_PARAM = { type: 'string', description: 'Nom du fichier sans extension, explicite (ex. Registre_Collecte_Risque_Credit_2026)' };
 
+/* Feuille décrite de façon approximative par un modèle → structure attendue */
+function coerceSheet(sh) {
+  if (typeof sh === 'string') sh = parseLooseValue(sh);
+  if (!sh || typeof sh !== 'object' || Array.isArray(sh)) return null;
+  const o = { ...sh };
+  for (const k of ['rows', 'headers', 'kpis', 'insights', 'status_values', 'done_statuses', 'editable_columns', 'instructions', 'charts', 'widths', 'columns', 'status_definitions']) if (typeof o[k] === 'string' && /^\s*[[{]/.test(o[k])) o[k] = parseLooseValue(o[k]);
+  if (typeof o.headers === 'string') o.headers = o.headers.split(/\s*[|;,]\s*/).filter(Boolean);
+  if (typeof o.insights === 'string') o.insights = o.insights.split(/\n+/).map((x) => x.replace(/^\s*(?:[-*•▪]|\d+[.)])\s*/, '').trim()).filter(Boolean);
+  if (Array.isArray(o.insights)) o.insights = o.insights.map((x) => (typeof x === 'string' ? x : x?.text || x?.insight || JSON.stringify(x))).map((x) => x.replace(/\*\*/g, ''));
+  if (o.kpis && !Array.isArray(o.kpis) && typeof o.kpis === 'object') o.kpis = Object.entries(o.kpis).map(([k, v]) => (v && typeof v === 'object' ? { label: k, ...v } : { label: k, value: v }));
+  if (Array.isArray(o.kpis)) o.kpis = o.kpis.filter((k) => k && typeof k === 'object').map((k) => ({ ...k, label: k.label ?? k.name ?? k.titre ?? '', caption: k.caption ?? k.note ?? k.unit ?? k.comment ?? '' }));
+  if (o.charts && !Array.isArray(o.charts)) o.charts = [o.charts];
+  if (Array.isArray(o.rows) && o.rows.length && o.rows.every((r) => r && typeof r === 'object' && !Array.isArray(r))) { const hs = o.headers?.length ? o.headers : [...new Set(o.rows.flatMap((r) => Object.keys(r)))]; o.headers = hs; o.rows = o.rows.map((r) => hs.map((h) => r[h] ?? '')); }
+  if (Array.isArray(o.rows)) o.rows = o.rows.filter((r) => Array.isArray(r));
+  return o;
+}
+/* Fichier de données de l'espace dont le nom correspond à une feuille (ex. « Registre_Analyse » → exports/registre_analyse.csv) */
+function findDataFileFor(name) {
+  const key = normalizeText(String(name || '')).replace(/[^a-z0-9]+/g, '');
+  if (key.length < 4) return null;
+  const files = [...col('files').keys()].filter((p) => /\.(csv|tsv|json|xlsx)$/i.test(p) && !/^exports\/.*\.xlsx$/i.test(p) || /\.(csv|tsv|json)$/i.test(p));
+  return files.find((p) => normalizeText(p.split('/').pop().replace(/\.[^.]+$/, '')).replace(/[^a-z0-9]+/g, '') === key) || null;
+}
 /* Tableau texte (Markdown ou CSV/TSV/point-virgule) → { headers, rows } : entrée plus sûre que du JSON imbriqué */
 function tableFromText(text) {
   const lines = String(text || '').replace(/\r/g, '').split('\n').filter((l) => l.trim());
@@ -5424,6 +5567,9 @@ const DELIVERABLE_TOOLS = [
               headers: { type: 'array', items: { type: 'string' } },
               rows: { type: 'array', description: "Lignes : tableaux de valeurs dans l'ordre des en-têtes", items: { type: 'array', items: {} } },
               table: { type: 'string', description: 'Alternative plus sûre à headers/rows : tableau Markdown (| A | B |) ou CSV complet, en-têtes en première ligne' },
+              source_file: { type: 'string', description: 'Données de la feuille depuis un fichier de l\'espace (CSV/JSON/xlsx, ex. préparé avec python dans exports/) — idéal pour les gros volumes' },
+              source_sheet: { type: 'string' }, columns: { type: 'array', items: { type: 'string' }, description: 'Colonnes à garder (source_file)' }, limit: { type: 'integer', description: 'Nombre max. de lignes (défaut 10 000)' },
+              charts: { type: 'array', description: 'Graphiques natifs : [{ type: bar|column|line|pie|doughnut, title, labels: [...], series: [{ name, values: [...] }] }] (ou data: { libellé: valeur })', items: { type: 'object' } },
               status_column: { type: 'string', description: 'En-tête de la colonne statut' },
               status_values: { type: 'array', items: { type: 'string' }, description: 'Statuts possibles, dans l\'ordre du cycle (liste déroulante, tuiles)' },
               done_statuses: { type: 'array', items: { type: 'string' }, description: "Statuts comptés comme faits dans l'avancement (défaut : reçus/validés/terminés)" },
@@ -5454,10 +5600,38 @@ const DELIVERABLE_TOOLS = [
     },
     args: (a) => (a.file_name || a.title || 'classeur') + '.xlsx',
     async run(a, ctx) {
-      const top = { status_column: a.status_column, group_by: a.group_by, insights: a.insights, kpis: a.kpis, item_label: a.item_label };
-      let sheets = Array.isArray(a.sheets) ? a.sheets.filter((s) => s && typeof s === 'object') : [];
-      sheets = sheets.map((s) => (s.table && !(s.headers?.length && s.rows?.length) ? { ...s, ...tableFromText(s.table) } : s)).filter((s) => s.headers?.length || s.rows?.length);
+      // Tolérance : paramètres reçus en texte JSON, en objet au lieu de liste, lignes en objets…
+      let rawSheets = typeof a.sheets === 'string' ? parseLooseValue(a.sheets) : a.sheets;
+      if (rawSheets && !Array.isArray(rawSheets) && typeof rawSheets === 'object') rawSheets = [rawSheets];
+      const top = coerceSheet({ status_column: a.status_column, group_by: a.group_by, insights: a.insights, kpis: a.kpis, item_label: a.item_label, charts: a.charts });
+      let sheets = (Array.isArray(rawSheets) ? rawSheets : []).map(coerceSheet).filter(Boolean);
+      const notes = [];
+      for (let i = 0; i < sheets.length; i++) {
+        const sh = sheets[i];
+        if (sh.table && !(sh.headers?.length && sh.rows?.length)) Object.assign(sh, tableFromText(sh.table));
+        // Feuille sans lignes : données d'un fichier (source_file), ou CSV/JSON/xlsx du même nom préparé par Python
+        if (!sh.rows?.length) {
+          const src = sh.source_file || findDataFileFor(sh.name || sh.title);
+          if (src) {
+            try {
+              const list = await sheetsFromFile(src);
+              const pick = list.find((x) => sh.source_sheet && normalizeText(x.name) === normalizeText(sh.source_sheet)) || list[0];
+              let { headers, rows } = pick;
+              if (Array.isArray(sh.columns) && sh.columns.length) { const idx = sh.columns.map((c) => headers.findIndex((h) => normalizeText(h) === normalizeText(c))).filter((x) => x >= 0); if (idx.length) { headers = idx.map((x) => headers[x]); rows = rows.map((r) => idx.map((x) => r[x])); } }
+              const lim = clamp(+sh.limit || 10000, 1, 10000);
+              if (rows.length > lim) notes.push(`« ${sh.name || 'feuille'} » limitée aux ${lim} premières lignes sur ${rows.length}`);
+              if (!sh.headers?.length || sh.headers.length !== headers.length || !sh.source_file) sh.headers = headers;
+              sh.rows = rows.slice(0, lim);
+              notes.push(`« ${sh.name || 'feuille'} » remplie depuis ${src}`);
+            } catch (e) { notes.push(`« ${sh.name || 'feuille'} » : ${e.message}`); }
+          }
+        }
+      }
+      const empty = sheets.filter((s) => !s.rows?.length && !s.template);
+      if (empty.length && empty.length < sheets.length) { notes.push(`feuille(s) sans données ignorée(s) : ${empty.map((s) => s.name || '?').join(', ')} — passe leurs lignes (rows ou table) ou un source_file (CSV préparé avec python)`); sheets = sheets.filter((s) => !empty.includes(s)); }
+      sheets = sheets.filter((s) => s.headers?.length || s.rows?.length);
       if (!sheets.length && a.table) sheets = [{ name: a.title || 'Données', title: a.title, ...tableFromText(a.table), ...top }];
+      if (!sheets.length && !a.source_file && !(a.headers && a.rows)) { const auto = findDataFileFor(a.title || a.file_name); if (auto) a.source_file = auto; }
       if (!sheets.length && a.headers && a.rows) sheets = [{ name: a.title || 'Feuille 1', title: a.title, headers: a.headers, rows: a.rows, ...top }];
       if (!sheets.length && a.source_file) sheets = (await sheetsFromFile(a.source_file)).map((s, i) => ({ ...s, ...(i === 0 ? top : {}), title: i === 0 ? a.title || s.name : s.name }));
       if (!sheets.length) throw new Error('Aucune donnée : fournis sheets (headers + rows, ou table en Markdown/CSV), table, ou source_file.');
@@ -5469,7 +5643,7 @@ const DELIVERABLE_TOOLS = [
       const path = await saveExport(a.file_name || a.title || 'classeur', blob, 'xlsx');
       const m = blob.meta || {};
       const desc = `onglets : ${(m.sheets || []).join(', ')} — ` + sheets.map((s) => `« ${s.name || 'Feuille'} » ${(s.rows || []).length} lignes × ${(s.headers || []).length} colonnes`).join(', ') + (m.dashboard ? `, tableau de bord automatique (${m.charts} graphique(s) natif(s))` : '') + ', ' + st.note;
-      return { text: deliverableText('Classeur Excel', path, desc + ', ' + fmtBytes(blob.size)), files: [path] };
+      return { text: deliverableText('Classeur Excel', path, desc + ', ' + fmtBytes(blob.size)) + (notes.length ? '\nNotes : ' + notes.join(' ; ') + '.' : ''), files: [path] };
     },
   },
   {
@@ -5885,7 +6059,7 @@ function rtfToText(r) {
   return String(r).replace(/\{\\\*[^{}]*\}/g, '').replace(/\\par[d]?\b/g, '\n').replace(/\\tab\b/g, '\t').replace(/\\'([0-9a-f]{2})/gi, (_, h) => dec(h))
     .replace(/\\u(-?\d+)\??/g, (_, n) => String.fromCharCode(+n < 0 ? 65536 + +n : +n)).replace(/\\[a-z]+-?\d* ?/gi, '').replace(/[{}]/g, '').replace(/\n{3,}/g, '\n\n').trim();
 }
-async function universalText(blob, name) {
+async function universalText(blob, name, opts = {}) {
   const ext = extOf(name);
   try {
     if (ext === 'pptx') return await Media.pptxText(await blob.arrayBuffer());
@@ -5906,7 +6080,7 @@ async function universalText(blob, name) {
     }
     if (ext === 'rtf') return rtfToText(await blob.text());
     if (ext === 'zip') return await Media.zipText(await blob.arrayBuffer());
-    if (['pdf', 'docx', 'xlsx', 'xlsm', 'xls', 'ods', 'csv', 'html', 'htm'].includes(ext)) return await extractText(new File([blob], name, { type: blob.type }));
+    if (['pdf', 'docx', 'xlsx', 'xlsm', 'xlsb', 'xls', 'ods', 'csv', 'html', 'htm'].includes(ext)) return await extractText(new File([blob], name, { type: blob.type }), opts);
     if (isTextLikeName(name) || /^text\/|json|xml|javascript|csv/.test(blob.type) || ['eml', 'ics', 'vcf', 'srt', 'vtt'].includes(ext)) return await blob.text();
     return null;
   } catch (e) { throw new Error(`extraction du texte impossible (${ext || 'format inconnu'}) : ${e.message}`); }
@@ -7243,7 +7417,7 @@ const GURU_PLAYBOOKS = [
 - Excel « registre » : colonnes Réf. | Rubrique | Élément | Owner(s) | Statut | Période/arrêté | Format/source | Date demande | Échéance | Date réception | Commentaires. status_column + status_values (cycle complet) + group_by → tableau de bord, graphiques, synthèses et Paramètres automatiques. item_label au pluriel (demandes, livrables…).
 - Ajoute toujours 3 à 5 insights chiffrés (Lecture) : volume, avancement, concentration (owner/rubrique la plus chargée), risques (bloqués, retards), prochaine action.
 - Tableaux chiffrés : kpis (3 à 6 chiffres clés), une ligne Total, unités dans les en-têtes, pourcentages en fraction (0,25) dans les colonnes Taux/Part.
-- Données volumineuses : paramètre table (Markdown ou CSV) plutôt que des rows JSON imbriqués.
+- Données volumineuses : calculs en python, un CSV par tableau dans exports/, puis create_excel avec sheets[].source_file (ou table en Markdown/CSV) — jamais de classeur livrable écrit avec openpyxl, jamais d'appel d'outil écrit en texte.
 - Word/PDF : titre + sous-titre (organisation · période · arrêté), kpis en tête, H1 = sections (Synthèse, Analyse, Recommandations, Prochaines étapes), tableaux avec une colonne Statut si pertinent, citations > pour les points d'attention.
 - PowerPoint : 1 idée par diapositive ; titres-messages (la conclusion, pas le sujet) ; layouts kpis, two_columns, timeline, section ; ≤ 6 puces.
 - Vérifie le fichier produit (visual_check) avant de conclure.`,
@@ -8018,10 +8192,30 @@ async function agentLoop(o) {
       model: res.model, provider: res.provider, genId: res.id, finishReason: res.finishReason, ttft: res.ttft, duration: res.duration, usage, status: 'done',
       toolCalls: o.forceFinal ? [] : res.toolCalls.map((t) => ({ id: t.id, name: t.name, args: t.args, status: 'pending' })),
     });
+    // Appels d'outil écrits en TEXTE par le modèle (format XML <tool_call><function=…>, JSON Hermes, bloc ```json) : exécutés comme de vrais appels
+    if (!step.toolCalls.length && !o.forceFinal && step.content && /<tool_call>|<function=|"arguments"\s*:|"parameters"\s*:|<\|python_tag\|>/.test(step.content)) {
+      const tx = parseTextToolCalls(step.content, (n) => o.toolMap.has(n) || TOOLS.has(n));
+      if (tx.calls.length) {
+        step.content = tx.rest;
+        step.toolCalls = tx.calls.map((c) => ({ id: 'call' + Math.random().toString(36).slice(2, 11), name: c.name, args: JSON.stringify(c.args), status: 'pending', fromText: true }));
+        o.run.note(`Appel(s) d'outil écrit(s) en texte par le modèle, exécuté(s) : ${tx.calls.map((c) => c.name).join(', ')}`);
+      }
+    }
     o.run.addUsage(usage, res.model || o.model, o.depth ? 'subagent' : 'chat');
     ev.end({ tokens: usage ? usage.prompt + usage.completion : null, cost: usage?.cost, model: res.model, response: { content: truncate(res.content, 4000), reasoning: truncate(res.reasoning, 2000), tool_calls: res.toolCalls, finish_reason: res.finishReason, provider: res.provider } });
     o.onUpdate();
-    if (!step.toolCalls.length) break;
+    if (!step.toolCalls.length) {
+      // Garde anti-hallucination : un fichier annoncé comme produit doit exister dans l'espace de travail
+      const miss = o.tools.length && !o.depth && !o.signal.aborted && (o.claimChecks || 0) < 2 ? missingFileClaims(step.content) : [];
+      if (miss.length) {
+        o.claimChecks = (o.claimChecks || 0) + 1;
+        step.superseded = 'claim';
+        o.nudge = `[Harness] Vérification : ${miss.map((x) => `« ${x} »`).join(', ')} n'existe pas dans l'espace de travail — le fichier n'a PAS été créé (aucun appel d'outil n'a abouti). Crée-le maintenant réellement avec l'outil adapté (create_excel, create_word…, en passant les données par table ou source_file si elles sont volumineuses), vérifie qu'il apparaît, puis donne la réponse finale. Ne dis jamais qu'un fichier existe sans l'avoir créé.`;
+        o.run.note('Fichier annoncé mais inexistant : ' + miss.join(', '));
+        continue;
+      }
+      break;
+    }
     // Garde-fou anti-boucle : appels identiques répétés
     const sig = step.toolCalls.map((t) => t.name + ':' + t.args).join('|');
     repeats = sig === lastSig ? repeats + 1 : 0;
@@ -8119,6 +8313,62 @@ function repairJSON(raw) {
   const v = safeJSON(out);
   return v && typeof v === 'object' && !Array.isArray(v) ? v : null;
 }
+/* Appels d'outil écrits en texte : <tool_call><function=NOM><parameter=clé>valeur</parameter></function></tool_call>,
+   <tool_call>{"name":…,"arguments":…}</tool_call>, <function=NOM>{…}</function>, bloc ```json {"name":…,"arguments":…}``` */
+function parseLooseValue(v) {
+  const t = String(v ?? '').replace(/^\n|\n$/g, '').trim();
+  if (/^[[{"]|^-?\d+(\.\d+)?$|^(true|false|null)$/.test(t)) {
+    const j = safeJSON(t);
+    if (j !== null || t === 'null') return j;
+    const w = repairJSON('{"v": ' + t + '}');
+    if (w && 'v' in w) return w.v;
+  }
+  return String(v ?? '').replace(/^\n|\n$/g, '');
+}
+function parseTextToolCalls(text, known) {
+  const calls = [];
+  const one = (name, body) => {
+    const args = {};
+    const params = [...String(body).matchAll(/<parameter=([\w.-]+)>([\s\S]*?)(?:<\/parameter>|(?=<parameter=)|(?=<\/function>)|$)/g)];
+    if (params.length) { for (const [, k, v] of params) args[k] = parseLooseValue(v); return { name, args }; }
+    const j = parseLooseValue(String(body).trim());
+    if (j && typeof j === 'object' && !Array.isArray(j)) return { name, args: j };
+    return null;
+  };
+  const fromJSON = (s) => {
+    const j = parseLooseValue(String(s).trim());
+    if (!j || typeof j !== 'object') return null;
+    const name = j.name || j.function?.name || j.tool || j.tool_name;
+    let args = j.arguments ?? j.parameters ?? j.args ?? j.function?.arguments ?? j.input ?? {};
+    if (typeof args === 'string') args = parseLooseValue(args);
+    return name && args && typeof args === 'object' ? { name: String(name), args } : null;
+  };
+  let rest = String(text);
+  rest = rest.replace(/<tool_call>\s*([\s\S]*?)\s*(?:<\/tool_call>|$)/g, (m, inner) => {
+    const f = inner.match(/^<function=([\w.-]+)>\s*([\s\S]*?)\s*(?:<\/function>|$)/);
+    const c = f ? one(f[1], f[2]) : fromJSON(inner);
+    if (c && known(c.name)) { calls.push(c); return ''; }
+    return m;
+  });
+  rest = rest.replace(/<function=([\w.-]+)>\s*([\s\S]*?)\s*(?:<\/function>|$)/g, (m, name, body) => { const c = one(name, body); if (c && known(c.name)) { calls.push(c); return ''; } return m; });
+  rest = rest.replace(/```(?:json|tool_call)?\s*(\{[\s\S]*?\})\s*```/g, (m, j) => { const c = /"(name|tool)"\s*:/.test(j) && /"(arguments|parameters|args|input)"\s*:/.test(j) ? fromJSON(j) : null; if (c && known(c.name)) { calls.push(c); return ''; } return m; });
+  rest = rest.replace(/<\|python_tag\|>\s*(\{[\s\S]*\})/g, (m, j) => { const c = fromJSON(j); if (c && known(c.name)) { calls.push(c); return ''; } return m; });
+  return { calls, rest: rest.replace(/\n{3,}/g, '\n\n').trim() };
+}
+/* Fichiers annoncés comme produits mais absents de l'espace de travail */
+function missingFileClaims(text) {
+  const t = String(text || '');
+  if (!t) return [];
+  const names = new Set();
+  for (const m of t.matchAll(/workspace:([^\s)\]]+)/g)) { try { names.add(decodeURI(m[1])); } catch { names.add(m[1]); } }
+  if (/(cré[ée]|génér[ée]|produit|prêt|télécharg|disponible|sous ma réponse|ci-dessous|enregistr|voici le fichier)/i.test(t)) {
+    for (const m of t.matchAll(/([A-Za-z0-9À-ÿ_\-.]{2,90}\.(?:xlsx|xlsm|docx|pptx|pdf|csv|html|zip|mp4|glb|png))(?![\w])/gi)) names.add(m[1]);
+  }
+  if (!names.size) return [];
+  const files = [...col('files').keys()].map((f) => f.toLowerCase());
+  const bases = new Set(files.map((f) => f.split('/').pop()));
+  return [...names].filter((n) => { const l = n.toLowerCase().replace(/^\.?\/?/, ''); return !files.includes(l) && !bases.has(l.split('/').pop()) && !/^https?:/.test(l); }).slice(0, 4);
+}
 /* Arguments approximatifs (fréquents chez les petits modèles) : synonymes, types, tableaux */
 const ARG_SYNONYMS = {
   path: ['file_path', 'filepath', 'file', 'filename', 'input', 'input_path', 'input_file', 'source', 'src', 'chemin', 'fichier', 'pdf', 'image', 'document'],
@@ -8144,11 +8394,11 @@ function normalizeArgs(tool, args) {
     }
     const v = args[k];
     if (v === undefined || v === null) continue;
-    if (sch.type === 'array' && !Array.isArray(v)) { args[k] = typeof v === 'string' && /^\s*\[/.test(v) ? (safeJSON(v) || [v]) : typeof v === 'string' && sch.items?.type === 'string' && /,/.test(v) && k !== 'content' ? v.split(',').map((x) => x.trim()).filter(Boolean) : [v]; fixed.push(k + '→tableau'); }
+    if (sch.type === 'array' && !Array.isArray(v)) { const pv = typeof v === 'string' && /^\s*\[/.test(v) ? parseLooseValue(v) : null; args[k] = Array.isArray(pv) ? pv : typeof v === 'string' && /^\s*\[/.test(v) ? [v] : v && typeof v === 'object' && sch.items?.type === 'object' ? [v] : typeof v === 'string' && sch.items?.type === 'string' && /,/.test(v) && k !== 'content' ? v.split(',').map((x) => x.trim()).filter(Boolean) : [v]; fixed.push(k + '→tableau'); }
     else if (sch.type === 'string' && Array.isArray(v) && v.length === 1) { args[k] = String(v[0]); fixed.push(k + '→texte'); }
     else if ((sch.type === 'integer' || sch.type === 'number') && typeof v === 'string' && v.trim() !== '' && isFinite(+v)) args[k] = +v;
     else if (sch.type === 'boolean' && typeof v === 'string') args[k] = /^(true|oui|yes|1)$/i.test(v.trim());
-    else if (sch.type === 'object' && typeof v === 'string' && /^\s*\{/.test(v)) { const j = safeJSON(v); if (j) args[k] = j; }
+    else if (sch.type === 'object' && typeof v === 'string' && /^\s*\{/.test(v)) { const j = parseLooseValue(v); if (j && typeof j === 'object') args[k] = j; }
   }
   // Un seul fichier fourni à la place d'une liste d'entrées (ex. pdf_tools watermark avec inputs)
   if (props.path && args.path === undefined && Array.isArray(args.inputs) && args.inputs.length === 1 && !(tool.parameters?.required || []).includes('inputs')) { args.path = args.inputs[0]; fixed.push('inputs→path'); }
@@ -8246,6 +8496,11 @@ async function guruRescue(tool, tc, errText, o, finish) {
     tc.progress = 'Le Guru reprend cet appel (2e échec)…'; o.onUpdate();
     const r = await Guru.rescue(tool, tc, errText, o);
     normalizeArgs(tool, r.args);
+    if (tool.name === 'create_excel') {
+      const sh = (Array.isArray(r.args.sheets) ? r.args.sheets : []).map(coerceSheet).filter(Boolean);
+      const nrows = sh.reduce((x, y) => x + (y.rows?.length || 0) + (y.table || y.source_file ? 1 : 0), 0) + (r.args.table || r.args.source_file ? 1 : 0);
+      if (!nrows) throw new Error('arguments corrigés sans données — reprise refusée pour ne pas livrer un fichier vide');
+    }
     const ctx = { signal: o.signal, chat: o.chat, node: o.node, tc, depth: o.depth, cfg: o.cfg, run: o.run, progress: (p) => { tc.progress = p; o.onUpdate(); }, cost: (u, model, kind) => o.run.addUsage(normUsage(u, model), model, kind), ask: (q, opts) => askUser(tc, q, opts, o), openArtifact: (path) => S.onArtifact?.(path, o.chat), update: o.onUpdate, model: o.model, toolsNow: () => [...o.toolMap.values()], addTools: () => [] };
     const res = await tool.run(r.args, ctx);
     const out = typeof res === 'string' ? { text: res } : res || { text: '' };
@@ -9406,7 +9661,7 @@ function stepsHTML(steps, running, keyBase) {
       const open = S.ui.open[k] ?? live;
       html += `<details class="thinking" data-ok="${k}" ${open ? 'open' : ''}><summary>${icon('brain', 'sm')} ${live ? 'Réflexion en cours… <span class="spin"></span>' : `Réflexion${s.duration ? ` · ${fmtDur((s.ttft && s.content ? s.duration : s.duration))}` : ''}`}<span class="chev">${icon('down', 'sm')}</span></summary><div class="th-body">${esc(s.reasoning)}</div></details>`;
     }
-    if (s.content && s.superseded) html += `<details class="superseded"><summary>${icon('undo', 'sm')} Première version — corrigée après relecture critique<span class="chev">${icon('down', 'sm')}</span></summary>${mdSlot('st-' + s.id, s.content, false)}</details>`;
+    if (s.content && s.superseded) html += `<details class="superseded"><summary>${icon('undo', 'sm')} ${s.superseded === 'claim' ? 'Réponse retirée — fichier annoncé mais pas encore créé (Cortex a relancé le modèle)' : 'Première version — corrigée après relecture critique'}<span class="chev">${icon('down', 'sm')}</span></summary>${mdSlot('st-' + s.id, s.content, false)}</details>`;
     else if (s.content) html += mdSlot('st-' + s.id, s.content, streaming && !(s.toolCalls || []).length);
     for (const img of s.images || []) html += `<img class="gen-img" src="${esc(img)}" alt="Image générée" data-act="zoom">`;
     for (const tc of s.toolCalls || []) html += toolCardHTML(tc, streaming);
@@ -9675,7 +9930,7 @@ async function addAttachments(files) {
         att = { kind: 'text', name, text: await Media.pptxText(await readFile(f, 'arrayBuffer')), size: f.size };
       } else if (ext === 'zip') {
         att = { kind: 'text', name, text: await Media.zipText(await readFile(f, 'arrayBuffer')), size: f.size };
-      } else if (isTextLikeName(name) || f.type.startsWith('text/') || ['docx', 'xlsx', 'xlsm', 'xls', 'ods', 'json', 'csv', 'odt', 'odp', 'epub', 'rtf', 'eml', 'ics'].includes(ext)) {
+      } else if (isTextLikeName(name) || f.type.startsWith('text/') || ['docx', 'xlsx', 'xlsm', 'xlsb', 'xls', 'ods', 'json', 'csv', 'odt', 'odp', 'epub', 'rtf', 'eml', 'ics'].includes(ext)) {
         let text = null;
         try { text = await universalText(f, name); } catch (e) { toast(`${name} : ${e.message} — fichier joint tel quel (exploitable par Python).`, 'info', 5000); }
         att = text != null ? { kind: 'text', name, text: text.length > 400000 ? text.slice(0, 400000) + '\n[… tronqué]' : text, size: f.size } : { kind: 'file', name, mime: f.type || mimeFromName(name), size: f.size };
@@ -11282,7 +11537,7 @@ function kbCollectionView(main, kc) {
   const ingest = async (files) => {
     for (const f of files) {
       drop.innerHTML = `<span class="spin"></span> Lecture de ${esc(f.name)}…`;
-      try { const text = await extractText(f); if (!text.trim()) throw new Error('aucun texte extrait'); await KB.addDoc(kc.id, f.name, text); }
+      try { const text = await extractText(f, { full: true }); if (!text.trim()) throw new Error('aucun texte extrait'); await KB.addDoc(kc.id, f.name, text); }
       catch (e) { toast(`${f.name} : ${e.message}`, 'err', 5000); }
     }
     toast('Documents ajoutés', 'ok');

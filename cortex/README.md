@@ -64,6 +64,11 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
 - **Créer une empreinte avec le Guru** en décrivant vos goûts ; **👍/👎** sur chaque fichier produit : un 👎 commenté fait
   affiner l'empreinte par le Guru puis régénère le fichier. Outil `design_studio` pour les modèles (list, create, import,
   update, apply, feedback).
+- **Analyses lourdes (portefeuille, revue de crédit)** : chaque feuille peut être remplie depuis un CSV produit par
+  Python (`source_file`, sinon liaison automatique au CSV du même nom dans l'espace de travail) ; `kpis`, `insights` et
+  `sheets` acceptés sous toutes les formes (texte, objet, liste) ; **graphiques natifs** demandés (`charts`) avec leur
+  bloc de données ; formats selon l'unité (%, montants, nombres) ; garde-fous (pas de colonne Statut sur des commentaires,
+  pas de regroupement sur une colonne quasi unique) ; une feuille vide est ignorée avec une note au lieu d'un onglet vide.
 
 ### Designs « ultra premium » (tous les modèles, même gratuits)
 - **7 thèmes** cohérents pour Excel, Word, PDF, PowerPoint et rapports HTML : Exécutif, Prestige (marine et or),
@@ -109,6 +114,12 @@ d'outils** : le modèle peut démonter un outil (schéma, code source), en crée
 - Robustesse : coupure du fournisseur en cours de réponse (« Provider timed out ») → nouvelle tentative, puis bascule sur
   un autre modèle gratuit ; réparateur JSON renforcé (guillemets internes non échappés, virgules manquantes, sorties
   tronquées, littéraux Python) ; `create_excel` accepte aussi un tableau Markdown ou CSV (`table`).
+- **Appels d'outil écrits en texte** (`<tool_call><function=…>`, JSON « Hermes », bloc de code JSON) par certains modèles
+  gratuits : Cortex les **exécute** au lieu de les afficher.
+- **Garde anti-fichier halluciné** : une réponse qui annonce un fichier « créé » qui n'existe pas est retirée et le
+  modèle est relancé pour le produire réellement (2 fois au plus).
+- Python : un classeur écrit à la main (openpyxl) déclenche une consigne de repasser par `create_excel` pour obtenir
+  l'empreinte premium ; un code vide est refusé avec une consigne claire.
 
 ### Modèles gratuits « niveau premium » : REA, Guru et boosters
 - **REA en premier sur chaque tâche** : analyse préalable visible (expériences passées similaires, outils pertinents
@@ -137,7 +148,12 @@ d'outils** : le modèle peut démonter un outil (schéma, code source), en crée
 
 ### Entrées — tous formats
 - Images, **vidéos** (images clés extraites), **audio** (transcrit si le modèle ne l'entend pas), PDF, Word,
-  Excel, **PowerPoint**, **zip**, code, CSV… ; chaque pièce jointe est aussi copiée dans `uploads/` pour Python.
+  Excel (**xlsx, xlsm, xlsb**, xls, ods), **PowerPoint**, **zip**, code, CSV… ; chaque pièce jointe est aussi copiée
+  dans `uploads/` pour Python.
+- **Gros classeurs** : la conversation reçoit un aperçu structuré (dimensions de chaque feuille + 25 premières lignes) et
+  l'analyse complète se fait en Python ; la base de connaissances indexe toujours le contenu intégral.
+- Python installe seul les dépendances, y compris les **moteurs implicites de pandas** (`pyxlsb` pour .xlsb, `openpyxl`,
+  `xlrd`, `odfpy`).
 - **Pont de modalités** : un modèle « vision » décrit images et vidéos aux modèles qui ne les voient pas.
 
 ### Skills (savoir-faire chargeables)
