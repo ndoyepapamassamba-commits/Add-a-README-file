@@ -69,6 +69,11 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
   `sheets` acceptés sous toutes les formes (texte, objet, liste) ; **graphiques natifs** demandés (`charts`) avec leur
   bloc de données ; formats selon l'unité (%, montants, nombres) ; garde-fous (pas de colonne Statut sur des commentaires,
   pas de regroupement sur une colonne quasi unique) ; une feuille vide est ignorée avec une note au lieu d'un onglet vide.
+- **`sources`** (paramètre texte, le plus fiable) : `"exports/x_*.csv"` ou une liste de fichiers → une feuille premium
+  par fichier ; `kpis`, `insights` et `charts` passés au niveau du classeur vont sur la feuille de synthèse. Formats
+  ligne par ligne selon la colonne Unité (« 18 978 contrats », « 1 013,36 Mrd XOF », « 0,137 indice »), nombres saisis
+  à la française (« 16 444 », « 987,35 ») reconnus, mentions « n.s. » tolérées dans une colonne de pourcentages,
+  tuiles réparties en grilles équilibrées, logo de l'espace de travail repris quand son nom évoque l'organisation.
 
 ### Designs « ultra premium » (tous les modèles, même gratuits)
 - **7 thèmes** cohérents pour Excel, Word, PDF, PowerPoint et rapports HTML : Exécutif, Prestige (marine et or),
@@ -114,6 +119,10 @@ d'outils** : le modèle peut démonter un outil (schéma, code source), en crée
 - Robustesse : coupure du fournisseur en cours de réponse (« Provider timed out ») → nouvelle tentative, puis bascule sur
   un autre modèle gratuit ; réparateur JSON renforcé (guillemets internes non échappés, virgules manquantes, sorties
   tronquées, littéraux Python) ; `create_excel` accepte aussi un tableau Markdown ou CSV (`table`).
+- **Fournisseurs qui suppriment des paramètres** : certains fournisseurs d'OpenRouter perdent les paramètres de type
+  liste ou objet des appels d'outil (constaté : Morph et InferenceNet pour DeepSeek V4.1 Flash — `create_excel` arrivait
+  sans `sheets`). Cortex détecte l'appel incomplet, **écarte ce fournisseur pour ce modèle** (mémorisé 7 jours) et
+  relance l'étape à l'identique ; l'erreur restante éventuelle liste les paramètres reçus et les CSV disponibles.
 - **Appels d'outil écrits en texte** (`<tool_call><function=…>`, JSON « Hermes », bloc de code JSON) par certains modèles
   gratuits : Cortex les **exécute** au lieu de les afficher.
 - **Garde anti-fichier halluciné** : une réponse qui annonce un fichier « créé » qui n'existe pas est retirée et le
@@ -154,6 +163,9 @@ d'outils** : le modèle peut démonter un outil (schéma, code source), en crée
   l'analyse complète se fait en Python ; la base de connaissances indexe toujours le contenu intégral.
 - Python installe seul les dépendances, y compris les **moteurs implicites de pandas** (`pyxlsb` pour .xlsb, `openpyxl`,
   `xlrd`, `odfpy`).
+- Python ne reçoit que les fichiers **nouveaux ou modifiés** depuis l'exécution précédente (son disque les garde), en
+  commençant par ceux que le code cite : les tables produites restent visibles même dans un espace de travail chargé ;
+  délai minimal de 3 min par exécution pour l'analyse de données.
 - **Pont de modalités** : un modèle « vision » décrit images et vidéos aux modèles qui ne les voient pas.
 
 ### Skills (savoir-faire chargeables)
@@ -174,6 +186,9 @@ d'outils** : le modèle peut démonter un outil (schéma, code source), en crée
 - Outil **visual_check** : rend une page, un graphique, un Excel, un Word, un PowerPoint, un PDF ou une vidéo,
   en fait une **capture d'écran** avec les **erreurs JavaScript**, et la transmet au modèle (ou la fait décrire
   par un modèle vision) — l'équivalent navigateur d'un Node.js + Playwright.
+- **Aperçu Excel fidèle** : le classeur est lu directement (polices, remplissages en dégradé, bordures, fusions,
+  largeurs, formats de nombre, statuts colorés, barres d'avancement, logo) et ses **graphiques natifs sont dessinés**
+  à partir des données du fichier — le modèle voit le livrable tel qu'Excel l'affiche (`page` = n° de feuille).
 - `run_javascript` : paquets **npm** via `await import('https://esm.sh/paquet')`.
 
 ### Blender & 3D

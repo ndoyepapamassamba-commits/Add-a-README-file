@@ -1740,21 +1740,25 @@ function walk(FS, dir, out) {
 const enc = new TextEncoder();
 function same(a, b) { if (a.length !== b.length) return false; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false; return true; }
 self.onmessage = async (e) => {
-  const { id, code, files } = e.data;
+  const { id, code, files, keep } = e.data;
   let stdout = '', stderr = '';
   try {
     const p = await ensure(id);
     p.setStdout({ batched: (s) => { if (stdout.length < 400000) stdout += s + '\\n'; } });
     p.setStderr({ batched: (s) => { if (stderr.length < 200000) stderr += s + '\\n'; } });
-    const input = new Map();
     for (const f of files || []) {
       const path = '/workspace/' + f.path.replace(/^\\/+/, '');
       const bytes = typeof f.content === 'string' ? enc.encode(f.content) : f.content;
-      input.set(path, bytes);
       p.FS.mkdirTree(path.slice(0, path.lastIndexOf('/')) || '/workspace');
       p.FS.writeFile(path, bytes);
     }
-    for (const path of walk(p.FS, '/workspace', [])) if (!input.has(path)) { try { p.FS.unlink(path); } catch {} }
+    // Fichiers supprimés de l'espace de travail : retirés aussi du disque Python
+    const kept = new Set((keep || []).map((x) => '/workspace/' + x.replace(/^\\/+/, '')));
+    for (const path of walk(p.FS, '/workspace', [])) if (!kept.has(path)) { try { p.FS.unlink(path); } catch {} }
+    // Repère temporel : tout fichier modifié après T1 a été écrit par le code de l'utilisateur
+    const T0 = Date.now(); while (Date.now() === T0) {}
+    const T1 = Date.now();
+    const known = new Set(walk(p.FS, '/workspace', []));
     p.FS.chdir('/workspace');
     self.postMessage({ id, progress: 'Installation des paquets…' });
     await p.loadPackagesFromImports(code);
@@ -1770,9 +1774,9 @@ self.onmessage = async (e) => {
     try { const r = await p.runPythonAsync(FIG); images = r.toJs ? r.toJs() : []; if (r.destroy) r.destroy(); } catch {}
     const changed = [];
     for (const path of walk(p.FS, '/workspace', [])) {
-      const data = p.FS.readFile(path);
-      const before = input.get(path);
-      if (!before || !same(before, data)) changed.push({ path: path.slice(11), data });
+      let t = 0;
+      try { const m = p.FS.stat(path).mtime; t = m && m.getTime ? m.getTime() : +m; } catch {}
+      if (!known.has(path) || t >= T1) changed.push({ path: path.slice(11), data: p.FS.readFile(path) });
     }
     self.postMessage({ id, ok: true, stdout, stderr, result, images, files: changed });
   } catch (err) {
@@ -1829,8 +1833,10 @@ const Sandbox = {
     });
     this.frame.srcdoc = SANDBOX_HTML;
   },
+  pySent: new Map(),
   failPy(error) {
     this.pyLoaded = false;
+    this.pySent.clear();
     for (const [id, p] of this.pending) if (p.kind === 'py') { clearTimeout(p.timer); this.pending.delete(id); p.resolve({ ok: false, error: 'Python indisponible : ' + error }); }
   },
   async exec(kind, payload, { timeout = 30000, signal, onProgress } = {}) {
@@ -1854,24 +1860,32 @@ const Sandbox = {
   },
   runJS(code, args = {}, opts = {}) { return this.exec('js', { code, args, mode: opts.mode }, { timeout: opts.timeout || S.settings.harness.toolTimeout * 1000, signal: opts.signal }); },
   runPy(code, opts = {}) {
-    const files = workspaceForPython();
-    const base = opts.timeout || S.settings.harness.toolTimeout * 1000;
-    return this.exec('py', { code, files }, { timeout: base + (this.pyLoaded ? 0 : 150000), signal: opts.signal, onProgress: opts.onProgress });
+    const { files, keep } = workspaceForPython(code, this.pySent);
+    // Analyse de données : 3 min minimum (lecture d'un gros classeur, pandas…)
+    const base = opts.timeout || Math.max(S.settings.harness.toolTimeout, 180) * 1000;
+    return this.exec('py', { code, files, keep }, { timeout: base + (this.pyLoaded ? 0 : 150000), signal: opts.signal, onProgress: opts.onProgress });
   },
   resetPy() { this.frame?.contentWindow?.postMessage({ kind: 'kill', id: '-', py: true }, '*'); this.failPy('réinitialisé'); toast('Interpréteur Python réinitialisé'); },
 };
 
-function workspaceForPython() {
+/* Fichiers à transmettre à Python : seulement ceux qui sont nouveaux ou modifiés depuis le dernier envoi (le disque Python
+   les conserve d'une exécution à l'autre). Priorité aux fichiers cités dans le code, puis aux plus récents ; 60 Mo par envoi. */
+function workspaceForPython(code = '', sent = new Map()) {
+  const all = [...col('files').values()];
+  for (const k of [...sent.keys()]) if (!col('files').has(k)) sent.delete(k);
+  const stamp = (f) => f.updatedAt || f.size || 1;
+  const cited = (f) => code.includes(f.id) || code.includes(f.id.split('/').pop());
+  const need = all.filter((f) => sent.get(f.id) !== stamp(f)).sort((x, y) => (cited(y) - cited(x)) || ((y.updatedAt || 0) - (x.updatedAt || 0)));
   const out = [];
   let total = 0;
-  for (const f of col('files').values()) {
-    if (total > 40e6) break;
-    if (f.encoding === 'base64') {
-      const b = dataURLtoBytes(f.content);
-      total += b.length; out.push({ path: f.id, content: b });
-    } else { total += (f.content || '').length; out.push({ path: f.id, content: f.content || '' }); }
+  for (const f of need) {
+    if (total + (f.size || 0) > 60e6 && !cited(f)) continue;
+    const content = f.encoding === 'base64' ? dataURLtoBytes(f.content) : f.content || '';
+    total += content.length;
+    out.push({ path: f.id, content });
+    sent.set(f.id, stamp(f));
   }
-  return out;
+  return { files: out, keep: all.map((f) => f.id) };
 }
 function dataURLtoBytes(url) {
   const b64 = url.includes(',') ? url.split(',')[1] : url;
@@ -1887,6 +1901,8 @@ function absorbPyFiles(files) {
     try { content = new TextDecoder('utf-8', { fatal: true }).decode(f.data); if (/\.(png|jpe?g|gif|webp|bmp|ico|pdf|zip|gz|tar|7z|xlsx?|xlsm|docx?|pptx?|od[tsp]|epub|parquet|pkl|npy|npz|h5|sqlite|db|mp[34]|m4[av]|webm|mov|ogg|wav|flac|glb|stl|ply|fbx|blend|woff2?|ttf|otf)$/i.test(f.path)) throw 0; }
     catch { content = 'data:' + mimeFromName(f.path) + ';base64,' + bytesToBase64(f.data); encoding = 'base64'; }
     writeWorkspaceFile(f.path, content, encoding);
+    const w = col('files').get(normPath(f.path));
+    if (w) Sandbox.pySent.set(w.id, w.updatedAt || w.size || 1);
     saved.push(f.path);
   }
   return saved;
@@ -2652,6 +2668,10 @@ const Office = {
     const s = v == null ? '' : String(v);
     if (/^=[A-Z]/.test(s)) return { f: s.slice(1) };
     if (/^-?\d{1,15}([.,]\d+)?$/.test(s.trim()) && !/^0\d/.test(s.trim())) return { n: parseFloat(s.trim().replace(',', '.')) };
+    // Milliers séparés : « 16 444 », « 1 013,36 » (français) ou « 1,013.36 » (anglais)
+    const t = s.trim();
+    if (/^-?\d{1,3}([ \u00a0\u202f]\d{3})+(,\d+)?$/.test(t)) return { n: parseFloat(t.replace(/[ \u00a0\u202f]/g, '').replace(',', '.')) };
+    if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) return { n: parseFloat(t.replace(/,/g, '')) };
     const pm = s.trim().match(/^(-?\d{1,6}(?:[.,]\d+)?)\s?%$/);
     if (pm) return { n: parseFloat(pm[1].replace(',', '.')) / 100, pct: true };
     return { s };
@@ -3496,8 +3516,12 @@ window.addEventListener('load',function(){setTimeout(function(){
     return c.toDataURL('image/jpeg', quality);
   },
   /* Convertit un fichier de l'espace de travail en HTML affichable (xlsx, docx, csv, md…) */
-  async fileToHTML(f) {
+  async fileToHTML(f, opts = {}) {
     const ext = (f.id.split('.').pop() || '').toLowerCase();
+    // Classeur .xlsx : aperçu fidèle (styles, logo, graphiques natifs) ; repli sur le rendu simple en cas d'échec
+    if (['xlsx', 'xlsm'].includes(ext) && f.encoding === 'base64') {
+      try { const X = await XlsxPreview.html(dataURLtoBytes(f.content), opts); this.lastNote = X.note; this.lastWidth = X.width; return X.html; } catch (e) { console.warn('Aperçu Excel fidèle indisponible', e); }
+    }
     const css = '<style>body{font-family:Calibri,Arial,sans-serif;margin:16px;color:#111;background:#fff}table{border-collapse:collapse;font-size:12px}td,th{border:1px solid #c9d1dc;padding:4px 8px;vertical-align:top}tr:first-child td{background:#1F4E79;color:#fff;font-weight:bold}h2{font-size:15px;color:#1F4E79;margin:18px 0 6px}img{max-width:100%}</style>';
     if (['xlsx', 'xls', 'ods'].includes(ext) || ext === 'csv') {
       await loadScript(LIBS.xlsx);
@@ -3536,7 +3560,10 @@ window.addEventListener('load',function(){setTimeout(function(){
       const v = await Media.videoFrames(dataURLtoBlob(f.content), 6, 480);
       return { image: await Media.contactSheet(v.frames.map((x) => x.data)), note: `Vidéo ${fmtDur(v.duration * 1000)}, ${v.width}×${v.height} — planche de 6 images` };
     }
-    let html = await this.fileToHTML(f);
+    this.lastNote = ''; this.lastWidth = 0;
+    let html = await this.fileToHTML(f, { page });
+    const xnote = this.lastNote;
+    if (this.lastWidth) width = clamp(this.lastWidth + 30, width, 2400);
     let wait = 1200;
     if (!html) {
       const d = artifactData({ path: f.id });
@@ -3551,7 +3578,7 @@ window.addEventListener('load',function(){setTimeout(function(){
     }
     const shot = await this.capture(html, { width, wait });
     if (!shot.ok) throw new Error('Capture impossible : ' + shot.error + (shot.errors?.length ? ' — erreurs : ' + shot.errors.join(' | ') : ''));
-    return { image: shot.data, errors: shot.errors || [], note: `${shot.w}×${shot.h}` };
+    return { image: shot.data, errors: shot.errors || [], note: (xnote ? xnote + ' · ' : '') + `${shot.w}×${shot.h}` };
   },
   /* Description d'image par un modèle « vision » (pour les modèles qui ne voient pas les images) */
   async describe(image, question, signal) {
@@ -3689,6 +3716,16 @@ class XlSheet {
 }
 
 /* ---------- Graphiques natifs (anneau par statut, barres empilées par groupe × statut) ---------- */
+/* Longueur affichée d'une valeur selon son format Excel (décimales, milliers, %, suffixe entre guillemets) */
+function shownLen(v, fmt = '') {
+  if (typeof v !== 'number') return String(v ?? '').length;
+  const f = String(fmt || '');
+  const dec = (f.match(/0\.(0+)/) || [, ''])[1].length;
+  const bare = f.replace(/"[^"]*"/g, '');
+  const pct = /%/.test(bare);
+  const txt = (pct ? v * 100 : v).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: /#,##/.test(f) });
+  return txt.length + (pct ? 1 : 0) + (f.match(/"([^"]*)"/g) || []).reduce((a, q) => a + q.length - 2, 0);
+}
 const XlChart = {
   txPr(sz, color, font, b = false) { return `<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="${sz}"${b ? ' b="1"' : ''}><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:latin typeface="${xmlEsc(font)}"/></a:defRPr></a:pPr><a:endParaRPr lang="fr-FR"/></a:p></c:txPr>`; },
   frame(fp, plot, legend = true, title = '') {
@@ -3710,7 +3747,9 @@ const XlChart = {
     if (round) {
       const se = series[0];
       const dpts = cats.map((_, i) => `<c:dPt><c:idx val="${i}"/><c:bubble3D val="0"/><c:spPr><a:solidFill><a:srgbClr val="${palette[i % palette.length]}"/></a:solidFill><a:ln w="19050"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln></c:spPr></c:dPt>`).join('');
-      const ser = `<c:ser><c:idx val="0"/><c:order val="0"/><c:tx><c:v>${xmlEsc(se.name)}</c:v></c:tx>${dpts}${dl('')}<c:cat>${this.strRef(catRef, cats)}</c:cat><c:val>${this.numRef(se.ref, se.vals)}</c:val></c:ser>`;
+      const tot = se.vals.reduce((x, v) => x + Math.abs(+v || 0), 0) || 1;
+      const hide = se.vals.map((v, i) => (Math.abs(+v || 0) / tot < 0.04 ? `<c:dLbl><c:idx val="${i}"/><c:delete val="1"/></c:dLbl>` : '')).join('');
+      const ser = `<c:ser><c:idx val="0"/><c:order val="0"/><c:tx><c:v>${xmlEsc(se.name)}</c:v></c:tx>${dpts}${dl('').replace('<c:dLbls>', '<c:dLbls>' + hide)}<c:cat>${this.strRef(catRef, cats)}</c:cat><c:val>${this.numRef(se.ref, se.vals)}</c:val></c:ser>`;
       return this.frame(fp, type === 'pie' ? `<c:pieChart><c:varyColors val="1"/>${ser}<c:firstSliceAng val="0"/></c:pieChart>` : `<c:doughnutChart><c:varyColors val="1"/>${ser}<c:firstSliceAng val="0"/><c:holeSize val="55"/></c:doughnutChart>`, true, title);
     }
     const isLine = type === 'line', horiz = type === 'bar';
@@ -3941,7 +3980,8 @@ Office.xlsx = async function (sheets, opts = {}) {
     const colFmt = H.map((h, c) => {
       if (role[c] !== 'auto' && role[c] !== 'ref') return role[c];
       const vals = R.map((r) => cv(r[c])).map((v) => (v.n != null ? v.n : v.cached)).filter((x) => typeof x === 'number' && isFinite(x));
-      const filled = R.filter((r) => String(r[c] ?? '').trim() !== '').length;
+      // Mentions « n.s. », « n.d. », « – »… ne comptent pas : la colonne reste numérique
+      const filled = R.filter((r) => { const t = String(r[c] ?? '').trim(); return t !== '' && !/^(n\.?\s?[sdca]\.?|n\/a|s\.o\.|nc|nd|ns|na|[-—–\/]|\.{2,}|…)$/i.test(t); }).length;
       if (!vals.length || vals.length < filled * (H.some((h) => /^(unite|unit|devise)$/.test(normalizeText(h).trim())) ? 0.5 : 0.8)) return role[c] === 'ref' ? 'ref' : 'text';
       if (role[c] === 'ref') return 'ref';
       if (R.some((r) => cv(r[c]).pct)) return 'pct';
@@ -3962,7 +4002,7 @@ Office.xlsx = async function (sheets, opts = {}) {
     };
     const kinds = H.map((_, c) => kindOf(c));
     const unitIdx = H.findIndex((h) => /^(unite|unites|unit|units|devise|monnaie)$/.test(normalizeText(h).trim()));
-    const unitFmt = (u, v) => { const t = normalizeText(String(u ?? '')); if (/%|pourcent/.test(t)) return '#,##0.00'; if (/index|indice|ratio|coef|\bx\b/.test(t)) return '0.000'; if (/nb|nombre|count|unite/.test(t)) return '#,##0'; if (/xof|fcfa|cfa|eur|usd|\$|€|mrd|mds|md\b|\bm\b|k\b|montant/.test(t)) return Number.isInteger(v) || Math.abs(v) >= 1000 ? '#,##0' : '#,##0.00'; return null; };
+    const unitFmt = (u, v) => { const t = normalizeText(String(u ?? '')); if (/%|pourcent/.test(t)) return '#,##0.00'; if (/index|indice|ratio|coef|\bx\b/.test(t)) return '0.000'; if (/nb|nombre|count|unite/.test(t)) return '#,##0'; if (/xof|fcfa|cfa|eur|usd|\$|€|mrd|mds|md\b|\bm\b|k\b|montant/.test(t)) return Number.isInteger(v) || Math.abs(v) >= 1e6 ? '#,##0' : '#,##0.00'; return Number.isInteger(v) ? '#,##0' : Math.abs(v) < 1 ? '0.000' : '#,##0.00'; };
     const editable = new Set((M.raw.editable_columns || []).map((x) => normalizeText(x)));
     const isEdit = (c) => (editable.size ? editable.has(normalizeText(H[c])) : ['status', 'date', 'comment'].includes(kinds[c]) && c !== M.lateIdx);
     // Largeurs
@@ -3989,13 +4029,11 @@ Office.xlsx = async function (sheets, opts = {}) {
     // Tuiles éventuelles (feuilles sans tableau de bord)
     if (M.raw.kpis?.length && !(wantDash && M === mainM)) {
       const pal = [C.banner, fp.status.doing, fp.status.partial, fp.status.received, fp.status.progress, fp.status.waiting, fp.status.blocked, C.group];
-      const list = M.raw.kpis.slice(0, 12).map((k, i) => ({ label: k.label, value: typeof k.value === 'number' ? k.value : String(k.value ?? ''), caption: k.caption || '', color: hex6c(k.color) || pal[i % pal.length], fmt: k.format || (typeof k.value === 'number' ? (!Number.isInteger(k.value) && Math.abs(k.value) <= 1.5 && /%|taux|ratio|part|couverture/i.test(k.label) ? '0.0%' : Number.isInteger(k.value) ? '#,##0' : '#,##0.00') : '@') }));
-      const perRow = Math.max(1, Math.min(n >= 2 ? n : 1, list.length <= n ? list.length : Math.ceil(list.length / Math.ceil(list.length / n))));
-      r = 5; X.heights[4] = 6;
-      for (let i = 0; i < list.length; i += perRow) {
-        const chunk = list.slice(i, i + perRow), m = chunk.length;
-        // Colonnes réparties en groupes contigus de largeurs voisines (une tuile par groupe)
-        const wpx = W.map((w) => xlColPx(w)), total = wpx.reduce((a, b) => a + b, 0);
+      const list = M.raw.kpis.slice(0, 12).map((k, i) => ({ label: k.label, value: typeof k.value === 'number' ? k.value : String(k.value ?? ''), caption: k.caption || '', color: hex6c(k.color) || pal[i % pal.length], fmt: k.format || (typeof k.value === 'number' ? (!Number.isInteger(k.value) && Math.abs(k.value) <= 1.5 && /%|taux|ratio|part|couverture/i.test(k.label) && String(k.caption || '').trim() !== '%' ? '0.0%' : /^%/.test(String(k.caption || '').trim()) ? (Number.isInteger(k.value) ? '#,##0" %"' : '#,##0.00" %"') : Number.isInteger(k.value) ? '#,##0' : Math.abs(k.value) < 1 ? '0.000' : '#,##0.00') : '@') }));
+      // Colonnes réparties en groupes contigus de largeurs voisines (une tuile par groupe) ; au moins ~150 px par tuile,
+      // quitte à passer sur plusieurs rangées équilibrées (ex. 4 tuiles sur 2 rangées de 2 quand les colonnes sont étroites)
+      const wpx = W.map((w) => xlColPx(w)), total = wpx.reduce((a, b) => a + b, 0);
+      const spansFor = (m) => {
         const spans = []; let cI = 0, acc = 0;
         for (let j = 0; j < m; j++) {
           let span = 0, wsum = 0;
@@ -4004,7 +4042,17 @@ Office.xlsx = async function (sheets, opts = {}) {
           if (j === m - 1) while (cI < n) { wsum += wpx[cI++]; span++; }
           acc += wsum; spans.push(span);
         }
-        chunk.forEach((t, j) => { let w = 0; for (let c = 0, k0 = spans.slice(0, j).reduce((a, b) => a + b, 0); c < spans[j]; c++) w += wpx[k0 + c]; const len = String(typeof t.value === 'number' ? t.value.toLocaleString('fr-FR') : t.value).length; t.vsz = clamp(Math.floor((w - 14) / Math.max(1, len) / 1.15), 11, fp.size.kpi); });
+        return spans;
+      };
+      const minW = (m) => { let k0 = 0, mn = Infinity; for (const sp of spansFor(m)) { let w = 0; for (let c = 0; c < sp; c++) w += wpx[k0 + c] || 0; k0 += sp; mn = Math.min(mn, w); } return mn; };
+      let perRow = Math.max(1, Math.min(n, list.length));
+      while (perRow > 1 && minW(perRow) < 150) perRow--;
+      perRow = Math.ceil(list.length / Math.ceil(list.length / perRow));
+      r = 5; X.heights[4] = 6;
+      for (let i = 0; i < list.length; i += perRow) {
+        const chunk = list.slice(i, i + perRow), m = chunk.length;
+        const spans = spansFor(m);
+        chunk.forEach((t, j) => { let w = 0; for (let c = 0, k0 = spans.slice(0, j).reduce((a, b) => a + b, 0); c < spans[j]; c++) w += wpx[k0 + c]; const len = shownLen(t.value, t.fmt); t.vsz = clamp(Math.floor((w - 14) / Math.max(1, len) / 1.15), 11, fp.size.kpi); });
         tiles(X, r, 0, chunk.map((t, j) => ({ ...t, span: spans[j] })));
         const lines = Math.max(1, ...chunk.map((t, j) => { let w = 0; for (let c = 0; c < spans[j]; c++) w += W[spans.slice(0, j).reduce((a, b) => a + b, 0) + c] || 10; return Math.ceil(String(t.label).length / Math.max(6, w * 1.35)); }));
         X.heights[r] = Math.max(26, 11 * lines + 8);
@@ -4318,6 +4366,350 @@ Office.xlsx = async function (sheets, opts = {}) {
   const blob = await zip.generateAsync({ type: 'blob', mimeType: OFFICE_MIME.xlsx, compression: 'DEFLATE' });
   blob.meta = { sheets: xs.map((X) => X.name), dashboard: !!wantDash, charts: chartN, fingerprint: fp.name };
   return blob;
+};
+
+/* ============================== 07f · APERÇU FIDÈLE D'UN CLASSEUR EXCEL ==============================
+   Rendu HTML d'une feuille .xlsx lu directement dans le fichier : polices, remplissages (dont dégradés), bordures,
+   alignements, fusions, largeurs et hauteurs, formats de nombre, mises en forme conditionnelles simples (statuts,
+   barres de données), images (logo) et graphiques natifs dessinés en SVG à partir de leurs valeurs en cache.
+   Sert à visual_check, convert_file et à l'aperçu : on voit le livrable comme Excel l'affiche.                  */
+const XlsxPreview = {
+  RNS: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+  els(n, name) { return n ? [...n.getElementsByTagNameNS('*', name)] : []; },
+  el(n, name) { return n ? n.getElementsByTagNameNS('*', name)[0] || null : null; },
+  kids(n, name) { return n ? [...n.children].filter((c) => c.localName === name) : []; },
+  rid(n, attr = 'id') { return n.getAttribute('r:' + attr) || n.getAttributeNS(this.RNS, attr) || ''; },
+  color(n) {
+    if (!n) return null;
+    const rgb = n.getAttribute('rgb') || n.getAttribute('val');
+    if (rgb && /^[0-9a-f]{6,8}$/i.test(rgb)) return '#' + rgb.slice(-6);
+    const idx = n.getAttribute('indexed');
+    if (idx === '9') return '#FFFFFF';
+    if (idx === '8') return '#000000';
+    return null;
+  },
+  resolve(base, target) {
+    if (target.startsWith('/')) return target.slice(1);
+    const parts = base.split('/').slice(0, -1);
+    for (const seg of target.split('/')) { if (seg === '..') parts.pop(); else if (seg !== '.') parts.push(seg); }
+    return parts.join('/');
+  },
+  async open(bytes) {
+    await loadScript(LIBS.jszip);
+    const zip = await JSZip.loadAsync(bytes);
+    const txt = async (p) => { const f = zip.file(p); return f ? f.async('string') : null; };
+    const dom = (s) => (s ? new DOMParser().parseFromString(s, 'application/xml') : null);
+    const rels = async (p) => {
+      const d = dom(await txt(p.replace(/([^/]+)$/, '_rels/$1.rels')));
+      const m = {};
+      for (const r of this.els(d, 'Relationship')) m[r.getAttribute('Id')] = this.resolve(p, r.getAttribute('Target'));
+      return m;
+    };
+    const wb = dom(await txt('xl/workbook.xml'));
+    const wrel = await rels('xl/workbook.xml');
+    const sheets = this.els(wb, 'sheet').filter((s) => s.getAttribute('state') !== 'hidden').map((s) => ({ name: s.getAttribute('name'), path: wrel[this.rid(s)] }));
+    const sst = this.els(dom(await txt('xl/sharedStrings.xml')), 'si').map((si) => this.els(si, 't').map((t) => t.textContent).join(''));
+    return { zip, txt, dom, rels, sheets, sst, styles: this.styles(dom(await txt('xl/styles.xml'))) };
+  },
+  styles(d) {
+    const numFmts = {};
+    for (const n of this.els(d, 'numFmt')) numFmts[n.getAttribute('numFmtId')] = n.getAttribute('formatCode');
+    const fonts = this.kids(this.el(d, 'fonts'), 'font').map((f) => ({
+      b: !!this.el(f, 'b') && this.el(f, 'b').getAttribute('val') !== '0', i: !!this.el(f, 'i'), u: !!this.el(f, 'u'),
+      sz: +(this.el(f, 'sz')?.getAttribute('val') || 11), color: this.color(this.el(f, 'color')), name: this.el(f, 'name')?.getAttribute('val') || 'Calibri',
+    }));
+    const fills = this.kids(this.el(d, 'fills'), 'fill').map((f) => {
+      const g = this.el(f, 'gradientFill');
+      if (g) return { grad: { deg: +(g.getAttribute('degree') || 0), stops: this.els(g, 'stop').map((s) => ({ pos: +s.getAttribute('position'), color: this.color(this.el(s, 'color')) || '#FFFFFF' })) } };
+      const p = this.el(f, 'patternFill');
+      return p && p.getAttribute('patternType') && p.getAttribute('patternType') !== 'none' ? { bg: this.color(this.el(p, 'fgColor')) || this.color(this.el(p, 'bgColor')) } : {};
+    });
+    const side = (b, k) => { const n = this.el(b, k); const st = n?.getAttribute('style'); return st ? { style: st, color: this.color(this.el(n, 'color')) || '#000000' } : null; };
+    const borders = this.kids(this.el(d, 'borders'), 'border').map((b) => ({ l: side(b, 'left'), r: side(b, 'right'), t: side(b, 'top'), b: side(b, 'bottom') }));
+    const xfs = this.kids(this.el(d, 'cellXfs'), 'xf').map((x) => {
+      const al = this.el(x, 'alignment');
+      return { numFmt: x.getAttribute('numFmtId') || '0', font: +(x.getAttribute('fontId') || 0), fill: +(x.getAttribute('fillId') || 0), border: +(x.getAttribute('borderId') || 0), h: al?.getAttribute('horizontal') || '', v: al?.getAttribute('vertical') || 'bottom', wrap: al?.getAttribute('wrapText') === '1', indent: +(al?.getAttribute('indent') || 0), rot: +(al?.getAttribute('textRotation') || 0) };
+    });
+    const dxfs = this.kids(this.el(d, 'dxfs'), 'dxf').map((x) => ({ b: !!this.el(x, 'b'), color: this.color(this.el(this.el(x, 'font'), 'color')), bg: this.color(this.el(this.el(x, 'fill'), 'bgColor')) || this.color(this.el(this.el(x, 'fill'), 'fgColor')), bottom: this.el(x, 'bottom')?.getAttribute('style') ? this.color(this.el(this.el(x, 'bottom'), 'color')) : null }));
+    return { numFmts, fonts, fills, borders, xfs, dxfs };
+  },
+  BUILTIN: { 0: 'General', 1: '0', 2: '0.00', 3: '#,##0', 4: '#,##0.00', 9: '0%', 10: '0.00%', 11: '0.00E+00', 14: 'dd/mm/yyyy', 15: 'd-mmm-yy', 16: 'd-mmm', 17: 'mmm-yy', 20: 'h:mm', 22: 'dd/mm/yyyy h:mm', 49: '@' },
+  MONTHS: ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'],
+  /* Valeur affichée selon un format Excel (sections, %, décimales, milliers, littéraux, dates) */
+  fmt(v, code) {
+    if (v == null || v === '') return '';
+    if (typeof v !== 'number') { const sec = String(code || '').split(';'); return sec.length >= 4 ? sec[3].replace(/"([^"]*)"/g, '$1').replace('@', v) : String(v); }
+    code = String(code || 'General');
+    if (/^general$/i.test(code)) return Number.isInteger(v) ? String(v) : String(+v.toPrecision(10)).replace('.', ',');
+    const secs = code.split(/;(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+    let s = secs[0], val = Math.abs(v), neg = v < 0;
+    if (v < 0 && secs[1] != null) { s = secs[1]; neg = false; } else if (v === 0 && secs[2] != null) s = secs[2];
+    s = s.replace(/\[[^\]]*\]/g, '');
+    if (!s.trim()) return '';
+    const bare = s.replace(/"[^"]*"/g, '').replace(/\\./g, '');
+    if (/[dy]|m{3,}|h:/i.test(bare) && !/[#0]/.test(bare.replace(/[dmyhs:\s/.,-]/gi, ''))) {
+      const d = new Date(Math.round((v - 25569) * 864e5));
+      const p2 = (n) => String(n).padStart(2, '0');
+      let afterH = false;
+      return s.replace(/"([^"]*)"|yyyy|yy|mmmm|mmm|mm|m|dd|d|hh|h|ss/gi, (t, lit) => {
+        if (lit != null) return lit;
+        const k = t.toLowerCase();
+        const r = k === 'yyyy' ? d.getUTCFullYear() : k === 'yy' ? String(d.getUTCFullYear()).slice(2) : k === 'mmmm' || k === 'mmm' ? this.MONTHS[d.getUTCMonth()]
+          : k === 'mm' ? (afterH ? p2(d.getUTCMinutes()) : p2(d.getUTCMonth() + 1)) : k === 'm' ? (afterH ? d.getUTCMinutes() : d.getUTCMonth() + 1)
+          : k === 'dd' ? p2(d.getUTCDate()) : k === 'd' ? d.getUTCDate() : k === 'hh' ? p2(d.getUTCHours()) : k === 'h' ? d.getUTCHours() : p2(d.getUTCSeconds());
+        afterH = k === 'hh' || k === 'h';
+        return String(r);
+      });
+    }
+    const pct = (bare.match(/%/g) || []).length;
+    if (pct) val *= 100 ** pct;
+    const num = bare.match(/[#0?][#0?,]*(?:\.[#0?]*)?/);
+    let out = '';
+    if (num) {
+      const [ip, fp = ''] = num[0].split('.');
+      const dec = fp.replace(/[^0?]/g, '').length, opt = fp.replace(/[^#]/g, '').length;
+      out = val.toLocaleString('fr-FR', { minimumFractionDigits: dec, maximumFractionDigits: dec + opt, useGrouping: /,/.test(ip) }).replace(/\u202f/g, '\u00a0');
+    }
+    let res = '', used = false;
+    for (const m of s.matchAll(/"([^"]*)"|\\(.)|_.|\*.|([#0?][#0?,]*(?:\.[#0?]*)?)|(.)/g)) {
+      if (m[1] != null) res += m[1];
+      else if (m[2] != null) res += m[2];
+      else if (m[3] != null) { if (!used) { res += out; used = true; } }
+      else if (m[4] != null) res += m[4] === '@' ? '' : m[4];
+    }
+    return (neg ? '-' : '') + res.trim();
+  },
+  ref(r) { const m = /^([A-Z]+)(\d+)$/.exec(r || ''); if (!m) return null; let c = 0; for (const ch of m[1]) c = c * 26 + ch.charCodeAt(0) - 64; return { c: c - 1, r: +m[2] - 1 }; },
+  /* HTML d'une feuille (index à partir de 0) */
+  async sheetHTML(book, idx = 0, { maxRows = 150, maxCols = 30 } = {}) {
+    const sh = book.sheets[idx];
+    const d = book.dom(await book.txt(sh.path));
+    const S_ = book.styles;
+    const fmtDef = this.el(d, 'sheetFormatPr');
+    const defW = +(fmtDef?.getAttribute('defaultColWidth') || fmtDef?.getAttribute('baseColWidth') || 8.43), defH = +(fmtDef?.getAttribute('defaultRowHeight') || 15);
+    const colW = [];
+    for (const c of this.els(d, 'col')) for (let i = +c.getAttribute('min'); i <= +c.getAttribute('max') && i <= maxCols; i++) colW[i - 1] = c.getAttribute('hidden') === '1' ? 0 : +c.getAttribute('width');
+    const cells = new Map();
+    const rowH = [];
+    let lastR = 0, lastC = 0;
+    for (const row of this.els(d, 'row')) {
+      const r = +row.getAttribute('r') - 1;
+      if (r >= maxRows) break;
+      if (row.getAttribute('ht')) rowH[r] = row.getAttribute('hidden') === '1' ? 0 : +row.getAttribute('ht');
+      for (const c of this.kids(row, 'c')) {
+        const p = this.ref(c.getAttribute('r'));
+        if (!p || p.c >= maxCols) continue;
+        const t = c.getAttribute('t'), vn = this.kids(c, 'v')[0];
+        let v = vn ? vn.textContent : null;
+        if (t === 's') v = book.sst[+v] ?? '';
+        else if (t === 'inlineStr') v = this.els(c, 't').map((x) => x.textContent).join('');
+        else if (t === 'b') v = v === '1' ? 'VRAI' : 'FAUX';
+        else if (t !== 'str' && t !== 'e' && v != null && v !== '') v = +v;
+        cells.set(p.r + ':' + p.c, { v, s: +(c.getAttribute('s') || 0) });
+        if (v != null && v !== '' || +(c.getAttribute('s') || 0)) { lastR = Math.max(lastR, p.r); lastC = Math.max(lastC, p.c); }
+      }
+    }
+    const merges = new Map(), covered = new Set();
+    for (const m of this.els(d, 'mergeCell')) {
+      const [a, b] = m.getAttribute('ref').split(':').map((x) => this.ref(x));
+      if (!a || !b) continue;
+      merges.set(a.r + ':' + a.c, { rs: b.r - a.r + 1, cs: b.c - a.c + 1 });
+      for (let r = a.r; r <= b.r; r++) for (let c = a.c; c <= b.c; c++) if (r !== a.r || c !== a.c) covered.add(r + ':' + c);
+      lastR = Math.max(lastR, Math.min(b.r, maxRows - 1)); lastC = Math.max(lastC, Math.min(b.c, maxCols - 1));
+    }
+    // Mises en forme conditionnelles : égalité sur une colonne (statuts) et barres de données
+    const cf = [];
+    for (const g of this.els(d, 'conditionalFormatting')) {
+      const ranges = g.getAttribute('sqref').split(/\s+/).map((x) => x.split(':').map((y) => this.ref(y))).filter((x) => x[0]);
+      for (const rule of this.kids(g, 'cfRule')) {
+        const type = rule.getAttribute('type');
+        if (type === 'expression') {
+          const m = /^\$?([A-Z]+)\$?(\d+)="((?:[^"]|"")*)"$/.exec(this.el(rule, 'formula')?.textContent || '');
+          if (m) cf.push({ ranges, kind: 'eq', col: this.ref(m[1] + '1').c, row0: +m[2] - 1, val: m[3].replace(/""/g, '"'), dxf: S_.dxfs[+rule.getAttribute('dxfId')] || {} });
+        } else if (type === 'dataBar') cf.push({ ranges, kind: 'bar', color: this.color(this.el(rule, 'color')) || '#638EC6', min: +(this.els(rule, 'cfvo')[0]?.getAttribute('val') || 0), max: +(this.els(rule, 'cfvo')[1]?.getAttribute('val') || 1) });
+      }
+    }
+    const inR = (rg, r, c) => rg.some(([a, b]) => { b = b || a; return r >= a.r && r <= b.r && c >= a.c && c <= b.c; });
+    const firstRow = (rg) => rg[0][0].r;
+    const W = (c) => Math.round((colW[c] ?? defW) * 7 + 5), H = (r) => Math.round((rowH[r] ?? defH) * 4 / 3);
+    const xs = [0], ys = [0];
+    for (let c = 0; c <= Math.max(lastC, 0); c++) xs.push(xs[c] + W(c));
+    // Dessins (logo, graphiques) : leur emprise compte dans la taille de la feuille
+    const drawings = [];
+    const srel = await book.rels(sh.path);
+    for (const dn of this.els(d, 'drawing')) {
+      const dp = srel[this.rid(dn)];
+      const dd = book.dom(await book.txt(dp));
+      if (!dd) continue;
+      const drel = await book.rels(dp);
+      for (const an of [...this.els(dd, 'twoCellAnchor'), ...this.els(dd, 'oneCellAnchor')]) {
+        const pos = (n) => n && { c: +this.el(n, 'col').textContent, co: +this.el(n, 'colOff').textContent / 9525, r: +this.el(n, 'row').textContent, ro: +this.el(n, 'rowOff').textContent / 9525 };
+        const from = pos(this.el(an, 'from')), to = pos(this.el(an, 'to')), ext = this.kids(an, 'ext')[0];
+        const blip = this.el(an, 'blip'), ch = this.el(an, 'chart');
+        drawings.push({ from, to, ext: ext && { w: +ext.getAttribute('cx') / 9525, h: +ext.getAttribute('cy') / 9525 }, img: blip ? drel[this.rid(blip, 'embed')] : null, chart: ch ? drel[this.rid(ch)] : null });
+        if (to) { lastR = Math.max(lastR, Math.min(to.r, maxRows - 1)); lastC = Math.max(lastC, Math.min(to.c, maxCols - 1)); }
+      }
+    }
+    for (let c = xs.length - 1; c <= lastC + 1; c++) xs.push(xs[c] + W(c));
+    for (let r = 0; r <= lastR + 1; r++) ys.push(ys[r] + H(r));
+    const css = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}:${v}`).join(';');
+    const bcss = (b) => b ? `${/medium/.test(b.style) ? 2 : /thick/.test(b.style) ? 3 : 1}px ${/dash|dot/.test(b.style) ? 'dashed' : /double/.test(b.style) ? 'double' : 'solid'} ${b.color}` : null;
+    let rowsHtml = '';
+    for (let r = 0; r <= lastR; r++) {
+      let tds = '';
+      for (let c = 0; c <= lastC; c++) {
+        const key = r + ':' + c;
+        if (covered.has(key)) continue;
+        const cell = cells.get(key) || { v: null, s: 0 };
+        const xf = S_.xfs[cell.s] || S_.xfs[0] || {};
+        const font = S_.fonts[xf.font] || {}, fill = S_.fills[xf.fill] || {}, bd = S_.borders[xf.border] || {};
+        let text = this.fmt(cell.v, S_.numFmts[xf.numFmt] || this.BUILTIN[xf.numFmt] || 'General');
+        const st = {
+          'font-family': `'${font.name || 'Calibri'}',Calibri,'Segoe UI',Arial,sans-serif`, 'font-size': (font.sz || 11) * 4 / 3 + 'px', 'font-weight': font.b ? 700 : null, 'font-style': font.i ? 'italic' : null, color: font.color,
+          background: fill.grad ? `linear-gradient(${(fill.grad.deg + 90) % 360}deg,${fill.grad.stops.map((s) => `${s.color} ${Math.round(s.pos * 100)}%`).join(',')})` : fill.bg,
+          'border-left': bcss(bd.l), 'border-right': bcss(bd.r), 'border-top': bcss(bd.t), 'border-bottom': bcss(bd.b),
+          'text-align': xf.h === 'centerContinuous' ? 'center' : xf.h || (typeof cell.v === 'number' ? 'right' : null), 'vertical-align': xf.v === 'center' ? 'middle' : xf.v === 'top' ? 'top' : 'bottom',
+          'white-space': xf.wrap ? 'pre-wrap' : 'pre', 'padding-left': xf.indent ? xf.indent * 9 + 3 + 'px' : null, 'text-decoration': font.u ? 'underline' : null,
+        };
+        for (const k of cf) {
+          if (!inR(k.ranges, r, c)) continue;
+          if (k.kind === 'eq') {
+            const ref = cells.get(r + ':' + k.col);
+            if (ref && String(ref.v ?? '') === k.val) { if (k.dxf.color) st.color = k.dxf.color; if (k.dxf.b) st['font-weight'] = 700; if (k.dxf.bg) st.background = k.dxf.bg; if (k.dxf.bottom) st['border-bottom'] = `2px solid ${k.dxf.bottom}`; }
+          } else if (k.kind === 'bar' && typeof cell.v === 'number') {
+            const p = Math.max(0, Math.min(1, (cell.v - k.min) / ((k.max - k.min) || 1)));
+            st.background = `linear-gradient(90deg,${k.color} ${Math.round(p * 100)}%,transparent ${Math.round(p * 100)}%)`;
+          }
+        }
+        const mg = merges.get(key);
+        tds += `<td${mg ? `${mg.cs > 1 ? ` colspan="${mg.cs}"` : ''}${mg.rs > 1 ? ` rowspan="${mg.rs}"` : ''}` : ''} style="${css(st)}">${esc(text)}</td>`;
+      }
+      rowsHtml += `<tr style="height:${H(r)}px">${tds}</tr>`;
+    }
+    const cols = Array.from({ length: lastC + 1 }, (_, c) => `<col style="width:${W(c)}px">`).join('');
+    let over = '';
+    for (const dw of drawings) {
+      if (!dw.from || dw.from.r > lastR + 1 || dw.from.c > lastC + 1) continue;
+      const x = (xs[dw.from.c] ?? 0) + dw.from.co, y = (ys[dw.from.r] ?? 0) + dw.from.ro;
+      const w = dw.to ? (xs[dw.to.c] ?? xs.at(-1)) + dw.to.co - x : dw.ext?.w || 200, h = dw.to ? (ys[dw.to.r] ?? ys.at(-1)) + dw.to.ro - y : dw.ext?.h || 120;
+      if (dw.img) { const f = book.zip.file(dw.img); if (f) over += `<img src="data:${mimeFromName(dw.img)};base64,${await f.async('base64')}" style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${h}px;object-fit:contain">`; }
+      if (dw.chart) { const cd = book.dom(await book.txt(dw.chart)); if (cd) over += `<div style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${h}px;background:#fff">${this.chartSVG(cd, w, h)}</div>`; }
+    }
+    const width = xs[lastC + 1] || 600;
+    return `<div class="xl-sheet" style="position:relative;width:${width}px"><table style="table-layout:fixed;border-collapse:collapse;width:${width}px"><colgroup>${cols}</colgroup>${rowsHtml}</table>${over}</div>`;
+  },
+  /* Graphique natif (DrawingML) → SVG : anneau, secteurs, barres/colonnes (groupées ou empilées), courbes */
+  chartSVG(d, w, h) {
+    const title = this.els(this.el(d, 'title'), 't').map((t) => t.textContent).join('');
+    const plot = this.el(d, 'plotArea');
+    const ch = plot && [...plot.children].find((n) => /Chart$/.test(n.localName));
+    if (!ch) return '';
+    const cache = (n) => this.els(n, 'pt').map((p) => ({ i: +p.getAttribute('idx'), v: this.el(p, 'v')?.textContent ?? '' })).sort((a, b) => a.i - b.i).map((p) => p.v);
+    const series = this.kids(ch, 'ser').map((s, i) => {
+      const tx = this.el(s, 'tx');
+      const sp = this.kids(s, 'spPr')[0];
+      const solid = this.el(sp && (this.el(sp, 'solidFill') || this.el(this.el(sp, 'ln'), 'solidFill')), 'srgbClr');
+      const pts = {};
+      for (const dp of this.kids(s, 'dPt')) pts[+this.el(dp, 'idx').getAttribute('val')] = this.color(this.el(dp, 'srgbClr'));
+      const lbl = this.kids(s, 'dLbls')[0];
+      const hidden = new Set(this.kids(lbl, 'dLbl').filter((x) => this.el(x, 'delete')?.getAttribute('val') === '1').map((x) => +this.el(x, 'idx').getAttribute('val')));
+      return { name: tx ? (this.el(tx, 'v')?.textContent || cache(tx)[0] || '') : `Série ${i + 1}`, cats: cache(this.el(s, 'cat')), vals: cache(this.el(s, 'val')).map((v) => +v || 0), color: this.color(solid), pts, showVal: this.el(lbl, 'showVal')?.getAttribute('val') === '1', hidden, fmt: this.el(lbl, 'numFmt')?.getAttribute('formatCode') };
+    });
+    if (!series.length) return '';
+    const PAL = ['#00415E', '#8CC63F', '#2E86AB', '#F18F01', '#C73E1D', '#6B4E9B', '#3B8B6E', '#A23B72'];
+    const font = "font-family:'Segoe UI',Calibri,Arial,sans-serif";
+    const lab = (v, f) => (f ? this.fmt(v, f) : this.fmt(v, Number.isInteger(v) ? '#,##0' : '#,##0.0#')) || '';
+    const tt = title ? `<text x="${w / 2}" y="20" text-anchor="middle" style="${font};font-size:13px;font-weight:700" fill="#1F2937">${esc(title)}</text>` : '';
+    const top = title ? 32 : 10;
+    const hasLegend = !!this.el(d, 'legend');
+    const kind = ch.localName;
+    if (kind === 'doughnutChart' || kind === 'pieChart') {
+      const s = series[0], tot = s.vals.reduce((a, v) => a + Math.abs(v), 0) || 1;
+      const maxL = Math.min(40, Math.max(1, ...s.cats.map((c) => String(c).length)));
+      const ncol = clamp(Math.floor((w - 24) / (maxL * 5.6 + 24)), 1, 3), colW = (w - 24) / ncol;
+      const legH = hasLegend ? Math.ceil(s.cats.length / ncol) * 16 + 6 : 0;
+      const R = Math.max(20, Math.min(w - 20, h - top - legH - 10) / 2), cx = w / 2, cy = top + R + 4;
+      const hole = kind === 'doughnutChart' ? R * (+(this.el(ch, 'holeSize')?.getAttribute('val') || 50) / 100) : 0;
+      let a0 = -Math.PI / 2 + (+(this.el(ch, 'firstSliceAng')?.getAttribute('val') || 0)) * Math.PI / 180, out = '';
+      s.vals.forEach((v, i) => {
+        const a1 = a0 + (Math.abs(v) / tot) * Math.PI * 2, big = a1 - a0 > Math.PI ? 1 : 0, col = s.pts[i] || PAL[i % PAL.length];
+        const P = (r, a) => `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
+        const path = a1 - a0 >= Math.PI * 2 - 1e-6 ? `M${P(R, a0)}A${R},${R} 0 1 1 ${P(R, a0 + Math.PI)}A${R},${R} 0 1 1 ${P(R, a0)}${hole ? `M${P(hole, a0)}A${hole},${hole} 0 1 0 ${P(hole, a0 + Math.PI)}A${hole},${hole} 0 1 0 ${P(hole, a0)}` : ''}Z`
+          : hole ? `M${P(R, a0)}A${R},${R} 0 ${big} 1 ${P(R, a1)}L${P(hole, a1)}A${hole},${hole} 0 ${big} 0 ${P(hole, a0)}Z` : `M${cx},${cy}L${P(R, a0)}A${R},${R} 0 ${big} 1 ${P(R, a1)}Z`;
+        out += `<path d="${path}" fill="${col}" stroke="#fff" stroke-width="1.5"${hole ? ' fill-rule="evenodd"' : ''}/>`;
+        if (s.showVal && !s.hidden.has(i) && Math.abs(v) / tot >= 0.04) { const am = (a0 + a1) / 2, rr = hole ? (R + hole) / 2 : R * 0.62; out += `<text x="${(cx + rr * Math.cos(am)).toFixed(1)}" y="${(cy + rr * Math.sin(am) + 4).toFixed(1)}" text-anchor="middle" style="${font};font-size:11px;font-weight:700" fill="#fff">${esc(lab(v, s.fmt))}</text>`; }
+        a0 = a1;
+      });
+      let leg = '';
+      if (hasLegend) s.cats.forEach((c, i) => { const col = i % ncol, row = Math.floor(i / ncol), lx = 12 + col * colW, ly = h - legH + row * 16 + 10; leg += `<rect x="${lx}" y="${ly - 8}" width="9" height="9" fill="${s.pts[i] || PAL[i % PAL.length]}"/><text x="${lx + 13}" y="${ly}" style="${font};font-size:10px" fill="#374151">${esc(truncate(String(c), Math.max(6, Math.floor((colW - 22) / 5.6))))}</text>`; });
+      return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">${tt}${out}${leg}</svg>`;
+    }
+    const isLine = kind === 'lineChart' || kind === 'areaChart';
+    const horiz = this.el(ch, 'barDir')?.getAttribute('val') === 'bar';
+    const grouping = this.el(ch, 'grouping')?.getAttribute('val') || 'clustered';
+    const stacked = /stacked/i.test(grouping), pctStack = grouping === 'percentStacked';
+    const cats = series[0].cats.length ? series[0].cats : series[0].vals.map((_, i) => String(i + 1));
+    const n = cats.length;
+    const sums = cats.map((_, i) => series.reduce((a, s) => a + Math.max(0, s.vals[i] || 0), 0));
+    let max = stacked ? Math.max(...sums, 0) : Math.max(...series.flatMap((s) => s.vals), 0);
+    if (pctStack) max = 1;
+    const min = stacked ? 0 : Math.min(0, ...series.flatMap((s) => s.vals));
+    const nice = (x) => { if (x <= 0) return 1; const e = 10 ** Math.floor(Math.log10(x)); const f = x / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * e; };
+    const step = nice((max - min) / 4 || 1), hi = Math.ceil(max / step) * step || step, lo = Math.floor(min / step) * step;
+    const legH = hasLegend && series.length > 1 ? 20 : 0;
+    const catW = horiz ? Math.min(150, Math.max(...cats.map((c) => String(c).length)) * 6 + 10) : 0;
+    const L = horiz ? catW : 44, B = horiz ? 22 + legH : 34 + legH, T = top, Rm = 14;
+    const pw = w - L - Rm, ph = h - T - B;
+    const scale = (v) => (v - lo) / (hi - lo || 1);
+    let out = '';
+    for (let g = lo; g <= hi + 1e-9; g += step) {
+      const p = scale(g);
+      out += horiz ? `<line x1="${L + p * pw}" y1="${T}" x2="${L + p * pw}" y2="${T + ph}" stroke="#E5E7EB"/><text x="${L + p * pw}" y="${T + ph + 14}" text-anchor="middle" style="${font};font-size:9px" fill="#6B7280">${esc(lab(pctStack ? g : g, pctStack ? '0%' : null))}</text>`
+        : `<line x1="${L}" y1="${T + ph - p * ph}" x2="${L + pw}" y2="${T + ph - p * ph}" stroke="#E5E7EB"/><text x="${L - 6}" y="${T + ph - p * ph + 3}" text-anchor="end" style="${font};font-size:9px" fill="#6B7280">${esc(lab(g, pctStack ? '0%' : null))}</text>`;
+    }
+    const band = (horiz ? ph : pw) / Math.max(1, n);
+    cats.forEach((c, i) => {
+      out += horiz ? `<text x="${L - 6}" y="${T + band * (i + 0.5) + 3}" text-anchor="end" style="${font};font-size:10px" fill="#374151">${esc(truncate(String(c), 26))}</text>`
+        : `<text x="${L + band * (i + 0.5)}" y="${T + ph + 14}" text-anchor="middle" style="${font};font-size:9.5px" fill="#374151">${esc(truncate(String(c), Math.max(4, Math.floor(band / 6))))}</text>`;
+    });
+    if (isLine) {
+      series.forEach((s, k) => {
+        const col = s.color || PAL[k % PAL.length];
+        const pts = s.vals.map((v, i) => [L + band * (i + 0.5), T + ph - scale(v) * ph]);
+        out += `<polyline points="${pts.map((p) => p.map((x) => x.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="${col}" stroke-width="2.2"/>` + pts.map((p) => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="${col}"/>`).join('');
+      });
+    } else {
+      const acc = cats.map(() => 0);
+      series.forEach((s, k) => {
+        const col = s.color || PAL[k % PAL.length];
+        s.vals.forEach((v0, i) => {
+          const v = pctStack ? (sums[i] ? Math.max(0, v0) / sums[i] : 0) : v0;
+          const inner = band * 0.7, bw = stacked ? inner : inner / series.length;
+          const off = band * 0.15 + (stacked ? 0 : k * bw);
+          const a = stacked ? acc[i] : Math.max(lo, 0), b = stacked ? acc[i] + Math.max(0, v) : v;
+          if (stacked) acc[i] += Math.max(0, v);
+          const p0 = scale(Math.min(a, b)), p1 = scale(Math.max(a, b));
+          const rect = horiz ? { x: L + p0 * pw, y: T + band * i + off, w: Math.max(0.5, (p1 - p0) * pw), h: bw } : { x: L + band * i + off, y: T + ph - p1 * ph, w: bw, h: Math.max(0.5, (p1 - p0) * ph) };
+          out += `<rect x="${rect.x.toFixed(1)}" y="${rect.y.toFixed(1)}" width="${rect.w.toFixed(1)}" height="${rect.h.toFixed(1)}" fill="${s.pts[i] || col}"/>`;
+          if (s.showVal && !s.hidden.has(i) && v0) out += horiz ? `<text x="${(rect.x + rect.w + 3).toFixed(1)}" y="${(rect.y + rect.h / 2 + 3).toFixed(1)}" style="${font};font-size:9px" fill="#374151">${esc(lab(v0, s.fmt))}</text>` : `<text x="${(rect.x + rect.w / 2).toFixed(1)}" y="${(rect.y - 3).toFixed(1)}" text-anchor="middle" style="${font};font-size:9px" fill="#374151">${esc(lab(v0, s.fmt))}</text>`;
+        });
+      });
+    }
+    out += horiz ? `<line x1="${L + scale(0) * pw}" y1="${T}" x2="${L + scale(0) * pw}" y2="${T + ph}" stroke="#9CA3AF"/>` : `<line x1="${L}" y1="${T + ph - scale(0) * ph}" x2="${L + pw}" y2="${T + ph - scale(0) * ph}" stroke="#9CA3AF"/>`;
+    let leg = '';
+    if (legH) { let lx = L; series.forEach((s, k) => { leg += `<rect x="${lx}" y="${h - 14}" width="9" height="9" fill="${s.color || PAL[k % PAL.length]}"/><text x="${lx + 13}" y="${h - 6}" style="${font};font-size:10px" fill="#374151">${esc(truncate(s.name, 28))}</text>`; lx += 24 + Math.min(28, s.name.length) * 6; }); }
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">${tt}${out}${leg}</svg>`;
+  },
+  /* Document HTML complet : une feuille (page = n° de feuille à partir de 1) */
+  async html(bytes, { page = 1 } = {}) {
+    const book = await this.open(bytes);
+    if (!book.sheets.length) throw new Error('classeur sans feuille visible');
+    const i = clamp((+page || 1) - 1, 0, book.sheets.length - 1);
+    const body = await this.sheetHTML(book, i);
+    const tabs = book.sheets.map((s, k) => `<span style="padding:4px 12px;border:1px solid #D1D5DB;border-top:0;${k === i ? 'background:#fff;font-weight:700;color:#111' : 'background:#F3F4F6;color:#6B7280'}">${esc(s.name)}</span>`).join('');
+    const doc = `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:12px;background:#fff;font-family:Calibri,'Segoe UI',Arial,sans-serif}td{overflow:hidden;padding:0 3px;line-height:1.15}</style></head><body>${body}<div style="margin-top:10px;font-size:12px;display:flex;gap:2px">${tabs}</div></body></html>`;
+    return { html: doc, width: +(/width:(\d+)px/.exec(body) || [, 0])[1], note: `Feuille ${i + 1}/${book.sheets.length} « ${book.sheets[i].name} »${book.sheets.length > 1 ? ` — page=${i + 2 > book.sheets.length ? 1 : i + 2} pour voir « ${book.sheets[(i + 1) % book.sheets.length].name} »` : ''}`, sheets: book.sheets.map((s) => s.name) };
+  },
 };
 
 /* ============================== 08 · OUTILS ============================== */
@@ -5077,7 +5469,7 @@ const FREE_API_TOOL = {
 /* ============================== 08c · SKILLS (savoir-faire chargeables à la demande) ==============================
    Un skill = des instructions expertes (Markdown) + des outils à activer + éventuellement des fichiers (modèles, scripts).
    Compatible avec le format SKILL.md (en-tête YAML name/description) : import d'un .md, d'un .zip ou d'un .json. */
-const SKILLS_VERSION = 7;
+const SKILLS_VERSION = 8;
 const BUILTIN_SKILLS = [
   {
     id: 'skill-excel', emoji: '📗', name: 'excel', title: 'Excel premium',
@@ -5086,7 +5478,7 @@ const BUILTIN_SKILLS = [
     tools: ['create_excel', 'visual_check'],
     content: `## Méthode
 1. Structure les données avant de générer : une ligne = un élément (document, tâche, client…), une colonne = un attribut. Colonnes types d'un registre : Réf., Section/Catégorie, Élément/Document, Description, Responsable, Échéance, Statut, Commentaires.
-2. Appelle **create_excel** (outil natif, jamais en texte) avec TOUTES les lignes (jamais d'échantillon, jamais « … »). Données volumineuses ou calculées en Python : écris un CSV par feuille (df.to_csv('exports/top50.csv', index=False)) puis passe sheets[].source_file — ne génère JAMAIS le livrable avec openpyxl (il perdrait le design premium).
+2. Appelle **create_excel** (outil natif, jamais en texte) avec TOUTES les lignes (jamais d'échantillon, jamais « … »). Données volumineuses ou calculées en Python : écris un CSV par feuille (df.to_csv('exports/x_top50.csv', index=False)) puis appelle create_excel avec sources: "exports/x_*.csv" (texte : une feuille par fichier, le plus fiable) ou sheets[].source_file ; tuiles, lecture et graphiques de la synthèse : kpis, insights, charts au niveau du classeur — ne génère JAMAIS le livrable avec openpyxl (il perdrait le design premium).
 3. Registre/suivi : status_column + status_values (cycle complet) → tableau de bord automatique, statuts colorés, liste déroulante, feuille Paramètres. N'utilise PAS status_column pour une colonne de commentaires.
 4. group_by = une catégorie qui se répète (Rubrique, Segment…), jamais un identifiant unique.
 5. Analyse chiffrée : kpis (3 à 6 chiffres clés, valeurs déjà formatées « 1 013,4 Mrd », « 2,07 % »), insights (3 à 5 constats), charts natifs (bar, column, line, pie, doughnut : { type, title, labels, series: [{ name, values }] }), une colonne Unité si les unités varient.
@@ -5215,7 +5607,7 @@ L'utilisateur dispose aussi de la page « Code » (éditeur Monaco, comme VS Cod
 1. Charge les fichiers (uploads/… ou exports/…) avec pandas ; affiche df.shape, df.dtypes, df.head() et les valeurs manquantes.
 2. Nettoie (types, doublons, dates) en expliquant chaque choix.
 3. Analyse : agrégats, tendances, ratios, top/flop, tests si pertinent. Graphiques matplotlib lisibles (titre, axes, unités) : ils s'affichent automatiquement.
-4. Livrables : un CSV par tableau final (df.to_csv('exports/synthese.csv', index=False), exports/top20.csv…), puis create_excel avec sheets[].source_file + kpis + insights + charts. Jamais de classeur livrable écrit avec openpyxl (design premium perdu). Pour des gros fichiers (.xlsb, 18 000 lignes), garde les calculs en Python et ne passe à create_excel que les tableaux de synthèse (≤ 10 000 lignes par feuille).
+4. Livrables : un CSV par tableau final (df.to_csv('exports/synthese.csv', index=False), exports/top20.csv…), puis create_excel avec sources: "exports/x_*.csv" (une feuille par fichier, préfixe x_ retiré du nom) + kpis + insights + charts au niveau du classeur (appliqués à la synthèse). Jamais de classeur livrable écrit avec openpyxl (design premium perdu). Pour des gros fichiers (.xlsb, 18 000 lignes), garde les calculs en Python et ne passe à create_excel que les tableaux de synthèse (≤ 10 000 lignes par feuille).
 5. Conclus par 3 à 5 enseignements chiffrés et des recommandations.`,
   },
   {
@@ -5437,8 +5829,15 @@ async function resolveLogo(a, ctx) {
   }
   const b = S.settings.brand || {};
   if (b.logo && b.auto !== false) { const im = await Office.image(b.logo, 700); if (im) return { logo: im, src: 'logo de la charte (Réglages › Profil)' }; }
+  // Logo déposé dans l'espace de travail dont le nom évoque l'organisation du livrable (ex. logo_ecobank.png pour « Ecobank Sénégal »)
+  if (b.auto !== false) {
+    const words = normalizeText([a.org, b.org, a.title, a.subtitle, a.file_name].filter(Boolean).join(' ')).split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !LOGO_STOP.has(w));
+    const hit = [...col('files').keys()].filter((p) => /logo/i.test(p.split('/').pop()) && /\.(png|jpe?g|svg|webp)$/i.test(p) && !/verif|capture|screenshot/i.test(p)).find((p) => { const n = normalizeText(p.split('/').pop()); return words.some((w) => n.includes(w)); });
+    if (hit) { const im = await Office.image(hit, 700); if (im) return { logo: im, src: hit }; }
+  }
   return { logo: null };
 }
+const LOGO_STOP = new Set(['logo', 'rapport', 'analyse', 'avancee', 'portefeuille', 'credit', 'credits', 'revue', 'registre', 'suivi', 'note', 'synthese', 'document', 'classeur', 'fichier', 'tableau', 'bord', 'donnees', 'interne', 'usage', 'premium', 'arrete', 'montants', 'contrats', 'mois', 'annee', 'groupe', 'banque', 'bank', 'sous', 'pour', 'avec', 'dans']);
 /* Dernier message de l'utilisateur (normalisé) : sert à savoir s'il a lui-même demandé un thème, une couleur, un logo d'origine… */
 function lastUserText(ctx) {
   if (!ctx?.chat || !ctx.node?.parentId) return '';
@@ -5496,10 +5895,42 @@ function coerceSheet(sh) {
 }
 /* Fichier de données de l'espace dont le nom correspond à une feuille (ex. « Registre_Analyse » → exports/registre_analyse.csv) */
 function findDataFileFor(name) {
-  const key = normalizeText(String(name || '')).replace(/[^a-z0-9]+/g, '');
+  const norm = (s) => normalizeText(String(s || '')).replace(/[^a-z0-9]+/g, '');
+  const key = norm(name);
   if (key.length < 4) return null;
   const files = [...col('files').keys()].filter((p) => /\.(csv|tsv|json|xlsx)$/i.test(p) && !/^exports\/.*\.xlsx$/i.test(p) || /\.(csv|tsv|json)$/i.test(p));
-  return files.find((p) => normalizeText(p.split('/').pop().replace(/\.[^.]+$/, '')).replace(/[^a-z0-9]+/g, '') === key) || null;
+  const base = (p) => p.split('/').pop().replace(/\.[^.]+$/, '');
+  const exact = files.find((p) => norm(base(p)) === key);
+  if (exact) return exact;
+  // « Segments » ↔ x_segments.csv, « Top 30 défauts » ↔ x_top_defauts.csv (match unique seulement)
+  const loose = (s) => norm(s.replace(/^(x|tab|table|df|t|data|out|res)[_-]/i, '')).replace(/[0-9]+/g, '');
+  const k2 = loose(String(name || ''));
+  const m = k2.length >= 4 ? files.filter((p) => loose(base(p)) === k2) : [];
+  return m.length === 1 ? m[0] : null;
+}
+/* sources : chemins de fichiers en texte (virgules, retours à la ligne, motifs *) → liste de fichiers de l'espace */
+function expandSources(v) {
+  if (v == null || v === '') return [];
+  let list = Array.isArray(v) ? v : typeof v === 'string' && /^\s*\[/.test(v) ? parseLooseValue(v) : String(v).split(/[\n,;]+/);
+  if (!Array.isArray(list)) list = [String(v)];
+  const files = [...col('files').keys()];
+  const out = [];
+  for (const raw of list) {
+    const x = normPath(String(raw && typeof raw === 'object' ? raw.path || raw.source_file || raw.file || '' : raw).trim().replace(/^["'`]|["'`]$/g, ''));
+    if (!x) continue;
+    if (/[*?]/.test(x)) { const re = globToRegex(x); files.filter((p) => re.test(p) && /\.(csv|tsv|json|xlsx|xls|xlsb)$/i.test(p) && !/^_|\/_/.test(p)).sort((p, q) => (/kpi|synth|resume|summary|dashboard|indicateur/i.test(q) - /kpi|synth|resume|summary|dashboard|indicateur/i.test(p)) || p.localeCompare(q)).forEach((p) => out.push(p)); }
+    else out.push(x);
+  }
+  return [...new Set(out)];
+}
+function prettySheetName(p) {
+  const n = p.split('/').pop().replace(/\.[^.]+$/, '').replace(/^(x|tab|table|df|t|data|out|res)[_-]/i, '').replace(/[_-]+/g, ' ').trim()
+    .replace(/\b(kpis?|orr|frr|ifrs\s?9?|npl|npe|hhi|pdo|sic|ead|lgd|pd|ecl|bceao|uemoa|ca|pnb|rh)\b/gi, (m) => m.toUpperCase());
+  return (n.charAt(0).toUpperCase() + n.slice(1)).slice(0, 31) || 'Feuille';
+}
+/* Fichiers de données de l'espace (les plus récents d'abord) : proposés au modèle quand il oublie de les passer */
+function dataFilesHint(max = 25) {
+  return [...col('files').values()].filter((f) => /\.(csv|tsv|json)$/i.test(f.id) && !/(^|\/)_|package(-lock)?\.json$|tsconfig/i.test(f.id)).sort((x, y) => (y.updatedAt || 0) - (x.updatedAt || 0)).slice(0, max).map((f) => f.id);
 }
 /* Tableau texte (Markdown ou CSV/TSV/point-virgule) → { headers, rows } : entrée plus sûre que du JSON imbriqué */
 function tableFromText(text) {
@@ -5557,7 +5988,7 @@ const DELIVERABLE_TOOLS = [
         title: { type: 'string', description: 'Titre du classeur (bandeau du tableau de bord)' },
         subtitle: { type: 'string', description: 'Sous-titre : organisation · période · arrêté' },
         sheets: {
-          type: 'array', description: 'Feuilles de données',
+          type: 'array', description: 'Feuilles de données (liste ; acceptée aussi en chaîne JSON). Gros volumes : préfère source_file par feuille, ou le paramètre sources',
           items: {
             type: 'object',
             properties: {
@@ -5588,8 +6019,12 @@ const DELIVERABLE_TOOLS = [
             },
           },
         },
+        sources: { type: 'string', description: "LE PLUS FIABLE pour un classeur de plusieurs tables préparées avec python : fichiers de l'espace séparés par des virgules, motifs * acceptés (ex. \"exports/x_kpi.csv, exports/x_segments.csv\" ou \"exports/x_*.csv\") → une feuille premium par fichier (nom tiré du fichier)" },
         table: { type: 'string', description: 'Raccourci pour une seule feuille : tableau Markdown ou CSV (en-têtes en première ligne)' },
         source_file: { type: 'string', description: "Alternative : fichier CSV/JSON/xlsx de l'espace de travail à mettre en forme" },
+        kpis: { type: 'array', items: { type: 'object', properties: { label: { type: 'string' }, value: { type: 'number' }, caption: { type: 'string' } } }, description: 'Tuiles de chiffres clés de la feuille de synthèse (première feuille)' },
+        insights: { type: 'array', items: { type: 'string' }, description: 'Phrases de lecture de la feuille de synthèse' },
+        charts: { type: 'array', items: { type: 'object' }, description: 'Graphiques natifs de la feuille de synthèse : [{ type, title, labels, series: [{ name, values }] }]' },
         org: { type: 'string', description: 'Organisation (pied de page, sous-titre)' },
         confidentiality: { type: 'string', description: 'Mention de confidentialité du pied de page (ex. USAGE INTERNE)' },
         dashboard: { type: 'boolean', description: 'Tableau de bord automatique (défaut : oui si statut)' },
@@ -5606,6 +6041,8 @@ const DELIVERABLE_TOOLS = [
       const top = coerceSheet({ status_column: a.status_column, group_by: a.group_by, insights: a.insights, kpis: a.kpis, item_label: a.item_label, charts: a.charts });
       let sheets = (Array.isArray(rawSheets) ? rawSheets : []).map(coerceSheet).filter(Boolean);
       const notes = [];
+      // sources : une feuille par fichier (paramètre texte, transmis même par les fournisseurs qui perdent les listes)
+      for (const p of expandSources(a.sources ?? a.source_files ?? a.files)) if (!sheets.some((s) => normPath(s.source_file || '') === p)) sheets.push({ name: prettySheetName(p), title: sheets.length ? prettySheetName(p) : undefined, source_file: p });
       for (let i = 0; i < sheets.length; i++) {
         const sh = sheets[i];
         if (sh.table && !(sh.headers?.length && sh.rows?.length)) Object.assign(sh, tableFromText(sh.table));
@@ -5634,7 +6071,17 @@ const DELIVERABLE_TOOLS = [
       if (!sheets.length && !a.source_file && !(a.headers && a.rows)) { const auto = findDataFileFor(a.title || a.file_name); if (auto) a.source_file = auto; }
       if (!sheets.length && a.headers && a.rows) sheets = [{ name: a.title || 'Feuille 1', title: a.title, headers: a.headers, rows: a.rows, ...top }];
       if (!sheets.length && a.source_file) sheets = (await sheetsFromFile(a.source_file)).map((s, i) => ({ ...s, ...(i === 0 ? top : {}), title: i === 0 ? a.title || s.name : s.name }));
-      if (!sheets.length) throw new Error('Aucune donnée : fournis sheets (headers + rows, ou table en Markdown/CSV), table, ou source_file.');
+      if (!sheets.length) {
+        const got = Object.keys(a).filter((k) => a[k] != null && a[k] !== '');
+        const avail = dataFilesHint();
+        throw new Error(`Aucune donnée reçue (paramètres reçus : ${got.join(', ') || 'aucun'}). Fournis les données par l'un de ces moyens : sources (texte, le plus fiable : chemins séparés par des virgules ou motif, ex. "exports/x_*.csv" → une feuille par fichier), sheets ([{ name, source_file }] ou headers + rows), table (Markdown/CSV) ou source_file.${avail.length ? ` Fichiers de données disponibles : ${avail.join(', ')}.` : ''} Si tu avais bien envoyé sheets, il a été perdu en route : renvoie-le en chaîne JSON ou utilise sources.`);
+      }
+      // kpis / insights / charts passés au niveau du classeur : appliqués à la feuille de synthèse (ou à la première)
+      const topSet = Object.entries(top || {}).filter(([, v]) => v != null && v !== '' && !(Array.isArray(v) && !v.length));
+      if (topSet.length) {
+        const tgt = sheets.find((s) => /synth|kpi|indicateur|r[ée]sum|dashboard|tableau de bord|overview/i.test(normalizeText(s.name || s.title || ''))) || sheets[0];
+        for (const [k, v] of topSet) if (tgt[k] == null || tgt[k] === '' || (Array.isArray(tgt[k]) && !tgt[k].length)) tgt[k] = v;
+      }
       // Titre du classeur repris sur la première feuille si elle n'en a pas
       if (a.title && !sheets[0].title) sheets[0] = { ...sheets[0], title: a.title, subtitle: sheets[0].subtitle || a.subtitle };
       ctx.progress('Génération du classeur premium…');
@@ -5807,7 +6254,7 @@ Exemple : const m = new THREE.Mesh(new THREE.TorusKnotGeometry(1, .3, 200, 32), 
         path: { type: 'string', description: 'Fichier de l\'espace de travail à vérifier' },
         html: { type: 'string', description: 'Ou : HTML complet à rendre directement' },
         question: { type: 'string', description: 'Ce qu\'il faut vérifier en particulier' },
-        page: { type: 'integer', description: 'Page (PDF)' },
+        page: { type: 'integer', description: 'Page (PDF) ou n° de feuille (Excel : aperçu fidèle avec styles, logo et graphiques natifs dessinés)' },
         width: { type: 'integer', description: 'Largeur de la fenêtre en px (défaut 1280 ; 390 pour mobile)' },
       },
     },
@@ -7830,6 +8277,7 @@ function stepsToMessages(steps, withReasoning) {
   const seeSteps = withReasoning ? new Set(steps.filter((s) => (s.toolCalls || []).some((t) => t.seeImages && t.display?.images?.length)).slice(-2)) : new Set();
   for (const s of steps) {
     if (s.synthetic) { if (withReasoning && s.inject) out.push({ role: 'user', content: s.inject }); continue; }
+    if (s.superseded === 'provider') continue;
     const tcs = (s.toolCalls || []).filter((t) => t.name);
     if (!s.content && !tcs.length) continue;
     const m = { role: 'assistant', content: s.content || '' };
@@ -8030,6 +8478,37 @@ const Hooks = {
   },
 };
 
+/* ---------- Fournisseurs écartés automatiquement, par modèle ----------
+   Certains fournisseurs d'OpenRouter suppriment les paramètres complexes (listes, objets) des appels d'outil :
+   create_excel arrive sans « sheets », create_powerpoint sans « slides »… Le fournisseur fautif est mémorisé
+   (7 jours) et exclu des requêtes suivantes pour ce modèle. */
+const ProviderQuirks = {
+  KEY: 'cortex.providerQuirks', TTL: 7 * 864e5,
+  load() { try { return JSON.parse(localStorage.getItem(this.KEY) || '{}') || {}; } catch { return {}; } },
+  list(model) { const q = this.load()[model] || {}, t = Date.now(); return Object.keys(q).filter((p) => t - q[p].at < this.TTL).sort((x, y) => q[y].at - q[x].at).slice(0, 4); },
+  add(model, provider, reason) {
+    if (!model || !provider) return;
+    const all = this.load();
+    (all[model] ||= {})[provider] = { at: Date.now(), reason };
+    try { localStorage.setItem(this.KEY, JSON.stringify(all)); } catch {}
+  },
+  clear() { try { localStorage.removeItem(this.KEY); } catch {} },
+};
+/* Paramètres complexes attendus mais absents d'un appel d'outil (signe d'un fournisseur qui les a supprimés) */
+const DATA_KEYS = { create_excel: ['sheets', 'table', 'source_file', 'sources', 'csv', 'data', 'rows'] };
+function droppedParams(tool, raw) {
+  const P = tool?.parameters?.properties;
+  if (!P) return [];
+  let a = safeJSON(raw || '{}');
+  if (!a || typeof a !== 'object' || Array.isArray(a)) return [];
+  a = JSON.parse(JSON.stringify(a));
+  try { normalizeArgs(tool, a); } catch {}
+  const empty = (v) => v == null || v === '' || (Array.isArray(v) && !v.length);
+  const miss = (tool.parameters.required || []).filter((k) => ['array', 'object'].includes(P[k]?.type) && empty(a[k]));
+  if (DATA_KEYS[tool.name] && DATA_KEYS[tool.name].every((k) => empty(a[k]))) miss.push(DATA_KEYS[tool.name][0]);
+  return [...new Set(miss)];
+}
+
 /* ---------- Corps de requête ---------- */
 function buildBody(o, messages, toolDefs) {
   const p = o.cfg.params || {};
@@ -8059,6 +8538,8 @@ function buildBody(o, messages, toolDefs) {
   if (pv.zdr) pr.zdr = true;
   if (!pv.allowFallbacks) pr.allow_fallbacks = false;
   if (pv.ignore) pr.ignore = pv.ignore.split(',').map((x) => x.trim()).filter(Boolean);
+  const quirks = toolDefs.length ? ProviderQuirks.list(o.model) : [];
+  if (quirks.length) pr.ignore = [...new Set([...(pr.ignore || []), ...quirks])];
   if (Object.keys(pr).length) body.provider = pr;
   if (S.settings.harness.middleOut) body.transforms = ['middle-out'];
   if (o.cfg.responseFormat) {
@@ -8202,6 +8683,23 @@ async function agentLoop(o) {
       }
     }
     o.run.addUsage(usage, res.model || o.model, o.depth ? 'subagent' : 'chat');
+    // Fournisseur qui a supprimé des paramètres (listes/objets) : appel reçu sans ses données → fournisseur écarté
+    // pour ce modèle et étape relancée à l'identique (2 fois au plus par réponse)
+    if (step.toolCalls.length && res.provider && !o.signal.aborted && (o.dropRetries || 0) < 2) {
+      const lost = step.toolCalls.map((t) => ({ name: t.name, missing: droppedParams(o.toolMap.get(t.name) || TOOLS.get(t.name), t.args) })).filter((x) => x.missing.length);
+      if (lost.length) {
+        o.dropRetries = (o.dropRetries || 0) + 1;
+        const what = lost.map((x) => `${x.missing.join(', ')} (${x.name})`).join(' ; ');
+        ProviderQuirks.add(o.model, res.provider, what);
+        step.superseded = 'provider';
+        step.lostParams = { provider: res.provider, calls: lost };
+        step.toolCalls = [];
+        ev.end({ tokens: usage ? usage.prompt + usage.completion : null, cost: usage?.cost, model: res.model, response: { provider: res.provider, dropped: what } });
+        o.run.note(`Le fournisseur ${res.provider} a supprimé ${what} : écarté pour ${modelShort(o.model)}, étape relancée`);
+        o.onUpdate();
+        continue;
+      }
+    }
     ev.end({ tokens: usage ? usage.prompt + usage.completion : null, cost: usage?.cost, model: res.model, response: { content: truncate(res.content, 4000), reasoning: truncate(res.reasoning, 2000), tool_calls: res.toolCalls, finish_reason: res.finishReason, provider: res.provider } });
     o.onUpdate();
     if (!step.toolCalls.length) {
@@ -8498,7 +8996,7 @@ async function guruRescue(tool, tc, errText, o, finish) {
     normalizeArgs(tool, r.args);
     if (tool.name === 'create_excel') {
       const sh = (Array.isArray(r.args.sheets) ? r.args.sheets : []).map(coerceSheet).filter(Boolean);
-      const nrows = sh.reduce((x, y) => x + (y.rows?.length || 0) + (y.table || y.source_file ? 1 : 0), 0) + (r.args.table || r.args.source_file ? 1 : 0);
+      const nrows = sh.reduce((x, y) => x + (y.rows?.length || 0) + (y.table || y.source_file ? 1 : 0), 0) + (r.args.table || r.args.source_file || r.args.sources ? 1 : 0);
       if (!nrows) throw new Error('arguments corrigés sans données — reprise refusée pour ne pas livrer un fichier vide');
     }
     const ctx = { signal: o.signal, chat: o.chat, node: o.node, tc, depth: o.depth, cfg: o.cfg, run: o.run, progress: (p) => { tc.progress = p; o.onUpdate(); }, cost: (u, model, kind) => o.run.addUsage(normUsage(u, model), model, kind), ask: (q, opts) => askUser(tc, q, opts, o), openArtifact: (path) => S.onArtifact?.(path, o.chat), update: o.onUpdate, model: o.model, toolsNow: () => [...o.toolMap.values()], addTools: () => [] };
@@ -9661,7 +10159,8 @@ function stepsHTML(steps, running, keyBase) {
       const open = S.ui.open[k] ?? live;
       html += `<details class="thinking" data-ok="${k}" ${open ? 'open' : ''}><summary>${icon('brain', 'sm')} ${live ? 'Réflexion en cours… <span class="spin"></span>' : `Réflexion${s.duration ? ` · ${fmtDur((s.ttft && s.content ? s.duration : s.duration))}` : ''}`}<span class="chev">${icon('down', 'sm')}</span></summary><div class="th-body">${esc(s.reasoning)}</div></details>`;
     }
-    if (s.content && s.superseded) html += `<details class="superseded"><summary>${icon('undo', 'sm')} ${s.superseded === 'claim' ? 'Réponse retirée — fichier annoncé mais pas encore créé (Cortex a relancé le modèle)' : 'Première version — corrigée après relecture critique'}<span class="chev">${icon('down', 'sm')}</span></summary>${mdSlot('st-' + s.id, s.content, false)}</details>`;
+    if (s.superseded === 'provider') html += `<div class="superseded provider-drop">${icon('undo', 'sm')} Réponse écartée — le fournisseur ${esc(s.lostParams?.provider || '')} a supprimé ${esc((s.lostParams?.calls || []).map((c) => `${c.missing.join(', ')} (${c.name})`).join(' ; '))} : Cortex l'écarte pour ce modèle et relance.</div>`;
+    else if (s.content && s.superseded) html += `<details class="superseded"><summary>${icon('undo', 'sm')} ${s.superseded === 'claim' ? 'Réponse retirée — fichier annoncé mais pas encore créé (Cortex a relancé le modèle)' : 'Première version — corrigée après relecture critique'}<span class="chev">${icon('down', 'sm')}</span></summary>${mdSlot('st-' + s.id, s.content, false)}</details>`;
     else if (s.content) html += mdSlot('st-' + s.id, s.content, streaming && !(s.toolCalls || []).length);
     for (const img of s.images || []) html += `<img class="gen-img" src="${esc(img)}" alt="Image générée" data-act="zoom">`;
     for (const tc of s.toolCalls || []) html += toolCardHTML(tc, streaming);
@@ -11769,7 +12268,7 @@ const SETTINGS_TABS = {
       <div class="grid2">
         ${n('h-steps', 'Étapes max par réponse', H.maxSteps, 'min="1" max="200"', 'Nombre maximal d\'appels au modèle dans une boucle d\'agent.')}
         ${n('h-budget', 'Budget max par réponse ($)', H.budgetPerRun, 'min="0" step="0.05"', '0 = illimité.')}
-        ${n('h-timeout', 'Délai max par outil (s)', H.toolTimeout, 'min="5" max="900"', 'Python ajoute 2,5 min au premier chargement.')}
+        ${n('h-timeout', 'Délai max par outil (s)', H.toolTimeout, 'min="5" max="900"', 'Python : 3 min minimum (analyse de données), + 2,5 min au premier chargement.')}
         ${n('h-chars', 'Taille max d\'un résultat d\'outil (car.)', H.maxToolChars, 'min="1000" step="1000"', 'Les résultats plus longs sont tronqués (début + fin).')}
         ${n('h-retries', 'Nouvelles tentatives (429/5xx)', H.retries, 'min="0" max="6"', 'Avec attente exponentielle.')}
         ${n('h-depth', 'Profondeur des sous-agents', H.subagentDepth, 'min="1" max="4"', 'Un sous-agent peut-il en lancer d\'autres ?')}
