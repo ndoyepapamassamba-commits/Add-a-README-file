@@ -825,7 +825,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-28 21:06 UTC', stamp: 202610282106, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-28 21:20 UTC', stamp: 202610282120, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -9959,7 +9959,7 @@ const LocalModels = {
     const ollamaSteps = ['Ollama refuse l\'origine de cette page : autorisez-la avec la variable OLLAMA_ORIGINS (le plus simple : *).', `Windows : fermez Ollama (barre des tâches), puis dans un terminal : setx OLLAMA_ORIGINS "*" — relancez Ollama.`, `macOS : launchctl setenv OLLAMA_ORIGINS "*" puis relancez l'application Ollama.`, `Linux (service) : systemctl edit ollama.service → [Service] Environment="OLLAMA_ORIGINS=*" → systemctl daemon-reload && systemctl restart ollama.`];
     const steps = isOllama ? ollamaSteps : isLm ? ['LM Studio : onglet Developer › Server Settings › activez « Enable CORS » (désactivé par défaut), puis relancez le serveur.'] : ['Le serveur doit renvoyer les en-têtes CORS pour l\'origine ' + origin + ' (ex. Access-Control-Allow-Origin: *).'];
     if (file) steps.push('Autre solution, sans toucher au serveur : ouvrez Cortex depuis http://localhost (origine autorisée par défaut) — dans le dossier de Cortex : python -m http.server 8080, puis http://localhost:8080/index.html.');
-    if (https) steps.push('Page ouverte en https : selon la version de Chrome, une autorisation « accès au réseau local » peut être demandée — acceptez-la (icône à gauche de l\'adresse).');
+    if (https) steps.push('Page ouverte en https : Chrome (142 et plus) demande l\'autorisation d\'accéder aux « applications de l\'appareil » / au réseau local — acceptez-la (invite ou icône à gauche de l\'adresse) ; et ajoutez cette origine à OLLAMA_ORIGINS (ex. OLLAMA_ORIGINS=' + location.origin + ').');
     return { kind: 'cors', title: `Le serveur ${root} répond, mais il refuse les requêtes venant de Cortex (origine ${origin}).`, steps };
   },
   /* Catalogue WebLLM : identifiants vérifiés à l'exécution contre la liste préconstruite de la bibliothèque */
@@ -10050,14 +10050,14 @@ const LocalModels = {
   setModels = function (list, ts) { setM(list, ts); LocalModels.attach(); };
 }
 /* Carte de réglages (page Modèles) */
-const WEBLLM_PICKS = [['Qwen3-4B-q4f16_1-MLC', 'Qwen3 4B — conseillé (≈ 2,5 Go, 6 Go de RAM/VRAM)'], ['Qwen3-1.7B-q4f16_1-MLC', 'Qwen3 1.7B — léger (≈ 1,2 Go)'], ['Qwen3-8B-q4f16_1-MLC', 'Qwen3 8B — plus fort (≈ 5 Go, 8 Go de VRAM)'], ['Qwen2.5-7B-Instruct-q4f16_1-MLC', 'Qwen2.5 7B Instruct (≈ 4,5 Go)'], ['Mistral-7B-Instruct-v0.3-q4f16_1-MLC', 'Mistral 7B Instruct v0.3 (≈ 4,5 Go)'], ['DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC', 'DeepSeek-R1 distill 7B — raisonnement (≈ 4,5 Go)']];
+const WEBLLM_PICKS = [['Qwen3-4B-q4f16_1-MLC', 'Qwen3 4B — conseillé (3,4 Go de mémoire graphique)'], ['Qwen3-1.7B-q4f16_1-MLC', 'Qwen3 1.7B — léger (2 Go)'], ['Qwen3-8B-q4f16_1-MLC', 'Qwen3 8B — plus fort (5,7 Go)'], ['Qwen2.5-7B-Instruct-q4f16_1-MLC', 'Qwen2.5 7B Instruct (5,1 Go)'], ['Mistral-7B-Instruct-v0.3-q4f16_1-MLC', 'Mistral 7B Instruct v0.3 (4,6 Go)'], ['DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC', 'DeepSeek-R1 distill 7B — raisonnement (5,1 Go)']];
 function localModelsHTML() {
   const c = LocalModels.cfg(); const p = LocalModels.progress; const err = c.lastError; const cur = S.settings.defaultModel || '';
   const rows = LOCAL_CATALOG.map((m) => `<tr><td><b>${esc(m.name)}</b><div class="small muted">${esc(m.note || '')}</div></td><td class="small">${esc(m.license)}</td><td class="small">${esc(m.ram)}</td><td class="small mono">${m.ollama ? `ollama pull ${esc(m.ollama)}` : '—'}</td><td>${m.webllm && LocalModels.webgpu ? `<button class="btn sm" data-lm="webllm" data-id="${esc(m.webllm)}">${icon('download', 'sm')} Navigateur</button>` : ''}</td></tr>`).join('');
   const readyList = [...LocalModels.ready];
   const browser = LocalModels.webgpu
     ? `<div class="card" style="margin:10px 0;background:var(--accent-soft)"><b>${icon('zap', 'sm')} Sans rien installer : un modèle dans votre navigateur (WebGPU disponible)</b>
-        <p class="small muted" style="margin:6px 0 8px">Le modèle est téléchargé une seule fois (quelques Go, mis en cache) puis tourne sur votre carte graphique. Vos données ne quittent pas l'ordinateur. Comptez 2 à 10 minutes de téléchargement la première fois.</p>
+        <p class="small muted" style="margin:6px 0 8px">Le modèle est téléchargé une seule fois (1 à 4 Go, mis en cache) puis tourne sur votre carte graphique (mémoire indiquée entre parenthèses ; WebGPU avec shader-f16). Vos données ne quittent pas l'ordinateur. Comptez 2 à 30 minutes de téléchargement la première fois selon la connexion.</p>
         <div class="row wrap" style="gap:8px;align-items:center"><select id="lm-pick" class="sel" style="min-width:300px">${WEBLLM_PICKS.map(([id, lab]) => `<option value="${esc(id)}" ${cur === 'webllm/' + id ? 'selected' : ''}>${esc(lab)}</option>`).join('')}</select><button class="btn sm primary" data-lm="webllm-pick">${icon('download', 'sm')} Télécharger et utiliser</button></div>
         ${readyList.length ? `<div class="row wrap" style="gap:8px;align-items:center;margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff;border:1px solid var(--ok,#16a34a)"><b style="color:var(--ok,#16a34a)">✅ Prêt dans votre navigateur : ${readyList.map((x) => esc(x.replace(/-q4f16_1-MLC$/, ''))).join(', ')}</b>${readyList.map((x) => `<button class="btn sm primary" data-lm="use" data-id="${esc(x)}">${icon('chat', 'sm')} Discuter avec ${esc(x.replace(/-q4f16_1-MLC$/, ''))}</button>`).join('')}<span class="small muted">Le modèle est aussi dans le sélecteur de la conversation, onglet « Local / Navigateur ».</span></div>` : ''}
         <div id="lm-progress" class="small muted" style="margin-top:8px;${p ? '' : 'display:none'}"><div style="height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-bottom:4px"><div id="lm-bar" style="height:100%;width:${p ? Math.round((p.pct || 0) * 100) : 0}%;background:var(--accent);transition:width .3s"></div></div><span id="lm-ptext">${p ? esc(p.text || '') : ''}</span></div></div>`
