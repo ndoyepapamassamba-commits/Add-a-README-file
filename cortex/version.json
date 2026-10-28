@@ -1,0 +1,1 @@
+{ "build": "2026-10-28 19:54 UTC", "stamp": 202610281954, "branch": "claude/vibrant-dirac-3qrbfm", "notes": "Cortex : moteur de design propre, Studio JS, cerveau de vérification, skills importables\nCortex : préfixe export_ retiré des noms d'onglets tirés des fichiers\nCortex : pas de registre sur un échéancier même avec des statuts déclarés" }

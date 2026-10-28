@@ -825,6 +825,8 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
+const CORTEX_VERSION = { build: '2026-10-28 19:54 UTC', stamp: 202610281954, branch: 'claude/vibrant-dirac-3qrbfm' };
+
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
   plus: '<path d="M5 12h14M12 5v14"/>',
@@ -9394,7 +9396,7 @@ const Mind = {
   /* 2. Chercher : conversations passées et, si besoin, recherche web — avant que le modèle ne commence */
   async gather(contract, task, { chat, signal, tools = [] } = {}) {
     const H = S.settings.harness || {}; const out = { past: [], web: null, text: '', ms: 0 }; const t0 = now();
-    try { out.past = Sessions.search(task, { exclude: chat?.id, k: 3, minRel: 0.25 }); } catch (e) { console.warn('sessions', e); }
+    try { out.past = Sessions.search(task, { exclude: chat?.id, k: 3, minRel: 0.15 }); } catch (e) { console.warn('sessions', e); }
     if (contract.needsWeb && H.preSearch !== false && typeof freeWebSearch === 'function') {
       try { out.web = await withTimeout(freeWebSearch(truncate(task, 240), { n: 5, read: 1, signal }), 18000, 'recherche préalable'); } catch (e) { if (signal?.aborted) throw e; out.webError = e.message; }
     }
@@ -9511,6 +9513,306 @@ const Mind = {
     return b;
   },
 };
+
+/* ============================== 08l · TÂCHES PLANIFIÉES ==============================
+   Cortex programme des tâches (ponctuelles ou récurrentes) et les exécute lui-même tant que la page est ouverte :
+   à l'échéance, une conversation est créée (ou reprise) et le prompt de la tâche est envoyé à l'agent choisi.
+   Rattrapage au lancement des tâches manquées, notification à la fin, historique des exécutions.            */
+const DAY_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+const Scheduler = {
+  timer: null, running: null, queue: [],
+  list() { return S.settings.scheduled || (S.settings.scheduled = []); },
+  save() { saveSettings(); if (S.ui?.page === 'scheduled') renderPageSoon(); },
+  get(id) { return this.list().find((t) => t.id === id) || null; },
+  find(ref) { if (!ref) return null; const n = normalizeText(String(ref)); return this.get(ref) || this.list().find((t) => normalizeText(t.title) === n) || this.list().find((t) => normalizeText(t.title).includes(n)) || null; },
+  /* prochaine échéance d'une tâche après un instant donné */
+  nextAfter(t, from) {
+    const d = new Date(from);
+    if (t.once) { const o = new Date(t.once).getTime(); return o > from ? o : null; }
+    const n = Math.max(1, +t.n || 1);
+    if (t.every === 'minute') return from + n * 60e3;
+    if (t.every === 'hour') return from + n * 3600e3;
+    const [hh, mm] = String(t.at || '09:00').split(':').map((x) => +x || 0);
+    const cand = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hh, mm, 0, 0);
+    if (t.every === 'day') { while (cand.getTime() <= from) cand.setDate(cand.getDate() + n); return cand.getTime(); }
+    if (t.every === 'week') { const days = (t.days && t.days.length ? t.days : [1]).map((x) => ((+x % 7) + 7) % 7); for (let i = 0; i < 60; i++) { if (cand.getTime() > from && days.includes(cand.getDay())) return cand.getTime(); cand.setDate(cand.getDate() + 1); } return null; }
+    if (t.every === 'month') { cand.setDate(Math.min(+t.day || 1, 28)); while (cand.getTime() <= from) cand.setMonth(cand.getMonth() + n); return cand.getTime(); }
+    return null;
+  },
+  create(o) {
+    const t = { id: uid('task'), title: String(o.title || o.prompt || 'Tâche').slice(0, 90), prompt: String(o.prompt || '').trim(), agentId: o.agentId || null, every: o.once ? null : (o.every || 'day'), n: Math.max(1, +o.n || 1), at: o.at || '09:00', days: o.days || null, day: o.day || null, once: o.once || null, enabled: o.enabled !== false, notify: o.notify !== false, catchUp: o.catchUp !== false, sameChat: !!o.sameChat, chatId: null, createdAt: now(), last: null, lastStatus: null, runs: [] };
+    if (!t.prompt) throw new Error('prompt requis : l\'instruction complète que Cortex exécutera');
+    if (t.once && isNaN(new Date(t.once).getTime())) throw new Error('once : date-heure invalide (format ISO attendu, ex. 2026-11-03T08:30)');
+    if (!t.once && !['minute', 'hour', 'day', 'week', 'month'].includes(t.every)) throw new Error('every doit valoir minute, hour, day, week ou month');
+    if (t.every === 'minute' && t.n < 5) t.n = 5;
+    t.next = this.nextAfter(t, now());
+    if (!t.next) throw new Error('Échéance invalide (date déjà passée ?)');
+    this.list().push(t); this.save(); return t;
+  },
+  update(id, patch) { const t = this.get(id); if (!t) throw new Error('Tâche introuvable : ' + id); Object.assign(t, patch); if (['every', 'at', 'days', 'once', 'n', 'day'].some((k) => k in patch)) t.next = this.nextAfter(t, now()); if (patch.enabled && !t.next) t.next = this.nextAfter(t, now()); this.save(); return t; },
+  remove(id) { const l = this.list(); const i = l.findIndex((t) => t.id === id); if (i < 0) throw new Error('Tâche introuvable : ' + id); l.splice(i, 1); this.save(); },
+  describe(t) {
+    if (t.once) return 'une fois, le ' + new Date(t.once).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
+    if (t.every === 'minute') return `toutes les ${t.n} min`;
+    if (t.every === 'hour') return t.n > 1 ? `toutes les ${t.n} h` : 'toutes les heures';
+    if (t.every === 'day') return (t.n > 1 ? `tous les ${t.n} jours` : 'chaque jour') + ' à ' + t.at;
+    if (t.every === 'week') return 'le ' + (t.days && t.days.length ? t.days : [1]).map((d) => DAY_NAMES[((+d % 7) + 7) % 7]).join(', ') + ' à ' + t.at;
+    if (t.every === 'month') return `le ${t.day || 1} de chaque mois à ${t.at}`;
+    return '?';
+  },
+  start() { if (this.timer) return; this.timer = setInterval(() => this.tick().catch((e) => console.warn('planificateur', e)), 30000); setTimeout(() => this.tick({ catchUp: true }).catch((e) => console.warn('planificateur', e)), 5000); },
+  async tick({ catchUp = false } = {}) {
+    const t0 = now();
+    for (const t of this.list()) {
+      if (!t.enabled || !t.next || t.next > t0) continue;
+      const late = t0 - t.next;
+      if (late > 6 * 3600e3 && !(catchUp && t.catchUp)) { t.next = this.nextAfter(t, t0); if (!t.next) t.enabled = false; this.save(); continue; }
+      if (!this.queue.includes(t.id) && this.running !== t.id) this.queue.push(t.id);
+    }
+    if (!this.running && this.queue.length) await this.runNext();
+  },
+  async runNext() { while (this.queue.length) { const t = this.get(this.queue.shift()); if (t) await this.run(t).catch((e) => console.warn('tâche planifiée', e)); } },
+  async run(t) {
+    this.running = t.id; const started = now();
+    let chat = t.sameChat && t.chatId ? col('chats').get(t.chatId) : null;
+    if (!chat) { chat = createChat({ agentId: t.agentId || undefined }); chat.title = '⏰ ' + t.title; chat.scheduledTask = t.id; if (t.sameChat) t.chatId = chat.id; persist('chats', chat); }
+    t.last = started; t.lastStatus = 'running'; t.next = t.once ? null : this.nextAfter(t, started); if (t.once) t.enabled = false; this.save();
+    try { renderChatList?.(); } catch (e) {}
+    try {
+      await sendUserMessage(chat, `[Tâche planifiée « ${t.title} » — ${new Date(started).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}]\n${t.prompt}`);
+      const leaf = chat.nodes[chat.leafId]; t.lastStatus = leaf?.status === 'error' ? 'error' : 'done';
+    } catch (e) { t.lastStatus = 'error'; console.warn('tâche planifiée', e); }
+    t.runs = [...(t.runs || []), { at: started, status: t.lastStatus, chatId: chat.id, ms: now() - started }].slice(-30);
+    this.running = null; this.save();
+    const msg = `Tâche planifiée ${t.lastStatus === 'done' ? 'terminée' : 'en erreur'} : ${t.title}`;
+    if (t.notify) { if (document.hidden) attention(msg, chat, true); else toast(msg + ' — voir la conversation « ⏰ ' + t.title + ' »', t.lastStatus === 'done' ? 'ok' : 'err', 8000); }
+    return chat;
+  },
+};
+const SCHEDULE_TOOL = {
+  name: 'schedule_task', title: 'Planifier une tâche', icon: 'clock', group: 'agent', perm: 'auto', write: true,
+  summary: 'Programme une tâche que Cortex exécutera lui-même plus tard (ponctuelle ou récurrente) tant que Cortex est ouvert ; rattrapage au lancement.',
+  description: "Planification de tâches exécutées par Cortex lui-même, dans une nouvelle conversation, à l'échéance (la page Cortex doit être ouverte ; les tâches manquées sont rattrapées au lancement). Actions : list ; create (title ; prompt = instruction complète et autonome que Cortex exécutera comme si l'utilisateur l'envoyait, avec les fichiers/outils à utiliser ; every = minute|hour|day|week|month avec n (fréquence), at 'HH:MM', days [1=lundi … 7=dimanche] pour week, day (1-28) pour month ; ou once = date-heure ISO locale pour une exécution unique ; agent = nom d'un agent ; same_chat = reprendre la même conversation à chaque exécution) ; update (id + champs) ; delete (id) ; run_now (id) ; enable / disable (id). Quand l'utilisateur demande un rappel, un rapport récurrent, une veille ou « chaque lundi… », crée la tâche puis confirme l'échéance calculée.",
+  parameters: { type: 'object', properties: { action: { type: 'string', enum: ['list', 'create', 'update', 'delete', 'run_now', 'enable', 'disable'] }, id: { type: 'string' }, title: { type: 'string' }, prompt: { type: 'string' }, every: { type: 'string', enum: ['minute', 'hour', 'day', 'week', 'month'] }, n: { type: 'integer' }, at: { type: 'string', description: 'heure HH:MM' }, days: { type: 'array', items: { type: 'integer' } }, day: { type: 'integer' }, once: { type: 'string', description: 'date-heure ISO pour une exécution unique' }, agent: { type: 'string' }, same_chat: { type: 'boolean' }, notify: { type: 'boolean' } }, required: ['action'] },
+  args: (a) => `${a.action}${a.title ? ' ' + truncate(a.title, 50) : a.id ? ' ' + a.id : ''}`,
+  async run(a) {
+    const fmt = (t) => `- ${t.id} · « ${t.title} » — ${Scheduler.describe(t)} · ${t.enabled ? 'prochaine : ' + (t.next ? new Date(t.next).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : '—') : 'désactivée'}${t.last ? ' · dernière : ' + new Date(t.last).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) + ' (' + (t.lastStatus || '?') + ')' : ''}`;
+    switch (a.action) {
+      case 'list': { const l = Scheduler.list(); return l.length ? `Tâches planifiées (${l.length}) :\n${l.map(fmt).join('\n')}\n\n(Exécution par Cortex lui-même lorsque la page est ouverte ; rattrapage au lancement.)` : 'Aucune tâche planifiée.'; }
+      case 'create': {
+        const agent = a.agent ? [...col('agents').values()].find((x) => normalizeText(x.name) === normalizeText(a.agent) || normalizeText(x.name).includes(normalizeText(a.agent))) : null;
+        const t = Scheduler.create({ title: a.title, prompt: a.prompt, every: a.every, n: a.n, at: a.at, days: a.days, day: a.day, once: a.once, agentId: agent?.id || null, sameChat: !!a.same_chat, notify: a.notify });
+        return `Tâche créée : « ${t.title} » — ${Scheduler.describe(t)}. Prochaine exécution : ${new Date(t.next).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })}${agent ? ' (agent ' + agent.name + ')' : ''}. Cortex l'exécutera lui-même si la page est ouverte (sinon au prochain lancement).`;
+      }
+      case 'update': { const t = Scheduler.find(a.id); if (!t) throw new Error('Tâche introuvable'); const patch = {}; for (const k of ['title', 'prompt', 'every', 'n', 'at', 'days', 'day', 'once']) if (a[k] != null) patch[k] = a[k]; if (a.notify != null) patch.notify = a.notify; if (a.same_chat != null) patch.sameChat = a.same_chat; Scheduler.update(t.id, patch); return 'Tâche mise à jour :\n' + fmt(t); }
+      case 'delete': { const t = Scheduler.find(a.id); if (!t) throw new Error('Tâche introuvable'); Scheduler.remove(t.id); return `Tâche « ${t.title} » supprimée.`; }
+      case 'enable': case 'disable': { const t = Scheduler.find(a.id); if (!t) throw new Error('Tâche introuvable'); Scheduler.update(t.id, { enabled: a.action === 'enable' }); return fmt(t); }
+      case 'run_now': { const t = Scheduler.find(a.id); if (!t) throw new Error('Tâche introuvable'); if (Scheduler.running) throw new Error('Une tâche planifiée est déjà en cours.'); setTimeout(() => Scheduler.run(t).catch((e) => console.warn(e)), 50); return `Tâche « ${t.title} » lancée dans une nouvelle conversation.`; }
+    }
+    throw new Error('Action inconnue : ' + a.action);
+  },
+};
+BUILTIN_TOOLS.push(SCHEDULE_TOOL);
+TOOLS.set(SCHEDULE_TOOL.name, SCHEDULE_TOOL);
+/* Page de gestion (enregistrée dans PAGES par 14d) */
+function scheduledPageRender(b) {
+  const l = Scheduler.list();
+  const agents = [...col('agents').values()];
+  const fmtD = (ts) => (ts ? new Date(ts).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : '—');
+  b.innerHTML = `<p class="lead">Cortex exécute lui-même ces tâches à l'échéance (page ouverte) et rattrape celles manquées au lancement. Chaque exécution ouvre une conversation « ⏰ … ». Vous pouvez aussi les créer en langage naturel dans le chat (« chaque lundi à 8h, … »).</p>
+    <div class="card" style="margin-bottom:14px"><b>Nouvelle tâche</b>
+      <div class="grid2" style="margin-top:8px">${ui.field('Titre', '<input id="sc-title" placeholder="Point hebdomadaire du portefeuille">')}${ui.field('Agent', `<select id="sc-agent" class="sel"><option value="">Agent par défaut</option>${agents.map((a) => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</select>`)}</div>
+      ${ui.field('Instruction complète (ce que Cortex fera)', '<textarea id="sc-prompt" rows="3" placeholder="Lis le dernier fichier exports/portefeuille*.xlsx, calcule le taux de dégradation par segment et produis une note Word sobre avec les écarts par rapport à la semaine passée."></textarea>')}
+      <div class="row wrap" style="gap:10px;align-items:flex-end">${ui.field('Fréquence', `<select id="sc-every" class="sel"><option value="day">Chaque jour</option><option value="week">Chaque semaine</option><option value="month">Chaque mois</option><option value="hour">Toutes les N heures</option><option value="minute">Toutes les N minutes</option><option value="once">Une fois (date)</option></select>`)}${ui.field('N', '<input id="sc-n" type="number" min="1" value="1" style="width:70px">')}${ui.field('Heure', '<input id="sc-at" type="time" value="09:00">')}${ui.field('Jours (semaine)', '<input id="sc-days" placeholder="1,3,5 (lundi=1)" style="width:130px">')}${ui.field('Date (une fois)', '<input id="sc-once" type="datetime-local">')}<button class="btn primary" id="sc-add">${icon('plus', 'sm')} Planifier</button></div></div>
+    ${l.length ? `<table class="tbl"><tr><th>Tâche</th><th>Échéance</th><th>Prochaine</th><th>Dernière</th><th></th></tr>${l.map((t) => `<tr class="${t.enabled ? '' : 'muted'}"><td><b>${esc(t.title)}</b><div class="small muted" style="max-width:420px;white-space:pre-wrap">${esc(truncate(t.prompt, 220))}</div></td><td class="small">${esc(Scheduler.describe(t))}</td><td class="small">${t.enabled ? fmtD(t.next) : 'désactivée'}</td><td class="small">${t.last ? fmtD(t.last) + ' · ' + (t.lastStatus === 'done' ? '✅' : t.lastStatus === 'error' ? '❌' : '…') + (t.runs?.length ? ` <a href="#" data-sc="open" data-id="${t.id}">ouvrir</a>` : '') : '—'}</td><td style="white-space:nowrap"><button class="btn sm" data-sc="run" data-id="${t.id}" title="Exécuter maintenant">${icon('play', 'sm')}</button> <button class="btn sm" data-sc="toggle" data-id="${t.id}" title="${t.enabled ? 'Désactiver' : 'Activer'}">${icon(t.enabled ? 'stop' : 'check', 'sm')}</button> <button class="btn sm" data-sc="del" data-id="${t.id}" title="Supprimer">${icon('trash', 'sm')}</button></td></tr>`).join('')}</table>` : '<p class="muted">Aucune tâche planifiée pour l\'instant.</p>'}`;
+  b.querySelector('#sc-add').onclick = () => {
+    try {
+      const every = b.querySelector('#sc-every').value; const days = b.querySelector('#sc-days').value.split(/[ ,;]+/).map((x) => +x).filter((x) => x >= 1 && x <= 7);
+      const t = Scheduler.create({ title: b.querySelector('#sc-title').value, prompt: b.querySelector('#sc-prompt').value, every: every === 'once' ? null : every, once: every === 'once' ? b.querySelector('#sc-once').value : null, n: +b.querySelector('#sc-n').value || 1, at: b.querySelector('#sc-at').value || '09:00', days: days.length ? days : null, agentId: b.querySelector('#sc-agent').value || null });
+      toast('Tâche planifiée : ' + Scheduler.describe(t), 'ok', 4000); renderPage();
+    } catch (e) { toast(e.message, 'err', 5000); }
+  };
+  b.onclick = async (e) => {
+    const el = e.target.closest('[data-sc]'); if (!el) return; e.preventDefault(); const t = Scheduler.get(el.dataset.id); if (!t) return;
+    if (el.dataset.sc === 'run') { if (Scheduler.running) return toast('Une tâche est déjà en cours', 'err'); toast('Exécution de « ' + t.title + ' »…', 'info'); Scheduler.run(t).catch((er) => toast(er.message, 'err')); }
+    if (el.dataset.sc === 'toggle') { Scheduler.update(t.id, { enabled: !t.enabled }); renderPage(); }
+    if (el.dataset.sc === 'del' && (await confirmDialog(`Supprimer la tâche « ${esc(t.title)} » ?`, { danger: true, ok: 'Supprimer' }))) { Scheduler.remove(t.id); renderPage(); }
+    if (el.dataset.sc === 'open') { const r = (t.runs || []).at(-1); if (r && col('chats').has(r.chatId)) { closePage(); openChat(r.chatId); } }
+  };
+}
+
+/* ============================== 08m · DOSSIERS DE L'ORDINATEUR (File System Access) ==============================
+   L'utilisateur connecte des dossiers (Bureau, Téléchargements, un dossier de travail…) ; les poignées sont conservées
+   dans IndexedDB. Cortex peut alors y chercher un document, le récupérer dans son espace de travail et y enregistrer
+   ses livrables — sans serveur, dans Chrome / Edge.                                                                */
+const LocalFolders = {
+  list: [], loaded: false, index: new Map(),
+  get supported() { return typeof window.showDirectoryPicker === 'function'; },
+  async load() { if (this.loaded) return this.list; try { const r = await DB.get('kv', 'localfolders'); this.list = (r && r.list) || []; } catch (e) { this.list = []; } this.loaded = true; return this.list; },
+  async persist() { try { await DB.put('kv', { id: 'localfolders', list: this.list.map((f) => ({ id: f.id, name: f.name, handle: f.handle, addedAt: f.addedAt })) }); } catch (e) { console.warn('dossiers locaux : enregistrement impossible', e); } },
+  async connect() { if (!this.supported) throw new Error("Ce navigateur ne permet pas l'accès aux dossiers de l'ordinateur : utilisez Chrome ou Edge."); const h = await window.showDirectoryPicker({ mode: 'readwrite' }); return this.addHandle(h); },
+  async addHandle(h, name) { await this.load(); const f = { id: uid('lf'), name: name || h.name, handle: h, addedAt: now() }; this.list = this.list.filter((x) => x.name !== f.name); this.list.push(f); await this.persist(); return f; },
+  async remove(id) { await this.load(); this.list = this.list.filter((x) => x.id !== id); this.index.delete(id); await this.persist(); },
+  find(ref) { if (!this.list.length) return null; if (!ref) return this.list[0]; const n = normalizeText(String(ref)); return this.list.find((f) => f.id === ref) || this.list.find((f) => normalizeText(f.name) === n) || this.list.find((f) => normalizeText(f.name).includes(n) || n.includes(normalizeText(f.name))) || null; },
+  async perm(f, mode = 'read') { try { return await f.handle.queryPermission({ mode }); } catch (e) { return 'denied'; } },
+  async grant(f, mode = 'readwrite') { try { return await f.handle.requestPermission({ mode }); } catch (e) { return 'denied'; } },
+  async ensure(f, mode = 'read') {
+    if ((await this.perm(f, mode)) === 'granted') return;
+    if ((await this.grant(f, mode)) === 'granted') return;
+    throw new Error(`Accès ${mode === 'readwrite' ? 'en écriture ' : ''}au dossier « ${f.name} » non autorisé par le navigateur : l'utilisateur doit cliquer sur « Autoriser » dans Fichiers › Dossiers de l'ordinateur, puis relancer.`);
+  },
+  SKIP: /^(\.|node_modules$|\$RECYCLE|System Volume|AppData$|Library$|__pycache__$|~\$)/,
+  async walk(f, { maxFiles = 5000, maxDepth = 6, signal } = {}) {
+    const out = [];
+    const rec = async (dir, path, depth) => {
+      if (out.length >= maxFiles || depth > maxDepth) return;
+      for await (const [name, h] of dir.entries()) {
+        if (signal?.aborted || out.length >= maxFiles) return;
+        if (this.SKIP.test(name)) continue;
+        const p = path ? path + '/' + name : name;
+        if (h.kind === 'directory') { await rec(h, p, depth + 1); continue; }
+        let size = 0, mtime = 0; try { const file = await h.getFile(); size = file.size; mtime = file.lastModified; } catch (e) {}
+        out.push({ path: p, name, size, mtime, ext: (name.includes('.') ? name.split('.').pop() : '').toLowerCase() });
+      }
+    };
+    await rec(f.handle, '', 0);
+    return out;
+  },
+  async files(f, opts = {}) { const c = this.index.get(f.id); if (c && now() - c.at < 60000 && !opts.fresh) return c.files; await this.ensure(f, 'read'); const files = await this.walk(f, opts); this.index.set(f.id, { at: now(), files }); return files; },
+  async handleFor(f, path, { create = false } = {}) { const segs = String(path).replace(/\\/g, '/').split('/').filter(Boolean); if (!segs.length) throw new Error('chemin vide'); let dir = f.handle; for (let i = 0; i < segs.length - 1; i++) dir = await dir.getDirectoryHandle(segs[i], { create }); return dir.getFileHandle(segs[segs.length - 1], { create }); },
+  async read(f, path) { await this.ensure(f, 'read'); const h = await this.handleFor(f, path); return h.getFile(); },
+  async importFile(f, path, dest) {
+    const file = await this.read(f, path); const name = path.replace(/\\/g, '/').split('/').pop(); const target = normPath(dest || 'imports/' + name);
+    const text = isTextLikeName(name) && file.size < 20e6;
+    if (text) writeWorkspaceFile(target, await file.text(), 'utf8');
+    else { const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(new Error('lecture impossible')); r.readAsDataURL(file); }); writeWorkspaceFile(target, 'data:' + (mimeFromName(name) || file.type || 'application/octet-stream') + ';base64,' + (b64.split(',')[1] || ''), 'base64'); }
+    return { path: target, size: file.size, text, mtime: file.lastModified };
+  },
+  async save(f, path, blob) { await this.ensure(f, 'readwrite'); const h = await this.handleFor(f, path, { create: true }); const w = await h.createWritable(); await w.write(blob); await w.close(); this.index.delete(f.id); return path; },
+  search(files, query, { ext, limit = 40 } = {}) {
+    const toks = tokenizeFr(query).concat(String(query || '').toLowerCase().split(/\s+/).filter((w) => w.length >= 2 && !isNaN(+w) === false ? false : w.length >= 2 && /\d/.test(w)));
+    const exts = ext ? String(ext).toLowerCase().replace(/\./g, '').split(/[ ,;|]+/).filter(Boolean) : null;
+    const scored = files.filter((x) => !exts || exts.includes(x.ext)).map((x) => { const n = normalizeText(x.path); let s = 0; for (const t of toks) if (n.includes(t)) s += t.length; if (toks.length && !s) return null; return { x, s: s * 1e6 + Math.min(x.mtime || 0, 9e12) / 1e7 }; }).filter(Boolean);
+    scored.sort((a, b) => b.s - a.s);
+    return scored.slice(0, limit).map((o) => o.x);
+  },
+  async workspaceBlob(path) { const f = readWorkspaceFile(path); if (!f) throw new Error('Fichier de l\'espace introuvable : ' + path); if (f.encoding === 'base64') { const b = atob(f.content.split(',')[1] || ''); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new Blob([u], { type: mimeFromName(path) }); } return new Blob([f.content], { type: 'text/plain;charset=utf-8' }); },
+};
+const fmtLocal = (x) => `${x.path} (${fmtBytes(x.size)}${x.mtime ? ', ' + new Date(x.mtime).toLocaleDateString('fr-FR') : ''})`;
+const LOCAL_TOOLS = [
+  {
+    name: 'local_folders', title: "Dossiers de l'ordinateur", icon: 'folder', group: 'files', perm: 'auto',
+    summary: "Liste les dossiers de l'ordinateur connectés à Cortex (Bureau, Téléchargements…) et leur état d'accès.",
+    description: "Liste les dossiers de l'ordinateur que l'utilisateur a connectés à Cortex (Fichiers › Dossiers de l'ordinateur) avec l'état des autorisations. S'il n'y en a aucun, demande à l'utilisateur d'en connecter un (bouton « Connecter un dossier »). Ensuite : local_search pour chercher un document, local_read pour le récupérer dans l'espace de travail, local_save pour y déposer un livrable.",
+    parameters: { type: 'object', properties: {} }, args: () => '',
+    async run() { await LocalFolders.load(); if (!LocalFolders.supported) return "Ce navigateur ne permet pas l'accès aux dossiers de l'ordinateur (il faut Chrome ou Edge)."; if (!LocalFolders.list.length) return "Aucun dossier connecté. Demande à l'utilisateur d'ouvrir Fichiers › Dossiers de l'ordinateur › « Connecter un dossier » (Bureau, Téléchargements, Documents…)."; const lines = []; for (const f of LocalFolders.list) lines.push(`- ${f.name} [${f.id}] — lecture : ${await LocalFolders.perm(f, 'read')}, écriture : ${await LocalFolders.perm(f, 'readwrite')}`); return 'Dossiers connectés :\n' + lines.join('\n') + "\n(« prompt » = l'utilisateur doit cliquer sur Autoriser dans Fichiers › Dossiers de l'ordinateur.)"; },
+  },
+  {
+    name: 'local_search', title: "Chercher dans l'ordinateur", icon: 'search', group: 'files', perm: 'auto',
+    summary: "Cherche des fichiers par nom (et extension) dans un dossier connecté de l'ordinateur.",
+    description: "Cherche des fichiers dans un dossier de l'ordinateur connecté (nom de fichier et de dossier ; extension optionnelle). Renvoie les chemins relatifs au dossier, tailles et dates, du plus pertinent/récent au moins. Puis local_read pour récupérer le fichier. Paramètres : query (mots du nom, ex. « portefeuille septembre »), folder (nom du dossier connecté ; par défaut tous), ext (ex. xlsx,pdf), limit.",
+    parameters: { type: 'object', properties: { query: { type: 'string' }, folder: { type: 'string' }, ext: { type: 'string' }, limit: { type: 'integer' } }, required: ['query'] },
+    args: (a) => truncate((a.query || '') + (a.folder ? ' @' + a.folder : ''), 80),
+    async run(a, ctx) {
+      await LocalFolders.load(); if (!LocalFolders.list.length) throw new Error("Aucun dossier de l'ordinateur n'est connecté : l'utilisateur doit en connecter un (Fichiers › Dossiers de l'ordinateur).");
+      const targets = a.folder ? [LocalFolders.find(a.folder)].filter(Boolean) : LocalFolders.list; if (!targets.length) throw new Error('Dossier inconnu : ' + a.folder + '. Dossiers : ' + LocalFolders.list.map((f) => f.name).join(', '));
+      const out = [];
+      for (const f of targets) { ctx.progress('Parcours de ' + f.name + '…'); const files = await LocalFolders.files(f, { signal: ctx.signal }); const hits = LocalFolders.search(files, a.query, { ext: a.ext, limit: clamp(+a.limit || 25, 1, 100) }); if (hits.length) out.push(`Dossier « ${f.name} » (${files.length} fichiers parcourus) :\n` + hits.map((x) => '- ' + fmtLocal(x)).join('\n')); else out.push(`Dossier « ${f.name} » (${files.length} fichiers) : aucun fichier ne correspond.`); }
+      return out.join('\n\n') + "\n\nPour récupérer un fichier : local_read { folder, path }.";
+    },
+  },
+  {
+    name: 'local_read', title: "Récupérer un fichier de l'ordinateur", icon: 'download', group: 'files', perm: 'auto',
+    summary: "Copie un fichier d'un dossier connecté dans l'espace de travail de Cortex (imports/).",
+    description: "Récupère un fichier d'un dossier de l'ordinateur connecté et le copie dans l'espace de travail (par défaut imports/<nom>) pour le lire ou le traiter (read_file, python, run_studio, create_excel…). Paramètres : folder (nom du dossier connecté), path (chemin relatif renvoyé par local_search), as (chemin de destination dans l'espace, optionnel). Les fichiers texte sont aussi affichés (début).",
+    parameters: { type: 'object', properties: { folder: { type: 'string' }, path: { type: 'string' }, as: { type: 'string' } }, required: ['path'] },
+    args: (a) => truncate((a.folder ? a.folder + '/' : '') + (a.path || ''), 80),
+    async run(a, ctx) {
+      await LocalFolders.load(); const f = LocalFolders.find(a.folder); if (!f) throw new Error(a.folder ? 'Dossier inconnu : ' + a.folder : "Aucun dossier de l'ordinateur n'est connecté.");
+      ctx.progress('Lecture de ' + a.path + '…');
+      const r = await LocalFolders.importFile(f, a.path, a.as);
+      let text = `Fichier récupéré dans l'espace de travail : ${r.path} (${fmtBytes(r.size)}${r.mtime ? ', modifié le ' + new Date(r.mtime).toLocaleString('fr-FR') : ''}).`;
+      if (r.text) { const w = readWorkspaceFile(r.path); text += '\n\nDébut du contenu :\n' + truncate(w?.content || '', 3000); } else text += ' Utilise read_file (aperçu/extraction), python ou run_studio pour l\'exploiter.';
+      return { text, files: [r.path] };
+    },
+  },
+  {
+    name: 'local_save', title: "Enregistrer dans l'ordinateur", icon: 'save', group: 'files', perm: 'ask', write: true,
+    summary: "Copie un fichier de l'espace de travail dans un dossier connecté de l'ordinateur.",
+    description: "Enregistre un fichier de l'espace de travail (ex. exports/Rapport.xlsx) dans un dossier de l'ordinateur connecté. Paramètres : source (chemin dans l'espace), folder (nom du dossier connecté), path (chemin de destination relatif au dossier, par défaut le nom du fichier). Nécessite l'autorisation d'écriture donnée par l'utilisateur.",
+    parameters: { type: 'object', properties: { source: { type: 'string' }, folder: { type: 'string' }, path: { type: 'string' } }, required: ['source'] },
+    args: (a) => truncate((a.source || '') + ' → ' + (a.folder || '') + '/' + (a.path || ''), 80),
+    async run(a, ctx) {
+      await LocalFolders.load(); const f = LocalFolders.find(a.folder); if (!f) throw new Error(a.folder ? 'Dossier inconnu : ' + a.folder : "Aucun dossier de l'ordinateur n'est connecté.");
+      const blob = await LocalFolders.workspaceBlob(a.source); const dest = a.path || a.source.split('/').pop();
+      ctx.progress('Enregistrement dans ' + f.name + '/' + dest + '…');
+      await LocalFolders.save(f, dest, blob);
+      return `Fichier enregistré : ${f.name}/${dest} (${fmtBytes(blob.size)}).`;
+    },
+  },
+];
+for (const t of LOCAL_TOOLS) { BUILTIN_TOOLS.push(t); TOOLS.set(t.name, t); }
+/* Section de la page Fichiers */
+async function localFoldersHTML() {
+  await LocalFolders.load();
+  const rows = [];
+  for (const f of LocalFolders.list) { const r = await LocalFolders.perm(f, 'read'), w = await LocalFolders.perm(f, 'readwrite'); rows.push(`<div class="toggle-row"><span class="ticon" style="width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:none">${icon('folder', 'sm')}</span><div class="grow"><div class="tr-t">${esc(f.name)}</div><div class="tr-d">lecture : ${r === 'granted' ? '✅ autorisée' : '⏳ à autoriser'} · écriture : ${w === 'granted' ? '✅ autorisée' : '⏳ à autoriser'}</div></div>${r !== 'granted' || w !== 'granted' ? `<button class="btn sm" data-lf="grant" data-id="${f.id}">Autoriser</button>` : ''}<button class="btn sm" data-lf="del" data-id="${f.id}" title="Retirer">${icon('trash', 'sm')}</button></div>`); }
+  return `<div class="card" style="margin-top:16px" id="lf-card"><div class="row"><b class="grow">${icon('folder', 'sm')} Dossiers de l'ordinateur</b><button class="btn sm primary" data-lf="connect" ${LocalFolders.supported ? '' : 'disabled'}>${icon('plus', 'sm')} Connecter un dossier</button></div>
+    <p class="small muted">Connectez votre Bureau, vos Téléchargements ou un dossier de travail : Cortex pourra y chercher des documents (local_search), les récupérer (local_read) et y enregistrer ses livrables (local_save). L'accès reste sous votre contrôle (autorisation du navigateur, révocable).${LocalFolders.supported ? '' : ' <b>Navigateur non compatible : utilisez Chrome ou Edge.</b>'}</p>
+    ${rows.join('') || '<div class="small muted">Aucun dossier connecté.</div>'}</div>`;
+}
+function bindLocalFolders(b) {
+  b.addEventListener('click', async (e) => {
+    const el = e.target.closest('[data-lf]'); if (!el) return;
+    try {
+      if (el.dataset.lf === 'connect') { const f = await LocalFolders.connect(); toast('Dossier connecté : ' + f.name, 'ok'); }
+      if (el.dataset.lf === 'grant') { const f = LocalFolders.list.find((x) => x.id === el.dataset.id); if (f) { const p = await LocalFolders.grant(f, 'readwrite'); toast(p === 'granted' ? 'Accès autorisé : ' + f.name : 'Accès refusé', p === 'granted' ? 'ok' : 'err'); } }
+      if (el.dataset.lf === 'del') { await LocalFolders.remove(el.dataset.id); toast('Dossier retiré'); }
+      renderPage();
+    } catch (er) { if (er && er.name === 'AbortError') return; toast(er.message, 'err', 5000); }
+  });
+}
+
+/* ============================== 08n · CONNEXION & MISE À JOUR ==============================
+   Cortex vérifie s'il existe une version plus récente de lui-même sur son dépôt (version.json), propose de la
+   télécharger (un seul fichier HTML) et affiche les notes ; la vérification est quotidienne et silencieuse. */
+const Updater = {
+  repo: 'ndoyepapamassamba-commits/Add-a-README-file',
+  base() { const b = S.settings.updateBranch || this.local().branch || 'main'; return `https://raw.githubusercontent.com/${this.repo}/${b}/cortex/`; },
+  local() { return typeof CORTEX_VERSION !== 'undefined' ? CORTEX_VERSION : { build: 'inconnue', stamp: 0 }; },
+  async check({ silent = true } = {}) {
+    try {
+      const r = await fetch(this.base() + 'version.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      const newer = (+j.stamp || 0) > (+this.local().stamp || 0);
+      S.update = { ...j, newer, checkedAt: now() }; S.settings.lastUpdateCheck = now(); saveSettings();
+      if (newer && !silent) toast(`Nouvelle version de Cortex disponible (${j.build}) — Réglages › Données`, 'info', 9000);
+      if (S.ui?.page === 'settings') renderPageSoon();
+      return S.update;
+    } catch (e) { S.update = { error: e.message, checkedAt: now() }; return S.update; }
+  },
+  async download() {
+    const r = await fetch(this.base() + 'index.html?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const html = await r.text();
+    if (!/<title>/.test(html) || html.length < 100000) throw new Error('Fichier reçu invalide');
+    download('cortex-' + String(S.update?.build || 'nouvelle-version').replace(/[^\w.-]+/g, '_') + '.html', html, 'text/html;charset=utf-8');
+  },
+  auto() { if (S.settings.autoUpdateCheck === false || !navigator.onLine) return; if (now() - (S.settings.lastUpdateCheck || 0) < 86400e3) return; setTimeout(() => this.check({ silent: false }), 8000); },
+};
+function updateCardHTML() {
+  const v = Updater.local(); const u = S.update;
+  const status = !u ? 'Pas encore vérifié.' : u.error ? `Vérification impossible (${esc(u.error)}).` : u.newer ? `<b style="color:var(--ok,#16a34a)">Nouvelle version disponible : ${esc(u.build)}</b>${u.notes ? `<div class="small" style="margin-top:4px;white-space:pre-wrap">${esc(u.notes)}</div>` : ''}` : `À jour (dernière version publiée : ${esc(u.build || '?')}).`;
+  return `<div class="card" style="margin-bottom:12px" id="upd"><b>${icon('refresh', 'sm')} Mise à jour de Cortex</b><p class="small muted">Version installée : <b>${esc(v.build)}</b>${v.branch ? ' (' + esc(v.branch) + ')' : ''}. Cortex vérifie chaque jour si une version plus récente est publiée sur son dépôt ; la mise à jour est un simple fichier HTML à remplacer (vos données restent dans le navigateur).</p>
+    <div class="small" style="margin-bottom:8px">${status}</div>
+    <div class="row wrap"><button class="btn sm" id="upd-check">${icon('refresh', 'sm')} Vérifier maintenant</button>${u && u.newer ? `<button class="btn sm primary" id="upd-dl">${icon('download', 'sm')} Télécharger la nouvelle version</button>` : ''}<label class="row small" style="margin-left:auto"><input type="checkbox" id="upd-auto" ${S.settings.autoUpdateCheck !== false ? 'checked' : ''} style="accent-color:var(--accent)"> Vérification automatique</label></div></div>`;
+}
+function bindUpdateCard(m) {
+  m.querySelector('#upd-check')?.addEventListener('click', async (e) => { e.target.disabled = true; const u = await Updater.check({ silent: true }); toast(u.error ? 'Vérification impossible : ' + u.error : u.newer ? 'Nouvelle version disponible : ' + u.build : 'Cortex est à jour', u.error ? 'err' : 'ok', 5000); renderPage(); });
+  m.querySelector('#upd-dl')?.addEventListener('click', async () => { try { await Updater.download(); toast('Nouvelle version téléchargée : remplacez votre fichier index.html par celui-ci', 'ok', 8000); } catch (e) { toast('Téléchargement impossible : ' + e.message, 'err', 6000); } });
+  m.querySelector('#upd-auto')?.addEventListener('change', (e) => { S.settings.autoUpdateCheck = e.target.checked; saveSettings(); });
+}
 
 /* ============================== 09 · MOTEUR (HARNESS) ============================== */
 
@@ -11059,6 +11361,7 @@ const RAIL = [
   { id: 'memory', label: 'Mémoire', icon: 'brain' },
   { id: 'experience', label: 'Expérience', icon: 'trophy' },
   { id: 'files', label: 'Fichiers', icon: 'files' },
+  { id: 'scheduled', label: 'Tâches planifiées', icon: 'clock' },
   { id: 'usage', label: 'Usage', icon: 'chart' },
 ];
 function renderRail() {
@@ -13582,7 +13885,8 @@ PAGES.memory = {
 PAGES.files = {
   title: 'Espace de fichiers', icon: 'files',
   render(b) {
-    b.innerHTML = `<p class="lead">Système de fichiers virtuel persistant partagé par vos agents (outils fichiers, Python dans /workspace, artefacts). Cliquez sur un fichier pour l'éditer ou le prévisualiser.</p>` + filesPanelHTML();
+    b.innerHTML = `<p class="lead">Système de fichiers virtuel persistant partagé par vos agents (outils fichiers, Python dans /workspace, artefacts). Cliquez sur un fichier pour l'éditer ou le prévisualiser.</p>` + filesPanelHTML() + '<div id="lf-slot"></div>';
+    localFoldersHTML().then((h) => { const slot = b.querySelector('#lf-slot'); if (slot) { slot.innerHTML = h; bindLocalFolders(slot); } });
   },
 };
 
@@ -13854,9 +14158,11 @@ const SETTINGS_TABS = {
     m.innerHTML = `<h3>Données</h3><p class="lead">Tout est stocké localement. Exportez régulièrement pour sauvegarder ou transférer vers un autre appareil.</p>
       <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px">${[['Conversations', col('chats').size], ['Agents', col('agents').size], ['Prompts', col('prompts').size], ['Fichiers', col('files').size], ['Documents', col('kbdocs').size], ['Souvenirs', col('memories').size]].map(([k, v]) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
       ${est ? `<div class="small muted" style="margin-bottom:16px">Stockage utilisé : ${fmtBytes(est.usage)} / ${fmtBytes(est.quota)} disponibles. ${DB.memory ? '<b style="color:var(--danger)">IndexedDB indisponible : données non persistées !</b>' : ''}</div>` : ''}
+      ${updateCardHTML()}
       <div class="card" style="margin-bottom:12px"><b>Exporter</b><p class="small muted">Sauvegarde complète au format JSON.</p><label class="row small" style="margin-bottom:10px"><input type="checkbox" id="dx-key" style="accent-color:var(--accent)"> Inclure la clé API (attention si vous partagez le fichier)</label><button class="btn primary" id="dx-exp">${icon('download', 'sm')} Exporter tout</button></div>
       <div class="card" style="margin-bottom:12px"><b>Importer</b><p class="small muted">Sauvegarde Cortex, export ChatGPT (conversations.json) ou export TypingMind. Les éléments sont fusionnés avec vos données.</p><button class="btn" id="dx-imp">${icon('upload', 'sm')} Importer un fichier…</button></div>
       <div class="card" style="border-color:color-mix(in srgb,var(--danger) 40%,var(--border))"><b style="color:var(--danger)">Zone dangereuse</b><p class="small muted">Supprime définitivement toutes les données de ce navigateur.</p><div class="row wrap"><button class="btn danger" id="dx-chats">Supprimer toutes les conversations</button><button class="btn danger" id="dx-all">Tout réinitialiser</button></div></div>`;
+    bindUpdateCard(m);
     m.querySelector('#dx-exp').onclick = () => exportAll($('#dx-key').checked);
     m.querySelector('#dx-imp').onclick = () => pickFiles(async (fs) => { try { const n = await importData(fs[0]); toast(`Import terminé : ${n} élément(s)`, 'ok', 4000); renderPage(); renderChatList(); } catch (e) { toast('Import impossible : ' + e.message, 'err', 6000); } }, '.json');
     m.querySelector('#dx-chats').onclick = async () => {
@@ -14368,6 +14674,9 @@ async function showDiff(path, before, after) {
   modified.onDidChangeContent(() => { if (IDE.pendingDiff) IDE.pendingDiff.text = modified.getValue(); });
 }
 
+/* ---------------- Tâches planifiées ---------------- */
+PAGES.scheduled = { title: 'Tâches planifiées', icon: 'clock', render(b) { scheduledPageRender(b); } };
+
 /* ---------------- Mémoire d'expérience (savoir-faire procédural appris par Cortex) ---------------- */
 PAGES.experience = {
   title: "Mémoire d'expérience", icon: 'trophy',
@@ -14753,6 +15062,9 @@ async function boot() {
     saveSettings();
   }
   Skills.seed();
+  LocalFolders.load().catch(() => {});
+  Scheduler.start();
+  Updater.auto();
   if (!S.settings.seededPrompts) {
     for (const p of BUILTIN_PROMPTS) if (!col('prompts').has(p.id)) { col('prompts').set(p.id, { ...p }); persist('prompts', { ...p }); }
     S.settings.seededPrompts = true;
