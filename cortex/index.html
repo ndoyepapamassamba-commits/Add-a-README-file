@@ -825,7 +825,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-28 20:09 UTC', stamp: 202610282009, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-28 20:12 UTC', stamp: 202610282012, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -1468,6 +1468,7 @@ function defaultModel() {
   return pickAvailable(MODEL_CANDIDATES) || d || 'openrouter/auto';
 }
 function utilityModel() {
+  if (!getApiKey() && typeof localMode === 'function' && localMode()) { const d = S.settings.defaultModel; if (/^(local|webllm)\//.test(d || '')) return d; const l = S.models.find((m) => m.local_server); if (l) return l.id; }
   const u = S.settings.utilityModel;
   if (u && (!S.models.length || S.modelMap.has(u))) return u;
   return pickAvailable(UTILITY_CANDIDATES) || defaultModel();
@@ -7916,6 +7917,8 @@ const FREE_TIERS = {
 const NOT_CHAT = /safety|guard|lyria|embed|whisper|tts|image|moderation|rerank/i;
 function freeModels(tier = 'experts', n = 3, exclude = []) {
   const ex = new Set(exclude.filter(Boolean));
+  // Sans clé OpenRouter : les modèles locaux (serveur, ou moteur WebLLM déjà chargé) jouent les rôles du Guru et des relecteurs
+  if (!getApiKey() && typeof localMode === 'function' && localMode()) { const loc = S.models.filter((m) => m.local && !ex.has(m.id) && (m.local_server || (m.webllm && LocalModels.engines.has(m.id.replace(/^webllm\//, ''))))).map((m) => m.id); if (loc.length) return loc.slice(0, n); }
   const listed = (FREE_TIERS[tier] || []).filter((m) => S.modelMap.has(m) && !ex.has(m));
   const extra = S.models.filter((m) => isFreeModel(m) && m.id !== 'openrouter/free' && (!m.local || S.settings.localServer?.booster) && !NOT_CHAT.test(m.id) && !ex.has(m.id) && !listed.includes(m.id) && (m.context_length || 0) >= 32000)
     .sort((a, b) => (b.context_length || 0) - (a.context_length || 0)).map((m) => m.id);
@@ -9913,6 +9916,8 @@ const LOCAL_CATALOG = [
   { name: 'DeepSeek-R1 distill Qwen 7B', license: 'MIT', ram: '8 Go', ollama: 'deepseek-r1:7b', webllm: 'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC', note: 'raisonnement' },
   { name: 'Phi-4 14B', license: 'MIT', ram: '12 Go', ollama: 'phi4', note: 'raisonnement, maths' },
 ];
+/* Mode local : Cortex fonctionne sans clé OpenRouter quand un modèle local est configuré */
+function localMode() { return !!(S.settings.localServer && S.settings.localServer.enabled && (S.settings.localServer.models || []).length) || /^(local|webllm)\//.test(S.settings.defaultModel || ''); }
 const LocalModels = {
   WEBLLM_URL: 'https://esm.run/@mlc-ai/web-llm@0.2.79',
   engines: new Map(), lib: null, progress: null,
@@ -9936,7 +9941,9 @@ const LocalModels = {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
     c.models = (j.data || j.models || []).map((m) => ({ id: m.id || m.name, context_length: m.context_length || m.max_context_length || 32768 })).filter((m) => m.id);
-    c.enabled = true; c.lastSync = now(); saveSettings(); this.attach();
+    c.enabled = true; c.lastSync = now();
+    if (c.models.length && !getApiKey() && !/^(local|webllm)\//.test(S.settings.defaultModel || '')) S.settings.defaultModel = 'local/' + c.models[0].id;
+    saveSettings(); this.attach();
     return c.models;
   },
   cleanBody(body) { const b = { ...body }; for (const k of ['usage', 'provider', 'transforms', 'plugins', 'route', 'reasoning', 'include_reasoning', 'repetition_penalty', 'top_k', 'min_p', 'models', 'web_search_options']) delete b[k]; return b; },
@@ -12529,7 +12536,7 @@ function emptyStateHTML(chat) {
   const c = chat ? cfg(chat) : cfg(null);
   const agents = [...col('agents').values()].sort((a, b) => (b.builtin ? 1 : 0) - (a.builtin ? 1 : 0) || a.name.localeCompare(b.name)).slice(0, 10);
   const starters = (c.agent?.starters || []).slice(0, 4);
-  const noKey = !getApiKey();
+  const noKey = !getApiKey() && !localMode();
   return `<div class="empty">
     <div class="hero"><div class="hero-logo">${icon('logo', 'lg')}</div><h1>Cortex Studio</h1></div>
     <div class="hero-sub">Le harness d'agents IA — ${S.models.length ? S.models.length + ' modèles' : '400+ modèles'} via OpenRouter, outils, sous-agents, mémoire et RAG.</div>
@@ -12738,7 +12745,7 @@ async function sendFromComposer(textOverride) {
   const inp = $('#input');
   const text = (textOverride ?? inp.value).trim();
   if (!text && !S.ui.attachments.length) return;
-  if (!getApiKey()) { openOnboarding(); return; }
+  if (!getApiKey() && !localMode()) { openOnboarding(); return; }
   const chat = ensureChat();
   if (chatBusy(chat)) { toast('Une réponse est déjà en cours dans cette conversation'); return; }
   if (text.startsWith('/') && !S.ui.attachments.length && await runSlashCommand(text)) { inp.value = ''; autoGrow(); saveDraft(); return; }
@@ -12880,7 +12887,7 @@ async function enhancePrompt() {
   const inp = $('#input');
   const t = inp.value.trim();
   if (!t) { toast('Écrivez d\'abord un brouillon de demande'); return; }
-  if (!getApiKey()) return openOnboarding();
+  if (!getApiKey() && !localMode()) return openOnboarding();
   const btn = $('[data-act="enhance-prompt"]');
   btn.innerHTML = '<span class="spin"></span>';
   try {
@@ -15624,7 +15631,7 @@ async function boot() {
     if (S.ui.page === 'models') renderPage();
   }).catch((e) => toast('Catalogue des modèles indisponible : ' + e.message, 'err', 5000));
   if (!Store.probe() || DB.memory) toast("Stockage du navigateur indisponible : rien ne sera conservé après rechargement. Ouvrez le fichier directement dans Chrome, Edge ou Firefox.", 'err', 9000);
-  if (!getApiKey()) openOnboarding();
+  if (!getApiKey() && !localMode()) openOnboarding();
   else Balance.start();
   if ('speechSynthesis' in window) speechSynthesis.getVoices();
 }
