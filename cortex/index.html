@@ -825,7 +825,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-28 20:31 UTC', stamp: 202610282031, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-28 20:35 UTC', stamp: 202610282035, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -10067,10 +10067,20 @@ function localModelsHTML() {
     <div class="small muted" style="margin:6px 0 4px">${c.enabled && c.models?.length ? `✅ ${c.models.length} modèle(s) sur le serveur : ${c.models.map((m) => esc(m.id)).join(', ')}` : 'Aucun serveur connecté. Ollama : installez-le (ollama.com), lancez-le, autorisez Cortex avec OLLAMA_ORIGINS=* puis <span class="mono">ollama pull qwen3:8b</span>.'}</div>${diag}</div>
     <details><summary class="small">Catalogue conseillé (licences permissives)</summary><table class="tbl" style="margin-top:8px"><tr><th>Modèle</th><th>Licence</th><th>Mémoire</th><th>Serveur local</th><th>Navigateur</th></tr>${rows}</table></details></div>`;
 }
+/* Progression d'un chargement WebLLM : pastille dans la barre du modèle (visible partout) et barre dans la carte */
+function localProgressPill() { const p = LocalModels.progress; if (!p) return ''; const pct = Math.round((p.pct || 0) * 100); return `<span class="pill on" title="${esc(p.text || '')}">${icon('download', 'sm')}<span class="hide-sm">${esc(p.model.replace(/-q4f16_1-MLC$/, ''))}</span> ${pct} %</span>`; }
+let __lbAt = 0; const localBarSoon = () => { const t = Date.now(); if (t - __lbAt < 800) return; __lbAt = t; try { renderModelBar(); } catch (e) {} };
+S.onLocalProgress = (p) => {
+  localBarSoon();
+  const box = document.querySelector('#lm-progress'); if (!box) return;
+  if (!p) { box.style.display = 'none'; renderPageSoon(); return; }
+  box.style.display = ''; const bar = box.querySelector('#lm-bar'), t = box.querySelector('#lm-ptext'); if (bar) bar.style.width = Math.round((p.pct || 0) * 100) + '%'; if (t) t.textContent = p.text || '';
+};
+/* Un modèle du navigateur prêt devient le modèle par défaut et celui de la conversation courante */
+function useLocalModelNow(id) { S.settings.defaultModel = id; saveSettings(); try { const chat = currentChat(); if (chat && !chat.compare?.length) { chat.model = id; saveChat(chat); } renderModelBar(); } catch (e) {} }
 function bindLocalModels(b) {
-  S.onLocalProgress = (p) => { const box = document.querySelector('#lm-progress'); if (!box) return; if (!p) { box.style.display = 'none'; renderPageSoon(); return; } box.style.display = ''; const bar = box.querySelector('#lm-bar'), t = box.querySelector('#lm-ptext'); if (bar) bar.style.width = Math.round((p.pct || 0) * 100) + '%'; if (t) t.textContent = p.text || ''; };
   if (b.__lmBound) return; b.__lmBound = true;
-  const loadWebllm = async (id, btn) => { if (btn) btn.disabled = true; toast('Téléchargement du modèle dans le navigateur (une seule fois)…', 'info', 6000); try { await LocalModels.engine(id); S.settings.defaultModel = 'webllm/' + id; saveSettings(); toast('Modèle prêt et choisi par défaut : ' + id, 'ok', 6000); } catch (er) { toast(er.message, 'err', 10000); } renderPage(); };
+  const loadWebllm = async (id, btn) => { if (btn) btn.disabled = true; toast('Téléchargement du modèle dans le navigateur (une seule fois) — vous pouvez continuer à utiliser Cortex, la progression s\'affiche dans la barre du modèle.', 'info', 7000); try { await LocalModels.engine(id); useLocalModelNow('webllm/' + id); toast('Modèle prêt : « ' + id.replace(/-q4f16_1-MLC$/, '') + ' » est maintenant le modèle de la conversation et le modèle par défaut.', 'ok', 8000); } catch (er) { toast(er.message, 'err', 10000); } if (S.ui?.page === 'models') renderPage(); };
   b.addEventListener('click', async (e) => {
     const el = e.target.closest('[data-lm]'); if (!el) return;
     const c = LocalModels.cfg();
@@ -12706,7 +12716,7 @@ function renderModelBar() {
     <button class="pill ${c.web ? 'on' : ''}" data-act="toggle-web" title="Recherche web intégrée au modèle (plugin OpenRouter, ~0,02 $/requête)">${icon('globe', 'sm')}<span class="hide-sm">Web</span></button>
     ${modelSupports(c.model, 'reasoning') ? `<button class="pill ${effort && effort !== 'off' ? 'on' : ''}" data-act="pick-effort" title="Effort de raisonnement">${icon('brain', 'sm')}<span class="hide-sm">${EFFORT_LABELS[effort] || effort}</span></button>` : ''}
     <button class="pill ${S.settings.docTheme ? 'on' : ''}" data-act="pick-design" title="Design des fichiers produits : thème, couleur du logo, logo">${icon('palette', 'sm')}<span class="hide-sm">${S.settings.docTheme ? esc(designLabel()) : 'Design'}</span></button>
-    ${(chat?.kb || c.agent?.kb || []).length ? `<span class="pill on" title="Base de connaissances attachée">${icon('db', 'sm')}${(c.kb || []).length}</span>` : ''}`;
+    ${(chat?.kb || c.agent?.kb || []).length ? `<span class="pill on" title="Base de connaissances attachée">${icon('db', 'sm')}${(c.kb || []).length}</span>` : ''}${typeof localProgressPill === 'function' ? localProgressPill() : ''}`;
   renderStatusLine();
 }
 function updateSendBtn() {
@@ -12971,7 +12981,7 @@ function openModelPicker(anchor, { onPick, multi, initial, title } = {}) {
   const el = showPop(anchor, `<div class="mp-head">
       ${title ? `<b class="small">${esc(title)}</b>` : ''}
       <label class="search">${icon('search', 'sm')}<input id="mpq" placeholder="Rechercher parmi ${S.models.length} modèles…" autocomplete="off"></label>
-      <div class="chips" id="mpt">${[['all', 'Tous'], ['fav', '★ Favoris'], ['recent', 'Récents'], ['free', 'Gratuits'], ['tools', 'Outils'], ['vision', 'Vision'], ['reasoning', 'Raisonnement'], ['image', 'Image']].map(([k, l]) => `<button class="chip ${k === tab ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div></div>
+      <div class="chips" id="mpt">${[['all', 'Tous'], ['fav', '★ Favoris'], ['recent', 'Récents'], ['free', 'Gratuits'], ['local', 'Local / Navigateur'], ['tools', 'Outils'], ['vision', 'Vision'], ['reasoning', 'Raisonnement'], ['image', 'Image']].map(([k, l]) => `<button class="chip ${k === tab ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div></div>
     <div class="mp-list" id="mpl"></div>
     ${compareMode ? `<div class="row" style="padding:10px;border-top:1px solid var(--border)"><span class="small muted grow" id="mpc"></span><button class="btn sm primary" id="mpok">Appliquer</button></div>` : ''}`, { cls: 'mp', side: 'top' });
   const draw = () => {
@@ -12980,12 +12990,13 @@ function openModelPicker(anchor, { onPick, multi, initial, title } = {}) {
     if (tab === 'fav') list = list.filter((m) => favs.has(m.id));
     else if (tab === 'recent') list = S.settings.recentModels.map(getModel).filter(Boolean);
     else if (tab === 'free') list = list.filter(isFreeModel);
+    else if (tab === 'local') list = list.filter((m) => m.local);
     else if (tab === 'tools') list = list.filter((m) => modelSupports(m.id, 'tools'));
     else if (tab === 'vision') list = list.filter((m) => modelSupports(m.id, 'vision'));
     else if (tab === 'reasoning') list = list.filter((m) => modelSupports(m.id, 'reasoning'));
     else if (tab === 'image') list = list.filter((m) => modelSupports(m.id, 'imageOut'));
     if (q) list = list.map((m) => ({ m, s: fuzzyScore(q, m.name + ' ' + m.id) })).filter((x) => x.s).sort((a, b) => b.s - a.s).map((x) => x.m);
-    else if (tab === 'all') list = [...list.filter((m) => favs.has(m.id)), ...list.filter((m) => !favs.has(m.id))];
+    else if (tab === 'all') list = [...list.filter((m) => favs.has(m.id)), ...list.filter((m) => !favs.has(m.id) && m.local), ...list.filter((m) => !favs.has(m.id) && !m.local)];
     const html = list.slice(0, 150).map((m) => modelRow(m, { selected: sel.has(m.id), multi: compareMode, fav: favs.has(m.id) })).join('');
     const custom = q && /^[\w~.-]+\/[\w.:-]+$/.test(q.trim()) && !S.modelMap.has(q.trim()) ? `<div class="mrow" data-mid="${esc(q.trim())}">${icon('plus', 'sm')}<div class="grow"><div class="mn">Utiliser « ${esc(q.trim())} »</div><div class="md2">Identifiant personnalisé</div></div></div>` : '';
     el.querySelector('#mpl').innerHTML = custom + (html || `<div class="empty-s">${S.models.length ? 'Aucun modèle' : 'Catalogue en cours de chargement…'}</div>`) + (list.length > 150 ? `<div class="empty-s small">+${list.length - 150} autres — affinez la recherche</div>` : '');
