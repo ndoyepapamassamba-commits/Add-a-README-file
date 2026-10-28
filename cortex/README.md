@@ -77,6 +77,7 @@ Aucun serveur, aucun abonnement : vos données restent **dans votre navigateur**
 - **Contrôle de cohérence des échéanciers** : solde de début = solde de fin précédent, début − amortissement = fin,
   amortissement + intérêts = échéance ; toute incohérence est signalée au modèle avec la première ligne fautive
   (« 15 209 518 − 209 518 = 15 000 000 ≠ 14 790 482 ») pour qu'il corrige avant de livrer.
+  Une colonne entièrement vide (ex. libellés de scénarios oubliés) est signalée de la même façon.
 - Tableaux essentiellement chiffrés (simulation, synthèse) : une colonne « Statut » de contrôle (« Vérifié ») ne
   déclenche plus de tableau de bord de registre ; en-têtes techniques rendus lisibles (« Capital_Restant_Début » →
   « Capital restant début », « Coût_pct » → « Coût (%) ») ; colonnes `_pct` au format pourcentage.

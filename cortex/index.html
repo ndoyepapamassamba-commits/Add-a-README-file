@@ -4047,7 +4047,8 @@ Office.xlsx = async function (sheets, opts = {}) {
     const unitIdx = H.findIndex((h) => /^(unite|unites|unit|units|devise|monnaie)$/.test(normalizeText(h).trim()));
     const unitFmt = (u, v) => { const t = normalizeText(String(u ?? '')); if (/%|pourcent/.test(t)) return '#,##0.00'; if (/index|indice|ratio|coef|\bx\b/.test(t)) return '0.000'; if (/nb|nombre|count|unite/.test(t)) return '#,##0'; if (/xof|fcfa|cfa|eur|usd|\$|€|mrd|mds|md\b|\bm\b|k\b|montant/.test(t)) return Number.isInteger(v) || Math.abs(v) >= 1e6 ? '#,##0' : '#,##0.00'; return Number.isInteger(v) ? '#,##0' : Math.abs(v) < 1 ? '0.000' : '#,##0.00'; };
     const editable = new Set((M.raw.editable_columns || []).map((x) => normalizeText(x)));
-    const isEdit = (c) => (editable.size ? editable.has(normalizeText(H[c])) : ['status', 'date', 'comment'].includes(kinds[c]) && c !== M.lateIdx);
+    // Colonnes « à renseigner » : seulement pour un registre de suivi (colonne statut) ou si elles sont déclarées
+    const isEdit = (c) => (editable.size ? editable.has(normalizeText(H[c])) : M.si >= 0 && ['status', 'date', 'comment'].includes(kinds[c]) && c !== M.lateIdx);
     // Largeurs
     const W = H.map((h, c) => {
       const k = kinds[c], L = avgLen[c], mx = Math.max(String(h).length, ...R.map((r) => String(r[c] ?? '').length));
@@ -4072,7 +4073,7 @@ Office.xlsx = async function (sheets, opts = {}) {
     // Tuiles éventuelles (feuilles sans tableau de bord)
     if (M.raw.kpis?.length && !(wantDash && M === mainM)) {
       const pal = [C.banner, fp.status.doing, fp.status.partial, fp.status.received, fp.status.progress, fp.status.waiting, fp.status.blocked, C.group];
-      const list = M.raw.kpis.slice(0, 12).map((k, i) => ({ label: k.label, value: typeof k.value === 'number' ? k.value : String(k.value ?? ''), caption: k.caption || '', color: hex6c(k.color) || pal[i % pal.length], fmt: k.format || (typeof k.value === 'number' ? (!Number.isInteger(k.value) && Math.abs(k.value) <= 1.5 && /%|taux|ratio|part|couverture/i.test(k.label) && String(k.caption || '').trim() !== '%' ? '0.0%' : /^%/.test(String(k.caption || '').trim()) ? (Number.isInteger(k.value) ? '#,##0" %"' : '#,##0.00" %"') : Number.isInteger(k.value) ? '#,##0' : Math.abs(k.value) < 1 ? '0.000' : '#,##0.00') : '@') }));
+      const list = M.raw.kpis.slice(0, 12).map((k) => ({ ...k, value: typeof k.value === 'string' && Office.cellValue(k.value).n != null && !Office.cellValue(k.value).pct ? Office.cellValue(k.value).n : k.value })).map((k, i) => ({ label: k.label, value: typeof k.value === 'number' ? k.value : String(k.value ?? ''), caption: k.caption || '', color: hex6c(k.color) || pal[i % pal.length], fmt: k.format || (typeof k.value === 'number' ? (!Number.isInteger(k.value) && Math.abs(k.value) <= 1.5 && /%|taux|ratio|part|couverture/i.test(k.label) && String(k.caption || '').trim() !== '%' ? '0.0%' : /^%/.test(String(k.caption || '').trim()) ? (Number.isInteger(k.value) ? '#,##0" %"' : '#,##0.00" %"') : Number.isInteger(k.value) ? '#,##0' : Math.abs(k.value) < 1 ? '0.000' : '#,##0.00') : '@') }));
       // Colonnes réparties en groupes contigus de largeurs voisines (une tuile par groupe) ; au moins ~150 px par tuile,
       // quitte à passer sur plusieurs rangées équilibrées (ex. 4 tuiles sur 2 rangées de 2 quand les colonnes sont étroites)
       const wpx = W.map((w) => xlColPx(w)), total = wpx.reduce((a, b) => a + b, 0);
@@ -6025,7 +6026,7 @@ function expandSources(v) {
 }
 function prettySheetName(p) {
   const n = p.split('/').pop().replace(/\.[^.]+$/, '').replace(/^(x|tab|table|df|t|data|out|res)[_-]/i, '').replace(/[_-]+/g, ' ').trim()
-    .replace(/\b(kpis?|orr|frr|ifrs\s?9?|npl|npe|hhi|pdo|sic|ead|lgd|pd|ecl|bceao|uemoa|ca|pnb|rh)\b/gi, (m) => m.toUpperCase());
+    .replace(/\b(kpis?|orr|frr|ifrs\s?9?|npl|npe|hhi|pdo|sic|ead|lgd|pd|ecl|bceao|uemoa|ca|pnb|rh)\b/gi, (m) => m.toUpperCase()).replace(/(\d+(?:[.,]\d+)?)\s?pct\b/gi, '$1 %');
   return (n.charAt(0).toUpperCase() + n.slice(1)).slice(0, 31) || 'Feuille';
 }
 /* Fichiers de données de l'espace (les plus récents d'abord) : proposés au modèle quand il oublie de les passer */
@@ -6188,13 +6189,20 @@ const DELIVERABLE_TOOLS = [
       if (a.title && !sheets[0].title) sheets[0] = { ...sheets[0], title: a.title, subtitle: sheets[0].subtitle || a.subtitle };
       // Contrôles de cohérence des échéanciers (soldes, remboursements, échéances)
       const checks = sheets.flatMap((s) => scheduleChecks(s).map((m) => `« ${s.name || s.title || 'feuille'} » : ${m}`));
+      // Colonnes entièrement vides : presque toujours une erreur de préparation des données (libellé non renseigné…)
+      for (const s of sheets) {
+        const R = s.rows || [];
+        if (R.length < 2) continue;
+        const empty = (s.headers || []).filter((h, c) => R.every((r) => r[c] == null || String(r[c]).trim() === '' || /^(undefined|null|nan)$/i.test(String(r[c]).trim())));
+        if (empty.length) checks.push(`« ${s.name || s.title || 'feuille'} » : colonne(s) entièrement vide(s) — ${empty.map((h) => `« ${h} »`).join(', ')} (libellés ou valeurs non renseignés dans les données)`);
+      }
       ctx.progress('Génération du classeur premium…');
       const st = await docStyle(a, ctx);
       const blob = await Office.xlsx(sheets, { title: a.title, theme: st.theme, logo: st.logo, org: a.org, confidentiality: a.confidentiality, dashboard: a.dashboard, subtitle: a.subtitle });
       const path = await saveExport(a.file_name || a.title || 'classeur', blob, 'xlsx');
       const m = blob.meta || {};
       const desc = `onglets : ${(m.sheets || []).join(', ')} — ` + sheets.map((s) => `« ${s.name || 'Feuille'} » ${(s.rows || []).length} lignes × ${(s.headers || []).length} colonnes`).join(', ') + (m.dashboard ? `, tableau de bord automatique (${m.charts} graphique(s) natif(s))` : '') + ', ' + st.note;
-      const warn = checks.length ? `⚠️ CONTRÔLE DE COHÉRENCE — calculs incohérents dans les données fournies : ${checks.slice(0, 6).join(' ; ')}. Corrige le calcul (python), vérifie-le, puis régénère le classeur ; ne dis pas que les montants sont vérifiés tant que ce contrôle n'est pas propre.\n` : '';
+      const warn = checks.length ? `⚠️ CONTRÔLE DE COHÉRENCE — anomalies dans les données fournies : ${checks.slice(0, 6).join(' ; ')}. Corrige le calcul (python), vérifie-le, puis régénère le classeur ; ne dis pas que les montants sont vérifiés tant que ce contrôle n'est pas propre.\n` : '';
       return { text: warn + deliverableText('Classeur Excel', path, desc + ', ' + fmtBytes(blob.size)) + (notes.length ? '\nNotes : ' + notes.join(' ; ') + '.' : ''), files: [path] };
     },
   },
