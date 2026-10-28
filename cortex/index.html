@@ -825,7 +825,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-28 20:39 UTC', stamp: 202610282039, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-28 20:46 UTC', stamp: 202610282046, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -9957,8 +9957,9 @@ const LocalModels = {
     if (!up) return { kind: 'down', title: `Aucun serveur ne répond à ${root} : rien n'écoute sur ce port.`, steps: isOllama ? ['1) Installez Ollama (ollama.com/download) et lancez-le (icône dans la barre des tâches, ou « ollama serve »).', '2) Téléchargez un modèle : ollama pull qwen3:8b (ou gpt-oss:20b avec 16 Go de RAM).', '3) Cliquez de nouveau sur « Tester ».'] : isLm ? ['1) Dans LM Studio : onglet Developer › Start Server (port 1234) et chargez un modèle.', '2) Activez « Enable CORS » dans les réglages du serveur.', '3) Cliquez de nouveau sur « Tester ».'] : ['Vérifiez que le serveur est lancé et que le port de l\'URL est le bon.'] };
     const origin = file ? 'null (page ouverte en fichier local)' : location.origin;
     const ollamaSteps = ['Ollama refuse l\'origine de cette page : autorisez-la avec la variable OLLAMA_ORIGINS (le plus simple : *).', `Windows : fermez Ollama (barre des tâches), puis dans un terminal : setx OLLAMA_ORIGINS "*" — relancez Ollama.`, `macOS : launchctl setenv OLLAMA_ORIGINS "*" puis relancez l'application Ollama.`, `Linux (service) : systemctl edit ollama.service → [Service] Environment="OLLAMA_ORIGINS=*" → systemctl daemon-reload && systemctl restart ollama.`];
-    const steps = isOllama ? ollamaSteps : isLm ? ['LM Studio : Developer › Settings › « Enable CORS », puis relancez le serveur.'] : ['Le serveur doit renvoyer les en-têtes CORS pour l\'origine ' + origin + ' (ex. Access-Control-Allow-Origin: *).'];
-    if (https) steps.push('Page ouverte en https : Chrome demande l\'autorisation « accéder aux appareils du réseau local » — acceptez-la (icône à gauche de l\'adresse).');
+    const steps = isOllama ? ollamaSteps : isLm ? ['LM Studio : onglet Developer › Server Settings › activez « Enable CORS » (désactivé par défaut), puis relancez le serveur.'] : ['Le serveur doit renvoyer les en-têtes CORS pour l\'origine ' + origin + ' (ex. Access-Control-Allow-Origin: *).'];
+    if (file) steps.push('Autre solution, sans toucher au serveur : ouvrez Cortex depuis http://localhost (origine autorisée par défaut) — dans le dossier de Cortex : python -m http.server 8080, puis http://localhost:8080/index.html.');
+    if (https) steps.push('Page ouverte en https : selon la version de Chrome, une autorisation « accès au réseau local » peut être demandée — acceptez-la (icône à gauche de l\'adresse).');
     return { kind: 'cors', title: `Le serveur ${root} répond, mais il refuse les requêtes venant de Cortex (origine ${origin}).`, steps };
   },
   /* Catalogue WebLLM : identifiants vérifiés à l'exécution contre la liste préconstruite de la bibliothèque */
