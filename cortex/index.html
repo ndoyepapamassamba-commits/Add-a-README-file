@@ -825,7 +825,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-28 20:01 UTC', stamp: 202610282001, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-28 20:05 UTC', stamp: 202610282005, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -10032,6 +10032,172 @@ function bindLocalModels(b) {
   b.querySelector('#lm-booster')?.addEventListener('change', (e) => { LocalModels.cfg().booster = e.target.checked; saveSettings(); });
 }
 
+/* ============================== 08q · MESSAGERIE (Gmail, Outlook, fichiers .eml) ==============================
+   Cortex va chercher un document dans la boîte mail : recherche, lecture, pièces jointes récupérées dans l'espace
+   de travail. Deux connexions directes (OAuth dans le navigateur, avec l'identifiant client de l'utilisateur) :
+   Gmail (Google Identity Services) et Outlook / Microsoft 365 (MSAL + Microsoft Graph) — exigent que Cortex soit
+   servi en http(s). Sans connexion : les fichiers .eml déposés dans l'espace sont lus et leurs pièces jointes
+   extraites ; un serveur MCP de messagerie peut aussi être branché (Outils › MCP).                               */
+const Mail = {
+  tokens: {}, libs: {},
+  cfg() { return S.settings.mail || (S.settings.mail = { googleClientId: '', msClientId: '', msTenant: 'common', provider: 'auto' }); },
+  get httpOrigin() { return /^https?:$/.test(location.protocol); },
+  connected(p) { return !!this.tokens[p]; },
+  async script(url, key) { if (this.libs[key]) return; await new Promise((res, rej) => { const s = document.createElement('script'); s.src = url; s.onload = res; s.onerror = () => rej(new Error('Chargement impossible : ' + url)); document.head.appendChild(s); }); this.libs[key] = true; },
+  /* Gmail : jeton d'accès via Google Identity Services (popup), lecture seule */
+  async connectGmail() {
+    const c = this.cfg(); if (!c.googleClientId) throw new Error('Identifiant client Google (OAuth) manquant : Réglages › Messagerie.');
+    if (!this.httpOrigin) throw new Error("La connexion Gmail exige que Cortex soit ouvert en http(s) (pas en fichier local) : servez le dossier (ex. python -m http.server) ou utilisez les fichiers .eml / un serveur MCP.");
+    await this.script('https://accounts.google.com/gsi/client', 'gis');
+    const token = await new Promise((res, rej) => { try { const tc = google.accounts.oauth2.initTokenClient({ client_id: c.googleClientId, scope: 'https://www.googleapis.com/auth/gmail.readonly', callback: (r) => (r && r.access_token ? res(r.access_token) : rej(new Error(r?.error || 'jeton refusé'))), error_callback: (e) => rej(new Error(e?.message || e?.type || 'connexion annulée')) }); tc.requestAccessToken({ prompt: '' }); } catch (e) { rej(e); } });
+    this.tokens.gmail = token; return token;
+  },
+  /* Outlook / Microsoft 365 : MSAL (popup) puis Microsoft Graph, lecture seule */
+  async connectOutlook() {
+    const c = this.cfg(); if (!c.msClientId) throw new Error('Identifiant client Microsoft (Entra ID) manquant : Réglages › Messagerie.');
+    if (!this.httpOrigin) throw new Error("La connexion Outlook exige que Cortex soit ouvert en http(s) (pas en fichier local) : servez le dossier (ex. python -m http.server) ou utilisez les fichiers .eml / un serveur MCP.");
+    await this.script('https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js', 'msal');
+    this.msal ||= new msal.PublicClientApplication({ auth: { clientId: c.msClientId, authority: 'https://login.microsoftonline.com/' + (c.msTenant || 'common'), redirectUri: location.origin + location.pathname }, cache: { cacheLocation: 'sessionStorage' } });
+    const scopes = ['Mail.Read', 'User.Read'];
+    let r; const acc = this.msal.getAllAccounts()[0];
+    try { r = acc ? await this.msal.acquireTokenSilent({ scopes, account: acc }) : await this.msal.loginPopup({ scopes }); } catch (e) { r = await this.msal.loginPopup({ scopes }); }
+    this.tokens.outlook = r.accessToken; return r.accessToken;
+  },
+  provider(p) { const c = this.cfg(); if (p && p !== 'auto') return p; if (this.tokens.gmail) return 'gmail'; if (this.tokens.outlook) return 'outlook'; if (c.provider && c.provider !== 'auto') return c.provider; return c.googleClientId ? 'gmail' : c.msClientId ? 'outlook' : null; },
+  async ensure(p) { if (this.tokens[p]) return this.tokens[p]; return p === 'gmail' ? this.connectGmail() : this.connectOutlook(); },
+  async api(p, url, opts = {}) {
+    const tok = await this.ensure(p);
+    const r = await fetch(url, { ...opts, headers: { Authorization: 'Bearer ' + tok, ...(opts.headers || {}) } });
+    if (r.status === 401) { delete this.tokens[p]; throw new Error('Session expirée : reconnectez la messagerie (Réglages › Messagerie).'); }
+    if (!r.ok) throw new Error(`${p === 'gmail' ? 'Gmail' : 'Microsoft Graph'} : HTTP ${r.status} ${truncate(await r.text(), 200)}`);
+    return r.json();
+  },
+  b64urlToBytes(s) { const b = atob(String(s).replace(/-/g, '+').replace(/_/g, '/')); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; },
+  bytesToB64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); },
+  /* ---- recherche ---- */
+  async search(q, { provider, max = 10, signal } = {}) {
+    const p = this.provider(provider); if (!p) throw new Error("Aucune messagerie configurée : Réglages › Messagerie (Gmail ou Outlook), ou déposez des fichiers .eml dans l'espace.");
+    if (p === 'gmail') {
+      const l = await this.api(p, `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(q)}&maxResults=${max}`, { signal });
+      const out = [];
+      for (const m of l.messages || []) { const d = await this.api(p, `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date&metadataHeaders=To`, { signal }); const h = Object.fromEntries((d.payload?.headers || []).map((x) => [x.name.toLowerCase(), x.value])); out.push({ id: m.id, provider: p, subject: h.subject || '(sans objet)', from: h.from || '', to: h.to || '', date: h.date || '', snippet: d.snippet || '', attachments: this.gmailParts(d.payload).filter((x) => x.filename).map((x) => x.filename) }); }
+      return out;
+    }
+    const l = await this.api(p, `https://graph.microsoft.com/v1.0/me/messages?$search=${encodeURIComponent('"' + q.replace(/"/g, '') + '"')}&$top=${max}&$select=id,subject,from,toRecipients,receivedDateTime,bodyPreview,hasAttachments`, { signal, headers: { ConsistencyLevel: 'eventual' } });
+    return (l.value || []).map((m) => ({ id: m.id, provider: p, subject: m.subject || '(sans objet)', from: m.from?.emailAddress ? `${m.from.emailAddress.name || ''} <${m.from.emailAddress.address}>` : '', to: (m.toRecipients || []).map((x) => x.emailAddress?.address).join(', '), date: m.receivedDateTime || '', snippet: m.bodyPreview || '', attachments: m.hasAttachments ? ['(pièces jointes)'] : [] }));
+  },
+  gmailParts(payload, out = []) { if (!payload) return out; if (payload.filename || payload.body?.data) out.push({ filename: payload.filename || '', mime: payload.mimeType, attachmentId: payload.body?.attachmentId, data: payload.body?.data, size: payload.body?.size }); for (const p of payload.parts || []) this.gmailParts(p, out); return out; },
+  /* ---- lecture complète ---- */
+  async read(id, { provider, signal } = {}) {
+    const p = this.provider(provider); if (!p) throw new Error('Aucune messagerie configurée.');
+    if (p === 'gmail') {
+      const d = await this.api(p, `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`, { signal });
+      const h = Object.fromEntries((d.payload?.headers || []).map((x) => [x.name.toLowerCase(), x.value])); const parts = this.gmailParts(d.payload);
+      const dec = (x) => new TextDecoder().decode(this.b64urlToBytes(x));
+      const txt = parts.find((x) => x.mime === 'text/plain' && x.data), html = parts.find((x) => x.mime === 'text/html' && x.data);
+      const body = txt ? dec(txt.data) : html ? htmlToText(dec(html.data)).text : d.snippet || '';
+      return { id, provider: p, subject: h.subject || '', from: h.from || '', to: h.to || '', date: h.date || '', body, attachments: parts.filter((x) => x.filename).map((x) => ({ id: x.attachmentId, name: x.filename, mime: x.mime, size: x.size })) };
+    }
+    const m = await this.api(p, `https://graph.microsoft.com/v1.0/me/messages/${id}?$select=id,subject,from,toRecipients,receivedDateTime,body,hasAttachments`, { signal, headers: { Prefer: 'outlook.body-content-type="text"' } });
+    const atts = m.hasAttachments ? (await this.api(p, `https://graph.microsoft.com/v1.0/me/messages/${id}/attachments?$select=id,name,contentType,size`, { signal })).value || [] : [];
+    return { id, provider: p, subject: m.subject || '', from: m.from?.emailAddress?.address || '', to: (m.toRecipients || []).map((x) => x.emailAddress?.address).join(', '), date: m.receivedDateTime || '', body: m.body?.content || '', attachments: atts.map((a) => ({ id: a.id, name: a.name, mime: a.contentType, size: a.size })) };
+  },
+  /* ---- pièce jointe → espace de travail ---- */
+  async attachment(msgId, att, { provider, signal, dest } = {}) {
+    const p = this.provider(provider); let bytes, name = att.name || 'piece-jointe', mime = att.mime || mimeFromName(name);
+    if (p === 'gmail') { const d = await this.api(p, `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}/attachments/${att.id}`, { signal }); bytes = this.b64urlToBytes(d.data || ''); }
+    else { const d = await this.api(p, `https://graph.microsoft.com/v1.0/me/messages/${msgId}/attachments/${att.id}`, { signal }); if (!d.contentBytes) throw new Error('Pièce jointe non téléchargeable (élément Outlook ou référence)'); bytes = this.b64urlToBytes(d.contentBytes); name = d.name || name; mime = d.contentType || mime; }
+    const target = normPath(dest || 'imports/mail/' + safeFileName(name.replace(/\.[^.]+$/, ''), (name.split('.').pop() || 'bin').toLowerCase()));
+    if (isTextLikeName(name) && bytes.length < 20e6) writeWorkspaceFile(target, new TextDecoder().decode(bytes), 'utf8'); else writeWorkspaceFile(target, 'data:' + mime + ';base64,' + this.bytesToB64(bytes), 'base64');
+    return { path: target, size: bytes.length };
+  },
+};
+/* ---------- Lecture d'un fichier .eml (MIME) : en-têtes, corps texte, pièces jointes ---------- */
+const EML = {
+  decodeQP(s) { return s.replace(/=\r?\n/g, '').replace(/=([0-9A-Fa-f]{2})/g, (m, h) => String.fromCharCode(parseInt(h, 16))); },
+  bytes(str) { const u = new Uint8Array(str.length); for (let i = 0; i < str.length; i++) u[i] = str.charCodeAt(i) & 255; return u; },
+  decodeText(body, enc, charset) { let raw = /quoted-printable/i.test(enc) ? this.decodeQP(body) : /base64/i.test(enc) ? atob(body.replace(/\s+/g, '')) : body; try { return new TextDecoder(charset || 'utf-8').decode(this.bytes(raw)); } catch (e) { return raw; } },
+  header(h, name) { const m = h.match(new RegExp('^' + name + ':[ \\t]*([^\\r\\n]*(?:\\r?\\n[ \\t]+[^\\r\\n]*)*)', 'im')); return m ? m[1].replace(/\r?\n[ \t]+/g, ' ').trim() : ''; },
+  decodeWord(s) { return String(s || '').replace(/=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g, (m, cs, enc, txt) => { try { const raw = /b/i.test(enc) ? atob(txt) : txt.replace(/_/g, ' ').replace(/=([0-9A-Fa-f]{2})/g, (x, h) => String.fromCharCode(parseInt(h, 16))); return new TextDecoder(cs).decode(this.bytes(raw)); } catch (e) { return txt; } }); },
+  parse(src, depth = 0) {
+    const sep = src.indexOf('\r\n\r\n') >= 0 ? '\r\n\r\n' : '\n\n'; const i = src.indexOf(sep); const head = i >= 0 ? src.slice(0, i) : src; const body = i >= 0 ? src.slice(i + sep.length) : '';
+    const ct = this.header(head, 'Content-Type') || 'text/plain'; const enc = this.header(head, 'Content-Transfer-Encoding'); const charset = (ct.match(/charset="?([^";\s]+)"?/i) || [])[1];
+    const out = { headers: head, from: this.decodeWord(this.header(head, 'From')), to: this.decodeWord(this.header(head, 'To')), subject: this.decodeWord(this.header(head, 'Subject')), date: this.header(head, 'Date'), text: '', html: '', attachments: [] };
+    const bm = ct.match(/boundary="?([^";\r\n]+)"?/i);
+    if (/^multipart\//i.test(ct) && bm && depth < 6) {
+      const parts = body.split(new RegExp('(?:^|\\r?\\n)--' + bm[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:--)?[ \\t]*(?=\\r?\\n|$)')).slice(1).filter((p) => p.trim());
+      for (const p of parts) { const sub = this.parse(p.replace(/^\r?\n/, ''), depth + 1); out.text ||= sub.text; out.html ||= sub.html; out.attachments.push(...sub.attachments); }
+      return out;
+    }
+    const disp = this.header(head, 'Content-Disposition'); const fname = this.decodeWord((disp.match(/filename\*?="?([^";\r\n]+)"?/i) || ct.match(/name="?([^";\r\n]+)"?/i) || [])[1] || '');
+    if (/attachment/i.test(disp) || (fname && !/^text\/(plain|html)/i.test(ct)) || (fname && /inline/i.test(disp) && !/^text\//i.test(ct))) { const raw = /base64/i.test(enc) ? atob(body.replace(/\s+/g, '')) : /quoted-printable/i.test(enc) ? this.decodeQP(body) : body; out.attachments.push({ name: fname || 'piece-jointe.bin', mime: ct.split(';')[0].trim(), bytes: this.bytes(raw) }); return out; }
+    if (/^text\/html/i.test(ct)) out.html = this.decodeText(body, enc, charset); else if (/^text\//i.test(ct) || !/^(image|application|audio|video)\//i.test(ct)) out.text = this.decodeText(body, enc, charset);
+    return out;
+  },
+  fromWorkspace(path) { const f = readWorkspaceFile(path); if (!f) throw new Error('Fichier introuvable : ' + path); const src = f.encoding === 'base64' ? new TextDecoder().decode(Mail.b64urlToBytes((f.content.split(',')[1] || '').replace(/-/g, '+').replace(/_/g, '/'))) : f.content; return this.parse(src.replace(/^\s+/, '')); },
+};
+const MAIL_TOOLS = [
+  {
+    name: 'mail_search', title: 'Chercher dans la messagerie', icon: 'send', group: 'comm', perm: 'auto',
+    summary: 'Cherche des messages dans Gmail ou Outlook (connexion directe, lecture seule) : objet, expéditeur, date, pièces jointes.',
+    description: "Cherche des messages dans la messagerie connectée (Gmail ou Outlook / Microsoft 365, lecture seule). query : syntaxe de recherche de la messagerie (Gmail : « from:dupont has:attachment newer_than:30d filename:xlsx » ; Outlook : mots-clés). Renvoie id, objet, expéditeur, date, extrait et noms des pièces jointes ; puis mail_read (contenu) ou mail_attachment (récupération d'une pièce jointe dans l'espace). Si aucune messagerie n'est connectée, dis-le à l'utilisateur (Réglages › Messagerie) ou utilise eml_extract sur un fichier .eml déposé.",
+    parameters: { type: 'object', properties: { query: { type: 'string' }, provider: { type: 'string', enum: ['auto', 'gmail', 'outlook'] }, max: { type: 'integer' } }, required: ['query'] },
+    args: (a) => truncate(a.query || '', 80),
+    async run(a, ctx) { const hits = await Mail.search(a.query, { provider: a.provider, max: clamp(+a.max || 10, 1, 25), signal: ctx.signal }); if (!hits.length) return 'Aucun message trouvé pour : ' + a.query; return hits.map((h, i) => `[${i + 1}] id=${h.id} · ${h.date}\nDe : ${h.from}\nObjet : ${h.subject}${h.attachments.length ? '\nPièces jointes : ' + h.attachments.join(', ') : ''}\n${truncate(h.snippet, 200)}`).join('\n\n'); },
+  },
+  {
+    name: 'mail_read', title: 'Lire un message', icon: 'send', group: 'comm', perm: 'auto',
+    summary: "Lit un message de la messagerie connectée (corps et liste des pièces jointes).",
+    description: "Lit un message (id renvoyé par mail_search) : en-têtes, corps en texte et liste des pièces jointes (id, nom, taille) à récupérer avec mail_attachment.",
+    parameters: { type: 'object', properties: { id: { type: 'string' }, provider: { type: 'string', enum: ['auto', 'gmail', 'outlook'] } }, required: ['id'] },
+    args: (a) => a.id,
+    async run(a, ctx) { const m = await Mail.read(a.id, { provider: a.provider, signal: ctx.signal }); return `De : ${m.from}\nÀ : ${m.to}\nDate : ${m.date}\nObjet : ${m.subject}\n\n${truncate(m.body, 12000)}${m.attachments.length ? '\n\nPièces jointes :\n' + m.attachments.map((x) => `- ${x.name} (${fmtBytes(x.size || 0)}) id=${x.id}`).join('\n') + '\n→ mail_attachment { message_id, attachment_id }' : ''}`; },
+  },
+  {
+    name: 'mail_attachment', title: 'Récupérer une pièce jointe', icon: 'download', group: 'comm', perm: 'auto', write: true,
+    summary: "Copie une pièce jointe d'un message dans l'espace de travail (imports/mail/).",
+    description: "Récupère une pièce jointe (message_id et attachment_id donnés par mail_read ; ou name pour la choisir par son nom) et la copie dans l'espace de travail (imports/mail/<nom>) pour la lire ou la traiter.",
+    parameters: { type: 'object', properties: { message_id: { type: 'string' }, attachment_id: { type: 'string' }, name: { type: 'string' }, provider: { type: 'string', enum: ['auto', 'gmail', 'outlook'] }, as: { type: 'string' } }, required: ['message_id'] },
+    args: (a) => (a.name || a.attachment_id || '') + ' ← ' + a.message_id,
+    async run(a, ctx) { let att = a.attachment_id ? { id: a.attachment_id, name: a.name } : null; if (!att || !att.name) { const m = await Mail.read(a.message_id, { provider: a.provider, signal: ctx.signal }); att = m.attachments.find((x) => (a.attachment_id && x.id === a.attachment_id) || (a.name && normalizeText(x.name).includes(normalizeText(a.name)))) || (m.attachments.length === 1 ? m.attachments[0] : null); if (!att) throw new Error('Pièce jointe introuvable. Disponibles : ' + m.attachments.map((x) => x.name).join(', ')); } const r = await Mail.attachment(a.message_id, att, { provider: a.provider, signal: ctx.signal, dest: a.as }); return { text: `Pièce jointe récupérée : ${r.path} (${fmtBytes(r.size)}). Lis-la avec read_file / python / run_studio.`, files: [r.path] }; },
+  },
+  {
+    name: 'eml_extract', title: 'Lire un fichier .eml', icon: 'file', group: 'comm', perm: 'auto', write: true,
+    summary: "Lit un e-mail enregistré (.eml) de l'espace : en-têtes, corps, et extrait ses pièces jointes.",
+    description: "Lit un fichier .eml (e-mail enregistré depuis Outlook, Gmail, Thunderbird…) présent dans l'espace de travail : en-têtes, corps en texte, et extraction des pièces jointes dans imports/mail/. Aucune connexion nécessaire.",
+    parameters: { type: 'object', properties: { path: { type: 'string' }, extract: { type: 'boolean', description: 'extraire les pièces jointes (défaut oui)' } }, required: ['path'] },
+    args: (a) => a.path,
+    async run(a) {
+      const m = EML.fromWorkspace(a.path); const files = [];
+      if (a.extract !== false) for (const att of m.attachments) { const name = safeFileName(att.name.replace(/\.[^.]+$/, '') || 'piece', (att.name.split('.').pop() || 'bin').toLowerCase()); const p = normPath('imports/mail/' + name); if (isTextLikeName(att.name) && att.bytes.length < 20e6) writeWorkspaceFile(p, new TextDecoder().decode(att.bytes), 'utf8'); else writeWorkspaceFile(p, 'data:' + (att.mime || mimeFromName(att.name)) + ';base64,' + Mail.bytesToB64(att.bytes), 'base64'); files.push(p); }
+      const body = m.text || (m.html ? htmlToText(m.html).text : '');
+      return { text: `De : ${m.from}\nÀ : ${m.to}\nDate : ${m.date}\nObjet : ${m.subject}\n\n${truncate(body, 12000)}${m.attachments.length ? '\n\nPièces jointes (' + m.attachments.length + ')' + (files.length ? ' extraites : ' + files.join(', ') : ' : ' + m.attachments.map((x) => x.name).join(', ')) : '\n\n(aucune pièce jointe)'}`, files };
+    },
+  },
+];
+for (const t of MAIL_TOOLS) { BUILTIN_TOOLS.push(t); TOOLS.set(t.name, t); }
+TOOL_GROUPS.comm = 'Communication (e-mail, agenda)';
+/* Réglages › Messagerie */
+function mailSettingsHTML() {
+  const c = Mail.cfg();
+  return `<h3>Messagerie</h3><p class="lead">Cortex peut chercher un document dans vos mails et récupérer la pièce jointe (lecture seule). Connexion directe depuis le navigateur avec votre propre identifiant client OAuth (aucun serveur Cortex, aucun intermédiaire) ; nécessite d'ouvrir Cortex en http(s) ${Mail.httpOrigin ? '<span style="color:var(--ok,#16a34a)">(c\'est le cas)</span>' : '<b>(actuellement ouvert en fichier local : servez le dossier, ex. <span class="mono">python -m http.server 8080</span>, puis ouvrez http://localhost:8080/index.html)</b>'}. Alternatives sans connexion : déposer des fichiers .eml dans l'espace (outil eml_extract), ou brancher un serveur MCP de messagerie (Outils › MCP).</p>
+    <div class="card" style="margin-bottom:12px"><b>Gmail</b><p class="small muted">Google Cloud Console › API Gmail activée › Identifiants › ID client OAuth (application Web) avec l'origine de Cortex autorisée.</p>
+      ${ui.field('ID client OAuth Google', `<input id="ml-gcid" value="${esc(c.googleClientId || '')}" placeholder="xxxx.apps.googleusercontent.com" style="width:100%">`)}
+      <div class="row wrap"><button class="btn sm" data-ml="gmail">${icon('plug', 'sm')} ${Mail.connected('gmail') ? 'Reconnecter' : 'Se connecter à Gmail'}</button><span class="small muted">${Mail.connected('gmail') ? '✅ connecté (session)' : 'non connecté'}</span></div></div>
+    <div class="card" style="margin-bottom:12px"><b>Outlook / Microsoft 365</b><p class="small muted">Entra ID › Inscription d'application (SPA) avec l'URI de redirection de Cortex, autorisation déléguée Mail.Read.</p>
+      <div class="grid2">${ui.field('ID client (application)', `<input id="ml-mcid" value="${esc(c.msClientId || '')}" placeholder="00000000-0000-…">`)}${ui.field('Tenant', `<input id="ml-mten" value="${esc(c.msTenant || 'common')}" placeholder="common ou ID du tenant">`)}</div>
+      <div class="row wrap"><button class="btn sm" data-ml="outlook">${icon('plug', 'sm')} ${Mail.connected('outlook') ? 'Reconnecter' : 'Se connecter à Outlook'}</button><span class="small muted">${Mail.connected('outlook') ? '✅ connecté (session)' : 'non connecté'}</span></div></div>`;
+}
+function bindMailSettings(m) {
+  m.addEventListener('click', async (e) => {
+    const el = e.target.closest('[data-ml]'); if (!el) return; const c = Mail.cfg();
+    c.googleClientId = m.querySelector('#ml-gcid')?.value.trim() || c.googleClientId; c.msClientId = m.querySelector('#ml-mcid')?.value.trim() || c.msClientId; c.msTenant = m.querySelector('#ml-mten')?.value.trim() || 'common'; saveSettings();
+    try { if (el.dataset.ml === 'gmail') await Mail.connectGmail(); else await Mail.connectOutlook(); toast('Messagerie connectée', 'ok'); } catch (er) { toast(er.message, 'err', 8000); }
+    renderPage();
+  });
+  for (const id of ['ml-gcid', 'ml-mcid', 'ml-mten']) m.querySelector('#' + id)?.addEventListener('change', (e) => { const c = Mail.cfg(); if (id === 'ml-gcid') c.googleClientId = e.target.value.trim(); if (id === 'ml-mcid') c.msClientId = e.target.value.trim(); if (id === 'ml-mten') c.msTenant = e.target.value.trim() || 'common'; saveSettings(); });
+}
+
 /* ============================== 09 · MOTEUR (HARNESS) ============================== */
 
 /* ---------- Arbre de messages (branches) ---------- */
@@ -14163,7 +14329,7 @@ const ACCENTS = ['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#16a34a
 PAGES.settings = {
   title: 'Réglages', icon: 'settings', flush: true,
   render(b) {
-    tabbed(b, [['general', 'Général', 'sliders'], ['api', 'API & compte', 'key'], ['models', 'Modèles par défaut', 'cpu'], ['harness', 'Harness (agents)', 'zap'], ['privacy', 'Routage & confidentialité', 'shield'], ['profile', 'Profil & instructions', 'user'], ['voice', 'Voix', 'volume'], ['data', 'Données', 'db'], ['keys', 'Raccourcis', 'cmd'], ['about', 'À propos', 'info']], 'setTab', (tab, main) => SETTINGS_TABS[tab](main));
+    tabbed(b, [['general', 'Général', 'sliders'], ['api', 'API & compte', 'key'], ['models', 'Modèles par défaut', 'cpu'], ['harness', 'Harness (agents)', 'zap'], ['mail', 'Messagerie', 'send'], ['privacy', 'Routage & confidentialité', 'shield'], ['profile', 'Profil & instructions', 'user'], ['voice', 'Voix', 'volume'], ['data', 'Données', 'db'], ['keys', 'Raccourcis', 'cmd'], ['about', 'À propos', 'info']], 'setTab', (tab, main) => SETTINGS_TABS[tab](main));
   },
 };
 const SETTINGS_TABS = {
@@ -14373,6 +14539,7 @@ const SETTINGS_TABS = {
     bindRange(m, 'vo-r', (v) => { S.settings.tts.rate = +v; saveSettings(); }, (v) => '×' + (+v).toFixed(1));
     m.querySelector('#vo-test').onclick = () => speak({ role: 'user', content: 'Bonjour ! Je suis Cortex, votre studio d\'agents IA.' });
   },
+  mail(m) { m.innerHTML = mailSettingsHTML(); bindMailSettings(m); },
   async data(m) {
     const est = await DB.estimate();
     m.innerHTML = `<h3>Données</h3><p class="lead">Tout est stocké localement. Exportez régulièrement pour sauvegarder ou transférer vers un autre appareil.</p>
