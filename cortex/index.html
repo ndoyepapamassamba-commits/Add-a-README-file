@@ -869,7 +869,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-29 08:12 UTC', stamp: 202610290812, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-29 08:18 UTC', stamp: 202610290818, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -9457,7 +9457,7 @@ const Mind = {
       || (/\d/.test(t) && (/\b(mensualit\w*|interets?|amortiss\w*|rentabilit\w*|rendement|marge|cout total)/.test(t) || (/(%|\bfcfa\b|\bxof\b|\beur\b|€|\$|\bans?\b|\bmois\b|\bmillions?\b|\bmilliards?\b)/.test(t) && /\b(quel|quelle|combien|calcul|simul|estime|evalue)/.test(t))));
     const code = /\b(code|script|fonction|bug|erreur|api|programme|python|javascript|typescript|sql|regex|algorithme|refactor|compile|debug)\b/.test(t);
     const timely = /\b(actualite|actualites|news|nouvelles|aujourd|hier|cette semaine|ce mois|cette annee|en ce moment|actuellement|recent|recente|recemment|derniere?s? (nouvelles|version|annonce|actualites|chiffres|donnees)|prix actuel|cours (actuel|du jour)|taux (actuel|du jour|directeur)|meteo|resultats? (du|des) match|bourse|cotation|en 202\d)\b/.test(t);
-    const explicitWeb = /\b(cherche|recherche|trouve|verifie)\b.{0,40}\b(internet|web|en ligne|google|sources?|sites?|articles?)\b|\b(sur internet|sur le web|en ligne|wikipedia|google|site web|lien|url|sources?)\b/.test(t);
+    const explicitWeb = /\b(cherche|recherche|trouve|verifie)\b.{0,40}\b(internet|web|en ligne|google|sites?|articles?|presse)\b|\b(sur internet|sur le web|en ligne|wikipedia|google|site web|sources? (web|en ligne|recentes?)|cite(r)? (les|des|tes) sources)\b/.test(t);
     const search = timely || explicitWeb;
     const auto = /\b(planifie|planifier|programme|programmer|chaque (jour|semaine|mois|lundi|mardi|mercredi|jeudi|vendredi|matin|soir)|tous les (jours|matins|soirs|lundis|mardis|mercredis|jeudis|vendredis)|rappelle|rappel|automatise|quotidien|hebdomadaire|mensuel|a \d{1,2}h)\b/.test(t);
     let kind = 'question';
