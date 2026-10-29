@@ -256,7 +256,7 @@ kbd{font-family:var(--mono);font-size:.75em;padding:1px 6px;border-radius:6px;bo
 .source img{width:14px;height:14px;border-radius:3px}
 .err-steps{margin:6px 0 2px 18px;padding:0;color:var(--text-2)}.err-steps li{margin:3px 0}
 .local-issue{border:1px solid var(--border);background:var(--bg-2,var(--panel));color:var(--text-2);border-radius:12px;padding:10px 14px;font-size:.9em;display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}.local-issue b{color:var(--text)}.local-issue details{margin-top:6px}.local-issue summary{cursor:pointer;color:var(--accent);font-weight:500}
-.err-box{border:1px solid color-mix(in srgb,var(--danger) 40%,transparent);background:var(--danger-soft);color:var(--danger);border-radius:12px;padding:10px 14px;font-size:.9em;display:flex;gap:10px;align-items:flex-start}
+.err-box{border-left:3px solid var(--danger)!important;background:var(--danger-soft);color:var(--danger);border-radius:12px;padding:10px 14px;font-size:.9em;display:flex;gap:10px;align-items:flex-start}
 .note{border:1px solid var(--border);background:var(--panel-2);border-radius:12px;padding:10px 14px;font-size:.88em;color:var(--text-2)}
 .gen-img{max-width:min(100%,512px);border-radius:14px;border:1px solid var(--border);display:block;margin:8px 0;cursor:zoom-in}
 .compare-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));padding:8px 0}
@@ -482,7 +482,8 @@ body.term .thinking>summary svg:first-child{display:none}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-size:.78em;font-weight:500;color:var(--text-2);background:var(--panel)}
 .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.toasts{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none}
+.toasts{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:300;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:max-content;max-width:min(560px,92vw)}
+.toast .tcount{margin-left:4px;font-size:.85em;opacity:.8}
 .toast{pointer-events:auto;background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;box-shadow:var(--shadow-lg);font-size:.9em;font-weight:500;display:flex;align-items:center;gap:10px;max-width:420px;animation:pop .2s}
 .toast.err{background:var(--danger);color:#fff}
 .toast.ok{background:var(--success);color:#fff}
@@ -601,6 +602,46 @@ body.term .thinking>summary svg:first-child{display:none}
 .theme-grid.compact .theme-card .sw i{width:18px;height:13px;border-radius:4px}
 .brand-logo.sm{width:130px;height:60px;padding:6px;border-radius:10px}
 .fb-btn{font-size:13px;filter:grayscale(.35);opacity:.8}.fb-btn:hover{filter:none;opacity:1}
+
+/* ===== Interface SaaS épurée (vues routées, navigation compacte, barre du modèle sur une ligne, étapes regroupées) ===== */
+.app.paged .sidebar{display:none}
+.app.paged .chat-head,.app.paged .messages,.app.paged .jump,.app.paged .composer-wrap{display:none!important}
+.page-view{flex:1;display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--bg)}
+.page-view[hidden]{display:none!important}
+.page-head{height:58px;flex:none;display:flex;align-items:center;gap:10px;padding:0 20px 0 24px;border-bottom:1px solid var(--border);background:var(--bg)}
+.page-head h1{margin:0;font-size:1.08em;font-weight:700;display:flex;align-items:center;gap:10px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.page-body{flex:1;overflow:auto;padding:22px 28px 40px;min-height:0}
+.page-body:not(.flush)>*{max-width:1160px;margin-left:auto;margin-right:auto}
+.page-body.flush{padding:0;display:flex;overflow:hidden}
+.page-body.flush .page-nav{background:var(--bg-2)}
+.page-body.flush .page-main>*{max-width:960px}
+.jump{bottom:var(--composer-h,210px)!important}
+.rail{gap:2px;padding:8px 0}
+.rail-btn{width:62px;padding:7px 2px 6px;border-radius:12px;font-size:11px;gap:2px}
+.rail-logo{width:40px;height:40px;margin:2px 0 8px;border-radius:12px}
+@media (max-height:640px){.rail-btn span{display:none}.rail-btn{padding:9px 2px}}
+.btn-new{height:44px;border-radius:12px;font-size:.96em;white-space:nowrap;box-shadow:none;gap:8px}
+.side-sq{width:44px;height:44px;border-radius:12px}
+.composer-wrap{container-type:inline-size}
+.model-bar{flex-wrap:nowrap;overflow:hidden;gap:6px}
+.model-bar .mb-grow{flex:1 1 0;min-width:0}
+.model-bar .pill{flex:none}
+.model-chip{max-width:min(320px,48%);min-width:0;flex:0 1 auto}
+.model-chip .ellipsis{min-width:0}
+@container (max-width:780px){.model-bar .pill .lbl{display:none}.model-bar .pill{padding:0 9px}}
+@container (max-width:520px){.model-bar .mb-opt{display:none}.model-chip .badge{display:none}}
+.sys-steps{margin:2px 0 10px;border-radius:10px}
+.sys-steps>summary{list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:6px;cursor:pointer;font-size:.8em;color:var(--muted);padding:2px 0}
+.sys-steps>summary::-webkit-details-marker{display:none}
+.sys-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;background:var(--bg-2);color:var(--text-2);font-weight:500}
+.sys-chip.ok svg{color:var(--success)}.sys-chip.warn svg{color:var(--warning)}.sys-chip.err svg{color:var(--danger)}.sys-chip.run{color:var(--accent)}
+.sys-time{color:var(--faint);font-family:var(--mono);font-size:.95em}
+.sys-more{color:var(--accent);margin-left:2px}.sys-more::after{content:'détails'}.sys-steps[open] .sys-more::after{content:'masquer'}
+.sys-steps:not([open]) .sys-body{display:none}
+.sys-body{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.err-box{background:var(--panel)!important;color:var(--text)!important;border:1px solid var(--border)}
+.err-box>svg{color:var(--danger);flex:none;margin-top:2px}.err-box b{color:var(--danger)}
+@media (max-width:820px){.page-body{padding:16px}.page-body.flush{flex-direction:column}.page-head{padding:0 12px}}
 </style>
 </head>
 <body>
@@ -612,6 +653,7 @@ body.term .thinking>summary svg:first-child{display:none}
     <div class="messages" id="messages"></div>
     <button class="jump hidden" id="jumpBtn" title="Aller en bas" data-act="jump"></button>
     <div class="composer-wrap" id="composerWrap"></div>
+    <section id="pageView" class="page-view" hidden aria-live="polite"></section>
   </main>
   <aside id="inspector" class="inspector hidden" aria-label="Inspecteur"></aside>
   <div class="scrim" id="scrim"></div>
@@ -827,7 +869,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-29 08:06 UTC', stamp: 202610290806, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-29 08:12 UTC', stamp: 202610290812, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -11935,7 +11977,11 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) { cl
 function toast(msg, type = 'info', ms = 2600) {
   const root = $('#toasts');
   if (!root) return;
+  const same = [...root.children].find((x) => x.dataset.msg === String(msg));
+  if (same) { const n = (+same.dataset.n || 1) + 1; same.dataset.n = n; let b = same.querySelector('.tcount'); if (!b) { b = document.createElement('b'); b.className = 'tcount'; same.appendChild(b); } b.textContent = '×' + n; return same; }
+  while (root.children.length >= 3) root.firstElementChild.remove();
   const t = document.createElement('div');
+  t.dataset.msg = String(msg);
   t.className = 'toast ' + (type === 'err' ? 'err' : type === 'ok' ? 'ok' : '');
   t.innerHTML = (type === 'err' ? icon('alert', 'sm') : type === 'ok' ? icon('check', 'sm') : icon('info', 'sm')) + `<span>${esc(msg)}</span>`;
   root.appendChild(t);
@@ -12121,27 +12167,35 @@ function compressImage(dataURL, maxDim = 1800, quality = 0.88) {
 const RAIL = [
   { id: 'chats', label: 'Chats', icon: 'chat' },
   { id: 'agents', label: 'Agents', icon: 'bot' },
-  { id: 'prompts', label: 'Prompts', icon: 'book' },
-  { id: 'tools', label: 'Outils', icon: 'plug' },
   { id: 'skills', label: 'Skills', icon: 'puzzle' },
-  { id: 'code', label: 'Code', icon: 'ide' },
+  { id: 'files', label: 'Fichiers', icon: 'files' },
+  { id: 'scheduled', label: 'Tâches', icon: 'clock' },
   { id: 'models', label: 'Modèles', icon: 'cpu' },
-  { id: 'kb', label: 'Savoir', icon: 'db' },
+];
+/* Entrées secondaires regroupées dans le menu « Plus » (pas de débordement vertical) */
+const RAIL_MORE = [
+  { id: 'kb', label: 'Base de connaissances', icon: 'db' },
   { id: 'memory', label: 'Mémoire', icon: 'brain' },
   { id: 'experience', label: 'Expérience', icon: 'trophy' },
-  { id: 'files', label: 'Fichiers', icon: 'files' },
-  { id: 'scheduled', label: 'Tâches planifiées', icon: 'clock' },
-  { id: 'usage', label: 'Usage', icon: 'chart' },
+  { id: 'prompts', label: 'Prompts', icon: 'book' },
+  { id: 'tools', label: 'Outils & extensions', icon: 'plug' },
+  { id: 'code', label: 'Code', icon: 'ide' },
+  { id: 'usage', label: 'Usage & coûts', icon: 'chart' },
 ];
 function renderRail() {
   const page = S.ui.page;
   const dark = document.documentElement.dataset.theme === 'dark';
+  const more = RAIL_MORE.find((r) => r.id === page);
   $('#rail').innerHTML = `<div class="rail-logo" title="${APP_NAME}">${icon('logo', 'lg')}</div>` +
-    RAIL.map((r) => `<button class="rail-btn ${(page ? page === r.id : r.id === 'chats') ? 'active' : ''}" data-rail="${r.id}" title="${r.label}">${icon(r.icon, 'lg')}<span>${r.label}</span></button>`).join('') +
-    `<div class="rail-spacer"></div>
-    ${getApiKey() ? `<button class="rail-btn bal ${balanceClass()}" id="railBal" data-act="balance" title="${esc(balanceTitle())}">${icon('wallet', 'lg')}<span>${esc(balanceLabel())}</span></button>` : ''}
-    <button class="rail-btn" data-act="toggle-theme" title="Changer de thème">${icon(dark ? 'sun' : 'moon', 'lg')}<span>${dark ? 'Clair' : 'Sombre'}</span></button>
-    <button class="rail-btn ${page === 'settings' ? 'active' : ''}" data-rail="settings" title="Réglages">${icon('settings', 'lg')}<span>Réglages</span>${getApiKey() ? '' : '<i class="dot"></i>'}</button>`;
+    RAIL.map((r) => `<button class="rail-btn ${(page ? page === r.id : r.id === 'chats') ? 'active' : ''}" data-rail="${r.id}" title="${r.label}">${icon(r.icon)}<span>${r.label}</span></button>`).join('') +
+    `<button class="rail-btn ${more ? 'active' : ''}" data-act="rail-more" title="Plus : ${RAIL_MORE.map((r) => r.label).join(', ')}">${icon(more ? more.icon : 'layers')}<span>${more ? esc(more.label.split(' ')[0]) : 'Plus'}</span></button>
+    <div class="rail-spacer"></div>
+    ${getApiKey() ? `<button class="rail-btn bal ${balanceClass()}" id="railBal" data-act="balance" title="${esc(balanceTitle())}">${icon('wallet')}<span>${esc(balanceLabel())}</span></button>` : ''}
+    <button class="rail-btn" data-act="toggle-theme" title="${dark ? 'Thème clair' : 'Thème sombre'}">${icon(dark ? 'sun' : 'moon')}<span>${dark ? 'Clair' : 'Sombre'}</span></button>
+    <button class="rail-btn ${page === 'settings' ? 'active' : ''}" data-rail="settings" title="Réglages">${icon('settings')}<span>Réglages</span>${getApiKey() ? '' : '<i class="dot"></i>'}</button>`;
+}
+function railMore(anchor) {
+  showMenu(anchor, RAIL_MORE.map((r) => ({ label: r.label, icon: r.icon, action: () => openPage(r.id) })), { side: 'right' });
 }
 /* ---------- Solde OpenRouter ---------- */
 const Balance = {
@@ -12434,6 +12488,7 @@ function ensureChat() {
 }
 function openChat(id) {
   if (!col('chats').has(id)) return;
+  if (S.ui.page) closePage();
   S.currentChatId = id;
   S.ui.stick = true;
   S.ui.editing = null;
@@ -12449,6 +12504,7 @@ function newChatView(opts = {}) {
   if (cur && !Object.keys(cur.nodes).length && !opts.agentId && !opts.folderId) { $('#input')?.focus(); return; }
   const c = createChat(opts);
   S.currentChatId = c.id;
+  if (S.ui.page) closePage();
   S.ui.page = null;
   $('#app').classList.remove('mobile-open');
   renderRail();
@@ -12487,7 +12543,7 @@ function renderHeader() {
     <button class="pill" data-act="pick-agent" title="Agent">${agent ? `<span>${esc(agent.emoji || '🤖')}</span><span class="ellipsis" style="max-width:140px">${esc(agent.name)}</span>` : `${icon('bot', 'sm')}<span>Sans agent</span>`}${icon('down', 'xs')}</button>
     <span class="grow"></span>
     ${Object.keys(chat.nodes).length ? `<button class="ctx-meter hide-sm" data-act="ctx-info" title="Contexte utilisé : ${fmtTokens(used)} / ${fmtTokens(lim)} tokens"><span>${fmtTokens(used)} / ${fmtTokens(lim)}</span><span class="ctx-bar"><i style="width:${Math.max(2, pct * 100)}%;background:${col_}"></i></span></button>
-    <span class="pill hide-sm" title="Coût cumulé de la conversation">${icon('dollar', 'sm')}${fmtCost(cost, true)}</span>` : ''}
+    ${cost > 0 ? `<span class="pill hide-sm" title="Coût cumulé de la conversation">${fmtCost(cost, true)}</span>` : ''}` : ''}
     <button class="icon-btn ${S.ui.inspectorOpen ? 'on' : ''}" data-act="toggle-inspector" title="Inspecteur : trace, plan, fichiers, artefacts (${MOD}+.)">${icon('panelR')}</button>
     <button class="icon-btn" data-act="chat-head-menu" title="Plus">${icon('moreV')}</button>`;
 }
@@ -12667,9 +12723,23 @@ function producedFilesHTML(n) {
     ${files.map((p) => { const f = readWorkspaceFile(p); return `<div class="of-item">${fileBadge(p)}<div class="grow" style="min-width:0"><div class="of-name ellipsis" title="${esc(p)}">${esc(p.split('/').pop())}</div><div class="faint xs ellipsis">${esc(p)} · ${fmtBytes(f.size)}</div></div>
       ${producerOf(n, p) ? `<button class="icon-btn sm fb-btn" data-act="design-fb" data-r="up" data-id="${n.id}" data-path="${esc(p)}" title="J'aime ce design">👍</button><button class="icon-btn sm fb-btn" data-act="design-fb" data-r="down" data-id="${n.id}" data-path="${esc(p)}" title="Je n'aime pas : le Guru affine l'empreinte et régénère le fichier">👎</button><button class="icon-btn sm" data-act="restyle-file" data-id="${n.id}" data-path="${esc(p)}" title="Changer le design (empreinte, couleur du logo)">${icon('palette', 'sm')}</button>` : ''}<button class="icon-btn sm" data-act="preview-file" data-path="${esc(p)}" title="Aperçu">${icon('eye', 'sm')}</button><button class="btn sm primary" data-act="dl-file" data-path="${esc(p)}">${icon('download', 'sm')} Télécharger</button></div>`; }).join('')}</div>`;
 }
+/* Étapes internes de Cortex (analyse, compréhension, stratégie, vérification, relecture) : une ligne de pastilles, détails au clic */
+const SYS_STEPS = { rea: ['Analyse', 'sparkles'], cerveau: ['Compréhension', 'brain'], guru: ['Stratégie', 'zap'], verification: ['Vérification', 'shield'], review: ['Relecture', 'check'] };
+function sysStepsHTML(group, keyBase) {
+  const items = group.map((s) => { const tc = (s.toolCalls || [])[0] || {}; const [lab] = SYS_STEPS[s.synthetic]; const res = String(tc.result || ''); const st = tc.status === 'running' ? 'run' : tc.status === 'error' ? 'err' : /❌|point\(s\) à corriger|correction demandée|Points restants/.test(res) ? 'warn' : 'ok'; return { tc, lab, st }; });
+  const ms = items.reduce((a, x) => a + (x.tc.durationMs || 0), 0);
+  const k = 'sys-' + keyBase + '-' + group[0].id;
+  const open = !!S.ui.open[k];
+  const chips = items.map((x) => `<span class="sys-chip ${x.st}">${x.st === 'run' ? '<span class="spin"></span>' : x.st === 'ok' ? icon('check', 'xs') : icon('alert', 'xs')}${esc(x.lab)}</span>`).join('');
+  return `<details class="sys-steps" data-ok="${k}" ${open ? 'open' : ''}><summary>${chips}${ms > 0 && !items.some((x) => x.st === 'run') ? `<span class="sys-time">${fmtDur(ms)}</span>` : ''}<span class="sys-more"></span></summary><div class="sys-body">${items.map((x) => toolCardHTML(x.tc, false)).join('')}</div></details>`;
+}
 function stepsHTML(steps, running, keyBase) {
   let html = '';
+  let group = [];
+  const flushSys = () => { if (group.length) { html += sysStepsHTML(group, keyBase); group = []; } };
   steps.forEach((s, i) => {
+    if (SYS_STEPS[s.synthetic] && !s.content && (s.toolCalls || []).length) { group.push(s); if (i === steps.length - 1) flushSys(); return; }
+    flushSys();
     const isLast = i === steps.length - 1;
     const streaming = running && isLast && s.status === 'streaming';
     html += '<div class="step">';
@@ -12909,12 +12979,13 @@ function renderModelBar() {
   const effort = c.params.reasoning || '';
   const [mLabel, mIcon, mCls] = MODE_LABELS[S.settings.harness.permissionMode] || MODE_LABELS.ask;
   bar.innerHTML = `${compare ? compare.map((m) => `<button class="model-chip" data-act="pick-model" title="${esc(modelName(m))}">${modelLogo(m)}<span class="ellipsis" style="max-width:150px">${esc(modelShort(m))}</span></button>`).join('') + `<button class="pill" data-act="pick-model">${icon('plus', 'sm')}</button>`
-      : `<button class="model-chip" data-act="pick-model" title="${esc(c.model)}">${modelLogo(c.model)}<span class="ellipsis">${esc(modelName(c.model))}</span>${isFreeModel(c.model) ? '<span class="badge ok">gratuit</span>' : ''}${icon('down', 'sm')}</button>`}
-    <button class="pill ${compare ? 'on' : ''}" data-act="toggle-compare" title="Comparer plusieurs modèles côte à côte (arène, conseil)">${icon('columns', 'sm')}<span class="hide-sm">${compare ? (chat.arena ? 'Arène' : 'Comparer') : 'Comparer'}</span></button>
-    <button class="pill ${tools.length ? '' : ''} ${noTools ? 'warn' : ''}" data-act="pick-tools" title="${noTools ? 'Ce modèle ne prend pas en charge les outils' : 'Outils actifs'}">${icon('wrench', 'sm')}${tools.length} outil${tools.length > 1 ? 's' : ''}</button>
-    <button class="pill ${c.web ? 'on' : ''}" data-act="toggle-web" title="Recherche web intégrée au modèle (plugin OpenRouter, ~0,02 $/requête)">${icon('globe', 'sm')}<span class="hide-sm">Web</span></button>
-    ${modelSupports(c.model, 'reasoning') ? `<button class="pill ${effort && effort !== 'off' ? 'on' : ''}" data-act="pick-effort" title="Effort de raisonnement">${icon('brain', 'sm')}<span class="hide-sm">${EFFORT_LABELS[effort] || effort}</span></button>` : ''}
-    <button class="pill ${S.settings.docTheme ? 'on' : ''}" data-act="pick-design" title="Design des fichiers produits : thème, couleur du logo, logo">${icon('palette', 'sm')}<span class="hide-sm">${S.settings.docTheme ? esc(designLabel()) : 'Design'}</span></button>
+      : `<button class="model-chip" data-act="pick-model" title="${esc(modelName(c.model))} — changer de modèle">${modelLogo(c.model)}<span class="ellipsis">${esc(modelShort(c.model))}</span>${isFreeModel(c.model) ? '<span class="badge ok">gratuit</span>' : ''}${icon('down', 'sm')}</button>`}
+    <span class="grow mb-grow"></span>
+    <button class="pill mb-opt ${compare ? 'on' : ''}" data-act="toggle-compare" title="Comparer plusieurs modèles côte à côte (arène, conseil)">${icon('columns', 'sm')}<span class="lbl">${compare ? (chat.arena ? 'Arène' : 'Comparer') : 'Comparer'}</span></button>
+    <button class="pill ${noTools ? 'warn' : ''}" data-act="pick-tools" title="${noTools ? 'Ce modèle ne prend pas en charge les outils' : tools.length + ' outil(s) actif(s)'}">${icon('wrench', 'sm')}<span>${tools.length}</span><span class="lbl"> outil${tools.length > 1 ? 's' : ''}</span></button>
+    <button class="pill mb-opt ${c.web ? 'on' : ''}" data-act="toggle-web" title="Recherche web intégrée au modèle (plugin OpenRouter, ~0,02 $/requête)">${icon('globe', 'sm')}<span class="lbl">Web</span></button>
+    ${modelSupports(c.model, 'reasoning') ? `<button class="pill ${effort && effort !== 'off' ? 'on' : ''}" data-act="pick-effort" title="Effort de raisonnement : ${esc(EFFORT_LABELS[effort] || effort || 'auto')}">${icon('brain', 'sm')}<span class="lbl">${EFFORT_LABELS[effort] || effort}</span></button>` : ''}
+    <button class="pill ${S.settings.docTheme ? 'on' : ''}" data-act="pick-design" title="Design des fichiers produits : ${S.settings.docTheme ? esc(designLabel()) : 'sobre (par défaut)'}">${icon('palette', 'sm')}<span class="lbl">${S.settings.docTheme ? esc(designLabel()) : 'Design'}</span></button>
     ${(chat?.kb || c.agent?.kb || []).length ? `<span class="pill on" title="Base de connaissances attachée">${icon('db', 'sm')}${(c.kb || []).length}</span>` : ''}${typeof localProgressPill === 'function' ? localProgressPill() : ''}`;
   renderStatusLine();
 }
@@ -13738,12 +13809,11 @@ function renderStatusLine() {
   const st = chatStats(chat);
   const model = st.c.model;
   const free = boostAllowed(model);
-  const smart = [H.reaFirst !== false && 'REA', free && H.boosters !== false && H.guru !== 'off' && 'Guru', free && H.boosters !== false && 'boosters', free && H.freeReview !== false && 'relecture', H.learn !== false && `${col('experiences')?.size || 0} exp.`].filter(Boolean);
+  const smart = [];
   const pct = Math.round((st.used / st.lim) * 100);
   el.innerHTML = `<button class="sl-mode m-${mode}" data-act="pick-mode" title="${esc(MODE_GLYPH[mode]?.[1] || '')} — Maj+Tab pour changer">${MODE_GLYPH[mode]?.[0] || '⏵'} ${esc((MODE_LABELS[mode] || MODE_LABELS.ask)[0])} <span class="faint">(Maj+Tab)</span></button>
-    <span class="sl-dot">·</span><span class="ellipsis sl-model" title="${esc(model)}">${esc(modelShort(model))}</span>
     ${st.used ? `<span class="sl-dot">·</span><span class="${pct > 85 ? 'sl-warn' : ''}" title="${fmtTokens(st.used)} / ${fmtTokens(st.lim)} tokens">contexte ${pct} %</span>` : ''}
-    <span class="sl-dot">·</span><span>${fmtCost(st.cost, true)}</span>
+    ${st.cost > 0 ? `<span class="sl-dot">·</span><span>${fmtCost(st.cost, true)}</span>` : ''}
     ${smart.length ? `<span class="sl-dot hide-sm">·</span><button class="sl-smart hide-sm" data-act="open-harness" title="Intelligence active (Réglages › Harness)">✦ ${esc(smart.join(' · '))}</button>` : ''}
     <span class="grow"></span><button class="sl-help hide-sm" data-act="cc-help" title="Commandes / et raccourcis">? aide</button>`;
 }
@@ -14130,20 +14200,34 @@ function renderChatParams(body, chat) {
 /* ============================== 14 · PAGES DE GESTION ============================== */
 const PAGES = {};
 let pageModal = null;
+/* Les pages s'affichent DANS la zone principale (vue routée, comme un SaaS) : rien ne recouvre la conversation */
 function openPage(id, sub) {
   if (id === 'chats') { closePage(); $('#app').classList.remove('side-collapsed'); renderHeader(); return; }
   if (!PAGES[id]) return;
   closePop();
-  if (pageModal) pageModal.close();
+  while (modalStack.length) modalStack[modalStack.length - 1].close();
   S.ui.page = id;
   if (sub) S.ui.pageSub = sub;
   const P = PAGES[id];
-  pageModal = openModal({ title: P.title, iconName: P.icon, size: 'wide', flush: !!P.flush, cls: P.cls || '', ovCls: 'page-ov', onClose: () => { pageModal = null; S.ui.page = null; renderRail(); } });
+  const v = $('#pageView');
+  v.className = 'page-view ' + (P.cls || '');
+  v.innerHTML = `<div class="page-head"><h1>${P.icon ? icon(P.icon) : ''}<span>${P.title}</span></h1><span class="grow"></span><button class="btn sm ghost" data-page-close title="Revenir à la conversation (Échap)">${icon('chat', 'sm')}<span class="hide-sm">Conversation</span></button></div><div class="page-body ${P.flush ? 'flush' : ''}"></div>`;
+  pageModal = { el: v, body: v.querySelector('.page-body'), close: closePage };
+  v.hidden = false;
+  $('#app').classList.add('paged');
   $('#app').classList.remove('mobile-open');
+  v.querySelector('[data-page-close]').onclick = () => closePage();
   renderRail();
   renderPage();
+  v.querySelector('.page-body').scrollTop = 0;
 }
-function closePage() { pageModal?.close(); }
+function closePage() {
+  const v = $('#pageView');
+  if (v) { v.hidden = true; v.innerHTML = ''; }
+  $('#app')?.classList.remove('paged');
+  const was = S.ui.page; pageModal = null; S.ui.page = null;
+  if (was) { renderRail(); renderHeader?.(); }
+}
 function renderPage() {
   if (!pageModal || !S.ui.page) return;
   const b = pageModal.body;
@@ -15653,6 +15737,7 @@ const ACTIONS = {
   resend: (el) => resendFromUser(el.dataset.id),
   'node-menu': (el) => nodeMenu(el, el.dataset.id),
   regen: (el) => regenerate(el.dataset.id),
+  'rail-more': (el) => railMore(el),
   'local-retry': (el) => { LocalModels.clearFailure(el.dataset.model); regenerate(el.dataset.id, el.dataset.model); },
   'local-keep': (el) => { setChatModel(el.dataset.model); toast('Modèle de la conversation : ' + modelShort(el.dataset.model), 'ok'); },
   'regen-model': (el) => openModelPicker(el, { multi: false, title: 'Régénérer avec…', onPick: (m) => regenerate(el.dataset.id, m) }),
@@ -15804,12 +15889,13 @@ document.addEventListener('keydown', (e) => {
     if ($('.lightbox')) { $('.lightbox').remove(); return; }
     if (openPop) { closePop(); return; }
     if (modalStack.length) { modalStack[modalStack.length - 1].close(); return; }
+    if (S.ui.page) { closePage(); return; }
     if (S.ui.editing) { S.ui.editing = null; renderMessages(); return; }
     const chat = currentChat();
     if (chat && chatBusy(chat)) { stopChat(chat); toast('Génération arrêtée'); }
     return;
   }
-  if (e.key === '/' && !typing && !mod && !modalStack.length) { e.preventDefault(); $('#input')?.focus(); }
+  if (e.key === '/' && !typing && !mod && !modalStack.length && !S.ui.page) { e.preventDefault(); $('#input')?.focus(); }
 });
 let lastErrToast = 0;
 function reportError(err) {
@@ -15850,6 +15936,7 @@ async function boot() {
   Skills.seed();
   LocalFolders.load().catch(() => {});
   Scheduler.start();
+  try { const cw = $('#composerWrap'); if (cw && 'ResizeObserver' in window) new ResizeObserver(() => document.documentElement.style.setProperty('--composer-h', (cw.offsetHeight + 12) + 'px')).observe(cw); } catch (e) {}
   Updater.auto();
   if (!S.settings.seededPrompts) {
     for (const p of BUILTIN_PROMPTS) if (!col('prompts').has(p.id)) { col('prompts').set(p.id, { ...p }); persist('prompts', { ...p }); }
