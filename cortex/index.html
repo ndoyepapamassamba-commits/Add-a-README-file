@@ -827,7 +827,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-29 08:03 UTC', stamp: 202610290803, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-29 08:06 UTC', stamp: 202610290806, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -1104,7 +1104,7 @@ const DEFAULT_SETTINGS = {
     maxSteps: 25, toolTimeout: 60, maxToolChars: 24000, parallelTools: true, permissionMode: 'ask',
     budgetPerRun: 0.5, retries: 3, autoCompact: true, compactAt: 0.7, keepRecent: 6, contextLimit: 0,
     injectDate: true, middleOut: false, loopGuard: true, subagentDepth: 2, freeFallback: true, loopDetect: true, autoSkills: true, toolSearch: true,
-    reaFirst: true, learn: true, boosters: true, guru: 'auto', freeReview: true, boostFreeOnly: false, audit: true, preSearch: true, display: 'cards',
+    reaFirst: true, learn: true, boosters: true, guru: 'auto', freeReview: true, boostFreeOnly: false, audit: true, preSearch: true, fastPath: true, display: 'cards',
   },
   toolPerms: {},
   provider: { sort: '', dataCollection: 'allow', zdr: false, allowFallbacks: true, ignore: '' },
@@ -8040,9 +8040,9 @@ Checklist courte à valider avant de livrer.`;
     const tried = [model];
     let lastErr;
     for (let k = 0; k < 2; k++) {
-      const m = deepModel(tried);
+      const m = k === 0 ? deepModel(tried) : fastModel(tried);
       tried.push(m);
-      try { return { model: m, text: await askModel(m, [{ role: 'user', content: this.prompt(task, { tools, context, rea }) }], { signal, maxTokens: 5000, effort: 'high', timeout: 150000 }) }; }
+      try { return { model: m, text: await askModel(m, [{ role: 'user', content: this.prompt(task, { tools, context, rea }) }], { signal, maxTokens: 3000, effort: k === 0 ? 'medium' : undefined, timeout: k === 0 ? 45000 : 25000 }) }; }
       catch (e) { lastErr = e; if (signal?.aborted) throw e; }
     }
     throw lastErr || new Error('Guru indisponible');
@@ -9411,9 +9411,12 @@ const Mind = {
     const raw = String(task || ''); const t = normalizeText(raw);
     const formats = this.FORMAT_RE.filter(([, re]) => re.test(t)).map(([f]) => f);
     const produce = /\b(genere|generer|produis|produire|cree|creer|construis|fais[- ]moi|prepare|preparer|exporte|exporter|livre|fournis|transforme|convertis|mets?[- ]en forme|redige|rediger|ecris|ecrire|envoie|sors|dresse)\b/.test(t);
-    const analyse = /\b(analyse|analyser|calcul|calcule|calculer|simul|ratio|taux|portefeuille|echeancier|statisti|compare|comparer|previs|tendance|evalue|mesure|verifie|controle|reconcil|consolide|synthese|bilan|revue)\b/.test(t);
+    const analyse = /\b(analyse|analyser|calcul|calcule|calculer|simul|ratio|taux|portefeuille|echeancier|statisti|compare|comparer|previs|tendance|evalue|mesure|verifie|controle|reconcil|consolide|synthese|bilan|revue)\b/.test(t)
+      || (/\d/.test(t) && (/\b(mensualit\w*|interets?|amortiss\w*|rentabilit\w*|rendement|marge|cout total)/.test(t) || (/(%|\bfcfa\b|\bxof\b|\beur\b|€|\$|\bans?\b|\bmois\b|\bmillions?\b|\bmilliards?\b)/.test(t) && /\b(quel|quelle|combien|calcul|simul|estime|evalue)/.test(t))));
     const code = /\b(code|script|fonction|bug|erreur|api|programme|python|javascript|typescript|sql|regex|algorithme|refactor|compile|debug)\b/.test(t);
-    const search = /\b(cherche|recherche|actualite|news|nouvelles|derniere?s?|recent|recemment|aujourd|cette semaine|ce mois|prix|cours|meteo|qui est|qu[' ]est[- ]ce|c[' ]est quoi|definition|quand|ou se trouve|combien coute|source|site web|lien|url|wikipedia|google)\b/.test(t);
+    const timely = /\b(actualite|actualites|news|nouvelles|aujourd|hier|cette semaine|ce mois|cette annee|en ce moment|actuellement|recent|recente|recemment|derniere?s? (nouvelles|version|annonce|actualites|chiffres|donnees)|prix actuel|cours (actuel|du jour)|taux (actuel|du jour|directeur)|meteo|resultats? (du|des) match|bourse|cotation|en 202\d)\b/.test(t);
+    const explicitWeb = /\b(cherche|recherche|trouve|verifie)\b.{0,40}\b(internet|web|en ligne|google|sources?|sites?|articles?)\b|\b(sur internet|sur le web|en ligne|wikipedia|google|site web|lien|url|sources?)\b/.test(t);
+    const search = timely || explicitWeb;
     const auto = /\b(planifie|planifier|programme|programmer|chaque (jour|semaine|mois|lundi|mardi|mercredi|jeudi|vendredi|matin|soir)|tous les (jours|matins|soirs|lundis|mardis|mercredis|jeudis|vendredis)|rappelle|rappel|automatise|quotidien|hebdomadaire|mensuel|a \d{1,2}h)\b/.test(t);
     let kind = 'question';
     if (auto) kind = 'automatisation';
@@ -9422,7 +9425,7 @@ const Mind = {
     else if (analyse || attachments.length) kind = 'analyse';
     else if (search) kind = 'recherche';
     else if (raw.length < 40 && /^(merci|ok|bonjour|salut|super|parfait|oui|non|d'accord|ça marche)/i.test(raw.trim())) kind = 'conversation';
-    const needsWeb = (kind === 'recherche' || /\b(actualite|aujourd|cette semaine|ce mois|recent|recemment|derniere?s? (nouvelles|version|actualites)|prix actuel|cours actuel|taux actuel|nouveaut|sorti|annonce)\b/.test(t)) && !attachments.length && !/\b(fichier|ci-joint|joint|tableau ci|donnees ci)\b/.test(t);
+    const needsWeb = (timely || explicitWeb) && !attachments.length && !/\b(fichier|ci-joint|joint|tableau ci|donnees ci)\b/.test(t);
     const needsData = attachments.length > 0 || /\b(fichier|donnees|tableau|csv|xlsx|colonne|ligne|base)\b/.test(t);
     const criteria = [];
     for (const f of formats) criteria.push(`Fichier ${f} produit, ouvert et contrôlé (aperçu)`);
@@ -9439,7 +9442,7 @@ const Mind = {
     const H = S.settings.harness || {}; const out = { past: [], web: null, text: '', ms: 0 }; const t0 = now();
     try { out.past = Sessions.search(task, { exclude: chat?.id, k: 3, minRel: 0.15 }); } catch (e) { console.warn('sessions', e); }
     if (contract.needsWeb && H.preSearch !== false && typeof freeWebSearch === 'function') {
-      try { out.web = await withTimeout(freeWebSearch(truncate(task, 240), { n: 5, read: 1, signal }), 18000, 'recherche préalable'); } catch (e) { if (signal?.aborted) throw e; out.webError = e.message; }
+      try { out.web = await withTimeout(freeWebSearch(truncate(task, 240), { n: 5, read: 1, signal }), 10000, 'recherche préalable'); } catch (e) { if (signal?.aborted) throw e; out.webError = e.message; }
     }
     const parts = [];
     if (out.past.length) parts.push('# Conversations passées pertinentes (mémoire de Cortex — à réutiliser si c\'est le même sujet)\n' + out.past.map((h) => `- [${h.date}] « ${h.title} » : ${h.snippet}`).join('\n'));
@@ -10680,7 +10683,7 @@ function estMessages(msgs) {
 const FS_TOOLS = ['list_files', 'read_file', 'write_file', 'edit_file', 'grep_files', 'python'];
 const dedicatedNames = (names) => ['create_excel', 'create_word', 'create_pdf', 'create_powerpoint', 'create_html_report'].filter((n) => names.includes(n));
 const DELIVERABLE_TOOL_NAMES = ['create_excel', 'create_word', 'create_pdf', 'create_powerpoint', 'create_video', 'create_3d', 'generate_image', 'python', 'write_file'];
-async function buildSystem(chat, c, query, { summary, tools = [], sub = false, skills = [], rea = '', guru = null, research = '', compact = false } = {}) {
+async function buildSystem(chat, c, query, { summary, tools = [], sub = false, skills = [], rea = '', guru = null, research = '', compact = false, simple = false, contract = null } = {}) {
   const sec = { base: fillVars(c.systemPrompt || '', { model: modelName(c.model) }) };
   const ctx = [];
   if (S.settings.harness.injectDate) ctx.push(`Date et heure actuelles : ${new Date().toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })} (fuseau ${Intl.DateTimeFormat().resolvedOptions().timeZone}).`);
@@ -10741,6 +10744,16 @@ Mise en forme : sobre par défaut. Applique la charte que l'utilisateur demande 
 Utilise-les quand la qualité en dépend ; inutile pour une tâche simple. Objectif : un résultat de niveau expert, rapidement.`;
   if (S.settings.harness.permissionMode === 'plan' && tools.length && !sub) sec.plan = `# MODE PLAN (actif)
 Tu es en mode plan : n'effectue AUCUNE modification (pas d'écriture de fichier, pas de livrable, pas d'action externe). Analyse d'abord (lecture de fichiers, recherche, questions), puis appelle propose_plan avec un plan détaillé et numéroté : objectif, étapes, outils, fichiers concernés, livrables, risques. L'exécution commencera quand l'utilisateur aura approuvé le plan.`;
+  if (simple) {
+    // Voie rapide : pas de méthode lourde ni de référentiel ; une réponse directe, utile et vivante
+    delete sec.methods; delete sec.boost; delete sec.empreinte; delete sec.deliver;
+    sec.quality = `# Réponse attendue
+Demande simple${contract?.kind === 'conversation' ? ' (échange courtois)' : ''} : réponds tout de suite, naturellement, sans titre ni sections, en français.
+- ${contract?.kind === 'conversation' ? "1 à 3 phrases chaleureuses ; si l'utilisateur se présente ou évoque son métier, montre ce que tu peux faire concrètement pour lui (2 ou 3 exemples précis)." : "Va droit au but : la réponse d'abord (2 à 8 phrases ou une courte liste), puis, si utile, un exemple concret ou un ordre de grandeur."}
+- Adapte-toi à ce que tu sais de l'utilisateur (mémoire, métier) ; pas de généralités creuses ni de mise en garde inutile.
+- N'appelle un outil que si c'est indispensable (calcul exact → run_javascript ; information récente → web_search).
+- Termine, si c'est pertinent, par une proposition d'action utile en une phrase.`;
+  }
   if (compact) compactSections(sec, tools, skills);
   const text = [sec.base, sec.context, sec.project, sec.memory, sec.kb, sec.todos, sec.files, sec.tools, sec.quality, sec.boost, sec.methods, sec.deliver, sec.empreinte, sec.skills, sec.skillsActive, sec.research, sec.rea, sec.guru, sec.plan, sec.summary].filter(Boolean).join('\n\n');
   return { text, sec };
@@ -10771,6 +10784,8 @@ function compactSections(sec, tools, skills) {
   if (sec.rea) sec.rea = truncate(sec.rea, 800);
 }
 function compactTools(tools, task, contract) {
+  if (contract?.kind === 'conversation') { tools.splice(0, tools.length); return tools; }
+  if (contract?.kind === 'question' && !contract.needsData) { const q = tools.filter((t) => ['run_javascript', 'web_search'].includes(t.name)); tools.splice(0, tools.length, ...q); return tools; }
   const CORE = ['read_file', 'write_file', 'list_files', 'python', 'run_javascript', 'web_search', 'fetch_url', 'todo_write'];
   const FMT = { xlsx: 'create_excel', docx: 'create_word', pptx: 'create_powerpoint', pdf: 'create_pdf', html: 'create_html_report', png: 'create_chart', csv: 'write_file', eml: 'draft_email' };
   const SKIP = new Set(['ask_experts', 'deep_think', 'think', 'verify_answer', 'find_tools', 'load_skill', 'discover_tools', 'rea', 'experience', 'design_studio', 'spawn_agent', 'tool_workshop', 'github_explore', 'connect_mcp']);
@@ -11636,9 +11651,14 @@ async function runAssistant(chat, node, opts = {}) {
     const toolsOK = tools.length > 0 && modelSupports(model, 'tools') && !opts.custom;
     const task = userNode?.content || '';
     const compact = isCompactModel(model); node.compact = compact;
+    // VOIE RAPIDE : salutation ou question de connaissance sans fichier → réponse directe (pas de REA, Guru, boosters, recherche, vérification ni relecture)
+    const contract0 = task.trim() && !opts.custom ? Mind.contract(task, { attachments: userNode?.attachments || [], tools }) : null;
+    const simple = !!contract0 && ['conversation', 'question'].includes(contract0.kind) && !contract0.needsWeb && !(userNode?.attachments || []).length && H.fastPath !== false;
+    node.simple = simple;
+    if (simple && tools.length) { const KEEP = new Set(['run_javascript', 'web_search', 'fetch_url', 'read_file', 'list_files', 'memory_save', 'memory_search', 'kb_search', 'session_search', 'load_skill', 'find_tools', 'local_search', 'local_read', 'mail_search']); tools.splice(0, tools.length, ...tools.filter((t) => KEEP.has(t.name))); }
     const addTool = (t) => { if (t && toolPerm(t) !== 'off' && !tools.some((x) => x.name === t.name)) tools.push(t); };
     let rea = null;
-    if (toolsOK && !compact) {
+    if (toolsOK && !compact && !simple) {
       if (H.boosters !== false && boostAllowed(model)) BOOSTERS.forEach(addTool);
       [REA_TOOL, EXPERIENCE_TOOL, DISCOVER_TOOLS].forEach(addTool);
       if (tools.some((t) => /^create_/.test(t.name))) addTool(DESIGN_STUDIO);
@@ -11653,11 +11673,11 @@ async function runAssistant(chat, node, opts = {}) {
       }
     }
     // CERVEAU : contrat de tâche (intention, livrables, critères) et pré-collecte (conversations passées, web) — pour tous les modèles
-    let contract = null, pre = null;
-    if (toolsOK && task.trim() && !node.steps.some((x) => x.synthetic === 'cerveau')) {
+    let contract = contract0, pre = null;
+    if (contract) node.contract = contract;
+    if (compact && toolsOK && contract) { compactTools(tools, task, contract); tracer.note('Mode léger (modèle local / petite fenêtre) : ' + tools.length + ' outils, prompt condensé'); }
+    if (toolsOK && contract && !simple && !node.steps.some((x) => x.synthetic === 'cerveau')) {
       const t1 = now();
-      contract = Mind.contract(task, { attachments: userNode?.attachments || [], tools }); node.contract = contract;
-      if (compact) { compactTools(tools, task, contract); tracer.note('Mode léger (modèle local / petite fenêtre) : ' + tools.length + ' outils, prompt condensé'); }
       const st = { id: uid('s'), synthetic: 'cerveau', content: '', toolCalls: [{ id: uid('mi'), name: 'cerveau', args: JSON.stringify({ task: truncate(task, 120) }), parsed: { task: truncate(task, 120) }, status: 'running', progress: 'Cortex comprend la demande et rassemble le contexte…', startedAt: t1 }], status: 'done', startedAt: t1 };
       node.steps.push(st); onUpdate();
       const mtc = st.toolCalls[0];
@@ -11669,7 +11689,7 @@ async function runAssistant(chat, node, opts = {}) {
     // GURU : sur une tâche complexe, le plus puissant modèle gratuit de raisonnement écrit la stratégie experte que le modèle exécute
     let guru = null;
     // (pas de Guru ni de relecture en mode Comparer / Arène : la comparaison des modèles doit rester équitable)
-    const complex = !opts.custom && !userNode?.compare && boostAllowed(model) && H.boosters !== false && !(compact && !getApiKey()) && Guru.needed(task, (userNode?.attachments || []).length);
+    const complex = !opts.custom && !simple && !userNode?.compare && boostAllowed(model) && H.boosters !== false && !(compact && !getApiKey()) && (!contract || ['analyse', 'livrable', 'code', 'automatisation', 'recherche'].includes(contract.kind)) && Guru.needed(task, (userNode?.attachments || []).length);
     // Suite d'une tâche déjà stratégisée (ex. « Plan approuvé », « continue ») : on garde la stratégie précédente
     const prevA = path.slice(0, -1).reverse().find((n) => n.role === 'assistant');
     const prevGuru = prevA?.steps?.find((x) => x.synthetic === 'guru' && x.toolCalls[0]?.status === 'done');
@@ -11711,13 +11731,13 @@ async function runAssistant(chat, node, opts = {}) {
     else {
       await bridgeAttachments(chat, path, model, tracer, ctrl.signal);
       let h = buildHistory(chat, path, model);
-      let sys = await buildSystem(chat, c, userNode?.content || '', { summary: h.summary, tools, skills, rea: rea?.text, guru, research: pre?.text || '', compact });
+      let sys = await buildSystem(chat, c, userNode?.content || '', { summary: h.summary, tools, skills, rea: rea?.text, guru, research: pre?.text || '', compact, simple, contract });
       const limit = contextLimit(model) - (compact ? Math.min(Math.max(+c.params.max_tokens || 0, 1536), Math.floor(contextLimit(model) / 3)) : Math.max(+c.params.max_tokens || 0, 4096));
       let est = estTokens(sys.text) + estMessages(h.messages) + estTokens(JSON.stringify(tools.map(compact ? compactToolSchema : toolSchema)));
       if (S.settings.harness.autoCompact && est > limit * S.settings.harness.compactAt && path.length > (S.settings.harness.keepRecent || 6) + 1) {
         if (await compactChat(chat, path, tracer)) {
           h = buildHistory(chat, path, model);
-          sys = await buildSystem(chat, c, userNode?.content || '', { summary: h.summary, tools, skills, rea: rea?.text, guru, research: pre?.text || '', compact });
+          sys = await buildSystem(chat, c, userNode?.content || '', { summary: h.summary, tools, skills, rea: rea?.text, guru, research: pre?.text || '', compact, simple, contract });
           est = estTokens(sys.text) + estMessages(h.messages);
         }
       }
@@ -11739,7 +11759,7 @@ async function runAssistant(chat, node, opts = {}) {
       await Mind.verify(node, task, contract, { userNode, loopOpts, tracer, onUpdate }).catch((e) => tracer.note('Vérification ignorée : ' + e.message));
     }
     // Relecture critique (Reflexion) : un autre modèle gratuit vérifie, puis une passe de correction si nécessaire
-    if (toolsOK && !ctrl.signal.aborted && !loopOpts.stopAfter && H.freeReview !== false && boostAllowed(model) && H.permissionMode !== 'plan' && !userNode?.compare) {
+    if (toolsOK && !simple && !ctrl.signal.aborted && !loopOpts.stopAfter && H.freeReview !== false && boostAllowed(model) && H.permissionMode !== 'plan' && !userNode?.compare) {
       await reviewPass(node, task, { ...loopOpts, maxSteps: 8, stopAfter: false }, tracer, complex).catch((e) => tracer.note('Relecture ignorée : ' + e.message));
     }
     node.notes.push(...notes);
@@ -14795,6 +14815,7 @@ const SETTINGS_TABS = {
         ${ui.toggleRow('h-learn', "Mémoire d'expérience", "Chaque tâche outillée est mémorisée (étapes, outils, erreurs corrigées, leçons) et réutilisée par REA", H.learn !== false)}
         ${ui.toggleRow('h-boost', 'Boosters de raisonnement', 'Guru (stratégie experte par le plus puissant modèle gratuit), conseil d\'experts, réflexion profonde, vérification critique', H.boosters !== false)}
         ${ui.toggleRow('h-review', 'Relecture critique automatique', 'Après la réponse, un autre modèle gratuit la vérifie ; une passe de correction est lancée si nécessaire', H.freeReview !== false)}
+        ${ui.toggleRow('h-fast', 'Voie rapide pour les demandes simples', 'Salutations et questions de connaissance : réponse directe, sans Guru, recherche, vérification ni relecture (beaucoup plus rapide)', H.fastPath !== false)}
         ${ui.toggleRow('h-audit', 'Vérification sur preuves (cerveau)', 'Avant livraison, Cortex contrôle livrables, fichiers annoncés, fichiers ouverts et chiffres de la réponse, puis demande une correction si nécessaire', H.audit !== false)}
         ${ui.toggleRow('h-presearch', 'Recherche préalable', 'Quand la demande porte sur une information récente, Cortex lance une recherche web gratuite avant la réponse', H.preSearch !== false)}
         ${ui.toggleRow('h-freeonly', 'Boosters réservés aux modèles gratuits', 'Désactivez pour en faire profiter aussi les modèles payants (les boosters utilisent toujours des modèles gratuits)', H.boostFreeOnly !== false)}
@@ -14835,7 +14856,7 @@ const SETTINGS_TABS = {
     num('h-ctx', (v) => { H.contextLimit = Math.max(0, v || 0); });
     num('h-webn', (v) => { S.settings.webMaxResults = clamp(v || 5, 1, 10); });
     const tg = (id, k) => { m.querySelector('#' + id).onchange = (e) => { H[k] = e.target.checked; saveSettings(); }; };
-    tg('h-compact', 'autoCompact'); tg('h-audit', 'audit'); tg('h-presearch', 'preSearch'); tg('h-middle', 'middleOut'); tg('h-date', 'injectDate'); tg('h-par', 'parallelTools'); tg('h-loop', 'loopGuard'); tg('h-free', 'freeFallback'); tg('h-rep', 'loopDetect'); tg('h-skills', 'autoSkills'); tg('h-tsearch', 'toolSearch'); tg('h-rea', 'reaFirst'); tg('h-learn', 'learn'); tg('h-boost', 'boosters'); tg('h-review', 'freeReview'); tg('h-freeonly', 'boostFreeOnly');
+    tg('h-compact', 'autoCompact'); tg('h-audit', 'audit'); tg('h-fast', 'fastPath'); tg('h-presearch', 'preSearch'); tg('h-middle', 'middleOut'); tg('h-date', 'injectDate'); tg('h-par', 'parallelTools'); tg('h-loop', 'loopGuard'); tg('h-free', 'freeFallback'); tg('h-rep', 'loopDetect'); tg('h-skills', 'autoSkills'); tg('h-tsearch', 'toolSearch'); tg('h-rea', 'reaFirst'); tg('h-learn', 'learn'); tg('h-boost', 'boosters'); tg('h-review', 'freeReview'); tg('h-freeonly', 'boostFreeOnly');
     bindSeg(m, 'h-guru', (v) => { H.guru = v; saveSettings(); });
     bindSeg(m, 'h-disp', (v) => { H.display = v; saveSettings(); document.body.classList.toggle('term', v === 'terminal'); });
     bindRange(m, 'h-at', (v) => { H.compactAt = +v; saveSettings(); }, (v) => Math.round(v * 100) + ' %');
