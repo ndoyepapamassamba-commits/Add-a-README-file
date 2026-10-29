@@ -254,6 +254,8 @@ kbd{font-family:var(--mono);font-size:.75em;padding:1px 6px;border-radius:6px;bo
 .source{display:inline-flex;align-items:center;gap:6px;max-width:260px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:var(--panel);font-size:.78em;color:var(--text-2);text-decoration:none}
 .source:hover{border-color:var(--accent);color:var(--accent)}
 .source img{width:14px;height:14px;border-radius:3px}
+.err-steps{margin:6px 0 2px 18px;padding:0;color:var(--text-2)}.err-steps li{margin:3px 0}
+.local-issue{border:1px solid var(--border);background:var(--bg-2,var(--panel));color:var(--text-2);border-radius:12px;padding:10px 14px;font-size:.9em;display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}.local-issue b{color:var(--text)}.local-issue details{margin-top:6px}.local-issue summary{cursor:pointer;color:var(--accent);font-weight:500}
 .err-box{border:1px solid color-mix(in srgb,var(--danger) 40%,transparent);background:var(--danger-soft);color:var(--danger);border-radius:12px;padding:10px 14px;font-size:.9em;display:flex;gap:10px;align-items:flex-start}
 .note{border:1px solid var(--border);background:var(--panel-2);border-radius:12px;padding:10px 14px;font-size:.88em;color:var(--text-2)}
 .gen-img{max-width:min(100%,512px);border-radius:14px;border:1px solid var(--border);display:block;margin:8px 0;cursor:zoom-in}
@@ -825,7 +827,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-28 21:20 UTC', stamp: 202610282120, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-29 08:03 UTC', stamp: 202610290803, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -1525,7 +1527,15 @@ async function streamCompletion(body, { signal, onDelta } = {}) {
     if (!ch) continue;
     const d = ch.delta || ch.message || {};
     let got = false;
-    if (typeof d.content === 'string' && d.content) { acc.content += d.content; got = true; }
+    if (typeof d.reasoning_content === 'string' && d.reasoning_content) { acc.reasoning += d.reasoning_content; got = true; }
+    if (typeof d.content === 'string' && d.content) {
+      // Modèles qui pensent « dans le texte » (Qwen3, DeepSeek-R1 locaux) : le bloc <think> initial devient du raisonnement
+      const th = (acc._th ||= { mode: 'start', buf: '' });
+      let txt = d.content;
+      if (th.mode === 'start') { th.buf += txt; txt = ''; const t = th.buf.replace(/^\s+/, ''); if (t.startsWith('<think>')) { th.mode = 'think'; txt = ''; th.buf = t.slice(7); } else if ('<think>'.startsWith(t) && t.length < 7) { /* attendre la suite */ } else { th.mode = 'text'; txt = th.buf; th.buf = ''; } }
+      if (th.mode === 'think') { th.buf += txt; txt = ''; const i = th.buf.indexOf('</think>'); if (i >= 0) { acc.reasoning += th.buf.slice(0, i); txt = th.buf.slice(i + 8).replace(/^\s+/, ''); th.buf = ''; th.mode = 'text'; } else { const keep = (() => { for (let k = Math.min(7, th.buf.length); k > 0; k--) if ('</think>'.startsWith(th.buf.slice(-k))) return k; return 0; })(); acc.reasoning += th.buf.slice(0, th.buf.length - keep); th.buf = th.buf.slice(th.buf.length - keep); } got = true; }
+      if (txt) { acc.content += txt; got = true; }
+    }
     if (typeof d.reasoning === 'string' && d.reasoning) { acc.reasoning += d.reasoning; got = true; }
     if (Array.isArray(d.reasoning_details)) {
       mergeReasoningDetails(acc.reasoningDetails, d.reasoning_details);
@@ -1552,6 +1562,7 @@ async function streamCompletion(body, { signal, onDelta } = {}) {
     if (got && acc.ttft == null) acc.ttft = performance.now() - t0;
     onDelta?.(acc);
   }
+  if (acc._th) { if (acc._th.mode === 'start' && acc._th.buf) acc.content += acc._th.buf; else if (acc._th.mode === 'think' && acc._th.buf) acc.reasoning += acc._th.buf; delete acc._th; }
   acc.toolCalls = acc.toolCalls.filter(Boolean).filter((t) => t.name);
   for (const t of acc.toolCalls) if (!t.id) t.id = uid('call_');
   acc.duration = performance.now() - t0;
@@ -9916,11 +9927,81 @@ const LOCAL_CATALOG = [
   { name: 'DeepSeek-R1 distill Qwen 7B', license: 'MIT', ram: '8 Go', ollama: 'deepseek-r1:7b', webllm: 'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC', note: 'raisonnement' },
   { name: 'Phi-4 14B', license: 'MIT', ram: '12 Go', ollama: 'phi4', note: 'raisonnement, maths' },
 ];
+/* Erreurs des modèles locaux, expliquées en français (titre + marche à suivre) */
+const LOCAL_ERR = {
+  nowebgpu: { code: 'nowebgpu', title: "Ce navigateur n'a pas WebGPU : les modèles du navigateur ne peuvent pas tourner ici.", steps: ['Utilisez Chrome ou Edge à jour (WebGPU depuis la version 113).', "Ou utilisez un modèle cloud gratuit, ou un serveur local (Ollama)."] },
+  noadapter: { code: 'noadapter', title: "Chrome ne donne plus accès à la carte graphique (WebGPU désactivé pour le moment).", steps: ["Cause la plus fréquente : la mémoire graphique a été saturée (plusieurs modèles chargés à la suite) et Chrome a coupé WebGPU par sécurité.", "Fermez les onglets lourds, puis redémarrez Chrome : tapez chrome://restart dans la barre d'adresse.", "Vérifiez chrome://gpu → « WebGPU : Hardware accelerated », et Paramètres › Système › « Utiliser l'accélération graphique si disponible » activé.", 'Reprenez ensuite un modèle léger : Qwen3 4B ou Qwen3 1.7B.'] },
+  f16: { code: 'f16', title: "Cette carte graphique ne gère pas le calcul en demi-précision (shader-f16).", steps: ['Cortex prend automatiquement la variante q4f32 du modèle (un peu plus gourmande en mémoire) ; choisissez de préférence Qwen3 4B ou 1.7B.'] },
+  lost: { code: 'lost', title: 'La mémoire graphique a été dépassée : le modèle est trop lourd pour cette carte, ou d’autres onglets l’occupent.', steps: ['Choisissez un modèle plus léger (Qwen3 4B ou Qwen3 1.7B).', 'Réduisez la fenêtre de contexte à 4 096 (Modèles › Modèles locaux).', 'Fermez les onglets lourds ; si le problème persiste, redémarrez Chrome (chrome://restart).'] },
+  context: { code: 'context', title: 'La demande dépasse la fenêtre de contexte du modèle local.', steps: ['Augmentez la fenêtre (Modèles › Modèles locaux › Fenêtre de contexte) ou commencez une nouvelle conversation.'] },
+  network: { code: 'network', title: 'Téléchargement du modèle interrompu.', steps: ['Vérifiez la connexion puis réessayez : le téléchargement reprend là où il s’était arrêté.'] },
+};
+const localErrText = (info) => info.title + (info.steps && info.steps.length ? '\n' + info.steps.map((x, i) => `${i + 1}. ${x}`).join('\n') : '');
+/* Modèle de repli quand le modèle local ne peut pas répondre : cloud gratuit (si clé), sinon serveur local */
+function localFallbackModel(from) {
+  const cands = [];
+  if (getApiKey()) {
+    const pref = S.settings.localFallback; if (pref && !/^(webllm|local)\//.test(pref)) cands.push(pref);
+    if (S.settings.lastCloudModel && !/^(webllm|local)\//.test(S.settings.lastCloudModel)) cands.push(S.settings.lastCloudModel);
+    try { cands.push(...(FREE_TIERS.fast || []), ...(FREE_TIERS.experts || [])); } catch (e) {}
+    const d = S.settings.defaultModel; if (d && !/^(webllm|local)\//.test(d)) cands.push(d);
+  }
+  if (String(from).startsWith('webllm/')) { const srv = S.models.find((m) => m.local_server); if (srv) cands.push(srv.id); }
+  const ok = (m) => m && m !== from && m !== 'openrouter/free' && (!S.models.length || S.modelMap.has(m));
+  return cands.find((m) => ok(m) && modelSupports(m, 'tools')) || cands.find(ok) || null;
+}
 /* Mode local : Cortex fonctionne sans clé OpenRouter quand un modèle local est configuré */
 function localMode() { return !!(S.settings.localServer && S.settings.localServer.enabled && (S.settings.localServer.models || []).length) || /^(local|webllm)\//.test(S.settings.defaultModel || ''); }
 const LocalModels = {
   WEBLLM_URL: 'https://esm.run/@mlc-ai/web-llm@0.2.79',
-  engines: new Map(), lib: null, progress: null,
+  engines: new Map(), lib: null, progress: null, gpu: null, failed: new Map(), serverOk: new Map(),
+  /* Carte graphique : vérifiée AVANT tout téléchargement ou chargement (évite l'erreur brute de WebLLM) */
+  async gpuCheck(force) {
+    if (this.gpu && !force && (this.gpu.ok || now() - this.gpu.at < 15000)) return this.gpu;
+    if (!navigator.gpu) return (this.gpu = { ok: false, code: 'nowebgpu', at: now() });
+    let adapter = null;
+    try { adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' }); } catch (e) {}
+    if (!adapter) { try { adapter = await navigator.gpu.requestAdapter(); } catch (e) {} }
+    if (!adapter) return (this.gpu = { ok: false, code: 'noadapter', at: now() });
+    let info = adapter.info || {};
+    try { if (!adapter.info && adapter.requestAdapterInfo) info = await adapter.requestAdapterInfo(); } catch (e) {}
+    return (this.gpu = { ok: true, at: now(), f16: !!(adapter.features && adapter.features.has('shader-f16')), maxBuf: adapter.limits && adapter.limits.maxBufferSize, vendor: info.vendor || '', arch: info.architecture || '', mem: navigator.deviceMemory || null });
+  },
+  /* Traduction d'une erreur WebLLM / serveur local en explication française */
+  explain(e) {
+    const m = String((e && (e.message || e)) || ''), n = String((e && e.name) || '');
+    if (/Unable to find a compatible GPU|WebGPU is not supported|Cannot find WebGPU|WebGPUNot/i.test(m + ' ' + n)) return LOCAL_ERR.noadapter;
+    if (/shader-f16/i.test(m)) return LOCAL_ERR.f16;
+    if (/device was lost|DeviceLost|device.{0,20}lost|out of memory|\bOOM\b|GPUOutOfMemory|allocat/i.test(m + ' ' + n)) return LOCAL_ERR.lost;
+    if (/context window|ContextWindowSize|Prompt tokens exceed/i.test(m + ' ' + n)) return LOCAL_ERR.context;
+    if (/Failed to fetch|NetworkError|network|Load failed|QuotaExceeded|cache/i.test(m)) return LOCAL_ERR.network;
+    return { code: 'other', title: 'Le modèle du navigateur a rencontré une erreur.', steps: ['Réessayez ; si cela persiste, redémarrez Chrome (chrome://restart) ou choisissez un autre modèle.'], raw: m };
+  },
+  /* Avant une requête : le modèle local peut-il répondre ? (GPU disponible, serveur joignable, pas d'échec récent) */
+  async preflight(model) {
+    if (String(model).startsWith('webllm/')) {
+      const id = model.slice(7); const f = this.failed.get(id);
+      if (f && now() - f.at < 10 * 60e3) return { ok: false, ...f.info };
+      const g = await this.gpuCheck();
+      if (!g.ok) return { ok: false, ...(LOCAL_ERR[g.code] || LOCAL_ERR.noadapter) };
+      return { ok: true };
+    }
+    if (String(model).startsWith('local/')) {
+      const c = this.cfg(); const base = String(c.url || '').replace(/\/+$/, '');
+      const last = this.serverOk.get(base); if (last && now() - last < 5 * 60e3) return { ok: true };
+      try { const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 2500); const r = await fetch(base + '/models', { headers: c.key ? { Authorization: 'Bearer ' + c.key } : {}, signal: ctrl.signal, cache: 'no-store' }); clearTimeout(t); if (r.ok) { this.serverOk.set(base, now()); return { ok: true }; } } catch (e) {}
+      const d = await this.diagnose(base); return { ok: false, code: 'server', title: d.title, steps: d.steps };
+    }
+    return { ok: true };
+  },
+  /* Préchargement : le moteur se charge en arrière-plan dès que le modèle est choisi (premier message sans attente) */
+  async prewarm(model) {
+    if (!String(model || '').startsWith('webllm/')) return;
+    const id = model.slice(7); if (this.engines.has(id) || this.failed.has(id)) return;
+    const g = await this.gpuCheck(); if (!g.ok) return;
+    this.engine(id).catch(() => {});
+  },
+  clearFailure(model) { const id = String(model || '').replace(/^webllm\//, ''); this.failed.delete(id); this.gpu = null; },
   cfg() { const c = S.settings.localServer || (S.settings.localServer = { url: 'http://localhost:11434/v1', key: '', enabled: false, booster: false, ctx: 8192 }); if (!c.ctx) c.ctx = 8192; return c; },
   get webgpu() { return !!navigator.gpu; },
   entry(id, name, extra) { return Object.assign({ id, name, local: true, pricing: { prompt: '0', completion: '0' }, context_length: 32768, supported_parameters: ['tools', 'temperature', 'max_tokens', 'top_p', 'seed', 'stop'], architecture: { modality: 'text->text', input_modalities: ['text'], output_modalities: ['text'] }, description: 'Modèle local : vos données ne quittent pas votre ordinateur.' }, extra || {}); },
@@ -9929,7 +10010,7 @@ const LocalModels = {
     const out = [];
     const c = this.cfg();
     if (c.enabled) for (const m of c.models || []) out.push(this.entry('local/' + m.id, 'Local · ' + m.id, { context_length: c.ctx || 8192, local_server: true }));
-    if (this.webgpu) for (const m of LOCAL_CATALOG) if (m.webllm) out.push(this.entry('webllm/' + m.webllm, 'Navigateur · ' + m.name, { context_length: c.ctx || 8192, webllm: true, license: m.license, ram: m.ram }));
+    if (this.webgpu) for (const m of LOCAL_CATALOG) if (m.webllm) { const e = this.entry('webllm/' + m.webllm, 'Navigateur · ' + m.name, { context_length: c.ctx || 8192, webllm: true, license: m.license, ram: m.ram }); if (/^(Qwen3|DeepSeek-R1)/.test(m.webllm)) e.supported_parameters = [...e.supported_parameters, 'reasoning']; out.push(e); }
     return out;
   },
   attach() { const keep = S.models.filter((m) => !m.local); const mine = this.entries(); S.models = [...keep, ...mine]; S.modelMap = new Map(S.models.map((m) => [m.id, m])); },
@@ -9993,13 +10074,20 @@ const LocalModels = {
       const lib = await this.webllmLib();
       // Un seul modèle résident à la fois : les autres sont déchargés de la mémoire graphique (ils restent en cache disque)
       for (const [id, prev] of [...this.engines]) { if (id === modelId) continue; this.engines.delete(id); this.ready.delete(id); try { const e = await prev; if (e && e.unload) await e.unload(); } catch (e) {} }
-      const res = await this.resolveWebllmId(modelId);
+      const g = await this.gpuCheck();
+      if (!g.ok) { const er = new Error(localErrText(LOCAL_ERR[g.code] || LOCAL_ERR.noadapter)); er.localInfo = LOCAL_ERR[g.code] || LOCAL_ERR.noadapter; throw er; }
+      const res = await this.resolveWebllmId(!g.f16 ? modelId.replace(/q4f16_1/, 'q4f32_1') : modelId);
       const eng = await lib.CreateMLCEngine(res.id, { initProgressCallback: (r) => { this.progress = { model: res.id, text: r.text, pct: r.progress }; S.onLocalProgress?.(this.progress); } }, { context_window_size: this.cfg().ctx || 8192 });
       this.ready.add(modelId); this.progress = null; S.onLocalProgress?.(null);
       return eng;
     })();
     this.engines.set(modelId, p);
-    try { return await p; } catch (e) { this.engines.delete(modelId); this.progress = null; S.onLocalProgress?.(null); throw new ApiError('Chargement du modèle impossible : ' + (e && e.message || e), 0); }
+    try { return await p; } catch (e) {
+      this.engines.delete(modelId); this.ready.delete(modelId); this.progress = null; S.onLocalProgress?.(null);
+      const info = e.localInfo || this.explain(e);
+      if (['noadapter', 'lost', 'nowebgpu'].includes(info.code)) { this.failed.set(modelId, { at: now(), info }); this.gpu = null; }
+      const er = new ApiError(localErrText(info), 0); er.localInfo = info; er.local = true; throw er;
+    }
   },
   /* Outils pour un modèle sans function calling natif : protocole en texte, compris par Cortex (parseTextToolCalls) */
   textTools(messages, tools) {
@@ -10021,13 +10109,17 @@ const LocalModels = {
     const eng = await this.engine(modelId);
     const messages = this.textTools(body.messages, body.tools);
     const req = { messages, stream: true, stream_options: { include_usage: true }, temperature: body.temperature ?? 0.5, max_tokens: Math.min(+body.max_tokens || 2048, 4096), top_p: body.top_p };
-    const it = await eng.chat.completions.create(req);
+    const effort = body.reasoning && body.reasoning.effort; const think = !!effort && effort !== 'off' && effort !== 'none';
+    if (/^Qwen3-/i.test(modelId)) req.extra_body = { enable_thinking: think };
+    let it;
+    try { it = await eng.chat.completions.create(req); }
+    catch (e) { const info = this.explain(e); if (info.code === 'lost') { this.engines.delete(modelId); this.ready.delete(modelId); this.failed.set(modelId, { at: now(), info }); } const er = new ApiError(localErrText(info), 0); er.localInfo = info; er.local = true; throw er; }
     const id = uid('webllm-');
     if (!raw) { let content = '', usage = null, finish = 'stop'; for await (const ch of it) { if (signal?.aborted) break; const d = ch.choices?.[0]?.delta; if (d?.content) content += d.content; if (ch.usage) usage = ch.usage; if (ch.choices?.[0]?.finish_reason) finish = ch.choices[0].finish_reason; } return { id, model: body.model, choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: finish }], usage }; }
     const enc = new TextEncoder();
     const stream = new ReadableStream({ async start(controller) {
       try { for await (const ch of it) { if (signal?.aborted) break; const chunk = { id, model: body.model, provider: 'WebLLM', choices: (ch.choices || []).map((c) => ({ index: c.index || 0, delta: c.delta || {}, finish_reason: c.finish_reason || null })), usage: ch.usage || undefined }; controller.enqueue(enc.encode('data: ' + JSON.stringify(chunk) + '\n\n')); } controller.enqueue(enc.encode('data: [DONE]\n\n')); }
-      catch (e) { controller.enqueue(enc.encode('data: ' + JSON.stringify({ error: { message: e.message, code: 0 } }) + '\n\n')); }
+      catch (e) { const info = LocalModels.explain(e); if (info.code === 'lost') { LocalModels.engines.delete(modelId); LocalModels.ready.delete(modelId); LocalModels.failed.set(modelId, { at: now(), info }); } controller.enqueue(enc.encode('data: ' + JSON.stringify({ error: { message: localErrText(info), code: 0, local: info.code } }) + '\n\n')); }
       controller.close();
     } });
     return new Response(stream, { status: 200, headers: { 'content-type': 'text/event-stream' } });
@@ -10082,7 +10174,7 @@ S.onLocalProgress = (p) => {
   box.style.display = ''; const bar = box.querySelector('#lm-bar'), t = box.querySelector('#lm-ptext'); if (bar) bar.style.width = Math.round((p.pct || 0) * 100) + '%'; if (t) t.textContent = p.text || '';
 };
 /* Un modèle du navigateur prêt devient le modèle par défaut et celui de la conversation courante */
-function useLocalModelNow(id) { S.settings.defaultModel = id; saveSettings(); try { const chat = currentChat(); if (chat && !chat.compare?.length) { chat.model = id; saveChat(chat); } renderModelBar(); } catch (e) {} }
+function useLocalModelNow(id) { LocalModels.clearFailure(id); S.settings.defaultModel = id; saveSettings(); try { const chat = currentChat(); if (chat && !chat.compare?.length) { chat.model = id; saveChat(chat); } renderModelBar(); } catch (e) {} }
 function bindLocalModels(b) {
   if (b.__lmBound) return; b.__lmBound = true;
   const loadWebllm = async (id, btn) => { if (btn) btn.disabled = true; toast('Téléchargement du modèle dans le navigateur (une seule fois) — vous pouvez continuer à utiliser Cortex, la progression s\'affiche dans la barre du modèle.', 'info', 7000); try { await LocalModels.engine(id); useLocalModelNow('webllm/' + id); toast('Modèle prêt : « ' + id.replace(/-q4f16_1-MLC$/, '') + ' » est maintenant le modèle de la conversation et le modèle par défaut.', 'ok', 8000); } catch (er) { toast(er.message, 'err', 10000); } if (S.ui?.page === 'models') renderPage(); };
@@ -10992,6 +11084,19 @@ async function agentLoop(o) {
         await sleep(1200 * o.transientRetries);
         continue;
       }
+      if ((e.local || /^(webllm|local)\//.test(o.model)) && !o.localFallbackDone && !o.signal.aborted) {
+        const info = e.localInfo || LocalModels.explain(e);
+        const fb = localFallbackModel(o.model);
+        if (fb) {
+          o.localFallbackDone = true; o.steps.pop();
+          o.node.localIssue = { from: o.model, code: info.code, title: info.title, steps: info.steps || [], to: fb };
+          o.run.note(`Modèle local indisponible (${info.code}) : bascule sur ${modelShort(fb)}`);
+          o.model = fb; o.node.model = fb; o.onUpdate();
+          continue;
+        }
+        if (!step.content) o.steps.pop();
+        const er = new ApiError(localErrText(info), 0); throw er;
+      }
       if (!step.content) o.steps.pop();
       throw e;
     } finally { o.signal.removeEventListener('abort', relay); }
@@ -11481,7 +11586,17 @@ function createAssistantNode(chat, parentId, model, extra = {}) {
 async function runAssistant(chat, node, opts = {}) {
   const c = cfg(chat);
   if (opts.cfgOverride) Object.assign(c, opts.cfgOverride);
-  const model = node.model || c.model;
+  let model = node.model || c.model;
+  // Modèle local (navigateur ou serveur) indisponible : bascule immédiate sur un modèle de repli, avec explication
+  let localIssue = null; node.localIssue = null;
+  if (/^(webllm|local)\//.test(model) && !opts.custom) {
+    try { const pf = await LocalModels.preflight(model); if (!pf.ok) localIssue = pf; } catch (e) {}
+    if (localIssue) {
+      const fb = localFallbackModel(model);
+      node.localIssue = { from: model, code: localIssue.code, title: localIssue.title, steps: localIssue.steps || [], to: fb };
+      if (fb) { model = fb; node.model = fb; }
+    }
+  } else if (model && !opts.custom) { if (S.settings.lastCloudModel !== model) { S.settings.lastCloudModel = model; saveSettings(); } }
   c.model = model;
   const ctrl = new AbortController();
   S.running.set(node.id, { chatId: chat.id, ctrl });
@@ -11491,6 +11606,13 @@ async function runAssistant(chat, node, opts = {}) {
   node.status = 'running';
   node.error = null;
   node.notes = [];
+  if (node.localIssue && !node.localIssue.to) {
+    // Aucun repli possible (pas de clé ni de serveur local) : message clair au lieu de l'erreur brute
+    node.status = 'error'; node.error = localErrText(node.localIssue); node.errorStatus = 0;
+    runData.status = 'error'; runData.endedAt = now();
+    S.running.delete(node.id); saveChat(chat); S.onNodeUpdate?.(chat, node, true); S.onRunState?.(chat);
+    return;
+  }
   const tracer = new Tracer(runData, chat.id);
   const onUpdate = () => { S.onNodeUpdate?.(chat, node); saveChat(chat, 2000); };
   S.onRunState?.(chat);
@@ -12488,11 +12610,13 @@ function nodeBodyHTML(chat, n) {
   let html = stepsHTML(n.steps || [], running, n.id);
   const lastStep = (n.steps || []).at(-1);
   if (running && (!lastStep || (!lastStep.content && !lastStep.reasoning && !(lastStep.toolCalls || []).length) || (lastStep.toolCalls?.length && lastStep.toolCalls.every((t) => t.status === 'done')))) html += '<div class="typing"><i></i><i></i><i></i></div>';
+  if (n.localIssue && n.localIssue.to && n.status !== 'error') html = localIssueHTML(n) + html;
   if (n.status === 'error') {
-    html += `<div class="err-box">${icon('alert', 'sm')}<div class="grow"><b>Erreur${n.errorStatus ? ' ' + n.errorStatus : ''}</b> — ${esc(n.error)}
+    const lines = String(n.error || '').split('\n'); const head = lines.shift(); const steps = lines.filter((l) => /^\d+\.\s/.test(l)).map((l) => l.replace(/^\d+\.\s*/, ''));
+    html += `<div class="err-box">${icon('alert', 'sm')}<div class="grow"><b>${n.localIssue ? 'Modèle local indisponible' : 'Erreur' + (n.errorStatus ? ' ' + n.errorStatus : '')}</b> — ${esc(head)}${steps.length ? `<ol class="err-steps">${steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : lines.length ? `<div style="white-space:pre-line">${esc(lines.join('\n'))}</div>` : ''}
       <div class="row wrap" style="margin-top:8px"><button class="btn sm" data-act="regen" data-id="${n.id}">${icon('refresh', 'sm')} Réessayer</button><button class="btn sm" data-act="regen-model" data-id="${n.id}">${icon('cpu', 'sm')} Autre modèle</button>${n.errorStatus === 401 ? `<button class="btn sm primary" data-act="open-settings-api">Configurer la clé API</button>` : ''}</div></div></div>`;
   }
-  for (const note of n.notes || []) if (note !== 'trunc') html += `<div class="note" style="margin-top:8px">${icon('info', 'xs')} ${esc(note)}</div>`;
+  for (const note of n.notes || []) if (note !== 'trunc') html += `<div class="note" style="margin-top:8px;white-space:pre-line">${icon('info', 'xs')} ${esc(note)}</div>`;
   if ((n.notes || []).includes('trunc')) html += `<div class="note" style="margin-top:8px">${icon('info', 'xs')} Historique ancien tronqué pour tenir dans le contexte du modèle (activez la compaction automatique dans Réglages › Harness).</div>`;
   const last = (n.steps || []).at(-1);
   if (last?.finishReason === 'length' && n.status === 'done') html += `<div class="note" style="margin-top:8px">${icon('alert', 'xs')} Réponse coupée (limite de tokens atteinte). <button class="cb-btn" data-act="continue" data-id="${n.id}">Continuer</button></div>`;
@@ -12546,6 +12670,13 @@ function stepsHTML(steps, running, keyBase) {
 }
 const TC_STATUS = { pending: ['…', ''], awaiting: ['autorisation requise', 'warn'], asking: ['question posée', 'acc'], running: ['en cours', 'acc'], done: ['ok', 'ok'], error: ['erreur', 'err'], denied: ['refusé', 'err'], stopped: ['interrompu', 'warn'] };
 const SYNTHETIC_META = { cerveau: { title: 'Cerveau — compréhension et contexte', icon: 'brain' }, verification: { title: 'Vérification sur preuves', icon: 'shield' } };
+/* Modèle local indisponible : la réponse vient d'un modèle de repli — explication discrète et actions */
+function localIssueHTML(n) {
+  const L = n.localIssue;
+  return `<div class="local-issue">${icon('info', 'sm')}<div class="grow"><b>${esc(modelShort(L.from))} n'a pas pu répondre</b> — ${esc(L.title)} Réponse fournie par <b>${esc(modelShort(L.to))}</b>.
+    <details><summary>Comment corriger</summary><ol class="err-steps">${(L.steps || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ol></details>
+    <div class="row wrap" style="margin-top:6px;gap:6px"><button class="btn sm" data-act="local-retry" data-id="${n.id}" data-model="${esc(L.from)}">${icon('refresh', 'sm')} Réessayer avec ${esc(modelShort(L.from))}</button><button class="btn sm ghost" data-act="local-keep" data-model="${esc(L.to)}">Garder ${esc(modelShort(L.to))} pour cette conversation</button></div></div></div>`;
+}
 function toolMeta(name) {
   if (SYNTHETIC_META[name]) return { ...SYNTHETIC_META[name], args: (a) => truncate(a.task || '', 90) };
   const t = TOOLS.get(name);
@@ -13079,6 +13210,7 @@ function toggleFavorite(id) {
 function setChatModel(id) {
   const chat = ensureChat();
   chat.model = id;
+  if (String(id).startsWith('webllm/')) { LocalModels.clearFailure(id); LocalModels.prewarm(id); }
   if (Object.keys(chat.nodes).length) saveChat(chat);
   pushRecentModel(id);
   renderModelBar(); renderHeader();
@@ -15500,6 +15632,8 @@ const ACTIONS = {
   resend: (el) => resendFromUser(el.dataset.id),
   'node-menu': (el) => nodeMenu(el, el.dataset.id),
   regen: (el) => regenerate(el.dataset.id),
+  'local-retry': (el) => { LocalModels.clearFailure(el.dataset.model); regenerate(el.dataset.id, el.dataset.model); },
+  'local-keep': (el) => { setChatModel(el.dataset.model); toast('Modèle de la conversation : ' + modelShort(el.dataset.model), 'ok'); },
   'regen-model': (el) => openModelPicker(el, { multi: false, title: 'Régénérer avec…', onPick: (m) => regenerate(el.dataset.id, m) }),
   speak: (el) => { const n = currentChat()?.nodes[el.dataset.id]; if (n) speak(n); },
   'edit-asst': (el) => startEdit(el.dataset.id),
