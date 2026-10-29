@@ -1,0 +1,894 @@
+[
+ {
+  "id": "B051-01",
+  "titre": "Le lit au milieu de la cour",
+  "lieu": "shared courtyard of a cour commune in Angré, Abidjan, a row of numbered tenant doors, a single metal bed with a thin mattress standing in the middle of the courtyard, a plastic water barrel, morning",
+  "persos": [
+   {
+    "nom": "the curious neighbor woman",
+    "desc": "neighbor woman in her 40s, rose-and-apricot kaba, headscarf, holding ONE single plastic basin against her hip",
+    "pose": "standing in the foreground on the left, basin on her hip, frowning"
+   },
+   {
+    "nom": "the tenant on the bed",
+    "desc": "tenant man in his 30s, lime-and-copper tracksuit, short beard, sitting cross-legged on the metal bed, empty hands",
+    "pose": "sitting on the bed on the right, arms crossed, very calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Vieux père, ton lit-là fait quoi dans la cour ?!"
+   ],
+   [
+    1,
+    "Bailleur a dit : sors de ma maison."
+   ],
+   [
+    0,
+    "Et tu pars quand, dêh ?"
+   ],
+   [
+    1,
+    "Il a dit sors. Il a pas dit pars."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The neighbor, in the foreground, points at the bed with her free hand and asks, outraged. The tenant answers calmly, shrugging, still seated cross-legged. The neighbor puts her free hand on her hip and asks again. The tenant raises one finger like a lawyer and says his last line proudly, his face clearly visible.",
+  "chute": "The neighbor freezes, her mouth wide open, the basin still on her hip. The camera slowly pushes in to a close-up of the curious neighbor woman's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "bailleur",
+   "sors",
+   "pars"
+  ],
+  "gag_legende": "LE BAILLEUR EN RELISANT SON CONTRAT :",
+  "mecanisme": "logique absurde : l'ordre du bailleur pris au pied de la lettre"
+ },
+ {
+  "id": "B051-02",
+  "titre": "L'inspection du bailleur",
+  "lieu": "doorway of a small rented studio in a cour commune in Deux-Plateaux, Abidjan, a tiny bathroom shelf visible behind, late afternoon",
+  "persos": [
+   {
+    "nom": "the suspicious landlord",
+    "desc": "landlord in his 60s, saffron-and-aubergine boubou, grey moustache, reading glasses, holding ONE single plastic cup crammed with eight toothbrushes, one of them small and pink with glitter",
+    "pose": "standing in the foreground on the left, holding the cup up, eyebrows raised"
+   },
+   {
+    "nom": "the tenant who lives alone",
+    "desc": "tenant man in his late 20s, teal-and-ruby shirt, skinny, big toothy smile, empty hands",
+    "pose": "standing on the right in the doorway, frozen smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu vis seul ? Pourquoi huit brosses à dents-là ?!"
+   ],
+   [
+    1,
+    "Tonton, j'ai trente-deux dents. J'économise dêh."
+   ],
+   [
+    0,
+    "Et la brosse rose-là ?"
+   ],
+   [
+    1,
+    "Ça, c'est pour mes dents de lait dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The landlord, in the foreground, shakes the cup of toothbrushes once and asks, suspicious. The tenant answers with a big confident smile, tapping his own front teeth with one finger. The landlord squints at the cup and asks again. The tenant says his last line very seriously, nodding, his face clearly visible.",
+  "chute": "The landlord's jaw drops, the cup still raised in his hand. The camera slowly pushes in to a close-up of the suspicious landlord's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "huit brosses",
+   "trente-deux dents",
+   "dents de lait"
+  ],
+  "gag_legende": "LA FAMILLE CACHÉE DANS LA DOUCHE :",
+  "mecanisme": "logique absurde : un mensonge défendu au pied de la lettre"
+ },
+ {
+  "id": "B051-03",
+  "titre": "Le toit qui coule",
+  "lieu": "small rented room in a cour commune in Songon, Abidjan, water dripping from a hole in the tin roof right above a bed, rainy evening",
+  "persos": [
+   {
+    "nom": "the soaked tenant woman",
+    "desc": "tenant woman in her 30s, lilac-and-rose dress, wet braids, holding ONE single plastic bucket under the leak",
+    "pose": "standing in the foreground on the left next to the bed, holding the bucket under the dripping water, furious"
+   },
+   {
+    "nom": "the greedy landlady",
+    "desc": "landlady in her 50s, burgundy-and-fuchsia kaba, gold earrings, holding ONE single receipt notebook",
+    "pose": "standing on the right in the doorway, perfectly dry, calm smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, le toit-là coule sur mon lit dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. C'est chambre avec douche maintenant, ma fille."
+   ],
+   [
+    0,
+    "Tu vas réparer ça quand, Tantie ?"
+   ],
+   [
+    1,
+    "Réparer ? Non. Je viens augmenter le loyer."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. Drops of water keep falling into the bucket. The tenant, in the foreground, lifts the bucket slightly and shouts her complaint. The landlady answers with a calm smile, tapping her notebook. The tenant frowns and asks again. The landlady opens her notebook and says her last line sweetly, her face clearly visible.",
+  "chute": "The tenant freezes with the bucket in her hands as one big drop falls on her head. The camera slowly pushes in to a close-up of the soaked tenant woman's furious face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "toit",
+   "douche",
+   "loyer"
+  ],
+  "gag_legende": "LA LOCATAIRE QUAND LA PLUIE REVIENT :",
+  "mecanisme": "logique absurde : la panne transformée en option payante"
+ },
+ {
+  "id": "B051-04",
+  "titre": "Le nouveau locataire",
+  "lieu": "shared courtyard of a cour commune in Angré, Abidjan, numbered tenant doors, a big painted number 3 on the nearest door, plastic chairs, morning",
+  "persos": [
+   {
+    "nom": "the landlady with the keys",
+    "desc": "landlady in her 50s, mint-and-emerald boubou, big headscarf, holding ONE single bunch of keys",
+    "pose": "standing on the left, holding up the keys, welcoming smile"
+   },
+   {
+    "nom": "the new tenant with the briefcase",
+    "desc": "new tenant man in his 40s, apricot-and-charcoal suit, thin glasses, holding ONE single leather briefcase",
+    "pose": "standing in the middle, briefcase in hand, polite"
+   },
+   {
+    "nom": "the tenant of room three",
+    "desc": "tenant man in his 30s, lime-and-copper t-shirt, messy hair, sitting on a plastic chair in front of door number 3, empty hands",
+    "pose": "sitting in the foreground on the right in front of his door, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Bienvenue mon fils ! Tu fais quel travail dêh ?"
+   ],
+   [
+    1,
+    "Je suis huissier de justice, Tantie."
+   ],
+   [
+    0,
+    "Ya fohi ! Ton loyer est gratuit. Commence par la chambre trois."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The landlady jingles her keys and asks with a big smile. The new tenant answers politely, lifting his briefcase slightly. The landlady's eyes light up; she points her keys toward door number 3 and says her last line, her face clearly visible. The tenant of room three stays silent on his chair.",
+  "chute": "The tenant of room three freezes on his chair, eyes wide, sweat on his forehead. The camera slowly pushes in to a close-up of the tenant of room three's panicked face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "huissier",
+   "gratuit",
+   "chambre trois"
+  ],
+  "gag_legende": "CHAMBRE TROIS EN CHERCHANT SES SANDALES :",
+  "mecanisme": "logique cynique de la bailleuse + victime présente qui découvre son sort"
+ },
+ {
+  "id": "B051-05",
+  "titre": "La branche du manguier",
+  "lieu": "two neighboring courtyards in Songon, Abidjan, separated by a low cement wall, a big mango tree whose heavy branch hangs over the wall, afternoon",
+  "persos": [
+   {
+    "nom": "the mango tree owner",
+    "desc": "woman in her 50s, saffron-and-aubergine kaba, round face, empty hands",
+    "pose": "standing in the foreground on the left behind the low wall, hands on her hips"
+   },
+   {
+    "nom": "the neighbor with the mango",
+    "desc": "neighbor woman in her 40s, ruby-and-apricot dress, braids, holding ONE single ripe mango",
+    "pose": "standing on the right under the branch, holding the mango, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi tu cueilles mes mangues-là ?!"
+   ],
+   [
+    1,
+    "La branche est chez moi dêh. Donc mangues aussi."
+   ],
+   [
+    0,
+    "Ton fils aussi saute mon mur chaque jour !"
+   ],
+   [
+    1,
+    "Garde-le, ma sœur. Il mange trop dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The tree owner, in the foreground, keeps her hands on her hips and accuses. The neighbor answers calmly, pointing up at the branch with her free hand. The tree owner points at the wall and fires back, sure she has won. The neighbor shrugs and says her last line with a relieved smile, her face clearly visible.",
+  "chute": "The tree owner freezes, her hands still on her hips, her mouth open. The camera slowly pushes in to a close-up of the mango tree owner's flabbergasted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "mangues",
+   "mon mur",
+   "garde-le"
+  ],
+  "gag_legende": "LE PETIT EN APPRENANT LA NOUVELLE :",
+  "mecanisme": "logique absurde de la frontière retournée, puis acceptée"
+ },
+ {
+  "id": "B051-06",
+  "titre": "Le mur de la voisine",
+  "lieu": "outside wall of a house in a cour commune in Angré, Abidjan, big childish chalk scribbles on the white wall, morning",
+  "persos": [
+   {
+    "nom": "the angry neighbor",
+    "desc": "neighbor woman in her 50s, teal-and-ruby boubou, big round face, empty hands",
+    "pose": "standing in the foreground on the left, pointing at the scribbled wall"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, apricot-and-charcoal kaba, headscarf, one hand on her son's shoulder",
+    "pose": "standing on the right, one hand on her son's shoulder, apologetic"
+   },
+   {
+    "nom": "the little boy with the chalk",
+    "desc": "boy around 7, rose-and-apricot t-shirt, holding ONE single piece of chalk",
+    "pose": "standing in the middle next to the wall, looking down"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton petit-là a écrit « voisin méchant » sur mon mur dêh !"
+   ],
+   [
+    1,
+    "Pardon ma sœur. Je vais le corriger maintenant même."
+   ],
+   [
+    1,
+    "Mon petit, voisine-là, ça prend un E dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The angry neighbor, in the foreground, points at the wall and shouts. The mother bows her head slightly and apologizes, her hand on the boy's shoulder. Then the mother turns her head to the boy and says her last line like a patient teacher, her face clearly visible. The boy nods.",
+  "chute": "The angry neighbor's pointing finger stays frozen in the air, her eyes wide. The camera slowly pushes in to a close-up of the angry neighbor's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "voisin méchant",
+   "corriger",
+   "un E"
+  ],
+  "gag_legende": "LA VOISINE EN CHERCHANT SA CRAIE :",
+  "mecanisme": "excuse prise au pied de la lettre : on corrige l'orthographe, pas l'insulte"
+ },
+ {
+  "id": "B051-07",
+  "titre": "Les cris de minuit",
+  "lieu": "courtyard of a small apartment building in Deux-Plateaux, Abidjan, two facing doors under a bare light bulb, night",
+  "persos": [
+   {
+    "nom": "the neighbor in pajamas",
+    "desc": "neighbor woman in her 40s, lilac-and-rose pajamas, hair net, empty hands",
+    "pose": "standing on the left in her doorway, sleepy eyes"
+   },
+   {
+    "nom": "the shouting wife",
+    "desc": "wife in her 30s, burgundy-and-fuchsia kaftan, hair in rollers, empty hands",
+    "pose": "standing in the foreground on the right at her door, hands on her hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, ça fait trois nuits vous criez dêh !"
+   ],
+   [
+    1,
+    "Pardon dêh, ma sœur. On va baisser."
+   ],
+   [
+    0,
+    "Non ! Parle fort dêh. Hier, toute la cour a raté la fin."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The neighbor in pajamas rubs one eye and complains. The wife, in the foreground, presses one hand on her chest and apologizes. The neighbor suddenly opens her eyes wide and says her last line, leaning forward eagerly, her face clearly visible.",
+  "chute": "The wife freezes, eyebrows raised, mouth half open. The camera slowly pushes in to a close-up of the shouting wife's shocked face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "trois nuits",
+   "parle fort",
+   "la fin"
+  ],
+  "gag_legende": "LE MARI DERRIÈRE LA PORTE :",
+  "mecanisme": "renversement : la plainte pour le bruit devient une demande de suite"
+ },
+ {
+  "id": "B051-08",
+  "titre": "Tantie interroge la petite",
+  "lieu": "shared courtyard of a cour commune in Songon, Abidjan, a clay pot, plastic chairs, afternoon",
+  "persos": [
+   {
+    "nom": "the nosy neighbor",
+    "desc": "neighbor woman in her 50s, mint-and-emerald kaba, big hoop earrings, empty hands",
+    "pose": "standing in the foreground on the left, bent toward the girl, sweet fake smile"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 7, lime-and-copper dress, two puffs of hair, holding ONE single plastic cup",
+    "pose": "standing on the right, innocent wide eyes"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma chérie, ta maman-là parle mal de moi, hein ?"
+   ],
+   [
+    1,
+    "Jamais, Tantie ! Maman dit : on parle pas de la commère-là devant elle."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The nosy neighbor, in the foreground, bends toward the girl and asks in a sweet whisper. The girl shakes her head and answers proudly and innocently, her face clearly visible.",
+  "chute": "The nosy neighbor's fake smile freezes and slowly collapses. The camera slowly pushes in to a close-up of the nosy neighbor's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "parle mal",
+   "commère"
+  ],
+  "gag_legende": "LA MAMAN QUAND ELLE VA RENTRER :",
+  "mecanisme": "consigne de la maman répétée au pied de la lettre par l'enfant"
+ },
+ {
+  "id": "B051-09",
+  "titre": "La menace du bailleur",
+  "lieu": "shared courtyard of a cour commune in Angré, Abidjan, an electric cable running along the wall between two tenant doors, evening",
+  "persos": [
+   {
+    "nom": "the warning neighbor",
+    "desc": "neighbor woman in her 40s, ruby-and-apricot kaba, headscarf, empty hands",
+    "pose": "standing in the foreground on the left, hands clasped, worried"
+   },
+   {
+    "nom": "the relaxed old tenant",
+    "desc": "man in his 60s, saffron-and-aubergine shirt, bald head, sitting on a wooden stool, empty hands",
+    "pose": "sitting on the stool on the right in front of his door, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Vieux père, le bailleur va couper le courant des mauvais payeurs dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, ma sœur. Moi, mon câble-là sort de ta chambre."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The neighbor, in the foreground, warns him in a low worried voice. The old tenant smiles calmly, points his thumb at the cable on the wall and says his last line, his face clearly visible.",
+  "chute": "The neighbor slowly turns her head toward the cable, then freezes, eyes wide. The camera slowly pushes in to a close-up of the warning neighbor's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "courant",
+   "câble",
+   "ta chambre"
+  ],
+  "gag_legende": "LA VOISINE EN SUIVANT LE CÂBLE :",
+  "mecanisme": "révélation : celle qui avertit paie le courant de l'autre"
+ },
+ {
+  "id": "B051-10",
+  "titre": "Madame devant le portail",
+  "lieu": "closed metal gate of a villa in Deux-Plateaux, Abidjan, a balcony above the courtyard, early evening",
+  "persos": [
+   {
+    "nom": "the wife outside the gate",
+    "desc": "wife in her 40s, rose-and-apricot dress, elegant, holding ONE single handbag",
+    "pose": "standing in the foreground on the left, outside the closed gate, handbag in hand, impatient"
+   },
+   {
+    "nom": "the guard",
+    "desc": "guard in his 50s, apricot-and-charcoal uniform, cap, holding ONE single notebook",
+    "pose": "standing in the middle behind the gate, very serious"
+   },
+   {
+    "nom": "the husband on the balcony",
+    "desc": "husband in his 40s, mint-and-emerald polo shirt, round belly, both hands on the balcony railing",
+    "pose": "standing on the balcony in the background on the right, leaning on the railing, smiling"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Gardien, ouvre ! Je suis la femme du patron dêh !"
+   ],
+   [
+    1,
+    "Patron a dit : personne entre sans son autorisation, Madame."
+   ],
+   [
+    2,
+    "Mon petit, on va parler de ton augmentation dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife, in the foreground, shouts at the guard, lifting her handbag. The guard answers very seriously, tapping his notebook. On the balcony, the husband smiles widely and says his last line to the guard, his face clearly visible.",
+  "chute": "The wife slowly turns her head toward the balcony, her mouth open in shock. The camera slowly pushes in to a close-up of the wife outside the gate's furious face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "gardien",
+   "autorisation",
+   "augmentation"
+  ],
+  "gag_legende": "LE PATRON À L'HEURE DU DÎNER :",
+  "mecanisme": "consigne appliquée au pied de la lettre + le mari complice"
+ },
+ {
+  "id": "B051-11",
+  "titre": "Le visiteur du matin",
+  "lieu": "front courtyard of a house in Deux-Plateaux, Abidjan, the gate behind, a plastic table, morning",
+  "persos": [
+   {
+    "nom": "the angry husband",
+    "desc": "husband in his 40s, burgundy-and-fuchsia shirt, big belly, empty hands",
+    "pose": "standing in the foreground on the left, hands on his hips, furious"
+   },
+   {
+    "nom": "the young guard",
+    "desc": "guard in his 30s, teal-and-ruby uniform, thin, holding ONE single cap against his chest",
+    "pose": "standing on the right near the gate, holding his cap against his chest, innocent"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Gardien, pourquoi mon créancier-là est dans la cour ?!"
+   ],
+   [
+    1,
+    "Patron, il dit il est de la famille."
+   ],
+   [
+    0,
+    "Quelle famille, mon petit ?!"
+   ],
+   [
+    1,
+    "C'est lui qui a payé la dot de Madame dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The husband, in the foreground, points toward the courtyard and shouts. The guard answers innocently, holding his cap. The husband throws his hands up and asks. The guard says his last line with total sincerity, his face clearly visible.",
+  "chute": "The husband freezes, hands still in the air, his face going grey. The camera slowly pushes in to a close-up of the angry husband's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "créancier",
+   "famille",
+   "dot"
+  ],
+  "gag_legende": "MADAME QUAND ELLE VA APPRENDRE ÇA :",
+  "mecanisme": "logique absurde : celui qui a payé la dot est forcément de la famille"
+ },
+ {
+  "id": "B051-12",
+  "titre": "Le dîner devant la porte",
+  "lieu": "shared courtyard of a cour commune in Songon, Abidjan, a tenant door with a small doorstep, a low wooden stool, evening",
+  "persos": [
+   {
+    "nom": "the surprised neighbor woman",
+    "desc": "neighbor woman in her 40s, lime-and-copper boubou, headscarf, empty hands",
+    "pose": "standing in the foreground on the left at her door, hands on her hips"
+   },
+   {
+    "nom": "the boy with the plate",
+    "desc": "boy around 9, saffron-and-aubergine t-shirt, holding ONE single plate of attiéké with fish on his knees",
+    "pose": "sitting on the low stool on the right, plate on his knees, not eating"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, pourquoi tu viens manger devant ma porte chaque soir ?"
+   ],
+   [
+    1,
+    "Maman dit : si on mange chez nous, toi tu vas venir dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The neighbor, in the foreground, leans toward the boy and asks, suspicious. The boy, not eating, looks up at her and answers very innocently, his face clearly visible.",
+  "chute": "The neighbor freezes, her hands still on her hips, her eyes popping. The camera slowly pushes in to a close-up of the surprised neighbor woman's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "manger",
+   "ma porte",
+   "venir"
+  ],
+  "gag_legende": "LA VOISINE DEMAIN À L'HEURE DU DÎNER :",
+  "mecanisme": "logique absurde de l'enfant : aller chez elle pour qu'elle ne vienne pas"
+ },
+ {
+  "id": "B051-13",
+  "titre": "Le bonjour du petit",
+  "lieu": "small courtyard between two houses in Deux-Plateaux, Abidjan, a low hedge, a chicken coop in the background, morning",
+  "persos": [
+   {
+    "nom": "the delighted neighbor",
+    "desc": "neighbor woman in her 50s, lilac-and-rose kaba, glasses on a chain, empty hands",
+    "pose": "standing in the foreground on the left by the hedge, hands clasped, delighted"
+   },
+   {
+    "nom": "the suspicious mother",
+    "desc": "mother in her 40s, ruby-and-apricot boubou, holding ONE single broom",
+    "pose": "standing on the right, holding the broom, frowning"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, ton fils m'a salué avec respect dêh !"
+   ],
+   [
+    1,
+    "Ehh ! Il a cassé quoi chez toi ?"
+   ],
+   [
+    0,
+    "Rien du tout dêh, il est poli !"
+   ],
+   [
+    1,
+    "Rentre vite compter tes poules, ma sœur."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The neighbor, in the foreground, smiles and clasps her hands as she says it. The mother frowns hard and asks, gripping her broom. The neighbor shakes her head, still smiling. The mother points at the chicken coop with her chin and says her last line very seriously, her face clearly visible.",
+  "chute": "The neighbor's smile freezes, then she slowly turns her head toward the chicken coop, worried. The camera slowly pushes in to a close-up of the delighted neighbor's worried face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "respect",
+   "cassé",
+   "poules"
+  ],
+  "gag_legende": "LA VOISINE EN COMPTANT SES POULES :",
+  "mecanisme": "logique absurde de la mère : la politesse est une preuve de crime"
+ },
+ {
+  "id": "B051-14",
+  "titre": "La vitre cassée",
+  "lieu": "courtyard of a house in Angré, Abidjan, a window with a broken pane, another intact window next to it, afternoon",
+  "persos": [
+   {
+    "nom": "the angry window owner",
+    "desc": "man in his 50s, mint-and-emerald shirt, thick eyebrows, empty hands",
+    "pose": "standing in the foreground on the left, pointing at the broken window"
+   },
+   {
+    "nom": "the calm father",
+    "desc": "father in his 40s, apricot-and-charcoal tracksuit, holding ONE single wallet",
+    "pose": "standing on the right, holding his wallet, calm"
+   },
+   {
+    "nom": "the boy with the football",
+    "desc": "boy around 10, teal-and-ruby t-shirt, holding ONE single football",
+    "pose": "standing in the middle next to his father, holding the football, guilty face"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton fils-là a cassé ma vitre dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. C'est combien ?"
+   ],
+   [
+    0,
+    "Vingt mille francs, vieux père !"
+   ],
+   [
+    1,
+    "Mon petit, casse aussi l'autre-là. On prend le prix de gros."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The window owner, in the foreground, points at the broken window and shouts. The father calmly opens his wallet and asks. The window owner shows two fingers, furious. The father turns his head to the boy and says his last line like a smart businessman, his face clearly visible.",
+  "chute": "The window owner freezes, his eyes jumping to his intact window. The camera slowly pushes in to a close-up of the angry window owner's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "vitre",
+   "vingt mille",
+   "prix de gros"
+  ],
+  "gag_legende": "LA DEUXIÈME VITRE EN VOYANT LE BALLON :",
+  "mecanisme": "logique absurde du commerce appliquée à la casse"
+ },
+ {
+  "id": "B051-15",
+  "titre": "Le petit mal élevé",
+  "lieu": "shared courtyard of a cour commune in Songon, Abidjan, a mango tree, tenant doors, late afternoon",
+  "persos": [
+   {
+    "nom": "the judgmental neighbor",
+    "desc": "neighbor woman in her 50s, burgundy-and-fuchsia boubou, tight lips, empty hands",
+    "pose": "standing in the foreground on the left, arms crossed, judging"
+   },
+   {
+    "nom": "the tired mother",
+    "desc": "mother in her 30s, lime-and-copper kaba, tired eyes, empty hands",
+    "pose": "standing on the right, hands on her hips"
+   },
+   {
+    "nom": "the cheeky boy",
+    "desc": "boy around 8, rose-and-apricot tracksuit, holding ONE single small backpack",
+    "pose": "standing in the middle between them, holding his backpack, big grin"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, ton fils-là est vraiment mal élevé dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Toi, tu sais élever ?"
+   ],
+   [
+    0,
+    "Bien sûr, ma sœur !"
+   ],
+   [
+    1,
+    "Mon petit, va dormir chez Tantie dêh. Tes trois frères aussi."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The judgmental neighbor, in the foreground, keeps her arms crossed and says it with disgust. The mother tilts her head and asks. The neighbor lifts her chin proudly. The mother turns her head to the boy and says her last line with a huge relieved smile, her face clearly visible. The boy grins.",
+  "chute": "The neighbor's crossed arms drop, her mouth falls open. The camera slowly pushes in to a close-up of the judgmental neighbor's panicked face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "mal élevé",
+   "élever",
+   "trois frères"
+  ],
+  "gag_legende": "LA VOISINE QUAND LES QUATRE ARRIVENT :",
+  "mecanisme": "critique prise au pied de la lettre : tu sais élever ? alors élève-les"
+ },
+ {
+  "id": "B051-16",
+  "titre": "La musique du samedi soir",
+  "lieu": "veranda of a house in Deux-Plateaux, Abidjan, a big speaker next to a plastic chair, string lights, evening",
+  "persos": [
+   {
+    "nom": "the boy messenger",
+    "desc": "boy around 10, lilac-and-rose t-shirt, serious face, empty hands",
+    "pose": "standing on the left, arms straight at his sides, serious"
+   },
+   {
+    "nom": "the party neighbor",
+    "desc": "man in his 30s, saffron-and-aubergine tunic, sunglasses on his head, holding ONE single remote control",
+    "pose": "sitting on the plastic chair in the foreground on the right next to the speaker, nodding to the music"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, papa dit de baisser ta musique-là dêh."
+   ],
+   [
+    1,
+    "Ehh, elle dérange son sommeil ?"
+   ],
+   [
+    0,
+    "Non. Elle gâte la musique du voisin d'en face."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy delivers the message very seriously. The party neighbor, in the foreground, stops nodding and asks, annoyed, holding the remote. The boy points over his shoulder with his thumb and says his last line flatly, his face clearly visible.",
+  "chute": "The party neighbor freezes, remote still raised, deeply vexed. The camera slowly pushes in to a close-up of the party neighbor's vexed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "musique",
+   "gâte",
+   "d'en face"
+  ],
+  "gag_legende": "LE DJ DU QUARTIER APRÈS CETTE RÉPONSE :",
+  "mecanisme": "renversement : on ne se plaint pas du bruit, mais de sa mauvaise musique"
+ },
+ {
+  "id": "B051-17",
+  "titre": "Le compliment de Madame",
+  "lieu": "shared courtyard of a cour commune in Angré, Abidjan, plastic chairs in front of tenant doors, morning",
+  "persos": [
+   {
+    "nom": "the gossiping neighbor",
+    "desc": "neighbor woman in her 40s, apricot-and-charcoal dress, holding ONE single plastic basin",
+    "pose": "standing on the left, basin on her hip, grinning"
+   },
+   {
+    "nom": "the proud husband",
+    "desc": "husband in his 40s, teal-and-ruby tracksuit, big belly, sitting on a plastic chair, empty hands",
+    "pose": "sitting in the foreground on the right on a plastic chair, chest puffed out"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon vieux, ta femme dit que tu es un lion dêh !"
+   ],
+   [
+    1,
+    "Ehh ! C'est moi le roi ici dêh !"
+   ],
+   [
+    0,
+    "Elle dit : tu dors toute la journée, c'est elle qui chasse."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The neighbor announces it with a big grin. The husband, in the foreground, puffs out his chest and taps it with one hand, proud. The neighbor tilts her head and says her last line sweetly, her face clearly visible.",
+  "chute": "The husband's chest slowly deflates, his proud smile frozen. The camera slowly pushes in to a close-up of the proud husband's humiliated face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "lion",
+   "roi",
+   "chasse"
+  ],
+  "gag_legende": "LE LION QUAND MADAME RENTRE DU MARCHÉ :",
+  "mecanisme": "compliment pris au pied de la lettre : le lion dort, la lionne chasse"
+ },
+ {
+  "id": "B051-18",
+  "titre": "La fille de la voisine",
+  "lieu": "low garden wall between two villas in Deux-Plateaux, Abidjan, flower pots on the wall, morning",
+  "persos": [
+   {
+    "nom": "the neighbor with the watering can",
+    "desc": "woman in her 40s, mint-and-emerald dress, short hair, holding ONE single watering can",
+    "pose": "standing on the left behind the low wall, holding the watering can, smiling"
+   },
+   {
+    "nom": "the proud mother",
+    "desc": "mother in her 40s, saffron-and-aubergine dress, braided bun, empty hands",
+    "pose": "standing in the foreground on the right, hands clasped on her chest"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, mon mari dit que ta fille est très polie dêh !"
+   ],
+   [
+    1,
+    "Ehh merci ! Je l'ai bien éduquée, ma sœur."
+   ],
+   [
+    0,
+    "Elle l'a salué au maquis à trois heures du matin."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The neighbor says it warmly, lifting the watering can slightly. The proud mother, in the foreground, presses her hands on her chest and thanks her. The neighbor says her last line innocently, her face clearly visible, then her own smile slowly fades as she realizes.",
+  "chute": "The proud mother's smile freezes; behind her, the neighbor's eyes widen too. The camera slowly pushes in to a close-up of the proud mother's frozen face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "polie",
+   "maquis",
+   "trois heures"
+  ],
+  "gag_legende": "LA FILLE EN RENTRANT CE SOIR :",
+  "mecanisme": "compliment empoisonné qui dénonce deux personnes d'un coup"
+ },
+ {
+  "id": "B051-19",
+  "titre": "Derrière le bidon",
+  "lieu": "shared courtyard of a cour commune in Angré, Abidjan, a big plastic water barrel against the wall, morning",
+  "persos": [
+   {
+    "nom": "the creditor",
+    "desc": "man in his 50s, burgundy-and-fuchsia tracksuit, moustache, holding ONE single notebook",
+    "pose": "standing in the foreground on the left, notebook in hand, frowning"
+   },
+   {
+    "nom": "the hiding debtor",
+    "desc": "man in his 30s, lime-and-copper shirt, crouching behind the water barrel, head and shoulders visible, empty hands",
+    "pose": "crouching on the right behind the barrel, eyes wide, face turned toward the camera"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon vieux, pourquoi tu es caché là ?!"
+   ],
+   [
+    1,
+    "Chut ! Mon créancier est dans la cour dêh !"
+   ],
+   [
+    0,
+    "Mais ton créancier-là, c'est moi !"
+   ],
+   [
+    1,
+    "Voilà. Donc fais comme tu m'as pas vu."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The creditor, in the foreground, points his notebook at the barrel and asks, puzzled. The debtor whispers urgently, eyes darting left and right. The creditor taps his own chest, outraged. The debtor nods seriously and says his last line in a whisper, his face clearly visible.",
+  "chute": "The creditor freezes, his notebook still pointed, speechless. The camera slowly pushes in to a close-up of the creditor's exasperated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "caché",
+   "créancier",
+   "pas vu"
+  ],
+  "gag_legende": "LE CRÉANCIER EN OUVRANT SON CAHIER :",
+  "mecanisme": "logique absurde : demander au créancier de ne pas se voir lui-même"
+ },
+ {
+  "id": "B051-20",
+  "titre": "La queue au robinet",
+  "lieu": "shared courtyard of a cour commune in Songon, Abidjan, a single tap on a cement post, ten yellow jerrycans lined up next to it, morning",
+  "persos": [
+   {
+    "nom": "the waiting neighbor",
+    "desc": "woman in her 30s, teal-and-ruby kaba, headscarf, holding ONE single empty bucket",
+    "pose": "standing in the foreground on the left, holding her empty bucket, impatient"
+   },
+   {
+    "nom": "the woman at the tap",
+    "desc": "woman in her 40s, apricot-and-charcoal boubou, strong arms, one hand on the tap",
+    "pose": "standing on the right at the tap, one hand on the tap, the jerrycans behind her"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi tu remplis dix bidons-là ? On attend dêh !"
+   ],
+   [
+    1,
+    "Sodeci coupe demain, ma sœur."
+   ],
+   [
+    0,
+    "Et nous, on va faire comment ?"
+   ],
+   [
+    1,
+    "Ya fohi. Ce soir, je vous vends ça deux cents."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The waiting neighbor, in the foreground, lifts her empty bucket and complains. The woman at the tap answers without moving her hand from the tap. The waiting neighbor frowns and asks. The woman at the tap smiles like a businesswoman and says her last line, her face clearly visible.",
+  "chute": "The waiting neighbor freezes, her empty bucket still raised. The camera slowly pushes in to a close-up of the waiting neighbor's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "dix bidons",
+   "Sodeci",
+   "deux cents"
+  ],
+  "gag_legende": "LA COUR DEMAIN MATIN À SIX HEURES :",
+  "mecanisme": "logique commerciale cynique : la pénurie devient un business"
+ }
+]

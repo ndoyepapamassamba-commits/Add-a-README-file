@@ -1,0 +1,868 @@
+[
+ {
+  "id": "B011-01",
+  "titre": "La belle-mère s'installe",
+  "lieu": "living room of a young couple's apartment in Angré, Abidjan, a beige sofa, ONE big suitcase standing next to the sofa, family photos on the wall, late afternoon",
+  "persos": [
+   {
+    "nom": "the mother-in-law with the suitcase",
+    "desc": "mother-in-law in her 60s, chocolate-and-cyan boubou, short grey hair, big gold earrings, one hand on the handle of ONE big suitcase",
+    "pose": "standing on the left next to her suitcase, chin raised, determined"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 30s, magenta-and-pistachio shirt, thin moustache, empty hands",
+    "pose": "standing in the middle in the foreground, arms crossed, calm and confident"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, maroon-and-cherry kaba, long braids, hands clasped in front of her",
+    "pose": "standing on the right, slightly behind her husband, hands clasped"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Je reste ici jusqu'à ce que ma fille soit heureuse dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, Tantie. Demain matin, je signe le divorce."
+   ],
+   [
+    2,
+    "Maman, tu peux partir. Je suis déjà heureuse dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother-in-law announces her line firmly, one hand on the suitcase handle, chin raised. The son-in-law answers calmly with a small shrug, arms still crossed, his face turned three-quarters to the camera. The wife breaks into a huge relieved smile and says her line joyfully, her face clearly visible.",
+  "chute": "The son-in-law slowly turns his head toward his wife, his confident smile freezing. The camera slowly pushes in to a close-up of the son-in-law's betrayed face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "heureuse",
+   "divorce"
+  ],
+  "gag_legende": "LE GENDRE QUI VOULAIT JUSTE CHASSER TANTIE :",
+  "mecanisme": "condition prise au pied de la lettre + le gendre se fait achever par sa propre femme"
+ },
+ {
+  "id": "B011-02",
+  "titre": "Le gendre qui n'appelle jamais",
+  "lieu": "covered terrace of a house in Deux-Plateaux, Abidjan, two plastic chairs and a low table with a thermos, potted plants, morning",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 50s, sky-blue-and-cyan kaba, round glasses, holding ONE phone",
+    "pose": "sitting on a plastic chair on the left, phone in her hand, offended"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 40s, ivory-and-charcoal shirt, short beard, a watch on his wrist",
+    "pose": "standing on the right in the foreground, hands on his hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, pourquoi tu m'appelles jamais dêh ?!"
+   ],
+   [
+    1,
+    "Tantie, la dernière fois que je vous ai appelée, vous êtes restée six mois."
+   ],
+   [
+    0,
+    "Justement, appelle ce soir. Mon bailleur m'a chassée dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother-in-law complains, shaking her phone slightly. The son-in-law answers with his eyebrows raised, hands on his hips, his face turned three-quarters to the camera. The mother-in-law answers with a sweet smile, tapping her phone with one finger, her face clearly visible.",
+  "chute": "The son-in-law's hands drop from his hips and his mouth falls open. The camera slowly pushes in to a close-up of the son-in-law's terrified face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "appelles",
+   "six mois",
+   "bailleur"
+  ],
+  "gag_legende": "LE GENDRE EN BLOQUANT LE NUMÉRO DE TANTIE :",
+  "mecanisme": "« appeler » pris au pied de la lettre (appeler = faire venir) + relance qui piège le gendre"
+ },
+ {
+  "id": "B011-03",
+  "titre": "Les cent mille de Tantie",
+  "lieu": "courtyard of a small house in Songon, Abidjan, a mango tree, a wooden bench, a basin of cassava on the ground, afternoon",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, rust-and-crimson boubou, grey braids, holding ONE small notebook",
+    "pose": "sitting on the wooden bench on the right, notebook open on her knees, stern"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 30s, plum-and-violet polo shirt, round face, empty hands",
+    "pose": "standing on the left in the foreground, hands open, smiling nervously"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, tu rembourses quand mes cent mille-là ?"
+   ],
+   [
+    1,
+    "Tantie, on est en famille dêh. En famille, on compte pas."
+   ],
+   [
+    0,
+    "Ya fohi. Je viens habiter chez toi. On compte pas les mois."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother-in-law asks sternly, tapping the notebook with one finger. The son-in-law answers with a big nervous smile, hands open, his face turned three-quarters to the camera. The mother-in-law answers calmly with a satisfied nod, her face clearly visible.",
+  "chute": "The son-in-law's nervous smile freezes and his open hands drop slowly. The camera slowly pushes in to a close-up of the son-in-law's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "cent mille",
+   "famille",
+   "les mois"
+  ],
+  "gag_legende": "LE GENDRE EN CHERCHANT CENT MILLE PARTOUT :",
+  "mecanisme": "l'argument du gendre retourné au pied de la lettre contre lui"
+ },
+ {
+  "id": "B011-04",
+  "titre": "Appelle-moi maman",
+  "lieu": "living room of a house in Deux-Plateaux, Abidjan, a sofa with lace covers, a coffee table with a tray of glasses of bissap, Sunday afternoon",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 50s, lime-and-chocolate kaba, short hair, a pearl necklace, hands clasped on her lap",
+    "pose": "sitting in an armchair on the left in the foreground, smiling warmly"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 30s, sky-blue-and-ivory shirt, glasses, empty hands",
+    "pose": "sitting on the sofa on the right, leaning forward politely"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, à partir d'aujourd'hui, appelle-moi maman dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, maman. Alors rends-moi la dot. On fait pas payer son fils."
+   ],
+   [
+    0,
+    "Hum… Pour toi, c'est Madame Kouassi dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother-in-law says her line tenderly, hands clasped, a warm smile. The son-in-law answers with a delighted smile, one finger raised, his face turned three-quarters to the camera. The mother-in-law's smile disappears instantly and she answers coldly, lips pinched, her face clearly visible.",
+  "chute": "The mother-in-law turns her head slightly away, chin up, lips pinched. The camera slowly pushes in to a close-up of the mother-in-law's icy face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "maman",
+   "dot",
+   "Madame"
+  ],
+  "gag_legende": "TANTIE QUAND ON PARLE DE REMBOURSER :",
+  "mecanisme": "lien familial pris au pied de la lettre (une mère ne prend pas de dot) + volte-face immédiate"
+ },
+ {
+  "id": "B011-05",
+  "titre": "Le gendre aux fourneaux",
+  "lieu": "kitchen of a house in Angré, Abidjan, a gas stove with ONE big pot of sauce, onions and tomatoes on the counter, evening",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, magenta-and-pistachio boubou, gold earrings, empty hands",
+    "pose": "standing in the kitchen doorway on the left in the foreground, hands on her hips, shocked"
+   },
+   {
+    "nom": "the cooking son-in-law",
+    "desc": "son-in-law in his 30s, chocolate-and-cyan t-shirt, sweat on his forehead, holding ONE single wooden ladle",
+    "pose": "standing at the stove on the right, ladle above the pot, face turned three-quarters to the camera"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, pourquoi c'est toi qui cuisines ?!"
+   ],
+   [
+    1,
+    "Tantie, si je cuisine pas, ta fille-là rentre chez sa mère dêh."
+   ],
+   [
+    0,
+    "Ajoute le cube, mon fils. Cuisine bien, je t'en prie !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother-in-law asks, outraged, hands on her hips. The son-in-law answers wearily, ladle still above the pot, his face turned three-quarters to the camera. The mother-in-law switches from outrage to panic, joins her hands in front of her chest and begs, her face clearly visible.",
+  "chute": "The son-in-law stares at her, ladle frozen in the air. The camera slowly pushes in to a close-up of the mother-in-law's begging face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "cuisines",
+   "sa mère",
+   "cube"
+  ],
+  "gag_legende": "TANTIE QUAND SA FILLE MENACE DE RENTRER :",
+  "mecanisme": "retournement d'alliance : la mère ne veut surtout pas récupérer sa fille"
+ },
+ {
+  "id": "B011-06",
+  "titre": "Pourquoi on dit belle-mère ?",
+  "lieu": "living room of a house in Songon, Abidjan, a sofa, a TV on a low cabinet, a bowl of oranges on the coffee table, evening",
+  "persos": [
+   {
+    "nom": "the curious boy",
+    "desc": "boy around 8, sky-blue-and-cyan tracksuit, big round eyes, empty hands",
+    "pose": "standing in the middle, looking up at his father"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, rust-and-crimson shirt, bald head, holding ONE TV remote",
+    "pose": "sitting on the sofa on the right in the foreground, remote in hand, relaxed"
+   },
+   {
+    "nom": "the grandmother",
+    "desc": "grandmother in her 60s, ivory-and-charcoal kaba, small glasses, hands on her knees",
+    "pose": "sitting in an armchair on the left, slightly behind, listening sharply"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, pourquoi on appelle mamie « belle-mère » ?"
+   ],
+   [
+    1,
+    "C'est comme « bonne arrivée », mon fils. On dit même quand c'est mauvais dêh."
+   ],
+   [
+    2,
+    "Pareil pour « beau-fils », mon petit. Regarde ton papa."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boy asks innocently, head tilted. The father answers with a sly smile, remote in hand, his face turned three-quarters to the camera. The grandmother answers calmly, pointing one finger at the father, her face clearly visible.",
+  "chute": "The boy turns his head and stares at his father. The father's sly smile freezes, remote still in his hand. The camera slowly pushes in to a close-up of the father's vexed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "belle-mère",
+   "bonne arrivée",
+   "beau-fils"
+  ],
+  "gag_legende": "PAPA APRÈS LA RÉPONSE DE MAMIE :",
+  "mecanisme": "formule de politesse prise au pied de la lettre + retour à l'envoyeur"
+ },
+ {
+  "id": "B011-07",
+  "titre": "Marier toute la famille",
+  "lieu": "dining room of a house in Deux-Plateaux, Abidjan, a table with plates and a big bowl of attiéké, evening",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 50s, plum-and-violet boubou, big round glasses, hands flat on the table",
+    "pose": "sitting at the table on the left in the foreground, proud and solemn"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 30s, lime-and-chocolate shirt, short dreadlocks, holding ONE spoon",
+    "pose": "sitting at the head of the table in the middle, relaxed"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, sky-blue-and-ivory dress, long braids, arms crossed",
+    "pose": "standing on the right behind the table, smiling mischievously"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, tu as marié toute la famille dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, Tantie. Donc toi c'est deuxième épouse : ce soir, tu cuisines."
+   ],
+   [
+    2,
+    "Et demain, maman, c'est ton tour du linge dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother-in-law declares it proudly, hands flat on the table. The son-in-law answers with a big satisfied smile, pointing his spoon toward the kitchen, his face turned three-quarters to the camera. The wife answers cheerfully, arms crossed, her face clearly visible.",
+  "chute": "The mother-in-law's proud smile collapses and her mouth falls wide open. The camera slowly pushes in to a close-up of the mother-in-law's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "famille",
+   "deuxième épouse",
+   "linge"
+  ],
+  "gag_legende": "TANTIE EN RANGEANT SES PROVERBES :",
+  "mecanisme": "proverbe pris au pied de la lettre (épouser la famille = la belle-mère devient coépouse) + la fille en rajoute"
+ },
+ {
+  "id": "B011-08",
+  "titre": "Les mots d'amour du gendre",
+  "lieu": "living room of an apartment in Angré, Abidjan, a sofa, a wall clock and a calendar on the wall, evening",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 50s, maroon-and-cherry boubou, gold bracelets, empty hands",
+    "pose": "sitting on the sofa on the left, pointing at her son-in-law"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 40s, ivory-and-charcoal polo shirt, receding hairline, holding ONE phone",
+    "pose": "standing on the right in the foreground, phone in hand, confident"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, chocolate-and-cyan jumpsuit, short hair, arms crossed",
+    "pose": "standing in the middle behind them, frowning"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, tu dis jamais « je t'aime » à ma fille ?!"
+   ],
+   [
+    1,
+    "Tantie, je dis ça chaque fin du mois, par mobile money."
+   ],
+   [
+    2,
+    "Chéri, donc depuis trois mois, tu m'aimes plus dêh ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother-in-law accuses him, pointing her finger. The son-in-law answers proudly, lifting his phone a little, his face turned three-quarters to the camera. The wife answers slowly, eyes narrowed, arms crossed, her face clearly visible.",
+  "chute": "The son-in-law's proud smile freezes, his phone still raised. The camera slowly pushes in to a close-up of the son-in-law's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "je t'aime",
+   "mobile money",
+   "trois mois"
+  ],
+  "gag_legende": "LE MARI EN CHERCHANT UNE EXCUSE :",
+  "mecanisme": "définition de l'amour prise au pied de la lettre, retournée par la femme"
+ },
+ {
+  "id": "B011-09",
+  "titre": "Ce que Tantie dit aux voisins",
+  "lieu": "front gate of a villa in Deux-Plateaux, Abidjan, the metal gate half open, a plastic chair on the terrace behind, morning",
+  "persos": [
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 30s, maroon-and-cherry tracksuit, thin moustache, holding ONE big padlock",
+    "pose": "standing next to the open gate on the right in the foreground, padlock in hand, outraged"
+   },
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, chocolate-and-cyan kaba, short grey hair, holding ONE hand fan",
+    "pose": "sitting on the plastic chair on the terrace on the left, fanning herself calmly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, pourquoi vous dites aux voisins que je suis le gardien ?!"
+   ],
+   [
+    1,
+    "Mon fils, tu dors au salon et tu ouvres le portail. Tu es quoi alors dêh ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son-in-law protests, holding up the padlock, his face turned three-quarters to the camera. The mother-in-law answers calmly, still fanning herself, her face clearly visible.",
+  "chute": "The son-in-law slowly looks down at the padlock in his hand, speechless. The camera slowly pushes in to a close-up of the son-in-law's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "gardien",
+   "salon",
+   "portail"
+  ],
+  "gag_legende": "LE GENDRE EN RELISANT SA FICHE DE POSTE :",
+  "mecanisme": "définition d'un métier appliquée au pied de la lettre à la vie du gendre"
+ },
+ {
+  "id": "B011-10",
+  "titre": "Le départ de Mamie",
+  "lieu": "living room of a house in Angré, Abidjan, a sofa, an armchair with a few inflated balloons hidden behind it, a packed travel bag near the door, afternoon",
+  "persos": [
+   {
+    "nom": "the little girl",
+    "desc": "girl around 7, magenta-and-pistachio dress, two puffs of hair, empty hands",
+    "pose": "standing in the middle next to the armchair"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, sky-blue-and-ivory kaftan, chubby cheeks, empty hands",
+    "pose": "standing on the right in the foreground, smiling nervously"
+   },
+   {
+    "nom": "the grandmother",
+    "desc": "grandmother in her 60s, lime-and-chocolate boubou, glasses, holding ONE handbag on her knees",
+    "pose": "sitting on the sofa on the left, handbag on her knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mamie, papa dit quand tu vas partir, on va faire la fête dêh !"
+   ],
+   [
+    1,
+    "Tantie, l'enfant-là ment dêh !"
+   ],
+   [
+    0,
+    "Papa, et les ballons-là que tu as cachés derrière le fauteuil ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The girl announces it happily, with a big excited smile. The father shakes his head fast, both hands raised, his face turned three-quarters to the camera. The girl points at the balloons behind the armchair, her face clearly visible.",
+  "chute": "The grandmother slowly turns her head toward the father, eyebrows raised. The father's nervous smile freezes. The camera slowly pushes in to a close-up of the father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "la fête",
+   "ballons"
+  ],
+  "gag_legende": "PAPA EN DÉGONFLANT LES BALLONS EN SILENCE :",
+  "mecanisme": "révélation par l'enfant + preuve matérielle dans le décor"
+ },
+ {
+  "id": "B011-11",
+  "titre": "Ce que le gendre doit",
+  "lieu": "terrace of a house in Songon, Abidjan, two wooden chairs, a small table with a calendar, late afternoon",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 50s, sky-blue-and-ivory boubou, big earrings, empty hands",
+    "pose": "sitting on a wooden chair on the left, one finger raised, lecturing"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 30s, rust-and-crimson polo shirt, goatee, holding ONE thick bundle of unpaid bills",
+    "pose": "standing on the right in the foreground, holding the bundle of bills"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, chez nous, le gendre doit tout à sa belle-mère dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, Tantie. Prenez un ticket : vous êtes la quatorzième."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother-in-law lectures him solemnly, one finger raised. The son-in-law answers with a perfectly calm face, lifting the bundle of bills a little, his face turned three-quarters to the camera, clearly visible.",
+  "chute": "The mother-in-law's finger freezes in the air, her mouth open. The son-in-law keeps a perfectly calm face. The camera slowly pushes in to a close-up of the son-in-law's deadpan face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "doit tout",
+   "ticket",
+   "quatorzième"
+  ],
+  "gag_legende": "LES CRÉANCIERS DU GENDRE DEVANT LA PORTE :",
+  "mecanisme": "« devoir » pris au sens de la dette + file d'attente de créanciers"
+ },
+ {
+  "id": "B011-12",
+  "titre": "L'appétit du gendre",
+  "lieu": "dining table in a house in Deux-Plateaux, Abidjan, a big empty dish of rice and a pot in the middle, evening",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, ivory-and-charcoal boubou, round face, holding ONE serving spoon",
+    "pose": "sitting at the table on the left in the foreground, serving spoon in hand"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 40s, plum-and-violet shirt, big belly, empty hands",
+    "pose": "sitting at the table on the right, hands on his belly"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, lime-and-chocolate dress, high bun, arms crossed",
+    "pose": "standing in the middle behind the table"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, ma fille dit que tu manges comme quatre dêh !"
+   ],
+   [
+    1,
+    "C'est faux, Tantie. Moi je mange comme vous seulement."
+   ],
+   [
+    2,
+    "Voilà, maman. C'est ce que j'ai dit : comme quatre."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother-in-law asks, shocked, serving spoon in hand. The son-in-law answers, offended, hands on his belly, his face turned three-quarters to the camera. The wife answers calmly, arms crossed, nodding, her face clearly visible.",
+  "chute": "The mother-in-law slowly turns her head toward her daughter, the serving spoon frozen in the air. The camera slowly pushes in to a close-up of the mother-in-law's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "comme quatre",
+   "comme vous"
+  ],
+  "gag_legende": "TANTIE EN REPOSANT SA TROISIÈME ASSIETTE :",
+  "mecanisme": "équation logique : si le gendre mange comme Tantie et mange comme quatre, alors Tantie aussi"
+ },
+ {
+  "id": "B011-13",
+  "titre": "Le prêt urgent de Tantie",
+  "lieu": "living room of a house in Songon, Abidjan, a sofa, a wall calendar, a small wooden table, morning",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 50s, magenta-and-pistachio kaba, short braids, hands joined",
+    "pose": "sitting on the sofa on the left, hands joined, pleading"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 30s, sky-blue-and-cyan shirt, glasses, holding ONE wallet",
+    "pose": "standing on the right in the foreground, wallet in hand, suspicious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, prête-moi deux cent mille dêh. C'est urgent !"
+   ],
+   [
+    1,
+    "Tantie, et si vous remboursez pas, je fais comment ?"
+   ],
+   [
+    0,
+    "Ya fohi. Tu gardes ma fille. Je la reprends pas."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother-in-law begs, hands joined. The son-in-law answers suspiciously, holding his wallet against his chest, his face turned three-quarters to the camera. The mother-in-law answers generously with a big smile, her face clearly visible.",
+  "chute": "The son-in-law freezes, wallet still pressed against his chest, eyes wide. The camera slowly pushes in to a close-up of the son-in-law's horrified face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "deux cent mille",
+   "remboursez",
+   "ma fille"
+  ],
+  "gag_legende": "LE GENDRE EN COMPRENANT LA GARANTIE :",
+  "mecanisme": "logique de garantie prise au pied de la lettre : la fille en gage, qu'il a déjà"
+ },
+ {
+  "id": "B011-14",
+  "titre": "La promesse de Tantie",
+  "lieu": "living room of a house in Angré, Abidjan, a baby cot in the corner, a sofa, an open suitcase on the floor, afternoon",
+  "persos": [
+   {
+    "nom": "the daughter-in-law",
+    "desc": "daughter-in-law in her 30s, rust-and-crimson kaba, short curly hair, empty hands",
+    "pose": "standing on the right, hands on her hips, fed up"
+   },
+   {
+    "nom": "the mother-in-law with the baby",
+    "desc": "mother-in-law in her 60s, sky-blue-and-cyan boubou, grey hair in a bun, holding ONE baby wrapped in a blanket in her arms",
+    "pose": "sitting on the sofa on the left in the foreground, baby in her arms, smiling innocently"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, vous avez dit que vous partez quand le bébé va marcher !"
+   ],
+   [
+    1,
+    "Oui ma fille. C'est ma parole dêh."
+   ],
+   [
+    0,
+    "Alors pourquoi vous le portez dans vos bras jour et nuit ?!"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The daughter-in-law reminds her, hands on her hips. The mother-in-law answers sweetly, gently rocking the baby, her face turned three-quarters to the camera. The daughter-in-law accuses her, pointing at the baby, her face clearly visible.",
+  "chute": "The mother-in-law's innocent smile freezes and she holds the baby a little tighter. The camera slowly pushes in to a close-up of the mother-in-law with the baby's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "bébé",
+   "marcher",
+   "dans vos bras"
+  ],
+  "gag_legende": "TANTIE QUAND LE BÉBÉ ESSAIE DE SE LEVER :",
+  "mecanisme": "condition respectée à la lettre mais sabotée en secret"
+ },
+ {
+  "id": "B011-15",
+  "titre": "Le mariage pour l'argent",
+  "lieu": "kitchen of a house in Deux-Plateaux, Abidjan, a pot of sauce on the stove, a basket of tomatoes on the counter, midday",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 50s, maroon-and-cherry kaftan, gold-rimmed glasses, empty hands",
+    "pose": "standing on the left, pointing at her daughter-in-law, suspicious"
+   },
+   {
+    "nom": "the daughter-in-law",
+    "desc": "daughter-in-law in her 30s, sky-blue-and-ivory jumpsuit, long braids, holding ONE wooden spoon",
+    "pose": "standing at the stove on the right in the foreground, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Avoue ! C'est pour son argent que tu as marié mon fils-là !"
+   ],
+   [
+    1,
+    "Oui Tantie. Ça fait six ans j'attends la livraison dêh."
+   ],
+   [
+    0,
+    "Ma fille… Moi j'attends depuis sa naissance."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother-in-law accuses her, pointing her finger. The daughter-in-law answers calmly, wooden spoon in hand, her face turned three-quarters to the camera. The mother-in-law lowers her finger and answers with a long tired sigh, her face clearly visible.",
+  "chute": "The daughter-in-law slowly turns her head toward her mother-in-law, the wooden spoon frozen in the air. The camera slowly pushes in to a close-up of the daughter-in-law's devastated face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "argent",
+   "livraison",
+   "naissance"
+  ],
+  "gag_legende": "LE FILS EN OUVRANT SON PORTEFEUILLE VIDE :",
+  "mecanisme": "aveu pris au pied de la lettre (l'argent comme une commande jamais livrée) + la mère attend depuis plus longtemps"
+ },
+ {
+  "id": "B011-16",
+  "titre": "Les nuits de la belle-fille",
+  "lieu": "courtyard of a house in Songon, Abidjan, early morning, a plastic basin, two plastic chairs, a clothesline",
+  "persos": [
+   {
+    "nom": "the tired daughter-in-law",
+    "desc": "daughter-in-law in her 20s, lime-and-chocolate tracksuit, dark circles under her eyes, empty hands",
+    "pose": "standing on the left in the foreground, shoulders slumped, exhausted"
+   },
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, plum-and-violet kaba, short hair, holding ONE broom",
+    "pose": "standing on the right, leaning on her broom"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, votre fils ronfle comme un vieux gbaka dêh !"
+   ],
+   [
+    1,
+    "Ma fille, tu crois j'ai payé ta dot si vite pour quoi ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The daughter-in-law complains, rubbing one eye, her face turned three-quarters to the camera. The mother-in-law answers with a knowing smile, leaning on her broom, her face clearly visible.",
+  "chute": "The daughter-in-law's tired eyes go wide and her mouth falls open. The camera slowly pushes in to a close-up of the tired daughter-in-law's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "ronfle",
+   "gbaka",
+   "dot"
+  ],
+  "gag_legende": "LA BELLE-FILLE QUI VOULAIT JUSTE DORMIR :",
+  "mecanisme": "aveu de la mère : elle a payé la dot vite pour se débarrasser de son fils"
+ },
+ {
+  "id": "B011-17",
+  "titre": "La vaisselle du fils",
+  "lieu": "kitchen of a house in Angré, Abidjan, a sink full of dishes, a window, a wooden stool, evening",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, rust-and-crimson kaftan, big glasses, empty hands",
+    "pose": "standing on the left in the foreground, hands on her hips, outraged"
+   },
+   {
+    "nom": "the daughter-in-law",
+    "desc": "daughter-in-law in her 30s, magenta-and-pistachio jumpsuit, long braids, holding ONE phone",
+    "pose": "sitting on the wooden stool on the right, legs crossed, relaxed"
+   },
+   {
+    "nom": "the son at the sink",
+    "desc": "son in his 30s, ivory-and-charcoal t-shirt, short beard, holding ONE plate",
+    "pose": "standing at the sink in the middle, plate in hand, head turned three-quarters to the camera"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi c'est mon fils qui fait la vaisselle-là ?!"
+   ],
+   [
+    1,
+    "Tantie, c'est votre conseil : un homme occupé regarde pas dehors dêh."
+   ],
+   [
+    2,
+    "Maman, c'est pour ça papa lave le linge depuis trente ans ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother-in-law asks, outraged, hands on her hips. The daughter-in-law answers calmly without getting up, phone in hand, her face turned three-quarters to the camera. The son turns his head toward his mother, plate still in his hand, and asks her, his face clearly visible.",
+  "chute": "The mother-in-law's hands slowly slide off her hips and her eyes dart sideways. The camera slowly pushes in to a close-up of the mother-in-law's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "vaisselle",
+   "conseil",
+   "papa"
+  ],
+  "gag_legende": "PAPA EN ÉTENDANT LE LINGE DEPUIS TRENTE ANS :",
+  "mecanisme": "conseil de la belle-mère appliqué à la lettre + révélation du fils sur sa propre mère"
+ },
+ {
+  "id": "B011-18",
+  "titre": "Le petit surnom",
+  "lieu": "living room of a house in Deux-Plateaux, Abidjan, a big sofa with cushions, a TV, a plate of alloco on the coffee table, evening",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 50s, chocolate-and-cyan kaftan, braided bun, arms crossed",
+    "pose": "sitting in an armchair on the left, arms crossed, suspicious"
+   },
+   {
+    "nom": "the son",
+    "desc": "son in his 30s, sky-blue-and-cyan t-shirt, round cheeks, hugging ONE cushion",
+    "pose": "sitting on the sofa in the middle in the foreground, hugging the cushion, smiling shyly"
+   },
+   {
+    "nom": "the daughter-in-law",
+    "desc": "daughter-in-law in her 30s, plum-and-violet dress, short hair, empty hands",
+    "pose": "standing on the right, hands on her hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma fille, pourquoi tu appelles mon fils « bébé » comme ça ?!"
+   ],
+   [
+    1,
+    "Maman, c'est l'amour seulement dêh."
+   ],
+   [
+    2,
+    "Non Tantie. Il mange, il dort, il pleure, et c'est moi qui paie."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother-in-law asks suspiciously, arms crossed. The son answers shyly, hugging the cushion, his face turned three-quarters to the camera. The daughter-in-law answers flatly, counting on her fingers, her face clearly visible.",
+  "chute": "The son's shy smile freezes, still hugging the cushion. The camera slowly pushes in to a close-up of the son's humiliated face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "bébé",
+   "l'amour",
+   "paie"
+  ],
+  "gag_legende": "LE BÉBÉ DE TRENTE-CINQ ANS VEXÉ :",
+  "mecanisme": "surnom affectueux pris au pied de la lettre"
+ },
+ {
+  "id": "B011-19",
+  "titre": "Leçon d'obéissance",
+  "lieu": "living room of a house in Songon, Abidjan, a sofa, the mother-in-law's big suitcase under the window, a framed wedding photo on the wall, afternoon",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, sky-blue-and-ivory kaba, short grey hair, holding ONE folded hand fan",
+    "pose": "sitting on the sofa on the left in the foreground, lecturing with the fan"
+   },
+   {
+    "nom": "the daughter-in-law",
+    "desc": "daughter-in-law in her 30s, maroon-and-cherry dress, long braids, arms crossed",
+    "pose": "standing on the right, arms crossed"
+   },
+   {
+    "nom": "the son with the phone",
+    "desc": "son in his 30s, lime-and-chocolate polo shirt, short hair, holding ONE phone",
+    "pose": "standing in the middle, slightly behind, phone in hand"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Obéis à ton mari comme j'obéissais au mien dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, Tantie. Comme vous : je laisse mon mari, je vais chez mon fils."
+   ],
+   [
+    2,
+    "Maman, papa a appelé. Il dit merci dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother-in-law lectures her, pointing the folded fan. The daughter-in-law answers with a sweet obedient smile, arms crossed, her face turned three-quarters to the camera. The son lifts his phone a little and reports the message to his mother, his face clearly visible.",
+  "chute": "The mother-in-law's fan freezes in the air and her mouth falls open. The camera slowly pushes in to a close-up of the mother-in-law's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "obéis",
+   "chez mon fils",
+   "merci"
+  ],
+  "gag_legende": "PAPA AU VILLAGE DEPUIS LE DÉPART DE MAMAN :",
+  "mecanisme": "conseil pris au pied de la lettre : imiter la belle-mère, c'est quitter son mari + révélation du fils"
+ },
+ {
+  "id": "B011-20",
+  "titre": "La clé de la maison",
+  "lieu": "entrance of a house in Angré, Abidjan, the front door wide open, a shoe rack, a key hook on the wall, morning",
+  "persos": [
+   {
+    "nom": "the daughter-in-law",
+    "desc": "daughter-in-law in her 20s, chocolate-and-cyan dress, short twists, empty hands",
+    "pose": "standing on the right in the foreground, hands on her hips, furious"
+   },
+   {
+    "nom": "the mother-in-law with the keys",
+    "desc": "mother-in-law in her 50s, ivory-and-charcoal kaftan, gold earrings, holding ONE big key ring",
+    "pose": "standing in the open doorway on the left, holding up the key ring proudly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, comment vous avez eu la clé de notre maison-là ?!"
+   ],
+   [
+    1,
+    "Ma fille, c'est moi qui ai fabriqué le propriétaire. J'ai gardé le double dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The daughter-in-law asks furiously, hands on her hips, her face turned three-quarters to the camera. The mother-in-law answers proudly, shaking the key ring a little, her face clearly visible.",
+  "chute": "The daughter-in-law's mouth falls open and her hands slip off her hips. The camera slowly pushes in to a close-up of the daughter-in-law's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "la clé",
+   "propriétaire",
+   "double"
+  ],
+  "gag_legende": "LA BELLE-FILLE EN CHANGEANT LA SERRURE :",
+  "mecanisme": "logique absurde : celle qui a fabriqué le propriétaire a le double des clés"
+ }
+]

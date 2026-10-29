@@ -1,0 +1,836 @@
+[
+ {
+  "id": "B063-01",
+  "titre": "La dot symbolique",
+  "lieu": "courtyard of a family house in Anyama, Abidjan, plastic chairs, a low table with a tray of kola nuts and bottles of juice, late afternoon",
+  "persos": [
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, copper-and-gold boubou, short grey beard, holding ONE folded sheet of paper",
+    "pose": "sitting on a plastic chair on the right, the folded sheet in one hand, solemn"
+   },
+   {
+    "nom": "the young groom",
+    "desc": "young man in his late 20s, mint-and-charcoal suit, thin mustache, holding ONE sheet of paper with a hand-drawn banknote on it",
+    "pose": "standing in the foreground on the left, holding up the drawn banknote, hopeful"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, chez nous, la dot-là est symbolique dêh."
+   ],
+   [
+    1,
+    "Ya fohi Tonton. Voilà le dessin d'un billet de dix mille."
+   ],
+   [
+    0,
+    "Merci mon fils. Tiens, voilà le dessin de ma fille."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father, seated, announces it solemnly, one finger raised. The young groom smiles with relief and proudly holds up his sheet with the drawn banknote, face turned three-quarters to the camera. The father nods calmly, lifts his own folded sheet a little and says his last line with a sly smile, face clearly visible.",
+  "chute": "The groom's smile freezes, his drawn banknote still in the air. The camera slowly pushes in to a close-up of the young groom's stunned face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "dot",
+   "symbolique",
+   "dessin"
+  ],
+  "gag_legende": "LE MARIÉ EN RENTRANT AVEC SON DESSIN :",
+  "mecanisme": "mot pris au pied de la lettre (dot symbolique = dessin de billet), retourné contre le marié par le beau-père"
+ },
+ {
+  "id": "B063-02",
+  "titre": "La promesse au beau-père",
+  "lieu": "living room of a modest house in Attécoubé, Abidjan, old armchairs, a low table with two glasses of bissap on a tray, evening",
+  "persos": [
+   {
+    "nom": "the stern father",
+    "desc": "father in his 50s, indigo-and-pistachio kaftan, round glasses, both hands on ONE wooden walking cane",
+    "pose": "sitting in an armchair on the left, both hands on the cane, stern"
+   },
+   {
+    "nom": "the proud fiancé",
+    "desc": "young man around 30, sky-blue-and-amber shirt, neat short haircut, hands clasped in front of him",
+    "pose": "standing in the foreground on the right, hands clasped, eager smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, avec toi, ma fille-là va manquer de rien ?"
+   ],
+   [
+    1,
+    "Rien du tout, Tonton ! Chez moi, rien-là, on a ça beaucoup dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father, seated, leans forward slightly and asks sternly, eyebrows raised. The fiancé answers proudly, one hand on his chest, with a big confident smile, face turned three-quarters to the camera.",
+  "chute": "Behind him, the father's jaw drops slowly; the fiancé keeps his proud smile, not understanding. The camera slowly pushes in to a close-up of the proud fiancé's proud, clueless face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "manquer",
+   "rien",
+   "beaucoup"
+  ],
+  "gag_legende": "LE BEAU-PÈRE EN ANNULANT LES FIANÇAILLES :",
+  "mecanisme": "expression prise au pied de la lettre (ne manquer de rien = avoir beaucoup de rien)"
+ },
+ {
+  "id": "B063-03",
+  "titre": "Le témoin du marié",
+  "lieu": "wedding room of the town hall in Bingerville, Abidjan, a long wooden desk with a big open register, rows of chairs with guests in the background, morning",
+  "persos": [
+   {
+    "nom": "the registrar",
+    "desc": "civil registrar in his 50s, copper-and-aubergine suit, bald head, holding ONE pen",
+    "pose": "sitting behind the desk in the background center, pen in hand, polite"
+   },
+   {
+    "nom": "the best man",
+    "desc": "best man in his 30s, turquoise-and-lime suit, nervous wide eyes, both palms raised",
+    "pose": "standing on the left near the desk, palms up"
+   },
+   {
+    "nom": "the bride",
+    "desc": "bride in her late 20s, peach-and-ivory wedding gown, braided bun, holding ONE small bouquet",
+    "pose": "standing in the foreground on the right, the bouquet in one hand, smiling"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Monsieur, vous êtes bien le témoin du marié-là ?"
+   ],
+   [
+    1,
+    "Pardon, j'ai rien vu dêh ! Ce soir-là, j'étais même pas au maquis !"
+   ],
+   [
+    2,
+    "Quel soir-là, mon vieux ?!"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The registrar, seated, asks politely, pen raised. The best man panics, palms raised, shaking his head fast, face turned three-quarters to the camera. The bride's smile disappears; she turns her head sharply toward him and asks her line, eyes narrowed, face clearly visible.",
+  "chute": "The best man freezes, palms still up, a drop of sweat on his forehead. The camera slowly pushes in to a close-up of the bride's furious, suspicious face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "témoin",
+   "rien vu",
+   "soir-là"
+  ],
+  "gag_legende": "LE MARIÉ QUAND IL ENTEND ÇA :",
+  "mecanisme": "mot pris au pied de la lettre (témoin du mariage = témoin au tribunal) + aveu involontaire"
+ },
+ {
+  "id": "B063-04",
+  "titre": "La signature à la mairie",
+  "lieu": "civil wedding room in Anyama, Abidjan, a wooden desk with a big open register, a front row of chairs, flower decorations, morning",
+  "persos": [
+   {
+    "nom": "the bride",
+    "desc": "bride in her 30s, crimson-and-ivory wedding gown, pearl earrings, hands on her hips",
+    "pose": "standing in the foreground on the right, hands on her hips, outraged"
+   },
+   {
+    "nom": "the groom with the pencil",
+    "desc": "groom in his 30s, turquoise-and-maroon suit, short beard, holding ONE small pencil over the register",
+    "pose": "standing in the middle at the desk, pencil in hand, calm"
+   },
+   {
+    "nom": "the groom's mother",
+    "desc": "groom's mother in her 60s, copper-and-gold kaba, big earrings, holding ONE big eraser",
+    "pose": "sitting in the front row on the left, holding up the eraser, smug"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, pourquoi tu signes notre mariage au crayon-là ?!"
+   ],
+   [
+    1,
+    "Maman a dit : signe jamais ce que tu peux pas effacer dêh."
+   ],
+   [
+    2,
+    "Et c'est moi qui garde la gomme, ma fille."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The bride, hands on her hips, shouts her question at the groom. The groom answers calmly with an innocent shrug, the pencil still in his hand, face turned three-quarters to the camera. The groom's mother, seated, raises the eraser a little and says her line with a satisfied smile, face clearly visible.",
+  "chute": "The bride's mouth falls open, her hands still on her hips. The camera slowly pushes in to a close-up of the bride's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "crayon",
+   "effacer",
+   "gomme"
+  ],
+  "gag_legende": "LA MARIÉE EN CHERCHANT UN STYLO :",
+  "mecanisme": "conseil de maman pris au pied de la lettre + relance de la belle-mère"
+ },
+ {
+  "id": "B063-05",
+  "titre": "Le matin du mariage",
+  "lieu": "backyard of a family house in Bingerville, Abidjan, flower pots, plastic chairs, a bright sunny morning with a cloudless sky",
+  "persos": [
+   {
+    "nom": "the bride",
+    "desc": "bride in her 20s, sky-blue-and-amber wedding gown, long braids in a bun, arms slightly spread",
+    "pose": "standing in the middle, arms slightly spread, panicked"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 50s, mint-and-charcoal kaba, headscarf, holding ONE big metal watering can with both hands",
+    "pose": "standing in the foreground on the left, holding the watering can raised toward the dress, determined"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 60s, indigo-and-pistachio boubou, grey mustache, arms crossed",
+    "pose": "sitting on a plastic chair on the right, arms crossed, tired"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, pourquoi tu lèves l'arrosoir sur ma robe-là ?!"
+   ],
+   [
+    1,
+    "Mariage pluvieux, mariage heureux. Le ciel refuse, je vais l'aider dêh."
+   ],
+   [
+    2,
+    "Arrose fort, chérie. Notre jour-là, y avait soleil dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The bride, arms spread, shouts her question in panic. The mother, holding the watering can raised in both hands without pouring, answers very seriously, face turned three-quarters to the camera. The father, seated, nods slowly and says his line with a tired smile, face clearly visible.",
+  "chute": "The mother slowly turns her head toward the father, eyes narrowing, the watering can still raised. The camera slowly pushes in to a close-up of the mother's offended face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "pluvieux",
+   "heureux",
+   "soleil"
+  ],
+  "gag_legende": "MAMAN APRÈS LA PHRASE DE PAPA :",
+  "mecanisme": "proverbe pris au pied de la lettre + aveu du père"
+ },
+ {
+  "id": "B063-06",
+  "titre": "Le contrôle à l'entrée",
+  "lieu": "entrance of a decorated wedding tent in Attécoubé, Abidjan, a small table with a printed guest list, balloons, string lights, evening",
+  "persos": [
+   {
+    "nom": "the cousin with the clipboard",
+    "desc": "young woman in her 20s, turquoise-and-lime jumpsuit, high ponytail, holding ONE clipboard",
+    "pose": "standing behind the small table on the left, clipboard in hand, suspicious"
+   },
+   {
+    "nom": "the uninvited guest",
+    "desc": "man in his 40s, crimson-and-ivory boubou, round belly, holding ONE wedding invitation card",
+    "pose": "standing in the foreground on the right, holding up the card, confident"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, ton nom-là n'est pas sur la liste dêh !"
+   ],
+   [
+    1,
+    "Le carton dit : parents et amis. Moi, j'ai cinq enfants. Je suis parent dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The cousin taps the clipboard with one finger and frowns. The guest raises the invitation card next to his face and answers proudly, face turned three-quarters to the camera.",
+  "chute": "The cousin stares at him, speechless, the clipboard frozen in her hand. The camera slowly pushes in to a close-up of the uninvited guest's proud, satisfied face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "liste",
+   "parents",
+   "cinq enfants"
+  ],
+  "gag_legende": "SES CINQ ENFANTS QUI ATTENDENT DEHORS :",
+  "mecanisme": "mot de l'invitation pris au pied de la lettre (parents = qui a des enfants)"
+ },
+ {
+  "id": "B063-07",
+  "titre": "Les cadeaux du baptême",
+  "lieu": "living room of a house in Bingerville, Abidjan, a decorated baby cradle in the background, a small table with gift bags, balloons, afternoon",
+  "persos": [
+   {
+    "nom": "the young mother",
+    "desc": "young mother in her late 20s, copper-and-aubergine kaba, short braids, holding ONE open empty envelope",
+    "pose": "standing on the right, holding the open envelope upside down, outraged"
+   },
+   {
+    "nom": "the stingy uncle",
+    "desc": "uncle in his 50s, peach-and-ivory boubou, small mustache, hands behind his back",
+    "pose": "standing in the foreground on the left, hands behind his back, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, ton enveloppe pour le bébé-là est vide dêh !"
+   ],
+   [
+    1,
+    "Ma fille, tu as dit : pas de cadeau, juste l'enveloppe. J'ai pris la plus jolie."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother shakes the empty envelope upside down and protests. The uncle answers calmly and proudly, chin up, face turned three-quarters to the camera.",
+  "chute": "The mother freezes, the empty envelope still upside down. The camera slowly pushes in to a close-up of the stingy uncle's proud, satisfied face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "enveloppe",
+   "vide",
+   "jolie"
+  ],
+  "gag_legende": "LE BÉBÉ EN REGARDANT SON TONTON :",
+  "mecanisme": "consigne prise au pied de la lettre (une enveloppe = l'enveloppe seule)"
+ },
+ {
+  "id": "B063-08",
+  "titre": "Le prénom du bébé",
+  "lieu": "bedroom of a small apartment in Anyama, Abidjan, a wooden baby crib with a sleeping baby, a ceiling fan, a small desk lamp, evening",
+  "persos": [
+   {
+    "nom": "the young mother",
+    "desc": "young mother in her 20s, turquoise-and-maroon wrapper dress, puffy natural hair, hands on her hips",
+    "pose": "standing next to the crib on the right, hands on her hips, shocked"
+   },
+   {
+    "nom": "the dreamy father",
+    "desc": "young father in his 30s, mint-and-charcoal tracksuit, goatee, holding ONE birth registration form",
+    "pose": "standing in the foreground on the left, holding the form against his chest, dreamy smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, pourquoi tu as écrit Salaire comme prénom du bébé-là ?!"
+   ],
+   [
+    1,
+    "Pour qu'il y ait enfin un salaire qui grandit dans cette maison dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother, hands on her hips, asks her question with wide eyes. The father, holding the form against his chest, answers softly with a dreamy, emotional smile, face turned three-quarters to the camera.",
+  "chute": "The mother opens her mouth, speechless; the father looks up with misty eyes. The camera slowly pushes in to a close-up of the dreamy father's dreamy, emotional face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "Salaire",
+   "prénom",
+   "grandit"
+  ],
+  "gag_legende": "SON PATRON EN APPRENANT LE PRÉNOM :",
+  "mecanisme": "logique absurde : donner au bébé le nom de ce qui ne grandit jamais à la maison"
+ },
+ {
+  "id": "B063-09",
+  "titre": "Les quatre-vingts ans de Papi",
+  "lieu": "terrace of a family house in Attécoubé, Abidjan, a table with a birthday cake topped with only two candles, paper garlands, evening",
+  "persos": [
+   {
+    "nom": "the granddaughter",
+    "desc": "girl around 10, indigo-and-pistachio dress, two puffy pigtails, pointing at the cake",
+    "pose": "standing on the left behind the table, pointing at the cake, indignant"
+   },
+   {
+    "nom": "the aunt",
+    "desc": "aunt in her 40s, sky-blue-and-amber kaba, hoop earrings, holding ONE box of matches",
+    "pose": "standing on the right behind the table, holding the box of matches, casual"
+   },
+   {
+    "nom": "the grandfather",
+    "desc": "grandfather in his 80s, copper-and-gold kaftan, white beard, arms crossed",
+    "pose": "sitting in the foreground center in front of the cake, arms crossed, smiling"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, Papi a quatre-vingts ans ! Pourquoi deux bougies seulement dêh ?"
+   ],
+   [
+    1,
+    "Ma fille, on a compté seulement les années où il a travaillé."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandfather keeps smiling, seated. The granddaughter points at the cake and protests. The aunt shrugs and answers casually, the box of matches in her hand, face turned three-quarters to the camera.",
+  "chute": "The grandfather's smile drops; he slowly turns his head toward the aunt, arms still crossed. The camera slowly pushes in to a close-up of the grandfather's offended face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "quatre-vingts",
+   "bougies",
+   "travaillé"
+  ],
+  "gag_legende": "PAPI QUAND ON PARLE DE TRAVAIL :",
+  "mecanisme": "comptage absurde pris au pied de la lettre (une bougie par année travaillée)"
+ },
+ {
+  "id": "B063-10",
+  "titre": "Les sept ans de Junior",
+  "lieu": "living room of a house in Bingerville, Abidjan, a table with a half-eaten birthday cake with seven candles, balloons, afternoon",
+  "persos": [
+   {
+    "nom": "the proud mother",
+    "desc": "mother in her 30s, crimson-and-ivory kaba, big hoop earrings, hands clasped with pride",
+    "pose": "standing on the left behind the table, hands clasped, beaming"
+   },
+   {
+    "nom": "the birthday boy",
+    "desc": "boy around 7, turquoise-and-lime shirt, short hair, serious little face",
+    "pose": "standing in the middle next to the table, arms down, serious"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, copper-and-aubergine tracksuit, cake cream on his mustache, holding ONE empty plate",
+    "pose": "sitting on a sofa in the foreground on the right, holding the empty plate, frozen"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, tu sais que sept ans, c'est l'âge de raison dêh ?"
+   ],
+   [
+    1,
+    "Ya fohi maman. Donc j'ai raison : c'est papa qui a mangé mon gâteau-là."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father stays still on the sofa. The mother asks proudly, smiling. The boy nods seriously, then points his finger at his father and says his line, face turned three-quarters to the camera.",
+  "chute": "The father freezes, the empty plate in his hand, cream on his mustache. The camera slowly pushes in to a close-up of the father's guilty face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "âge de raison",
+   "raison",
+   "gâteau"
+  ],
+  "gag_legende": "PAPA QUAND IL SE SENT VISÉ :",
+  "mecanisme": "expression prise au pied de la lettre (âge de raison = avoir raison) + dénonciation du père"
+ },
+ {
+  "id": "B063-11",
+  "titre": "La fête des mères",
+  "lieu": "kitchen of a house in Anyama, Abidjan, a gas stove with a pot, a wall calendar, morning light",
+  "persos": [
+   {
+    "nom": "the wife",
+    "desc": "wife in her 40s, peach-and-ivory kaba, hair in a high bun, hands on her hips",
+    "pose": "standing on the left, hands on her hips, expectant smile"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, turquoise-and-maroon shirt, short beard, holding ONE phone showing a money transfer receipt",
+    "pose": "standing in the foreground on the right, showing the phone screen, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, c'est la fête des mères dêh ! Mon cadeau-là est où ?"
+   ],
+   [
+    1,
+    "C'est réglé, ma chérie. Ton cadeau-là, je l'ai envoyé à ma mère."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife, hands on her hips, asks with a big expectant smile. The husband proudly shows his phone screen and answers calmly, face turned three-quarters to the camera.",
+  "chute": "The wife's smile freezes, then her eyes widen with anger. The camera slowly pushes in to a close-up of the husband's proud, clueless face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "fête des mères",
+   "cadeau",
+   "ma mère"
+  ],
+  "gag_legende": "LA BELLE-MÈRE EN RECEVANT LE CADEAU :",
+  "mecanisme": "logique absurde prise au pied de la lettre (fête des mères = fête de SA mère)"
+ },
+ {
+  "id": "B063-12",
+  "titre": "Les vingt ans de mariage",
+  "lieu": "living room of a house in Attécoubé, Abidjan, a sofa, a framed wedding photo on the wall, a small table with an anniversary cake, evening",
+  "persos": [
+   {
+    "nom": "the romantic wife",
+    "desc": "wife in her 40s, mint-and-charcoal kaftan, elegant braided bun, hands clasped under her chin",
+    "pose": "standing in the foreground on the left, hands clasped, romantic"
+   },
+   {
+    "nom": "the husband with the remote",
+    "desc": "husband in his 50s, sky-blue-and-amber boubou, grey temples, holding ONE TV remote",
+    "pose": "sitting on the sofa on the right, remote in hand, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, ça fait vingt ans ! On va renouveler notre mariage dêh ?"
+   ],
+   [
+    1,
+    "Ah bon ? Ça expire ? Ya fohi, laisse ça expirer tranquille."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife asks tenderly, hands clasped under her chin. The husband, seated, raises his eyebrows and answers casually, pointing the remote at her, face turned three-quarters to the camera.",
+  "chute": "The wife's romantic smile turns into a furious glare, hands still clasped. The camera slowly pushes in to a close-up of the romantic wife's furious face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "vingt ans",
+   "renouveler",
+   "expirer"
+  ],
+  "gag_legende": "MONSIEUR CE SOIR SUR LE CANAPÉ :",
+  "mecanisme": "mot pris au pied de la lettre (renouveler = abonnement qui expire)"
+ },
+ {
+  "id": "B063-13",
+  "titre": "Le cortège des mariés",
+  "lieu": "roadside in Bingerville, Abidjan, an old minibus gbaka decorated with ribbons and balloons parked behind them, sunny afternoon",
+  "persos": [
+   {
+    "nom": "the bride",
+    "desc": "bride in her 20s, copper-and-gold wedding gown, long braids, holding ONE small bouquet",
+    "pose": "standing in the foreground on the left, the bouquet in one hand, the other hand on her hip, furious"
+   },
+   {
+    "nom": "the proud groom",
+    "desc": "groom in his 30s, indigo-and-pistachio suit, big proud smile, one hand resting on the gbaka door",
+    "pose": "standing on the right next to the gbaka, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, tu m'as juré que tu as les moyens dêh !"
+   ],
+   [
+    1,
+    "Oui bébé : gbaka, woro-woro, et mes deux pieds. Tous les moyens dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The bride, hand on her hip, accuses him, pointing the bouquet at the gbaka. The groom proudly pats the gbaka door and answers with a big smile, face turned three-quarters to the camera.",
+  "chute": "The bride closes her eyes and breathes in deeply, the bouquet trembling. The camera slowly pushes in to a close-up of the bride's desperate face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "moyens",
+   "gbaka",
+   "deux pieds"
+  ],
+  "gag_legende": "LA MARIÉE DANS LE GBAKA DU CORTÈGE :",
+  "mecanisme": "expression prise au pied de la lettre (avoir les moyens = les moyens de transport)"
+ },
+ {
+  "id": "B063-14",
+  "titre": "La valeur de la fiancée",
+  "lieu": "courtyard of a family house in Anyama, Abidjan, plastic chairs, a small table with a bowl of attiéké, afternoon",
+  "persos": [
+   {
+    "nom": "the bride's mother",
+    "desc": "mother in her 50s, turquoise-and-lime kaba, big earrings, hands on her hips",
+    "pose": "standing on the left, hands on her hips, proud"
+   },
+   {
+    "nom": "the groom with the scale",
+    "desc": "groom in his 30s, crimson-and-ivory suit, serious face, holding ONE bathroom scale with both hands",
+    "pose": "standing on the right, holding the scale in front of him"
+   },
+   {
+    "nom": "the hungry daughter",
+    "desc": "young woman in her 20s, copper-and-aubergine dress, braids, holding ONE spoon over a bowl of attiéké",
+    "pose": "sitting at the small table in the foreground center, spoon in hand"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, ma fille-là vaut son poids en or dêh !"
+   ],
+   [
+    1,
+    "Ya fohi Tantie. On va la peser d'abord. Voilà la balance."
+   ],
+   [
+    0,
+    "Ma fille, reprends l'attiéké ! Double portion dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The daughter stays silent, spoon in hand. The mother proudly announces her line, hands on her hips. The groom lifts the scale a little and answers seriously, face turned three-quarters to the camera. The mother turns her head to her daughter and gives her order urgently, pointing at the bowl, face clearly visible.",
+  "chute": "The daughter quickly puts one big spoonful in her mouth and freezes, cheeks puffed. The camera slowly pushes in to a close-up of the hungry daughter's puffed-cheeks face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "poids en or",
+   "balance",
+   "attiéké"
+  ],
+  "gag_legende": "LA BALANCE APRÈS LA DOUBLE PORTION :",
+  "mecanisme": "expression prise au pied de la lettre (son poids en or) + surenchère de la mère"
+ },
+ {
+  "id": "B063-15",
+  "titre": "La demande en mariage",
+  "lieu": "living room of a house in Attécoubé, Abidjan, a sofa, an armchair, a coffee table with a small open ring box, evening",
+  "persos": [
+   {
+    "nom": "the daughter",
+    "desc": "young woman in her 20s, peach-and-ivory dress, long braids, a ring already on her finger",
+    "pose": "standing in the middle, showing the back of her hand with the ring, glowing"
+   },
+   {
+    "nom": "the suspicious father",
+    "desc": "father in his 50s, turquoise-and-maroon boubou, thick glasses, arms crossed",
+    "pose": "sitting in the armchair on the left, arms crossed, suspicious"
+   },
+   {
+    "nom": "the nervous fiancé",
+    "desc": "young man around 30, mint-and-charcoal shirt, nervous smile, hands clasped",
+    "pose": "standing in the foreground on the right, hands clasped, nervous"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, il m'a demandée en mariage sur un genou dêh !"
+   ],
+   [
+    1,
+    "Un seul genou ? Et l'autre-là, il garde pour qui ?"
+   ],
+   [
+    2,
+    "Pardon Tonton, l'autre est déjà réservé dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The daughter proudly shows her ring and announces it, glowing. The father, seated, raises one eyebrow and asks suspiciously, face turned three-quarters to the camera. The fiancé lowers his eyes, rubs his hands and answers in a small embarrassed voice, face clearly visible.",
+  "chute": "The daughter's smile disappears; she slowly turns her head toward the fiancé. The camera slowly pushes in to a close-up of the nervous fiancé's guilty, embarrassed face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "genou",
+   "réservé"
+  ],
+  "gag_legende": "LA DEUXIÈME FIANCÉE QUAND ELLE VA SAVOIR :",
+  "mecanisme": "logique absurde prise au pied de la lettre (un genou par fiancée) + aveu du fiancé"
+ },
+ {
+  "id": "B063-16",
+  "titre": "Le premier invité",
+  "lieu": "courtyard of a family house in Anyama, Abidjan, stacked empty plastic chairs, an unfinished wedding tent, a broom against the wall, early evening",
+  "persos": [
+   {
+    "nom": "the bride's uncle",
+    "desc": "uncle in his 50s, sky-blue-and-amber tracksuit, sweaty forehead, holding ONE plastic chair",
+    "pose": "standing on the left, holding the plastic chair, surprised"
+   },
+   {
+    "nom": "the early guest",
+    "desc": "guest in his 30s, copper-and-gold three-piece suit, shiny shoes, holding ONE wedding invitation card",
+    "pose": "standing in the foreground on the right, holding up the card, very proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon vieux, pourquoi tu arrives à dix-huit heures pile ?!"
+   ],
+   [
+    1,
+    "Tonton, c'est écrit dix-huit heures sur l'invitation dêh !"
+   ],
+   [
+    0,
+    "Ya fohi. Assieds-toi. La mariée-là cherche encore un mari."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The uncle, holding the chair, asks in disbelief. The guest proudly taps the invitation card and answers, face turned three-quarters to the camera. The uncle sighs and says his last line calmly, face clearly visible, while the guest stays standing.",
+  "chute": "The guest's proud smile slowly disappears, the card still raised. The camera slowly pushes in to a close-up of the early guest's stunned face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "dix-huit heures",
+   "mariée",
+   "mari"
+  ],
+  "gag_legende": "LES AUTRES INVITÉS À MINUIT ET DEMI :",
+  "mecanisme": "ponctualité prise au pied de la lettre + exagération absurde du retard"
+ },
+ {
+  "id": "B063-17",
+  "titre": "La règle de la belle-mère",
+  "lieu": "hallway of a family house in Bingerville, Abidjan, in front of an open bedroom door, a wall clock showing five o'clock, dim dawn light",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, indigo-and-pistachio kaba, big round glasses, arms crossed",
+    "pose": "standing on the left in the hallway, arms crossed, strict"
+   },
+   {
+    "nom": "the sleepy daughter-in-law",
+    "desc": "young wife in her 20s, turquoise-and-lime nightgown, messy hair, holding ONE pillow against her chest",
+    "pose": "standing in the foreground on the right in the doorway, holding the pillow, sleepy"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma belle-fille, tu dors encore ?! Chez nous, la femme se lève à cinq heures dêh !"
+   ],
+   [
+    1,
+    "Ya fohi Tantie. Je me lève à cinq heures, je me recouche à cinq heures une."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother-in-law, arms crossed, scolds her sharply. The daughter-in-law, hugging her pillow, answers sweetly with a sleepy smile, face turned three-quarters to the camera.",
+  "chute": "The mother-in-law's mouth falls open, arms still crossed. The camera slowly pushes in to a close-up of the sleepy daughter-in-law's sleepy, satisfied face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "cinq heures",
+   "recouche"
+  ],
+  "gag_legende": "BELLE-MAMAN À CINQ HEURES DEUX :",
+  "mecanisme": "règle de la belle-mère appliquée au pied de la lettre"
+ },
+ {
+  "id": "B063-18",
+  "titre": "Le cadeau de Tantie",
+  "lieu": "wedding reception tent in Attécoubé, Abidjan, a gift table with wrapped presents, an empty open suitcase on the table, string lights, evening",
+  "persos": [
+   {
+    "nom": "the offended bride",
+    "desc": "bride in her 20s, turquoise-and-maroon wedding gown, braided crown, hands on her hips",
+    "pose": "standing in the middle, hands on her hips, offended"
+   },
+   {
+    "nom": "the aunt with the suitcase",
+    "desc": "aunt in her 50s, crimson-and-ivory kaftan, reading glasses, one hand on ONE empty open suitcase",
+    "pose": "standing on the left next to the gift table, one hand on the suitcase, calm"
+   },
+   {
+    "nom": "the worried groom",
+    "desc": "groom in his 30s, copper-and-aubergine three-piece suit, nervous eyes, hands clasped",
+    "pose": "standing in the foreground on the right, hands clasped, silent"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, pourquoi tu nous offres une valise vide pour le mariage-là ?!"
+   ],
+   [
+    1,
+    "Pour le jour où tu vas revenir chez nous, ma fille dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The groom stays silent. The bride, hands on her hips, asks her question, offended. The aunt pats the suitcase and answers calmly and kindly, as if it was obvious, face turned three-quarters to the camera.",
+  "chute": "The groom slowly turns his worried eyes toward the suitcase, then toward the bride. The camera slowly pushes in to a close-up of the worried groom's worried face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "valise",
+   "revenir"
+  ],
+  "gag_legende": "LE MARIÉ EN CACHANT LA VALISE :",
+  "mecanisme": "logique absurde de prévoyance : la tantie prépare déjà le retour de la mariée"
+ },
+ {
+  "id": "B063-19",
+  "titre": "Le départ de la mariée",
+  "lieu": "living room of a family house in Anyama, Abidjan, a sofa, wedding decorations, a framed family photo, morning",
+  "persos": [
+   {
+    "nom": "the mother",
+    "desc": "mother in her 50s, peach-and-ivory kaftan, teary eyes, holding ONE handkerchief",
+    "pose": "standing in the foreground on the left, the handkerchief pressed to her chest, crying with joy"
+   },
+   {
+    "nom": "the calm bride",
+    "desc": "bride in her 20s, mint-and-charcoal wedding gown, braided bun, hands clasped",
+    "pose": "standing in the middle, hands clasped, calm smile"
+   },
+   {
+    "nom": "the relaxed groom",
+    "desc": "groom in his 30s, turquoise-and-lime tracksuit, relaxed face, holding ONE TV remote",
+    "pose": "sitting comfortably on the sofa on the right, legs stretched out, remote in hand"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma fille, aujourd'hui enfin tu quittes ma maison dêh !"
+   ],
+   [
+    1,
+    "Non maman. C'est mon mari qui vient habiter ici dêh."
+   ],
+   [
+    2,
+    "Belle-maman, mon petit-déjeuner-là, c'est à quelle heure ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother, handkerchief pressed to her chest, says her line with tears of joy. The bride shakes her head with a calm smile and answers, face turned three-quarters to the camera. The groom, relaxed on the sofa, raises the remote and asks his line casually, face clearly visible.",
+  "chute": "The mother's tears stop at once; she freezes, the handkerchief still in her hand. The camera slowly pushes in to a close-up of the mother's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "quittes",
+   "habiter",
+   "petit-déjeuner"
+  ],
+  "gag_legende": "MAMAN EN CHERCHANT UNE NOUVELLE MAISON :",
+  "mecanisme": "retournement de situation + relance du gendre"
+ },
+ {
+  "id": "B063-20",
+  "titre": "La soirée d'anniversaire",
+  "lieu": "terrace of a house in Bingerville, Abidjan, birthday balloons, a table with a cake and drinks, guests chatting in the background, night lights",
+  "persos": [
+   {
+    "nom": "the host",
+    "desc": "man in his 30s, indigo-and-pistachio shirt, neat beard, holding ONE glass of juice",
+    "pose": "standing on the left, holding the glass, shocked"
+   },
+   {
+    "nom": "the pajama guest",
+    "desc": "man in his 30s, crimson-and-ivory pajamas, sleepy eyes, holding ONE small wrapped gift",
+    "pose": "standing in the foreground on the right, holding the gift, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon gars, tu viens à mon anniversaire en pyjama-là ?!"
+   ],
+   [
+    1,
+    "Tu as dit : viens comme tu es. Le samedi, moi je suis comme ça dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The host, holding his glass without drinking, points at the pajamas with his free hand and asks, shocked. The guest shrugs calmly and answers with total confidence, face turned three-quarters to the camera.",
+  "chute": "The host stares at him, speechless, the glass frozen in mid-air. The camera slowly pushes in to a close-up of the pajama guest's calm, confident face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "pyjama",
+   "comme tu es",
+   "samedi"
+  ],
+  "gag_legende": "LES INVITÉS QUI ONT LOUÉ LEUR COSTUME :",
+  "mecanisme": "invitation prise au pied de la lettre (viens comme tu es)"
+ }
+]

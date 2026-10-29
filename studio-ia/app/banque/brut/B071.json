@@ -1,0 +1,832 @@
+[
+ {
+  "id": "B071-01",
+  "titre": "Le maquillage de la mariée",
+  "lieu": "bridal makeup room in a villa in Angré, Abidjan, a big mirror with bulbs, a small makeup table covered with brushes and powders, morning light",
+  "persos": [
+   {
+    "nom": "the bride",
+    "desc": "bride in her late 20s, teal-and-sand robe, elegant bun already styled, slim face with big eyes, hands on the armrests of the makeup chair",
+    "pose": "sitting in the makeup chair in the foreground on the left, turned three-quarters toward the camera, alarmed"
+   },
+   {
+    "nom": "the makeup artist",
+    "desc": "makeup artist woman in her 30s, plum-and-magenta kaftan, big gold hoop earrings, holding ONE single paint roller",
+    "pose": "standing on the right just behind the chair, holding the paint roller up in one hand, calm, with a cold little smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, pourquoi tu me maquilles avec rouleau de peinture-là ?!"
+   ],
+   [
+    1,
+    "Tu as dit maquillage qui résiste aux larmes. Ton fiancé-là, c'est mon ex dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The bride, seated, keeps her face three-quarters to the camera and points at the paint roller, panicked. The makeup artist answers slowly and calmly, holding the single paint roller up, her face clearly visible, a cold little smile on her lips.",
+  "chute": "The bride freezes, mouth wide open, eyes huge. The camera slowly pushes in to a close-up of the bride's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "rouleau",
+   "larmes",
+   "mon ex"
+  ],
+  "gag_legende": "LA MARIÉE EN COMPRENANT LE PROGRAMME :",
+  "mecanisme": "demande prise au pied de la lettre (maquillage anti-larmes) + révélation qui frappe le fiancé"
+ },
+ {
+  "id": "B071-02",
+  "titre": "La facture du salon",
+  "lieu": "hair salon in Deux-Plateaux, Abidjan, a styling chair in front of a big mirror, a hooded hair dryer chair on the right, shelves of hair products, afternoon",
+  "persos": [
+   {
+    "nom": "the client",
+    "desc": "woman in her 30s, crimson-and-aubergine dress, fresh long braids, round face, a small handbag on her lap",
+    "pose": "sitting in the styling chair in the foreground on the left, turned three-quarters toward the camera, indignant"
+   },
+   {
+    "nom": "the hairdresser",
+    "desc": "hairdresser in her 40s, turquoise-and-gold boubou, big earrings, sly eyes, holding ONE single comb",
+    "pose": "standing in the middle behind the styling chair, holding the comb, sly smile"
+   },
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, plum-and-ochre kaba, glasses, sitting under a hood dryer raised above her head so her face is fully visible, arms crossed",
+    "pose": "sitting under the raised hood dryer on the right, arms crossed, glaring"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, la coiffure c'est trois mille ! Pourquoi tu dis cinq mille ?!"
+   ],
+   [
+    1,
+    "Deux mille pour oublier ce que tu as dit sur ta belle-mère dêh."
+   ],
+   [
+    2,
+    "Moi, j'ai rien oublié dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The client, seated, protests with her hands open, face three-quarters to the camera. The hairdresser answers with a sly smile, pointing her comb toward the dryer. The mother-in-law, under the raised dryer hood, leans forward slightly and says her line coldly, her face clearly visible.",
+  "chute": "The client freezes, eyes wide, without daring to turn around. The camera slowly pushes in to a close-up of the client's terrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "cinq mille",
+   "oublier",
+   "belle-mère"
+  ],
+  "gag_legende": "LA CLIENTE AU PROCHAIN REPAS DE FAMILLE :",
+  "mecanisme": "logique absurde (faire payer l'oubli des ragots) + la victime cachée relance"
+ },
+ {
+  "id": "B071-03",
+  "titre": "Le grand jour au salon",
+  "lieu": "hair salon in Angré, Abidjan, a styling chair facing a big mirror, wedding veils hanging on a rack, a waiting bench in front, early morning",
+  "persos": [
+   {
+    "nom": "the bride",
+    "desc": "bride-to-be in her late 20s, cyan-and-violet robe, elegant half-done updo, dreamy eyes, hands joined on her lap",
+    "pose": "sitting in the styling chair on the left, turned three-quarters toward the camera, dreamy smile"
+   },
+   {
+    "nom": "the hairdresser",
+    "desc": "hairdresser in her 40s, teal-and-tangerine kaftan, short hair, proud chin, holding ONE single round brush",
+    "pose": "standing in the middle behind the bride, holding the brush, very proud"
+   },
+   {
+    "nom": "the bridesmaid",
+    "desc": "bridesmaid in her 20s, tangerine-and-sand dress, her hair sticking straight up like a TV antenna, a small clutch bag on her lap",
+    "pose": "sitting on the waiting bench in the foreground on the right, arms crossed, furious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, je veux être la plus belle du mariage dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Ce matin, j'ai coiffé tes demoiselles d'honneur."
+   ],
+   [
+    2,
+    "C'est pour ça ma tête-là ressemble à antenne ?!"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The bride, seated, says her wish dreamily, hands joined. The hairdresser answers proudly, pointing her brush toward the bridesmaid. The bridesmaid, seated in the foreground, uncrosses her arms, points at her own antenna hair and shouts, her face clearly visible.",
+  "chute": "The bridesmaid freezes, nostrils flaring, her hair still standing straight up. The camera slowly pushes in to a close-up of the bridesmaid's furious face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "plus belle",
+   "demoiselles",
+   "antenne"
+  ],
+  "gag_legende": "LES DEMOISELLES D'HONNEUR SUR LES PHOTOS :",
+  "mecanisme": "logique absurde : être la plus belle en enlaidissant les autres + la victime relance"
+ },
+ {
+  "id": "B071-04",
+  "titre": "Le repas du soir",
+  "lieu": "living room of a modest house in Songon, Abidjan, a small wooden table with three plates of plain white rice, a ceiling fan, evening",
+  "persos": [
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, plum-and-ochre boubou, brand-new long luxurious braids, very long false eyelashes, gold bracelets",
+    "pose": "sitting at the table in the foreground on the left, turned three-quarters toward the camera, one hand touching her braids proudly"
+   },
+   {
+    "nom": "the boy",
+    "desc": "boy around 9, teal-and-sand t-shirt, skinny, holding ONE single spoon above his plate of plain rice",
+    "pose": "sitting at the table in the middle, holding the spoon still, sulking"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, crimson-and-aubergine shirt, thin mustache, arms crossed",
+    "pose": "sitting at the table on the right, arms crossed, bitter"
+   }
+  ],
+  "dialogue": [
+   [
+    1,
+    "Maman, pourquoi on mange riz blanc depuis lundi dêh ?"
+   ],
+   [
+    0,
+    "Mon bébé, la sauce de la semaine est sur ma tête dêh."
+   ],
+   [
+    2,
+    "Et le loyer-là est dans ses faux cils."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Nobody eats. The boy, holding his spoon above his plain rice, complains to his mother. The mother answers sweetly, touching her new braids with one hand, face three-quarters to the camera. The father, arms crossed, keeps his face three-quarters to the camera and says his line bitterly, his face clearly visible.",
+  "chute": "The mother flutters her long false eyelashes proudly, not ashamed at all. The camera slowly pushes in to a close-up of the mother's proud face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "riz blanc",
+   "sauce",
+   "loyer"
+  ],
+  "gag_legende": "LE PROPRIÉTAIRE EN VOYANT SES CILS :",
+  "mecanisme": "logique absurde : le budget de la maison transformé en coiffure + relance du père"
+ },
+ {
+  "id": "B071-05",
+  "titre": "Le cadeau chez la manucure",
+  "lieu": "nail salon in Deux-Plateaux, Abidjan, a small manicure table with a lamp and nail polish bottles, a mirror on the wall, afternoon",
+  "persos": [
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, cyan-and-violet jumpsuit, extremely long false nails, gold bracelets, hands spread on the table",
+    "pose": "sitting at the manicure table in the foreground on the left, turned three-quarters toward the camera, delighted"
+   },
+   {
+    "nom": "the nail technician",
+    "desc": "nail technician woman in her 20s, teal-and-tangerine tunic, braided ponytail, holding ONE single nail file",
+    "pose": "sitting across the table on the right, holding the nail file, neutral"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, plum-and-magenta shirt, receding hairline, holding ONE single phone pressed against his chest",
+    "pose": "standing in the middle behind the nail technician, phone pressed against his chest, sly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, tu paies mes ongles longs-là ? Tu es trop gentil dêh !"
+   ],
+   [
+    2,
+    "Ma sœur, ajoute encore deux centimètres. Elle tape toujours mon code."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife, seated, spreads her long nails on the table and smiles at her husband, face three-quarters to the camera. The husband leans slightly toward the nail technician and says his line in a low voice, pressing his phone against his chest, his face clearly visible.",
+  "chute": "The wife's smile freezes, then her eyes slowly narrow. The camera slowly pushes in to a close-up of the wife's suspicious face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "ongles",
+   "centimètres",
+   "code"
+  ],
+  "gag_legende": "LE TÉLÉPHONE DU MARI CE SOIR :",
+  "mecanisme": "aveu involontaire : la vraie raison du cadeau dite devant elle"
+ },
+ {
+  "id": "B071-06",
+  "titre": "Le rasage du samedi",
+  "lieu": "barbershop in Songon, Abidjan, a big barber chair, a mirror with a shelf of clippers, a small waiting sofa, late morning",
+  "persos": [
+   {
+    "nom": "the client",
+    "desc": "man in his 40s, turquoise-and-gold shirt, thick beard on his left cheek and a perfectly shaved right cheek, sitting in the barber chair",
+    "pose": "sitting in the barber chair in the foreground on the left, turned three-quarters toward the camera, one hand on his shaved cheek, outraged"
+   },
+   {
+    "nom": "the barber",
+    "desc": "barber in his 30s, tangerine-and-sand polo shirt, short twists, holding ONE single electric clipper",
+    "pose": "standing on the right behind the chair, holding the clipper still, very calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon vieux, pourquoi tu rases ma barbe d'un côté seulement ?!"
+   ],
+   [
+    1,
+    "Ta femme dit tu as deux visages dêh. Elle a payé pour celui qu'elle connaît."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The client, seated, touches his shaved cheek with one hand and protests, face three-quarters to the camera. The barber answers calmly, the clipper held still in one hand, his face clearly visible.",
+  "chute": "The client freezes, his hand still on his cheek, eyes wide. The camera slowly pushes in to a close-up of the client's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "barbe",
+   "deux visages",
+   "connaît"
+  ],
+  "gag_legende": "LE CLIENT EN RENTRANT À LA MAISON :",
+  "mecanisme": "expression « avoir deux visages » prise au pied de la lettre"
+ },
+ {
+  "id": "B071-07",
+  "titre": "Le pagne de Tantie",
+  "lieu": "tailor's workshop in Angré, Abidjan, a sewing machine on a wooden table, rolls of fabric on shelves, afternoon",
+  "persos": [
+   {
+    "nom": "the client",
+    "desc": "woman in her 50s, ochre-and-cherry dress, plump cheeks, a big handbag hanging on her arm",
+    "pose": "standing in the foreground on the left, turned three-quarters toward the camera, pointing at the tailor's shirt, outraged"
+   },
+   {
+    "nom": "the tailor",
+    "desc": "tailor in his 40s, ochre-and-cherry shirt in exactly the same fabric as the client's dress, measuring tape around his neck, small goatee",
+    "pose": "sitting behind the sewing machine on the right, hands open, innocent smile"
+   },
+   {
+    "nom": "the tailor's son",
+    "desc": "boy around 7, ochre-and-cherry tunic in the same fabric too, chubby cheeks",
+    "pose": "standing in the middle next to the sewing machine, hands behind his back, smiling"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Couturier, ta chemise-là, c'est mon pagne !"
+   ],
+   [
+    1,
+    "Ya fohi, Tantie. Ta robe-là a accouché cette nuit."
+   ],
+   [
+    0,
+    "Et la tenue de ton fils-là ?!"
+   ],
+   [
+    1,
+    "Jumeaux, Tantie. Tu es grand-mère dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The client points at the tailor's shirt, outraged. The tailor, seated, answers with a gentle innocent smile, opening his hands. The client points at the boy's tunic. The tailor answers proudly, gesturing toward his son with one hand, his face clearly visible, while the boy keeps smiling.",
+  "chute": "The client freezes, mouth open, her handbag sliding down to her elbow. The camera slowly pushes in to a close-up of the client's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "pagne",
+   "accouché",
+   "grand-mère"
+  ],
+  "gag_legende": "TANTIE EN COMPTANT SES PETITS-ENFANTS :",
+  "mecanisme": "logique absurde : le tissu détourné présenté comme une naissance + relance des jumeaux"
+ },
+ {
+  "id": "B071-08",
+  "titre": "Les six paquets de mèches",
+  "lieu": "hair salon in Songon, Abidjan, a styling chair, a big mirror, empty hair extension packets on a small table, late afternoon",
+  "persos": [
+   {
+    "nom": "the client",
+    "desc": "woman in her 20s, plum-and-magenta dress, thin sparse braids, a small purse on her lap",
+    "pose": "sitting in the styling chair in the foreground on the left, turned three-quarters toward the camera, pointing at the empty packets, angry"
+   },
+   {
+    "nom": "the hairdresser",
+    "desc": "hairdresser in her 30s, cyan-and-violet kaftan, brand-new thick long braids, holding ONE single comb",
+    "pose": "standing on the right behind the chair, holding the comb, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, six paquets de mèches et tu mets trois ?!"
+   ],
+   [
+    1,
+    "Tu as dit tresses légères dêh."
+   ],
+   [
+    0,
+    "Et tes nouvelles tresses-là alors ?!"
+   ],
+   [
+    1,
+    "C'est le poids que j'ai enlevé dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The client, seated, points at the empty packets, angry. The hairdresser answers calmly. The client points at the hairdresser's thick new braids. The hairdresser touches her own braids with her free hand and answers proudly, her face clearly visible.",
+  "chute": "The client freezes, mouth open. The camera slowly pushes in to a close-up of the client's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "mèches",
+   "légères",
+   "poids"
+  ],
+  "gag_legende": "LA CLIENTE DEVANT SES PROPRES MÈCHES :",
+  "mecanisme": "demande prise au pied de la lettre (« tresses légères ») + preuve du vol sur la tête de la coiffeuse"
+ },
+ {
+  "id": "B071-09",
+  "titre": "La coiffure du soir",
+  "lieu": "small hair salon in Deux-Plateaux, Abidjan, during a power cut, lit only by one small rechargeable lamp on the table, a mirror on the wall, faces still clearly visible, evening",
+  "persos": [
+   {
+    "nom": "the client",
+    "desc": "woman in her 40s, turquoise-and-gold kaba, brand-new elaborate hairstyle, big round cheeks, hands on her cheeks",
+    "pose": "sitting in the styling chair in the foreground on the left, turned three-quarters toward the camera, admiring herself, delighted"
+   },
+   {
+    "nom": "the hairdresser",
+    "desc": "hairdresser in her 30s, crimson-and-aubergine tunic, short braids, holding ONE single phone up as if to take a photo",
+    "pose": "standing on the right, holding the phone up toward the client, urgent"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, c'est moi-même dans le miroir-là ? Je suis belle dêh !"
+   ],
+   [
+    1,
+    "Souris vite, ma sœur ! Avant que la CIE remette le courant."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The client, seated, admires herself, hands on her cheeks, delighted, face three-quarters to the camera. The hairdresser holds the single phone up toward her and answers urgently, her face clearly visible in the lamp light.",
+  "chute": "The client's delighted smile freezes. The camera slowly pushes in to a close-up of the client's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "belle",
+   "CIE",
+   "courant"
+  ],
+  "gag_legende": "LA CLIENTE QUAND LE COURANT REVIENT :",
+  "mecanisme": "logique cruelle : la beauté tient seulement grâce au délestage"
+ },
+ {
+  "id": "B071-10",
+  "titre": "La nouvelle coiffure de la grande sœur",
+  "lieu": "courtyard of a family house in Angré, Abidjan, plastic chairs, a clothesline, morning",
+  "persos": [
+   {
+    "nom": "the neighbor",
+    "desc": "young woman in her 20s, teal-and-tangerine dress, short hair, holding ONE single phone",
+    "pose": "standing on the left, pointing at the big sister's hair, impressed"
+   },
+   {
+    "nom": "the big sister",
+    "desc": "young woman around 20, plum-and-ochre dress, very long thick glossy hair down to her waist",
+    "pose": "standing in the foreground in the middle, turned three-quarters toward the camera, one hand touching her long hair proudly"
+   },
+   {
+    "nom": "the little sister",
+    "desc": "girl around 10, teal-and-sand school dress, a headscarf tied tightly over her whole head, a school bag on her back",
+    "pose": "standing on the right, both hands on her school bag straps, furious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, tes cheveux-là sont naturels vraiment ?"
+   ],
+   [
+    1,
+    "Cent pour cent naturels dêh ! Ça vient de la famille."
+   ],
+   [
+    2,
+    "Rends-moi mes cheveux dêh ! Je vais à l'école !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The neighbor points at the big sister's long hair, impressed. The big sister answers proudly, touching her hair with one hand, face three-quarters to the camera. The little sister, both hands on her school bag straps, stamps her foot once and shouts at her big sister, her face clearly visible.",
+  "chute": "The big sister freezes, her hand still on her hair, her proud smile turning to panic. The camera slowly pushes in to a close-up of the big sister's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "naturels",
+   "famille",
+   "cheveux"
+  ],
+  "gag_legende": "LA GRANDE SŒUR DEVANT TOUT LE QUARTIER :",
+  "mecanisme": "révélation par un tiers : la petite sœur réclame les cheveux qu'on lui a pris"
+ },
+ {
+  "id": "B071-11",
+  "titre": "L'uniforme de la rentrée",
+  "lieu": "tailor's shop in Songon, Abidjan, a sewing machine on a table, a full-length mirror, school uniforms hanging on a rail, morning",
+  "persos": [
+   {
+    "nom": "the boy",
+    "desc": "boy around 8, drowning in a huge cyan-and-violet school uniform, sleeves covering his hands, trousers piled on his shoes, big eyes",
+    "pose": "standing in the foreground on the left, turned three-quarters toward the camera, arms held out, desperate"
+   },
+   {
+    "nom": "the seamstress",
+    "desc": "seamstress in her 50s, tangerine-and-sand boubou, measuring tape around her neck, small glasses on her nose",
+    "pose": "sitting behind the sewing machine on the right, hands on the machine, very serious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Couturière, l'uniforme-là est trop grand dêh ! Je suis perdu dedans !"
+   ],
+   [
+    1,
+    "Mon petit, ton papa a dit : prévois trois redoublements."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy holds his arms out, the sleeves hanging over his hands, and complains, face three-quarters to the camera. The seamstress, seated, answers very seriously, looking at him over her glasses, her face clearly visible.",
+  "chute": "The boy freezes, arms still out, mouth open. The camera slowly pushes in to a close-up of the boy's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "uniforme",
+   "papa",
+   "redoublements"
+  ],
+  "gag_legende": "LE BULLETIN DU PETIT EN JUIN :",
+  "mecanisme": "logique absurde du père : coudre pour les redoublements à venir"
+ },
+ {
+  "id": "B071-12",
+  "titre": "La perruque de la fête",
+  "lieu": "garden party in Deux-Plateaux, Abidjan, plastic chairs, a decorated tent, a mango tree behind, late afternoon",
+  "persos": [
+   {
+    "nom": "the friend",
+    "desc": "woman in her 40s, crimson-and-aubergine kaftan, short hair, holding ONE single small handbag",
+    "pose": "standing on the left, pointing at the wig with her free hand, shocked"
+   },
+   {
+    "nom": "the wig lady",
+    "desc": "woman in her 40s, turquoise-and-gold dress, huge voluminous curly wig with a small sparrow sitting calmly in it, chin up",
+    "pose": "standing in the foreground on the right, turned three-quarters toward the camera, chin up, unbothered"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, il y a un oiseau dans ta perruque-là dêh !"
+   ],
+   [
+    1,
+    "Laisse-le dêh. C'est mon locataire. Il paie mieux que mon mari."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The small sparrow stays sitting in the wig the whole time. The friend points at the bird, shocked. The wig lady answers calmly, chin up, without touching her wig, her face clearly visible.",
+  "chute": "The sparrow chirps once while the wig lady keeps her proud pose. The camera slowly pushes in to a close-up of the wig lady's proud face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "oiseau",
+   "locataire",
+   "mari"
+  ],
+  "gag_legende": "LE MARI EN APPRENANT LA NOUVELLE :",
+  "mecanisme": "logique absurde assumée : la perruque louée à un oiseau + pique au mari"
+ },
+ {
+  "id": "B071-13",
+  "titre": "La promesse du salon",
+  "lieu": "beauty salon in Angré, Abidjan, a styling chair, a big wall mirror, shelves of beauty products, afternoon",
+  "persos": [
+   {
+    "nom": "the client",
+    "desc": "woman in her 30s, plum-and-magenta kaba, freshly done elegant hairstyle, round face, pointing at her own face",
+    "pose": "sitting in the styling chair in the foreground on the left, turned three-quarters toward the camera, disappointed"
+   },
+   {
+    "nom": "the salon owner",
+    "desc": "salon owner woman in her 50s, teal-and-sand boubou, gold glasses, holding ONE single hand mirror",
+    "pose": "standing on the right, holding the hand mirror, calm and professional"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ton salon-là dit beauté garantie ! Regarde-moi dêh !"
+   ],
+   [
+    1,
+    "Ma sœur, la garantie couvre la coiffure. Pas les pièces d'origine."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The client, seated, points at her own face and complains, face three-quarters to the camera. The salon owner answers calmly like a professional, holding the single hand mirror, her face clearly visible.",
+  "chute": "The client freezes, her finger still pointing at her face. The camera slowly pushes in to a close-up of the client's insulted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "garantie",
+   "coiffure",
+   "pièces d'origine"
+  ],
+  "gag_legende": "LES PARENTS DE LA CLIENTE EN APPRENANT ÇA :",
+  "mecanisme": "logique de garantie prise au pied de la lettre : la coiffure est couverte, pas le visage d'usine"
+ },
+ {
+  "id": "B071-14",
+  "titre": "La robe commandée par le mari",
+  "lieu": "tailor's workshop in Deux-Plateaux, Abidjan, a sewing machine, a bare mannequin, a small folded new dress on the table, afternoon",
+  "persos": [
+   {
+    "nom": "the wife",
+    "desc": "wife in her 40s, teal-and-tangerine boubou, generous curves, big hopeful eyes",
+    "pose": "standing in the foreground on the left, turned three-quarters toward the camera, hands joined under her chin, hopeful"
+   },
+   {
+    "nom": "the tailor",
+    "desc": "tailor in his 50s, plum-and-ochre shirt, measuring tape around his neck, bald head, one hand on the small folded dress",
+    "pose": "standing behind the table on the right, one hand on the folded dress, embarrassed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Couturier, mon mari-là a commandé quelle taille pour moi ?"
+   ],
+   [
+    1,
+    "Trente-six, Tantie. Toute petite."
+   ],
+   [
+    0,
+    "Ehh ! Il me voit mince dêh !"
+   ],
+   [
+    1,
+    "Livraison à Songon, Tantie. Toi, tu dors à Angré, non ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife asks, hands joined under her chin, hopeful. The tailor answers, one hand on the folded dress. The wife beams and sways her shoulders happily. The tailor answers awkwardly, scratching his head with his free hand, his face clearly visible.",
+  "chute": "The wife's big smile freezes, then her eyebrows slowly rise. The camera slowly pushes in to a close-up of the wife's furious face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "taille",
+   "mince",
+   "Songon"
+  ],
+  "gag_legende": "LE MARI QUAND ELLE VA RENTRER :",
+  "mecanisme": "fausse joie puis révélation par l'adresse de livraison"
+ },
+ {
+  "id": "B071-15",
+  "titre": "Le costume du mariage",
+  "lieu": "tailor's workshop in Songon, Abidjan, a sewing machine, a bare mannequin, rolls of fabric on shelves, morning",
+  "persos": [
+   {
+    "nom": "the groom",
+    "desc": "young man in his late 20s, ochre-and-cherry t-shirt, fresh haircut, skinny",
+    "pose": "standing in the foreground on the left, turned three-quarters toward the camera, arms wide open, outraged"
+   },
+   {
+    "nom": "the tailor",
+    "desc": "old tailor in his 60s, cyan-and-violet boubou, glasses, white mustache, holding ONE single tie",
+    "pose": "standing behind the table on the right, holding up the single tie, very calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Couturier, j'ai dit costume trois pièces pour mon mariage dêh !"
+   ],
+   [
+    1,
+    "Mon vieux, ton avance-là, c'était trois pièces de cent francs. Voilà ta cravate."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The groom opens his arms wide and protests, face three-quarters to the camera. The tailor answers calmly and holds the single tie up toward him, his face clearly visible.",
+  "chute": "The groom freezes, arms still wide open, mouth open. The camera slowly pushes in to a close-up of the groom's dumbfounded face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "trois pièces",
+   "avance",
+   "cravate"
+  ],
+  "gag_legende": "LE MARIÉ DEVANT LA BELLE-FAMILLE :",
+  "mecanisme": "« costume trois pièces » pris au pied de la lettre : trois pièces de monnaie"
+ },
+ {
+  "id": "B071-16",
+  "titre": "Le bonnet de nuit",
+  "lieu": "living room of an old couple's house in Angré, Abidjan, an old sofa, a small lamp, night",
+  "persos": [
+   {
+    "nom": "the old husband",
+    "desc": "grandfather in his 70s, teal-and-sand pyjamas, white beard, bald head, arms crossed",
+    "pose": "sitting on the left end of the sofa in the foreground, turned three-quarters toward the camera, arms crossed, sulking"
+   },
+   {
+    "nom": "the old wife",
+    "desc": "grandmother in her 70s, plum-and-magenta nightgown, a big satin sleeping bonnet over her braids, one hand resting on the bonnet",
+    "pose": "sitting on the right end of the sofa, one hand resting on her bonnet, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma vieille, tu protèges tes cheveux-là mieux que notre mariage dêh !"
+   ],
+   [
+    1,
+    "Mes cheveux, j'ai payé cash. Toi, quarante ans après, ta dot-là est encore crédit."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The old husband, arms crossed, complains, face three-quarters to the camera. The old wife answers sharply, one hand resting on her bonnet, her face clearly visible.",
+  "chute": "The old husband uncrosses his arms and freezes, mouth open. The camera slowly pushes in to a close-up of the old husband's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "cheveux",
+   "cash",
+   "dot"
+  ],
+  "gag_legende": "LA BELLE-FAMILLE QUI ATTEND TOUJOURS :",
+  "mecanisme": "logique comptable : la coiffure payée cash contre la dot encore à crédit"
+ },
+ {
+  "id": "B071-17",
+  "titre": "L'essayage en boutique",
+  "lieu": "clothing boutique in Deux-Plateaux, Abidjan, racks of clothes, a very slim bare mannequin, a full-length mirror, afternoon",
+  "persos": [
+   {
+    "nom": "the customer",
+    "desc": "woman in her 40s, crimson-and-aubergine boubou, generous curves, holding ONE single small dress pressed against her body",
+    "pose": "standing in the foreground on the left, turned three-quarters toward the camera, holding the small dress against herself, frustrated"
+   },
+   {
+    "nom": "the saleswoman",
+    "desc": "saleswoman in her 20s, ochre-and-cherry jumpsuit, long straight hair, arms crossed",
+    "pose": "standing on the right next to the bare mannequin, arms crossed, smug"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, tu as dit taille unique ! Ça monte pas dêh !"
+   ],
+   [
+    1,
+    "Unique, Tantie : une seule personne peut porter. Le mannequin-là. Lui, il mange pas garba."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer holds the small dress against her body and complains, face three-quarters to the camera. The saleswoman answers smugly, pointing her thumb at the bare mannequin beside her, her face clearly visible.",
+  "chute": "The customer freezes, the small dress still pressed against her. The camera slowly pushes in to a close-up of the customer's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "taille unique",
+   "mannequin",
+   "garba"
+  ],
+  "gag_legende": "LE GARBA DE MIDI EN ENTENDANT ÇA :",
+  "mecanisme": "« taille unique » pris au pied de la lettre"
+ },
+ {
+  "id": "B071-18",
+  "titre": "La traîne de la mariée",
+  "lieu": "bride's dressing room in a villa in Songon, Abidjan, a big mirror, the bride's extremely long train spread across the whole floor and out through the door, morning",
+  "persos": [
+   {
+    "nom": "the bride",
+    "desc": "bride in her late 20s, turquoise-and-gold wedding gown with an extremely long train covering the floor, elegant updo",
+    "pose": "standing in the foreground on the left, turned three-quarters toward the camera, hands open toward the train, worried"
+   },
+   {
+    "nom": "the bride's mother",
+    "desc": "mother in her 50s, plum-and-ochre kaftan, big headwrap, gold earrings, hands on her hips",
+    "pose": "standing on the right, hands on her hips, proud and determined"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, ma traîne-là fait dix mètres dêh ! C'est trop !"
+   ],
+   [
+    1,
+    "Ya fohi. Comme ça ta belle-mère reste à dix mètres de toi toute la journée."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The bride opens her hands toward the endless train and complains, face three-quarters to the camera. The mother answers with deep satisfaction, hands on her hips, her face clearly visible.",
+  "chute": "The bride freezes, then a slow delighted smile spreads across her face. The camera slowly pushes in to a close-up of the bride's delighted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "traîne",
+   "dix mètres",
+   "belle-mère"
+  ],
+  "gag_legende": "LA BELLE-MÈRE AU BOUT DE LA TRAÎNE :",
+  "mecanisme": "logique absurde de la mère : la longueur de la traîne comme distance de sécurité"
+ },
+ {
+  "id": "B071-19",
+  "titre": "La commande de Madame",
+  "lieu": "tailor's workshop in Angré, Abidjan, a sewing machine, finished clothes hanging on a rail, late afternoon",
+  "persos": [
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, tangerine-and-sand kaftan, round belly, thick eyebrows",
+    "pose": "standing in the foreground on the left, turned three-quarters toward the camera, frowning"
+   },
+   {
+    "nom": "the tailor",
+    "desc": "tailor in his 50s, teal-and-tangerine shirt, measuring tape around his neck, holding ONE single folded wrapper cloth",
+    "pose": "sitting behind the sewing machine on the right, holding the folded wrapper, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Couturier, ma femme a commandé un pantalon pour elle-même dêh ?!"
+   ],
+   [
+    1,
+    "Oui, mon vieux. Chez vous, c'est elle qui porte le pantalon. Toi, ton pagne est prêt."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The husband asks, frowning, one finger raised, face three-quarters to the camera. The tailor answers calmly and holds the single folded wrapper out toward him, his face clearly visible.",
+  "chute": "The husband freezes, eyes wide, mouth open. The camera slowly pushes in to a close-up of the husband's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "pantalon",
+   "porte",
+   "pagne"
+  ],
+  "gag_legende": "LE MARI EN RENTRANT AVEC SON PAGNE :",
+  "mecanisme": "expression « porter le pantalon » prise au pied de la lettre"
+ },
+ {
+  "id": "B071-20",
+  "titre": "Les nouvelles tresses",
+  "lieu": "hair salon in Songon, Abidjan, a styling chair, a big mirror, a wall fan, morning",
+  "persos": [
+   {
+    "nom": "the client",
+    "desc": "woman in her 30s, ochre-and-cherry kaftan, extremely tight braids pulling her face, eyes stuck wide open",
+    "pose": "sitting in the styling chair in the foreground on the left, turned three-quarters toward the camera, eyes wide open, panicked"
+   },
+   {
+    "nom": "the hairdresser",
+    "desc": "hairdresser in her 40s, cyan-and-violet dress, strong arms, holding ONE single comb",
+    "pose": "standing on the right behind the chair, holding the comb, satisfied"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, tes tresses-là sont trop serrées ! Je peux plus fermer les yeux !"
+   ],
+   [
+    1,
+    "Ma sœur, c'est toi-même qui as dit : avec ton mari-là, tu fermes plus les yeux."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The client, seated, eyes stuck wide open, points at her braids and complains, face three-quarters to the camera. The hairdresser answers calmly with a satisfied smile, holding the comb, her face clearly visible.",
+  "chute": "The client tries to blink and cannot; her eyes stay wide open. The camera slowly pushes in to a close-up of the client's wide-eyed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "serrées",
+   "yeux",
+   "mari"
+  ],
+  "gag_legende": "SON MARI EN RENTRANT TARD CE SOIR :",
+  "mecanisme": "« ne plus fermer les yeux » pris au pied de la lettre"
+ }
+]

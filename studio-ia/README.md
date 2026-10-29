@@ -106,6 +106,23 @@ Environ 0,18 $ par sketch.
 - Dans la description TikTok, ajouter : « Extraits 3D : Big Buck Bunny, Caminandes 3 — (CC BY) Blender Foundation |
   studio.blender.org ».
 
+## Application HTML « Studio Comédie Abidjan » (app/)
+
+`app/studio-comedie.html` : UN fichier à ouvrir dans Chrome ou Edge (double-clic), sans installation. Il enchaîne tout :
+banque de sketchs notés (prompts image et vidéo générés avec les gabarits de `generer.py`), production image → clip →
+contrôle IA avec plafond de budget, puis montage au design de la chaîne en MP4 1080 × 1920, calculé dans le navigateur.
+
+- Construire : `python3 app/fusionner.py` (banque/brut + banque/notes → banque/selection.json), puis
+  `python3 app/construire.py` (src/ + vendor/ + sons/ + banque → studio-comedie.html).
+- Banque : écrite par 100 agents auteurs (fiches `banque/briefs.json` : 25 domaines × 4 mécanismes comiques, couleurs de
+  tenues réservées à chaque auteur), notée par deux juges indépendants (regard CHOC et regard PUBLIC, barème
+  `banque/jury.md` calé sur les meilleurs sketchs de la chaîne), dédoublonnée contre les sketchs déjà écrits.
+- Sécurité des dépenses : plafond par session et plancher de clé vérifiés avant chaque appel payant ; une vidéo lancée
+  n'est jamais relancée et toujours récupérée, même après fermeture de la page (IndexedDB).
+- Montage : lecture séquentielle mp4box.js + VideoDecoder (une recherche image par image coûtait 90 ms par image),
+  encodage WebCodecs (MP4 H.264 + AAC si le navigateur sait l'encoder, sinon Opus, sinon WebM).
+- Bibliothèques embarquées : mp4-muxer et webm-muxer (MIT), mp4box.js 0.5.4 (BSD-3) — licences dans `app/vendor/`.
+
 ## Utilisation
 
 ```bash

@@ -1,0 +1,787 @@
+[
+ {
+  "id": "B023-01",
+  "titre": "Les devoirs du soir",
+  "lieu": "small living room of a modest house in Attécoubé, Abidjan, a low wooden table with an open school notebook and ONE single thick stack of paper bills, a bare light bulb hanging from the ceiling, evening",
+  "persos": [
+   {
+    "nom": "the eager schoolboy",
+    "desc": "boy around 9, turquoise-and-navy T-shirt, short hair, round cheeks, holding ONE single pencil",
+    "pose": "sitting on a mat in the foreground on the right, at the low table, holding the pencil, eager"
+   },
+   {
+    "nom": "the tired father",
+    "desc": "father in his 40s, crimson-and-maroon boubou, thin mustache, tired eyes, one hand resting on the stack of paper bills",
+    "pose": "sitting on a low stool on the left, behind the low table, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, le maître dit : faites vos devoirs avec vos parents dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Moi aussi j'ai trois devoirs : CIE, Sodeci, loyer. Tu commences par lequel ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy announces it proudly, tapping his notebook with the pencil, his face turned three-quarters to the camera. The father nods slowly, slides the stack of paper bills onto the boy's notebook with one hand and asks his question calmly, his face clearly visible.",
+  "chute": "The boy freezes, staring down at the bills, the pencil trembling in his hand. The camera slowly pushes in to a close-up of the eager schoolboy's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "devoirs",
+   "CIE",
+   "loyer"
+  ],
+  "gag_legende": "LE PETIT EN OUVRANT LA FACTURE CIE :",
+  "mecanisme": "logique absurde au pied de la lettre : les « devoirs » deviennent les factures du père, refilées à l'enfant"
+ },
+ {
+  "id": "B023-02",
+  "titre": "La dame au fond de la classe",
+  "lieu": "primary school classroom in Anyama, Abidjan, wooden desks, a blackboard with chalk writing, ONE single big aluminium pot of garba on the floor at the front right, morning",
+  "persos": [
+   {
+    "nom": "the stunned teacher",
+    "desc": "male teacher in his 50s, peach-and-copper safari suit, round glasses, gray temples, holding ONE single piece of chalk",
+    "pose": "standing in the foreground on the left, in front of the blackboard, holding the chalk, shocked"
+   },
+   {
+    "nom": "the proud pupil",
+    "desc": "boy around 10, silver-and-cyan school uniform, big ears, hands folded on his desk",
+    "pose": "sitting at his desk in the middle of the room, proud smile"
+   },
+   {
+    "nom": "the garba seller",
+    "desc": "garba seller woman in her 40s, magenta-and-lilac kaba, headscarf, gold earrings, holding ONE single big ladle",
+    "pose": "standing on the right next to her pot of garba, smiling, the ladle raised"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "C'est qui cette dame-là avec sa marmite dans ma classe ?!"
+   ],
+   [
+    1,
+    "Maître, vous avez dit : apportez vos connaissances. C'est elle dêh."
+   ],
+   [
+    2,
+    "Et toi, maître, tu me dois trois garbas depuis lundi dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The teacher points the chalk at the woman and shouts his question, his face turned three-quarters to the camera. The boy answers calmly, very proud, opening one hand toward the woman. The garba seller stops smiling, points the ladle at the teacher and says her line, her face clearly visible.",
+  "chute": "The teacher freezes, the chalk still in the air, his mouth open. The camera slowly pushes in to a close-up of the stunned teacher's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "connaissances",
+   "garbas"
+  ],
+  "gag_legende": "LE MAÎTRE DEVANT TOUTE LA CLASSE :",
+  "mecanisme": "logique absurde au pied de la lettre (« apportez vos connaissances ») + relance du tiers qui accuse le maître"
+ },
+ {
+  "id": "B023-03",
+  "titre": "Le cahier à signer",
+  "lieu": "veranda of a house in Bingerville, Abidjan, two plastic chairs, a small table with a school bag, an open front door behind, late afternoon",
+  "persos": [
+   {
+    "nom": "the little girl",
+    "desc": "girl around 8, coral-and-violet dress, two puffy braids, holding ONE single small notebook",
+    "pose": "standing on the right, holding the notebook out toward her father, innocent"
+   },
+   {
+    "nom": "the nervous father",
+    "desc": "father in his 40s, lime-and-salmon shirt, round belly, short beard, holding ONE single pen",
+    "pose": "sitting on a plastic chair in the foreground on the left, holding the pen"
+   },
+   {
+    "nom": "the mother at the door",
+    "desc": "mother in her 40s, cream-and-salmon kaba, short hair, hands on her hips",
+    "pose": "standing in the open front doorway in the background in the middle, hands on her hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, la maîtresse dit de signer mon cahier de liaison dêh !"
+   ],
+   [
+    1,
+    "Liaison ?! Ma fille, c'est qui t'a parlé de Tantie Rose ?!"
+   ],
+   [
+    2,
+    "Chéri, c'est quelle Tantie Rose-là ?!"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The girl says her line innocently, holding out the notebook. The father jumps in his chair, eyes wide, and whispers his panicked question to the girl, his face turned three-quarters to the camera. In the doorway, the mother narrows her eyes and asks her question slowly, hands on her hips, her face clearly visible.",
+  "chute": "The father freezes, the pen in the air, a fake smile stuck on his face. The camera slowly pushes in to a close-up of the nervous father's terrified face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "liaison",
+   "Tantie Rose"
+  ],
+  "gag_legende": "PAPA CE SOIR SUR LE CANAPÉ :",
+  "mecanisme": "logique absurde au pied de la lettre (« cahier de liaison ») + le père se dénonce tout seul"
+ },
+ {
+  "id": "B023-04",
+  "titre": "La réunion avec la maîtresse",
+  "lieu": "primary school classroom in Attécoubé, Abidjan, wooden desks, a teacher's desk with a pile of report cards, the green Banco forest visible through the window, afternoon",
+  "persos": [
+   {
+    "nom": "the teacher",
+    "desc": "female teacher in her 30s, turquoise-and-navy dress, glasses, neat bun, holding ONE single report card",
+    "pose": "sitting behind the teacher's desk on the left, holding the report card"
+   },
+   {
+    "nom": "the calm mother",
+    "desc": "mother in her 40s, crimson-and-silver boubou, big gold earrings, a small handbag on her lap",
+    "pose": "sitting on a chair in the foreground on the right, facing the desk, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Madame, votre fils-là a un poil dans la main dêh !"
+   ],
+   [
+    1,
+    "Un seul poil ? Ya fohi. Son papa a la forêt du Banco dans chaque main."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher taps the report card and complains, frowning, her face turned three-quarters to the camera. The mother uncrosses her arms, shrugs and answers calmly, as if it were nothing, her face clearly visible.",
+  "chute": "The teacher freezes, her mouth open, the report card stuck in her hand. The camera slowly pushes in to a close-up of the calm mother's deadpan face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "poil",
+   "forêt du Banco"
+  ],
+  "gag_legende": "PAPA QUAND IL VA REGARDER CETTE VIDÉO :",
+  "mecanisme": "logique absurde au pied de la lettre (« poil dans la main ») + la mère enfonce le père"
+ },
+ {
+  "id": "B023-05",
+  "titre": "Le dessin du repas en famille",
+  "lieu": "primary school classroom in Anyama, Abidjan, wooden desks, children's drawings pinned on the wall, morning",
+  "persos": [
+   {
+    "nom": "the teacher",
+    "desc": "female teacher in her 40s, magenta-and-lilac kaftan, short hair, small glasses, holding ONE single drawing sheet showing a smiling family around a whole roast chicken",
+    "pose": "standing on the left in the background, holding up the drawing"
+   },
+   {
+    "nom": "the serious boy",
+    "desc": "boy around 8, cream-and-salmon school uniform, missing front tooth, hands flat on his desk",
+    "pose": "sitting at his desk in the foreground on the right, very serious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton dessin du repas en famille-là, pourquoi y a un poulet entier ?"
+   ],
+   [
+    1,
+    "Maîtresse, vous avez dit : utilisez votre imagination dêh !"
+   ],
+   [
+    0,
+    "Et ton papa qui sourit-là ?"
+   ],
+   [
+    1,
+    "Ça aussi, maîtresse. Imagination dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher shows the drawing and asks, intrigued, her face turned three-quarters to the camera. The boy answers seriously, as if it were obvious. The teacher points at the smiling father in the drawing and asks again. The boy shrugs and answers flatly, his face clearly visible.",
+  "chute": "The teacher slowly lowers the drawing, speechless. The camera slowly pushes in to a close-up of the serious boy's deadpan face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "poulet entier",
+   "imagination"
+  ],
+  "gag_legende": "MAMAN EN VOYANT LE DESSIN AFFICHÉ :",
+  "mecanisme": "logique absurde au pied de la lettre (« utilisez votre imagination ») + double chute qui touche le père"
+ },
+ {
+  "id": "B023-06",
+  "titre": "Le dessin affiché au mur",
+  "lieu": "primary school classroom in Bingerville, Abidjan, children's drawings pinned on the wall, one big drawing showing a giant mother and a tiny father in a corner, parents' day, late afternoon",
+  "persos": [
+   {
+    "nom": "the teacher",
+    "desc": "male teacher in his 30s, silver-and-cyan shirt, neat beard, holding ONE single wooden ruler",
+    "pose": "standing on the left next to the wall, pointing the ruler at the drawing"
+   },
+   {
+    "nom": "the vexed father",
+    "desc": "father in his 40s, peach-and-copper boubou, bald head, a phone in one hand",
+    "pose": "standing in the foreground in the middle, looking at the drawing"
+   },
+   {
+    "nom": "the honest girl",
+    "desc": "girl around 9, lime-and-salmon school uniform, two braids, hands behind her back",
+    "pose": "standing on the right, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Monsieur, sur son dessin-là, vous êtes tout petit."
+   ],
+   [
+    1,
+    "Ma fille, pourquoi papa est petit comme ça dêh ?!"
+   ],
+   [
+    2,
+    "Papa, le maître a dit : respectez l'échelle. J'ai mesuré avec ton salaire."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The teacher points the ruler at the tiny father in the drawing and says his line, holding back a smile. The father turns his head to his daughter, offended, and asks his question, his face turned three-quarters to the camera. The girl answers calmly, very sure of herself, her face clearly visible.",
+  "chute": "The teacher bites his lip to stop laughing; the father freezes. The camera slowly pushes in to a close-up of the vexed father's humiliated face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "échelle",
+   "salaire"
+  ],
+  "gag_legende": "PAPA LE JOUR DE LA PAIE :",
+  "mecanisme": "logique absurde au pied de la lettre (« respectez l'échelle ») + humiliation publique du père"
+ },
+ {
+  "id": "B023-07",
+  "titre": "Les révisions du soir",
+  "lieu": "small bare room of a house in Attécoubé, Abidjan, a woven mat on the floor, a school notebook on the mat, no furniture at all, a bare light bulb, evening",
+  "persos": [
+   {
+    "nom": "the studious boy",
+    "desc": "boy around 9, coral-and-violet tracksuit, round face, holding ONE single school notebook",
+    "pose": "sitting cross-legged on the mat on the right, holding the notebook"
+   },
+   {
+    "nom": "the poor father",
+    "desc": "father in his 40s, turquoise-and-navy kaftan, gray stubble, hands on his knees",
+    "pose": "sitting on a low stool in the foreground on the left"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, la maîtresse dit que je dois apprendre mes tables dêh !"
+   ],
+   [
+    1,
+    "Les tables-là ? Mon fils, on a même pas une table pour manger. Apprends d'abord la natte."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy says his line seriously, showing the notebook. The father raises his eyebrows, looks around the empty room, then answers calmly, pointing one finger at the mat, his face clearly visible.",
+  "chute": "The boy slowly looks down at the mat, then back at his father. The camera slowly pushes in to a close-up of the poor father's deadpan face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "tables",
+   "natte"
+  ],
+  "gag_legende": "LE PETIT DEVANT LA MAÎTRESSE DEMAIN :",
+  "mecanisme": "logique absurde au pied de la lettre (« apprendre ses tables ») sur fond de pauvreté"
+ },
+ {
+  "id": "B023-08",
+  "titre": "Le mot sur le bulletin",
+  "lieu": "front yard of a house in Anyama, Abidjan, a mango tree, a wooden bench, a school bag on the ground, late afternoon",
+  "persos": [
+   {
+    "nom": "the schoolgirl",
+    "desc": "girl around 10, crimson-and-maroon school uniform, hair in two puffs, holding ONE single report card",
+    "pose": "standing on the right, holding the report card open"
+   },
+   {
+    "nom": "the panicked father",
+    "desc": "father in his 50s, magenta-and-lilac boubou, gray beard, a watch on his wrist",
+    "pose": "sitting on the wooden bench in the foreground on the left"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, la maîtresse a écrit : doit redoubler d'efforts dêh !"
+   ],
+   [
+    1,
+    "Redoubler ?! Jamais ! Fais tes efforts une seule fois, l'écolage-là est trop cher !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl reads the comment on the report card proudly, her face turned three-quarters to the camera. The father jumps on the bench, eyes wide, raises one finger and shouts his answer, his face clearly visible.",
+  "chute": "The girl blinks, confused, the report card still open. The camera slowly pushes in to a close-up of the panicked father's outraged face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "redoubler",
+   "écolage"
+  ],
+  "gag_legende": "PAPA EN LISANT LE MOT REDOUBLER :",
+  "mecanisme": "logique absurde au pied de la lettre (« redoubler d'efforts ») + avarice du père"
+ },
+ {
+  "id": "B023-09",
+  "titre": "Le retour avec les résultats",
+  "lieu": "living room of a modest house in Bingerville, Abidjan, an old sofa, a cracked wall with a visible hole above the sofa, evening",
+  "persos": [
+   {
+    "nom": "the proud boy",
+    "desc": "boy around 11, silver-and-cyan polo shirt, short hair, big smile, holding ONE single report card",
+    "pose": "standing in the foreground on the right, holding the report card high"
+   },
+   {
+    "nom": "the delighted mother",
+    "desc": "mother in her 40s, coral-and-violet kaba, headscarf, gold bracelets",
+    "pose": "sitting on the old sofa on the left, under the hole in the wall"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman ! J'ai eu le tableau d'honneur dêh !"
+   ],
+   [
+    1,
+    "Ehh, mon bébé ! Ramène-le vite. Ça va cacher le trou dans le mur du salon."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy announces it, very proud, holding the report card high, his face turned three-quarters to the camera. The mother claps once with joy, then points at the hole in the wall behind her and says her line happily, her face clearly visible.",
+  "chute": "The boy's smile slowly melts and his arm lowers the report card. The camera slowly pushes in to a close-up of the proud boy's crushed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "tableau d'honneur",
+   "trou"
+  ],
+  "gag_legende": "LE PETIT QUAND IL A COMPRIS :",
+  "mecanisme": "logique absurde au pied de la lettre (« tableau d'honneur » = un tableau à accrocher)"
+ },
+ {
+  "id": "B023-10",
+  "titre": "Le goûter pour l'école",
+  "lieu": "kitchen corner of a small house in Attécoubé, Abidjan, a wooden table, a plastic basin, early morning",
+  "persos": [
+   {
+    "nom": "the schoolgirl",
+    "desc": "girl around 7, magenta-and-lilac school uniform, short braids, holding ONE single empty lunch box",
+    "pose": "standing in the foreground on the left, holding the lunch box open"
+   },
+   {
+    "nom": "the clever mother",
+    "desc": "mother in her 30s, peach-and-copper wrap dress, long braids, holding ONE single small loaf of bread standing upright",
+    "pose": "standing behind the table on the right, holding the bread upright"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, la maîtresse dit d'apporter un goûter équilibré demain dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Tiens ton pain-là bien droit. Voilà, il est équilibré."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl says her line, holding out the open lunch box, her face turned three-quarters to the camera. The mother holds the small loaf perfectly upright like a trophy and answers proudly, her face clearly visible.",
+  "chute": "The girl stares at the bread, then at her empty lunch box. The camera slowly pushes in to a close-up of the schoolgirl's dismayed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "goûter équilibré",
+   "pain"
+  ],
+  "gag_legende": "LA MAÎTRESSE EN VOYANT LE GOÛTER :",
+  "mecanisme": "logique absurde au pied de la lettre (« goûter équilibré » = pain qui tient debout)"
+ },
+ {
+  "id": "B023-11",
+  "titre": "Le compliment de la maîtresse",
+  "lieu": "courtyard of a house in Anyama, Abidjan, a plastic basin, a low stool, a clothesline, afternoon",
+  "persos": [
+   {
+    "nom": "the gifted boy",
+    "desc": "boy around 9, crimson-and-silver T-shirt, big round eyes, hands on his hips",
+    "pose": "standing in the foreground on the right, chest out, hands on his hips"
+   },
+   {
+    "nom": "the excited mother",
+    "desc": "mother in her 40s, lime-and-salmon kaba, headscarf, gold earrings",
+    "pose": "sitting on a low stool on the left, next to the basin"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, la maîtresse dit que je suis un génie dêh !"
+   ],
+   [
+    1,
+    "Ya fohi ! Premier vœu : le loyer. Deuxième vœu : un mari qui travaille dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy announces it very proudly, chest out, his face turned three-quarters to the camera. The mother's eyes light up; she raises one finger, then two, counting her wishes, and says her line with excitement, her face clearly visible.",
+  "chute": "The boy's proud smile freezes, completely lost. The camera slowly pushes in to a close-up of the gifted boy's confused face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "génie",
+   "vœu",
+   "mari"
+  ],
+  "gag_legende": "PAPA EN ENTENDANT LE DEUXIÈME VŒU :",
+  "mecanisme": "logique absurde au pied de la lettre (« génie » = génie de la lampe) + la mère vise le père"
+ },
+ {
+  "id": "B023-12",
+  "titre": "Le classement de l'école",
+  "lieu": "tiny tailor workshop in Bingerville, Abidjan, an old sewing machine on a wooden table, rolls of fabric on shelves, afternoon",
+  "persos": [
+   {
+    "nom": "the schoolboy",
+    "desc": "boy around 12, peach-and-copper school uniform, skinny, holding ONE single sheet of paper",
+    "pose": "standing on the right, holding the sheet, embarrassed"
+   },
+   {
+    "nom": "the proud tailor father",
+    "desc": "father in his 40s, cream-and-salmon boubou, a measuring tape around his neck, small glasses",
+    "pose": "sitting at the sewing machine in the foreground on the left"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, le directeur dit que je suis le pire élève de toute l'école dêh !"
+   ],
+   [
+    1,
+    "De toute l'école ?! Enfin un premier dans la famille ! Appelle le village dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy says his line, ashamed, eyes down. The father lifts his head from the machine, his face lights up, he raises both arms in joy and shouts his answer, his face clearly visible.",
+  "chute": "The boy looks up, completely lost. The camera slowly pushes in to a close-up of the proud tailor father's overjoyed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "pire élève",
+   "premier"
+  ],
+  "gag_legende": "LE VILLAGE EN APPRENANT LA NOUVELLE :",
+  "mecanisme": "logique absurde au pied de la lettre (le pire, c'est quand même un premier) + toute la lignée visée"
+ },
+ {
+  "id": "B023-13",
+  "titre": "Le maître en colère",
+  "lieu": "classroom of a private school in Attécoubé, Abidjan, wooden desks, a blackboard, a framed portrait of the smiling school founder on the wall, morning",
+  "persos": [
+   {
+    "nom": "the angry teacher",
+    "desc": "male teacher in his 40s, coral-and-violet shirt, thin mustache, holding ONE single exam paper",
+    "pose": "standing in the foreground on the left, holding the exam paper, furious"
+   },
+   {
+    "nom": "the calm pupil",
+    "desc": "boy around 10, crimson-and-silver school uniform, chubby cheeks, arms crossed",
+    "pose": "sitting at his desk on the right, arms crossed, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Encore zéro ! Continue comme ça, tu vas finir comme ton père-là !"
+   ],
+   [
+    1,
+    "Ya fohi, maître. Papa a redoublé cinq fois. Aujourd'hui, c'est lui le fondateur de l'école."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher shakes the exam paper and shouts at the boy, his face turned three-quarters to the camera. The boy stays relaxed, shrugs, and answers calmly, nodding toward the portrait on the wall, his face clearly visible.",
+  "chute": "The teacher slowly turns his head toward the portrait, then back, his anger turning into panic. The camera slowly pushes in to a close-up of the angry teacher's terrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "zéro",
+   "fondateur"
+  ],
+  "gag_legende": "LE MAÎTRE EN RELISANT SON CONTRAT :",
+  "mecanisme": "l'insulte se retourne contre celui qui la lance (révélation du statut du père)"
+ },
+ {
+  "id": "B023-14",
+  "titre": "Convoqué chez le directeur",
+  "lieu": "headmaster's office of a primary school in Anyama, Abidjan, a desk with a stack of folders and a calculator, a wall fan, morning",
+  "persos": [
+   {
+    "nom": "the headmaster",
+    "desc": "headmaster in his 50s, lime-and-salmon suit jacket, glasses, gray hair, holding ONE single folder",
+    "pose": "sitting behind the desk on the left, holding the folder"
+   },
+   {
+    "nom": "the young father",
+    "desc": "father in his 30s, silver-and-cyan tracksuit, thin goatee, a watch on his wrist",
+    "pose": "sitting on a chair in front of the desk in the foreground on the right, legs crossed, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Monsieur, votre fils dit à tout le monde que vous êtes son grand frère !"
+   ],
+   [
+    1,
+    "Ya fohi, directeur. C'est moi j'ai dit ça. Grand frère-là ne paie pas l'écolage dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The headmaster opens the folder and says his line, puzzled, his face turned three-quarters to the camera. The father smiles, leans back in his chair and answers proudly, very calm, his face clearly visible.",
+  "chute": "The headmaster freezes, his mouth open, the folder stuck in his hands. The camera slowly pushes in to a close-up of the young father's proud face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "grand frère",
+   "écolage"
+  ],
+  "gag_legende": "LE DIRECTEUR APRÈS CETTE RÉPONSE :",
+  "mecanisme": "aveu cynique : le père se rétrograde en grand frère pour fuir l'écolage"
+ },
+ {
+  "id": "B023-15",
+  "titre": "Le métier de rêve",
+  "lieu": "small front yard of a house in Bingerville, Abidjan, a plastic table with a covered pot, two plastic chairs, a bare light bulb, evening",
+  "persos": [
+   {
+    "nom": "the dreaming boy",
+    "desc": "boy around 8, turquoise-and-navy polo shirt, short hair, big smile, holding ONE single exercise book",
+    "pose": "sitting on a plastic chair on the right, holding the exercise book against his chest"
+   },
+   {
+    "nom": "the bitter father",
+    "desc": "father in his 50s, crimson-and-maroon kaftan, gray beard, deep wrinkles, arms crossed",
+    "pose": "sitting on a plastic chair in the foreground on the left, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, quand je serai grand, je veux être maître d'école dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Moi aussi je voulais être pauvre. Mais moi, j'ai réussi sans diplôme."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy announces his dream with stars in his eyes, holding his exercise book against his chest, his face turned three-quarters to the camera. The father nods slowly, then answers with a proud little smile, tapping his chest with one finger, his face clearly visible.",
+  "chute": "The boy's smile fades and he stares at his father, lost. The camera slowly pushes in to a close-up of the bitter father's proud face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "maître d'école",
+   "pauvre",
+   "diplôme"
+  ],
+  "gag_legende": "LES MAÎTRES QUI REGARDENT CETTE VIDÉO :",
+  "mecanisme": "fausse fierté : le père se vante d'avoir atteint la pauvreté sans études (deux cibles : le père et le salaire des maîtres)"
+ },
+ {
+  "id": "B023-16",
+  "titre": "Le message de papa au maître",
+  "lieu": "school courtyard in Attécoubé, Abidjan, a big almond tree, a school bell hanging on a pole, empty benches, recess, morning",
+  "persos": [
+   {
+    "nom": "the messenger boy",
+    "desc": "boy around 10, turquoise-and-navy school uniform, big ears, hands on his hips",
+    "pose": "standing in the foreground on the right, hands on his hips"
+   },
+   {
+    "nom": "the indebted teacher",
+    "desc": "male teacher in his 40s, magenta-and-lilac shirt, short beard, holding ONE single attendance register",
+    "pose": "standing under the almond tree on the left, holding the register"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maître, papa dit que tu lui dois quinze mille depuis la rentrée dêh !"
+   ],
+   [
+    1,
+    "Dis-lui que j'ai déjà payé, mon petit. Tu es passé en CM2 comment, tu crois ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy delivers his father's message loudly, hands on his hips, his face turned three-quarters to the camera. The teacher glances around, then leans slightly toward the boy and answers in a low voice with a sly smile, his face clearly visible.",
+  "chute": "The boy's mouth drops open as he understands. The camera slowly pushes in to a close-up of the messenger boy's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "quinze mille",
+   "CM2"
+  ],
+  "gag_legende": "LE PETIT EN REGARDANT SON BULLETIN :",
+  "mecanisme": "révélation cachée : le passage en classe supérieure était le remboursement de la dette"
+ },
+ {
+  "id": "B023-17",
+  "titre": "Le cours de soutien à la maison",
+  "lieu": "living room of a house in Anyama, Abidjan, a small table with notebooks and ONE single ruler, an old standing fan, evening",
+  "persos": [
+   {
+    "nom": "the furious mother",
+    "desc": "mother in her 40s, crimson-and-silver kaba, headscarf, hands on her hips",
+    "pose": "standing on the left, hands on her hips, furious"
+   },
+   {
+    "nom": "the cheeky son",
+    "desc": "boy around 11, coral-and-violet T-shirt, round glasses, holding ONE single pencil",
+    "pose": "sitting at the table in the middle, relaxed"
+   },
+   {
+    "nom": "the tutor",
+    "desc": "young male tutor in his 20s, peach-and-copper shirt, thin mustache, hands flat on the table",
+    "pose": "sitting at the table in the foreground on the right, next to the boy, a big stiff smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Encore dernier ?! Je paie ton répétiteur chaque mois pour rien dêh !"
+   ],
+   [
+    1,
+    "Pas pour rien, maman. Lui-même, il me paie pour rester dernier dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The tutor stays silent with a stiff smile the whole time. The mother shouts her line at both of them, hands on her hips, her face turned three-quarters to the camera. The boy answers calmly, pointing his pencil at the tutor, his face clearly visible.",
+  "chute": "The mother slowly turns her head toward the tutor; the tutor's smile freezes and a drop of sweat rolls down his forehead. The camera slowly pushes in to a close-up of the tutor's guilty face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "répétiteur",
+   "dernier"
+  ],
+  "gag_legende": "LE RÉPÉTITEUR QUAND MAMAN SE RETOURNE :",
+  "mecanisme": "révélation d'un complot : le répétiteur paie l'élève pour garder son travail"
+ },
+ {
+  "id": "B023-18",
+  "titre": "Le mot d'excuse",
+  "lieu": "primary school classroom in Bingerville, Abidjan, wooden desks, a blackboard, a teacher's desk, morning",
+  "persos": [
+   {
+    "nom": "the suspicious teacher",
+    "desc": "female teacher in her 50s, cream-and-salmon dress, glasses, short gray hair, holding ONE single folded note",
+    "pose": "sitting behind the teacher's desk in the foreground on the left, holding the note"
+   },
+   {
+    "nom": "the innocent girl",
+    "desc": "girl around 9, coral-and-violet school uniform, two long braids, hands behind her back",
+    "pose": "standing on the right in front of the desk, innocent"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton mot d'excuse est signé « Maman », mais c'est ton écriture-là !"
+   ],
+   [
+    1,
+    "Maîtresse, maman était occupée. Elle écrivait le mot d'excuse de papa pour son patron dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher shakes the note and says her line, eyes narrowed, her face turned three-quarters to the camera. The girl answers innocently, very naturally, her face clearly visible.",
+  "chute": "The teacher slowly lowers the note, her mouth open. The camera slowly pushes in to a close-up of the suspicious teacher's flabbergasted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "mot d'excuse",
+   "patron"
+  ],
+  "gag_legende": "PAPA QUAND LE PATRON VA APPELER :",
+  "mecanisme": "aveu naïf de l'enfant qui dénonce les deux parents d'un coup"
+ },
+ {
+  "id": "B023-19",
+  "titre": "Le cours de l'après-midi",
+  "lieu": "primary school classroom in Attécoubé, Abidjan, wooden desks, a blackboard covered with long sentences, hot early afternoon light",
+  "persos": [
+   {
+    "nom": "the offended teacher",
+    "desc": "male teacher in his 50s, lime-and-salmon safari suit, thick glasses, gray mustache, holding ONE single closed book",
+    "pose": "standing in the foreground on the left, holding the book"
+   },
+   {
+    "nom": "the sleepy boy",
+    "desc": "boy around 10, crimson-and-maroon short-sleeved shirt, sleepy eyes, hands flat on his desk",
+    "pose": "sitting at his desk on the right, half asleep, eyes half closed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, pourquoi tu dors chaque fois que je fais mon cours ?!"
+   ],
+   [
+    1,
+    "C'est pas ma faute, maître. Maman enregistre vos leçons pour endormir le bébé dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher taps the closed book against his palm and asks, irritated, his face turned three-quarters to the camera. The boy lifts his head, yawns before speaking, then answers sleepily but sincerely, his face clearly visible.",
+  "chute": "The teacher freezes, deeply offended, his mouth open. The camera slowly pushes in to a close-up of the offended teacher's vexed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "leçons",
+   "endormir",
+   "bébé"
+  ],
+  "gag_legende": "MAMAN QUAND LE MAÎTRE VA L'APPELER :",
+  "mecanisme": "révélation par l'enfant : le cours du maître sert de berceuse à la maison"
+ },
+ {
+  "id": "B023-20",
+  "titre": "Deux bulletins dans le cartable",
+  "lieu": "small bedroom of a house in Anyama, Abidjan, a bed with a school bag, ONE single report card lying on the bed, evening",
+  "persos": [
+   {
+    "nom": "the suspicious mother",
+    "desc": "mother in her 40s, turquoise-and-navy kaba, short braids, holding ONE single report card",
+    "pose": "standing in the foreground on the left, holding the report card, frowning"
+   },
+   {
+    "nom": "the teenage daughter",
+    "desc": "girl around 12, magenta-and-lilac T-shirt, high ponytail, hands on her knees",
+    "pose": "sitting on the bed on the right, next to the other report card"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi tu as deux bulletins-là ? Un avec dix-sept, un avec quatre ?!"
+   ],
+   [
+    1,
+    "Le dix-sept, c'est papa qui l'a tapé au cyber. Pour le groupe de la famille dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother holds up the report card in one hand and points at the other one on the bed with the other hand, asking her question, her face turned three-quarters to the camera. The girl shrugs and answers calmly, as if it were normal, her face clearly visible.",
+  "chute": "The mother freezes, slowly looking down at the report card in her hand. The camera slowly pushes in to a close-up of the suspicious mother's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "bulletins",
+   "dix-sept",
+   "cyber"
+  ],
+  "gag_legende": "PAPA DANS LE GROUPE DE LA FAMILLE :",
+  "mecanisme": "révélation par l'enfant : c'est le père qui fabrique le faux bulletin pour se vanter"
+ }
+]

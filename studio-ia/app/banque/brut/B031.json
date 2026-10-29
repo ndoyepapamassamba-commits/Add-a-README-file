@@ -1,0 +1,907 @@
+[
+ {
+  "id": "B031-01",
+  "titre": "Le crédit chez Tantie garba",
+  "lieu": "small garba stall at a street corner in Angré, Abidjan, a wooden bench, a big aluminium pot of attiéké, a small debt notebook, late morning",
+  "persos": [
+   {
+    "nom": "the garba seller",
+    "desc": "garba seller in her 50s, burgundy-and-sunflower kaba, a head scarf, plump cheeks, holding ONE single small debt notebook",
+    "pose": "standing in the foreground on the left beside the pot, holding the notebook, eyebrows raised"
+   },
+   {
+    "nom": "the student customer",
+    "desc": "young man around 20, cyan-and-pistachio tracksuit, short twists, a backpack on his shoulders",
+    "pose": "standing slightly behind on the right, hands in his pockets, relaxed smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, tu paies ton crédit quand dêh ?"
+   ],
+   [
+    1,
+    "Tantie, le temps c'est l'argent, non ?"
+   ],
+   [
+    0,
+    "Oui, mon petit. Et alors ?"
+   ],
+   [
+    1,
+    "Je t'ai fait attendre deux ans. Garde la monnaie dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The seller asks, tapping the notebook with one finger, her face three-quarters to the camera. The student answers with a calm smile, shrugging. The seller nods slowly, frowning, one hand on her hip. The student finishes proudly, pointing at the notebook, his face clearly visible.",
+  "chute": "The seller freezes, her mouth wide open, the notebook still in her hand. The camera slowly pushes in to a close-up of the garba seller's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "crédit",
+   "temps",
+   "monnaie"
+  ],
+  "gag_legende": "TANTIE EN CALCULANT LES INTÉRÊTS :",
+  "mecanisme": "logique absurde au pied de la lettre : le temps c'est l'argent, donc l'attente rembourse la dette"
+ },
+ {
+  "id": "B031-02",
+  "titre": "Le prêt entre amis",
+  "lieu": "living room of an apartment in Deux-Plateaux, Abidjan, a beige sofa, a low table, a framed photo on the wall, evening",
+  "persos": [
+   {
+    "nom": "the angry lender",
+    "desc": "man in his 40s, teal-and-amber shirt, short beard, a wristwatch, holding ONE single smartphone",
+    "pose": "standing in the foreground on the left, holding the phone, glaring"
+   },
+   {
+    "nom": "the grateful borrower",
+    "desc": "man in his 30s, magenta-and-copper boubou, round face, big innocent eyes",
+    "pose": "sitting on the sofa on the right, hands on his knees, sweet smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Je t'ai prêté cent mille, tu as dit quoi ?!"
+   ],
+   [
+    1,
+    "Merci, je te dois la vie dêh."
+   ],
+   [
+    0,
+    "Donc rembourse, mon vieux !"
+   ],
+   [
+    1,
+    "La vie seulement dêh. L'argent était pas dans la phrase."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The lender asks, pointing the phone at the borrower, his face three-quarters to the camera. The borrower answers warmly, one hand on his chest. The lender snaps, leaning slightly forward. The borrower finishes calmly with an innocent shrug, his face clearly visible.",
+  "chute": "The lender freezes, the phone slowly dropping to his side, his mouth open. The camera slowly pushes in to a close-up of the angry lender's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "cent mille",
+   "vie",
+   "phrase"
+  ],
+  "gag_legende": "MON ARGENT EN ÉCOUTANT ÇA :",
+  "mecanisme": "logique absurde au pied de la lettre : « je te dois la vie » ne mentionne pas l'argent"
+ },
+ {
+  "id": "B031-03",
+  "titre": "L'enveloppe d'anniversaire",
+  "lieu": "birthday party in a courtyard in Songon, Abidjan, a table with a cake and a pile of gift envelopes, balloons, string lights, evening",
+  "persos": [
+   {
+    "nom": "the birthday woman",
+    "desc": "woman in her 30s, rose-and-aubergine wrap dress, braided bun, holding ONE single open empty envelope",
+    "pose": "standing in the foreground on the left, holding the empty envelope up, outraged"
+   },
+   {
+    "nom": "the best friend",
+    "desc": "woman in her 30s, lavender-and-apricot kaftan, big hoop earrings, a small handbag on her arm",
+    "pose": "standing on the right next to the cake, hands clasped, sweet smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, ton enveloppe-là est vide !"
+   ],
+   [
+    1,
+    "Cadeau : les cinquante mille que je te dois."
+   ],
+   [
+    0,
+    "Tu offres mon argent-là ?!"
+   ],
+   [
+    1,
+    "Ya fohi. L'an prochain, je t'offre encore les mêmes."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The birthday woman shakes the empty envelope, her face three-quarters to the camera. The friend answers tenderly, hands clasped. The birthday woman points at herself, eyes wide. The friend finishes with a proud generous smile, her face clearly visible.",
+  "chute": "The birthday woman freezes, the envelope trembling in her hand, her mouth open. The camera slowly pushes in to a close-up of the birthday woman's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "enveloppe",
+   "cinquante mille",
+   "mêmes"
+  ],
+  "gag_legende": "LES INVITÉS EN COMPTANT LEURS ENVELOPPES :",
+  "mecanisme": "logique absurde : offrir en cadeau la dette qu'on doit, et promettre de recommencer"
+ },
+ {
+  "id": "B031-04",
+  "titre": "Le dernier billet de papa",
+  "lieu": "small living room of a house in Angré, Abidjan, a worn armchair, a plastic table, a calendar on the wall, evening",
+  "persos": [
+   {
+    "nom": "the curious son",
+    "desc": "boy around 9, tangerine-and-lilac t-shirt, short hair, big curious eyes",
+    "pose": "standing on the left, pointing at his father's phone"
+   },
+   {
+    "nom": "the hopeful father",
+    "desc": "father in his 40s, burgundy-and-sunflower polo shirt, receding hairline, holding ONE single smartphone with a banknote taped to its back",
+    "pose": "sitting in the armchair in the foreground on the right, holding the phone up near his face, hopeful"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, pourquoi ton dernier billet est sur le téléphone-là ?"
+   ],
+   [
+    1,
+    "On dit l'argent appelle l'argent, mon fils."
+   ],
+   [
+    0,
+    "Et il a appelé, papa ?"
+   ],
+   [
+    1,
+    "Oui. Ton tonton. Il veut emprunter dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son asks, pointing at the phone. The father answers wisely, raising the phone like a treasure, his face three-quarters to the camera. The son tilts his head, hopeful. The father answers in a defeated voice, lowering the phone, his face clearly visible.",
+  "chute": "The father's shoulders drop and he stares at the banknote on the phone. The camera slowly pushes in to a close-up of the hopeful father's crushed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "billet",
+   "appelle",
+   "emprunter"
+  ],
+  "gag_legende": "LE BILLET EN ENTENDANT LA SONNERIE :",
+  "mecanisme": "logique absurde au pied de la lettre : l'argent appelle l'argent, et c'est le parent fauché qui appelle"
+ },
+ {
+  "id": "B031-05",
+  "titre": "Le créancier à l'heure du repas",
+  "lieu": "dining room of a house in Deux-Plateaux, Abidjan, a long table covered with many dishes of rice, sauce and alloco, plastic chairs, midday",
+  "persos": [
+   {
+    "nom": "the creditor",
+    "desc": "man in his 50s, cobalt-and-tangerine boubou, grey goatee, holding ONE single small notebook",
+    "pose": "standing in the foreground on the left, in front of the table, holding the notebook, impatient"
+   },
+   {
+    "nom": "the debtor at the table",
+    "desc": "man in his 40s, teal-and-amber kaftan, big belly, a napkin tucked at his collar",
+    "pose": "sitting at the table on the right behind many dishes, a spoon resting on his plate, not eating"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Vieux père, et mes vingt mille-là dêh ?"
+   ],
+   [
+    1,
+    "Chez moi, on parle pas d'argent à table."
+   ],
+   [
+    0,
+    "Mais tu es à table depuis matin !"
+   ],
+   [
+    1,
+    "Depuis six mois. Assieds-toi, on mange dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The creditor asks, tapping his notebook, his face three-quarters to the camera. The debtor answers with dignity, raising one finger, not eating. The creditor points at all the dishes, outraged. The debtor finishes calmly, opening one hand toward an empty chair, his face clearly visible.",
+  "chute": "The creditor freezes, staring at the endless dishes, his mouth open. The camera slowly pushes in to a close-up of the creditor's flabbergasted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "vingt mille",
+   "table",
+   "six mois"
+  ],
+  "gag_legende": "LA MARMITE DEPUIS SIX MOIS :",
+  "mecanisme": "logique absurde au pied de la lettre : une règle de politesse transformée en fuite permanente"
+ },
+ {
+  "id": "B031-06",
+  "titre": "Le téléphone emprunté",
+  "lieu": "veranda of a small house in Angré, Abidjan, two plastic chairs, a low wall, a mango tree, late afternoon",
+  "persos": [
+   {
+    "nom": "the shy borrower",
+    "desc": "young man in his 20s, lavender-and-cobalt hoodie, thin moustache, hands joined",
+    "pose": "standing on the left, hands joined, embarrassed smile"
+   },
+   {
+    "nom": "the friend with the phone",
+    "desc": "young man in his 20s, rose-and-aubergine shirt, short dreadlocks, holding ONE single smartphone",
+    "pose": "sitting on a plastic chair in the foreground on the right, holding the phone, suspicious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon vieux, prête-moi ton téléphone deux minutes dêh."
+   ],
+   [
+    1,
+    "Pour appeler qui, mon gars ?"
+   ],
+   [
+    0,
+    "Toi-même. Je veux te demander l'argent, mais en face j'ai honte."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The borrower asks politely, hands joined, his face three-quarters to the camera. The friend answers, narrowing his eyes, holding the phone close to his chest. The borrower finishes shyly, looking down then back at his friend, his face clearly visible.",
+  "chute": "The friend slowly lowers the phone, staring blankly at the borrower. The camera slowly pushes in to a close-up of the friend with the phone's speechless face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "téléphone",
+   "honte"
+  ],
+  "gag_legende": "MOI EN BLOQUANT SON NUMÉRO :",
+  "mecanisme": "logique absurde : emprunter le téléphone de quelqu'un pour l'appeler lui-même, par pudeur"
+ },
+ {
+  "id": "B031-07",
+  "titre": "Le vieux père réclame",
+  "lieu": "yard of a family house in Songon, Abidjan, a wooden bench under a big tree, a small kettle on the ground, morning",
+  "persos": [
+   {
+    "nom": "the old lender",
+    "desc": "old man in his 60s, lavender-and-apricot boubou, white beard, a wristwatch",
+    "pose": "sitting on the bench in the foreground on the left, pointing one finger, stern"
+   },
+   {
+    "nom": "the young debtor",
+    "desc": "young man in his 20s, cyan-and-pistachio shirt, high-top haircut, holding ONE single very long folded paper list",
+    "pose": "standing on the right, holding the long list, eager smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Rembourse ! Celui qui paie ses dettes s'enrichit dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, vieux père. Tiens la liste."
+   ],
+   [
+    0,
+    "Quelle liste, mon petit ?"
+   ],
+   [
+    1,
+    "Mes dettes. Paie tout, tu vas devenir riche dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The old man lectures, pointing his finger, his face three-quarters to the camera. The debtor answers happily, holding out the long list. The old man frowns at the paper. The debtor finishes with a generous smile, the list still held out, his face clearly visible.",
+  "chute": "The old man stares at the long list, his eyes getting bigger and bigger. The camera slowly pushes in to a close-up of the old lender's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "dettes",
+   "liste",
+   "riche"
+  ],
+  "gag_legende": "LE VIEUX QUAND IL VOIT LE TOTAL :",
+  "mecanisme": "logique absurde au pied de la lettre : le proverbe appliqué au créancier, qui doit payer les dettes du débiteur"
+ },
+ {
+  "id": "B031-08",
+  "titre": "Le nom du bébé",
+  "lieu": "courtyard of a house in Angré, Abidjan, plastic chairs, a table with drinks and a small cake, decorations for a baby's naming party, afternoon",
+  "persos": [
+   {
+    "nom": "the shocked friend",
+    "desc": "man in his 30s, cobalt-and-tangerine shirt, short hair, a wristwatch",
+    "pose": "standing in the foreground on the left, pointing at the baby, shocked"
+   },
+   {
+    "nom": "the proud new father",
+    "desc": "man in his 30s, teal-and-amber boubou, wide smile, holding ONE single sleeping baby wrapped in a blanket",
+    "pose": "standing on the right, holding the baby in both arms, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu as donné mon nom à ton bébé ?!"
+   ],
+   [
+    1,
+    "Oui, mon vieux. C'est ton homonyme dêh."
+   ],
+   [
+    0,
+    "Mais tu me dois deux cent mille !"
+   ],
+   [
+    1,
+    "Ya fohi. Maintenant, toi tu paies son lait."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The friend points at the baby, his face three-quarters to the camera. The new father answers proudly, both arms holding the baby, no other gesture. The friend protests, hand on his chest. The new father finishes with a big grin, nodding toward the baby, his face clearly visible.",
+  "chute": "The friend freezes, his hand still on his chest, his mouth open. The camera slowly pushes in to a close-up of the shocked friend's trapped face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "homonyme",
+   "deux cent mille",
+   "lait"
+  ],
+  "gag_legende": "MON PORTEFEUILLE À LA SORTIE DU BÉBÉ :",
+  "mecanisme": "retournement par la coutume : le créancier devient l'homonyme qui doit entretenir l'enfant"
+ },
+ {
+  "id": "B031-09",
+  "titre": "Le mariage sans invitation",
+  "lieu": "wedding reception hall in Deux-Plateaux, Abidjan, round tables with tablecloths, a decorated head table with flowers and a big wedding cake in the background, evening",
+  "persos": [
+   {
+    "nom": "the uninvited lender",
+    "desc": "man in his 40s, burgundy-and-sunflower t-shirt, angry eyebrows, a sling bag",
+    "pose": "standing in the foreground on the left, hands on his hips, furious"
+   },
+   {
+    "nom": "the groom",
+    "desc": "groom in his 30s, lavender-and-cobalt suit, a flower on the lapel, big smile",
+    "pose": "standing in the middle near the head table, hands open, innocent"
+   },
+   {
+    "nom": "the bride",
+    "desc": "bride in her 30s, magenta-and-copper wedding dress, elegant updo, holding ONE single small bouquet",
+    "pose": "standing on the right next to the groom, holding the bouquet, radiant"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu te maries avec mes cinq cent mille et tu m'invites pas ?!"
+   ],
+   [
+    1,
+    "Mais tu es là ! Ton argent est à la table d'honneur dêh."
+   ],
+   [
+    2,
+    "Tonton, merci pour le gâteau dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The lender accuses, hands on his hips, his face three-quarters to the camera. The groom answers cheerfully, opening one hand toward the head table. The bride thanks him with a radiant smile, lifting the bouquet slightly, her face clearly visible.",
+  "chute": "The lender freezes, slowly turning his head toward the cake, his mouth open. The camera slowly pushes in to a close-up of the uninvited lender's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "cinq cent mille",
+   "table d'honneur",
+   "gâteau"
+  ],
+  "gag_legende": "MOI EN REGARDANT MON GÂTEAU :",
+  "mecanisme": "logique absurde au pied de la lettre : l'argent prêté « représente » le créancier, puis relance de la mariée"
+ },
+ {
+  "id": "B031-10",
+  "titre": "Le nouveau surnom",
+  "lieu": "small open-air maquis in Songon, Abidjan, plastic tables and chairs, a grill smoking in the background, evening",
+  "persos": [
+   {
+    "nom": "the suspicious lender",
+    "desc": "man in his 40s, cyan-and-pistachio polo shirt, bald head, holding ONE single car key",
+    "pose": "sitting at a plastic table in the foreground on the left, frowning"
+   },
+   {
+    "nom": "the flattering debtor",
+    "desc": "man in his 30s, magenta-and-copper shirt, thin, big smile, hands joined",
+    "pose": "standing on the right, slightly bowing, hands joined"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon gars, pourquoi tu m'appelles patron maintenant ?"
+   ],
+   [
+    1,
+    "Depuis deux ans, toi seul tu me nourris dêh."
+   ],
+   [
+    0,
+    "Et alors, mon gars ?"
+   ],
+   [
+    1,
+    "Le 30, c'est la paie. Pas de retard, patron."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The lender asks suspiciously, his face three-quarters to the camera. The debtor answers respectfully, bowing a little. The lender raises his eyebrows. The debtor finishes very seriously, raising one finger like a reminder, his face clearly visible.",
+  "chute": "The lender freezes, the car key hanging from his fingers, his jaw dropping. The camera slowly pushes in to a close-up of the suspicious lender's dumbfounded face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "patron",
+   "nourris",
+   "paie"
+  ],
+  "gag_legende": "LE PATRON MALGRÉ LUI :",
+  "mecanisme": "logique absurde : celui qui te nourrit est ton patron, donc il te doit un salaire"
+ },
+ {
+  "id": "B031-11",
+  "titre": "La réclamation au salon de coiffure",
+  "lieu": "hair salon in Deux-Plateaux, Abidjan, a big mirror, a salon chair, hair products on a shelf, afternoon",
+  "persos": [
+   {
+    "nom": "the hairdresser",
+    "desc": "hairdresser in her 40s, tangerine-and-lilac jumpsuit, short curly hair, holding ONE single comb",
+    "pose": "standing in the foreground on the left, one hand on her hip, holding the comb"
+   },
+   {
+    "nom": "the silent client",
+    "desc": "woman in her 30s, rose-and-aubergine kaba, long braids",
+    "pose": "sitting in the salon chair on the right, calm, arms resting on the armrests"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Je réclame mes cent mille, et tu dis rien ?!"
+   ],
+   [
+    1,
+    "Le silence est d'or, ma sœur. Ça fait trois mois je te paie dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The hairdresser scolds, pointing the comb, her face three-quarters to the camera. The client answers slowly and calmly, turning her face toward the hairdresser with a serene smile, her face clearly visible.",
+  "chute": "The hairdresser freezes, the comb in the air, one eyebrow trembling. The camera slowly pushes in to a close-up of the hairdresser's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "cent mille",
+   "silence",
+   "or"
+  ],
+  "gag_legende": "LA COIFFEUSE APRÈS CE PAIEMENT EN OR :",
+  "mecanisme": "logique absurde au pied de la lettre : le silence est d'or, donc se taire c'est rembourser"
+ },
+ {
+  "id": "B031-12",
+  "titre": "Le nouveau costume",
+  "lieu": "terrace of a café-restaurant in Deux-Plateaux, Abidjan, a small round table, two chairs, potted plants, afternoon",
+  "persos": [
+   {
+    "nom": "the broke lender",
+    "desc": "man in his 30s, lavender-and-apricot t-shirt, tired eyes, a small sling bag",
+    "pose": "standing in the foreground on the left, pointing at the suit"
+   },
+   {
+    "nom": "the elegant debtor",
+    "desc": "man in his 30s, cobalt-and-tangerine suit, shiny shoes, proud posture",
+    "pose": "standing on the right, both hands on his lapels, chest out"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu dis tu as pas l'argent, mais tu portes costume neuf ?!"
+   ],
+   [
+    1,
+    "Regarde bien, mon vieux. C'est ton argent. Tu as vraiment bon goût dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The lender accuses, pointing at the suit, his face three-quarters to the camera. The debtor answers with pride, hands on his lapels, turning slightly to show the suit, his face clearly visible.",
+  "chute": "The lender freezes, his finger still pointing, his lips trembling. The camera slowly pushes in to a close-up of the broke lender's heartbroken face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "costume",
+   "ton argent",
+   "bon goût"
+  ],
+  "gag_legende": "MON ARGENT EN COSTUME :",
+  "mecanisme": "retournement insolent : le débiteur complimente le créancier pour le costume payé avec son argent"
+ },
+ {
+  "id": "B031-13",
+  "titre": "L'argent de la rentrée",
+  "lieu": "living room of a modest house in Songon, Abidjan, a worn sofa, a small TV on a stand, a school bag on the floor, evening",
+  "persos": [
+   {
+    "nom": "the angry mother",
+    "desc": "mother in her 40s, teal-and-amber dress, hair in a scarf",
+    "pose": "standing on the left, hands on her hips"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 7, burgundy-and-sunflower dress, two puffs of hair, big curious eyes",
+    "pose": "standing in the middle, looking at her father's belly"
+   },
+   {
+    "nom": "the guilty father",
+    "desc": "father in his 40s, lavender-and-cobalt tracksuit, very big round belly",
+    "pose": "sitting on a chair in the foreground on the right, both hands on his belly, guilty smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton papa-là a mangé l'argent de ta rentrée !"
+   ],
+   [
+    1,
+    "Ahh ! C'est pour ça son ventre-là est gros ?"
+   ],
+   [
+    0,
+    "Oui, ma fille, regarde-le."
+   ],
+   [
+    1,
+    "Papa, tu vas accoucher mes cahiers quand ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video; the father never speaks. The mother denounces him, pointing at the father, her face three-quarters to the camera. The girl asks, eyes wide, pointing at the belly. The mother nods firmly, arms crossed. The girl asks her father very seriously, her face clearly visible.",
+  "chute": "The father slowly looks down at his belly, both hands on it, embarrassed. The camera slowly pushes in to a close-up of the guilty father's ashamed face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "mangé",
+   "ventre",
+   "cahiers"
+  ],
+  "gag_legende": "PAPA EN RENTRANT LE VENTRE :",
+  "mecanisme": "logique absurde au pied de la lettre : « manger l'argent » pris littéralement par l'enfant"
+ },
+ {
+  "id": "B031-14",
+  "titre": "Koffi a appelé maman",
+  "lieu": "veranda of a family house in Angré, Abidjan, a plastic table, a standing fan, a pot of plants, morning",
+  "persos": [
+   {
+    "nom": "the worried mother",
+    "desc": "mother in her 60s, cyan-and-pistachio kaba, glasses, holding ONE single smartphone",
+    "pose": "sitting on a plastic chair in the foreground on the left, holding the phone, worried"
+   },
+   {
+    "nom": "the grown-up son",
+    "desc": "son in his 30s, tangerine-and-lilac polo shirt, short beard",
+    "pose": "standing on the right, arms crossed, offended"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, Koffi dit tu lui dois cinquante mille."
+   ],
+   [
+    1,
+    "Koffi-là ment, maman ! C'est soixante mille."
+   ],
+   [
+    0,
+    "Donc tu rembourses quand ?"
+   ],
+   [
+    1,
+    "Quand il dit le bon chiffre. Je paie pas mensonge dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother speaks, showing the phone, her face three-quarters to the camera. The son answers, offended, arms crossed. The mother tilts her head, hopeful. The son finishes with great dignity, chin up, his face clearly visible.",
+  "chute": "The mother freezes, the phone sliding down in her hand, her mouth open. The camera slowly pushes in to a close-up of the worried mother's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "Koffi",
+   "soixante mille",
+   "mensonge"
+  ],
+  "gag_legende": "KOFFI QUAND IL VA APPRENDRE ÇA :",
+  "mecanisme": "logique absurde : il gonfle sa propre dette, puis refuse de payer tant que le créancier « ment »"
+ },
+ {
+  "id": "B031-15",
+  "titre": "Les lettres de la banque",
+  "lieu": "living room of an apartment in Deux-Plateaux, Abidjan, a glass coffee table covered with a pile of bank letters, a sofa, evening",
+  "persos": [
+   {
+    "nom": "the furious wife",
+    "desc": "wife in her 30s, magenta-and-copper wrap dress, short natural hair, holding ONE single bank letter",
+    "pose": "standing in the foreground on the left, holding the letter up, furious"
+   },
+   {
+    "nom": "the calm husband",
+    "desc": "husband in his 40s, lavender-and-apricot shirt, small glasses, relaxed",
+    "pose": "sitting on the sofa on the right, legs crossed, calm smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, pourquoi tu as pris crédit dans cinq banques ?!"
+   ],
+   [
+    1,
+    "Bébé, faut pas mettre tous ses œufs dans le même panier dêh."
+   ],
+   [
+    0,
+    "Et tu vas rembourser comment ?"
+   ],
+   [
+    1,
+    "Avec un sixième panier, bébé."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife shakes the letter, her face three-quarters to the camera. The husband answers like a wise expert, raising one finger. The wife crosses her arms, glaring. The husband finishes with a satisfied smile, his face clearly visible.",
+  "chute": "The wife freezes, the letter slowly crumpling in her fist, her eyes huge. The camera slowly pushes in to a close-up of the furious wife's exasperated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "cinq banques",
+   "panier",
+   "sixième"
+  ],
+  "gag_legende": "LA SIXIÈME BANQUE EN ATTENDANT SON TOUR :",
+  "mecanisme": "logique absurde au pied de la lettre : le conseil d'épargne appliqué aux dettes"
+ },
+ {
+  "id": "B031-16",
+  "titre": "La tirelire vide",
+  "lieu": "children's bedroom in a family house in Songon, Abidjan, a bunk bed, a small desk, afternoon",
+  "persos": [
+   {
+    "nom": "the little sister",
+    "desc": "girl around 12, rose-and-aubergine t-shirt, two braids, holding ONE single empty piggy bank",
+    "pose": "standing in the foreground on the left, holding the empty piggy bank, angry"
+   },
+   {
+    "nom": "the big brother",
+    "desc": "teenage boy around 17, cobalt-and-tangerine hoodie, headphones around his neck",
+    "pose": "sitting on the bottom bed on the right, hands open, innocent"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu as donné mes vingt mille à ton ami-là ?!"
+   ],
+   [
+    1,
+    "Pas donné, ma petite. Prêté dêh."
+   ],
+   [
+    0,
+    "Il rembourse quand, alors ?"
+   ],
+   [
+    1,
+    "Le même jour que moi je te rembourse."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The sister shakes the empty piggy bank, her face three-quarters to the camera. The brother answers, raising one finger to correct her. The sister frowns, waiting. The brother finishes with a relaxed smile, his face clearly visible.",
+  "chute": "The sister freezes, slowly hugging the empty piggy bank, her lips trembling. The camera slowly pushes in to a close-up of the little sister's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "vingt mille",
+   "prêté",
+   "même jour"
+  ],
+  "gag_legende": "LA TIRELIRE QUAND ELLE ENTEND ÇA :",
+  "mecanisme": "aveu-boomerang : la date de remboursement promise révèle que le frère ne rembourse jamais"
+ },
+ {
+  "id": "B031-17",
+  "titre": "Retrouvailles au maquis",
+  "lieu": "open-air maquis in Angré, Abidjan, plastic tables, a grill with brochettes in the background, string lights, night",
+  "persos": [
+   {
+    "nom": "the creditor",
+    "desc": "man in his 40s, tangerine-and-lilac shirt, round face, a wristwatch",
+    "pose": "sitting at a plastic table on the left, leaning forward, curious"
+   },
+   {
+    "nom": "the debtor with his chin up",
+    "desc": "man in his 30s, burgundy-and-sunflower tracksuit, long neck, chin raised very high",
+    "pose": "standing in the foreground on the right, chin raised high, very stiff, arms along his body"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon vieux, pourquoi tu lèves ton menton comme ça ?"
+   ],
+   [
+    1,
+    "Je suis endetté jusqu'au cou, mon vieux."
+   ],
+   [
+    0,
+    "Et mes cinquante mille-là, dêh ?"
+   ],
+   [
+    1,
+    "Parle doucement ! Tu fais monter le niveau dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The creditor asks, squinting, his face three-quarters to the camera. The debtor answers without lowering his chin, his face turned three-quarters to the camera. The creditor taps the table once. The debtor answers in panic, chin even higher, his face clearly visible.",
+  "chute": "The debtor stays frozen with his chin up, eyes rolling in panic. The camera slowly pushes in to a close-up of the debtor with his chin up's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "menton",
+   "cou",
+   "niveau"
+  ],
+  "gag_legende": "MOI QUAND MON CRÉANCIER ARRIVE :",
+  "mecanisme": "logique absurde au pied de la lettre : « endetté jusqu'au cou » comme une eau qui monte"
+ },
+ {
+  "id": "B031-18",
+  "titre": "La valise au salon",
+  "lieu": "living room of a nice house in Deux-Plateaux, Abidjan, a big sofa, a framed painting, a coffee table, late afternoon",
+  "persos": [
+   {
+    "nom": "the stunned lender",
+    "desc": "woman in her 50s, lavender-and-cobalt kaftan, big gold earrings",
+    "pose": "standing in the foreground on the left, hands on her hips, shocked"
+   },
+   {
+    "nom": "the debtor with the suitcase",
+    "desc": "young man in his 20s, teal-and-amber t-shirt, relaxed smile, ONE single big suitcase beside him",
+    "pose": "sitting on the sofa on the right, one hand resting on the suitcase, at ease"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi tu es dans mon salon avec ta valise ?!"
+   ],
+   [
+    1,
+    "Tantie, tu as dit de payer de ma personne."
+   ],
+   [
+    0,
+    "C'est une façon de parler !"
+   ],
+   [
+    1,
+    "Ya fohi. On mange à quelle heure ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The lender scolds, hands on her hips, her face three-quarters to the camera. The debtor answers politely, one hand on the suitcase. The lender points at the suitcase, outraged. The debtor finishes, leaning back on the sofa with a satisfied smile, his face clearly visible.",
+  "chute": "The lender freezes, her finger still pointing, her mouth wide open. The camera slowly pushes in to a close-up of the stunned lender's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "valise",
+   "personne",
+   "mange"
+  ],
+  "gag_legende": "MON FRIGO QUAND IL ENTEND ÇA :",
+  "mecanisme": "logique absurde au pied de la lettre : « payer de sa personne » devient emménager chez la créancière"
+ },
+ {
+  "id": "B031-19",
+  "titre": "L'épargne du mari",
+  "lieu": "yard of a house in Songon, Abidjan, a low fence on the left, a plastic chair, a water tank, early evening",
+  "persos": [
+   {
+    "nom": "the suspicious wife",
+    "desc": "wife in her 40s, cyan-and-pistachio wrap dress, hair in a bun",
+    "pose": "standing in the foreground on the left, arms crossed, eyebrows raised"
+   },
+   {
+    "nom": "the naive husband",
+    "desc": "husband in his 50s, rose-and-aubergine boubou, grey hair, proud smile",
+    "pose": "sitting on a plastic chair on the right, pointing his thumb toward the left, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, ton argent mis à gauche, c'est où ?"
+   ],
+   [
+    1,
+    "Chez notre voisin de gauche, bébé."
+   ],
+   [
+    0,
+    "Mais lui-là, il a construit villa !"
+   ],
+   [
+    1,
+    "Tu vois ? Notre argent est bien logé dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife asks, arms crossed, her face three-quarters to the camera. The husband answers proudly, pointing his thumb to the left. The wife turns her head toward the fence, then back, outraged. The husband finishes with a satisfied smile, his face clearly visible.",
+  "chute": "The wife freezes, slowly closing her eyes, her lips pressed together. The camera slowly pushes in to a close-up of the suspicious wife's exasperated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "à gauche",
+   "voisin",
+   "villa"
+  ],
+  "gag_legende": "LE VOISIN DEVANT SA NOUVELLE VILLA :",
+  "mecanisme": "logique absurde au pied de la lettre : « mettre l'argent à gauche » chez le voisin de gauche"
+ },
+ {
+  "id": "B031-20",
+  "titre": "La demande de prêt",
+  "lieu": "front of a small shop in Songon, Abidjan, a wooden counter, a bench, a few crates, afternoon",
+  "persos": [
+   {
+    "nom": "the cautious friend",
+    "desc": "man in his 40s, cobalt-and-tangerine polo shirt, moustache, a wristwatch",
+    "pose": "sitting on the bench in the foreground on the left, arms crossed"
+   },
+   {
+    "nom": "the dramatic borrower",
+    "desc": "man in his 30s, lavender-and-apricot tracksuit, wide expressive eyes",
+    "pose": "standing on the right, both hands on his chest, dramatic"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Cinquante mille ?! Tu rembourses quand, mon gars ?"
+   ],
+   [
+    1,
+    "Ehh ! On commence à peine, tu parles déjà séparation ?"
+   ],
+   [
+    0,
+    "C'est un prêt, pas un mariage dêh !"
+   ],
+   [
+    1,
+    "Justement. Le mariage finit, le prêt-là jamais."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The friend asks, arms crossed, his face three-quarters to the camera. The borrower answers, deeply hurt, hands on his chest. The friend shakes his head firmly. The borrower finishes tenderly, as if declaring his love, his face clearly visible.",
+  "chute": "The friend freezes, his arms still crossed, his eyes wide with horror. The camera slowly pushes in to a close-up of the cautious friend's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "cinquante mille",
+   "séparation",
+   "jamais"
+  ],
+  "gag_legende": "MON ARGENT EN ENTENDANT « JAMAIS » :",
+  "mecanisme": "logique absurde : le prêt vécu comme une histoire d'amour éternelle, donc jamais remboursé"
+ }
+]

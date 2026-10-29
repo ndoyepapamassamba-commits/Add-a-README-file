@@ -1,0 +1,962 @@
+[
+ {
+  "id": "B072-01",
+  "titre": "Les potins du salon de coiffure",
+  "lieu": "small hair salon in Williamsville, Abidjan, a mirror on the wall, one salon chair in the foreground, a hood hair dryer on a chair at the back right, packs of braiding hair on a shelf, afternoon",
+  "persos": [
+   {
+    "nom": "the gossiping hairdresser",
+    "desc": "hairdresser in her 40s, plum-and-cyan kaba, big hoop earrings, holding ONE single wide-tooth comb",
+    "pose": "standing behind the salon chair on the left, comb raised, leaning in to gossip"
+   },
+   {
+    "nom": "the client in the chair",
+    "desc": "woman in her 30s, sand-and-navy dress, half-braided hair, a small handbag on her lap",
+    "pose": "sitting in the salon chair in the foreground center, three-quarters to the camera"
+   },
+   {
+    "nom": "the woman under the dryer",
+    "desc": "woman in her late 20s, lilac-and-sunflower jumpsuit, long fake eyelashes, hands resting on her knees",
+    "pose": "sitting under the hood dryer on the right, face clearly visible below the hood, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, le douanier-là a une deuxième femme cachée dêh !"
+   ],
+   [
+    1,
+    "Tantie, c'est moi sa femme !"
+   ],
+   [
+    2,
+    "Et moi, je suis la cachée."
+   ],
+   [
+    0,
+    "Bon… Il paie les deux tresses ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The hairdresser, standing behind the chair, announces the gossip excitedly, waving her comb. The client in the chair turns her head three-quarters to the camera and protests, eyes wide, one hand on her chest. The woman under the dryer raises one hand calmly and says her line with a small smile, face clearly visible. The hairdresser lowers her comb and asks her last line with a greedy little smile, face clearly visible.",
+  "chute": "The client in the chair freezes, mouth open, eyes darting between the two women. The camera slowly pushes in to a close-up of the client in the chair's shocked face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "douanier",
+   "cachée",
+   "tresses"
+  ],
+  "gag_legende": "LE DOUANIER QUAND IL VA VENIR PAYER :",
+  "mecanisme": "révélation en chaîne + relance assassine commerciale de la coiffeuse"
+ },
+ {
+  "id": "B072-02",
+  "titre": "L'essayage de la robe de mariée",
+  "lieu": "tailor shop in Abatta, Abidjan, a sewing machine on a wooden table, rolls of fabric on shelves, a full-length mirror, morning",
+  "persos": [
+   {
+    "nom": "the bride-to-be",
+    "desc": "bride-to-be in her late 20s, sand-and-cherry dress being fitted as her wedding dress, neat updo, a name embroidered inside the collar",
+    "pose": "standing in the foreground center in front of the mirror, pointing at the embroidered name inside her collar"
+   },
+   {
+    "nom": "the seamstress",
+    "desc": "seamstress in her 50s, gold-and-chocolate kaba, tape measure around her neck, reading glasses",
+    "pose": "standing on the left, hands on her hips, unbothered"
+   },
+   {
+    "nom": "the apprentice with the notebook",
+    "desc": "apprentice girl around 17, ochre-and-chocolate tunic, short hair, holding ONE single appointment notebook",
+    "pose": "sitting at the sewing machine on the right, the notebook open in her hands"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, pourquoi y a un autre prénom brodé dans ma robe-là ?!"
+   ],
+   [
+    1,
+    "Ton fiancé-là est un client fidèle dêh. Toujours même modèle."
+   ],
+   [
+    2,
+    "Il a déjà réservé pour décembre."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The bride-to-be points at the embroidered name and asks, outraged, three-quarters to the camera. The seamstress answers calmly, hands on her hips, with a small professional nod. The apprentice looks up from the open notebook and says her line innocently, face clearly visible.",
+  "chute": "The bride-to-be freezes, her finger still on the collar, mouth open. The camera slowly pushes in to a close-up of the bride-to-be's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "prénom",
+   "fidèle",
+   "décembre"
+  ],
+  "gag_legende": "LE FIANCÉ EN DÉCEMBRE PROCHAIN :",
+  "mecanisme": "double sens de « client fidèle » + relance assassine de l'apprentie"
+ },
+ {
+  "id": "B072-03",
+  "titre": "Le rasage avant le rendez-vous",
+  "lieu": "small barbershop in Biétry, Abidjan, a big mirror, one barber chair in the foreground, a bench along the wall, evening",
+  "persos": [
+   {
+    "nom": "the old client",
+    "desc": "man in his 60s, indigo-and-charcoal shirt, grey hair and grey goatee, a watch on his wrist",
+    "pose": "sitting in the barber chair in the foreground, smiling proudly, three-quarters to the camera"
+   },
+   {
+    "nom": "the barber",
+    "desc": "barber in his 40s, chocolate-and-maroon tracksuit, thick black beard, holding ONE single electric hair clipper",
+    "pose": "standing behind the chair on the left, clipper raised near the client's head"
+   },
+   {
+    "nom": "the young apprentice",
+    "desc": "young apprentice barber in his early 20s, lilac-and-pistachio t-shirt, thin mustache, holding ONE single small brush",
+    "pose": "standing on the right by the wall, holding the brush"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, rajeunis-moi dêh ! Ce soir, j'ai rendez-vous avec la petite Mariam."
+   ],
+   [
+    1,
+    "Mariam de Biétry-là ? C'est ma fille."
+   ],
+   [
+    2,
+    "Et moi, son fiancé dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The old client speaks proudly, chin up, three-quarters to the camera. The barber stops the clipper mid-air and answers coldly, eyebrows lowered. The young apprentice crosses his arms over the brush and says his line flatly, face clearly visible.",
+  "chute": "The old client's smile freezes, his eyes slowly rolling up toward the clipper above his head. The camera slowly pushes in to a close-up of the old client's terrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "rajeunis-moi",
+   "Mariam",
+   "fiancé"
+  ],
+  "gag_legende": "LA TONDEUSE APRÈS CETTE INFORMATION :",
+  "mecanisme": "révélation du coiffeur + relance assassine de l'apprenti"
+ },
+ {
+  "id": "B072-04",
+  "titre": "Les premières tresses de la petite",
+  "lieu": "hair salon in Abatta, Abidjan, a low wooden stool, a big mirror, packs of braiding hair on a shelf, a plastic chair in the foreground right, Saturday morning",
+  "persos": [
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, plum-and-cyan boubou, short messy hair, a handbag on her lap",
+    "pose": "sitting on the plastic chair in the foreground right, arms crossed, stern"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 7, chocolate-and-maroon dress, half of her hair braided, teary eyes",
+    "pose": "sitting on the low stool in the center, three-quarters to the camera"
+   },
+   {
+    "nom": "the hairdresser",
+    "desc": "hairdresser in her 40s, gold-and-chocolate jumpsuit, short braids, holding ONE single comb",
+    "pose": "sitting on a chair behind the girl on the left, the comb in the girl's hair"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Arrête de pleurer dêh ! Faut souffrir pour être belle !"
+   ],
+   [
+    1,
+    "Maman, pourquoi toi tu viens jamais souffrir ici ?"
+   ],
+   [
+    2,
+    "Ta maman-là, on a abandonné dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother scolds, pointing her finger at the girl, three-quarters to the camera. The little girl sniffs and asks her question, turning her head toward her mother. The hairdresser keeps the comb still, glances at the mother and says her line with a pitying shrug, face clearly visible.",
+  "chute": "The mother freezes, her finger still raised, mouth open. The camera slowly pushes in to a close-up of the mother's insulted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "souffrir",
+   "belle",
+   "abandonné"
+  ],
+  "gag_legende": "MAMAN DEVANT LE MIROIR CE SOIR :",
+  "mecanisme": "logique de l'enfant retournée contre la mère + relance assassine de la coiffeuse"
+ },
+ {
+  "id": "B072-05",
+  "titre": "Le choix de la coiffure",
+  "lieu": "beauty salon in Williamsville, Abidjan, a mirror with light bulbs, a salon chair in the foreground, a waiting bench on the right, late morning",
+  "persos": [
+   {
+    "nom": "the hairdresser with the catalogue",
+    "desc": "hairdresser in her 30s, lilac-and-pistachio blouse, high ponytail, holding ONE single hairstyle catalogue",
+    "pose": "standing on the left, holding the catalogue open"
+   },
+   {
+    "nom": "the vain mother",
+    "desc": "woman in her 50s, sand-and-cherry kaba, heavy makeup, big earrings",
+    "pose": "sitting in the salon chair in the foreground center, chin up, proud"
+   },
+   {
+    "nom": "the grown son",
+    "desc": "man around 28, ochre-and-chocolate shirt, light beard, holding ONE single phone",
+    "pose": "sitting on the waiting bench on the right, looking up from his phone"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, tu as quel âge ? Pour choisir la coiffure."
+   ],
+   [
+    1,
+    "Vingt-cinq ans, ma sœur. Pas un jour de plus dêh."
+   ],
+   [
+    2,
+    "Maman, moi-même j'ai vingt-huit ans dêh."
+   ],
+   [
+    1,
+    "Toi-là, tu mens toujours !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The hairdresser asks politely, holding the catalogue. The vain mother answers proudly, chin up, three-quarters to the camera. The grown son lowers his phone and says his line, tired, face clearly visible. The vain mother snaps her head toward him and says her last line, pointing at him, face clearly visible.",
+  "chute": "The grown son stares at her, speechless; the hairdresser slowly closes the catalogue. The camera slowly pushes in to a close-up of the vain mother's stubborn, offended face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "âge",
+   "vingt-cinq",
+   "vingt-huit"
+  ],
+  "gag_legende": "LA COIFFEUSE QUI FAIT LE CALCUL :",
+  "mecanisme": "mensonge démoli par le fils + relance assassine de la mère qui nie encore"
+ },
+ {
+  "id": "B072-06",
+  "titre": "Le budget de la rentrée",
+  "lieu": "living room of a house in Biétry, Abidjan, a sofa in the foreground, an armchair at the back, a coffee table, evening",
+  "persos": [
+   {
+    "nom": "the teenage daughter",
+    "desc": "girl around 15, plum-and-cyan tracksuit, hair in a simple ponytail, holding ONE single hairstyle magazine",
+    "pose": "standing on the left, holding the magazine open toward her father"
+   },
+   {
+    "nom": "the stingy father",
+    "desc": "father in his 50s, sand-and-navy boubou, very receding hairline with a big bald patch on top, a watch",
+    "pose": "sitting on the sofa in the foreground right, arms crossed"
+   },
+   {
+    "nom": "the mother in the armchair",
+    "desc": "mother in her 40s, lilac-and-sunflower kaba, big earrings, relaxed",
+    "pose": "sitting in the armchair at the back center, legs crossed, face clearly visible"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, ma coiffure pour la rentrée coûte trente mille dêh !"
+   ],
+   [
+    1,
+    "Trente mille ?! Tresse seulement la moitié de la tête."
+   ],
+   [
+    2,
+    "Comme toi, chéri dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The teenage daughter shows the magazine and begs, three-quarters to the camera. The stingy father answers, frowning, arms still crossed, three-quarters to the camera. The mother in the armchair says her line sweetly with a tiny smile, face clearly visible.",
+  "chute": "The stingy father freezes, eyes slowly rolling up toward his own bald patch; the daughter covers a laugh with the magazine. The camera slowly pushes in to a close-up of the stingy father's wounded face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "trente mille",
+   "moitié",
+   "chéri"
+  ],
+  "gag_legende": "LE CRÂNE DE PAPA APRÈS ÇA :",
+  "mecanisme": "radinerie du père + relance assassine de la mère sur sa calvitie"
+ },
+ {
+  "id": "B072-07",
+  "titre": "Le mur de chaussures",
+  "lieu": "bedroom of a villa in Biétry, Abidjan, a whole wall of shelves full of women's shoes, a bed, evening",
+  "persos": [
+   {
+    "nom": "the husband with the shoe",
+    "desc": "husband in his 40s, gold-and-chocolate shirt, thin mustache, holding ONE single high-heeled shoe",
+    "pose": "standing in the foreground left, holding up the shoe, outraged"
+   },
+   {
+    "nom": "the calm wife",
+    "desc": "wife in her late 30s, indigo-and-charcoal dress, elegant long braids",
+    "pose": "standing on the right in front of the shoe wall, arms crossed, calm"
+   },
+   {
+    "nom": "the daughter with the box",
+    "desc": "girl around 10, lilac-and-pistachio dress, two puffs of hair, holding ONE single delivery box with both hands",
+    "pose": "standing in the center, holding the box with both hands"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chérie, pourquoi tu as quatre-vingts paires de chaussures-là ?!"
+   ],
+   [
+    1,
+    "Une paire pour chaque fois que tu as menti, chéri."
+   ],
+   [
+    2,
+    "Papa, hier elle a commandé cinq dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband shakes the shoe and shouts, three-quarters to the camera. The calm wife answers coolly, arms crossed, one eyebrow raised. The daughter keeps both hands on the box and says her line innocently, face clearly visible.",
+  "chute": "The husband freezes, the shoe still raised, his eyes darting left and right. The camera slowly pushes in to a close-up of the husband with the shoe's guilty face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "chaussures",
+   "menti",
+   "cinq"
+  ],
+  "gag_legende": "PAPA EN COMPTANT SES MENSONGES D'HIER :",
+  "mecanisme": "accusation retournée + relance assassine de la fille qui compte"
+ },
+ {
+  "id": "B072-08",
+  "titre": "La coiffure de la nuit",
+  "lieu": "hair salon in Abatta, Abidjan, a salon chair in the foreground, a wall clock showing eleven o'clock, piles of braiding hair on a table, night",
+  "persos": [
+   {
+    "nom": "the tired client",
+    "desc": "woman in her 30s, ochre-and-chocolate kaba, very long half-finished braids, holding ONE single phone",
+    "pose": "sitting in the salon chair in the foreground center, exhausted, three-quarters to the camera"
+   },
+   {
+    "nom": "the hairdresser",
+    "desc": "hairdresser in her 40s, sand-and-cherry blouse, short natural hair, both hands busy braiding",
+    "pose": "standing behind the chair on the left, both hands in the client's hair"
+   },
+   {
+    "nom": "the apprentice with the banknote",
+    "desc": "apprentice girl around 18, plum-and-cyan t-shirt, small braids, holding ONE single banknote",
+    "pose": "sitting on a stool on the right, holding the banknote up"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, onze heures de tresses ! Mon mari doit s'inquiéter dêh !"
+   ],
+   [
+    1,
+    "Ton mari est passé. Il dit : prends ton temps, ma sœur."
+   ],
+   [
+    2,
+    "Il a payé pour demain aussi."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The tired client complains, phone in hand, three-quarters to the camera. The hairdresser keeps braiding with both hands and answers calmly, face clearly visible. The apprentice waves the banknote slightly and says her line cheerfully, face clearly visible.",
+  "chute": "The tired client freezes, mouth open, the phone slowly dropping onto her lap. The camera slowly pushes in to a close-up of the tired client's betrayed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "onze heures",
+   "mari",
+   "demain"
+  ],
+  "gag_legende": "LE MARI À LA MAISON EN CE MOMENT :",
+  "mecanisme": "le mari soulagé par l'absence de sa femme + relance assassine de l'apprentie"
+ },
+ {
+  "id": "B072-09",
+  "titre": "La nouvelle coiffure de Madame",
+  "lieu": "living room of a modest house in Williamsville, Abidjan, a sofa in the foreground, a plastic chair near the door, end of the month, afternoon",
+  "persos": [
+   {
+    "nom": "the broke husband",
+    "desc": "husband in his 40s, chocolate-and-maroon shirt, tired face, short hair",
+    "pose": "standing on the left, pointing at his wife's new braids"
+   },
+   {
+    "nom": "the proud wife",
+    "desc": "wife in her 30s, lilac-and-sunflower dress, brand-new long elegant braids, a small handbag",
+    "pose": "sitting on the sofa in the foreground center, chin up, proud"
+   },
+   {
+    "nom": "the landlord",
+    "desc": "landlord in his 60s, gold-and-chocolate boubou, white beard, holding ONE single receipt book",
+    "pose": "sitting on the plastic chair near the door on the right, receipt book on his knee"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chérie, tes tresses-là ont coûté combien dêh ?!"
+   ],
+   [
+    1,
+    "Soixante mille seulement, mon chéri."
+   ],
+   [
+    0,
+    "Donc le loyer du mois est sur ta tête !"
+   ],
+   [
+    2,
+    "Alors je prends combien de tresses ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The broke husband points at the braids and asks, three-quarters to the camera. The proud wife answers sweetly, chin up. The broke husband shouts his line, hands on his head. The landlord opens his receipt book on his knee and asks his question very seriously, face clearly visible.",
+  "chute": "The proud wife freezes, her eyes slowly rolling up toward her braids. The camera slowly pushes in to a close-up of the proud wife's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "tresses",
+   "loyer",
+   "combien"
+  ],
+  "gag_legende": "LES TRESSES EN VOYANT LE PROPRIÉTAIRE :",
+  "mecanisme": "image littérale « le loyer sur la tête » + relance assassine du propriétaire présent"
+ },
+ {
+  "id": "B072-10",
+  "titre": "La robe commandée",
+  "lieu": "tailor shop in Biétry, Abidjan, a sewing table with scissors, an empty dress form, a full-length mirror, rolls of fabric, late afternoon",
+  "persos": [
+   {
+    "nom": "the angry client",
+    "desc": "woman in her 40s, indigo-and-charcoal kaftan, big handbag on her shoulder",
+    "pose": "standing in the foreground left, hands on her hips"
+   },
+   {
+    "nom": "the seamstress",
+    "desc": "seamstress in her 50s, sand-and-navy kaba, tape measure around her neck, holding ONE single pair of scissors",
+    "pose": "standing behind the sewing table in the center"
+   },
+   {
+    "nom": "the woman in the dress",
+    "desc": "woman in her 30s, ochre-and-chocolate dress, short stylish haircut, smug smile",
+    "pose": "standing on the right in front of the mirror, one hand on her hip"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Couturière, pourquoi la dame-là porte ma robe dêh ?!"
+   ],
+   [
+    1,
+    "Ma sœur, elle a payé cash. Toi, tu as payé promesses."
+   ],
+   [
+    2,
+    "Et ça me va mieux."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The angry client points at the woman in the dress and shouts, three-quarters to the camera. The seamstress answers calmly, snipping the air once with her scissors. The woman in the dress turns her head from the mirror and says her line with a smug smile, face clearly visible.",
+  "chute": "The angry client freezes, mouth open, her hands sliding off her hips. The camera slowly pushes in to a close-up of the angry client's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "robe",
+   "cash",
+   "promesses"
+  ],
+  "gag_legende": "LA CLIENTE DEVANT SA ROBE PERDUE :",
+  "mecanisme": "cynisme commercial de la couturière + relance assassine de la rivale"
+ },
+ {
+  "id": "B072-11",
+  "titre": "Le pagne confié au couturier",
+  "lieu": "tailor shop in Williamsville, Abidjan, a sewing machine, scraps of fabric on the floor, a wooden bench on the right, morning",
+  "persos": [
+   {
+    "nom": "the client with the receipt",
+    "desc": "woman in her 30s, lilac-and-pistachio jumpsuit, big hoop earrings, holding ONE single paper receipt",
+    "pose": "standing in the foreground left, pointing at the tailor's wife"
+   },
+   {
+    "nom": "the tailor",
+    "desc": "tailor in his 50s, chocolate-and-maroon boubou, round glasses, tape measure around his neck",
+    "pose": "sitting at the sewing machine in the center, hands on the machine"
+   },
+   {
+    "nom": "the tailor's wife",
+    "desc": "woman in her 40s, the tailor's wife, gold-and-chocolate kaftan, big gold earrings",
+    "pose": "sitting on the bench on the right, posing proudly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Couturier, ta femme-là porte mon pagne dêh !"
+   ],
+   [
+    1,
+    "Non, ma sœur. Ce sont les chutes de ton tissu."
+   ],
+   [
+    2,
+    "Il te reste un foulard dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The client with the receipt points at the tailor's wife and shouts, three-quarters to the camera. The tailor answers without stopping, hands still on the machine, very calm. The tailor's wife smooths her kaftan with one hand and says her line generously, face clearly visible.",
+  "chute": "The client with the receipt freezes, her finger still pointing, mouth open. The camera slowly pushes in to a close-up of the client with the receipt's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "pagne",
+   "chutes",
+   "foulard"
+  ],
+  "gag_legende": "LA CLIENTE EN RECEVANT SON FOULARD :",
+  "mecanisme": "mauvaise foi du couturier + relance assassine de sa femme"
+ },
+ {
+  "id": "B072-12",
+  "titre": "La retouche du costume",
+  "lieu": "tailor shop in Abatta, Abidjan, a full-length mirror, a sewing machine, a row of suits on hangers, a chair on the right, afternoon",
+  "persos": [
+   {
+    "nom": "the young husband",
+    "desc": "husband around 30, sand-and-cherry suit whose jacket cannot close over his round belly, neat haircut",
+    "pose": "standing in the foreground center in front of the mirror, arms slightly open"
+   },
+   {
+    "nom": "the tailor",
+    "desc": "tailor in his 40s, indigo-and-charcoal tunic, tape measure around his neck, holding ONE single notebook of measurements",
+    "pose": "standing on the left, reading the notebook"
+   },
+   {
+    "nom": "the proud wife",
+    "desc": "young wife in her late 20s, plum-and-cyan dress, big proud smile, a small handbag on her lap",
+    "pose": "sitting on the chair on the right, legs crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Couturier, pourquoi mon costume-là ne ferme plus ?!"
+   ],
+   [
+    1,
+    "Mon vieux, tes mesures datent d'avant ton mariage."
+   ],
+   [
+    0,
+    "Le mariage, c'était il y a un mois dêh !"
+   ],
+   [
+    2,
+    "Ma sauce graine-là ne blague pas."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The young husband shows the open jacket and complains, three-quarters to the camera. The tailor reads the notebook and answers calmly. The young husband protests, both hands open. The proud wife says her line very proudly, chin up, face clearly visible.",
+  "chute": "The young husband slowly looks down at his belly and freezes. The camera slowly pushes in to a close-up of the young husband's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "costume",
+   "mariage",
+   "sauce graine"
+  ],
+  "gag_legende": "LE BOUTON DU COSTUME EN CE MOMENT :",
+  "mecanisme": "transformation express du mari + relance assassine fière de l'épouse"
+ },
+ {
+  "id": "B072-13",
+  "titre": "Le nouveau boubou du gendre",
+  "lieu": "courtyard of a family house in Biétry, Abidjan, plastic chairs, a small table with a jug of water, Sunday afternoon",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, ochre-and-chocolate boubou, big round glasses, hands on her hips",
+    "pose": "standing in the foreground left, hands on her hips, offended"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 40s, lilac-and-sunflower boubou printed with a big portrait of the mother-in-law's face on the chest, short beard",
+    "pose": "standing in the center, smiling innocently, three-quarters to the camera"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, sand-and-navy jumpsuit, short braids",
+    "pose": "sitting on a plastic chair on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon gendre, pourquoi ma photo est sur ton boubou-là ?!"
+   ],
+   [
+    1,
+    "Belle-maman, c'est la seule version de vous qui parle pas."
+   ],
+   [
+    2,
+    "Même là, je l'entends dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother-in-law points at the printed portrait and asks, outraged, three-quarters to the camera. The son-in-law answers sweetly, patting the portrait once on his chest. The wife shakes her head slowly and says her line, deadpan, face clearly visible.",
+  "chute": "The mother-in-law freezes, then turns her head slowly toward her own daughter, mouth open. The camera slowly pushes in to a close-up of the mother-in-law's betrayed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "photo",
+   "parle",
+   "entends"
+  ],
+  "gag_legende": "BELLE-MAMAN QUAND ELLE VA RACONTER ÇA :",
+  "mecanisme": "pique du gendre + relance assassine de la propre fille contre sa mère"
+ },
+ {
+  "id": "B072-14",
+  "titre": "La nouvelle tenue du petit",
+  "lieu": "living room of a house in Abatta, Abidjan, big window curtains made of exactly the same fabric as the boy's tunic, a sofa on the left, afternoon",
+  "persos": [
+   {
+    "nom": "the neighbor",
+    "desc": "neighbor woman in her 40s, gold-and-chocolate dress, a small purse on her lap",
+    "pose": "sitting on the sofa on the left, pointing at the boy"
+   },
+   {
+    "nom": "the thrifty mother",
+    "desc": "mother in her 30s, sand-and-cherry boubou, hair in a neat bun",
+    "pose": "standing on the right, hands on her hips, proud"
+   },
+   {
+    "nom": "the camouflaged boy",
+    "desc": "boy around 7, lilac-and-sunflower tunic made from the same fabric as the curtains, big round eyes",
+    "pose": "standing in the foreground center right in front of the curtains, almost blending into them, three-quarters to the camera"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, pourquoi ton fils est habillé avec tes rideaux-là ?!"
+   ],
+   [
+    1,
+    "Il restait tissu, ma sœur. On gaspille pas dêh."
+   ],
+   [
+    2,
+    "Hier, papa a voulu me fermer."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The neighbor points at the boy and asks, shocked. The thrifty mother answers proudly, hands on her hips. The camouflaged boy sighs and says his line in a tired little voice, face clearly visible.",
+  "chute": "The neighbor bursts into silent laughter behind him while the boy stays still against the curtains. The camera slowly pushes in to a close-up of the camouflaged boy's resigned face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "rideaux",
+   "gaspille",
+   "fermer"
+  ],
+  "gag_legende": "PAPA CE SOIR À LA FENÊTRE :",
+  "mecanisme": "économie absurde de la mère + chute visuelle de l'enfant camouflé"
+ },
+ {
+  "id": "B072-15",
+  "titre": "Le boubou commandé",
+  "lieu": "tailor shop in Williamsville, Abidjan, a sewing machine, a mirror, a calendar on the wall, morning",
+  "persos": [
+   {
+    "nom": "the one-sleeve client",
+    "desc": "man in his 50s, indigo-and-charcoal boubou with only ONE sleeve, the other arm bare, grey mustache",
+    "pose": "standing in the foreground center, lifting his bare arm slightly, outraged"
+   },
+   {
+    "nom": "the tailor",
+    "desc": "tailor in his 40s, ochre-and-chocolate kaftan, tape measure around his neck, bald head",
+    "pose": "sitting at the sewing machine on the left, calm"
+   },
+   {
+    "nom": "the grinning apprentice",
+    "desc": "apprentice boy around 16, sand-and-navy t-shirt, short hair, holding ONE single pair of scissors",
+    "pose": "standing on the right, grinning"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Couturier, pourquoi mon boubou-là a une seule manche ?!"
+   ],
+   [
+    1,
+    "Tonton, tu as payé la moitié de l'avance."
+   ],
+   [
+    2,
+    "Paie le reste, ça va pousser."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The one-sleeve client lifts his bare arm slightly and shouts, three-quarters to the camera. The tailor answers calmly, hands resting on the machine. The grinning apprentice says his line with a big encouraging smile, face clearly visible.",
+  "chute": "The one-sleeve client slowly looks at his bare arm and freezes. The camera slowly pushes in to a close-up of the one-sleeve client's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "manche",
+   "moitié",
+   "pousser"
+  ],
+  "gag_legende": "TONTON EN ATTENDANT QUE LA MANCHE POUSSE :",
+  "mecanisme": "logique comptable du couturier + relance assassine absurde de l'apprenti"
+ },
+ {
+  "id": "B072-16",
+  "titre": "Le pagne du mariage du cousin",
+  "lieu": "living room of a house in Abatta, Abidjan, a sofa, a stack of folded pagnes on a coffee table, an armchair on the right, evening",
+  "persos": [
+   {
+    "nom": "the son-in-law with the pagne",
+    "desc": "husband in his 40s, indigo-and-charcoal polo shirt, short beard, holding ONE single folded pagne",
+    "pose": "standing in the foreground left, holding up the folded pagne"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, chocolate-and-maroon kaba, long braids",
+    "pose": "sitting on the sofa in the center"
+   },
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, lilac-and-pistachio boubou, big glasses",
+    "pose": "sitting in the armchair on the right, arms crossed, serious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chérie, vingt-cinq mille pour le pagne de ton cousin ?!"
+   ],
+   [
+    1,
+    "C'est l'uniforme de la famille, chéri. Obligatoire dêh."
+   ],
+   [
+    0,
+    "Mais moi, je suis pas de ta famille !"
+   ],
+   [
+    2,
+    "Voilà. Toi, tu paies double."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The son-in-law shakes the folded pagne and complains, three-quarters to the camera. The wife answers calmly, shrugging. The son-in-law protests, one hand on his chest. The mother-in-law says her line coldly, arms crossed, face clearly visible.",
+  "chute": "The son-in-law freezes, the pagne still raised, mouth open. The camera slowly pushes in to a close-up of the son-in-law with the pagne's ruined face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "pagne",
+   "famille",
+   "double"
+  ],
+  "gag_legende": "LE PORTE-MONNAIE DU GENDRE EN CE MOMENT :",
+  "mecanisme": "logique familiale retournée + relance assassine de la belle-mère"
+ },
+ {
+  "id": "B072-17",
+  "titre": "Le repas du soir",
+  "lieu": "dining room of a house in Biétry, Abidjan, a table with plates of attiéké and fish, wooden chairs, evening",
+  "persos": [
+   {
+    "nom": "the mother",
+    "desc": "mother in her 40s, sand-and-cherry jumpsuit, short braids, holding ONE single serving spoon",
+    "pose": "sitting at the table on the left, frowning"
+   },
+   {
+    "nom": "the stiff son",
+    "desc": "young man around 19, plum-and-cyan slim-fit suit with extremely tight trousers, trendy haircut",
+    "pose": "standing stiffly behind his empty chair in the foreground center, legs straight like sticks, three-quarters to the camera"
+   },
+   {
+    "nom": "the little sister",
+    "desc": "girl around 12, ochre-and-chocolate tracksuit, hair in two puffs",
+    "pose": "sitting at the table on the right, hands flat on the table"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, pourquoi tu restes debout à table depuis ?!"
+   ],
+   [
+    1,
+    "Maman, mon pantalon slim-là ne plie pas dêh."
+   ],
+   [
+    2,
+    "On était trois pour le fermer."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother points the serving spoon at her son and asks, annoyed. The stiff son answers, his body perfectly rigid, three-quarters to the camera. The little sister says her line in a flat voice, face clearly visible.",
+  "chute": "The stiff son stays rigid, only his eyes moving in shame. The camera slowly pushes in to a close-up of the stiff son's embarrassed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "debout",
+   "slim",
+   "trois"
+  ],
+  "gag_legende": "LE PANTALON SLIM À LA FIN DU REPAS :",
+  "mecanisme": "mode absurde + relance assassine de la petite sœur"
+ },
+ {
+  "id": "B072-18",
+  "titre": "Le retour de voyage de maman",
+  "lieu": "living room of an apartment in Williamsville, Abidjan, a sofa on the right, a suitcase by the door, a comb and a jar of hair cream on the coffee table, evening",
+  "persos": [
+   {
+    "nom": "the returning mother",
+    "desc": "mother in her 30s, lilac-and-pistachio kaftan, a travel handbag on her shoulder",
+    "pose": "standing on the left next to the suitcase, hands on her hips, shocked"
+   },
+   {
+    "nom": "the proud father",
+    "desc": "father in his 30s, chocolate-and-maroon polo shirt, short beard",
+    "pose": "sitting on the sofa on the right, proud smile"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 6, sand-and-navy tracksuit, a lopsided hairstyle with one huge puff on top and crooked uneven cornrows",
+    "pose": "standing in the foreground center, arms down, resigned, three-quarters to the camera"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, c'est toi qui as coiffé la petite-là comme ça ?!"
+   ],
+   [
+    1,
+    "Oui chérie. Exactement comme le tutoriel dêh."
+   ],
+   [
+    2,
+    "Le maître m'appelle Tonton maintenant."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The returning mother points at the girl's hair and asks, horrified. The proud father answers, very proud, thumbs up. The little girl sighs and says her line in a small tired voice, face clearly visible.",
+  "chute": "The little girl blinks slowly while her father keeps smiling proudly. The camera slowly pushes in to a close-up of the little girl's fed-up face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "coiffé",
+   "tutoriel",
+   "Tonton"
+  ],
+  "gag_legende": "LA PETITE DEVANT LE MIROIR DE L'ÉCOLE :",
+  "mecanisme": "fierté aveugle du père + relance assassine de la fillette"
+ },
+ {
+  "id": "B072-19",
+  "titre": "La chemise neuve de Tonton",
+  "lieu": "courtyard of a family house in Abatta, Abidjan, plastic chairs, a small table, Sunday morning",
+  "persos": [
+   {
+    "nom": "the niece",
+    "desc": "young woman around 20, indigo-and-charcoal jumpsuit, long braids, holding ONE single phone",
+    "pose": "standing on the left, pointing at the uncle's collar"
+   },
+   {
+    "nom": "the proud uncle",
+    "desc": "uncle in his 50s, sand-and-navy shirt with a big price tag still hanging from the collar, round belly, chest out",
+    "pose": "standing in the foreground center, chest out, three-quarters to the camera"
+   },
+   {
+    "nom": "the nephew",
+    "desc": "boy around 14, plum-and-cyan polo shirt, short hair",
+    "pose": "standing on the right close to the uncle, squinting at the price tag"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, l'étiquette est encore sur ta chemise-là dêh !"
+   ],
+   [
+    1,
+    "Laisse, ma fille. Les gens doivent voir que c'est neuf."
+   ],
+   [
+    2,
+    "Elle dit : friperie, deux cents francs."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The niece points at the collar and warns him. The proud uncle answers, chest out, with a superior little smile, three-quarters to the camera. The nephew leans his head toward the tag and reads it out loud, face clearly visible.",
+  "chute": "The proud uncle's smile freezes, his chest slowly deflating. The camera slowly pushes in to a close-up of the proud uncle's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "étiquette",
+   "neuf",
+   "friperie"
+  ],
+  "gag_legende": "TONTON EN CHERCHANT DES CISEAUX :",
+  "mecanisme": "frime démolie par la lecture de l'étiquette"
+ },
+ {
+  "id": "B072-20",
+  "titre": "Les nouveaux faux cils",
+  "lieu": "living room of a small house in Biétry, Abidjan, a sofa, an empty spot on a shelf where a fan used to stand, very hot afternoon",
+  "persos": [
+   {
+    "nom": "the wife with the lashes",
+    "desc": "wife in her 30s, lilac-and-pistachio kaba, extremely long dramatic fake eyelashes, elegant braids",
+    "pose": "sitting on the sofa in the foreground center, three-quarters to the camera, fluttering her eyelashes"
+   },
+   {
+    "nom": "the sweaty husband",
+    "desc": "husband in his 40s, sand-and-cherry shirt, sweaty forehead, eyes half closed with pleasure",
+    "pose": "sitting next to her on the right, face turned toward her eyelashes, enjoying the breeze"
+   },
+   {
+    "nom": "the son",
+    "desc": "boy around 9, gold-and-chocolate t-shirt, short hair",
+    "pose": "standing on the left, pointing at the empty shelf"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, mes faux cils-là coûtent quarante mille, tu dis rien ?!"
+   ],
+   [
+    1,
+    "Je dis merci, bébé. Cligne encore, il fait chaud dêh."
+   ],
+   [
+    2,
+    "Papa a vendu le ventilateur."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife with the lashes asks, offended, fluttering her eyelashes. The sweaty husband answers blissfully, eyes half closed, three-quarters to the camera. The son points at the empty shelf and says his line, face clearly visible.",
+  "chute": "The wife with the lashes stops blinking at once, outraged, while the husband leans closer for more breeze. The camera slowly pushes in to a close-up of the wife with the lashes' furious face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "faux cils",
+   "cligne",
+   "ventilateur"
+  ],
+  "gag_legende": "PAPA PENDANT LE PROCHAIN DÉLESTAGE :",
+  "mecanisme": "détournement absurde du luxe + relance assassine du fils"
+ }
+]

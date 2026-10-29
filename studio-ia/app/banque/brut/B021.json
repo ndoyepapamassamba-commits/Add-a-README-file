@@ -1,0 +1,831 @@
+[
+ {
+  "id": "B021-01",
+  "titre": "Le papa contre le vieux maître",
+  "lieu": "old public primary school classroom in Treichville, Abidjan, rows of worn wooden desks, a blackboard covered with chalk sums, a pile of exercise books on the teacher's desk, late morning",
+  "persos": [
+   {
+    "nom": "the angry father",
+    "desc": "father in his 40s, teal-and-ochre shirt, thin moustache, holding ONE single exercise book",
+    "pose": "standing in the foreground on the left, holding the exercise book up, angry"
+   },
+   {
+    "nom": "the old teacher",
+    "desc": "old male schoolteacher in his 60s, burgundy-and-chocolate suit, white hair, round glasses, holding ONE single piece of chalk",
+    "pose": "standing on the right in front of the blackboard, calm and relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maître, pourquoi mon fils-là a toujours zéro avec vous ?!"
+   ],
+   [
+    1,
+    "Mon vieux, c'est l'abonnement familial. J'ai eu ton papa, toi, et maintenant lui dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father shakes the exercise book and shouts his question, his face turned three-quarters toward the camera. The old teacher answers calmly with a small smile, counting on the fingers of his free hand, his face clearly visible.",
+  "chute": "The father freezes, mouth wide open, the exercise book still raised. The camera slowly pushes in to a close-up of the angry father's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "zéro",
+   "abonnement",
+   "familial"
+  ],
+  "gag_legende": "LE GRAND-PÈRE QUAND IL VA APPRENDRE ÇA :",
+  "mecanisme": "retournement logique à double cible : la plainte du père se retourne contre lui et contre le grand-père"
+ },
+ {
+  "id": "B021-02",
+  "titre": "La menace du maître",
+  "lieu": "primary school classroom in Marcory, Abidjan, wooden desks, a blackboard with a math lesson, a window with morning sunlight",
+  "persos": [
+   {
+    "nom": "the strict teacher",
+    "desc": "male schoolteacher in his 50s, navy-and-aubergine shirt, thick glasses, short grey hair, holding ONE single piece of chalk",
+    "pose": "standing in the foreground on the right, pointing the chalk at the boy"
+   },
+   {
+    "nom": "the cheeky boy",
+    "desc": "boy around 10, rust-and-pistachio school uniform, gap-toothed grin, short hair",
+    "pose": "sitting at his wooden desk on the left, arms crossed, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, si tu travailles pas, tu vas finir comme ton papa dêh !"
+   ],
+   [
+    1,
+    "Maître, papa dit si je travaille trop, je vais finir comme vous."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher points the chalk at the boy and threatens him, his face turned three-quarters toward the camera. The boy answers calmly with a little shrug, arms still crossed, his face clearly visible.",
+  "chute": "The teacher freezes, the chalk still raised, his stern face slowly collapsing. The camera slowly pushes in to a close-up of the strict teacher's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "finir",
+   "papa",
+   "vous"
+  ],
+  "gag_legende": "LE MAÎTRE EN RENTRANT DANS SON DEUX-PIÈCES :",
+  "mecanisme": "retournement logique à double cible : la menace renvoyée en miroir touche le maître et le papa"
+ },
+ {
+  "id": "B021-03",
+  "titre": "La convocation des parents",
+  "lieu": "living room of a modest house in Koumassi, Abidjan, a worn sofa, a low table, a small television, evening",
+  "persos": [
+   {
+    "nom": "the schoolgirl",
+    "desc": "girl around 9, teal-and-mint school uniform, two puff ponytails, holding ONE single school notebook",
+    "pose": "standing on the left, holding the notebook against her chest, innocent"
+   },
+   {
+    "nom": "the father on the sofa",
+    "desc": "father in his 40s, apricot-and-amber boubou, round belly, short beard, holding ONE single TV remote",
+    "pose": "sitting on the sofa in the foreground on the right, relaxed, remote in hand"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, la maîtresse veut voir toi et maman demain dêh."
+   ],
+   [
+    1,
+    "Ehh ! Pourquoi les deux, ma fille ?"
+   ],
+   [
+    0,
+    "Elle veut savoir le problème-là vient de quel côté."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl announces the news sweetly, her face turned three-quarters toward the camera. The father lowers the remote, frowns and asks his question, his face clearly visible. The girl answers innocently with a little shrug, her face clearly visible.",
+  "chute": "The father freezes, the remote stuck in mid-air, his eyes slowly widening. The camera slowly pushes in to a close-up of the father on the sofa's shocked face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "maîtresse",
+   "problème",
+   "côté"
+  ],
+  "gag_legende": "PAPA ET MAMAN DEVANT LA MAÎTRESSE DEMAIN :",
+  "mecanisme": "retournement logique à double cible : une seule phrase de l'enfant accuse papa et maman à la fois"
+ },
+ {
+  "id": "B021-04",
+  "titre": "Le devoir de calcul",
+  "lieu": "small dining room of an apartment in Treichville, Abidjan, a plastic table with an open exercise book, a ceiling fan, evening",
+  "persos": [
+   {
+    "nom": "the little boy",
+    "desc": "boy around 8, crimson-and-fuchsia t-shirt, round cheeks, holding ONE single pencil",
+    "pose": "sitting at the plastic table on the left, pencil in hand, pleading"
+   },
+   {
+    "nom": "the lazy father",
+    "desc": "father in his late 30s, teal-and-ochre tracksuit, thin moustache, ONE single folded newspaper resting on his lap",
+    "pose": "sitting in an armchair in the foreground on the right, leaning back, newspaper on his lap"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, mon devoir de calcul-là, tu m'aides jamais dêh !"
+   ],
+   [
+    1,
+    "Demande à ta maman-là. C'est elle qui sait calculer."
+   ],
+   [
+    0,
+    "Papa, si elle savait calculer, elle allait te marier ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy complains, holding up his pencil, his face turned three-quarters toward the camera. The father waves his free hand lazily without getting up, his face clearly visible. The boy tilts his head and asks his question innocently, his face clearly visible.",
+  "chute": "The father freezes, mouth half open, slowly realizing. The camera slowly pushes in to a close-up of the lazy father's speechless face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "calcul",
+   "calculer",
+   "marier"
+  ],
+  "gag_legende": "PAPA EN REFAISANT LE CALCUL :",
+  "mecanisme": "retournement logique à double cible : l'argument du père prouve que maman a mal calculé en le choisissant"
+ },
+ {
+  "id": "B021-05",
+  "titre": "Maman vérifie les cahiers",
+  "lieu": "living room of a house in Marcory, Abidjan, a wooden table with two open exercise books, a wall clock, evening",
+  "persos": [
+   {
+    "nom": "the mother checking homework",
+    "desc": "mother in her 40s, apricot-and-violet kaba, headscarf, holding ONE single open exercise book",
+    "pose": "standing in the middle, holding the exercise book open, furious"
+   },
+   {
+    "nom": "the little brother",
+    "desc": "boy around 10, rust-and-saffron school uniform, shaved head, mischievous grin",
+    "pose": "standing on the left, hands behind his back"
+   },
+   {
+    "nom": "the big sister",
+    "desc": "teenage girl around 16, navy-and-aubergine school uniform, long braids, holding ONE single phone",
+    "pose": "sitting on a chair in the foreground on the right, phone in her hand, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi ton devoir-là a l'écriture de ta grande sœur ?!"
+   ],
+   [
+    1,
+    "Ya fohi, maman. Son devoir à elle a l'écriture de son copain dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother shakes the exercise book at the boy, her face turned three-quarters toward the camera. The big sister keeps smiling at her phone. The boy answers calmly, pointing one finger at his big sister, his face clearly visible.",
+  "chute": "The big sister freezes, her smile gone, while the mother slowly turns her head toward her. The camera slowly pushes in to a close-up of the big sister's busted face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "écriture",
+   "grande sœur",
+   "copain"
+  ],
+  "gag_legende": "LA GRANDE SŒUR CE SOIR À TABLE :",
+  "mecanisme": "dénonciation en cascade : l'accusé se sauve en balançant une faute plus grosse"
+ },
+ {
+  "id": "B021-06",
+  "titre": "Le mot d'absence",
+  "lieu": "primary school classroom in Koumassi, Abidjan, wooden desks, a blackboard, the teacher's desk with a register, morning",
+  "persos": [
+   {
+    "nom": "the suspicious teacher",
+    "desc": "male schoolteacher in his 50s, burgundy-and-chocolate shirt, bushy eyebrows, holding ONE single small sheet of paper",
+    "pose": "standing in the foreground on the right, holding the note up, suspicious"
+   },
+   {
+    "nom": "the boy with the excuse",
+    "desc": "boy around 11, crimson-and-fuchsia school uniform, big eyes, hands behind his back",
+    "pose": "standing on the left, calm and confident"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ce mot d'absence-là, c'est toi-même qui l'as écrit, avec tes fautes !"
+   ],
+   [
+    1,
+    "Non maître, c'est maman dêh. Et c'est vous qui étiez son maître."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher waves the note and accuses the boy, his face turned three-quarters toward the camera. The boy answers calmly, shaking his head, his face clearly visible.",
+  "chute": "The teacher freezes, then slowly looks down at the note in his hand. The camera slowly pushes in to a close-up of the suspicious teacher's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "mot d'absence",
+   "fautes",
+   "maître"
+  ],
+  "gag_legende": "LE MAÎTRE QUAND LA MAMAN VA ARRIVER :",
+  "mecanisme": "retournement logique à double cible : la preuve de la tricherie accuse la mère et le maître lui-même"
+ },
+ {
+  "id": "B021-07",
+  "titre": "Le bilan du trimestre",
+  "lieu": "primary school classroom in Treichville, Abidjan, during a parent-teacher meeting, the teacher's desk with a pile of report cards, two chairs facing it, late afternoon",
+  "persos": [
+   {
+    "nom": "the tired teacher",
+    "desc": "female schoolteacher in her 40s, rust-and-pistachio blouse, short hair, holding ONE single report card",
+    "pose": "sitting behind her desk in the middle, holding the report card"
+   },
+   {
+    "nom": "the talkative mother",
+    "desc": "mother in her 40s, crimson-and-fuchsia boubou, big earrings, a handbag on her lap",
+    "pose": "sitting on a chair in the foreground on the left, chin up"
+   },
+   {
+    "nom": "the quiet father",
+    "desc": "father in his 40s, teal-and-mint shirt, bald head, arms crossed",
+    "pose": "sitting on a chair in the foreground on the right, arms crossed, silent"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Madame, votre fils-là est paresseux et bavard dêh !"
+   ],
+   [
+    1,
+    "La paresse-là, maîtresse, c'est son papa !"
+   ],
+   [
+    0,
+    "Et le bavardage-là, ça vient d'où ?"
+   ],
+   [
+    2,
+    "Maîtresse, regardez qui répond à toutes vos questions-là."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The teacher reads the report card and announces the verdict, her face turned three-quarters toward the camera. The mother points at the father without looking at him, her face clearly visible. The teacher raises her eyebrows and asks her question, her face clearly visible. The father, arms still crossed, tilts his head toward the mother and answers calmly, his face clearly visible.",
+  "chute": "The mother freezes, mouth open, and slowly turns her head toward the father. The camera slowly pushes in to a close-up of the talkative mother's speechless face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "paresseux",
+   "bavard",
+   "questions"
+  ],
+  "gag_legende": "MAMAN QUI SE TAIT POUR LA PREMIÈRE FOIS :",
+  "mecanisme": "retournement logique à double cible : les parents se renvoient les défauts, le père prouve en direct ceux de la mère"
+ },
+ {
+  "id": "B021-08",
+  "titre": "La meilleure rédaction",
+  "lieu": "schoolyard of a primary school in Marcory, Abidjan, a big mango tree, a concrete bench, classrooms in the background, noon",
+  "persos": [
+   {
+    "nom": "the proud mother",
+    "desc": "mother in her 30s, teal-and-ochre kaba, elegant headwrap, a handbag on her arm",
+    "pose": "standing in the foreground on the left, hands clasped, proud"
+   },
+   {
+    "nom": "the amused teacher",
+    "desc": "male schoolteacher in his 40s, apricot-and-violet shirt, small glasses, holding ONE single exercise book",
+    "pose": "standing on the right, holding the exercise book, grinning"
+   }
+  ],
+  "dialogue": [
+   [
+    1,
+    "Madame, votre fille a eu dix-neuf en rédaction dêh !"
+   ],
+   [
+    0,
+    "Ehh ! Le sujet-là, c'était quoi ?"
+   ],
+   [
+    1,
+    "Raconte une soirée chez toi. Tous les maîtres attendent l'épisode deux."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher taps the exercise book and announces the grade, his face turned three-quarters toward the camera. The mother claps her hands once, delighted, and asks her question, her face clearly visible. The teacher answers with a huge grin, tapping the exercise book, his face clearly visible.",
+  "chute": "The mother's proud smile freezes and slowly melts. The camera slowly pushes in to a close-up of the proud mother's mortified face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "rédaction",
+   "soirée",
+   "épisode deux"
+  ],
+  "gag_legende": "MAMAN EN RELISANT LA RÉDACTION :",
+  "mecanisme": "fierté retournée en honte : la réussite de l'enfant étale les disputes des deux parents à toute l'école"
+ },
+ {
+  "id": "B021-09",
+  "titre": "Le répétiteur à domicile",
+  "lieu": "living room of a house in Koumassi, Abidjan, a table with exercise books, a small chalkboard against the wall, late afternoon",
+  "persos": [
+   {
+    "nom": "the furious mother",
+    "desc": "mother in her 40s, rust-and-saffron boubou, hair in a bun, holding ONE single report card",
+    "pose": "standing on the left, holding the report card up, furious"
+   },
+   {
+    "nom": "the young tutor",
+    "desc": "young man in his 20s, apricot-and-amber shirt, thin glasses, holding ONE single pen",
+    "pose": "sitting at the table in the foreground on the right, nervous smile"
+   },
+   {
+    "nom": "the boy",
+    "desc": "boy around 12, teal-and-ochre school uniform, round face, arms crossed",
+    "pose": "sitting at the table in the middle, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Trois mois de répétiteur et tes notes descendent encore ?! Pourquoi dêh ?!"
+   ],
+   [
+    2,
+    "Maman, c'est lui qui fait mes devoirs maintenant dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother shakes the report card at the boy, her face turned three-quarters toward the camera. The tutor nods along, pretending to be serious. The boy answers calmly, pointing his thumb at the tutor, his face clearly visible.",
+  "chute": "The tutor freezes, his nervous smile stuck, while the mother slowly turns her head toward him. The camera slowly pushes in to a close-up of the young tutor's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "répétiteur",
+   "notes",
+   "devoirs"
+  ],
+  "gag_legende": "LE RÉPÉTITEUR QUAND MAMAN SE RETOURNE :",
+  "mecanisme": "révélation à double cible : l'enfant avoue sa paresse et démasque le répétiteur nul"
+ },
+ {
+  "id": "B021-10",
+  "titre": "Deux copies identiques",
+  "lieu": "primary school classroom in Treichville, Abidjan, wooden desks, a blackboard, the teacher's desk with a stack of graded test papers, morning",
+  "persos": [
+   {
+    "nom": "the outraged girl",
+    "desc": "girl around 11, apricot-and-violet school uniform, short braids, holding ONE single test paper",
+    "pose": "standing in the foreground on the left, holding up her test paper, outraged"
+   },
+   {
+    "nom": "the calm teacher",
+    "desc": "male schoolteacher in his 40s, rust-and-saffron shirt, bald head, small moustache",
+    "pose": "standing on the right next to his desk, hands on his hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maître, on a écrit pareil ! Pourquoi lui douze et moi trois ?!"
+   ],
+   [
+    1,
+    "Il a copié sur toi, ma fille. Mais lui, il a corrigé tes fautes dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl shakes her test paper and protests, her face turned three-quarters toward the camera. The teacher answers calmly, hands on his hips, nodding slowly, his face clearly visible.",
+  "chute": "The girl freezes, mouth open, the test paper still raised. The camera slowly pushes in to a close-up of the outraged girl's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "copié",
+   "corrigé",
+   "fautes"
+  ],
+  "gag_legende": "LA PETITE EN REGARDANT SON VOISIN :",
+  "mecanisme": "retournement logique à double cible : le tricheur est démasqué et la plaignante humiliée"
+ },
+ {
+  "id": "B021-11",
+  "titre": "Le cahier oublié",
+  "lieu": "primary school classroom in Marcory, Abidjan, wooden desks, a blackboard, morning sunlight through the window",
+  "persos": [
+   {
+    "nom": "the stern teacher",
+    "desc": "female schoolteacher in her 30s, navy-and-aubergine dress, neat bun, hands on her hips",
+    "pose": "standing in the foreground on the right, hands on her hips, stern"
+   },
+   {
+    "nom": "the forgetful boy",
+    "desc": "boy around 9, apricot-and-amber school uniform, chubby cheeks, empty hands",
+    "pose": "standing next to his desk on the left, innocent"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu as encore oublié ton cahier à la maison-là ?!"
+   ],
+   [
+    1,
+    "Maîtresse, j'ai la mémoire de mon papa dêh."
+   ],
+   [
+    0,
+    "Ah bon ? Lui, il oublie quoi ?"
+   ],
+   [
+    1,
+    "Ma scolarité, maîtresse. Depuis septembre dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher scolds the boy, hands on her hips, her face turned three-quarters toward the camera. The boy shrugs and answers proudly, his face clearly visible. The teacher frowns and asks her question, her face clearly visible. The boy answers innocently with a little smile, his face clearly visible.",
+  "chute": "The teacher's hands drop from her hips and her mouth falls open. The camera slowly pushes in to a close-up of the stern teacher's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "mémoire",
+   "papa",
+   "scolarité"
+  ],
+  "gag_legende": "LA DIRECTRICE EN OUVRANT LE REGISTRE :",
+  "mecanisme": "retournement logique à double cible : l'excuse de l'enfant dénonce le père qui ne paie pas l'école"
+ },
+ {
+  "id": "B021-12",
+  "titre": "L'insulte au tableau",
+  "lieu": "primary school classroom in Koumassi, Abidjan, a blackboard with a clumsy chalk scribble full of spelling mistakes, wooden desks, morning",
+  "persos": [
+   {
+    "nom": "the furious teacher",
+    "desc": "male schoolteacher in his 50s, teal-and-ochre suit, grey beard, holding ONE single piece of chalk",
+    "pose": "standing in the foreground on the right, in front of the blackboard, pointing at the scribble"
+   },
+   {
+    "nom": "the clever pupil",
+    "desc": "girl around 10, burgundy-and-chocolate school uniform, round glasses, one hand raised",
+    "pose": "sitting at a desk on the left, one hand raised"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Qui a écrit « le maître est nul » au tableau-là ?!"
+   ],
+   [
+    1,
+    "Maître, comptez les fautes dedans. Ça prouve que c'est vrai dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher points the chalk at the blackboard and shouts, his face turned three-quarters toward the camera. The girl answers calmly, her hand still raised, her face clearly visible.",
+  "chute": "The teacher freezes, slowly glances back at the blackboard, then turns back toward the camera. The camera slowly pushes in to a close-up of the furious teacher's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "nul",
+   "fautes",
+   "vrai"
+  ],
+  "gag_legende": "LE MAÎTRE EN COMPTANT LES FAUTES :",
+  "mecanisme": "retournement logique à double cible : les fautes de l'élève prouvent que le maître enseigne mal"
+ },
+ {
+  "id": "B021-13",
+  "titre": "Malade hier",
+  "lieu": "corridor in front of a classroom of a primary school in Treichville, Abidjan, a painted wall, a classroom door, morning",
+  "persos": [
+   {
+    "nom": "the suspicious teacher",
+    "desc": "female schoolteacher in her 40s, apricot-and-violet dress, short curly hair, holding ONE single attendance register",
+    "pose": "standing in the foreground on the right, holding the register, eyebrows raised"
+   },
+   {
+    "nom": "the truant boy",
+    "desc": "boy around 12, teal-and-mint school shirt, skinny, sly smile, hands in his pockets",
+    "pose": "standing on the left, leaning against the wall"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu étais malade hier, hein ? Je t'ai vu chez la vendeuse d'alloco à dix heures !"
+   ],
+   [
+    1,
+    "Ya fohi, maîtresse. Et c'est qui faisait cours à dix heures-là ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher taps the register and accuses the boy, her face turned three-quarters toward the camera. The boy answers slowly with a sly smile, raising one eyebrow, his face clearly visible.",
+  "chute": "The teacher freezes, her smile of victory gone, and slowly hugs the register against her chest. The camera slowly pushes in to a close-up of the suspicious teacher's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "malade",
+   "alloco",
+   "dix heures"
+  ],
+  "gag_legende": "LA MAÎTRESSE QUAND LE DIRECTEUR PASSE :",
+  "mecanisme": "retournement logique à double cible : en accusant l'élève, la maîtresse avoue qu'elle séchait aussi"
+ },
+ {
+  "id": "B021-14",
+  "titre": "L'avis de papa",
+  "lieu": "primary school classroom in Marcory, Abidjan, wooden desks, a blackboard with a grammar lesson, morning",
+  "persos": [
+   {
+    "nom": "the offended teacher",
+    "desc": "male schoolteacher in his 40s, crimson-and-fuchsia shirt, neat goatee, holding ONE single piece of chalk",
+    "pose": "standing in the foreground on the right, next to the blackboard"
+   },
+   {
+    "nom": "the honest girl",
+    "desc": "girl around 9, rust-and-saffron school dress, two braids, big innocent eyes",
+    "pose": "sitting at her desk on the left, hands flat on the desk"
+   }
+  ],
+  "dialogue": [
+   [
+    1,
+    "Maître, papa dit vous êtes trop payé pour rien faire dêh."
+   ],
+   [
+    0,
+    "Ah bon ? Ton papa-là fait quoi même ?"
+   ],
+   [
+    1,
+    "Rien, maître. Donc il connaît bien le sujet."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl repeats her father's words innocently, her face turned three-quarters toward the camera. The teacher frowns and asks his question, chalk in hand, his face clearly visible. The girl answers proudly with a little nod, her face clearly visible.",
+  "chute": "The teacher freezes, torn between anger and laughter, the chalk slowly lowering. The camera slowly pushes in to a close-up of the offended teacher's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "payé",
+   "rien faire",
+   "sujet"
+  ],
+  "gag_legende": "LE MAÎTRE À LA PROCHAINE RÉUNION DES PARENTS :",
+  "mecanisme": "retournement logique à double cible : l'insulte du père contre le maître le désigne lui-même comme spécialiste du rien"
+ },
+ {
+  "id": "B021-15",
+  "titre": "Les quatre langues de maman",
+  "lieu": "primary school classroom in Koumassi, Abidjan, during a parent-teacher meeting, the teacher's desk with report cards, a chair facing it, late afternoon",
+  "persos": [
+   {
+    "nom": "the amused teacher",
+    "desc": "female schoolteacher in her 50s, apricot-and-amber dress, round glasses, holding ONE single report card",
+    "pose": "sitting behind her desk on the right"
+   },
+   {
+    "nom": "the proud mother",
+    "desc": "mother in her 40s, burgundy-and-chocolate boubou, big headwrap, a handbag on her lap",
+    "pose": "sitting on a chair in the foreground on the left, chin up, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Madame, votre fils dit que vous parlez quatre langues dêh !"
+   ],
+   [
+    1,
+    "Ehh oui, maîtresse ! Mon fils-là est fier de sa maman."
+   ],
+   [
+    0,
+    "Il dit vous insultez son papa dans les quatre."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher reads from the report card, impressed, her face turned three-quarters toward the camera. The mother lifts her chin and pats her chest proudly, her face clearly visible. The teacher answers with a straight face, her face clearly visible.",
+  "chute": "The mother's proud smile freezes, her hand stuck on her chest. The camera slowly pushes in to a close-up of the proud mother's mortified face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "quatre langues",
+   "insultez",
+   "papa"
+  ],
+  "gag_legende": "MAMAN CE SOIR, EN QUATRE LANGUES :",
+  "mecanisme": "fierté retournée en honte à double cible : le talent de maman devient la preuve qu'elle insulte papa"
+ },
+ {
+  "id": "B021-16",
+  "titre": "Papa lit le bulletin",
+  "lieu": "living room of a house in Treichville, Abidjan, an old sofa, a low table, evening light from the window",
+  "persos": [
+   {
+    "nom": "the proud father",
+    "desc": "father in his 40s, rust-and-pistachio boubou, big smile, holding ONE single report card",
+    "pose": "sitting on the sofa in the foreground on the right, holding the report card open, beaming"
+   },
+   {
+    "nom": "the son",
+    "desc": "boy around 12, teal-and-mint t-shirt, skinny, hands behind his back",
+    "pose": "standing on the left, embarrassed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "« Élève brillant » ! Ça, c'est mon sang dêh !"
+   ],
+   [
+    1,
+    "Papa, c'est le bulletin de ma sœur-là."
+   ],
+   [
+    0,
+    "Et le tien-là, le maître a écrit quoi ?"
+   ],
+   [
+    1,
+    "« J'ai vu son papa. Tout s'explique. »"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father reads the report card proudly and taps his chest with his free hand, his face turned three-quarters toward the camera. The son answers shyly with a small shrug, his face clearly visible. The father frowns and asks his question, his face clearly visible. The son recites the teacher's comment with an embarrassed smile, his face clearly visible.",
+  "chute": "The father's big smile freezes, the report card slowly lowering in his hand. The camera slowly pushes in to a close-up of the proud father's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "brillant",
+   "mon sang",
+   "tout s'explique"
+  ],
+  "gag_legende": "PAPA EN SIGNANT LE BULLETIN :",
+  "mecanisme": "retournement logique à double cible : le père s'attribue la réussite, le maître lui attribue l'échec"
+ },
+ {
+  "id": "B021-17",
+  "titre": "La note trafiquée",
+  "lieu": "small living room of an apartment in Marcory, Abidjan, a plastic table, a ceiling fan, evening",
+  "persos": [
+   {
+    "nom": "the suspicious father",
+    "desc": "father in his 40s, crimson-and-fuchsia polo, receding hairline, holding ONE single test paper",
+    "pose": "standing in the foreground on the left, holding the test paper up beside his face"
+   },
+   {
+    "nom": "the clever daughter",
+    "desc": "girl around 11, teal-and-mint dress, two puffs, hands clasped",
+    "pose": "standing on the right, innocent smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton deux sur vingt-là est devenu vingt sur vingt comment ?!"
+   ],
+   [
+    1,
+    "Papa, j'ai fait comme maman avec ton salaire devant ses copines. J'ai ajouté un zéro dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father shakes the test paper, eyes narrowed, and asks his question, his face turned three-quarters toward the camera. The girl answers sweetly, hands clasped, her face clearly visible.",
+  "chute": "The father freezes, the test paper slowly dropping to his side, his face crumbling. The camera slowly pushes in to a close-up of the suspicious father's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "vingt sur vingt",
+   "salaire",
+   "zéro"
+  ],
+  "gag_legende": "MAMAN QUAND ELLE VA RENTRER CE SOIR :",
+  "mecanisme": "retournement logique à double cible : la triche de l'enfant dénonce le mensonge de maman et le petit salaire de papa"
+ },
+ {
+  "id": "B021-18",
+  "titre": "Papa à la réunion des parents",
+  "lieu": "primary school classroom in Koumassi, Abidjan, walls decorated with children's drawings, the teacher's desk with a stack of report cards, a wooden bench, late afternoon",
+  "persos": [
+   {
+    "nom": "the nodding father",
+    "desc": "father in his 50s, apricot-and-violet boubou, grey goatee, hands on his knees",
+    "pose": "sitting on a wooden bench in the foreground on the left, nodding seriously"
+   },
+   {
+    "nom": "the frank teacher",
+    "desc": "male schoolteacher in his 40s, rust-and-pistachio shirt, square glasses, holding ONE single report card",
+    "pose": "sitting behind his desk on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maître, mon fils-là, il est comment en classe ?"
+   ],
+   [
+    1,
+    "Comme vous maintenant, Tonton. Il dit oui oui, mais il comprend rien dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father asks seriously, his face turned three-quarters toward the camera. The teacher answers frankly, pointing his free hand at the father, his face clearly visible, while the father keeps nodding slowly.",
+  "chute": "The father freezes in the middle of a nod, chin down, eyes wide. The camera slowly pushes in to a close-up of the nodding father's confused face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "oui oui",
+   "comprend rien"
+  ],
+  "gag_legende": "PAPA QUI HOCHE ENCORE LA TÊTE :",
+  "mecanisme": "retournement logique à double cible : le portrait de l'enfant décrit le père en direct"
+ },
+ {
+  "id": "B021-19",
+  "titre": "La promesse du vélo",
+  "lieu": "courtyard of a family house in Treichville, Abidjan, a plastic chair, a water tank, a mango tree, late afternoon",
+  "persos": [
+   {
+    "nom": "the father with big promises",
+    "desc": "father in his 40s, navy-and-aubergine kaftan, round belly, holding ONE single report card",
+    "pose": "sitting on a plastic chair in the foreground on the right, holding the report card"
+   },
+   {
+    "nom": "the last-in-class boy",
+    "desc": "boy around 11, apricot-and-amber tracksuit, shaved head, hands behind his back",
+    "pose": "standing on the left, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Encore dernier ?! Sois premier, je t'achète un vélo dêh !"
+   ],
+   [
+    1,
+    "Avec quel argent, papa ?"
+   ],
+   [
+    0,
+    "Euh... On va voir ça, mon fils."
+   ],
+   [
+    1,
+    "Voilà. Je reste dernier pour protéger ton honneur dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father waves the report card and makes his promise, his face turned three-quarters toward the camera. The boy tilts his head and asks calmly, his face clearly visible. The father hesitates and scratches his neck with his free hand, his face clearly visible. The boy answers with a wise little nod, his face clearly visible.",
+  "chute": "The father freezes, his hand stuck on his neck, mouth open. The camera slowly pushes in to a close-up of the father with big promises's cornered face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "vélo",
+   "dernier",
+   "honneur"
+  ],
+  "gag_legende": "PAPA EN CACHANT SON PORTE-MONNAIE :",
+  "mecanisme": "retournement logique à double cible : la paresse de l'enfant devient un service rendu au père fauché"
+ },
+ {
+  "id": "B021-20",
+  "titre": "L'élève préféré",
+  "lieu": "kitchen of a house in Koumassi, Abidjan, a wooden table, a gas stove, a big cooking pot, morning",
+  "persos": [
+   {
+    "nom": "the proud son",
+    "desc": "boy around 10, rust-and-saffron t-shirt, a school bag on his back, big smile",
+    "pose": "standing on the left, hands on the straps of his school bag, proud"
+   },
+   {
+    "nom": "the mother with the empty bowl",
+    "desc": "mother in her 30s, teal-and-ochre boubou, headwrap, holding ONE single empty bowl",
+    "pose": "standing in the foreground on the right next to the stove, holding the empty bowl"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, la maîtresse dit que je suis son élève préféré dêh !"
+   ],
+   [
+    1,
+    "Ehh, mon bébé ! Tu as eu combien ?"
+   ],
+   [
+    0,
+    "Rien, maman. Mais chaque matin, je lui donne ton attiéké-là."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy announces the news proudly, his face turned three-quarters toward the camera. The mother smiles tenderly and asks her question, her face clearly visible. The boy answers cheerfully, his face clearly visible.",
+  "chute": "The mother freezes, slowly looks down at her empty bowl, then back up, furious. The camera slowly pushes in to a close-up of the mother with the empty bowl's betrayed face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "élève préféré",
+   "attiéké"
+  ],
+  "gag_legende": "LA MAÎTRESSE DEMAIN SANS SON ATTIÉKÉ :",
+  "mecanisme": "révélation à double cible : le chouchou est acheté avec l'attiéké volé à maman"
+ }
+]
