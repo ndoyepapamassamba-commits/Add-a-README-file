@@ -23,7 +23,8 @@
   --bg: #ffffff; --bg-2: #f3f4f6; --bg-3: #e8eaee; --bg-hover: #e5e7eb; --bg-active: #dcdfe5;
   --panel: #ffffff; --panel-2: #f8f9fb; --input: #f1f3f6;
   --border: #e3e5ea; --border-2: #d1d5db;
-  --text: #111827; --text-2: #374151; --muted: #6b7280; --faint: #9ca3af;
+  --text: #111827; --text-2: #374151; --muted: #5f6672; --faint: #6b7280;
+  --accent-text: color-mix(in srgb, var(--accent) 82%, #000); --success-text: #166534; --warning-text: #92400e; --danger-text: #b91c1c;
   --danger: #dc2626; --danger-soft: #fee2e2; --success: #16a34a; --success-soft: #dcfce7; --warning: #d97706; --warning-soft: #fef3c7;
   --code-bg: #f6f8fa; --code-head: #eceff3;
   --shadow-sm: 0 1px 2px rgba(16,24,40,.06);
@@ -37,7 +38,8 @@ html[data-theme="dark"]{
   --bg: #0e1015; --bg-2: #15181f; --bg-3: #0b0d11; --bg-hover: #1f232c; --bg-active: #272c37;
   --panel: #161920; --panel-2: #1b1f27; --input: #1c2029;
   --border: #252a34; --border-2: #343a46;
-  --text: #e8eaef; --text-2: #c5cad3; --muted: #8b93a1; --faint: #646c7a;
+  --text: #e8eaef; --text-2: #c5cad3; --muted: #9aa1ad; --faint: #808898;
+  --accent-text: color-mix(in srgb, var(--accent) 55%, #fff); --success-text: var(--success); --warning-text: var(--warning); --danger-text: var(--danger);
   --danger: #f87171; --danger-soft: #3b1418; --success: #4ade80; --success-soft: #11291b; --warning: #fbbf24; --warning-soft: #33270d;
   --code-bg: #0b0d12; --code-head: #151821;
   --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
@@ -292,7 +294,7 @@ kbd{font-family:var(--mono);font-size:.75em;padding:1px 6px;border-radius:6px;bo
 .model-bar{display:flex;align-items:center;gap:6px;padding:8px 2px;flex-wrap:wrap}
 .model-chip{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 10px 0 6px;border-radius:12px;font-weight:600;max-width:340px}
 .model-chip:hover{background:var(--bg-2)}
-.model-chip .mlogo{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;flex:none}
+.mlogo{border-radius:50%;display:inline-grid;place-items:center;font-weight:800;color:#fff;flex:none;line-height:1}
 .composer{background:var(--input);border:1px solid transparent;border-radius:20px;padding:12px 14px 8px;transition:border-color .15s,box-shadow .15s,background .15s}
 .composer:focus-within{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 4px var(--accent-soft);background:var(--panel)}
 .composer.drag{border-color:var(--accent);border-style:dashed;background:var(--accent-soft)}
@@ -372,7 +374,6 @@ body.term .thinking>summary svg:first-child{display:none}
 .insp-tablist{display:flex;gap:0;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none}
 .insp-tablist::-webkit-scrollbar{display:none}
 .insp-tab:not(.active) span:not(.badge){display:none}
-@media (min-width: 1500px){.insp-tab:not(.active) span:not(.badge){display:inline}}
 .insp-tab{padding:8px 8px;border-radius:9px 9px 0 0;font-size:.84em;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;white-space:nowrap}
 .insp-tab:hover{color:var(--text)}
 .insp-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
@@ -485,8 +486,12 @@ body.term .thinking>summary svg:first-child{display:none}
 .toasts{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:300;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:max-content;max-width:min(560px,92vw)}
 .toast .tcount{margin-left:4px;font-size:.85em;opacity:.8}
 .toast{pointer-events:auto;background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;box-shadow:var(--shadow-lg);font-size:.9em;font-weight:500;display:flex;align-items:center;gap:10px;max-width:420px;animation:pop .2s}
-.toast.err{background:var(--danger);color:#fff}
-.toast.ok{background:var(--success);color:#fff}
+/* Notifications neutres et lisibles dans les deux thèmes ; seule l'icône porte la couleur ; texte multi-ligne conservé */
+.toast,.toast.ok,.toast.err{background:var(--panel);color:var(--text);border:1px solid var(--border);max-width:min(520px,92vw)}
+.toast>svg{color:var(--accent-text)}.toast.ok>svg{color:var(--success-text)}.toast.err>svg{color:var(--danger-text)}
+.toast.err{border-color:color-mix(in srgb,var(--danger) 45%,var(--border))}
+.toast span{white-space:pre-line;max-height:30vh;overflow:auto}
+.toast .t-x{flex:none;opacity:.55}.toast .t-x:hover{opacity:1}
 .palette{width:min(640px,calc(100vw - 24px));align-self:flex-start;margin-top:12vh}
 .palette input{width:100%;border:0;outline:0;background:transparent;font-size:1.1em;padding:16px 18px}
 .palette .pl{max-height:50vh;overflow:auto;padding:6px;border-top:1px solid var(--border)}
@@ -505,9 +510,13 @@ body.term .thinking>summary svg:first-child{display:none}
 
 /* ---------- Responsive ---------- */
 .mobile-only{display:none}
-@media (max-width: 1100px){
-  .inspector{position:fixed;right:0;top:0;bottom:0;z-index:60;box-shadow:var(--shadow-lg);width:min(var(--insp-w),100vw)}
+@media (max-width: 820px){
+  .inspector{position:fixed;right:0;top:0;bottom:0;z-index:60;box-shadow:var(--shadow-lg);width:100vw}
 }
+@media (min-width: 821px) and (max-width: 1100px){.inspector{width:min(var(--insp-w),46vw)}}
+@media (min-width: 821px) and (max-width: 1439px){.app.insp-open .sidebar{display:none}}
+/* Vue routée : l'inspecteur appartient à la conversation, il est masqué sur les pages et revient au retour */
+.app.paged .inspector{display:none!important}
 @media (max-width: 820px){
   :root{--side-w: 300px}
   .mobile-only{display:inline-grid}
@@ -641,7 +650,72 @@ body.term .thinking>summary svg:first-child{display:none}
 .sys-body{margin-top:8px;display:flex;flex-direction:column;gap:6px}
 .err-box{background:var(--panel)!important;color:var(--text)!important;border:1px solid var(--border)}
 .err-box>svg{color:var(--danger);flex:none;margin-top:2px}.err-box b{color:var(--danger)}
+.err-tech{margin-top:6px}.err-tech>summary{cursor:pointer;color:var(--muted);font-size:.85em}
+a.btn{text-decoration:none}
+.lm-err{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--panel);border:1px solid color-mix(in srgb,var(--danger) 45%,var(--border))}
+.lm-err b{color:var(--danger)}.lm-err ol{margin:6px 0 0 18px;padding:0}
+.local-issue.compact{padding:6px 10px}
 @media (max-width:820px){.page-body{padding:16px}.page-body.flush{flex-direction:column}.page-head{padding:0 12px}}
+/* ===== Finitions SaaS (vérification v2) ===== */
+/* Textes colorés au contraste AA */
+.page-nav button.on,.insp-tab.active,.badge.acc,.pill.on,.agent-chip.on,.sys-more,.local-issue summary,.md a,#pageView a:not(.btn),.insp-body a,.menu .ck{color:var(--accent-text)}
+.citem.active{background:var(--bg-hover)}
+.badge.ok,.sys-chip.ok svg,.rail-btn.bal.ok{color:var(--success-text)}
+.badge.warn,.pill.warn,.sys-chip.warn svg,.rail-btn.bal.low{color:var(--warning-text)}
+.badge.err,.btn.danger,.pill.danger,.err-box b,.rail-btn.bal.crit,.sys-chip.err svg{color:var(--danger-text)}
+/* Barre du modèle : une ligne de 44 px */
+.model-bar{padding:4px 2px}
+.model-chip{height:36px}
+.model-bar .pill{height:30px}
+@container (min-width:700px){.model-chip{max-width:min(400px,52%)}}
+/* Tableaux : barre Copier / CSV / Excel sous le tableau */
+.tbl-wrap{display:flex;flex-direction:column}
+.tbl-wrap>table{order:1}
+.tbl-tools{order:2;margin:6px 0 0;justify-content:flex-start;opacity:1}
+.tbl-tools .cb-btn{font-size:.82em;padding:2px 6px}
+/* Étapes internes dépliées : espacement régulier */
+.sys-body>.tool,.sys-body>.tool.guru-plan{margin:0}
+/* En-tête : jauge sur une ligne, titre jamais réduit à une lettre */
+.ctx-meter{white-space:nowrap;flex:none}
+.chat-title{flex:0 1 auto}
+@media (min-width:821px){.chat-title{min-width:120px}}
+/* Pages : titre aligné sur la colonne de contenu ; contenu centré */
+.page-view:has(>.page-body:not(.flush)) .page-head{padding-left:max(28px,calc((100% - 1160px) / 2));padding-right:max(20px,calc((100% - 1160px) / 2))}
+.page-body:not(.flush)>*{margin-left:auto!important;margin-right:auto!important}
+/* Cartes en grille : actions alignées en bas */
+#pageView .cards>.card{display:flex;flex-direction:column}
+#pageView .cards>.card>.row:last-child{margin-top:auto!important;padding-top:12px}
+/* Champs sans classe : même style que .inp / .ta */
+#pageView .field>input:not([class]):not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),#pageView .field>textarea:not([class]){padding:9px 12px;border-radius:10px;border:1px solid var(--border-2);background:var(--panel);color:var(--text);outline:0;font:inherit;max-width:100%;width:100%}
+#pageView .field>input:not([class]):focus,#pageView .field>textarea:not([class]):focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input[type=checkbox]{accent-color:var(--accent)}
+input[type=color]{width:30px;height:30px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0}input[type=color]::-webkit-color-swatch{border:0;border-radius:50%}
+.range-row{max-width:520px}
+/* Barres d'outils des pages : la recherche passe à la ligne au lieu d'être écrasée */
+#pageView .row.wrap>.search{flex:1 1 240px;min-width:200px}
+/* Accueil : cartes d'amorce sans débordement, en-tête compact sur écran bas */
+.starter{min-width:0}.starter .s-t,.starter .s-d{overflow-wrap:anywhere;min-width:0}
+@media (max-height:820px){.empty{justify-content:flex-start;padding-top:28px;gap:8px}.hero-logo{width:56px;height:56px;border-radius:16px}.hero h1{font-size:2.4rem}.hero-sub{margin-bottom:6px}.starter{padding:10px 14px}}
+/* Carte de repli du modèle local : boutons qui passent à la ligne, chevron sobre */
+.local-issue .btn{white-space:normal;height:auto;min-height:32px;padding:5px 10px;text-align:left}
+.local-issue summary{list-style:none}.local-issue summary::-webkit-details-marker{display:none}.local-issue summary::before{content:'›';display:inline-block;margin-right:6px;transition:transform .15s}.local-issue details[open] summary::before{transform:rotate(90deg)}
+.err-box{border-radius:4px 12px 12px 4px}
+/* Logo de charte vide : pas de rectangle blanc en sombre */
+html[data-theme="dark"] .brand-logo:not(:has(img)){background:var(--panel-2)}
+/* « Aller en bas » intégré à la barre du modèle */
+#jumpPill.hidden{display:none}
+@media (max-width:820px){
+  .page-nav button{white-space:nowrap;flex:none;padding:8px 12px}
+  .page-nav{gap:4px;padding:6px 8px}
+  #pageView .row.wrap>.grow{flex:1 1 100%}
+  .agent-strip{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;max-width:100%;padding-bottom:4px;scrollbar-width:none}
+  .agent-chip{flex:none}
+  .insp-body .grid2{grid-template-columns:1fr 1fr}
+  .page-head .mobile-only{margin-right:2px}
+  .page-head h1>svg{display:none}
+}
+@media (hover:none){.status-line .sl-mode .faint{display:none}}
 </style>
 </head>
 <body>
@@ -651,7 +725,6 @@ body.term .thinking>summary svg:first-child{display:none}
   <main id="main" class="main">
     <header class="chat-head" id="chatHead"></header>
     <div class="messages" id="messages"></div>
-    <button class="jump hidden" id="jumpBtn" title="Aller en bas" data-act="jump"></button>
     <div class="composer-wrap" id="composerWrap"></div>
     <section id="pageView" class="page-view" hidden aria-live="polite"></section>
   </main>
@@ -869,7 +942,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-29 08:18 UTC', stamp: 202610290818, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-29 11:10 UTC', stamp: 202610291110, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -878,6 +951,7 @@ const ICONS = {
   search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   down: '<path d="m6 9 6 6 6-6"/>',
+  arrowDown: '<path d="M12 5v14M19 12l-7 7-7-7"/>',
   up: '<path d="m18 15-6-6-6 6"/>',
   left: '<path d="m15 18-6-6 6-6"/>',
   right: '<path d="m9 18 6-6-6-6"/>',
@@ -1168,13 +1242,15 @@ const BUILTIN_AGENTS = [
     id: 'agent-assistant', builtin: true, emoji: '💬', name: 'Assistant',
     description: 'Assistant polyvalent avec mémoire, calcul et lecture de pages web.',
     model: '', tools: ['memory_save', 'memory_search', 'kb_search', 'run_javascript', 'fetch_url', 'todo_write', 'ask_user', 'create_excel', 'create_word', 'create_pdf', 'create_powerpoint', 'free_api', 'load_skill', 'run_studio', 'skill_manage', 'style_manage'],
-    systemPrompt: `Tu es Cortex, un assistant IA expert, précis et chaleureux.
-- Réponds dans la langue de l'utilisateur (français par défaut), de façon claire et structurée (titres, listes, tableaux quand c'est utile).
-- Va droit au but ; développe seulement si la question l'exige.
-- Pour tout calcul non trivial, utilise l'outil run_javascript plutôt que de calculer de tête.
-- Quand l'utilisateur partage une information durable sur lui (préférences, projets, contexte), enregistre-la avec memory_save.
-- Si une demande est ambiguë et bloquante, pose une question avec ask_user.
-- Quand l'utilisateur veut un fichier (Excel, Word, PDF, PowerPoint…), produis-le avec l'outil dédié : il apparaît sous ta réponse avec un bouton de téléchargement.`,
+    systemPrompt: `Tu es Cortex, un assistant IA expert, précis et vivant.
+- Réponds dans la langue de l'utilisateur (français par défaut) et vouvoie-le, sauf s'il te tutoie.
+- Réponds d'abord : la première phrase donne la réponse ou le résultat. Ajuste la longueur à la question ; pas de titres pour une réponse de quelques lignes ; un tableau seulement pour comparer plusieurs chiffres.
+- Parle comme un collègue expérimenté : concret, un exemple chiffré (dans la devise de l'utilisateur) quand il éclaire, la nuance qui compte en pratique ; jamais de formules creuses ni de mises en garde inutiles.
+- Tout calcul non trivial passe par run_javascript, jamais de tête.
+- Règle, seuil ou article réglementaire dont tu n'es pas sûr : écris « à confirmer dans le texte en vigueur » plutôt que d'inventer.
+- Fichier demandé (Excel, Word, PDF, PowerPoint…) : produis-le avec l'outil dédié ; il apparaît sous ta réponse avec un bouton de téléchargement.
+- Information durable sur l'utilisateur (poste, entreprise, préférences) : enregistre-la avec memory_save, sans l'annoncer.
+- Donnée indispensable manquante : une seule question (ask_user) ; sinon pose une hypothèse explicite et avance.`,
     starters: ['Explique-moi la différence entre RAG et fine-tuning', 'Calcule les mensualités d\'un prêt de 15 M FCFA sur 5 ans à 8 %', 'Résume cette page : https://fr.wikipedia.org/wiki/Dakar'],
   },
   {
@@ -1380,7 +1456,8 @@ const OR = {
         resp = await fetch(this.base + path, { method, headers, body: body ? JSON.stringify(body) : undefined, signal: ctrl.signal });
       } catch (e) {
         if (signal?.aborted) throw e;
-        if (attempt < maxRetries) { attempt++; await sleep(800 * 2 ** attempt); continue; }
+        // Délai d'attente dépassé : on ne relance pas la même génération (elle repartirait de zéro et consommerait le quota)
+        if (!timedOut && attempt < maxRetries) { attempt++; await sleep(800 * 2 ** attempt); continue; }
         if (timedOut) throw new ApiError(`OpenRouter ne répond pas (délai de ${Math.round(timeout / 1000)} s dépassé) — vérifiez votre connexion internet, un pare-feu, un VPN ou une extension de blocage.`, 408);
         const msg = String(e.message || e);
         if (/ISO-8859-1|Invalid value|non ISO/i.test(msg)) throw new ApiError('La clé API contient des caractères invalides (copier-coller ?) : recopiez-la depuis openrouter.ai/settings/keys.', 400);
@@ -1406,7 +1483,9 @@ const OR = {
         continue;
       }
       const hint = HTTP_HINTS[resp.status];
-      throw new ApiError(hint && !msg.startsWith(hint) && resp.status !== 400 ? `${hint} — ${msg}` : msg, resp.status, err.code, meta);
+      // Message en français d'abord ; le texte brut du fournisseur (souvent en anglais) part dans meta.detail, affiché replié
+      const fr = hint && resp.status !== 400 ? hint : resp.status === 400 ? 'Requête refusée par le fournisseur — ' + truncate(msg, 220) : msg;
+      throw new ApiError(fr, resp.status, err.code, { ...(meta || {}), detail: fr !== msg ? msg : '' });
     }
   },
   async *sse(resp, signal) {
@@ -1452,8 +1531,9 @@ const OR = {
     return j.data;
   },
   async credits() { return (await this.request('/credits', { retries: 0 })).data; },
-  async complete(body, signal) {
-    return this.request('/chat/completions', { method: 'POST', body: { ...body, stream: false, usage: { include: true } }, signal });
+  async complete(body, signal, { timeout = 180000, retries } = {}) {
+    // Sans flux, les en-têtes n'arrivent qu'à la fin de la génération : délai plus long que pour un flux (le plafond utile est fixé par l'appelant)
+    return this.request('/chat/completions', { method: 'POST', body: { ...body, stream: false, usage: { include: true } }, signal, timeout, retries });
   },
   async embed(input, model, signal) {
     const j = await this.request('/embeddings', { method: 'POST', body: { model: model || S.settings.embeddingModel, input }, signal });
@@ -1473,7 +1553,7 @@ function modelName(id) {
   const m = getModel(id);
   return m ? m.name : id.split('/').pop();
 }
-function modelShort(id) { return modelName(id).replace(/^[^:]{1,30}:\s*/, ''); }
+function modelShort(id) { return modelName(id).replace(/^[^:]{1,30}:\s+/, ''); }
 function modelSupports(id, what) {
   const m = getModel(id);
   if (!m) return what === 'tools';
@@ -1559,6 +1639,8 @@ async function streamCompletion(body, { signal, onDelta } = {}) {
       const e = chunk.error;
       const err = new ApiError((e.message || 'Erreur du fournisseur') + (e.metadata?.raw ? ' — ' + truncate(String(e.metadata.raw), 200) : ''), e.code || 0, e.code);
       err.midStream = true;
+      // Modèle du navigateur (WebLLM) : le diagnostic d'origine est conservé (ex. « mémoire graphique dépassée »)
+      if (e.local) { err.local = true; const info = e.info || (typeof LOCAL_ERR !== 'undefined' && LOCAL_ERR[e.local]); if (info) err.localInfo = info; }
       throw err;
     }
     acc.id ||= chunk.id;
@@ -1577,6 +1659,8 @@ async function streamCompletion(body, { signal, onDelta } = {}) {
       if (th.mode === 'start') { th.buf += txt; txt = ''; const t = th.buf.replace(/^\s+/, ''); if (t.startsWith('<think>')) { th.mode = 'think'; txt = ''; th.buf = t.slice(7); } else if ('<think>'.startsWith(t) && t.length < 7) { /* attendre la suite */ } else { th.mode = 'text'; txt = th.buf; th.buf = ''; } }
       if (th.mode === 'think') { th.buf += txt; txt = ''; const i = th.buf.indexOf('</think>'); if (i >= 0) { acc.reasoning += th.buf.slice(0, i); txt = th.buf.slice(i + 8).replace(/^\s+/, ''); th.buf = ''; th.mode = 'text'; } else { const keep = (() => { for (let k = Math.min(7, th.buf.length); k > 0; k--) if ('</think>'.startsWith(th.buf.slice(-k))) return k; return 0; })(); acc.reasoning += th.buf.slice(0, th.buf.length - keep); th.buf = th.buf.slice(th.buf.length - keep); } got = true; }
       if (txt) { acc.content += txt; got = true; }
+      // Modèle local dont le gabarit préremplit « <think> » : seul « </think> » apparaît, ce qui précède est du raisonnement
+      if (th.mode === 'text' && !th.closed && /^(local|webllm)\//.test(body.model) && acc.content.length < 60000) { const j = acc.content.indexOf('</think>'); if (j >= 0 && !acc.content.slice(0, j).includes('<think>')) { acc.reasoning += acc.content.slice(0, j); acc.content = acc.content.slice(j + 8).replace(/^\s+/, ''); th.closed = true; } }
     }
     if (typeof d.reasoning === 'string' && d.reasoning) { acc.reasoning += d.reasoning; got = true; }
     if (Array.isArray(d.reasoning_details)) {
@@ -1623,17 +1707,17 @@ function absorbMessage(acc, j) {
 }
 
 /* Appel simple non-streamé (titres, résumés, synthèses…) */
-async function quickComplete(messages, { model, maxTokens = 600, temperature = 0.3, signal, kind = 'utility', extra = {} } = {}) {
+async function quickComplete(messages, { model, maxTokens = 600, temperature = 0.3, signal, kind = 'utility', extra = {}, retries } = {}) {
   const explicit = !!model;
   model = model || utilityModel();
   const body = { model, messages, max_tokens: maxTokens, ...extra };
   if (temperature != null) body.temperature = temperature;
   let j;
-  try { j = await OR.complete(body, signal); }
+  try { j = await OR.complete(body, signal, { retries }); }
   catch (e) {
-    // Modèle utilitaire saturé/indisponible : repli sur le modèle par défaut
+    // Modèle utilitaire saturé/indisponible : repli sur le modèle par défaut (jamais pour un appel de fond sans relance : quota gratuit préservé)
     const alt = defaultModel();
-    if (explicit || alt === model || ![404, 429, 502, 503].includes(e.status)) throw e;
+    if (explicit || alt === model || retries === 0 || ![404, 429, 502, 503].includes(e.status)) throw e;
     model = alt;
     const b2 = { ...body, model: alt };
     delete b2.reasoning;
@@ -1641,7 +1725,7 @@ async function quickComplete(messages, { model, maxTokens = 600, temperature = 0
   }
   const msg = j.choices?.[0]?.message || {};
   logUsage({ kind, model: j.model || model, prompt: j.usage?.prompt_tokens || 0, completion: j.usage?.completion_tokens || 0, cost: j.usage?.cost ?? estimateCost(model, j.usage?.prompt_tokens || 0, j.usage?.completion_tokens || 0) ?? 0 });
-  return { text: (msg.content || '').trim(), message: msg, raw: j };
+  return { text: String(msg.content || '').replace(/^\s*(?:<think>)?[\s\S]*?<\/think>\s*/, '').trim(), message: msg, raw: j };
 }
 
 /* Journal d'utilisation (coûts) */
@@ -7698,16 +7782,17 @@ const FREE_SEARCH = {
   },
 };
 async function readPage(url, signal, max = 6000) {
+  // Proxy de lecture d'abord (la plupart des sites refusent la lecture directe depuis un navigateur : CORS), accès direct ensuite
+  if (S.settings.readerProxy) { try { const r = await fetch(S.settings.readerProxy + url, { signal, headers: { Accept: 'text/plain' } }); if (r.ok) { const t = await r.text(); if (t.trim().length > 200) return t.slice(0, max); } } catch {} }
   try {
     const r = await fetch(url, { signal, redirect: 'follow' });
     if (r.ok && /html|text/.test(r.headers.get('content-type') || '')) { const h = htmlToText(await r.text(), url); if (h.text.length > 200) return h.text.slice(0, max); }
   } catch {}
-  if (!S.settings.readerProxy) return '';
-  try { const r = await fetch(S.settings.readerProxy + url, { signal, headers: { Accept: 'text/plain' } }); if (r.ok) return (await r.text()).slice(0, max); } catch {}
   return '';
 }
 async function freeWebSearch(q, { n = 6, news = false, read = 3, signal } = {}) {
-  const order = news ? ['gdelt', 'duckduckgo', 'duckduckgo_jina', 'mojeek', 'wikipedia'] : ['duckduckgo', 'duckduckgo_jina', 'mojeek', 'wikipedia', 'gdelt'];
+  // DuckDuckGo et Mojeek appelés en direct n'envoient pas d'en-tête CORS : dans un navigateur ils échouent ; on passe d'abord par le lecteur Jina
+  const order = news ? ['gdelt', 'duckduckgo_jina', 'wikipedia', 'duckduckgo', 'mojeek'] : ['duckduckgo_jina', 'wikipedia', 'gdelt', 'duckduckgo', 'mojeek'];
   const errors = [];
   let results = [];
   for (const eng of order) {
@@ -7847,11 +7932,13 @@ for (const t of [TOOL_WORKSHOP, GITHUB_EXPLORE]) { BUILTIN_TOOLS.push(t); TOOLS.
 /* ---------- Suggestion d'outils à partir d'un texte ---------- */
 const TOOL_STOP = new Set(['des', 'les', 'une', 'pour', 'avec', 'faire', 'dans', 'sur', 'par', 'qui', 'que', 'est', 'aux', 'son', 'ses', 'mon', 'mes', 'the', 'and', 'for', 'with', 'veux', 'creer', 'besoin', 'outil', 'outils', 'fichier', 'fichiers', 'cette', 'ces', 'tout', 'tous', 'moi', 'nous', 'vous', 'mettre', 'donne', 'donner']);
 function suggestTools(text, k = 5, exclude = new Set()) {
-  const words = normalizeText(text).split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !TOOL_STOP.has(w)).map((w) => w.replace(/s$/, ''));
+  // Début de mot uniquement : « ans » ne correspond plus à « transcrire », ni « pret » à « interprétation » ; unités ignorées
+  const words = [...new Set(normalizeText(text).split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !TOOL_STOP.has(w) && !['ans', 'mois', 'jour', 'jours', 'fcfa', 'xof', 'eur', 'prepare', 'preparer'].includes(w)).map((w) => (w.length > 4 ? w.replace(/s$/, '') : w)))];
   if (!words.length) return [];
+  const res = words.map((w) => new RegExp('(^|[^a-z0-9])' + w));
   return [...TOOLS.values()].filter((t) => !exclude.has(t.name) && !['find_tools', 'rea'].includes(t.name) && toolPerm(t) !== 'off').map((t) => {
     const head = normalizeText(`${t.name} ${t.title}`), body = normalizeText(`${t.summary || ''} ${typeof t.description === 'string' ? t.description : ''}`);
-    return [t, words.reduce((sc, w) => sc + (head.includes(w) ? 3 : 0) + (body.includes(w) ? 1 : 0), 0)];
+    return [t, res.reduce((sc, re) => sc + (re.test(head) ? 3 : 0) + (re.test(body) ? 1 : 0), 0)];
   }).filter((x) => x[1] >= 3).sort((x, y) => y[1] - x[1]).slice(0, k).map((x) => x[0]);
 }
 
@@ -7931,7 +8018,7 @@ const Rea = {
   },
 };
 const REA_TOOL = {
-  name: 'rea', title: 'REA — analyse de la tâche', icon: 'search', group: 'agent', perm: 'auto',
+  name: 'rea', title: 'Analyse de la tâche', icon: 'search', group: 'agent', perm: 'auto',
   summary: 'Méthode REA : analyse une (sous-)tâche, retrouve les expériences passées et active les outils pertinents.',
   description: "Analyse REA d'une tâche ou sous-tâche : expériences passées similaires (ce qui a marché, erreurs à éviter), outils pertinents (activés automatiquement) et méthode. Cortex l'exécute déjà au début de chaque tâche ; rappelle-le pour une nouvelle sous-tâche importante.",
   parameters: { type: 'object', properties: { task: { type: 'string' } }, required: ['task'] },
@@ -7985,9 +8072,16 @@ const boostAllowed = (model) => S.settings.harness.boostFreeOnly === false || is
 const timed = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('délai dépassé')), ms))]);
 async function askModel(model, messages, { maxTokens = 2500, signal, effort, timeout = 120000 } = {}) {
   const extra = effort && modelSupports(model, 'reasoning') ? { reasoning: { effort } } : {};
-  const r = await timed(quickComplete(messages, { model, maxTokens, temperature: 0.4, signal, kind: 'boost', extra }), timeout);
-  if (!String(r.text || '').trim()) throw new Error('réponse vide');
-  return r.text;
+  // Délai dépassé : la requête est réellement annulée (plus de génération « fantôme » relancée en arrière-plan sur le quota gratuit)
+  const ac = new AbortController(); const stop = () => ac.abort();
+  signal?.addEventListener('abort', stop, { once: true });
+  const tm = setTimeout(stop, timeout);
+  try {
+    const r = await quickComplete(messages, { model, maxTokens, temperature: 0.4, signal: ac.signal, kind: 'boost', extra });
+    if (!String(r.text || '').trim()) throw new Error('réponse vide');
+    return r.text;
+  } catch (e) { if (ac.signal.aborted && !signal?.aborted) throw new Error('délai dépassé'); throw e; }
+  finally { clearTimeout(tm); signal?.removeEventListener('abort', stop); }
 }
 const BOOSTERS = [
   {
@@ -8078,20 +8172,10 @@ Checklist courte à valider avant de livrer.`;
     const checklist = section(/controle qualite|checklist/).map((l) => (l.match(/^\s*(?:[-*•]|\d+[.)]|\[ ?\])\s+(.+)/) || [])[1]).filter(Boolean).map(clean).slice(0, 12);
     return { steps, checklist };
   },
-  async strategy(task, { model, tools, context, rea, signal } = {}) {
-    const tried = [model];
-    let lastErr;
-    for (let k = 0; k < 2; k++) {
-      const m = k === 0 ? deepModel(tried) : fastModel(tried);
-      tried.push(m);
-      try { return { model: m, text: await askModel(m, [{ role: 'user', content: this.prompt(task, { tools, context, rea }) }], { signal, maxTokens: 3000, effort: k === 0 ? 'medium' : undefined, timeout: k === 0 ? 45000 : 25000 }) }; }
-      catch (e) { lastErr = e; if (signal?.aborted) throw e; }
-    }
-    throw lastErr || new Error('Guru indisponible');
-  },
+  // strategy() est définie dans 08h_guru.js (réutilisation d'expérience, modèle profond plafonné, repli rapide)
 };
 BOOSTERS.push({
-  name: 'guru', title: 'Guru — stratégie experte', icon: 'sparkles', group: 'agent', perm: 'auto', booster: true, timeout: 0,
+  name: 'guru', title: 'Stratégie', icon: 'sparkles', group: 'agent', perm: 'auto', booster: true, timeout: 0,
   summary: "Demande au plus puissant modèle gratuit la stratégie experte d'une (sous-)tâche : raisonnement du domaine, pièges, plan, contrôle qualité.",
   description: "Consulte GURU (le plus puissant modèle gratuit de raisonnement, effort élevé) pour obtenir la stratégie experte d'une tâche ou sous-tâche difficile : raisonnement et règles du domaine, pièges à éviter, plan d'exécution avec outils, checklist qualité. Fournis tout le contexte utile.",
   parameters: { type: 'object', properties: { task: { type: 'string' }, context: { type: 'string' } }, required: ['task'] },
@@ -8299,22 +8383,20 @@ Guru.strategy = async function (task, { model, tools, context, rea, signal } = {
     const overlap = sim.length ? sim.filter((w) => words.has(w)).length / Math.max(words.size, sim.length) : 0;
     if (hit && overlap > 0.6) { hit.doc.e.uses = (hit.doc.e.uses || 0) + 1; persist('experiences', hit.doc.e); return { model: hit.doc.e.guruModel || 'mémoire', text: hit.doc.e.guru, reused: true }; }
   }
-  // 2) Course entre les deux plus puissants modèles gratuits : la première stratégie complète gagne
-  const racers = freeModels('deep', 2, [model]);
-  const ctrls = racers.map(() => new AbortController());
-  const relay = () => ctrls.forEach((c) => c.abort());
-  signal?.addEventListener('abort', relay, { once: true });
+  // 2) Un seul modèle de raisonnement, plafonné (45 s, effort moyen), puis repli sur un modèle rapide (25 s) :
+  //    la tâche démarre en moins d'une minute dans le pire cas (au lieu de 150 + 90 s) et ne consomme qu'une requête gratuite
   const prompt = [{ role: 'user', content: this.prompt(task, { tools, context, rea }) }];
+  const deep = deepModel([model]);
   try {
-    const win = await Promise.any(racers.map((m, i) => askModel(m, prompt, { signal: ctrls[i].signal, maxTokens: 4500, effort: 'high', timeout: 150000 }).then((t) => { if (!GURU_OK(t)) throw new Error('stratégie incomplète'); return { model: m, text: t }; })));
-    ctrls.forEach((c) => c.abort());
-    return win;
+    const t = await askModel(deep, prompt, { signal, maxTokens: 3000, effort: 'medium', timeout: 45000 });
+    if (!GURU_OK(t)) throw new Error('stratégie incomplète');
+    return { model: deep, text: t };
   } catch (e) {
     if (signal?.aborted) throw e;
     // 3) Repli : un modèle gratuit rapide
-    const m = fastModel([model, ...racers]);
-    return { model: m, text: await askModel(m, prompt, { signal, maxTokens: 3500, timeout: 90000 }) };
-  } finally { signal?.removeEventListener('abort', relay); }
+    const m = fastModel([model, deep]);
+    return { model: m, text: await askModel(m, prompt, { signal, maxTokens: 2500, timeout: 25000 }) };
+  }
 };
 
 /* ---------- Outils Guru pour les modèles gratuits ---------- */
@@ -9448,36 +9530,54 @@ TOOLS.set(SESSION_SEARCH_TOOL.name, SESSION_SEARCH_TOOL);
 const MIND_KINDS = { question: 'question', recherche: 'recherche d\'information', analyse: 'analyse / calcul', livrable: 'production de livrable', code: 'code', automatisation: 'automatisation', conversation: 'conversation' };
 const Mind = {
   FORMAT_RE: [['xlsx', /\b(excel|xlsx|xlsm|classeur|tableur|feuille de calcul)\b/], ['docx', /\b(word|docx|note word|document word|courrier)\b/], ['pptx', /\b(powerpoint|pptx|presentation|diaporama|slides?|deck)\b/], ['pdf', /\bpdf\b/], ['eml', /\b(mail|e-?mail|courriel|eml|brouillon outlook)\b/], ['html', /\b(html|tableau de bord interactif|page web|dashboard)\b/], ['png', /\b(graphique|chart|courbe|histogramme|camembert|visuel)\b/], ['csv', /\bcsv\b/]],
+  /* Questions de connaissance (définition, explication, différence, rôle…) : réponse directe, pas une analyse */
+  KNOW_RE: /^(c.?est quoi|qu.?est[- ]ce (que|qu|qui)|qu.?entend[- ]on par|que (veut dire|signifie)|definition|definis|explique|expliquez|(peux|pourrais)[- ]tu (m.?)?expliquer|(pouvez|pourriez)[- ]vous (m.?)?expliquer|comment (on |se )?(calcule|definit|mesure|interprete|lit|fonctionne|marche)|comment calculer|quelle (est la )?(difference|definition)|quel(le)?s? (est|sont) (le|la|les) (role|principe|regle|seuils?|composantes?|difference)|a quoi (sert|servent)|pourquoi)\b/,
   /* 1. Comprendre : contrat de tâche déterministe (sans appel de modèle) */
   contract(task, { attachments = [], tools = [] } = {}) {
     const raw = String(task || ''); const t = normalizeText(raw);
-    const formats = this.FORMAT_RE.filter(([, re]) => re.test(t)).map(([f]) => f);
+    // Fichiers cités (imports/portefeuille.csv, rapport.pdf) : données d'entrée, pas formats demandés
+    const tf = t.replace(/[\w\/.-]+\.(xlsx|xlsm|xls|csv|docx|pptx|pdf|json|txt|eml|html?)\b/g, ' ');
+    const formats = this.FORMAT_RE.filter(([, re]) => re.test(tf)).map(([f]) => f);
     const produce = /\b(genere|generer|produis|produire|cree|creer|construis|fais[- ]moi|prepare|preparer|exporte|exporter|livre|fournis|transforme|convertis|mets?[- ]en forme|redige|rediger|ecris|ecrire|envoie|sors|dresse)\b/.test(t);
     const analyse = /\b(analyse|analyser|calcul|calcule|calculer|simul|ratio|taux|portefeuille|echeancier|statisti|compare|comparer|previs|tendance|evalue|mesure|verifie|controle|reconcil|consolide|synthese|bilan|revue)\b/.test(t)
       || (/\d/.test(t) && (/\b(mensualit\w*|interets?|amortiss\w*|rentabilit\w*|rendement|marge|cout total)/.test(t) || (/(%|\bfcfa\b|\bxof\b|\beur\b|€|\$|\bans?\b|\bmois\b|\bmillions?\b|\bmilliards?\b)/.test(t) && /\b(quel|quelle|combien|calcul|simul|estime|evalue)/.test(t))));
     const code = /\b(code|script|fonction|bug|erreur|api|programme|python|javascript|typescript|sql|regex|algorithme|refactor|compile|debug)\b/.test(t);
     const timely = /\b(actualite|actualites|news|nouvelles|aujourd|hier|cette semaine|ce mois|cette annee|en ce moment|actuellement|recent|recente|recemment|derniere?s? (nouvelles|version|annonce|actualites|chiffres|donnees)|prix actuel|cours (actuel|du jour)|taux (actuel|du jour|directeur)|meteo|resultats? (du|des) match|bourse|cotation|en 202\d)\b/.test(t);
     const explicitWeb = /\b(cherche|recherche|trouve|verifie)\b.{0,40}\b(internet|web|en ligne|google|sites?|articles?|presse)\b|\b(sur internet|sur le web|en ligne|wikipedia|google|site web|sources? (web|en ligne|recentes?)|cite(r)? (les|des|tes) sources)\b/.test(t);
-    const search = timely || explicitWeb;
+    // Actualité implicite : prix et cours, titulaire actuel d'une fonction, dernier résultat
+    const live = /\b(prix|cours|cotation|taux de change)\b.{0,25}\b(bitcoin|ethereum|crypto|dollar|euro|fcfa|xof|naira|cedi|or|petrole|baril|brent|action|actions|bourse|brvm|cacao|cafe|anacarde|coton)\b|\bqui est (le|la|l')\s*(actuel|actuelle|nouveau|nouvelle|president|presidente|gouverneur|ministre|premier ministre|directeur|directrice|pdg|ceo)\b|\bderniere?s? (can|coupe du monde|election|elections|match|edition|saison|resultats?)\b/.test(t);
+    const search = timely || explicitWeb || live;
     const auto = /\b(planifie|planifier|programme|programmer|chaque (jour|semaine|mois|lundi|mardi|mercredi|jeudi|vendredi|matin|soir)|tous les (jours|matins|soirs|lundis|mardis|mercredis|jeudis|vendredis)|rappelle|rappel|automatise|quotidien|hebdomadaire|mensuel|a \d{1,2}h)\b/.test(t);
+    // Créations sans format bureautique (image, logo, affiche, 3D, quiz…) : livrable, jamais « question »
+    const media = /\b(images?|illustrations?|affiches?|logos?|photos?|dessins?|portraits?|bannieres?|icones?|videos?|animations?|3d|maquettes?|quiz|diaporamas?)\b/.test(t);
+    const create = /\b(genere|generer|cree|creer|dessine|dessiner|illustre|modelise|modeliser|fais|realise|realiser|imagine|anime)\b/.test(t) || /^(une?|des|la|le|l')\s?(affiche|image|illustration|logo|photo|dessin|portrait|banniere|icone|video|animation|scene|maquette)\b/.test(t);
+    // Demande d'action (créer, corriger, rédiger, traduire…) : jamais traitée par la voie rapide
+    const act = /\b(fais|faire|cree|creer|genere|generer|dessine|modelise|illustre|corrige|modifie|ajoute|supprime|renomme|trie|remplis|complete|envoie|planifie|programme|telecharge|ouvre|execute|lance|traduis|convertis|transforme|redige|ecris|resume|reformule)\b/.test(t);
     let kind = 'question';
     if (auto) kind = 'automatisation';
-    else if (formats.length && (produce || analyse || attachments.length)) kind = 'livrable';
+    else if ((formats.length || media) && (produce || create || analyse || attachments.length)) kind = 'livrable';
     else if (code && !analyse) kind = 'code';
     else if (analyse || attachments.length) kind = 'analyse';
     else if (search) kind = 'recherche';
     else if (raw.length < 40 && /^(merci|ok|bonjour|salut|super|parfait|oui|non|d'accord|ça marche)/i.test(raw.trim())) kind = 'conversation';
-    const needsWeb = (timely || explicitWeb) && !attachments.length && !/\b(fichier|ci-joint|joint|tableau ci|donnees ci)\b/.test(t);
+    // Question de connaissance (« C'est quoi le ratio NPL ? ») ou simple présentation (« Bonjour, je suis analyste… ») : ni analyse ni code
+    const own = attachments.length > 0 || /\d/.test(t) || /\b(mon|ma|mes|notre|nos|ce|cet|cette|ces) (portefeuille|fichier|classeur|tableau|donnees|encours|dossier|base|client|banque|script|code|projet)\b/.test(t);
+    const core = t.trim().replace(/^(bonjour|bonsoir|salut|hello|coucou|hey)\b[\s,!.]*(cortex\b[\s,!.]*)?/, '');
+    const knowledge = this.KNOW_RE.test(core) && !own && !formats.length && !media;
+    if (/^(bonjour|bonsoir|salut|hello|coucou|hey|merci)\b/.test(t.trim()) && !raw.includes('?') && raw.length < 160 && !own && !act && !formats.length && kind !== 'automatisation') kind = 'conversation';
+    else if (knowledge && ['analyse', 'code', 'question'].includes(kind)) kind = 'question';
+    const fileRef = /\b(fichier|ci-joint|piece jointe|colonne|onglet)\b|\.(xlsx|xlsm|xls|csv|docx|pptx|pdf|json|txt)\b/.test(t);
+    const needsWeb = search && !attachments.length && !/\b(fichier|ci-joint|joint|tableau ci|donnees ci)\b/.test(t);
     const needsData = attachments.length > 0 || /\b(fichier|donnees|tableau|csv|xlsx|colonne|ligne|base)\b/.test(t);
     const criteria = [];
     for (const f of formats) criteria.push(`Fichier ${f} produit, ouvert et contrôlé (aperçu)`);
     if (kind === 'analyse' || kind === 'livrable') criteria.push('Chiffres issus de calculs (code) ou des données fournies, recoupés par une seconde méthode');
     if (kind === 'recherche' || needsWeb) criteria.push('Sources citées (URL, date) ; information récente recoupée');
     if (kind === 'code') criteria.push('Code exécuté avec succès, résultat montré');
-    if (kind !== 'conversation') criteria.push('Réponse structurée : résultat, méthode et hypothèses, contrôles, points d\'attention, suites proposées');
+    if (!['conversation', 'question'].includes(kind)) criteria.push('Réponse claire : conclusion d\'abord, chiffres clés, hypothèses et points d\'attention utiles, suite proposée');
     const names = attachments.map((a) => a.name || a.path).filter(Boolean);
     const summary = `Type : ${MIND_KINDS[kind]} · Livrables : ${formats.join(', ') || 'réponse'}${names.length ? ' · Données : ' + names.slice(0, 4).join(', ') : ''}${needsWeb ? ' · Recherche web préalable' : ''}`;
-    return { kind, formats, needsWeb, needsData, criteria, attachments: names, summary };
+    return { kind, formats, needsWeb, needsData, criteria, attachments: names, summary, act: act && !knowledge, knowledge, fileRef };
   },
   /* 2. Chercher : conversations passées et, si besoin, recherche web — avant que le modèle ne commence */
   async gather(contract, task, { chat, signal, tools = [] } = {}) {
@@ -9512,6 +9612,8 @@ const Mind = {
     walk(node.steps);
     const nums = []; const seen = new Set();
     for (const p of parts) for (const m of p.matchAll(this.NUM_RE)) { const n = this.parseNum(m[0]); if (!n) continue; const key = n.v + (n.pct ? '%' : ''); if (seen.has(key)) continue; seen.add(key); nums.push(n.v); if (nums.length > 60000) break; }
+    // Passe permissive sur les données et les résultats d'outils : nombres d'un JSON compact ("total":18248760) ou d'une colonne CSV (C1,100)
+    for (const p of parts.slice(1)) for (const m of p.matchAll(/-?\d+(?:\.\d+)?/g)) { const k = String(+m[0]); if (seen.has(k)) continue; seen.add(k); nums.push(+m[0]); if (nums.length > 60000) break; }
     return nums;
   },
   traceable(n, ev) {
@@ -9574,8 +9676,8 @@ const Mind = {
     }
     // critères du contrat et checklist du Guru (information, la relecture critique les juge)
     if (contract?.criteria?.length && text.length > 300 && ['analyse', 'livrable'].includes(contract.kind)) {
-      const structured = /\*\*(résultats?|méthode|contrôles?|points? d'attention|fichiers?|suites? propos)/i.test(text) || /^#{1,3}\s/m.test(text);
-      checks.push({ ok: structured ? true : null, label: structured ? 'Réponse structurée' : 'Réponse non structurée (résultat, méthode, contrôles, points d\'attention attendus)' });
+      const structured = /\*\*[^*\n]{2,80}\*\*/.test(text) || /^\s*\|.+\|\s*$/m.test(text) || /^#{1,3}\s/m.test(text) || /^\s*([-*•]|\d+[.)])\s/m.test(text);
+      checks.push({ ok: structured ? true : null, label: structured ? 'Réponse lisible (conclusion, chiffres clés, points d\'attention)' : 'Réponse en un seul bloc (conclusion et chiffres clés à faire ressortir)' });
     }
     for (const c of node.guruChecklist || []) checks.push({ ok: null, label: '☐ ' + c });
     return { checks, blocking, text: checks.map((c) => `${c.ok === true ? '✅' : c.ok === false ? '❌' : '◻️'} ${c.label}`).join('\n') };
@@ -9590,7 +9692,7 @@ const Mind = {
     if (!a.blocking.length) { tc.status = 'done'; tc.result = '# Vérification sur preuves\n' + a.text; delete tc.progress; tc.durationMs = now() - t0; onUpdate(); tracer?.note('Vérification : OK (' + a.checks.length + ' contrôles)'); node.audit = a.checks; return a; }
     tc.result = '# Vérification sur preuves — correction demandée\n' + a.text;
     step.inject = `[Harness — vérification sur preuves par Cortex]\nAvant livraison, les contrôles suivants ont échoué :\n${a.blocking.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n\nCorrige ces points (outils, calculs par code, fichiers), puis redonne la réponse finale complète et structurée.`;
-    const last = [...node.steps].reverse().find((s) => s.content && !s.synthetic); if (last) last.superseded = true;
+    const last = [...node.steps].reverse().find((s) => s.content && !s.synthetic); if (last) last.superseded = 'verification';
     delete tc.progress; onUpdate(); tracer?.note(`Vérification : ${a.blocking.length} point(s) bloquant(s), correction`);
     await agentLoop({ ...loopOpts, maxSteps: 8, stopAfter: false });
     if (last && !node.steps.slice(node.steps.indexOf(step) + 1).some((s) => s.content)) delete last.superseded;
@@ -9707,9 +9809,9 @@ function scheduledPageRender(b) {
   const fmtD = (ts) => (ts ? new Date(ts).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : '—');
   b.innerHTML = `<p class="lead">Cortex exécute lui-même ces tâches à l'échéance (page ouverte) et rattrape celles manquées au lancement. Chaque exécution ouvre une conversation « ⏰ … ». Vous pouvez aussi les créer en langage naturel dans le chat (« chaque lundi à 8h, … »).</p>
     <div class="card" style="margin-bottom:14px"><b>Nouvelle tâche</b>
-      <div class="grid2" style="margin-top:8px">${ui.field('Titre', '<input id="sc-title" placeholder="Point hebdomadaire du portefeuille">')}${ui.field('Agent', `<select id="sc-agent" class="sel"><option value="">Agent par défaut</option>${agents.map((a) => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</select>`)}</div>
-      ${ui.field('Instruction complète (ce que Cortex fera)', '<textarea id="sc-prompt" rows="3" placeholder="Lis le dernier fichier exports/portefeuille*.xlsx, calcule le taux de dégradation par segment et produis une note Word sobre avec les écarts par rapport à la semaine passée."></textarea>')}
-      <div class="row wrap" style="gap:10px;align-items:flex-end">${ui.field('Fréquence', `<select id="sc-every" class="sel"><option value="day">Chaque jour</option><option value="week">Chaque semaine</option><option value="month">Chaque mois</option><option value="hour">Toutes les N heures</option><option value="minute">Toutes les N minutes</option><option value="once">Une fois (date)</option></select>`)}${ui.field('N', '<input id="sc-n" type="number" min="1" value="1" style="width:70px">')}${ui.field('Heure', '<input id="sc-at" type="time" value="09:00">')}${ui.field('Jours (semaine)', '<input id="sc-days" placeholder="1,3,5 (lundi=1)" style="width:130px">')}${ui.field('Date (une fois)', '<input id="sc-once" type="datetime-local">')}<button class="btn primary" id="sc-add">${icon('plus', 'sm')} Planifier</button></div></div>
+      <div class="grid2" style="margin-top:8px">${ui.field('Titre', '<input class="inp" id="sc-title" placeholder="Point hebdomadaire du portefeuille">')}${ui.field('Agent', `<select id="sc-agent" class="sel"><option value="">Agent par défaut</option>${agents.map((a) => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</select>`)}</div>
+      ${ui.field('Instruction complète (ce que Cortex fera)', '<textarea class="ta" id="sc-prompt" rows="3" placeholder="Lis le dernier fichier exports/portefeuille*.xlsx, calcule le taux de dégradation par segment et produis une note Word sobre avec les écarts par rapport à la semaine passée."></textarea>')}
+      <div class="row wrap" style="gap:10px;align-items:flex-end">${ui.field('Fréquence', `<select id="sc-every" class="sel"><option value="day">Chaque jour</option><option value="week">Chaque semaine</option><option value="month">Chaque mois</option><option value="hour">Toutes les N heures</option><option value="minute">Toutes les N minutes</option><option value="once">Une fois (date)</option></select>`)}${ui.field('N', '<input class="inp" id="sc-n" type="number" min="1" value="1" style="width:70px">')}${ui.field('Heure', '<input class="inp" id="sc-at" type="time" value="09:00">')}${ui.field('Jours (semaine)', '<input class="inp" id="sc-days" placeholder="1,3,5 (lundi=1)" style="width:130px">')}${ui.field('Date (une fois)', '<input class="inp" id="sc-once" type="datetime-local">')}<button class="btn primary" id="sc-add">${icon('plus', 'sm')} Planifier</button></div></div>
     ${l.length ? `<table class="tbl"><tr><th>Tâche</th><th>Échéance</th><th>Prochaine</th><th>Dernière</th><th></th></tr>${l.map((t) => `<tr class="${t.enabled ? '' : 'muted'}"><td><b>${esc(t.title)}</b><div class="small muted" style="max-width:420px;white-space:pre-wrap">${esc(truncate(t.prompt, 220))}</div></td><td class="small">${esc(Scheduler.describe(t))}</td><td class="small">${t.enabled ? fmtD(t.next) : 'désactivée'}</td><td class="small">${t.last ? fmtD(t.last) + ' · ' + (t.lastStatus === 'done' ? '✅' : t.lastStatus === 'error' ? '❌' : '…') + (t.runs?.length ? ` <a href="#" data-sc="open" data-id="${t.id}">ouvrir</a>` : '') : '—'}</td><td style="white-space:nowrap"><button class="btn sm" data-sc="run" data-id="${t.id}" title="Exécuter maintenant">${icon('play', 'sm')}</button> <button class="btn sm" data-sc="toggle" data-id="${t.id}" title="${t.enabled ? 'Désactiver' : 'Activer'}">${icon(t.enabled ? 'stop' : 'check', 'sm')}</button> <button class="btn sm" data-sc="del" data-id="${t.id}" title="Supprimer">${icon('trash', 'sm')}</button></td></tr>`).join('')}</table>` : '<p class="muted">Aucune tâche planifiée pour l\'instant.</p>'}`;
   b.querySelector('#sc-add').onclick = () => {
     try {
@@ -9973,17 +10075,23 @@ const LOCAL_CATALOG = [
   { name: 'Phi-4 14B', license: 'MIT', ram: '12 Go', ollama: 'phi4', note: 'raisonnement, maths' },
 ];
 /* Erreurs des modèles locaux, expliquées en français (titre + marche à suivre) */
+/* Navigateur réel (Edge ou Chrome) : les consignes citent le bon nom et les bonnes adresses internes */
+const BROWSER = /Edg\//.test(navigator.userAgent) ? { name: 'Edge', url: 'edge' } : { name: 'Chrome', url: 'chrome' };
 const LOCAL_ERR = {
   nowebgpu: { code: 'nowebgpu', title: "Ce navigateur n'a pas WebGPU : les modèles du navigateur ne peuvent pas tourner ici.", steps: ['Utilisez Chrome ou Edge à jour (WebGPU depuis la version 113).', "Ou utilisez un modèle cloud gratuit, ou un serveur local (Ollama)."] },
-  noadapter: { code: 'noadapter', title: "Chrome ne donne plus accès à la carte graphique (WebGPU désactivé pour le moment).", steps: ["Cause la plus fréquente : la mémoire graphique a été saturée (plusieurs modèles chargés à la suite) et Chrome a coupé WebGPU par sécurité.", "Fermez les onglets lourds, puis redémarrez Chrome : tapez chrome://restart dans la barre d'adresse.", "Vérifiez chrome://gpu → « WebGPU : Hardware accelerated », et Paramètres › Système › « Utiliser l'accélération graphique si disponible » activé.", 'Reprenez ensuite un modèle léger : Qwen3 4B ou Qwen3 1.7B.'] },
+  noadapter: { code: 'noadapter', title: `${BROWSER.name} ne donne plus accès à la carte graphique (WebGPU désactivé pour le moment).`, cause: `Cause la plus fréquente : la mémoire graphique a été saturée (plusieurs modèles chargés à la suite) et ${BROWSER.name} a coupé WebGPU par sécurité.`, steps: [`Fermez les onglets lourds, puis redémarrez ${BROWSER.name} : tapez ${BROWSER.url}://restart dans la barre d'adresse.`, `Vérifiez ${BROWSER.url}://gpu → « WebGPU : Hardware accelerated », et Paramètres › Système › « Utiliser l'accélération graphique si disponible » activé.`, 'Reprenez ensuite un modèle léger : Qwen3 4B ou Qwen3 1.7B.'] },
   f16: { code: 'f16', title: "Cette carte graphique ne gère pas le calcul en demi-précision (shader-f16).", steps: ['Cortex prend automatiquement la variante q4f32 du modèle (un peu plus gourmande en mémoire) ; choisissez de préférence Qwen3 4B ou 1.7B.'] },
-  lost: { code: 'lost', title: 'La mémoire graphique a été dépassée : le modèle est trop lourd pour cette carte, ou d’autres onglets l’occupent.', steps: ['Choisissez un modèle plus léger (Qwen3 4B ou Qwen3 1.7B).', 'Réduisez la fenêtre de contexte à 4 096 (Modèles › Modèles locaux).', 'Fermez les onglets lourds ; si le problème persiste, redémarrez Chrome (chrome://restart).'] },
+  lost: { code: 'lost', title: 'La mémoire graphique a été dépassée : le modèle est trop lourd pour cette carte, ou d’autres onglets l’occupent.', steps: ['Choisissez un modèle plus léger (Qwen3 4B ou Qwen3 1.7B).', 'Réduisez la fenêtre de contexte à 4 096 (Modèles › Modèles locaux).', `Fermez les onglets lourds ; si le problème persiste, redémarrez ${BROWSER.name} (${BROWSER.url}://restart).`] },
   context: { code: 'context', title: 'La demande dépasse la fenêtre de contexte du modèle local.', steps: ['Augmentez la fenêtre (Modèles › Modèles locaux › Fenêtre de contexte) ou commencez une nouvelle conversation.'] },
   network: { code: 'network', title: 'Téléchargement du modèle interrompu.', steps: ['Vérifiez la connexion puis réessayez : le téléchargement reprend là où il s’était arrêté.'] },
+  storage: { code: 'storage', title: 'Espace de stockage du navigateur insuffisant pour télécharger ce modèle.', steps: ["Libérez de l'espace disque, ou choisissez un modèle plus léger (Qwen3 1.7B).", 'En navigation privée le stockage est très limité : ouvrez Cortex dans une fenêtre normale.'] },
 };
-const localErrText = (info) => info.title + (info.steps && info.steps.length ? '\n' + info.steps.map((x, i) => `${i + 1}. ${x}`).join('\n') : '');
+// Titre, cause (texte), puis actions numérotées ; les étapes déjà numérotées « 1) » ne sont pas renumérotées
+const localErrText = (info) => info.title + (info.cause ? '\n' + info.cause : '') + (info.steps && info.steps.length ? '\n' + info.steps.map((x, i) => `${i + 1}. ${String(x).replace(/^\d+\)\s*/, '')}`).join('\n') : '');
 /* Modèle de repli quand le modèle local ne peut pas répondre : cloud gratuit (si clé), sinon serveur local */
 function localFallbackModel(from) {
+  // Réglage (Modèles › Modèles locaux) : 'off' = jamais de bascule vers le cloud quand un modèle local échoue
+  if (S.settings.localFallbackMode === 'off') return null;
   const cands = [];
   if (getApiKey()) {
     const pref = S.settings.localFallback; if (pref && !/^(webllm|local)\//.test(pref)) cands.push(pref);
@@ -9992,7 +10100,8 @@ function localFallbackModel(from) {
     const d = S.settings.defaultModel; if (d && !/^(webllm|local)\//.test(d)) cands.push(d);
   }
   if (String(from).startsWith('webllm/')) { const srv = S.models.find((m) => m.local_server); if (srv) cands.push(srv.id); }
-  const ok = (m) => m && m !== from && m !== 'openrouter/free' && (!S.models.length || S.modelMap.has(m));
+  // Jamais de modèle payant en secours (coût inattendu) : un modèle gratuit ou un autre modèle local
+  const ok = (m) => m && m !== from && m !== 'openrouter/free' && (!S.models.length || S.modelMap.has(m)) && (/^(webllm|local)\//.test(m) || isFreeModel(m));
   return cands.find((m) => ok(m) && modelSupports(m, 'tools')) || cands.find(ok) || null;
 }
 /* Mode local : Cortex fonctionne sans clé OpenRouter quand un modèle local est configuré */
@@ -10013,14 +10122,20 @@ const LocalModels = {
     return (this.gpu = { ok: true, at: now(), f16: !!(adapter.features && adapter.features.has('shader-f16')), maxBuf: adapter.limits && adapter.limits.maxBufferSize, vendor: info.vendor || '', arch: info.architecture || '', mem: navigator.deviceMemory || null });
   },
   /* Traduction d'une erreur WebLLM / serveur local en explication française */
-  explain(e) {
+  explain(e, model = '') {
     const m = String((e && (e.message || e)) || ''), n = String((e && e.name) || '');
+    // Serveur local (Ollama, LM Studio…) : son propre message, jamais une consigne « navigateur / Chrome »
+    if (String(model).startsWith('local/') || /^Serveur local/.test(m)) {
+      const raw = m.replace(/^Serveur local\s*:\s*/, ''); const name = String(model).replace(/^local\//, '');
+      return { code: 'server', title: 'Le serveur local a renvoyé une erreur : ' + truncate(raw, 200), steps: /not found|pull/i.test(raw) && name ? [`Installez le modèle : ollama pull ${name}`, 'Ou choisissez un modèle déjà installé (Modèles › Serveur local › Tester).'] : /context|too long|exceed/i.test(raw) ? LOCAL_ERR.context.steps : ['Regardez la fenêtre du serveur (Ollama, LM Studio) puis réessayez.'], raw: truncate(m, 400) };
+    }
+    if (/QuotaExceeded|quota/i.test(m + ' ' + n)) return LOCAL_ERR.storage;
     if (/Unable to find a compatible GPU|WebGPU is not supported|Cannot find WebGPU|WebGPUNot/i.test(m + ' ' + n)) return LOCAL_ERR.noadapter;
     if (/shader-f16/i.test(m)) return LOCAL_ERR.f16;
     if (/device was lost|DeviceLost|device.{0,20}lost|out of memory|\bOOM\b|GPUOutOfMemory|allocat/i.test(m + ' ' + n)) return LOCAL_ERR.lost;
     if (/context window|ContextWindowSize|Prompt tokens exceed/i.test(m + ' ' + n)) return LOCAL_ERR.context;
-    if (/Failed to fetch|NetworkError|network|Load failed|QuotaExceeded|cache/i.test(m)) return LOCAL_ERR.network;
-    return { code: 'other', title: 'Le modèle du navigateur a rencontré une erreur.', steps: ['Réessayez ; si cela persiste, redémarrez Chrome (chrome://restart) ou choisissez un autre modèle.'], raw: m };
+    if (/Failed to fetch|NetworkError|network|Load failed|cache/i.test(m)) return LOCAL_ERR.network;
+    return { code: 'other', title: 'Le modèle du navigateur s’est arrêté sur une erreur inattendue.', steps: ['Réessayez ; si cela persiste, rechargez la page (F5) ou choisissez un modèle plus léger.'], raw: truncate(m, 400) };
   },
   /* Avant une requête : le modèle local peut-il répondre ? (GPU disponible, serveur joignable, pas d'échec récent) */
   async preflight(model) {
@@ -10035,7 +10150,7 @@ const LocalModels = {
       const c = this.cfg(); const base = String(c.url || '').replace(/\/+$/, '');
       const last = this.serverOk.get(base); if (last && now() - last < 5 * 60e3) return { ok: true };
       try { const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 2500); const r = await fetch(base + '/models', { headers: c.key ? { Authorization: 'Bearer ' + c.key } : {}, signal: ctrl.signal, cache: 'no-store' }); clearTimeout(t); if (r.ok) { this.serverOk.set(base, now()); return { ok: true }; } } catch (e) {}
-      const d = await this.diagnose(base); return { ok: false, code: 'server', title: d.title, steps: d.steps };
+      const d = await this.diagnose(base); return { ok: false, code: 'server', title: d.title, steps: d.steps.filter((x) => !/« Tester »/.test(x)) };
     }
     return { ok: true };
   },
@@ -10044,6 +10159,8 @@ const LocalModels = {
     if (!String(model || '').startsWith('webllm/')) return;
     const id = model.slice(7); if (this.engines.has(id) || this.failed.has(id)) return;
     const g = await this.gpuCheck(); if (!g.ok) return;
+    // Préchargement seulement si le modèle est déjà en cache : choisir un modèle dans le sélecteur ne lance pas un téléchargement de plusieurs Go
+    try { const lib = await this.webllmLib(); const rid = (await this.resolveWebllmId(g.f16 ? id : id.replace(/q4f16_1/, 'q4f32_1'))).id; if (!(await lib.hasModelInCache(rid))) return; } catch (e) { return; }
     this.engine(id).catch(() => {});
   },
   clearFailure(model) { const id = String(model || '').replace(/^webllm\//, ''); this.failed.delete(id); this.gpu = null; },
@@ -10078,7 +10195,7 @@ const LocalModels = {
   async diagnose(base) {
     let root = base; try { root = new URL(base).origin + '/'; } catch (e) {}
     let up = false;
-    try { await fetch(root, { mode: 'no-cors', cache: 'no-store' }); up = true; } catch (e) { up = false; }
+    try { await fetch(root, { mode: 'no-cors', cache: 'no-store', signal: AbortSignal.timeout(3000) }); up = true; } catch (e) { up = false; }
     const isOllama = /:11434\b/.test(base), isLm = /:1234\b/.test(base), https = location.protocol === 'https:', file = location.protocol === 'file:';
     if (!up) return { kind: 'down', title: `Aucun serveur ne répond à ${root} : rien n'écoute sur ce port.`, steps: isOllama ? ['1) Installez Ollama (ollama.com/download) et lancez-le (icône dans la barre des tâches, ou « ollama serve »).', '2) Téléchargez un modèle : ollama pull qwen3:8b (ou gpt-oss:20b avec 16 Go de RAM).', '3) Cliquez de nouveau sur « Tester ».'] : isLm ? ['1) Dans LM Studio : onglet Developer › Start Server (port 1234) et chargez un modèle.', '2) Activez « Enable CORS » dans les réglages du serveur.', '3) Cliquez de nouveau sur « Tester ».'] : ['Vérifiez que le serveur est lancé et que le port de l\'URL est le bon.'] };
     const origin = file ? 'null (page ouverte en fichier local)' : location.origin;
@@ -10153,7 +10270,7 @@ const LocalModels = {
     const modelId = String(body.model).replace(/^webllm\//, '');
     const eng = await this.engine(modelId);
     const messages = this.textTools(body.messages, body.tools);
-    const req = { messages, stream: true, stream_options: { include_usage: true }, temperature: body.temperature ?? 0.5, max_tokens: Math.min(+body.max_tokens || 2048, 4096), top_p: body.top_p };
+    const req = { messages, stream: true, stream_options: { include_usage: true }, temperature: body.temperature ?? 0.5, max_tokens: Math.min(+body.max_tokens || (body.reasoning?.effort ? 4096 : 2048), 4096), top_p: body.top_p };
     const effort = body.reasoning && body.reasoning.effort; const think = !!effort && effort !== 'off' && effort !== 'none';
     if (/^Qwen3-/i.test(modelId)) req.extra_body = { enable_thinking: think };
     let it;
@@ -10164,7 +10281,7 @@ const LocalModels = {
     const enc = new TextEncoder();
     const stream = new ReadableStream({ async start(controller) {
       try { for await (const ch of it) { if (signal?.aborted) break; const chunk = { id, model: body.model, provider: 'WebLLM', choices: (ch.choices || []).map((c) => ({ index: c.index || 0, delta: c.delta || {}, finish_reason: c.finish_reason || null })), usage: ch.usage || undefined }; controller.enqueue(enc.encode('data: ' + JSON.stringify(chunk) + '\n\n')); } controller.enqueue(enc.encode('data: [DONE]\n\n')); }
-      catch (e) { const info = LocalModels.explain(e); if (info.code === 'lost') { LocalModels.engines.delete(modelId); LocalModels.ready.delete(modelId); LocalModels.failed.set(modelId, { at: now(), info }); } controller.enqueue(enc.encode('data: ' + JSON.stringify({ error: { message: localErrText(info), code: 0, local: info.code } }) + '\n\n')); }
+      catch (e) { const info = LocalModels.explain(e); if (info.code === 'lost') { LocalModels.engines.delete(modelId); LocalModels.ready.delete(modelId); LocalModels.failed.set(modelId, { at: now(), info }); } controller.enqueue(enc.encode('data: ' + JSON.stringify({ error: { message: localErrText(info), code: 0, local: info.code, info } }) + '\n\n')); }
       controller.close();
     } });
     return new Response(stream, { status: 200, headers: { 'content-type': 'text/event-stream' } });
@@ -10192,11 +10309,16 @@ function localModelsHTML() {
   const c = LocalModels.cfg(); const p = LocalModels.progress; const err = c.lastError; const cur = S.settings.defaultModel || '';
   const rows = LOCAL_CATALOG.map((m) => `<tr><td><b>${esc(m.name)}</b><div class="small muted">${esc(m.note || '')}</div></td><td class="small">${esc(m.license)}</td><td class="small">${esc(m.ram)}</td><td class="small mono">${m.ollama ? `ollama pull ${esc(m.ollama)}` : '—'}</td><td>${m.webllm && LocalModels.webgpu ? `<button class="btn sm" data-lm="webllm" data-id="${esc(m.webllm)}">${icon('download', 'sm')} Navigateur</button>` : ''}</td></tr>`).join('');
   const readyList = [...LocalModels.ready];
+  // Carte graphique vérifiée dès l'ouverture de la page : l'explication s'affiche avant tout clic
+  if (LocalModels.webgpu && !LocalModels.gpu && !LocalModels.gpuChecking) { LocalModels.gpuChecking = true; LocalModels.gpuCheck().catch(() => {}).finally(() => { LocalModels.gpuChecking = false; if (S.ui?.page === 'models') renderPageSoon(); }); }
+  const gpuBad = LocalModels.gpu && !LocalModels.gpu.ok ? LOCAL_ERR[LocalModels.gpu.code] || LOCAL_ERR.noadapter : null;
+  const shown = LocalModels.lastError || gpuBad;
   const browser = LocalModels.webgpu
     ? `<div class="card" style="margin:10px 0;background:var(--accent-soft)"><b>${icon('zap', 'sm')} Sans rien installer : un modèle dans votre navigateur (WebGPU disponible)</b>
         <p class="small muted" style="margin:6px 0 8px">Le modèle est téléchargé une seule fois (1 à 4 Go, mis en cache) puis tourne sur votre carte graphique (mémoire indiquée entre parenthèses ; WebGPU avec shader-f16). Vos données ne quittent pas l'ordinateur. Comptez 2 à 30 minutes de téléchargement la première fois selon la connexion.</p>
-        <div class="row wrap" style="gap:8px;align-items:center"><select id="lm-pick" class="sel" style="min-width:300px">${WEBLLM_PICKS.map(([id, lab]) => `<option value="${esc(id)}" ${cur === 'webllm/' + id ? 'selected' : ''}>${esc(lab)}</option>`).join('')}</select><button class="btn sm primary" data-lm="webllm-pick">${icon('download', 'sm')} Télécharger et utiliser</button></div>
-        ${readyList.length ? `<div class="row wrap" style="gap:8px;align-items:center;margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff;border:1px solid var(--ok,#16a34a)"><b style="color:var(--ok,#16a34a)">✅ Prêt dans votre navigateur : ${readyList.map((x) => esc(x.replace(/-q4f16_1-MLC$/, ''))).join(', ')}</b>${readyList.map((x) => `<button class="btn sm primary" data-lm="use" data-id="${esc(x)}">${icon('chat', 'sm')} Discuter avec ${esc(x.replace(/-q4f16_1-MLC$/, ''))}</button>`).join('')}<span class="small muted">Le modèle est aussi dans le sélecteur de la conversation, onglet « Local / Navigateur ».</span></div>` : ''}
+        <div class="row wrap" style="gap:8px;align-items:center"><select id="lm-pick" class="sel" style="min-width:300px">${WEBLLM_PICKS.map(([id, lab]) => `<option value="${esc(id)}" ${cur === 'webllm/' + id ? 'selected' : ''}>${esc(lab)}</option>`).join('')}</select><button class="btn sm primary" data-lm="webllm-pick" ${gpuBad ? 'disabled title="Carte graphique indisponible : voir l\'explication ci-dessous"' : ''}>${icon('download', 'sm')} Télécharger et utiliser</button>${gpuBad ? `<button class="btn sm" data-lm="gpu-recheck">${icon('refresh', 'sm')} Revérifier la carte graphique</button>` : ''}</div>
+        ${readyList.length ? `<div class="row wrap" style="gap:8px;align-items:center;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--success)"><b style="color:var(--success-text)">✅ Prêt dans votre navigateur : ${readyList.map((x) => esc(x.replace(/-q4f16_1-MLC$/, ''))).join(', ')}</b>${readyList.map((x) => `<button class="btn sm primary" data-lm="use" data-id="${esc(x)}">${icon('chat', 'sm')} Discuter avec ${esc(x.replace(/-q4f16_1-MLC$/, ''))}</button>`).join('')}<span class="small muted">Le modèle est aussi dans le sélecteur de la conversation, onglet « Local / Navigateur ».</span></div>` : ''}
+        ${shown ? `<div class="lm-err"><b>${esc(shown.title)}</b>${shown.cause ? `<div class="small muted">${esc(shown.cause)}</div>` : ''}<ol class="small">${(shown.steps || []).map((x) => `<li>${esc(String(x).replace(/^\d+[.)]\s*/, ''))}</li>`).join('')}</ol></div>` : ''}
         <div id="lm-progress" class="small muted" style="margin-top:8px;${p ? '' : 'display:none'}"><div style="height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-bottom:4px"><div id="lm-bar" style="height:100%;width:${p ? Math.round((p.pct || 0) * 100) : 0}%;background:var(--accent);transition:width .3s"></div></div><span id="lm-ptext">${p ? esc(p.text || '') : ''}</span></div></div>`
     : `<p class="small muted"><b>WebGPU indisponible ici</b> : impossible d'exécuter un modèle dans ce navigateur. Mettez Chrome ou Edge à jour (WebGPU est inclus depuis Chrome 113 / Edge 113) ou utilisez un serveur local ci-dessous.</p>`;
   const diag = err ? `<div class="card" style="border-color:var(--danger);margin:8px 0"><b style="color:var(--danger)">${esc(err.title)}</b><ol class="small" style="margin:6px 0 0 18px;padding:0">${(err.steps || []).map((x) => `<li style="margin:3px 0">${esc(x)}</li>`).join('')}</ol></div>` : '';
@@ -10204,7 +10326,8 @@ function localModelsHTML() {
     <p class="small muted">Cortex fonctionne sans le cloud et sans clé : soit un modèle exécuté dans le navigateur (WebLLM), soit un serveur local (Ollama, LM Studio, llama.cpp, vLLM — API compatible OpenAI). Les modèles locaux apparaissent ensuite dans le sélecteur (« Navigateur · … », « Local · … ») et bénéficient de tout le harness (outils, cerveau, Guru).</p>
     ${browser}
     <div class="card" style="margin:10px 0"><b>${icon('server', 'sm')} Serveur local (Ollama, LM Studio…)</b>
-    <div class="row wrap" style="gap:8px;align-items:flex-end;margin-top:6px">${ui.field('URL de l\'API', `<input id="lm-url" value="${esc(c.url || '')}" placeholder="http://localhost:11434/v1" style="width:260px">`)}${ui.field('Clé (si requise)', `<input id="lm-key" type="password" value="${esc(c.key || '')}" style="width:140px">`)}<button class="btn sm" data-lm="test">${icon('refresh', 'sm')} Tester et lister les modèles</button>${ui.field('Fenêtre de contexte', `<select id="lm-ctx" class="sel">${[4096, 8192, 16384, 32768].map((n) => `<option value="${n}" ${(c.ctx || 8192) === n ? 'selected' : ''}>${n.toLocaleString('fr-FR')} tokens</option>`).join('')}</select>`)}<label class="row small"><input type="checkbox" id="lm-booster" ${c.booster ? 'checked' : ''} style="accent-color:var(--accent)"> Utiliser aussi comme Guru / relecteur</label></div>
+    <div class="row wrap" style="gap:8px;align-items:flex-end;margin-top:6px">${ui.field('URL de l\'API', `<input id="lm-url" class="inp" value="${esc(c.url || '')}" placeholder="http://localhost:11434/v1" style="min-width:240px">`)}${ui.field('Clé (si requise)', `<input id="lm-key" class="inp" type="password" value="${esc(c.key || '')}" style="min-width:130px">`)}<button class="btn sm" data-lm="test">${icon('refresh', 'sm')} Tester et lister les modèles</button>${ui.field('Fenêtre de contexte', `<select id="lm-ctx" class="sel">${[4096, 8192, 16384, 32768].map((n) => `<option value="${n}" ${(c.ctx || 8192) === n ? 'selected' : ''}>${n.toLocaleString('fr-FR')} tokens</option>`).join('')}</select>`)}<label class="row small"><input type="checkbox" id="lm-booster" ${c.booster ? 'checked' : ''}> Utiliser aussi comme Guru / relecteur</label></div>
+    <label class="row small" style="margin-top:8px;align-items:flex-start;gap:8px"><input type="checkbox" id="lm-fallback" ${S.settings.localFallbackMode !== 'off' ? 'checked' : ''} style="margin-top:3px"><span>Si un modèle local échoue, répondre avec un modèle cloud <b>gratuit</b> (jamais un modèle payant). Décochez pour rester 100 % local : vos messages ne partent alors jamais sur Internet.</span></label>
     <div class="small muted" style="margin-top:4px">Les modèles locaux reçoivent un prompt condensé (mode léger) pour tenir dans cette fenêtre. Plus grande fenêtre = plus de mémoire graphique (navigateur) ; pour Ollama, fixez aussi OLLAMA_CONTEXT_LENGTH=${c.ctx || 8192}.</div>
     <div class="small muted" style="margin:6px 0 4px">${c.enabled && c.models?.length ? `✅ ${c.models.length} modèle(s) sur le serveur : ${c.models.map((m) => esc(m.id)).join(', ')}` : 'Aucun serveur connecté. Ollama : installez-le (ollama.com), lancez-le, autorisez Cortex avec OLLAMA_ORIGINS=* puis <span class="mono">ollama pull qwen3:8b</span>.'}</div>${diag}</div>
     <details><summary class="small">Catalogue conseillé (licences permissives)</summary><table class="tbl" style="margin-top:8px"><tr><th>Modèle</th><th>Licence</th><th>Mémoire</th><th>Serveur local</th><th>Navigateur</th></tr>${rows}</table></details></div>`;
@@ -10222,16 +10345,17 @@ S.onLocalProgress = (p) => {
 function useLocalModelNow(id) { LocalModels.clearFailure(id); S.settings.defaultModel = id; saveSettings(); try { const chat = currentChat(); if (chat && !chat.compare?.length) { chat.model = id; saveChat(chat); } renderModelBar(); } catch (e) {} }
 function bindLocalModels(b) {
   if (b.__lmBound) return; b.__lmBound = true;
-  const loadWebllm = async (id, btn) => { if (btn) btn.disabled = true; toast('Téléchargement du modèle dans le navigateur (une seule fois) — vous pouvez continuer à utiliser Cortex, la progression s\'affiche dans la barre du modèle.', 'info', 7000); try { await LocalModels.engine(id); useLocalModelNow('webllm/' + id); toast('Modèle prêt : « ' + id.replace(/-q4f16_1-MLC$/, '') + ' » est maintenant le modèle de la conversation et le modèle par défaut.', 'ok', 8000); } catch (er) { toast(er.message, 'err', 10000); } if (S.ui?.page === 'models') renderPage(); };
+  const loadWebllm = async (id, btn) => { if (btn) btn.disabled = true; LocalModels.lastError = null; toast('Téléchargement du modèle dans le navigateur (une seule fois) — vous pouvez continuer à utiliser Cortex, la progression s\'affiche dans la barre du modèle.', 'info', 7000); try { await LocalModels.engine(id); useLocalModelNow('webllm/' + id); toast('Modèle prêt : « ' + id.replace(/-q4f16_1-MLC$/, '') + ' » est maintenant le modèle de la conversation et le modèle par défaut.', 'ok', 8000); } catch (er) { LocalModels.lastError = er.localInfo || { title: er.message.split('\n')[0], steps: er.message.split('\n').slice(1) }; toast(LocalModels.lastError.title, 'err', 6000); } if (S.ui?.page === 'models') renderPage(); };
   b.addEventListener('click', async (e) => {
     const el = e.target.closest('[data-lm]'); if (!el) return;
     const c = LocalModels.cfg();
     if (el.dataset.lm === 'test') { c.url = b.querySelector('#lm-url').value.trim(); c.key = b.querySelector('#lm-key').value.trim(); el.disabled = true; try { const l = await LocalModels.refresh(); toast(`${l.length} modèle(s) local(aux) disponibles`, 'ok'); } catch (er) { c.enabled = false; saveSettings(); toast(c.lastError ? c.lastError.title : 'Serveur local : ' + er.message, 'err', 8000); } renderPage(); }
     if (el.dataset.lm === 'webllm') loadWebllm(el.dataset.id, el);
     if (el.dataset.lm === 'webllm-pick') loadWebllm(b.querySelector('#lm-pick').value, el);
+    if (el.dataset.lm === 'gpu-recheck') { el.disabled = true; LocalModels.lastError = null; const g = await LocalModels.gpuCheck(true); toast(g.ok ? 'Carte graphique disponible : vous pouvez télécharger un modèle.' : (LOCAL_ERR[g.code] || LOCAL_ERR.noadapter).title, g.ok ? 'ok' : 'err', 5000); renderPage(); }
     if (el.dataset.lm === 'use') { useLocalModelNow('webllm/' + el.dataset.id); try { closePage(); } catch (e2) {} toast('Modèle du navigateur sélectionné : écrivez votre message.', 'ok', 5000); }
   });
-  b.addEventListener('change', async (e) => { if (e.target.id === 'lm-booster') { LocalModels.cfg().booster = e.target.checked; saveSettings(); } if (e.target.id === 'lm-ctx') { LocalModels.cfg().ctx = +e.target.value || 8192; saveSettings(); LocalModels.attach(); for (const [id, p] of [...LocalModels.engines]) { LocalModels.engines.delete(id); LocalModels.ready.delete(id); try { const eng = await p; if (eng && eng.unload) await eng.unload(); } catch (er) {} } toast('Fenêtre de contexte : ' + LocalModels.cfg().ctx + ' tokens (le modèle du navigateur sera rechargé au prochain message)', 'ok', 5000); } });
+  b.addEventListener('change', async (e) => { if (e.target.id === 'lm-booster') { LocalModels.cfg().booster = e.target.checked; saveSettings(); } if (e.target.id === 'lm-fallback') { S.settings.localFallbackMode = e.target.checked ? 'free' : 'off'; saveSettings(); } if (e.target.id === 'lm-ctx') { LocalModels.cfg().ctx = +e.target.value || 8192; saveSettings(); LocalModels.attach(); for (const [id, p] of [...LocalModels.engines]) { LocalModels.engines.delete(id); LocalModels.ready.delete(id); try { const eng = await p; if (eng && eng.unload) await eng.unload(); } catch (er) {} } toast('Fenêtre de contexte : ' + LocalModels.cfg().ctx + ' tokens (le modèle du navigateur sera rechargé au prochain message)', 'ok', 5000); } });
 }
 
 /* ============================== 08q · MESSAGERIE (Gmail, Outlook, fichiers .eml) ==============================
@@ -10384,10 +10508,10 @@ function mailSettingsHTML() {
   const c = Mail.cfg();
   return `<h3>Messagerie</h3><p class="lead">Cortex peut chercher un document dans vos mails et récupérer la pièce jointe (lecture seule). Connexion directe depuis le navigateur avec votre propre identifiant client OAuth (aucun serveur Cortex, aucun intermédiaire) ; nécessite d'ouvrir Cortex en http(s) ${Mail.httpOrigin ? '<span style="color:var(--ok,#16a34a)">(c\'est le cas)</span>' : '<b>(actuellement ouvert en fichier local : servez le dossier, ex. <span class="mono">python -m http.server 8080</span>, puis ouvrez http://localhost:8080/index.html)</b>'}. Alternatives sans connexion : déposer des fichiers .eml dans l'espace (outil eml_extract), ou brancher un serveur MCP de messagerie (Outils › MCP).</p>
     <div class="card" style="margin-bottom:12px"><b>Gmail</b><p class="small muted">Google Cloud Console › API Gmail activée › Identifiants › ID client OAuth (application Web) avec l'origine de Cortex autorisée.</p>
-      ${ui.field('ID client OAuth Google', `<input id="ml-gcid" value="${esc(c.googleClientId || '')}" placeholder="xxxx.apps.googleusercontent.com" style="width:100%">`)}
+      ${ui.field('ID client OAuth Google', `<input class="inp" id="ml-gcid" value="${esc(c.googleClientId || '')}" placeholder="xxxx.apps.googleusercontent.com">`)}
       <div class="row wrap"><button class="btn sm" data-ml="gmail">${icon('plug', 'sm')} ${Mail.connected('gmail') ? 'Reconnecter' : 'Se connecter à Gmail'}</button><span class="small muted">${Mail.connected('gmail') ? '✅ connecté (session)' : 'non connecté'}</span></div></div>
     <div class="card" style="margin-bottom:12px"><b>Outlook / Microsoft 365</b><p class="small muted">Entra ID › Inscription d'application (SPA) avec l'URI de redirection de Cortex, autorisation déléguée Mail.Read.</p>
-      <div class="grid2">${ui.field('ID client (application)', `<input id="ml-mcid" value="${esc(c.msClientId || '')}" placeholder="00000000-0000-…">`)}${ui.field('Tenant', `<input id="ml-mten" value="${esc(c.msTenant || 'common')}" placeholder="common ou ID du tenant">`)}</div>
+      <div class="grid2">${ui.field('ID client (application)', `<input class="inp" id="ml-mcid" value="${esc(c.msClientId || '')}" placeholder="00000000-0000-…">`)}${ui.field('Tenant', `<input class="inp" id="ml-mten" value="${esc(c.msTenant || 'common')}" placeholder="common ou ID du tenant">`)}</div>
       <div class="row wrap"><button class="btn sm" data-ml="outlook">${icon('plug', 'sm')} ${Mail.connected('outlook') ? 'Reconnecter' : 'Se connecter à Outlook'}</button><span class="small muted">${Mail.connected('outlook') ? '✅ connecté (session)' : 'non connecté'}</span></div></div>`;
 }
 function bindMailSettings(m) {
@@ -10757,8 +10881,12 @@ Tu disposes d'outils (${tools.map((t) => t.name).join(', ')}). Travaille de faç
 3. Exécuter : appuie-toi sur les outils, pas sur ta mémoire ; tout calcul (sommes, ratios, taux, dates, échéanciers, statistiques) se fait avec du code (python ou run_javascript), jamais de tête ; données complètes, aucun « … ».
 4. Vérifier : recoupe les chiffres clés par une seconde méthode (total = somme des parties, soldes, ratio recalculé), ouvre les fichiers produits (read_file, visual_check) et compare-les à ton plan ; corrige avant de conclure.
 5. Livrer : ne cite que des chiffres issus de tes calculs, des fichiers ou des sources ; distingue le vérifié du supposé.
-# Format de la réponse finale (tâches)
-Commence par le résultat en 2 à 4 phrases, puis, selon ce qui s'applique : **Résultats** (chiffres clés, tableau si plusieurs) · **Fichiers** (liens) · **Méthode et hypothèses** · **Contrôles effectués** (quoi et comment) · **Points d'attention** (limites, données manquantes) · **Suites proposées** (1 à 3 actions utiles que tu peux enchaîner). Question simple : réponse directe, sans ces sections.${isFreeModel(c.model) ? "\n- Procède étape par étape : un appel d'outil à la fois quand les étapes dépendent les unes des autres ; relis chaque résultat d'outil avant de continuer." : ''}`;
+# Format de la réponse finale
+- Ouvre par la conclusion en 1 à 3 phrases, chiffres clés en gras avec leur unité (ex. « Taux de NPL : **10,7 %** — 5,2 Md sur 48,6 Md FCFA »).
+- Puis seulement ce qui aide à décider : un tableau si plusieurs chiffres, les fichiers produits (liens), les 2 ou 3 points d'attention ou hypothèses qui changent la lecture.
+- Méthode et contrôles en une ligne (« Calculé par code ; somme des segments = encours total »), pas en rubrique.
+- Termine par 1 ou 2 suites concrètes que tu peux exécuter tout de suite.
+- Aucune rubrique vide (« Fichiers : aucun »), aucune répétition de la demande, pas de mise en garde générique. Question simple : réponse directe.${isFreeModel(c.model) ? "\n- Procède étape par étape : un appel d'outil à la fois quand les étapes dépendent les unes des autres ; relis chaque résultat d'outil avant de continuer." : ''}`;
   }
   const names = tools.map((t) => t.name);
   if (names.some((n) => DELIVERABLE_TOOL_NAMES.includes(n))) {
@@ -10786,17 +10914,20 @@ Mise en forme : sobre par défaut. Applique la charte que l'utilisateur demande 
 Utilise-les quand la qualité en dépend ; inutile pour une tâche simple. Objectif : un résultat de niveau expert, rapidement.`;
   if (S.settings.harness.permissionMode === 'plan' && tools.length && !sub) sec.plan = `# MODE PLAN (actif)
 Tu es en mode plan : n'effectue AUCUNE modification (pas d'écriture de fichier, pas de livrable, pas d'action externe). Analyse d'abord (lecture de fichiers, recherche, questions), puis appelle propose_plan avec un plan détaillé et numéroté : objectif, étapes, outils, fichiers concernés, livrables, risques. L'exécution commencera quand l'utilisateur aura approuvé le plan.`;
-  if (simple) {
-    // Voie rapide : pas de méthode lourde ni de référentiel ; une réponse directe, utile et vivante
-    delete sec.methods; delete sec.boost; delete sec.empreinte; delete sec.deliver;
-    sec.quality = `# Réponse attendue
-Demande simple${contract?.kind === 'conversation' ? ' (échange courtois)' : ''} : réponds tout de suite, naturellement, sans titre ni sections, en français.
-- ${contract?.kind === 'conversation' ? "1 à 3 phrases chaleureuses ; si l'utilisateur se présente ou évoque son métier, montre ce que tu peux faire concrètement pour lui (2 ou 3 exemples précis)." : "Va droit au but : la réponse d'abord (2 à 8 phrases ou une courte liste), puis, si utile, un exemple concret ou un ordre de grandeur."}
-- Adapte-toi à ce que tu sais de l'utilisateur (mémoire, métier) ; pas de généralités creuses ni de mise en garde inutile.
-- N'appelle un outil que si c'est indispensable (calcul exact → run_javascript ; information récente → web_search).
-- Termine, si c'est pertinent, par une proposition d'action utile en une phrase.`;
-  }
   if (compact) compactSections(sec, tools, skills);
+  if (simple) {
+    // Voie rapide, APRÈS le mode léger (sinon sa consigne « Résultats, Fichiers, Méthode… » écrase celle-ci) : réponse directe, concrète, dans la langue choisie
+    const lang = S.settings.responseLang || "la langue de l'utilisateur";
+    const can = [names.includes('run_javascript') && 'un calcul exact (run_javascript)', names.includes('fetch_url') && "lire une page dont l'adresse est donnée (fetch_url)", names.includes('kb_search') && 'la base de connaissances (kb_search)'].filter(Boolean);
+    delete sec.boost; delete sec.empreinte; delete sec.deliver; delete sec.skills; delete sec.files; delete sec.tools;
+    sec.methods = pbs[0] && contract?.kind !== 'conversation' ? "# Repères métier (à utiliser s'ils servent la réponse)\n" + pbs[0].text.split('\n').slice(0, 5).join('\n') : '';
+    if (sec.skillsActive) sec.skillsActive = truncate(sec.skillsActive, 1500);
+    sec.quality = contract?.kind === 'conversation'
+      ? `# Réponse attendue — échange simple\nRéponds en ${lang}, en 1 à 3 phrases naturelles, sans titre ni liste. Si l'utilisateur se présente ou parle de son travail, rebondis avec 2 ou 3 propositions concrètes adaptées à son métier.`
+      : compact
+        ? `# Réponse attendue\nEn ${lang}. Première phrase : la réponse. Puis 2 à 6 lignes utiles (règle ou formule, petit exemple chiffré). Pas de titres ni de rubriques. Règle incertaine : dis-le.`
+        : `# Réponse attendue — question directe\nRéponds tout de suite, en ${lang}, comme un expert qui parle à un collègue :\n- Première phrase : la réponse elle-même (définition, chiffre, oui/non). Pas d'introduction, ne reformule pas la question.\n- Puis l'essentiel en 3 à 8 lignes : la règle ou la formule, un exemple chiffré s'il éclaire (dans la devise de l'utilisateur), la nuance ou le piège qui compte en pratique.\n- Pas de titres ni de rubriques (Résultats, Méthode, Contrôles…) ; une courte liste ou un petit tableau seulement s'ils rendent la réponse plus claire.\n- Règle, seuil ou chiffre réglementaire dont tu n'es pas certain : dis-le en une phrase plutôt que d'inventer.\n- ${can.length ? 'Outil seulement pour ' + can.join(', ') + '.' : 'Réponds sans outil.'}\n- Termine, si c'est utile, par une proposition concrète en une phrase.`;
+  }
   const text = [sec.base, sec.context, sec.project, sec.memory, sec.kb, sec.todos, sec.files, sec.tools, sec.quality, sec.boost, sec.methods, sec.deliver, sec.empreinte, sec.skills, sec.skillsActive, sec.research, sec.rea, sec.guru, sec.plan, sec.summary].filter(Boolean).join('\n\n');
   return { text, sec };
 }
@@ -10811,7 +10942,7 @@ const isCompactModel = (model) => !!(getModel(model)?.local) || contextLimit(mod
 function compactSections(sec, tools, skills) {
   if (sec.base) sec.base = truncate(sec.base, 2500);
   if (sec.tools) sec.tools = `# Agent (mode léger)\nOutils : ${tools.map((t) => t.name).join(', ')}. Un appel d'outil à la fois ; lis son résultat avant de continuer ; n'invente jamais un résultat. Tout calcul par code (python ou run_javascript). Fichier produit : ouvre-le (read_file) avant de conclure.`;
-  if (sec.quality) sec.quality = "# Réponse finale\nRésultat en 2 ou 3 phrases, puis Résultats (chiffres), Fichiers, Méthode, Contrôles, Points d'attention. Aucun chiffre inventé, aucun « … ».";
+  if (sec.quality) sec.quality = "# Réponse finale\nCommence par la réponse ou le résultat chiffré (1 à 3 phrases), puis 2 à 5 lignes utiles : chiffres clés, hypothèse, suite proposée. Pas de rubriques vides ; aucun chiffre inventé, aucun « … ».";
   delete sec.methods; delete sec.boost; delete sec.empreinte;
   if (sec.deliver) sec.deliver = '# Fichiers\nQuand un fichier est demandé, produis-le réellement (create_excel / create_word / python dans exports/). Mise en forme sobre par défaut.';
   if (sec.skills) sec.skills = skills.length ? '' : truncate(sec.skills, 600);
@@ -11002,6 +11133,8 @@ function buildBody(o, messages, toolDefs) {
     if (p.reasoning === 'off') { if (!getModel(o.model)?.reasoning?.mandatory) body.reasoning = { enabled: false }; }
     else body.reasoning = { effort: p.reasoning };
   } else if (o.effortBoost && !o.depth && modelSupports(o.model, 'reasoning')) body.reasoning = { effort: o.effortBoost };
+  // Voie rapide : réponse directe sans phase de réflexion (premier mot en 1 à 3 s au lieu de 15 à 50 s sur les modèles gratuits qui raisonnent par défaut)
+  else if (o.node?.simple && !o.depth && modelSupports(o.model, 'reasoning') && !getModel(o.model)?.reasoning?.mandatory) body.reasoning = { enabled: false };
   if (toolDefs.length) {
     if (o.compact && !body.max_tokens) body.max_tokens = Math.min(2048, Math.floor(contextLimit(o.model) / 3));
     body.tools = toolDefs.map(o.compact ? compactToolSchema : toolSchema);
@@ -11142,17 +11275,21 @@ async function agentLoop(o) {
         continue;
       }
       if ((e.local || /^(webllm|local)\//.test(o.model)) && !o.localFallbackDone && !o.signal.aborted) {
-        const info = e.localInfo || LocalModels.explain(e);
+        const info = e.localInfo || LocalModels.explain(e, o.model);
         const fb = localFallbackModel(o.model);
         if (fb) {
           o.localFallbackDone = true; o.steps.pop();
-          o.node.localIssue = { from: o.model, code: info.code, title: info.title, steps: info.steps || [], to: fb };
+          // Sous-agent : pas de nœud de conversation (o.node est null)
+          if (o.node) { o.node.localIssue = { from: o.model, code: info.code, title: info.title, cause: info.cause || '', steps: info.steps || [], to: fb }; o.node.model = fb; }
           o.run.note(`Modèle local indisponible (${info.code}) : bascule sur ${modelShort(fb)}`);
-          o.model = fb; o.node.model = fb; o.onUpdate();
+          o.model = fb;
+          // Le modèle de repli n'a pas les limites du modèle local : outils complets, schémas entiers, pas de plafond de 2 048 tokens
+          if (o.compact && !isCompactModel(fb)) { o.compact = false; if (o.node) o.node.compact = false; if (o.fullTools) { const extra = o.tools.filter((t) => !o.fullTools.some((x) => x.name === t.name)); o.tools.splice(0, o.tools.length, ...o.fullTools, ...extra); o.toolMap = new Map(o.tools.map((t) => [t.name, t])); } if (o.fullSystem) o.system = await o.fullSystem(fb); }
+          o.onUpdate();
           continue;
         }
         if (!step.content) o.steps.pop();
-        const er = new ApiError(localErrText(info), 0); throw er;
+        const er = new ApiError(localErrText(info), 0); er.local = true; er.localInfo = info; throw er;
       }
       if (!step.content) o.steps.pop();
       throw e;
@@ -11198,6 +11335,8 @@ async function agentLoop(o) {
     }
     ev.end({ tokens: usage ? usage.prompt + usage.completion : null, cost: usage?.cost, model: res.model, response: { content: truncate(res.content, 4000), reasoning: truncate(res.reasoning, 2000), tool_calls: res.toolCalls, finish_reason: res.finishReason, provider: res.provider } });
     o.onUpdate();
+    // Réflexion qui a épuisé le budget (réponse vide, coupée) : relance unique sans réflexion
+    if (!String(step.content || '').trim() && step.reasoning && res.finishReason === 'length' && !step.toolCalls.length && !o.thinkRetry && !o.signal.aborted) { o.thinkRetry = true; o.calm = true; o.nudge = '[Harness] Ta réflexion a épuisé le budget de tokens : réponds maintenant directement, sans réfléchir.'; o.run.note('Réflexion trop longue : modèle relancé sans réflexion'); continue; }
     if (!step.toolCalls.length) {
       // Garde anti-hallucination : un fichier annoncé comme produit doit exister dans l'espace de travail
       const miss = o.tools.length && !o.depth && !o.signal.aborted && (o.claimChecks || 0) < 2 ? missingFileClaims(step.content) : [];
@@ -11644,19 +11783,21 @@ async function runAssistant(chat, node, opts = {}) {
   const c = cfg(chat);
   if (opts.cfgOverride) Object.assign(c, opts.cfgOverride);
   let model = node.model || c.model;
+  // Enregistrée AVANT la pré-vérification d'un modèle local : bouton Arrêter et Échap actifs, pas de seconde réponse en parallèle
+  const ctrl = new AbortController();
+  S.running.set(node.id, { chatId: chat.id, ctrl }); S.onRunState?.(chat);
   // Modèle local (navigateur ou serveur) indisponible : bascule immédiate sur un modèle de repli, avec explication
   let localIssue = null; node.localIssue = null;
   if (/^(webllm|local)\//.test(model) && !opts.custom) {
     try { const pf = await LocalModels.preflight(model); if (!pf.ok) localIssue = pf; } catch (e) {}
+    if (ctrl.signal.aborted) { S.running.delete(node.id); node.status = 'stopped'; saveChat(chat); S.onNodeUpdate?.(chat, node, true); S.onRunState?.(chat); return; }
     if (localIssue) {
       const fb = localFallbackModel(model);
-      node.localIssue = { from: model, code: localIssue.code, title: localIssue.title, steps: localIssue.steps || [], to: fb };
+      node.localIssue = { from: model, code: localIssue.code, title: localIssue.title, cause: localIssue.cause || '', steps: localIssue.steps || [], to: fb, repeat: !!fb && (chat.localFallbacks = (chat.localFallbacks || 0) + 1) > 1 };
       if (fb) { model = fb; node.model = fb; }
     }
   } else if (model && !opts.custom) { if (S.settings.lastCloudModel !== model) { S.settings.lastCloudModel = model; saveSettings(); } }
   c.model = model;
-  const ctrl = new AbortController();
-  S.running.set(node.id, { chatId: chat.id, ctrl });
   const runData = { id: uid('r'), nodeId: node.id, model, startedAt: now(), endedAt: null, cost: 0, tokens: { prompt: 0, completion: 0, reasoning: 0 }, events: [], status: 'running' };
   chat.runs = [...(chat.runs || []), runData].slice(-30);
   node.runId = runData.id;
@@ -11695,9 +11836,16 @@ async function runAssistant(chat, node, opts = {}) {
     const compact = isCompactModel(model); node.compact = compact;
     // VOIE RAPIDE : salutation ou question de connaissance sans fichier → réponse directe (pas de REA, Guru, boosters, recherche, vérification ni relecture)
     const contract0 = task.trim() && !opts.custom ? Mind.contract(task, { attachments: userNode?.attachments || [], tools }) : null;
-    const simple = !!contract0 && ['conversation', 'question'].includes(contract0.kind) && !contract0.needsWeb && !(userNode?.attachments || []).length && H.fastPath !== false;
+    // Réservée à l'assistant généraliste : un agent spécialisé (image, 3D, bureautique, recherche, code…) garde toujours ses outils
+    const generalist = (!c.agent || c.agent.id === 'agent-assistant') && chat.systemPrompt == null;
+    const tn = normalizeText(task).trim();
+    const prevA0 = path.slice(0, -1).reverse().find((n) => n.role === 'assistant');
+    const proposed = !!prevA0 && /\?\s*$|voulez-vous|souhaitez-vous|dois-je|veux-tu|je peux (aussi )?(vous )?(pr[ée]parer|g[ée]n[ée]rer|cr[ée]er|produire|faire|calculer|lancer)/i.test(nodeText(prevA0).slice(-400));
+    const followUp = /^(continue|continuez|poursuis|poursuivez|reprends|termine|finis)\b/.test(tn) || (proposed && /^(oui|ouais|ok|okay|d'accord|dac|vas[- ]y|allez[- ]y|go|volontiers|je veux bien|fais[- ]le|faites[- ]le|c'est parti|lance|parfait|super|top)\b/.test(tn));
+    const simple = !!contract0 && H.fastPath !== false && H.permissionMode !== 'plan' && generalist && !followUp && !contract0.act && !contract0.fileRef && !contract0.formats.length && !contract0.needsWeb && !(userNode?.attachments || []).length && (contract0.kind === 'conversation' || (contract0.kind === 'question' && task.length < 300));
     node.simple = simple;
-    if (simple && tools.length) { const KEEP = new Set(['run_javascript', 'web_search', 'fetch_url', 'read_file', 'list_files', 'memory_save', 'memory_search', 'kb_search', 'session_search', 'load_skill', 'find_tools', 'local_search', 'local_read', 'mail_search']); tools.splice(0, tools.length, ...tools.filter((t) => KEEP.has(t.name))); }
+    // Outils de réponse seulement (find_tools et load_skill, ~10 000 caractères de schémas, sont retirés) ; aucun outil pour un échange courtois
+    if (simple && tools.length) { const KEEP = new Set(contract0.kind === 'conversation' ? [] : ['run_javascript', 'fetch_url', 'memory_save', 'memory_search', 'kb_search', 'session_search', 'local_search', 'local_read', 'mail_search']); tools.splice(0, tools.length, ...tools.filter((t) => KEEP.has(t.name))); }
     const addTool = (t) => { if (t && toolPerm(t) !== 'off' && !tools.some((x) => x.name === t.name)) tools.push(t); };
     let rea = null;
     if (toolsOK && !compact && !simple) {
@@ -11717,6 +11865,7 @@ async function runAssistant(chat, node, opts = {}) {
     // CERVEAU : contrat de tâche (intention, livrables, critères) et pré-collecte (conversations passées, web) — pour tous les modèles
     let contract = contract0, pre = null;
     if (contract) node.contract = contract;
+    const fullTools = [...tools];
     if (compact && toolsOK && contract) { compactTools(tools, task, contract); tracer.note('Mode léger (modèle local / petite fenêtre) : ' + tools.length + ' outils, prompt condensé'); }
     if (toolsOK && contract && !simple && !node.steps.some((x) => x.synthetic === 'cerveau')) {
       const t1 = now();
@@ -11768,7 +11917,7 @@ async function runAssistant(chat, node, opts = {}) {
       }
       delete gtc.progress; gtc.durationMs = now() - t0; onUpdate();
     }
-    let system, history;
+    let system, history, fullSystem = null;
     if (opts.custom) ({ system, history } = opts.custom);
     else {
       await bridgeAttachments(chat, path, model, tracer, ctrl.signal);
@@ -11789,12 +11938,13 @@ async function runAssistant(chat, node, opts = {}) {
         est -= estMessages([dropped]);
         if (!node.notes.includes('trunc')) { node.notes.push('trunc'); tracer.note('Historique tronqué pour tenir dans le contexte'); }
       }
+      fullSystem = async (m) => (await buildSystem(chat, { ...c, model: m }, userNode?.content || '', { summary: h.summary, tools: fullTools, skills, rea: rea?.text, guru, research: pre?.text || '', compact: false, simple, contract })).text;
       node.ctx = { est, limit: contextLimit(model), sec: Object.fromEntries(Object.entries(sys.sec).map(([k, v]) => [k, estTokens(v)])), history: estMessages(h.messages), tools: estTokens(JSON.stringify(tools.map(compact ? compactToolSchema : toolSchema))) };
       system = sys.text; history = h.messages;
     }
     const notes = [];
     Checkpoints.begin(node.id);
-    const loopOpts = { chat, node, steps: node.steps, model, cfg: c, system, history, tools, depth: 0, compact, signal: ctrl.signal, run: tracer, onUpdate, maxSteps: c.maxSteps, notes, effortBoost: complex ? 'medium' : null };
+    const loopOpts = { chat, node, steps: node.steps, model, cfg: c, system, history, tools, depth: 0, compact, signal: ctrl.signal, run: tracer, onUpdate, maxSteps: c.maxSteps, notes, effortBoost: complex ? 'medium' : null, fullTools, fullSystem };
     await agentLoop(loopOpts);
     // CERVEAU : vérification sur preuves (livrables, fichiers, chiffres, erreurs d'outils) puis correction si nécessaire — pour tous les modèles
     if (toolsOK && !ctrl.signal.aborted && !loopOpts.stopAfter && contract && H.audit !== false && H.permissionMode !== 'plan' && !userNode?.compare && ['analyse', 'livrable', 'code', 'recherche'].includes(contract.kind)) {
@@ -11806,6 +11956,8 @@ async function runAssistant(chat, node, opts = {}) {
     }
     node.notes.push(...notes);
     node.status = ctrl.signal.aborted ? 'stopped' : 'done';
+    // Plan du Guru : terminé avec la réponse (le modèle ne met pas toujours todo_write à jour)
+    if (node.status === 'done' && guru?.planned && chat.todos?.some((t) => t.status !== 'completed')) { chat.todos = chat.todos.map((t) => ({ ...t, status: 'completed' })); const g = node.steps.find((s) => s.synthetic === 'guru')?.toolCalls?.[0]; if (g?.display?.todos) g.display.todos = g.display.todos.map((t) => ({ ...t, status: 'completed' })); S.onTodos?.(chat); }
     if (Hooks.has('onAfterResponse')) {
       const last = [...node.steps].reverse().find((s) => s.content);
       if (last) { const r = await Hooks.run('onAfterResponse', { content: last.content, model }, tracer); if (r && typeof r.content === 'string') last.content = r.content; }
@@ -11815,6 +11967,8 @@ async function runAssistant(chat, node, opts = {}) {
     node.status = 'error';
     node.error = e.message || String(e);
     node.errorStatus = e.status || 0;
+    node.errorDetail = e.meta?.detail || e.localInfo?.raw || '';
+    if (e.localInfo && !node.localIssue) node.localIssue = { from: model, code: e.localInfo.code, title: e.localInfo.title, cause: e.localInfo.cause || '', steps: e.localInfo.steps || [], to: null };
     tracer.note('Erreur : ' + node.error);
   } finally {
     const ck = Checkpoints.end(node.id);
@@ -11843,6 +11997,8 @@ async function reviewPass(node, task, o, tracer, complex = false) {
   const work = node.steps.filter((s) => !s.synthetic).flatMap((s) => s.toolCalls || []);
   // Relecture des tâches complexes et des livrables uniquement (pas des réponses courtes ou simples)
   if (!last || !task.trim() || (!files.length && (!complex || last.content.length < 400))) return;
+  // Vérification sur preuves sans échec et pas de stratégie Guru : un appel de modèle évité
+  if ((node.audit || []).length && !node.audit.some((c) => c.ok === false) && !node.guruChecklist?.length) { tracer.note('Relecture évitée : vérification sur preuves concluante'); return; }
   const t0 = now();
   const made = work.filter((t) => DELIVERABLE_TOOL_NAMES.includes(t.name) || /^create_/.test(t.name)).map((t) => `${t.name}(${truncate(t.args || '', 5000)}) → ${truncate(String(t.result || '').split('\n')[0], 200)}`).join('\n');
   const answer = last.content + (made ? `\n\n--- Livrables produits (arguments des outils) ---\n${made}` : '');
@@ -11888,7 +12044,12 @@ async function respond(chat, userNode, models, extra = {}) {
 async function afterTurn(chat, userNode, nodes) {
   const ok = nodes.find((n) => n.status === 'done' && nodeText(n));
   if (!ok) return;
-  if (S.settings.autoTitle && chat.title === 'Nouvelle conversation') generateTitle(chat, userNode, ok);
+  // Échange simple : titre local (aucune requête) ; salutation : titre au prochain échange
+  if (S.settings.autoTitle && chat.title === 'Nouvelle conversation') {
+    if (ok.simple && ok.contract?.kind === 'conversation') { /* titre au prochain échange */ }
+    else if (ok.simple) { chat.title = truncate(String(userNode.content || '').replace(/\s+/g, ' ').trim().replace(/\s*[?!.…]+$/, ''), 60) || 'Conversation'; saveChat(chat); S.onChatsChanged?.(); }
+    else generateTitle(chat, userNode, ok);
+  }
   if (S.settings.followUps && nodes.length === 1) generateFollowUps(chat, ok);
 }
 async function generateTitle(chat, userNode, node) {
@@ -11897,7 +12058,7 @@ async function generateTitle(chat, userNode, node) {
     const r = await quickComplete([
       { role: 'system', content: 'Tu génères des titres de conversation. Réponds UNIQUEMENT par le titre : 3 à 6 mots, en français, sans guillemets, sans emoji, sans ponctuation finale.' },
       { role: 'user', content: `Message : ${truncate(userNode.content || '', 800)}\n\nDébut de réponse : ${truncate(nodeText(node), 500)}` },
-    ], { maxTokens: 400, kind: 'title', temperature: 0.2, extra: noReasoning(utilityModel()) });
+    ], { maxTokens: 400, kind: 'title', temperature: 0.2, extra: noReasoning(utilityModel()), retries: 0 });
     let t = (r.text || '').split('\n').map((l) => l.trim()).find(Boolean) || '';
     t = t.replace(/^(titre\s*:\s*)/i, '').replace(/\*\*|__|^#+\s*|["«»“”`]/g, '').replace(/[.!?:;]+$/, '').replace(/\s+/g, ' ').trim();
     chat.title = t && t.length < 80 ? t : fallback();
@@ -11977,15 +12138,21 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) { cl
 function toast(msg, type = 'info', ms = 2600) {
   const root = $('#toasts');
   if (!root) return;
-  const same = [...root.children].find((x) => x.dataset.msg === String(msg));
-  if (same) { const n = (+same.dataset.n || 1) + 1; same.dataset.n = n; let b = same.querySelector('.tcount'); if (!b) { b = document.createElement('b'); b.className = 'tcount'; same.appendChild(b); } b.textContent = '×' + n; return same; }
-  while (root.children.length >= 3) root.firstElementChild.remove();
+  const leave = (t) => { t.dataset.leaving = '1'; t.style.transition = 'opacity .25s, transform .25s'; t.style.opacity = '0'; t.style.transform = 'translateY(-6px)'; setTimeout(() => t.remove(), 260); };
+  const live = () => [...root.children].filter((x) => !x.dataset.leaving);
+  // Même message déjà affiché (et pas en train de disparaître) : compteur ×n et durée prolongée
+  const same = live().find((x) => x.dataset.msg === String(msg));
+  if (same) { const n = (+same.dataset.n || 1) + 1; same.dataset.n = n; let b = same.querySelector('.tcount'); if (!b) { b = document.createElement('b'); b.className = 'tcount'; same.querySelector('span').after(b); } b.textContent = '×' + n; clearTimeout(same._t); same._t = setTimeout(() => leave(same), Math.max(ms, 2600)); return same; }
+  // Trois notifications au plus : les informations partent avant les erreurs
+  while (live().length >= 3) { const l = live(); (l.find((x) => !x.classList.contains('err')) || l[0]).remove(); }
   const t = document.createElement('div');
   t.dataset.msg = String(msg);
   t.className = 'toast ' + (type === 'err' ? 'err' : type === 'ok' ? 'ok' : '');
-  t.innerHTML = (type === 'err' ? icon('alert', 'sm') : type === 'ok' ? icon('check', 'sm') : icon('info', 'sm')) + `<span>${esc(msg)}</span>`;
+  t.setAttribute('role', type === 'err' ? 'alert' : 'status');
+  t.innerHTML = (type === 'err' ? icon('alert', 'sm') : type === 'ok' ? icon('check', 'sm') : icon('info', 'sm')) + `<span>${esc(msg)}</span><button class="icon-btn sm t-x" title="Fermer">${icon('x', 'xs')}</button>`;
+  t.querySelector('.t-x').onclick = () => { clearTimeout(t._t); leave(t); };
   root.appendChild(t);
-  setTimeout(() => { t.style.transition = 'opacity .25s, transform .25s'; t.style.opacity = '0'; t.style.transform = 'translateY(6px)'; setTimeout(() => t.remove(), 260); }, ms);
+  t._t = setTimeout(() => leave(t), ms);
   return t;
 }
 
@@ -12274,7 +12441,9 @@ function chatAvatar(chat) {
   return modelLogo(cfg(chat).model, 36);
 }
 function chatPreview(chat) {
-  const leaf = chat.nodes[chat.leafId];
+  const last = chat.nodes[chat.leafId];
+  if (last?.status === 'error') return 'Erreur — ' + truncate(String(last.error || '').split('\n')[0].split(' — ')[0], 50);
+  const leaf = [...pathTo(chat, chat.leafId)].reverse().find((x) => nodeText(x).trim()) || last;
   return truncate(nodeText(leaf).replace(/!\[[^\]]*\]\([^)]*\)/g, '🖼').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[#*`>\n|]+/g, ' ').replace(/\s+/g, ' ').trim(), 70);
 }
 function chatMatches(chat, q) {
@@ -12500,6 +12669,7 @@ function openChat(id) {
   if (window.innerWidth > 820) $('#input')?.focus();
 }
 function newChatView(opts = {}) {
+  if (S.ui.page) closePage();
   const cur = currentChat();
   if (cur && !Object.keys(cur.nodes).length && !opts.agentId && !opts.folderId) { $('#input')?.focus(); return; }
   const c = createChat(opts);
@@ -12638,8 +12808,10 @@ function asstHeader(chat, n, opts = {}) {
   const blind = opts.blind;
   const name = blind ? opts.label : agent && !opts.compact ? agent.name : modelShort(n.model);
   const sub = blind ? '' : agent && !opts.compact ? modelShort(n.model) : '';
-  const nSteps = (n.steps || []).length;
-  const nTools = (n.steps || []).reduce((a, s) => a + (s.toolCalls || []).length, 0);
+  // Étapes internes de Cortex (analyse, compréhension, vérification…) exclues : seuls les vrais outils du modèle sont comptés
+  const real = (n.steps || []).filter((s) => !s.synthetic);
+  const nSteps = real.length;
+  const nTools = real.reduce((a, s) => a + (s.toolCalls || []).length, 0);
   return `<div class="who"><b>${esc(name)}</b>${sub ? `<span class="faint">${esc(sub)}</span>` : ''}
     ${n.synth ? `<span class="badge acc">${icon('sparkles', 'xs')} Synthèse du conseil</span>` : ''}
     ${nTools ? `<span class="badge">${icon('wrench', 'xs')} ${nTools} outil${nTools > 1 ? 's' : ''} · ${nSteps} étape${nSteps > 1 ? 's' : ''}</span>` : ''}
@@ -12686,11 +12858,19 @@ function nodeBodyHTML(chat, n) {
   let html = stepsHTML(n.steps || [], running, n.id);
   const lastStep = (n.steps || []).at(-1);
   if (running && (!lastStep || (!lastStep.content && !lastStep.reasoning && !(lastStep.toolCalls || []).length) || (lastStep.toolCalls?.length && lastStep.toolCalls.every((t) => t.status === 'done')))) html += '<div class="typing"><i></i><i></i><i></i></div>';
-  if (n.localIssue && n.localIssue.to && n.status !== 'error') html = localIssueHTML(n) + html;
+  // Repli : l'explication du modèle local reste visible, même quand le modèle de repli échoue à son tour
+  if (n.localIssue && n.localIssue.to) html = localIssueHTML(n) + html;
   if (n.status === 'error') {
-    const lines = String(n.error || '').split('\n'); const head = lines.shift(); const steps = lines.filter((l) => /^\d+\.\s/.test(l)).map((l) => l.replace(/^\d+\.\s*/, ''));
-    html += `<div class="err-box">${icon('alert', 'sm')}<div class="grow"><b>${n.localIssue ? 'Modèle local indisponible' : 'Erreur' + (n.errorStatus ? ' ' + n.errorStatus : '')}</b> — ${esc(head)}${steps.length ? `<ol class="err-steps">${steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : lines.length ? `<div style="white-space:pre-line">${esc(lines.join('\n'))}</div>` : ''}
-      <div class="row wrap" style="margin-top:8px"><button class="btn sm" data-act="regen" data-id="${n.id}">${icon('refresh', 'sm')} Réessayer</button><button class="btn sm" data-act="regen-model" data-id="${n.id}">${icon('cpu', 'sm')} Autre modèle</button>${n.errorStatus === 401 ? `<button class="btn sm primary" data-act="open-settings-api">Configurer la clé API</button>` : ''}</div></div></div>`;
+    const lines = String(n.error || '').split('\n'); const first = lines.shift() || ''; const steps = lines.filter((l) => /^\d+\.\s/.test(l)).map((l) => l.replace(/^\d+\.\s*/, '')); const notes = lines.filter((l) => l.trim() && !/^\d+\.\s/.test(l));
+    // Titre court en français, explication, actions ; le message brut du fournisseur est replié dans « Détail technique »
+    const L = n.localIssue; const [title, ...rest] = first.split(' — ');
+    const head = L && !L.to ? 'Modèle local indisponible' : L ? `Le modèle de repli ${modelShort(L.to).replace(/\s*\(free\)$/i, '')} a aussi échoué` : title || 'Erreur' + (n.errorStatus ? ' ' + n.errorStatus : '');
+    // Erreur enregistrée par une version antérieure (« indication — conseil — message brut du fournisseur ») : le brut est replié aussi
+    const legacy = !L && !n.errorDetail && rest.length > 1;
+    const sub = L ? first : legacy ? rest[0] : rest.join(' — ');
+    const detail = n.errorDetail || (legacy ? rest.slice(1).join(' — ') : '');
+    html += `<div class="err-box">${icon('alert', 'sm')}<div class="grow"><b>${esc(head)}</b>${sub ? ' — ' + esc(sub) : ''}${notes.length ? `<div class="small muted" style="margin-top:4px">${esc(notes.join(' '))}</div>` : ''}${steps.length ? `<ol class="err-steps">${steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}${detail ? `<details class="err-tech"><summary>Détail technique</summary><div class="small muted" style="overflow-wrap:anywhere">${esc(detail)}</div></details>` : ''}
+      <div class="row wrap" style="margin-top:8px"><button class="btn sm" data-act="regen" data-id="${n.id}">${icon('refresh', 'sm')} Réessayer</button><button class="btn sm" data-act="regen-model" data-id="${n.id}">${icon('cpu', 'sm')} Autre modèle</button>${n.errorStatus === 401 ? `<button class="btn sm primary" data-act="open-settings-api">Configurer la clé API</button>` : ''}${n.errorStatus === 402 ? `<a class="btn sm" href="https://openrouter.ai/settings/credits" target="_blank" rel="noopener">Recharger le compte</a>` : ''}</div></div></div>`;
   }
   for (const note of n.notes || []) if (note !== 'trunc') html += `<div class="note" style="margin-top:8px;white-space:pre-line">${icon('info', 'xs')} ${esc(note)}</div>`;
   if ((n.notes || []).includes('trunc')) html += `<div class="note" style="margin-top:8px">${icon('info', 'xs')} Historique ancien tronqué pour tenir dans le contexte du modèle (activez la compaction automatique dans Réglages › Harness).</div>`;
@@ -12750,7 +12930,7 @@ function stepsHTML(steps, running, keyBase) {
       html += `<details class="thinking" data-ok="${k}" ${open ? 'open' : ''}><summary>${icon('brain', 'sm')} ${live ? 'Réflexion en cours… <span class="spin"></span>' : `Réflexion${s.duration ? ` · ${fmtDur((s.ttft && s.content ? s.duration : s.duration))}` : ''}`}<span class="chev">${icon('down', 'sm')}</span></summary><div class="th-body">${esc(s.reasoning)}</div></details>`;
     }
     if (s.superseded === 'provider') html += `<div class="superseded provider-drop">${icon('undo', 'sm')} Réponse écartée — le fournisseur ${esc(s.lostParams?.provider || '')} a supprimé ${esc((s.lostParams?.calls || []).map((c) => `${c.missing.join(', ')} (${c.name})`).join(' ; '))} : Cortex l'écarte pour ce modèle et relance.</div>`;
-    else if (s.content && s.superseded) html += `<details class="superseded"><summary>${icon('undo', 'sm')} ${s.superseded === 'claim' ? 'Réponse retirée — fichier annoncé mais pas encore créé (Cortex a relancé le modèle)' : 'Première version — corrigée après relecture critique'}<span class="chev">${icon('down', 'sm')}</span></summary>${mdSlot('st-' + s.id, s.content, false)}</details>`;
+    else if (s.content && s.superseded) html += `<details class="superseded"><summary>${icon('undo', 'sm')} ${s.superseded === 'claim' ? 'Réponse retirée — fichier annoncé mais pas encore créé (Cortex a relancé le modèle)' : s.superseded === 'verification' ? 'Première version — corrigée après la vérification des chiffres et des fichiers' : 'Première version — corrigée après relecture critique'}<span class="chev">${icon('down', 'sm')}</span></summary>${mdSlot('st-' + s.id, s.content, false)}</details>`;
     else if (s.content) html += mdSlot('st-' + s.id, s.content, streaming && !(s.toolCalls || []).length);
     for (const img of s.images || []) html += `<img class="gen-img" src="${esc(img)}" alt="Image générée" data-act="zoom">`;
     for (const tc of s.toolCalls || []) html += toolCardHTML(tc, streaming);
@@ -12759,13 +12939,15 @@ function stepsHTML(steps, running, keyBase) {
   return html;
 }
 const TC_STATUS = { pending: ['…', ''], awaiting: ['autorisation requise', 'warn'], asking: ['question posée', 'acc'], running: ['en cours', 'acc'], done: ['ok', 'ok'], error: ['erreur', 'err'], denied: ['refusé', 'err'], stopped: ['interrompu', 'warn'] };
-const SYNTHETIC_META = { cerveau: { title: 'Cerveau — compréhension et contexte', icon: 'brain' }, verification: { title: 'Vérification sur preuves', icon: 'shield' } };
+const SYNTHETIC_META = { cerveau: { title: 'Compréhension de la demande', icon: 'brain' }, verification: { title: 'Vérification sur preuves', icon: 'shield' } };
 /* Modèle local indisponible : la réponse vient d'un modèle de repli — explication discrète et actions */
 function localIssueHTML(n) {
-  const L = n.localIssue;
-  return `<div class="local-issue">${icon('info', 'sm')}<div class="grow"><b>${esc(modelShort(L.from))} n'a pas pu répondre</b> — ${esc(L.title)} Réponse fournie par <b>${esc(modelShort(L.to))}</b>.
-    <details><summary>Comment corriger</summary><ol class="err-steps">${(L.steps || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ol></details>
-    <div class="row wrap" style="margin-top:6px;gap:6px"><button class="btn sm" data-act="local-retry" data-id="${n.id}" data-model="${esc(L.from)}">${icon('refresh', 'sm')} Réessayer avec ${esc(modelShort(L.from))}</button><button class="btn sm ghost" data-act="local-keep" data-model="${esc(L.to)}">Garder ${esc(modelShort(L.to))} pour cette conversation</button></div></div></div>`;
+  const L = n.localIssue; const to = modelShort(L.to).replace(/\s*\(free\)$/i, ''); const cloud = !/^(webllm|local)\//.test(L.to);
+  // Même panne dans la même conversation : une ligne discrète (l'explication complète a déjà été donnée)
+  if (L.repeat) return `<div class="local-issue compact">${icon('info', 'sm')}<div class="grow">${esc(modelShort(L.from))} toujours indisponible : réponse de <b>${esc(to)}</b>. <button class="cb-btn" data-act="local-retry" data-id="${n.id}" data-model="${esc(L.from)}">Réessayer en local</button> <button class="cb-btn" data-act="local-keep" data-model="${esc(L.to)}">Garder ${esc(to)}</button></div></div>`;
+  return `<div class="local-issue">${icon('info', 'sm')}<div class="grow"><b>${esc(modelShort(L.from))} n'a pas pu répondre</b> — ${esc(L.title)} Réponse fournie par <b>${esc(to)}</b>${cloud ? ' (modèle cloud gratuit)' : ''}.
+    <details><summary>Comment corriger</summary>${L.cause ? `<p class="small muted" style="margin:6px 0 0">${esc(L.cause)}</p>` : ''}<ol class="err-steps">${(L.steps || []).map((x) => `<li>${esc(String(x).replace(/^\d+\)\s*/, ''))}</li>`).join('')}</ol></details>
+    <div class="row wrap" style="margin-top:6px;gap:6px"><button class="btn sm" data-act="local-retry" data-id="${n.id}" data-model="${esc(L.from)}">${icon('refresh', 'sm')} Réessayer en local</button><button class="btn sm" data-act="local-keep" data-model="${esc(L.to)}">Garder ${esc(to)}</button></div></div></div>`;
 }
 function toolMeta(name) {
   if (SYNTHETIC_META[name]) return { ...SYNTHETIC_META[name], args: (a) => truncate(a.task || '', 90) };
@@ -12780,7 +12962,7 @@ function toolCardHTML(tc, streaming) {
   const parsed = tc.parsed || safeJSON(tc.args) || {};
   let argSum = '';
   try { argSum = meta.args(parsed) || ''; } catch { argSum = ''; }
-  if (tc.name === 'rea' && tc.result) { const xp = (tc.result.match(/Expériences similaires \((\d+)\)/) || [])[1] || 0, nt = (tc.result.match(/\n- [a-z_0-9]+ :/g) || []).length; argSum = `${xp} expérience(s) · ${nt} outil(s) activé(s) · méthode`; }
+  if (tc.name === 'rea' && tc.result) { const xp = (tc.result.match(/Expériences similaires \((\d+)\)/) || [])[1] || 0, nt = (tc.result.match(/\n- [a-z_0-9]+ :/g) || []).length; argSum = [+xp ? `${xp} expérience(s) réutilisée(s)` : '', nt ? `${nt} outil(s) activé(s)` : '', 'méthode'].filter(Boolean).join(' · '); }
   if (tc.name === 'guru' && tc.result && tc.status === 'done') argSum = 'stratégie experte · ' + ((tc.result.match(/^Stratégie du Guru \((.+?)\) :/) || [])[1] || '');
   if (tc.name === 'cerveau' && tc.result) argSum = ((tc.result.match(/Type : ([^·\n]+)/) || [])[1] || 'analyse de la demande').trim();
   if (tc.name === 'verification' && tc.result) { const ok = (tc.result.match(/✅/g) || []).length, ko = (tc.result.match(/❌/g) || []).length; argSum = `${ok} contrôle(s) ok${ko ? ' · ' + ko + ' à corriger' : ''}`; }
@@ -12829,7 +13011,7 @@ function toolCardHTML(tc, streaming) {
   const imgsOutside = (tc.display?.images || []).length && !open ? (tc.display.images.map((img) => `<img class="gen-img" src="${esc(img)}" alt="" data-act="zoom">`).join('')) : '';
   const peekSrc = tc.status === 'running' ? tc.progress || 'en cours…' : String(tc.result || '').replace(/^(Stratégie du Guru|Relecture par)[^\n]*\n+/, '').split('\n').find((l) => l.trim() && !/^#/.test(l)) || '';
   const peek = tc.status === 'pending' ? '' : `<div class="tc-peek ${tc.status}">⎿ ${esc(truncate(peekSrc.replace(/[#*`]/g, '').trim(), 160))}</div>`;
-  const plan = tc.name === 'guru' && tc.display?.todos?.length ? `<div class="tool guru-plan"><div style="padding:10px 14px"><div class="row" style="margin-bottom:6px"><span class="ticon">${icon('todo', 'sm')}</span><b class="small">Plan d'exécution du Guru</b><span class="badge">${tc.display.todos.length} étapes</span></div>${todoListHTML(tc.display.todos)}</div></div>` : '';
+  const plan = tc.name === 'guru' && tc.display?.todos?.length ? `<div class="tool guru-plan"><div style="padding:10px 14px"><div class="row" style="margin-bottom:6px"><span class="ticon">${icon('todo', 'sm')}</span><b class="small">Plan d'exécution</b><span class="badge">${tc.display.todos.length} étapes</span></div>${todoListHTML(tc.display.todos)}</div></div>` : '';
   return `<details class="tool ${tc.status}" data-ok="${k}" ${open ? 'open' : ''}>
     <summary><span class="ticon">${tc.status === 'running' ? '<span class="spin"></span>' : icon(meta.icon, 'sm')}</span><span class="tname">${esc(meta.title)}</span><span class="targs">${esc(argSum)}</span>
     ${stLabel && tc.status !== 'done' ? `<span class="badge ${stCls}">${stLabel}</span>` : ''}${tc.status === 'done' ? `<span class="badge ok">${icon('check', 'xs')}${tc.durationMs != null ? ' ' + fmtDur(tc.durationMs) : ''}</span>` : ''}<span class="chev">${icon('down', 'sm')}</span></summary>
@@ -12916,8 +13098,9 @@ function scrollToBottom(force) {
 }
 function updateJump() {
   const box = $('#messages');
+  if (!box) return;
   const far = box.scrollHeight - box.scrollTop - box.clientHeight > 300;
-  $('#jumpBtn').classList.toggle('hidden', !far);
+  $('#jumpPill')?.classList.toggle('hidden', !far);
   $('#chatHead')?.classList.toggle('scrolled', box.scrollTop > 4);
 }
 
@@ -12927,13 +13110,10 @@ function renderComposer() {
   w.innerHTML = `<div class="model-bar" id="modelBar"></div>
     <div class="composer" id="composer">
       <div class="comp-atts" id="compAtts"></div>
-      <div style="position:relative" id="inputWrap"><textarea id="input" rows="1" placeholder="${S.settings.harness.permissionMode === 'plan' ? 'Décrivez la tâche : Cortex analyse puis propose un plan à approuver…' : 'Écrivez un message…  ( / pour les commandes )'}" aria-label="Message"></textarea></div>
+      <div style="position:relative" id="inputWrap"><textarea id="input" rows="1" placeholder="${S.settings.harness.permissionMode === 'plan' ? 'Décrivez la tâche : Cortex analyse puis propose un plan à approuver…' : 'Écrivez un message… (/ pour les commandes)'}" aria-label="Message"></textarea></div>
       <div class="comp-row">
-        <button class="icon-btn" data-act="comp-plus" title="Plus d'options">${icon('plus')}</button>
-        <button class="icon-btn" data-act="attach" title="Joindre des fichiers (images, PDF, Word, Excel, code…)">${icon('clip')}</button>
+        <button class="icon-btn" data-act="comp-plus" title="Joindre des fichiers, prompts, améliorer le message…">${icon('plus')}</button>
         <button class="icon-btn" data-act="voice" id="micBtn" title="Dictée vocale">${icon('mic')}</button>
-        <button class="icon-btn" data-act="prompt-lib" title="Bibliothèque de prompts">${icon('bulb')}</button>
-        <button class="icon-btn" data-act="enhance-prompt" title="Améliorer mon prompt avec l'IA">${icon('wand')}</button>
         <span class="grow"></span>
         <span class="xs faint hide-sm" id="tokHint"></span>
         <button class="send-btn" id="sendBtn" data-act="send" title="Envoyer (Entrée)">${icon('send')}</button>
@@ -12979,14 +13159,15 @@ function renderModelBar() {
   const effort = c.params.reasoning || '';
   const [mLabel, mIcon, mCls] = MODE_LABELS[S.settings.harness.permissionMode] || MODE_LABELS.ask;
   bar.innerHTML = `${compare ? compare.map((m) => `<button class="model-chip" data-act="pick-model" title="${esc(modelName(m))}">${modelLogo(m)}<span class="ellipsis" style="max-width:150px">${esc(modelShort(m))}</span></button>`).join('') + `<button class="pill" data-act="pick-model">${icon('plus', 'sm')}</button>`
-      : `<button class="model-chip" data-act="pick-model" title="${esc(modelName(c.model))} — changer de modèle">${modelLogo(c.model)}<span class="ellipsis">${esc(modelShort(c.model))}</span>${isFreeModel(c.model) ? '<span class="badge ok">gratuit</span>' : ''}${icon('down', 'sm')}</button>`}
-    <span class="grow mb-grow"></span>
+      : `<button class="model-chip" data-act="pick-model" title="${esc(modelName(c.model))} — changer de modèle">${modelLogo(c.model)}<span class="ellipsis">${esc(isFreeModel(c.model) ? modelShort(c.model).replace(/\s*\((free|gratuit)\)\s*$/i, '') : modelShort(c.model))}</span>${isFreeModel(c.model) ? '<span class="badge ok">gratuit</span>' : ''}${icon('down', 'sm')}</button>`}${typeof localProgressPill === 'function' ? localProgressPill() : ''}
+    <span class="grow mb-grow"></span><button class="pill hidden" id="jumpPill" data-act="jump" title="Aller en bas de la conversation">${icon('arrowDown', 'sm')}<span class="lbl">Bas</span></button>
     <button class="pill mb-opt ${compare ? 'on' : ''}" data-act="toggle-compare" title="Comparer plusieurs modèles côte à côte (arène, conseil)">${icon('columns', 'sm')}<span class="lbl">${compare ? (chat.arena ? 'Arène' : 'Comparer') : 'Comparer'}</span></button>
     <button class="pill ${noTools ? 'warn' : ''}" data-act="pick-tools" title="${noTools ? 'Ce modèle ne prend pas en charge les outils' : tools.length + ' outil(s) actif(s)'}">${icon('wrench', 'sm')}<span>${tools.length}</span><span class="lbl"> outil${tools.length > 1 ? 's' : ''}</span></button>
     <button class="pill mb-opt ${c.web ? 'on' : ''}" data-act="toggle-web" title="Recherche web intégrée au modèle (plugin OpenRouter, ~0,02 $/requête)">${icon('globe', 'sm')}<span class="lbl">Web</span></button>
     ${modelSupports(c.model, 'reasoning') ? `<button class="pill ${effort && effort !== 'off' ? 'on' : ''}" data-act="pick-effort" title="Effort de raisonnement : ${esc(EFFORT_LABELS[effort] || effort || 'auto')}">${icon('brain', 'sm')}<span class="lbl">${EFFORT_LABELS[effort] || effort}</span></button>` : ''}
     <button class="pill ${S.settings.docTheme ? 'on' : ''}" data-act="pick-design" title="Design des fichiers produits : ${S.settings.docTheme ? esc(designLabel()) : 'sobre (par défaut)'}">${icon('palette', 'sm')}<span class="lbl">${S.settings.docTheme ? esc(designLabel()) : 'Design'}</span></button>
-    ${(chat?.kb || c.agent?.kb || []).length ? `<span class="pill on" title="Base de connaissances attachée">${icon('db', 'sm')}${(c.kb || []).length}</span>` : ''}${typeof localProgressPill === 'function' ? localProgressPill() : ''}`;
+    ${(chat?.kb || c.agent?.kb || []).length ? `<span class="pill on" title="Base de connaissances attachée">${icon('db', 'sm')}${(c.kb || []).length}</span>` : ''}`;
+  updateJump();
   renderStatusLine();
 }
 function updateSendBtn() {
@@ -13924,6 +14105,8 @@ function toggleInspector(tab) {
 function renderInspector() {
   const el = $('#inspector');
   el.classList.toggle('hidden', !S.ui.inspectorOpen);
+  // 821-1439 px : l'inspecteur prend la place du panneau des conversations (3 colonnes → 2), rien ne se recouvre
+  $('#app').classList.toggle('insp-open', !!S.ui.inspectorOpen);
   if (!S.ui.inspectorOpen) return;
   const prevBody = $('#inspBody');
   const scroll = prevBody ? prevBody.scrollTop : 0;
@@ -14211,7 +14394,7 @@ function openPage(id, sub) {
   const P = PAGES[id];
   const v = $('#pageView');
   v.className = 'page-view ' + (P.cls || '');
-  v.innerHTML = `<div class="page-head"><h1>${P.icon ? icon(P.icon) : ''}<span>${P.title}</span></h1><span class="grow"></span><button class="btn sm ghost" data-page-close title="Revenir à la conversation (Échap)">${icon('chat', 'sm')}<span class="hide-sm">Conversation</span></button></div><div class="page-body ${P.flush ? 'flush' : ''}"></div>`;
+  v.innerHTML = `<div class="page-head"><button class="icon-btn mobile-only" data-act="mobile-menu" title="Menu">${icon('menu')}</button><h1>${P.icon ? icon(P.icon) : ''}<span>${P.title}</span></h1><span class="grow"></span><button class="btn sm ghost" data-page-close title="Revenir à la conversation (Échap)">${icon('chat', 'sm')}<span class="hide-sm">Conversation</span></button></div><div class="page-body ${P.flush ? 'flush' : ''}"></div>`;
   pageModal = { el: v, body: v.querySelector('.page-body'), close: closePage };
   v.hidden = false;
   $('#app').classList.add('paged');
@@ -14345,7 +14528,7 @@ PAGES.prompts = {
       <button class="btn" data-pp="export">${icon('download', 'sm')} Exporter</button><button class="btn" data-pp="import">${icon('upload', 'sm')} Importer</button><button class="btn primary" data-pp="new">${icon('plus', 'sm')} Nouveau prompt</button></div>
       <p class="lead">Tapez <kbd>/</kbd> dans la zone de saisie pour les insérer. Variables : <code>{{nom}}</code> ou <code>{{nom|valeur par défaut}}</code> — un formulaire s'ouvre à l'insertion.</p>
       <div class="cards">${ps.map((p) => `<div class="card"><div class="row"><b class="grow ellipsis">${esc(p.title)}</b>${p.command ? `<span class="badge mono">/${esc(p.command)}</span>` : ''}</div>
-        <div class="small muted" style="margin:6px 0 10px;white-space:pre-wrap;max-height:84px;overflow:hidden">${esc(truncate(p.content, 220))}</div>
+        <div class="small muted" style="margin:6px 0 10px;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden">${esc(truncate(p.content, 220))}</div>
         <div class="row">${p.category ? `<span class="badge">${esc(p.category)}</span>` : ''}<span class="grow"></span><button class="icon-btn sm" data-pp="use" data-id="${p.id}" title="Utiliser">${icon('send', 'sm')}</button><button class="icon-btn sm" data-pp="edit" data-id="${p.id}" title="Modifier">${icon('edit', 'sm')}</button><button class="icon-btn sm" data-pp="del" data-id="${p.id}" title="Supprimer">${icon('trash', 'sm')}</button></div></div>`).join('') || '<div class="empty-s">Aucun prompt.</div>'}</div>`;
     b.querySelector('#pq').addEventListener('input', debounce((e) => { S.ui.promptQ = e.target.value; renderPage(); setTimeout(() => { const i = $('#pq'); i?.focus(); i?.setSelectionRange(i.value.length, i.value.length); }); }, 250));
     b.onclick = async (e) => {
@@ -15024,7 +15207,7 @@ const SETTINGS_TABS = {
   async data(m) {
     const est = await DB.estimate();
     m.innerHTML = `<h3>Données</h3><p class="lead">Tout est stocké localement. Exportez régulièrement pour sauvegarder ou transférer vers un autre appareil.</p>
-      <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px">${[['Conversations', col('chats').size], ['Agents', col('agents').size], ['Prompts', col('prompts').size], ['Fichiers', col('files').size], ['Documents', col('kbdocs').size], ['Souvenirs', col('memories').size]].map(([k, v]) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
+      <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-bottom:16px">${[['Conversations', col('chats').size], ['Agents', col('agents').size], ['Prompts', col('prompts').size], ['Fichiers', col('files').size], ['Documents', col('kbdocs').size], ['Souvenirs', col('memories').size]].map(([k, v]) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
       ${est ? `<div class="small muted" style="margin-bottom:16px">Stockage utilisé : ${fmtBytes(est.usage)} / ${fmtBytes(est.quota)} disponibles. ${DB.memory ? '<b style="color:var(--danger)">IndexedDB indisponible : données non persistées !</b>' : ''}</div>` : ''}
       ${updateCardHTML()}
       <div class="card" style="margin-bottom:12px"><b>Exporter</b><p class="small muted">Sauvegarde complète au format JSON.</p><label class="row small" style="margin-bottom:10px"><input type="checkbox" id="dx-key" style="accent-color:var(--accent)"> Inclure la clé API (attention si vous partagez le fichier)</label><button class="btn primary" id="dx-exp">${icon('download', 'sm')} Exporter tout</button></div>
@@ -15716,6 +15899,7 @@ const ACTIONS = {
   'comp-plus': (el) => showMenu(el, [
     { label: 'Joindre des fichiers', icon: 'clip', action: () => pickFiles(addAttachments) },
     { label: 'Insérer un prompt', icon: 'book', action: () => openPromptLib(el) },
+    { label: 'Améliorer mon message avec l\'IA', icon: 'wand', action: () => enhancePrompt() },
     { label: 'Comparer des modèles', icon: 'columns', action: () => openModelPicker($('[data-act="pick-model"]'), { multi: true }) },
     { label: "Arène à l'aveugle", icon: 'trophy', action: startArena },
     { label: 'Compacter le contexte', icon: 'layers', action: compactNow },
@@ -15736,7 +15920,7 @@ const ACTIONS = {
   'edit-user': (el) => startEdit(el.dataset.id),
   resend: (el) => resendFromUser(el.dataset.id),
   'node-menu': (el) => nodeMenu(el, el.dataset.id),
-  regen: (el) => regenerate(el.dataset.id),
+  regen: (el) => { const n = currentChat()?.nodes[el.dataset.id]; const m = n?.localIssue?.from || n?.model || ''; if (/^(webllm|local)\//.test(m)) { LocalModels.clearFailure(m); LocalModels.serverOk.clear(); } regenerate(el.dataset.id, n?.localIssue && !n.localIssue.to ? n.localIssue.from : undefined); },
   'rail-more': (el) => railMore(el),
   'local-retry': (el) => { LocalModels.clearFailure(el.dataset.model); regenerate(el.dataset.id, el.dataset.model); },
   'local-keep': (el) => { setChatModel(el.dataset.model); toast('Modèle de la conversation : ' + modelShort(el.dataset.model), 'ok'); },
@@ -15889,7 +16073,8 @@ document.addEventListener('keydown', (e) => {
     if ($('.lightbox')) { $('.lightbox').remove(); return; }
     if (openPop) { closePop(); return; }
     if (modalStack.length) { modalStack[modalStack.length - 1].close(); return; }
-    if (S.ui.page) { closePage(); return; }
+    // Échap pendant une saisie dans une page : quitte le champ sans fermer la page (pas de perte des modifications)
+    if (S.ui.page) { if (typing) { document.activeElement.blur(); return; } closePage(); return; }
     if (S.ui.editing) { S.ui.editing = null; renderMessages(); return; }
     const chat = currentChat();
     if (chat && chatBusy(chat)) { stopChat(chat); toast('Génération arrêtée'); }
@@ -15933,6 +16118,13 @@ async function boot() {
     S.settings.builtinVersion = 3;
     saveSettings();
   }
+  // v4 : nouvelle consigne de l'Assistant (réponses directes et concrètes), appliquée seulement si l'utilisateur ne l'avait pas modifiée
+  if ((S.settings.builtinVersion || 0) < 4) {
+    const a = col('agents').get('agent-assistant'), ref = BUILTIN_AGENTS.find((x) => x.id === 'agent-assistant');
+    if (a && ref && /^Tu es Cortex, un assistant IA expert, précis et chaleureux\.\n- Réponds dans la langue de l'utilisateur \(français par défaut\), de façon claire et structurée/.test(a.systemPrompt || '')) { a.systemPrompt = ref.systemPrompt; persist('agents', a); }
+    S.settings.builtinVersion = 4;
+    saveSettings();
+  }
   Skills.seed();
   LocalFolders.load().catch(() => {});
   Scheduler.start();
@@ -15956,7 +16148,6 @@ async function boot() {
   renderSidebar();
   renderComposer();
   renderAttachments();
-  $('#jumpBtn').innerHTML = icon('down');
   $('#messages').addEventListener('scroll', () => {
     const box = $('#messages');
     S.ui.stick = box.scrollHeight - box.scrollTop - box.clientHeight < 80;

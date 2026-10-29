@@ -19,15 +19,17 @@ vos données restent **dans votre navigateur**.
 
 ## 🧭 Comment Cortex travaille (le « cerveau »)
 
-À chaque demande, une couche déterministe et gratuite entoure le modèle, quel qu'il soit (payant, gratuit, local) :
+À chaque demande, une couche déterministe et gratuite entoure le modèle, quel qu'il soit (payant, gratuit, local).
+
+**Voie rapide** : une salutation ou une question de connaissance (« C'est quoi le ratio NPL ? ») reçoit une réponse directe en quelques secondes — sans analyse préalable, stratégie, vérification ni relecture, et sans phase de réflexion du modèle. Une action (créer, corriger, traduire…), un fichier, une suite de tâche (« oui », « continue »), une information d'actualité, le mode plan ou un agent spécialisé passent toujours par la voie complète :
 
 1. **Comprendre** — contrat de tâche : type (question, recherche, analyse, livrable, code, automatisation), livrables attendus, critères de réussite.
 2. **Chercher** — conversations passées pertinentes (recherche BM25 locale), recherche web préalable si la demande porte sur une information récente, mémoire, base de connaissances.
-3. **Stratégie** — le **Guru** (modèle gratuit de raisonnement) rédige le plan expert, les pièges et la checklist ; l'**expérience** des tâches passées (REA) est réinjectée.
+3. **Stratégie** — le **Guru** (modèle gratuit de raisonnement, plafonné à 45 s puis repli sur un modèle rapide) rédige le plan expert, les pièges et la checklist ; l'**expérience** des tâches passées (REA) est réinjectée.
 4. **Exécuter** — outils (≈ 70) : Python, JavaScript, Studio (DOM + canvas), fichiers, web, documents, dossiers de l'ordinateur, messagerie…
 5. **Vérifier sur preuves** — avant livraison : livrables demandés produits, fichiers annoncés existants, fichiers ouverts (aperçu généré par Cortex sinon), **chiffres de la réponse tracés dans les résultats d'outils**, erreurs d'outils non résolues ; une passe de correction est imposée si quelque chose bloque, puis une relecture critique par un autre modèle.
 6. **Apprendre** — expérience mémorisée ; préférences durables retenues (profil) ; une tâche complexe réussie devient un **skill** réutilisable ; les recettes d'images sont mémorisées.
-7. **Répondre** — réponse structurée : résultat, méthode et hypothèses, contrôles effectués, points d'attention, **suites proposées**.
+7. **Répondre** — la conclusion d'abord, chiffres clés en gras, puis seulement ce qui aide à décider (tableau, fichiers, points d'attention) et 1 ou 2 **suites proposées** ; aucune rubrique vide.
 
 Les boosters gratuits (Guru, relecture critique, conseil d'experts, réflexion profonde) accompagnent aussi les modèles payants (réglable).
 
@@ -39,6 +41,8 @@ Les boosters gratuits (Guru, relecture critique, conseil d'experts, réflexion p
 | **Dans le navigateur** (WebLLM, WebGPU) | Modèles › Modèles locaux › « Dans le navigateur » — téléchargé une fois, mis en cache | Qwen3 8B / 4B / 1.7B, Qwen2.5 7B, Mistral 7B v0.3, DeepSeek-R1 distill 7B |
 
 Les modèles locaux apparaissent dans le sélecteur (« Local · … », « Navigateur · … ») et bénéficient de tout le harness : outils (appel natif ou **écrit en texte** si le modèle n'a pas de function calling), cerveau, vérification, Guru (option « utiliser aussi comme Guru / relecteur »). Sans clé OpenRouter, Cortex démarre directement sur le modèle local.
+
+**Carte graphique vérifiée avant chaque usage** : si le navigateur ne donne pas accès au GPU (WebGPU coupé après une saturation de la mémoire graphique, par exemple), la page Modèles l'explique avant tout clic (cause et étapes, bouton « Revérifier ») et la conversation bascule sur un modèle cloud **gratuit** — jamais payant — avec une carte « Comment corriger ». Pour rester 100 % local, décochez « Si un modèle local échoue, répondre avec un modèle cloud gratuit » : aucun message ne part alors sur Internet. Choisir un modèle du navigateur dans le sélecteur ne lance aucun téléchargement : il démarre avec « Télécharger et utiliser » ou au premier message.
 
 ## 🎨 Moteur de design — styles créés par Cortex
 
