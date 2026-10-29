@@ -512,6 +512,7 @@ body.term .thinking>summary svg:first-child{display:none}
 .elo-row{display:grid;grid-template-columns:30px 1fr 70px 70px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:.88em}
 /* ---------- Studio images & vidéos ---------- */
 .st-top{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+body:has(#pageView .st-top) .toasts{top:auto;bottom:24px}
 .st-tabs{display:inline-flex;gap:4px;padding:4px;border-radius:12px;background:var(--bg-2);border:1px solid var(--border);max-width:100%;overflow-x:auto;scrollbar-width:none}
 .st-tabs::-webkit-scrollbar{display:none}
 .st-tabs button{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-radius:9px;font-weight:600;font-size:.9em;color:var(--muted);white-space:nowrap;flex:none}
@@ -1097,7 +1098,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-29 16:24 UTC', stamp: 202610291624, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-29 19:23 UTC', stamp: 202610291923, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -2626,7 +2627,7 @@ const hexMix = (a, b, t) => {
 function resolveTheme(name, accent) {
   if (name && typeof name === 'object' && name.primary) return name;
   // Catalogue des designs de référence : identifiant, ancien identifiant ou libellé (avant la normalisation [^a-z])
-  if (typeof name === 'string' && findDesign(name)) name = findDesign(name);
+  if (typeof name === 'string' && !S.settings?.fingerprints?.[name.trim()] && findDesign(name)) name = findDesign(name);
   const n = normalizeText(name || '').replace(/[^a-z]/g, '');
   const valid = (h) => /^[0-9a-f]{6}$/i.test(String(h || '').replace('#', ''));
   const brand = valid(S.settings.brand?.color) ? String(S.settings.brand.color).replace('#', '').toUpperCase() : null;
@@ -2813,14 +2814,16 @@ function designComplete(out, fp) {
   return out;
 }
 /* Recoloration d'un design du catalogue (couleur demandée) : la mise en page est conservée */
-function designRecolor(fp, P) {
+function designRecolor(fp, P0) {
   const f = deepClone(fp), C = f.colors, bg = C.background || 'FFFFFF';
   const light = lum(C.header) > 0.55;
-  Object.assign(C, { banner: P, bannerDark: hexMix(P, '000000', 0.4), key: onBg(P, bg, 4.5), group: onBg(P, bg, 4.5), subtitle: hexMix(P, 'FFFFFF', 0.8) });
+  // Couleur trop claire pour porter un titre blanc (bandeau) ou pour un titre sur fond clair : même teinte, assombrie (4,5:1)
+  const P = f.layout?.dark ? P0 : onBg(onBg(P0, 'FFFFFF', 4.5), bg, 4.5);
+  Object.assign(C, { banner: P, bannerDark: hexMix(P, '000000', 0.4), key: onBg(P, bg, 4.5), group: onBg(P, bg, 4.5), subtitle: onBg(hexMix(P, 'FFFFFF', 0.8), P, 4.5) });
   if (light) Object.assign(C, { header: hexMix(P, 'FFFFFF', 0.86), headerText: onBg(P, hexMix(P, 'FFFFFF', 0.86), 7) });
-  else Object.assign(C, { header: P, headerText: lum(P) > 0.55 ? C.text : 'FFFFFF' });
+  else Object.assign(C, { header: P, headerText: ['FFFFFF', '1A1A1A'].sort((a, b) => wcag(P, b) - wcag(P, a))[0] });
   C.headerEdit = hexMix(C.header, C.accent, 0.25);
-  if (f.chart) f.chart = [P, ...f.chart.filter((c) => c !== fp.colors.banner)].slice(0, 10);
+  if (f.chart) f.chart = [onBg(P, bg, 3), ...f.chart.filter((c) => c !== fp.colors.banner)].slice(0, 10);
   return f;
 }
 /* Variante claire d'un design sombre pour Word et PDF (papier) */
@@ -3145,7 +3148,9 @@ function designReportCSS(fp) {
   if (L.kpi !== 'tiles') o.push('.kpi.light{color:var(--t)}.kpi.light .l,.kpi.light .note{color:var(--m)}');
   if (L.kpi === 'tiles') o.push('.kpi .l{background:none}');
   if (L.dark) o.push(`.md strong,.summary h3{color:var(--t)}.situ b{color:${c(C.key)}}footer b{color:${c(C.key)}}.callout.success{background:${c(hexMix(C.positive, BG, 0.82))}}.callout.warning{background:${c(hexMix(fp.status.waiting, BG, 0.82))}}.callout.danger{background:${c(hexMix(C.negative, BG, 0.82))}}figure img{border-color:var(--rule)}`);
-  o.push(`@media(max-width:700px){h1{font-size:${L.title === 'editorial' ? 24 : 20}px}.kpi .v{font-size:26px}}@media print{body{background:#fff}}`);
+  o.push(`@media(max-width:700px){h1{font-size:${L.title === 'editorial' ? 24 : 20}px}.kpi .v{font-size:26px}}@media print{body{background:#fff}}${wcag(C.accent, C.banner) < 4.5 ? `.tb button{background:${c(C.text)};color:${c(BG)}}` : ''}`);
+  // Design sombre : « Imprimer / PDF » donne la variante claire, comme Word et PDF (graphiques inversés)
+  if (L.dark) { const V = fpForPrint(fp).colors; o.push(`@media print{:root{--p:${c(V.banner)};--pd:${c(V.bannerDark)};--g:${c(V.group)};--a:${c(V.accent)};--ad:${c(V.accentDark)};--z:${c(V.zebra)};--note:${c(V.note)};--rule:${c(V.rule)};--grid:${c(V.grid)};--t:${c(V.text)};--m:${c(V.muted)};--sub:${c(V.subtitle)}}${designReportCSS(fpForPrint(fp)).trim()}.situ b,footer b{color:${c(V.key)}}figure img{filter:invert(1) hue-rotate(180deg)}}`); }
   return '\n' + o.filter(Boolean).join('');
 }
 
@@ -3644,7 +3649,7 @@ ${subtitle ? `<w:p><w:pPr><w:spacing w:after="0"/></w:pPr><w:r><w:rPr><w:color w
           let jc = numCols[c] ? 'right' : 'left';
           if (!head && c === statusCol && t && !/^[—–\-\s]*$/.test(t)) { const k = statusColors(fp, t); fill = k.bg; extra = { b: true, color: k.fg, sz: 17 }; jc = 'center'; }
           if (!head && c === 0 && !total && /^\d{1,3}$/.test(t)) extra = { ...extra, b: true, color: FC.banner, mono: true };
-          if (!head && numCols[c]) extra = { ...extra, mono: true };
+          if (!head && numCols[c]) extra = { ...extra, mono: true, ...(cat && /red/.test(L.negatives) && (neg(t) || /^\(\d/.test(t)) ? { color: FC.negative } : {}) };
           const side = (k, sz, col, v = 'single') => `<w:${k} w:val="${v}" w:sz="${sz}" w:space="0" w:color="${col}"/>`;
           const bd = !cat ? (head ? `<w:bottom w:val="single" w:sz="12" w:space="0" w:color="${FC.accent}"/>` : total ? `<w:top w:val="single" w:sz="12" w:space="0" w:color="${FC.banner}"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="${FC.rule}"/>` : `<w:bottom w:val="single" w:sz="4" w:space="0" w:color="${FC.rule}"/>`)
             : head ? side('bottom', L.header === 'soft' ? 4 : 12, L.header === 'soft' ? FC.rule : FC.accent) + (L.borders === 'grid' ? side('left', 4, FC.rule) + side('right', 4, FC.rule) : '')
@@ -3708,9 +3713,9 @@ ${!cat || L.section === 'band' ? `<w:style w:type="paragraph" w:styleId="Heading
 
   /* ------------------------------ PDF ------------------------------ */
   pdfSafe(s) {
-    const map = { '→': '->', '←': '<-', '⇒': '=>', '≥': '>=', '≤': '<=', '≠': '!=', '✓': 'v', '✔': 'v', '✅': '[OK]', '❌': '[X]', '☑': '[x]', '☐': '[ ]', '★': '*', '◦': '-', '▪': '-', '≈': '~', '×': 'x', '…': '...', ' ': ' ', ' ': ' ' };
+    const map = { '−': '-', '‑': '-', '→': '->', '←': '<-', '⇒': '=>', '≥': '>=', '≤': '<=', '≠': '!=', '✓': 'v', '✔': 'v', '✅': '[OK]', '❌': '[X]', '☑': '[x]', '☐': '[ ]', '★': '*', '◦': '-', '▪': '-', '≈': '~', '×': 'x', '…': '...', ' ': ' ', ' ': ' ' };
     const winAnsi = '€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ';
-    return String(s ?? '').replace(/[→←⇒≥≤≠✓✔✅❌☑☐★◦▪≈×  ]/g, (c) => map[c] || c).replace(/[^\u0000-ÿ]/g, (c) => (winAnsi.includes(c) ? c : ''));
+    return String(s ?? '').replace(/[−‑→←⇒≥≤≠✓✔✅❌☑☐★◦▪≈×  ]/g, (c) => map[c] || c).replace(/[^\u0000-ÿ]/g, (c) => (winAnsi.includes(c) ? c : ''));
   },
   async pdf(md, { title = '', subtitle = '', landscape = false, accent = '', logo = null, theme = '', cover = false, author = '', kpis = [], org = '', confidentiality = '' } = {}) {
     const T = resolveTheme(theme, accent), fp = fpForPrint(T.fp), FC = fp.colors;
@@ -4089,7 +4094,21 @@ ${!cat || L.section === 'band' ? `<w:style w:type="paragraph" w:styleId="Heading
       }
       if (s.notes) sl.addNotes(String(s.notes));
     }
-    return P.write({ outputType: 'blob' });
+    const out = await P.write({ outputType: 'blob' });
+    if (!cat) return out;
+    // Camemberts et anneaux (catalogue) : étiquette foncée sur une part claire, comme dans l'Excel (XlChart.lblOn)
+    await loadScript(LIBS.jszip);
+    const z = await JSZip.loadAsync(out), dk = [FC.text, '1A1A1A'].sort((a, b) => wcag(b, 'FFFFFF') - wcag(a, 'FFFFFF'))[0];
+    let changed = false;
+    for (const n of Object.keys(z.files).filter((x) => /^ppt\/charts\/chart\d+\.xml$/.test(x))) {
+      const x = await z.file(n).async('string');
+      if (!/<c:(pie|doughnut)Chart>/.test(x)) continue;
+      const col = {};
+      for (const m of x.matchAll(/<c:dPt>\s*<c:idx val="(\d+)"\/>[\s\S]*?<a:srgbClr val="([0-9A-Fa-f]{6})"\/>/g)) col[m[1]] = m[2];
+      const y = x.replace(/<c:dLbl>\s*<c:idx val="(\d+)"\/>[\s\S]*?<\/c:dLbl>/g, (m, i) => (col[i] && wcag(col[i], 'FFFFFF') < 3 && wcag(col[i], dk) > wcag(col[i], 'FFFFFF') ? m.replace('<a:srgbClr val="FFFFFF"/>', `<a:srgbClr val="${dk}"/>`) : m));
+      if (y !== x) { z.file(n, y); changed = true; }
+    }
+    return changed ? z.generateAsync({ type: 'blob', mimeType: OFFICE_MIME.pptx, compression: 'DEFLATE' }) : out;
   },
 };
 
@@ -4405,7 +4424,7 @@ function visionModel() {
   const v = S.settings.visionModel;
   if (v && (!S.models.length || S.modelMap.has(v))) return v;
   return pickAvailable(['nvidia/nemotron-3.5-super-vl:free', 'google/gemma-4-31b-it:free', 'google/gemma-4-26b-a4b-it:free', 'thinkingmachines/inkling-small:free', 'openrouter/free'])
-    || S.models.find((m) => isFreeModel(m) && modelSupports(m.id, 'vision'))?.id || 'google/gemini-2.5-flash';
+    || S.models.find((m) => isFreeModel(m) && modelSupports(m.id, 'vision'))?.id || 'openrouter/free'; // jamais un modèle payant à l'insu de l'utilisateur (catalogue non chargé) : routeur gratuit, qui accepte les images
 }
 function audioModel() {
   const a = S.settings.audioModel;
@@ -4471,7 +4490,7 @@ class XlStyles {
   }
   fmt(code) {
     if (!code || code === 'General') return 0;
-    if (/parens/.test(this.fp.layout?.negatives || '') && !String(code).includes(';') && /#|%/.test(code) && !/[dmyh]/i.test(String(code).replace(/"[^"]*"/g, ''))) code = `${code}_);(${code})`;
+    if (/parens/.test(this.fp.layout?.negatives || '') && !String(code).includes(';') && /#|%|0\.0/.test(code) && !/[dmyh]/i.test(String(code).replace(/"[^"]*"/g, ''))) code = `${code}_);(${code})`;
     const BI = { 0: 1, '0.00': 2, '#,##0': 3, '#,##0.00': 4, '0%': 9, '0.00%': 10, '@': 49 };
     if (BI[code] != null) return BI[code];
     let i = this.fmts.indexOf(code);
@@ -4583,7 +4602,7 @@ const XlChart = {
     }
     const isLine = type === 'line', horiz = type === 'bar';
     const ser = series.map((se, i) => `<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:v>${xmlEsc(se.name)}</c:v></c:tx><c:spPr>${isLine ? `<a:ln w="28575" cap="rnd"><a:solidFill><a:srgbClr val="${se.color}"/></a:solidFill></a:ln>` : `<a:solidFill><a:srgbClr val="${se.color}"/></a:solidFill>`}</c:spPr>${isLine ? `<c:marker><c:symbol val="circle"/><c:size val="6"/><c:spPr><a:solidFill><a:srgbClr val="${se.color}"/></a:solidFill></c:spPr></c:marker>` : '<c:invertIfNegative val="0"/>'}${series.length === 1 && cats.length <= 14 ? dl(isLine ? 't' : 'outEnd') : ''}<c:cat>${this.strRef(catRef, cats)}</c:cat><c:val>${this.numRef(se.ref, se.vals)}</c:val>${isLine ? '<c:smooth val="0"/>' : ''}</c:ser>`).join('');
-    const ax = `<c:catAx><c:axId val="6001"/><c:scaling><c:orientation val="${horiz ? 'maxMin' : 'minMax'}"/></c:scaling><c:delete val="0"/><c:axPos val="${horiz ? 'l' : 'b'}"/><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="${fp.colors.rule}"/></a:solidFill></a:ln></c:spPr>${this.txPr(900, fp.colors.text, fp.fonts.body)}<c:crossAx val="6002"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx><c:valAx><c:axId val="6002"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="${horiz ? 't' : 'l'}"/><c:majorGridlines><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="${fp.colors.grid}"/></a:solidFill></a:ln></c:spPr></c:majorGridlines><c:numFmt formatCode="#,##0.##" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr>${this.txPr(850, fp.colors.muted, fp.fonts.body)}<c:crossAx val="6001"/><c:crosses val="${horiz ? 'max' : 'autoZero'}"/><c:crossBetween val="between"/></c:valAx>`;
+    const ax = `<c:catAx><c:axId val="6001"/><c:scaling><c:orientation val="${horiz ? 'maxMin' : 'minMax'}"/></c:scaling><c:delete val="0"/><c:axPos val="${horiz ? 'l' : 'b'}"/><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="${series.some((s) => s.vals.some((v) => v < 0)) ? 'low' : 'nextTo'}"/><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="${fp.colors.rule}"/></a:solidFill></a:ln></c:spPr>${this.txPr(900, fp.colors.text, fp.fonts.body)}<c:crossAx val="6002"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx><c:valAx><c:axId val="6002"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="${horiz ? 't' : 'l'}"/><c:majorGridlines><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="${fp.colors.grid}"/></a:solidFill></a:ln></c:spPr></c:majorGridlines><c:numFmt formatCode="#,##0.##" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr>${this.txPr(850, fp.colors.muted, fp.fonts.body)}<c:crossAx val="6001"/><c:crosses val="${horiz ? 'max' : 'autoZero'}"/><c:crossBetween val="between"/></c:valAx>`;
     const plot = isLine ? `<c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/>${ser}<c:marker val="1"/><c:axId val="6001"/><c:axId val="6002"/></c:lineChart>` : `<c:barChart><c:barDir val="${horiz ? 'bar' : 'col'}"/><c:grouping val="clustered"/><c:varyColors val="0"/>${ser}<c:gapWidth val="60"/><c:axId val="6001"/><c:axId val="6002"/></c:barChart>`;
     return this.frame(fp, plot + ax, series.length > 1, title);
   },
@@ -4677,6 +4696,8 @@ Office.xlsx = async function (sheets, opts = {}) {
   const WHITE = cat && L.gridlines ? null : cat ? BG : 'FFFFFF'; // fond « blanc » du corps (aucun si le quadrillage doit rester visible)
   const zebraOn = (legacy) => (cat ? L.zebra : legacy);
   const DEN = { compact: [18, 11.5, 6, 20], airy: [28, 13.5, 13, 30] }[L.density] || [24, 12.5, 9, 24];
+  // Police à chasse fixe (Consolas…) : ~20 % de caractères en moins par unité de largeur qu'une police proportionnelle
+  const CPU = cat && /consol|mono|courier/i.test(fp.fonts.body || '') ? 0.8 : 1;
   const keyCol = cat ? onBg(C.key, BG, 4.5) : C.banner, editCol = onBg(C.accentDark, BG, 4.5);
   const lateFill = cat ? hexMix(fp.status.blocked, BG, 0.86) : 'FBE3E0', lateInk = cat ? onBg(fp.status.blocked, lateFill, 4.5) : fp.status.blocked;
   const newSheet = (name) => { const X = new XlSheet(name); if (cat) { X.grid = L.gridlines; if (BG !== 'FFFFFF') X.colStyle = st.s({ fill: BG }); } return X; };
@@ -4745,7 +4766,7 @@ Office.xlsx = async function (sheets, opts = {}) {
     return { b: [L.borders === 'hair' ? 'hair' : 'thin', C.rule], t };
   };
   // Ligne de total : bande (historique), gras + filet, ou filet simple au-dessus et double filet dessous
-  const totalStyle = (fill, b) => (!cat || L.totals === 'bold-band' ? { fill: C.note, border: { ...(b || {}), t: ['medium', cat && L.dark ? C.muted : C.banner] } } : { fill, border: { ...(b || {}), t: ['thin', C.text], ...(L.totals === 'double-rule' ? { b: ['double', C.text] } : {}) } });
+  const totalStyle = (fill, b, sub) => (!cat || L.totals === 'bold-band' ? { fill: C.note, border: { ...(b || {}), t: ['medium', cat && L.dark ? C.muted : C.banner] } } : { fill, border: { ...(b || {}), t: ['thin', C.text], ...(L.totals === 'double-rule' && !sub ? { b: ['double', C.text] } : {}) } });
 
   /* Bandeau (2 lignes) + logo */
   const drawBanner = (X, c1, c2, ttl, sub) => {
@@ -4801,7 +4822,7 @@ Office.xlsx = async function (sheets, opts = {}) {
     return c - 1;
   };
   const bullets = (X, c1, c2, r, list, cpl, mark = '▪  ') => {
-    list.forEach((txt, k) => { const lines = Math.max(1, Math.ceil((String(txt).length + 4) / cpl)); X.heights[r + k] = Math.max(22, 13 * lines + 9); X.merge(c1, r + k, c2, r + k, mark + txt, S_.bullet(k % 2 === 1)); });
+    list.forEach((txt, k) => { const lines = Math.max(1, Math.ceil((String(txt).length + 4) / (cpl * CPU))); X.heights[r + k] = Math.max(22, 13 * lines + 9); X.merge(c1, r + k, c2, r + k, mark + txt, S_.bullet(k % 2 === 1)); });
     return r + list.length;
   };
 
@@ -4881,7 +4902,8 @@ Office.xlsx = async function (sheets, opts = {}) {
     models.push(M);
   }
   const mainM = models.find((m) => m.si >= 0);
-  const wantDash = mainM && opts.dashboard !== false && fp.style.dashboard;
+  // Registre de suivi demandé par l'utilisateur : tableau de bord et mode d'emploi quel que soit le design (« premium » sans design = sobre)
+  const wantDash = mainM && opts.dashboard !== false && (fp.style.dashboard || opts.registryAsked === true);
 
   const xs = []; // feuilles finales (ordre)
   const charts = [];
@@ -4989,7 +5011,7 @@ Office.xlsx = async function (sheets, opts = {}) {
       r += 1; X.heights[r - 1] = 8;
     }
     const hr = r;
-    X.heights[hr] = Math.max(DEN[3], 13 * Math.max(...H.map((h, c) => Math.ceil((String(h).length + 2) / Math.max(4, W[c] * 1.05)))) + 8);
+    X.heights[hr] = Math.max(DEN[3], 13 * Math.max(...H.map((h, c) => Math.ceil((String(h).length + 2) / Math.max(4, W[c] * 1.05 * CPU)))) + 8);
     // Catalogue : léger retrait d'une colonne de texte collée à une colonne de chiffres alignée à droite
     const gapL = (c) => (cat && c > 0 && ['int', 'dec', 'pct'].includes(kinds[c - 1]) && !['status', 'ref', 'date', 'late', 'int', 'dec', 'pct'].includes(kinds[c]) ? 1 : undefined);
     H.forEach((h, c) => X.set(c, hr, (isEdit(c) ? '✎ ' : '') + prettyHead(h), headCell(isEdit(c), cat && ['int', 'dec', 'pct'].includes(kinds[c]) ? 'right' : ['status', 'ref', 'date', 'late', 'int', 'dec', 'pct'].includes(kinds[c]) ? 'center' : 'left', gapL(c))));
@@ -5004,7 +5026,7 @@ Office.xlsx = async function (sheets, opts = {}) {
         const kd = kinds[c];
         let v = row[c];
         const b = bodyBorder(sep);
-        const base = { ...(isTotal ? totalStyle(fill, b) : { fill, border: b }), wrap: true, inp: cat && isEdit(c) && !isTotal };
+        const base = { ...(isTotal ? totalStyle(fill, b, /^(sous-total|sous total|moyenne)\b/i.test(String(row[0] ?? '').trim() || String(row[1] ?? '').trim())) : { fill, border: b }), wrap: true, inp: cat && isEdit(c) && !isTotal };
         let o;
         if (v && typeof v === 'object' && v.late) {
           const due = colL(M.dueIdx) + rr, rec = M.recvIdx >= 0 ? colL(M.recvIdx) + rr : null;
@@ -5033,7 +5055,7 @@ Office.xlsx = async function (sheets, opts = {}) {
         if (gapL(c) && !o.h) o = { ...o, indent: 1 };
         const s = st.s(o);
         X.set(c, rr, v, s);
-        if (typeof v === 'string' && o.wrap) lines = Math.max(lines, ...v.split('\n').map((ln) => Math.ceil((ln.length || 1) / Math.max(4, W[c] * 1.18))));
+        if (typeof v === 'string' && o.wrap) lines = Math.max(lines, ...v.split('\n').map((ln) => Math.ceil((ln.length || 1) / Math.max(4, W[c] * 1.18 * CPU))));
       });
       X.heights[rr] = Math.min(409, Math.max(DEN[0], DEN[1] * lines + DEN[2]));
     });
@@ -5194,7 +5216,7 @@ Office.xlsx = async function (sheets, opts = {}) {
     xs.unshift(X);
 
     /* ---- Paramètres & référentiel ---- */
-    if (fp.style.params && opts.params !== false) {
+    if ((fp.style.params || opts.registryAsked === true) && opts.params !== false) {
       const P = newSheet(Office.sheetName('Paramètres', used)); P.tab = C.group;
       P.widths = [2, 22, 30, 30, 18];
       drawBanner(P, 1, 4, 'Paramètres & référentiel', `Statuts${M.gi >= 0 ? ', ' + M.groupLabel.toLowerCase() + 's' : ''}${M.owners.length ? ', owners' : ''} — listes de référence et mode d'emploi`);
@@ -6111,6 +6133,12 @@ const BUILTIN_TOOLS = [
       }
       if (!images.length) {
         const model = S.settings.imageModel || 'google/gemini-2.5-flash-image';
+        // « Gratuit puis OpenRouter » : le repli payant n'est lancé qu'après accord explicite, coût estimé à l'appui
+        if (engine !== 'openrouter') {
+          const c = typeof studioImgCost === 'function' ? studioImgCost(model) : null;
+          const ok = await confirmDialog(`Le moteur d'images gratuit est indisponible.<br><br>Générer cette image avec <b>${esc(modelShort(model))}</b> (OpenRouter, payant) ?<br>Coût estimé : <b>${c != null ? fmtCost(c, true) : 'inconnu'}</b>.`, { title: 'Repli payant', ok: 'Générer (payant)' });
+          if (!ok || ctx.signal?.aborted) throw new Error(note + 'Repli payant non autorisé : aucune image générée.');
+        }
         ctx.progress('Génération avec ' + modelShort(model) + '…');
         const body = { model, modalities: ['image', 'text'], messages: [{ role: 'user', content: a.prompt }] };
         if (a.aspect_ratio) body.image_config = { aspect_ratio: a.aspect_ratio };
@@ -6904,7 +6932,7 @@ TOOLS.set(SKILL_MANAGE_TOOL.name, SKILL_MANAGE_TOOL);
 /* ============================== 08d · LIVRABLES (fichiers téléchargeables), 3D, VÉRIFICATION VISUELLE ============================== */
 TOOL_GROUPS.office = 'Documents (Office, PDF)';
 const ACCENT_PARAM = { type: 'string', description: 'Couleur principale en hexadécimal (défaut 1F4E79, bleu institutionnel)' };
-const LOGO_PARAM = { type: 'string', description: "Logo à intégrer : chemin d'une image de l'espace de travail (les images jointes par l'utilisateur y sont copiées : uploads/nom.png). Si omis : image jointe par l'utilisateur quand il parle de logo, sinon logo de la charte (Réglages › Profil). 'aucun' pour ne pas en mettre." };
+const LOGO_PARAM = { type: 'string', description: "Logo à intégrer : chemin d'une image de l'espace de travail (les images jointes par l'utilisateur y sont copiées : uploads/nom.png). Si omis : image jointe par l'utilisateur quand il parle de logo, sinon logo de la charte (Réglages › Design des documents). 'aucun' pour ne pas en mettre." };
 /* Logo d'un livrable : paramètre explicite, image jointe au message (« logo »), ou charte par défaut */
 async function resolveLogo(a, ctx) {
   const v = String(a.logo ?? '').trim();
@@ -6924,7 +6952,7 @@ async function resolveLogo(a, ctx) {
     }
   }
   const b = S.settings.brand || {};
-  if (b.logo && b.auto !== false) { const im = await Office.image(b.logo, 700); if (im) return { logo: im, src: 'logo de la charte (Réglages › Profil)' }; }
+  if (b.logo && b.auto !== false) { const im = await Office.image(b.logo, 700); if (im) return { logo: im, src: 'logo de la charte (Réglages › Design des documents)' }; }
   // Logo déposé dans l'espace de travail dont le nom évoque l'organisation (ex. logo_ecobank.png) — seulement si l'utilisateur parle de logo ou de charte
   // (« premium » ne suffit pas : l'espace est commun à toutes les conversations, ce logo peut venir d'une autre tâche)
   if (b.auto !== false && /logo|charte/.test(lastUserText(ctx, 3))) {
@@ -6950,10 +6978,11 @@ function designChoice(a, ctx) {
   const userTheme = S.settings.docTheme || '';
   const userMode = S.settings.brand?.logoMode || 'palette';
   const themeName = normalizeText(a.theme || '');
-  // Un style créé par Cortex (style_manage) compte comme demandé : il n'existe que parce que l'utilisateur a voulu ce design
+  // Style créé par Cortex (style_manage) : demandé seulement si CETTE demande parle de design ou le nomme — un style créé pour une
+  // ancienne tâche (registre « pétrole et lime ») ne s'impose ni au design des Réglages ni à la mise en forme sobre
   const custom = a.theme && !THEMES[themeName] && !BUILTIN_FINGERPRINTS[slugify(a.theme)] && Fingerprints.get(slugify(a.theme));
   // « thème revue », « design prestige » : un nom de thème qui est aussi un mot courant (« revue de crédit ») ne suffit pas
-  const named = !!custom || Coherence.themeNamed(said, themeName);
+  const named = (!!custom && (Coherence.designAsked(said) || Coherence.themeNamed(said, custom.name || ''))) || Coherence.themeNamed(said, themeName);
   const modeAsked = a.logo_color && a.logo_color !== userMode && ({ original: /origin|vraies couleurs|couleurs du logo/, mono: /mono|silhouette|uni\b/, blanc: /blanc|negatif/, palette: /palette|couleur du theme/ }[a.logo_color] || /$^/).test(said);
   const mode = modeAsked ? a.logo_color : userMode;
   if (userTheme) return { theme: named ? a.theme : userTheme, accent: COLOR_WORDS.test(said) ? a.accent : null, mode, by: named ? 'demande' : 'réglage' };
@@ -7245,7 +7274,7 @@ const DELIVERABLE_TOOLS = [
       notes.push(...coh.notes);
       ctx.progress('Génération du classeur…');
       const st = await docStyle(a, ctx);
-      const blob = await Office.xlsx(sheets, { title: a.title, theme: st.theme, logo: st.logo, org: a.org, confidentiality: a.confidentiality, dashboard: a.dashboard, subtitle: a.subtitle, registry: coh.tracking });
+      const blob = await Office.xlsx(sheets, { title: a.title, theme: st.theme, logo: st.logo, org: a.org, confidentiality: a.confidentiality, dashboard: a.dashboard, subtitle: a.subtitle, registry: coh.tracking, registryAsked: coh.asked });
       const path = await saveExport(a.file_name || a.title || 'classeur', blob, 'xlsx');
       const m = blob.meta || {};
       const desc = `onglets : ${(m.sheets || []).join(', ')} — ` + sheets.map((s) => `« ${s.name || 'Feuille'} » ${(s.rows || []).length} lignes × ${(s.headers || []).length} colonnes`).join(', ') + (m.dashboard ? `, tableau de bord automatique (${m.charts} graphique(s) natif(s))` : '') + (coh.unit ? `, montants en ${coh.unit}` : '') + ', ' + st.note;
@@ -7728,7 +7757,7 @@ async function renderChart(spec, T, { width = 1200, height = 675 } = {}) {
           const v = ds.data[j];
           if (v == null || isNaN(v)) return;
           const p = el.tooltipPosition();
-          ctx.save(); ctx.font = '600 13px Inter, Calibri, Arial'; ctx.fillStyle = round ? '#ffffff' : K ? K.text : '#333333'; ctx.textAlign = 'center';
+          ctx.save(); ctx.font = '600 13px Inter, Calibri, Arial'; const sc = String((Array.isArray(ds.backgroundColor) ? ds.backgroundColor[j] : ds.backgroundColor) || '').replace('#', ''); ctx.fillStyle = round ? (K && /^[0-9A-Fa-f]{6}$/.test(sc) && wcag(sc, 'FFFFFF') < 3 ? '#1A1A1A' : '#ffffff') : K ? K.text : '#333333'; ctx.textAlign = 'center';
           if (round) { ctx.textBaseline = 'middle'; ctx.fillText(fmt(v), p.x, p.y); }
           else if (horizontal) { ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(fmt(v), p.x + 6, p.y); }
           else { ctx.textBaseline = 'bottom'; ctx.fillText(fmt(v), p.x, p.y - 4); }
@@ -9139,7 +9168,8 @@ Guru.strategy = async function (task, { model, tools, context, rea, signal, atta
   if (xp.length) {
     const hit = bm25Search(xp.map((e) => ({ id: e.id, text: `${e.title} ${e.task}`, e })), task, 1)[0];
     const same = hit ? Coherence.sameTask(task, hit.doc.e, { attachments, contract }) : null;
-    if (same?.reuse) { hit.doc.e.uses = (hit.doc.e.uses || 0) + 1; persist('experiences', hit.doc.e); return { model: hit.doc.e.guruModel || 'mémoire', text: hit.doc.e.guru, reused: true }; }
+    // (et seulement si la stratégie enregistrée n'impose ni registre ni design absents de la demande : une stratégie contaminée n'est plus recopiée)
+    if (same?.reuse && Coherence.strategyFits(hit.doc.e.guru, task)) { hit.doc.e.uses = (hit.doc.e.uses || 0) + 1; persist('experiences', hit.doc.e); return { model: hit.doc.e.guruModel || 'mémoire', text: hit.doc.e.guru, reused: true }; }
     if (same && same.overlap >= 0.3) past = Coherence.methodOnly(hit.doc.e.guru, { tracking: Coherence.trackingAsked(task) });
   }
   // 2) Un seul modèle de raisonnement, plafonné (45 s, effort moyen), puis repli sur un modèle rapide (25 s) :
@@ -10194,7 +10224,7 @@ function __cortexKit() {
 function styleSeedsFor(name) {
   const n = String(name ?? '').trim(), k = normalizeText(n).replace(/[^a-z]/g, '');
   if (n && !findDesign(n) && !THEMES[k] && !Fingerprints.get(n) && !Fingerprints.get(slugify(n)) && !['marque', 'charte', 'brand'].includes(k)) return null;
-  const T = resolveTheme(findDesign(n) || (Fingerprints.get(n) ? n : Fingerprints.get(slugify(n)) ? slugify(n) : n)); const fp = T.fp || fpFor(T);
+  const T = resolveTheme(S.settings?.fingerprints?.[n] ? n : findDesign(n) || (Fingerprints.get(n) ? n : Fingerprints.get(slugify(n)) ? slugify(n) : n)); const fp = T.fp || fpFor(T);
   const seeds = fp.seeds ? { ...fp.seeds } : { primary: fp.colors.banner, secondary: fp.colors.group, accent: fp.colors.accent, ink: fp.colors.text, muted: fp.colors.muted, soft: fp.colors.note, rule: fp.colors.rule, zebra: fp.colors.zebra, ok: fp.status.done, warn: fp.status.waiting, danger: fp.status.blocked, fonts: fp.fonts, relief: fp.relief || (fp.style?.plain ? 'soft' : '3d'), gradients: fp.style?.gradients !== false, uppercase: fp.style?.upperTitles !== false, description: fp.description || '' };
   // Design du catalogue : couleurs de graphiques, fond, en-têtes et règles de mise en page
   if (fp.schema === 2) Object.assign(seeds, { palette: chartPalette(fp) || undefined, background: fp.colors.background || 'FFFFFF', header: fp.colors.header, headerText: fp.colors.headerText, layout: fp.layout, dark: !!fp.layout.dark, relief: fp.layout.dark || fp.style.plain ? 'flat' : 'soft' });
@@ -10325,7 +10355,10 @@ const Mind = {
     const raw = String(task || ''); const t = normalizeText(raw);
     // Fichiers cités (imports/portefeuille.csv, rapport.pdf) : données d'entrée, pas formats demandés
     const tf = t.replace(/[\w\/.-]+\.(xlsx|xlsm|xls|csv|docx|pptx|pdf|json|txt|eml|html?)\b/g, ' ');
-    const formats = this.FORMAT_RE.filter(([, re]) => re.test(tf)).map(([f]) => f);
+    let formats = this.FORMAT_RE.filter(([, re]) => re.test(tf)).map(([f]) => f);
+    // Contenu d'un document demandé, pas un livrable à part : « un Excel avec un graphique » (graphique natif), « même présentation »,
+    // « belle présentation » (mise en page) — un PNG ou un PowerPoint n'est exigé que s'il est nommé (« en PNG », « une présentation PowerPoint »)
+    if (formats.some((f) => ['xlsx', 'docx', 'pdf', 'html'].includes(f))) formats = formats.filter((f) => (f !== 'png' || /\b(png|jpe?g|images?)\b/.test(tf)) && (f !== 'pptx' || /\b(powerpoint|pptx|diaporama|slides?|deck)\b|\b(une|cette|en) presentation\b/.test(tf)));
     const produce = /\b(genere|generer|produis|produire|cree|creer|construis|fais[- ]moi|prepare|preparer|exporte|exporter|livre|fournis|transforme|convertis|mets?[- ]en forme|redige|rediger|ecris|ecrire|envoie|sors|dresse)\b/.test(t);
     const analyse = /\b(analyse|analyser|calcul|calcule|calculer|simul|ratio|taux|portefeuille|echeancier|statisti|compare|comparer|previs|tendance|evalue|mesure|verifie|controle|reconcil|consolide|synthese|bilan|revue)\b/.test(t)
       || (/\d/.test(t) && (/\b(mensualit\w*|interets?|amortiss\w*|rentabilit\w*|rendement|marge|cout total)/.test(t) || (/(%|\bfcfa\b|\bxof\b|\beur\b|€|\$|\bans?\b|\bmois\b|\bmillions?\b|\bmilliards?\b)/.test(t) && /\b(quel|quelle|combien|calcul|simul|estime|evalue)/.test(t))));
@@ -10990,9 +11023,11 @@ const LocalModels = {
       prev.then(() => { if (done) return; done = true; signal?.removeEventListener('abort', onAbort); let freed = false; res(() => { if (freed) return; freed = true; this.holder = null; rel(); }); });
     });
   },
-  /* État en direct de la demande la plus récente (chargement, attente, lecture du contexte, réflexion, rédaction) : affiché dans la conversation */
-  setLive(j, patch) { Object.assign(j, patch || {}); if (!this.live || j.seq >= this.live.seq) { this.live = j; S.onLocalLive?.(j); } },
-  endLive(j) { j.ended = true; if (this.live === j) { this.live = null; S.onLocalLive?.(null); } },
+  /* État en direct des demandes en cours (chargement, attente, lecture du contexte, réflexion, rédaction) : chaque réponse affiche la sienne,
+     même quand une autre conversation attend la carte graphique ; live = la plus récente */
+  jobs: new Set(),
+  setLive(j, patch) { Object.assign(j, patch || {}); if (j.ended) return; this.jobs.add(j); if (!this.live || j.seq >= this.live.seq) this.live = j; S.onLocalLive?.(j); },
+  endLive(j) { j.ended = true; this.jobs.delete(j); if (this.live === j) this.live = [...this.jobs].at(-1) || null; S.onLocalLive?.(this.live); },
   clearFailure(model) { const id = String(model || '').replace(/^webllm\//, ''); this.failed.delete(id); this.gpu = null; },
   cfg() { const c = S.settings.localServer || (S.settings.localServer = { url: 'http://localhost:11434/v1', key: '', enabled: false, booster: false, ctx: 8192 }); if (!c.ctx) c.ctx = 8192; return c; },
   get webgpu() { return !!navigator.gpu; },
@@ -11107,7 +11142,7 @@ const LocalModels = {
     if (id) await this.load(id).catch(() => {});
   },
   /* Messages ajustés à la fenêtre (estimation prudente, corrigée par le compte réel de WebLLM au besoin) :
-     longs messages intermédiaires raccourcis, historique le plus ancien retiré, puis prompt système et dernier message bornés */
+     longs messages de l'historique raccourcis, historique le plus ancien retiré, puis tour en cours (résultats d'outils, demande) et prompt système bornés */
   fit(messages, ctx, reserve, ratio = 1) {
     const len = (m) => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content || '')).length;
     const est = (m) => Math.ceil(len(m) / 3.3 * ratio) + 8;
@@ -11117,12 +11152,18 @@ const LocalModels = {
     const t0 = total(); let t = t0;
     if (t > budget) {
       const sys = msgs[0]?.role === 'system' ? 1 : 0;
-      for (let i = sys; i < msgs.length - 1 && t > budget; i++) if (typeof msgs[i].content === 'string' && msgs[i].content.length > 2400) { cut(msgs[i], 2400); t = total(); }
-      // Le dernier message est toujours gardé ; la conversation reprend sur un message de l'utilisateur
-      while (t > budget && msgs.length - sys > 1) { msgs.splice(sys, 1); while (msgs.length - sys > 1 && msgs[sys].role !== 'user') msgs.splice(sys, 1); t = total(); }
+      // Demande en cours = dernier message de l'utilisateur (hors résultats d'outils et consignes du harness) : ni elle, ni la suite du tour
+      // (appels et résultats d'outils), ni le prompt système (protocole des outils) ne sont retirés ; seul l'historique antérieur l'est
+      const isAsk = (m) => m.role === 'user' && !/^(Résultat de l'outil \(|\[Harness)/.test(String(m.content || ''));
+      let ask = msgs.length - 1; while (ask > sys && !isAsk(msgs[ask])) ask--;
+      for (let i = sys; i < ask && t > budget; i++) if (typeof msgs[i].content === 'string' && msgs[i].content.length > 2400) { cut(msgs[i], 2400); t = total(); }
+      // Historique le plus ancien retiré ; la conversation reprend sur une demande de l'utilisateur
+      while (t > budget && ask > sys) { msgs.splice(sys, 1); ask--; while (ask > sys && !isAsk(msgs[sys])) { msgs.splice(sys, 1); ask--; } t = total(); }
+      // Puis le tour en cours, juste assez : anciens résultats d'outils, dernier message, demande, prompt système en dernier recours
       const room = (m) => Math.max(400, Math.floor((budget - (t - est(m))) * 3.3 / ratio) - 60);
-      if (t > budget && sys && typeof msgs[0].content === 'string') { cut(msgs[0], room(msgs[0])); t = total(); }
-      const last = msgs[msgs.length - 1]; if (t > budget && typeof last.content === 'string') { cut(last, room(last)); t = total(); }
+      const turn = msgs.slice(ask + 1, -1).filter((m) => typeof m.content === 'string');
+      for (const m of turn) if (t > budget && m.content.length > 2400) { cut(m, 2400); t = total(); }
+      for (const m of [msgs[msgs.length - 1], ...turn, msgs[ask], sys ? msgs[0] : null]) if (m && t > budget && typeof m.content === 'string') { cut(m, room(m)); t = total(); }
     }
     return { messages: msgs, tokens: t, trimmed: t < t0, ratio };
   },
@@ -11137,8 +11178,8 @@ const LocalModels = {
   gpuName() { const g = this.gpu || {}; return [g.vendor ? g.vendor.charAt(0).toUpperCase() + g.vendor.slice(1) : '', g.arch].filter(Boolean).join(' '); },
   /* Outils pour un modèle sans function calling natif : protocole en texte, compris par Cortex (parseTextToolCalls) */
   textTools(messages, tools) {
-    if (!tools?.length) return messages;
-    const spec = tools.map((t) => { const P = t.function.parameters || {}; const req = P.required || []; const ps = Object.entries(P.properties || {}).slice(0, 10).map(([k, v]) => `${k}${req.includes(k) ? '*' : ''}: ${v.type || 'any'}${v.enum ? ' (' + v.enum.slice(0, 6).join('|') + ')' : ''}`).join(', '); return `- ${t.function.name}(${ps}) : ${truncate(String(t.function.description || ''), 160)}`; }).join('\n');
+    const has = !!tools?.length;
+    const spec = (tools || []).map((t) => { const P = t.function.parameters || {}; const req = P.required || []; const ps = Object.entries(P.properties || {}).slice(0, 10).map(([k, v]) => `${k}${req.includes(k) ? '*' : ''}: ${v.type || 'any'}${v.enum ? ' (' + v.enum.slice(0, 6).join('|') + ')' : ''}`).join(', '); return `- ${t.function.name}(${ps}) : ${truncate(String(t.function.description || ''), 160)}`; }).join('\n');
     const instr = `\n\n# Outils (appel écrit en texte)\nTu disposes des outils ci-dessous. Pour en appeler un, réponds UNIQUEMENT par un bloc :\n\`\`\`json\n{"tool": "nom_de_l_outil", "arguments": { … }}\n\`\`\`\nUn seul appel par réponse, sans autre texte ; tu recevras ensuite le résultat et tu continueras. Quand la tâche est finie, réponds normalement, sans bloc.\n${spec}`;
     const out = messages.map((m) => {
       if (m.role === 'tool') return { role: 'user', content: `Résultat de l'outil (${m.name || 'outil'}) :\n${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}` };
@@ -11146,6 +11187,9 @@ const LocalModels = {
       if (Array.isArray(m.content)) return { ...m, content: m.content.map((p) => (p.type === 'text' ? p.text : p.type === 'image_url' ? '[image]' : '')).join('\n') };
       return m;
     });
+    // Sans outils, l'historique reste converti en texte : WebLLM refuse le rôle « tool » (gabarit Qwen3 : user/assistant)
+    // et tout contenu utilisateur non textuel (pièces jointes) sur un modèle sans vision
+    if (!has) return out;
     const i = out.findIndex((m) => m.role === 'system');
     if (i >= 0) out[i] = { ...out[i], content: out[i].content + instr }; else out.unshift({ role: 'system', content: instr.trim() });
     return out;
@@ -11158,7 +11202,7 @@ const LocalModels = {
     // Tâches de fond (titre, suggestions, Guru, relecture, synthèses…) : jamais sur la carte graphique du navigateur
     if (!raw && !body._fg) { const er = new ApiError((body.plugins || []).some((p) => p.id === 'web') ? 'La recherche web intégrée passe par OpenRouter : ajoutez une clé (gratuite) ou lisez une adresse précise avec fetch_url.' : 'Modèle du navigateur réservé à la conversation : tâche de fond non exécutée.', 0); er.background = true; throw er; }
     if (signal?.aborted) throw abortErr();
-    const L = this.LIMITS, j = { seq: ++this.seq, model: modelId, phase: 'queue', t0: now(), tokens: 0, think: 0, gen: true };
+    const L = this.LIMITS, j = { seq: ++this.seq, model: modelId, phase: 'queue', t0: now(), tokens: 0, think: 0, gen: true, node: signal?.cortexNode || null };
     this.setLive(j);
     let release = null, eng;
     try {
@@ -11392,14 +11436,21 @@ function localDigest(nodes, prev = '') {
 const LIVE_PHASE = { queue: 'En attente du modèle', load: 'Chargement du modèle', prefill: 'Lecture du contexte', think: 'Réflexion', gen: 'Rédaction', stopping: 'Arrêt en cours' };
 const llN = (n) => Math.round(n || 0).toLocaleString('fr-FR');
 const llTps = (x) => (x >= 10 ? Math.round(x) : x.toFixed(1).replace('.', ',')) + ' jetons/s';
-/* Demande en cours pour ce nœud (la plus récente) ; une demande plus ancienne encore en train de s'arrêter = attente */
-function localLiveJob(n) { const j = LocalModels.live; if (!j || j.ended || !n || n.status !== 'running' || !/^webllm\//.test(n.model || '')) return null; return j; }
+/* Demande du modèle du navigateur rattachée à cette réponse (par son signal d'arrêt, voir agentLoop) ;
+   demande sans rattachement (sous-agent) lancée après la réponse : la sienne aussi */
+function localLiveJob(n) {
+  if (!n || n.status !== 'running' || !/^webllm\//.test(n.model || '')) return null;
+  const jobs = [...LocalModels.jobs].filter((j) => !j.ended).sort((a, b) => a.seq - b.seq);
+  return jobs.find((j) => j.node === n.id) || jobs.find((j) => !j.node && j.t0 >= (n.createdAt || 0) - 50) || null;
+}
 function localLiveInner(n, waiting) {
-  const j = localLiveJob(n);
+  const own = localLiveJob(n);
+  // Pas encore de demande pour cette réponse : une autre (arrêt en cours, autre conversation) occupe la carte graphique = attente
+  const j = own || (waiting && n.status === 'running' && /^webllm\//.test(n.model || '') ? [...LocalModels.jobs].find((x) => !x.ended) : null);
   if (!j) return waiting ? '<div class="typing"><i></i><i></i><i></i></div>' : '';
-  const t = now(), old = j.t0 < (n.createdAt || 0) - 50, H = LocalModels.holder;
-  let phase = old ? 'queue' : j.phase, meta = '', bar = null;
-  if (phase === 'queue') { const p = LocalModels.progress; if (H && H.phase === 'load' && p) { phase = 'load'; meta = frLoad(p); bar = (p.pct || 0) * 100; } else meta = H && H !== j ? 'le modèle termine la demande précédente…' : 'démarrage…'; }
+  const t = now(), H = LocalModels.holder;
+  let phase = own ? j.phase : 'queue', meta = '', bar = null;
+  if (phase === 'queue') { const p = LocalModels.progress; if (H && H.phase === 'load' && p) { phase = 'load'; meta = frLoad(p); bar = (p.pct || 0) * 100; } else meta = H && H !== own ? 'le modèle termine la demande précédente…' : 'démarrage…'; }
   else if (phase === 'load') { const p = LocalModels.progress; meta = p ? frLoad(p) : 'préparation…'; bar = p ? (p.pct || 0) * 100 : 0; }
   else if (phase === 'prefill') {
     const s = j.tPrefill ? (t - j.tPrefill) / 1000 : 0, sp = LocalModels.speed.get(j.model);
@@ -11448,7 +11499,7 @@ S.onLocalLive = () => { if (__llQ) return; __llQ = true; setTimeout(() => { __ll
 document.addEventListener('click', async (e) => {
   const el = e.target.closest('[data-llm]'); if (!el) return;
   const chat = currentChat(), id = el.dataset.id, act = el.dataset.llm; if (!chat || !chat.nodes[id]) return;
-  if (act === 'wait') { const j = LocalModels.live; if (j) j.dismissed = true; refreshLocalLive(); return; }
+  if (act === 'wait') { const j = localLiveJob(chat.nodes[id]); if (j) j.dismissed = true; refreshLocalLive(); return; }
   el.disabled = true;
   S.running.get(id)?.ctrl.abort();
   for (let i = 0; i < 60 && chatBusy(chat); i++) await sleep(50);
@@ -11779,25 +11830,44 @@ const ASSUME_FAMILY = { PD: '\\bPD\\b|probabilit[ée]s? de d[ée]faut', LGD: '\\
 
 const Coherence = {
   TRACK_RE: /\b(registres?|suivis?|suivre|tracker|tracking|collectes?|collecter|relances?|relancer|check-?lists?|plans? d.actions?|to-?do|backlog|listes? (de|des) (documents|pieces|demandes|actions|livrables|taches)|demandes? de (documents|pieces|informations))\b/,
-  /* Demande en cours : dernier message de l'utilisateur ; une suite courte (« oui », « continue ») reprend la demande d'origine */
+  /* Demande en cours : dernier message de l'utilisateur. Une suite ou un ajustement (« oui », « continue », « ajoute trois lignes… »,
+     « refais le même classeur pour le trimestre suivant », message court sans nouvelle demande) reprend la demande d'origine, de proche
+     en proche ; une NOUVELLE demande, même courte (« Analyse ce portefeuille en Excel premium »), est traitée pour elle-même. */
+  FOLLOW_RE: /^(?:(?:merci|bien|tres bien|bon|parfait|super|ok|okay)\b[\s,.;:!]*)?(?:oui|ouais|ok|okay|d'accord|dac|vas[- ]y|allez[- ]y|go|volontiers|je veux bien|c'est parti|lance|continue|continuez|poursuis|poursuivez|termine|finis|ajoute|ajouter|corrige|corriger|modifie|modifier|change|changer|remplace|remplacer|retire|retirer|enleve|enlever|supprime|supprimer|mets|renomme|trie|complete|ameliore|refais|refaire|reprends|reprendre|precise|adapte|ajuste|rectifie|garde|conserve|actualise|pareil|idem|meme|memes|fais[- ](?:le|la|les|pareil|de meme)|faites[- ]le)\b/,
+  NEW_TASK_RE: /\b(analyse[rz]?|prepare[rz]?|cree[rz]?|genere[rz]?|produis|produire|calcule[rz]?|redige[rz]?|simule[rz]?|construis|construire|etablis|etablir|dresse[rz]?|elabore[rz]?)\b/,
+  isFollowUp(text) {
+    const t = normalizeText(text || '').trim();
+    // (message court sans verbe de demande : suite, sauf s'il réclame lui-même un document — « Un Excel du portefeuille joint stp »)
+    if (!this.NEW_TASK_RE.test(t)) return this.FOLLOW_RE.test(t) || (t.length < 60 && !/\b(excel|xlsx|classeur|word|docx|pdf|powerpoint|pptx)\b/.test(t));
+    // Message qui porte une demande : suite seulement s'il commence par un ajustement (« ajoute une analyse… ») ou un court « oui, prépare-le »
+    return /^(?:(?:merci|bien|tres bien|bon)\b[\s,.;:!]*)?(?:ajoute|ajouter|corrige|corriger|modifie|modifier|complete|ameliore|refais|refaire|reprends|reprendre|adapte|ajuste|rectifie)\b/.test(t) || (this.FOLLOW_RE.test(t) && t.length < 60);
+  },
   requestText(ctx) {
     const chat = ctx?.chat;
     if (!chat?.nodes) return '';
     let id = ctx.node?.parentId;
     if (!id) id = Object.values(chat.nodes).filter((n) => n.role === 'user').sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0]?.id;
     const users = id ? pathTo(chat, id).filter((n) => n.role === 'user') : [];
-    const last = String(users.at(-1)?.content || '');
-    return last.trim().length < 60 && users.length > 1 ? `${users.at(-2).content || ''}\n${last}` : last;
+    const parts = [];
+    for (let i = users.length - 1; i >= 0 && parts.length < 6; i--) {
+      parts.unshift(String(users[i].content || ''));
+      if (!this.isFollowUp(users[i].content)) break;
+    }
+    return parts.join('\n');
   },
-  /* Registre de suivi demandé : suivi, collecte, relance, registre… ou owners + statuts explicitement demandés */
+  /* Registre de suivi demandé : suivi, collecte, relance, registre… ou un responsable ET un état ou une échéance à suivre
+     (« porteur, état et date cible », « qui s'en occupe, où on en est, pour quand ») */
   trackingAsked(text) {
     const t = normalizeText(text || '');
-    return this.TRACK_RE.test(t) || (/\b(owners?|responsables?|porteurs?)\b/.test(t) && /\b(statuts?|avancement|echeances?)\b/.test(t));
+    const who = /\b(owners?|responsables?|porteurs?|pilotes?|referents?|assigne|assignes|en charge|qui s.en (occupe|charge))\b/.test(t);
+    const state = /\b(statuts?|avancement|echeances?|dates? (cible|limite|butoir)s?|deadlines?|ou (on|il|elle|ils|elles) en (est|sont)|pour quand)\b/.test(t);
+    return this.TRACK_RE.test(t) || (who && state);
   },
   /* Design précis demandé (thème, couleurs, charte, logo, style) — « premium », « joli », « soigné » ne désignent pas un design */
   designAsked(said) {
     const t = normalizeText(said || '').replace(/\b(premium|ultra|haut de gamme|joli|jolie|beau|belle|elegant|elegante|esthetique|soigne|soignee|professionnel|professionnelle|propre|impeccable|structure|structuree|mise en forme)\b/g, ' ');
-    return /\b(design|charte|couleurs?|teintes?|themes?|styles?|habillage|habiller|logos?|palettes?|polices?|look|empreinte)\b/.test(t) || COLOR_WORDS.test(t);
+    // Une couleur citée comme donnée (« zone rouge », « groupe Orange ») n'est pas un choix de design ; « en vert », « fond bleu », « #1F4E79 » le sont
+    return /\b(design|charte|couleurs?|teintes?|themes?|styles?|habillage|habiller|logos?|palettes?|polices?|look|empreinte)\b/.test(t) || /#[0-9a-f]{6}\b|\b(en|fond|bandeau|accent|tons?|nuances?)\s+(?:de\s+|d')?(vert|verte|rouge|bleu|bleue|orange|violet|jaune|noir|gris|rose|marron|dore|turquoise|sarcelle|marine|bordeaux|kaki|beige)\b/.test(t);
   },
   /* Thème nommé par l'utilisateur : « thème revue », « design prestige », « en bordeaux » ; un nom de thème qui est un mot courant ne suffit pas seul */
   themeNamed(said, name) {
@@ -11819,6 +11889,8 @@ const Coherence = {
     const t = normalizeText(text || '');
     if (!t.trim()) return false;
     if (t.includes(normalizeText(s.name || '#')) || (s.title && t.includes(normalizeText(s.title)))) return true;
+    // Skill appris pour un registre de suivi (collecte, relances, owners) : jamais pour une demande qui n'est pas un suivi, même du même domaine
+    if (this.trackingAsked(`${s.title || ''} ${s.description || ''}`) && !this.trackingAsked(t)) return false;
     const purpose = this.stems(`${s.title || ''} ${s.description || ''}`), task = this.stems(t);
     const shared = [...purpose].filter((w) => task.has(w)).length;
     return shared >= 2 && shared >= Math.ceil(purpose.size * 0.2);
@@ -11859,6 +11931,15 @@ const Coherence = {
     const lines = blocks.flatMap((b) => b.split('\n').slice(1)).map((l) => l.trim()).filter((l) => l.length > 8 && !/^#/.test(l)).filter((l) => { const n = normalizeText(l); return !FOREIGN.test(n) && (tracking || !TRACK.test(n)); });
     return truncate(lines.slice(0, 12).join('\n'), 1500);
   },
+  /* Stratégie enregistrée reprise telle quelle : seulement si elle n'impose rien que la demande ne demande pas (registre de suivi, design).
+     Une stratégie contaminée par une autre tâche (registre plaqué sur une analyse, enregistré avant la correction) n'est plus recopiée ;
+     seule sa méthode, nettoyée, est transmise au Guru. */
+  strategyFits(text, task) {
+    const s = normalizeText(text || '').split('\n').filter((l) => !/\b(pas de|sans|aucun|aucune|jamais|ni|n.en|eviter|evite)\b/.test(l)).join('\n'), t = normalizeText(task || '');
+    if (!this.trackingAsked(t) && (/\b(registres?|owners?|relances?|status_column|collecte)\b|tableau de bord par statut|mode d.emploi/.test(s))) return false;
+    if (!this.designAsked(t) && /#[0-9a-f]{6}\b|\btheme\s*[=:]|\bthemes?\s+[«"']?[a-z]{3,}/.test(s)) return false;
+    return true;
+  },
   /* Expérience passée présentée comme leçon de méthode (AUTRE demande : rien à recopier) */
   lesson(e) {
     const clean = (x) => String(x || '').replace(/«[^»]*»|"[^"]*"/g, '…').replace(/\b[\w./-]+\.(csv|xlsx|xlsb|xls|docx|pptx|pdf|png|json)\b/gi, 'fichier').replace(/#[0-9a-f]{6}\b/gi, '').replace(/\s+/g, ' ').trim();
@@ -11881,8 +11962,20 @@ const Coherence = {
   },
   /* ---------- Classeurs ---------- */
   /* Colonnes d'un registre de suivi (owner, statut de suivi, échéances, réception) — [] si le tableau n'en est pas un */
-  trackingHeaders(H, R = []) {
-    const n = H.map((h) => normalizeText(String(h ?? '')).replace(/[_✎]+/g, ' ').trim());
+  /* Texte des pièces jointes de la demande : une colonne qui en vient telle quelle (champ exact d'un CSV ou d'une feuille : « Statut » d'un
+     prêt, « Date d'échéance ») est une donnée de l'analyse, pas un registre de suivi plaqué */
+  sourceText(chat, nodeId) {
+    if (!chat?.nodes || !nodeId) return '';
+    const parts = [];
+    for (const u of pathTo(chat, nodeId).filter((x) => x.role === 'user').slice(-6)) for (const a of u.attachments || []) for (const k of ['text', 'content', 'extracted', 'preview']) if (typeof a[k] === 'string' && !a[k].startsWith('data:')) parts.push(a[k].slice(0, 300000));
+    return normalizeText(parts.join('\n'));
+  },
+  fromSource(h, src) {
+    const k = normalizeText(String(h ?? '')).replace(/✎/g, '').trim(), e = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return !!src && k.length > 2 && new RegExp('(^|[\\n,;\\t|])[ "\']*' + e + '[ "\']*(?=[\\n,;\\t|]|$)').test(src);
+  },
+  trackingHeaders(H, R = [], src = '') {
+    const n = H.map((h) => (this.fromSource(h, src) ? '' : normalizeText(String(h ?? '')).replace(/[_✎]+/g, ' ').trim()));
     const owner = n.findIndex((h) => /\b(owners?|responsables?|porteurs?|assigne|en charge|pilote|referent)\b/.test(h));
     const status = n.findIndex((h) => /^(statut|status|etat|etat d.avancement|avancement)\b/.test(h));
     // Une « échéance » n'est une date de suivi que si ses valeurs en sont (« Echeance_FCFA » = montant d'un échéancier)
@@ -11898,17 +11991,17 @@ const Coherence = {
   },
   /* Avant create_excel : noms de feuilles lisibles, « Top N » limité, unités dans les en-têtes, formats des tuiles, registre ou non */
   prepareSheets(sheets, a, ctx) {
-    const said = this.requestText(ctx);
+    const said = this.requestText(ctx), src = this.sourceText(ctx?.chat, ctx?.node?.parentId);
     const meta = [a.title, a.subtitle, a.file_name, ...sheets.flatMap((s) => [s.name, s.title, s.item_label])].filter(Boolean).join(' ');
-    const tracking = a.dashboard === true || this.trackingAsked(said.trim() ? said : meta);
+    const asked = this.trackingAsked(said.trim() ? said : meta), tracking = a.dashboard === true || asked;
     const notes = [], foreign = [], unitless = new Set();
     const unit = XlFormat.unitOf(a.unit) || (a.unit && String(a.unit).trim().length <= 12 ? String(a.unit).trim() : '') || XlFormat.unitOf([a.subtitle, a.title, ...sheets.map((s) => s.subtitle)].filter(Boolean).join(' ')) || XlFormat.headerUnit(sheets);
     for (const s of sheets) {
       const old = s.name;
       if (s.name) { s.name = XlFormat.sheetLabel(s.name); if (s.title && s.title === old) s.title = s.name; }
-      const top = XlFormat.limitTop(s);
+      const top = XlFormat.limitTop(s, said);
       if (top) notes.push(top);
-      if (!tracking) { const th = this.trackingHeaders(s.headers || [], s.rows || []); if (th.length) foreign.push(`« ${s.name || s.title || 'feuille'} » (${th.slice(0, 5).map((h) => `« ${h} »`).join(', ')})`); }
+      if (!tracking) { const th = this.trackingHeaders(s.headers || [], s.rows || [], src); if (th.length) foreign.push(`« ${s.name || s.title || 'feuille'} » (${th.slice(0, 5).map((h) => `« ${h} »`).join(', ')})`); }
       const R = s.rows || [];
       (s.headers || []).forEach((h, c) => {
         if (!XlFormat.isAmountHead(h) || XlFormat.hasUnit(h) || !R.length || R.filter((r) => Office.cellValue(r?.[c]).n != null).length < R.length * 0.6) return;
@@ -11919,8 +12012,10 @@ const Coherence = {
     }
     const warn = [];
     if (foreign.length) warn.push(`⚠️ COHÉRENCE AVEC LA DEMANDE — structure de registre de suivi dans ${foreign.join(' ; ')} alors que la demande ne porte pas sur un suivi : owners, statuts et échéances ne viennent pas de la demande (reprise d'une autre tâche ?). Le classeur est rendu en tableau d'analyse, sans tableau de bord de suivi ; retire ces colonnes (ou la feuille) et régénère avec seulement l'analyse demandée.`);
-    if (unitless.size) warn.push(`⚠️ UNITÉ — montants sans unité : ${[...unitless].slice(0, 6).map((h) => `« ${h} »`).join(', ')}. Précise l'unité (paramètre unit, ex. « XOF » ou « M XOF ») : déduis-la de l'en-tête source, des métadonnées ou de l'ordre de grandeur, puis régénère.`);
-    return { tracking, notes, unit, warn: warn.join('\n') };
+    // Modèle du navigateur : simple note (une régénération coûte des minutes sur la carte graphique)
+    if (unitless.size && /^webllm\//.test(ctx?.model || '')) notes.push(`montants sans unité : ${[...unitless].slice(0, 6).map((h) => `« ${h} »`).join(', ')}`);
+    else if (unitless.size) warn.push(`⚠️ UNITÉ — montants sans unité : ${[...unitless].slice(0, 6).map((h) => `« ${h} »`).join(', ')}. Précise l'unité (paramètre unit, ex. « XOF » ou « M XOF ») : déduis-la de l'en-tête source, des métadonnées ou de l'ordre de grandeur, puis régénère.`);
+    return { tracking, asked, notes, unit, warn: warn.join('\n') };
   },
   /* Paramètres saisis à la main dans le code (pd_map = {…}, LGD = […]) : des hypothèses, pas des données */
   assumptions(calls) {
@@ -11930,7 +12025,9 @@ const Coherence = {
       const code = String(tc.parsed?.code ?? safeJSON(tc.args || '')?.code ?? tc.args ?? '');
       for (const m of code.matchAll(/([A-Za-z_][A-Za-z0-9_]*)\s*=\s*[{[]([^}\]]{0,800})/g)) {
         const segs = m[1].replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase().split('_').filter(Boolean);
-        if (segs.some((x) => ASSUME_SEGS.has(x)) && (m[2].match(/\d+(?:\.\d+)?/g) || []).length >= 2) out.add(m[1]);
+        // Bornes de tranches, listes de colonnes ou de libellés (pdBuckets, lgd_cols) : présentation des données, pas des paramètres
+        if (segs.some((x) => /^(buckets?|bins?|tranches?|bornes?|bounds?|edges?|cols?|columns?|colonnes?|labels?|libelles?|names?|noms?|keys?|order|ordre|fields?|champs?)$/.test(x))) continue;
+        if (segs.some((x) => ASSUME_SEGS.has(x)) && (m[2].replace(/(["'`])(?:(?!\1)[^\n])*\1/g, '').match(/\d+(?:\.\d+)?/g) || []).length >= 2) out.add(m[1]);
       }
     }
     return [...out];
@@ -11980,8 +12077,10 @@ const Coherence = {
   async audit({ node, task, contract, userNode, text = '', calls = [], files = [] }) {
     const checks = [], blocking = [];
     if (!contract || !['analyse', 'livrable'].includes(contract.kind)) return { checks, blocking };
+    // Modèle du navigateur : une unité absente est signalée sans passe de correction (chaque génération coûte des minutes sur la carte graphique)
+    const soft = /^webllm\//.test(node?.model || ''), advice = [];
     const chat = [...col('chats').values()].find((c) => c.nodes?.[node.id]);
-    const tracking = this.trackingAsked((chat && this.requestText({ chat, node })) || task);
+    const req = (chat && this.requestText({ chat, node })) || task, tracking = this.trackingAsked(req), src = chat ? this.sourceText(chat, node.parentId) : '';
     const isX = (f) => /\.(xlsx|xlsm)$/i.test(f);
     const prod = calls.filter((tc) => tc.status === 'done' && (tc.display?.files || []).some(isX));
     const last = prod.length ? prod.at(-1).display.files.filter((f) => isX(f) && files.includes(f)) : [];
@@ -11994,25 +12093,27 @@ const Coherence = {
       if (!tracking) {
         const found = [];
         for (const sh of book) {
-          const th = this.trackingHeaders(sh.headers, sh.data);
+          const th = this.trackingHeaders(sh.headers, sh.data, src);
           if (th.length) found.push(`colonnes ${th.slice(0, 4).map((h) => `« ${h} »`).join(', ')} (feuille « ${sh.name} »)`);
           const kinds = new Set(sh.cells.filter((c) => c.length < 30).map(statusKind).filter((k) => TRACK_KINDS.has(k)));
           const all = normalizeText(sh.cells.join(' '));
-          if (kinds.size >= 4 && /avancement|total (des )?elements|situation au/.test(all)) found.push(`tableau de bord par statut (feuille « ${sh.name} »)`);
+          // (le tableau de bord du registre porte toujours « Avancement » ; « Situation au 30/09 » seul est l'arrêté d'une analyse)
+          if (kinds.size >= 4 && /\bavancement\b/.test(all) && /total (des )?elements|situation au|en retard/.test(all)) found.push(`tableau de bord par statut (feuille « ${sh.name} »)`);
           if (/mode d.emploi/.test(all) && /statuts?/.test(all)) found.push(`mode d'emploi et liste de statuts (feuille « ${sh.name} »)`);
         }
         if (found.length) problems.push(`Structure de registre de suivi absente de la demande dans ${nm} : ${found.join(' ; ')} — la demande ne porte pas sur un suivi (aucun owner, statut ni échéance demandés) : retire ces colonnes ou feuilles (statuts et owners fictifs, tableau de bord par statut, mode d'emploi) et régénère le classeur avec seulement l'analyse demandée`);
       }
       for (const sh of book) {
-        const m = normalizeText(sh.name).match(/\btop[\s_-]*(\d{1,3})?\b/);
-        if (!m) continue;
-        const N = +m[1] || 20, n = sh.data.filter((r) => !/^(total|sous-total|grand total|ensemble|autres?)\b/i.test(String(r[0] ?? '').trim())).length;
+        const N = XlFormat.topN(sh.name, (chat && this.requestText({ chat, node })) || task);
+        if (!N) continue;
+        const n = sh.data.filter((r) => !/^(total|sous-total|grand total|ensemble|autres?)\b/i.test(String(r[0] ?? '').trim())).length;
         if (n > N + 2) problems.push(`La feuille « ${sh.name} » de ${nm} contient ${n.toLocaleString('fr-FR')} lignes : une feuille « Top » se limite aux ${N} premières lignes, triées par montant décroissant`);
       }
       // Unité citée quelque part dans le classeur (titre, tuiles, en-têtes, colonne Unité, formats « #,##0" XOF" ») : rien à signaler
       const said = book.some((sh) => [sh.top, ...sh.headers, ...sh.cells, ...sh.fmts].some((x) => XlFormat.hasUnit(x) || /^(unite|unites|unit|devise|monnaie)$/.test(normalizeText(x).trim())));
-      const noUnit = said ? [] : book.map((sh) => [sh, sh.headers.filter((h) => XlFormat.isAmountHead(h) && !XlFormat.hasUnit(h))]).filter(([, am]) => am.length).map(([sh, am]) => `${am.slice(0, 3).map((h) => `« ${h} »`).join(', ')} (feuille « ${sh.name} »)`);
-      if (noUnit.length) problems.push(`Montants sans unité dans ${nm} : ${noUnit.slice(0, 3).join(' ; ')} — indique l'unité dans les en-têtes (ex. « EAD (M XOF) ») ; déduis-la de l'en-tête source, des métadonnées ou de l'ordre de grandeur`);
+      // (montant = en-tête de montant ET valeurs numériques : « Garantie » = Hypothèque, « Résultat du contrôle » = Conforme ne sont pas des montants)
+      const noUnit = said ? [] : book.map((sh) => [sh, sh.headers.filter((h, c) => XlFormat.isAmountHead(h) && !XlFormat.hasUnit(h) && sh.data.length > 0 && sh.data.filter((r) => Office.cellValue(r?.[c]).n != null).length >= sh.data.length * 0.6)]).filter(([, am]) => am.length).map(([sh, am]) => `${am.slice(0, 3).map((h) => `« ${h} »`).join(', ')} (feuille « ${sh.name} »)`);
+      if (noUnit.length) (soft ? advice : problems).push(`Montants sans unité dans ${nm} : ${noUnit.slice(0, 3).join(' ; ')} — indique l'unité dans les en-têtes (ex. « EAD (M XOF) ») ; déduis-la de l'en-tête source, des métadonnées ou de l'ordre de grandeur`);
     }
     // Hypothèses saisies dans le code, utilisées dans le livrable ou la réponse, mais jamais présentées comme telles
     const hyp = this.assumptions(calls);
@@ -12033,7 +12134,8 @@ const Coherence = {
       if (cl) { const f = [[...cl[0].fs][0], [...cl[1].fs][0]].sort((a, b) => a - b); problems.push(`Unités incohérentes dans la réponse : « ${cl[0].raw} » et « ${cl[1].raw} » lisent les mêmes données à deux échelles différentes (rapport de ${(f[1] / f[0]).toLocaleString('fr-FR')}). Détermine l'unité réelle des montants (en-tête, métadonnées, ordre de grandeur) et exprime tous les montants dans la même unité, dans la réponse comme dans le classeur`); }
     }
     for (const p of problems) { checks.push({ ok: false, label: p }); blocking.push(p); }
-    if (!problems.length && (last.length || hyp.length)) checks.push({ ok: true, label: 'Cohérence avec la demande : structure, formats, unités et hypothèses conformes' });
+    for (const p of advice) checks.push({ ok: null, label: p });
+    if (!problems.length && !advice.length && (last.length || hyp.length)) checks.push({ ok: true, label: 'Cohérence avec la demande : structure, formats, unités et hypothèses conformes' });
     return { checks, blocking };
   },
 };
@@ -12049,7 +12151,15 @@ const XlFormat = {
   key(h) { return normalizeText(String(h ?? '')).replace(/[_\W]+/g, ' ').trim(); },
   hasUnit(h) { const s = String(h ?? ''); return this.UNIT_RE.test(normalizeText(s).replace(/_/g, ' ')) || /\(\s*(k|m|md|mds|mrd|milliers?|millions?|milliards?)\b/i.test(s); },
   isAmountHead(h) { const t = this.key(h); return this.AMOUNT_HEAD.test(t) && !this.NOT_AMOUNT.test(t) && !/%/.test(String(h ?? '')); },
-  codeLike(h) { const t = this.key(h); return /(^| )(code|codes|segment|id|identifiant|n|no|num|numero|matricule|annee|exercice|year|stage|stade|classe|rang|rank|cote|agence|ref|reference|cle|cif|periode|trimestre)( |$)/.test(t) && !/(^| )(nb|nombre|nbre|count|montant|total|somme|effectif)( |$)/.test(t); },
+  // Identifiants et périodes : jamais de séparateur de milliers (« Compte » 251100, « Account Number », « Client » 100234, « Cohorte » 2024, « Mois » 202609)
+  codeLike(h) {
+    const t = this.key(h);
+    if (/(^| )(nb|nombre|nbre|count|montant|total|somme|effectif)( |$)|number of/.test(t)) return false;
+    return /(^| )(code|codes|segment|id|identifiant|n|no|num|numero|matricule|annee|exercice|year|stage|stade|classe|rang|rank|cote|agence|ref|reference|cle|cif|periode|trimestre)( |$)/.test(t)
+      || (/(^| )(number|nr|an|millesime|cohorte|vintage|generation|period|mois|month|compte|account|client|customer|contrat|contract|dossier|pret|loan|facility|branch|telephone|tel|phone|gl|iban|bic|swift|isin|siren|siret|ninea|rccm|nif|ifu)( |$)/.test(t) && !this.AMOUNT_HEAD.test(t) && !/(^| )(value|valeur|prix|price|cost|cout)( |$)/.test(t));
+  },
+  /* Années, mois (aaaamm) ou dates (aaaammjj) en entiers */
+  periodLike(vals) { return vals.length > 0 && vals.every((x) => Number.isInteger(x) && ((x >= 1900 && x <= 2100) || (x >= 190001 && x <= 210012 && x % 100 >= 1 && x % 100 <= 12) || (x >= 19000101 && x <= 21001231 && Math.floor(x / 100) % 100 >= 1 && Math.floor(x / 100) % 100 <= 12))); },
   isPctLabel(label) { const raw = normalizeText(String(label ?? '')), t = this.key(label); return (/%/.test(raw) || /taux|ratio|(^| )parts?( |$)|couverture|coverage|pourcent|proportion|share|(^| )rates?( |$)|(^| )(pd|lgd|ccf)( |$)|probabilit/.test(t)) && !/taux de change|(^| )cours( |$)|multiple|nombre de fois|(^| )x( |$)/.test(t); },
   // Typographie française : espace avant % (« 5,0 % »), comme les pourcentages déjà exprimés en points (0.0" %")
   pctFmt(vals) { return vals.some((x) => x !== 0 && Math.abs(x) < 0.01) ? '0.00 %' : '0.0 %'; },
@@ -12067,7 +12177,9 @@ const XlFormat = {
     const ints = vals.every((x) => Number.isInteger(x));
     if (pctFlag) return { kind: 'pct', fmt: this.pctFmt(vals) };
     const explicit = /%|pourcent|(^|[^a-z])pct([^a-z]|$)/.test(raw);
-    if (!(this.hasUnit(h) && !explicit) && (explicit || this.PCT_HEAD.test(t))) {
+    // Taux qui ne sont pas des pourcentages : taux de change (655,957), cours, multiples (« Couverture (x) » 2,5)
+    const notPct = !explicit && /taux de change|(^| )(cours|multiples?|fois|levier|x)( |$)/.test(t);
+    if (!notPct && !(this.hasUnit(h) && !explicit) && (explicit || this.PCT_HEAD.test(t))) {
       if (max <= 1.5 && !ints) return { kind: 'pct', fmt: this.pctFmt(vals) };
       if ((explicit || (this.SHARE_HEAD.test(t) && !ints)) && max <= 100.5) return { kind: 'dec', fmt: ints ? '0" %"' : this.unitsPctFmt(vals) };
       if (this.RATE_HEAD.test(t) && !ints) {
@@ -12075,7 +12187,7 @@ const XlFormat = {
         if (max <= 1000) return { kind: 'dec', fmt: this.unitsPctFmt(vals) };
       }
     }
-    if (ints) return { kind: 'int', fmt: this.codeLike(h) ? '0' : '#,##0' };
+    if (ints) return { kind: 'int', fmt: this.codeLike(h) || (this.periodLike(vals) && !this.AMOUNT_HEAD.test(t) && !/(^| )(nb|nombre|nbre|count|effectif|total|somme)( |$)/.test(t)) ? '0' : '#,##0' };
     return { kind: 'dec', fmt: this.decFmt(abs, h) };
   },
   /* Tableau d'indicateurs (Indicateur | Valeur…) : le format suit le libellé de chaque ligne */
@@ -12108,6 +12220,8 @@ const XlFormat = {
     return Number.isInteger(v) ? '#,##0' : Math.abs(v) < 1 ? '0.000' : '#,##0.00';
   },
   cell(v, { unit, unitFrac, label, amountUnit } = {}) {
+    // Identifiant ou période d'un tableau d'indicateurs (« Exercice » 2026 avec l'unité « - », arrêté 20260930) : sans séparateur de milliers
+    if (Number.isInteger(v) && label != null && String(label).trim() && (this.codeLike(label) || (v >= 190001 && this.periodLike([v]) && !this.AMOUNT_HEAD.test(this.key(label))))) return '0';
     if (unit != null && String(unit).trim()) return this.unitCell(unit, v, unitFrac);
     if (label != null && String(label).trim()) return this.byLabel(label, v, amountUnit);
     return null;
@@ -12162,16 +12276,28 @@ const XlFormat = {
       .split(' ').map((w) => W[normalizeText(w)] || w).join(' ');
     return s ? (s.charAt(0).toUpperCase() + s.slice(1)).slice(0, 31) : s0;
   },
-  /* Feuille « Top N » : N premières lignes, triées par le montant principal (« Top » seul : 20) */
-  limitTop(sh) {
-    const m = normalizeText(sh.name || sh.title || '').match(/\btop[\s_-]*(\d{1,3})?\b/);
+  /* N d'une feuille « Top » : celui du nom (« Top 10 »), sinon celui de la demande (« top 50 », « les 50 premiers »), sinon 20 ; 0 : pas une feuille Top */
+  topN(name, said = '') {
+    const m = normalizeText(name || '').match(/\btop[\s_-]*(\d{1,3})?\b/);
+    if (!m) return 0;
+    if (+m[1]) return +m[1];
+    const q = normalizeText(said || '').match(/\btop[\s_-]*(\d{1,3})\b|\b(\d{1,3})\s+(?:premiers|premieres|plus (?:gros|grosses|grands|grandes|importants|importantes|fortes?|eleve(?:e|s|es)?))\b/);
+    return q ? +(q[1] || q[2]) : 20;
+  },
+  /* Feuille « Top N » : N premières lignes. Ordre déjà choisi par le modèle (lignes triées sur une colonne de valeurs : taux de défaut,
+     encours…) conservé ; sinon tri par le montant principal */
+  limitTop(sh, said = '') {
+    const N0 = this.topN(sh.name || sh.title || '', said);
     const R = sh.rows || [], H = sh.headers || [];
-    if (!m || !R.length) return '';
-    const N = clamp(+m[1] || 20, 1, 500);
+    if (!N0 || !R.length) return '';
+    const N = clamp(N0, 1, 500);
     const isTot = (r) => /^(total|sous-total|grand total|ensemble|autres?)\b/i.test(String(r?.[0] ?? '').trim());
     const body = R.filter((r) => !isTot(r)), tots = R.filter(isTot);
     if (body.length <= N) return '';
     const num = (v) => Office.cellValue(v).n;
+    const mono = (v) => v.every((x) => x != null) && new Set(v).size > 2 && (v.every((x, i) => !i || x <= v[i - 1]) || v.every((x, i) => !i || x >= v[i - 1])) && !v.every((x, i) => x === v[0] + i);
+    const kept = H.findIndex((h, c) => !this.codeLike(h) && mono(body.map((r) => num(r?.[c]))));
+    if (kept >= 0) { sh.rows = [...body.slice(0, N), ...tots]; return `« ${sh.name || sh.title} » limitée aux ${N} premières lignes sur ${body.length.toLocaleString('fr-FR')} (ordre conservé, trié par « ${H[kept]} »)`; }
     const cand = H.map((h, c) => ({ h, c, n: body.filter((r) => num(r?.[c]) != null).length, sum: body.reduce((a, r) => a + Math.abs(num(r?.[c]) || 0), 0) }))
       .filter((x) => x.n >= body.length * 0.8 && !this.PCT_HEAD.test(this.key(x.h)) && !this.codeLike(x.h));
     const pick = cand.find((x) => this.isAmountHead(x.h)) || cand.sort((a, b) => b.sum - a.sum)[0];
@@ -12184,12 +12310,23 @@ const XlFormat = {
 /* ============================== 08u · DESIGNS DU CATALOGUE NOMMÉS DANS UNE DEMANDE ==============================
    Le contrôle de cohérence (s'il est présent) reconnaît aussi un design du catalogue désigné par son libellé
    (« thème papier saumon », « design natif 2023 ») : la demande explicite l'emporte alors sur le réglage. */
+/* Identifiants qui sont aussi des mots courants (« ventes de saumon », « clients SaaS », « après minuit », « agence de Ndar ») :
+   comme « thème revue » pour les thèmes classiques, il faut « design saumon », « style SaaS », « en bogolan »… */
+const COMMON_DESIGN_IDS = new Set(['saumon', 'saas', 'minuit', 'pastel', 'indigo', 'ardoise', 'sourdine', 'abysse', 'bogolan', 'ndar']);
 setTimeout(() => {
   try {
     if (typeof Coherence === 'undefined' || typeof Coherence.themeNamed !== 'function' || Coherence.themeNamed.catalog) return;
-    const orig = Coherence.themeNamed.bind(Coherence);
-    Coherence.themeNamed = (said, name) => { const id = findDesign(name); return id ? designNamedIn(said, id) : orig(said, name); };
+    const orig = Coherence.themeNamed.bind(Coherence), asked = Coherence.designAsked.bind(Coherence);
+    const prefixed = (said, id) => {
+      const t = normalizeText(said || '').replace(/[—–-]+/g, ' ').replace(/\s+/g, ' '), esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const label = normalizeText(DESIGN_CATALOG[id].name.split(' (')[0]).replace(/[—–-]+/g, ' ').replace(/\s+/g, ' ').trim();
+      return new RegExp(`\\b(design|style|theme|charte|palette|habillage|look|empreinte|facon|maniere|version|couleurs?|teintes?|tons?|en)\\s+(?:de |du |d'|la |le |« ?|" ?)?(${esc(id)}|${esc(label)})\\b`).test(t);
+    };
+    Coherence.themeNamed = (said, name) => { const id = findDesign(name); return !id ? orig(said, name) : COMMON_DESIGN_IDS.has(id) ? prefixed(said, id) : designNamedIn(said, id) || normalizeText(said || '').includes(id); };
     Coherence.themeNamed.catalog = true;
+    // Nom distinctif d'un design du catalogue sans le mot « design » (« lisible par les daltoniens », « au format IBCS ») : c'est une demande de design
+    const ASK = new RegExp(DESIGN_NAME_WORDS.split('|').filter((w) => !COMMON_DESIGN_IDS.has(w)).join('|'));
+    Coherence.designAsked = (said) => asked(said) || ASK.test(normalizeText(said || ''));
   } catch { /* module de cohérence absent : la reconnaissance par identifiant suffit */ }
 }, 0);
 
@@ -12750,6 +12887,8 @@ async function agentLoop(o) {
     const ev = o.run.begin('llm', (o.depth ? '↳ ' : '') + modelShort(o.model) + (i ? ` · étape ${i + 1}` : ''), body);
     // Contrôleur local : permet d'interrompre un flux qui tourne en boucle
     const ctrl = new AbortController();
+    // Modèle du navigateur : la demande est rattachée à sa réponse (progression affichée au bon endroit)
+    ctrl.signal.cortexNode = o.node?.id || null;
     const relay = () => ctrl.abort();
     o.signal.addEventListener('abort', relay, { once: true });
     let looped = null, checkedAt = 0;
@@ -15115,11 +15254,13 @@ function effortMenu(anchor) {
   const set = (v) => { chat.params = { ...(chat.params || {}), reasoning: v }; if (Object.keys(chat.nodes).length) saveChat(chat); renderModelBar(); };
   // Modèle du navigateur : sans réflexion par défaut (le plus rapide) ; réflexion plafonnée selon l'effort
   const web = /^webllm\//.test(c.model || '') && typeof THINK_BUDGET !== 'undefined';
+  // DeepSeek-R1 réfléchit toujours : « Automatique » = réflexion moyenne, « Désactivé » = réflexion courte (budgets de LocalModels.webllm)
+  const r1 = web && /DeepSeek-R1/i.test(c.model || ''), jt = (n) => n.toLocaleString('fr-FR') + ' jetons de réflexion au plus';
   showMenu(anchor, [
     { header: 'Effort de raisonnement' },
-    { label: web ? 'Automatique — sans réflexion (le plus rapide)' : 'Automatique (défaut du modèle)', checked: !cur, action: () => set('') },
-    ...[...efforts].reverse().map((e) => ({ label: (EFFORT_LABELS[e] || e) + (web && THINK_BUDGET[e] ? ` — ${THINK_BUDGET[e].toLocaleString('fr-FR')} jetons de réflexion au plus` : ''), checked: cur === e, action: () => set(e) })),
-    ...(m?.reasoning?.mandatory ? [] : [{ label: 'Désactivé', checked: cur === 'off', action: () => set('off') }]),
+    { label: r1 ? 'Automatique — ' + jt(THINK_BUDGET.medium) : web ? 'Automatique — sans réflexion (le plus rapide)' : 'Automatique (défaut du modèle)', checked: !cur, action: () => set('') },
+    ...[...efforts].reverse().map((e) => ({ label: (EFFORT_LABELS[e] || e) + (web && THINK_BUDGET[e] ? ` — ${jt(THINK_BUDGET[e])}` : ''), checked: cur === e, action: () => set(e) })),
+    ...(m?.reasoning?.mandatory ? [] : [{ label: r1 ? 'Minimal — ' + jt(THINK_BUDGET.low) + ' (ce modèle réfléchit toujours)' : 'Désactivé', checked: cur === 'off', action: () => set('off') }]),
   ], { side: 'top' });
 }
 function modeMenu(anchor) {
@@ -15412,7 +15553,7 @@ function designPop(anchor, { cur, onPick, title = 'Design des fichiers produits'
         <div class="dp-actions"><button class="btn sm" id="dp-import" title="Copier le DESIGN d'un fichier Excel, Word, PowerPoint ou d'une image (pas ses données)">${icon('upload', 'sm')}<span>Copier le design<span class="dp-hide-xs"> d'un fichier</span></span></button><button class="btn sm" id="dp-guru" title="Décrivez vos goûts : le Guru crée l'empreinte (palette, polices, statuts)">${icon('sparkles', 'sm')} Créer avec le Guru</button>${apply ? `<button class="btn primary sm" id="dp-apply">${icon('refresh', 'sm')} ${esc(apply)}</button>` : ''}</div>
       </div>
     </aside>
-  </div>`, { side: 'top', cls: 'design' });
+  </div>`, { side: 'top', cls: 'design', onClose: () => { if (!document.activeElement || document.activeElement === document.body) anchor?.focus?.({ preventScroll: true }); } });
   let logoIm = null;
   const preview = async () => {
     const img = pop.querySelector('#dp-prev'), none = pop.querySelector('#dp-none');
@@ -15796,7 +15937,7 @@ function ccHelp() {
 
 /* Textes de l'interface pour les designs qui n'ont pas de description propre : [nom, sous-titre, description] */
 const DESIGN_BLURBS = {
-  '': ['Automatique', 'Sobre, ou le style demandé', "Sobre par défaut. Si votre message parle de design (« premium », « aux couleurs de… », le nom d'un design), le modèle choisit le style adapté."],
+  '': ['Automatique', 'Sobre, ou le style demandé', "Sobre par défaut. Si votre message demande un design précis (son nom, un style, une couleur, « aux couleurs de… »), le modèle l'applique ; « premium », « soigné » ou « élégant » gardent Sobre."],
   sobre: ['Sobre', 'Neutre et lisible', "Titre simple, en-têtes gris anthracite, lignes alternées discrètes, formats de nombres soignés. Aucun bandeau, logo ni tableau de bord imposé."],
   revue: ['Revue premium', 'Pétrole et lime', "Bandeau pétrole souligné de lime, tuiles d'indicateurs en dégradé, sections soulignées, registre à colonnes à renseigner et statuts colorés."],
   executif: ['Exécutif', 'Bleu nuit et or', "Bandeau bleu nuit, accent or, en-têtes en dégradé et tuiles d'indicateurs : le classique des rapports de direction."],
@@ -17889,7 +18030,9 @@ const studioSleep = (ms, signal) => new Promise((res, rej) => {
 const studioAR = (r) => String(r || '1:1').replace(':', ' / ');
 const studioKind = (f) => { if (!f || f.encoding !== 'base64') return null; const m = f.mime || mimeFromName(f.id); return /^image\//.test(m) && !/svg/.test(m) ? 'image' : /^video\//.test(m) ? 'video' : null; };
 const studioMedia = (kind) => [...col('files').values()].filter((f) => { const k = studioKind(f); return k && (!kind || kind === 'all' || k === kind); }).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-const studioHasAI = () => !!getApiKey() || (typeof localMode === 'function' && localMode());
+// Analyse d'image (recette, plan vidéo) : modèle de vision OpenRouter (clé requise) ou modèle de vision du serveur local choisi
+// dans les Réglages ; le modèle du navigateur ne lit pas les images (sans clé, la carte « ajoutez une clé » reste affichée)
+const studioHasAI = () => !!getApiKey() || /^local\//.test(visionModel() || '');
 function studioURL(f) {
   const key = f.id + '@' + (f.updatedAt || 0);
   let u = MediaStudio.urls.get(key);
@@ -17899,6 +18042,13 @@ function studioURL(f) {
 function studioPrune() {
   const live = new Set([...col('files').values()].map((f) => f.id + '@' + (f.updatedAt || 0)));
   for (const [k, u] of MediaStudio.urls) if (!live.has(k)) { if (/^blob:/.test(u)) URL.revokeObjectURL(u); MediaStudio.urls.delete(k); }
+}
+/* Chemin libre : une création n'écrase jamais la précédente (même invite + même graine, même description, même minute) */
+function studioFreePath(path) {
+  if (!readWorkspaceFile(path)) return path;
+  const [, base, ext = ''] = path.match(/^(.*?)(\.[^./]+)?$/);
+  for (let i = 2; i < 1000; i++) if (!readWorkspaceFile(`${base}-${i}${ext}`)) return `${base}-${i}${ext}`;
+  return `${base}-${uid('v')}${ext}`;
 }
 /* Contexte minimal pour exécuter un outil depuis la page (sans conversation) */
 const studioCtx = (signal, onProgress) => ({ signal, progress: (p) => onProgress?.(p), cost: (u, model, kind) => logUsage({ kind: kind || 'image', model, prompt: u?.prompt_tokens || 0, completion: u?.completion_tokens || 0, cost: u?.cost ?? 0 }), openArtifact() {}, update() {}, cfg: { kb: [] }, model: '' });
@@ -17956,21 +18106,27 @@ const StudioGen = {
     catch (e) { if (signal?.aborted) throw e; throw new Error('AI Horde est injoignable : vérifiez la connexion internet.'); }
     if (!r.ok || !j.id) throw new Error(this.hordeError(r.status, j));
     const id = j.id, t0 = now();
+    // Connexion perdue ou demande disparue (expirée, retirée de la file) : message clair au lieu d'une attente sans fin
+    const lostNet = (e) => { if (signal?.aborted) throw e; throw new Error('AI Horde est injoignable (connexion perdue) : vérifiez la connexion internet puis réessayez.'); };
     try {
-      for (let k = 0; ; k++) {
+      for (let k = 0, lost = 0; ; k++) {
         await studioSleep(k ? 4000 : 2000, signal);
-        let c;
-        try { c = await (await fetch(`${HORDE_API}/generate/check/${id}`, { headers: HORDE_HEAD, signal })).json(); } catch (e) { if (signal?.aborted) throw e; continue; }
+        if (now() - t0 > 15 * 60e3) throw new Error('AI Horde : délai dépassé (file d\'attente trop longue) — réessayez plus tard ou choisissez Pollinations.');
+        let rc, c;
+        try { rc = await fetch(`${HORDE_API}/generate/check/${id}`, { headers: HORDE_HEAD, signal }); c = await rc.json().catch(() => ({})); }
+        catch (e) { if (signal?.aborted || ++lost >= 3) lostNet(e); status(`Connexion perdue — nouvel essai (${lost}/3)…`); continue; }
+        lost = 0;
+        if (rc.status === 404) throw new Error('AI Horde : la demande a expiré ou a été retirée de la file — relancez la génération.');
+        if (!rc.ok) { if (rc.status === 429) continue; throw new Error(this.hordeError(rc.status, c)); }
         if (c.faulted) throw new Error('AI Horde : la génération a échoué sur le serveur bénévole — réessayez.');
         if (c.is_possible === false) throw new Error('AI Horde : aucun serveur ne propose ce modèle à cette taille en ce moment — choisissez « Rapide » ou un autre moteur.');
         if (c.done) break;
         status(c.processing ? `Génération en cours… (${c.finished || 0}/${n})` : `File d'attente : position ${c.queue_position ?? '?'} · environ ${fmtDur(Math.max(1, c.wait_time || 0) * 1000)}`);
-        if (now() - t0 > 15 * 60e3) throw new Error('AI Horde : délai dépassé (file d\'attente trop longue) — réessayez plus tard ou choisissez Pollinations.');
       }
-      const s = await (await fetch(`${HORDE_API}/generate/status/${id}`, { headers: HORDE_HEAD, signal })).json();
+      let s; try { s = await (await fetch(`${HORDE_API}/generate/status/${id}`, { headers: HORDE_HEAD, signal })).json(); } catch (e) { lostNet(e); }
       const out = [];
       for (const g of s.generations || []) {
-        const data = /^https?:/.test(g.img) ? await blobToDataURL(await (await fetch(g.img, { signal })).blob()) : 'data:image/webp;base64,' + g.img;
+        let data; try { data = /^https?:/.test(g.img) ? await blobToDataURL(await (await fetch(g.img, { signal })).blob()) : 'data:image/webp;base64,' + g.img; } catch (e) { lostNet(e); }
         out.push({ data, w, h, seed: +g.seed || seed, model: g.model || M.id, censored: !!g.censored });
       }
       if (!out.length) throw new Error('AI Horde n\'a renvoyé aucune image.');
@@ -18000,6 +18156,8 @@ FreeImage.generate = async (prompt, { width = 1024, height = 1024, seed } = {}) 
   const gi = TOOLS.get('generate_image');
   if (gi) {
     Object.defineProperty(gi, 'summary', { configurable: true, enumerable: true, get() { return S.settings.imageEngine === 'openrouter' ? 'Génère une image avec le modèle image OpenRouter configuré (payant).' : 'Génère une image gratuitement (Pollinations, sans clé, filigrane « pollinations.ai »), repli possible sur OpenRouter.'; } });
+    // Moteur OpenRouter : la carte d'autorisation du chat affiche le coût estimé (« L'agent veut utiliser « Générer une image (payant ≈ 0,039 $) » »)
+    Object.defineProperty(gi, 'title', { configurable: true, enumerable: true, get() { if (S.settings.imageEngine !== 'openrouter') return 'Générer une image'; const c = studioImgCost(S.settings.imageModel || 'google/gemini-2.5-flash-image'); return `Générer une image (OpenRouter, payant${c != null ? ' ≈ ' + fmtCost(c, true) : ''})`; } });
     const run = gi.run;
     gi.run = async (a, ctx) => { const r = await run.call(gi, a, ctx); if (r && typeof r.text === 'string') r.text = r.text.replace('FLUX (gratuit)', 'Pollinations (gratuit, filigrane « pollinations.ai »)'); return r; };
   }
@@ -18067,7 +18225,28 @@ async function studioEnhanceText(t) {
 
 /* ---------- Page ---------- */
 PAGES.studio = { title: 'Studio images et vidéos', icon: 'studio', render(b) { studioRender(b); } };
+/* Re-rendu sans perte du focus clavier : l'élément équivalent (onglet, moteur, sélecteur, case, champ) reprend le focus */
+function studioFocusSel(a) {
+  const d = a.dataset || {}, q = (v) => '"' + CSS.escape(String(v)) + '"', seg = a.closest('.seg[id]');
+  if (a.id) return '#' + CSS.escape(a.id);
+  if (a.name === 'stEng') return `input[name="stEng"][value=${q(a.value)}]`;
+  if (d.stTab) return `[data-st-tab=${q(d.stTab)}]`;
+  if (d.shot) return `[data-shot=${q(d.shot)}][data-i=${q(d.i)}]`;
+  if (d.st) return `[data-st=${q(d.st)}]` + ['v', 'path', 'i', 'id'].filter((k) => d[k] != null).map((k) => `[data-${k}=${q(d[k])}]`).join('');
+  if (seg && d.v != null) return `#${CSS.escape(seg.id)} [data-v=${q(d.v)}]`;
+  return null;
+}
 function studioRender(b) {
+  const a = document.activeElement, had = !!a && a !== b && b.contains(a);
+  const sel = had ? studioFocusSel(a) : null, caret = had && /^(TEXTAREA|INPUT)$/.test(a.tagName) ? [a.selectionStart, a.selectionEnd] : null;
+  studioRenderAll(b);
+  if (!had) return;
+  const el = (sel && [...b.querySelectorAll(sel)].find((x) => x.tabIndex >= 0 && !x.disabled)) || b.querySelector('.st-tabs [aria-selected="true"]');
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  if (caret && caret[0] != null) try { el.setSelectionRange(caret[0], caret[1]); } catch {}
+}
+function studioRenderAll(b) {
   studioPrune();
   const T = [['image', 'Image', 'image'], ['video', 'Vidéo', 'film'], ['recipe', 'Recette', 'palette'], ['gallery', 'Galerie', 'grid']];
   const n = studioMedia().length;
@@ -18079,6 +18258,12 @@ function studioRender(b) {
   b.onclick = (e) => studioClick(e);
   b.oninput = (e) => studioInput(e);
   b.onchange = (e) => studioChange(e);
+  // Onglets (role=tablist) : flèches gauche/droite, Début, Fin
+  b.querySelector('.st-tabs').onkeydown = (e) => {
+    const ids = T.map((t) => t[0]), i = ids.indexOf(MediaStudio.tab), j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: ids.length - 1 }[e.key];
+    if (j == null) return;
+    e.preventDefault(); studioTab(ids[(j + ids.length) % ids.length]); $('.st-tabs [aria-selected="true"]')?.focus();
+  };
 }
 function studioTab(t) { MediaStudio.tab = t; renderPage(); pageModal?.body && (pageModal.body.scrollTop = 0); }
 
@@ -18143,7 +18328,8 @@ function studioCostNote() {
   return 'Gratuit · environ 5 à 15 s par image';
 }
 function studioResultsHTML() {
-  const jobs = MediaStudio.jobs;
+  // Création supprimée ailleurs (page Fichiers, agent) : sa carte disparaît au lieu de tourner « En attente… » indéfiniment
+  const jobs = MediaStudio.jobs = MediaStudio.jobs.filter((j) => j.status !== 'done' || readWorkspaceFile(j.path));
   if (jobs.length) return `<div class="st-rh"><h3>Résultats</h3><span class="faint small">${jobs.filter((j) => j.status === 'done').length}/${jobs.length}</span><span class="grow"></span>${MediaStudio.busy ? '' : `<button class="btn sm ghost" data-st="clear-jobs">${icon('x', 'sm')} Effacer la liste</button>`}</div><div class="st-results">${jobs.map(studioJobCard).join('')}</div>`;
   const recent = studioMedia('image').filter((f) => f.studio).slice(0, 6);
   if (recent.length) return `<div class="st-rh"><h3>Créations récentes</h3><span class="grow"></span><button class="btn sm ghost" data-st-tab="gallery">${icon('grid', 'sm')} Toute la galerie</button></div><div class="st-results">${recent.map((f) => studioFileCard(f, 'result')).join('')}</div>`;
@@ -18177,6 +18363,12 @@ async function studioGenerate(only) {
   if (!P.prompt.trim()) { toast('Décrivez d\'abord l\'image à créer', 'err'); $('#stPrompt')?.focus(); return; }
   const eng = only ? only.engine : P.engine === 'openrouter' && !getApiKey() ? 'pollinations' : P.engine;
   const n = only ? 1 : clamp(+P.n || 1, 1, 4);
+  if (eng === 'openrouter') {
+    // Moteur payant : coût estimé affiché puis confirmé à chaque lancement (bouton, Ctrl+Entrée, « Réessayer »)
+    const model = studioDefaultOR(), c = studioImgCost(model);
+    const ok = await confirmDialog(`Générer <b>${n} image${n > 1 ? 's' : ''}</b> avec <b>${esc(modelShort(model))}</b> (OpenRouter) ?<br><br>Coût estimé : <b>${c != null ? fmtCost(c * n, true) : 'inconnu (catalogue des modèles non chargé)'}</b>, débité sur votre compte OpenRouter.`, { title: 'Image payante', ok: 'Générer' });
+    if (!ok || MediaStudio.busy) return;
+  }
   const seed0 = /^\d{1,10}$/.test(String(P.seed).trim()) ? +P.seed : Math.floor(Math.random() * 1e9);
   const jobs = only ? [Object.assign(only, { status: 'wait', msg: 'En attente…' })] : Array.from({ length: n }, (_, i) => ({ id: uid('sj'), status: 'wait', msg: 'En attente…', seed: seed0 + i, ratio: P.format, prompt: P.prompt.trim(), style: P.style, full: studioFullPrompt(P), negative: P.negative.trim(), engine: eng, horde: P.horde }));
   if (!only) MediaStudio.jobs = [...jobs, ...MediaStudio.jobs.filter((j) => j.status === 'done')].slice(0, 24);
@@ -18218,7 +18410,7 @@ async function studioGenerate(only) {
 function studioSaveJob(j, r, eng) {
   const ext = (r.data.match(/^data:image\/(\w+)/) || [])[1]?.replace('jpeg', 'jpg') || 'png';
   const seed = r.seed ?? j.seed;
-  const path = 'exports/' + safeFileName(`${slugify(j.prompt).slice(0, 36)}-${seed}`, ext);
+  const path = studioFreePath('exports/' + safeFileName(`${slugify(j.prompt).slice(0, 36)}-${seed}`, ext));
   const f = writeWorkspaceFile(path, r.data, 'base64');
   f.studio = { prompt: j.prompt, style: j.style, engine: eng, model: r.model, seed, w: r.w, h: r.h, ratio: j.ratio, wm: !!r.wm, censored: !!r.censored, cost: r.cost || 0, at: now() };
   persist('files', f);
@@ -18254,6 +18446,7 @@ function studioVideoTotal() { const P = MediaStudio.p; return studioShots().redu
 function studioVideoTab(el) {
   const P = MediaStudio.p, V = MediaStudio.video || {}, shots = studioShots(), total = studioVideoTotal();
   if (getApiKey() && !MediaStudio.vmodels && !MediaStudio.vmLoading && !MediaStudio.vmErr) studioLoadVModels();
+  if (getApiKey() && P.aiJob && !MediaStudio.ai?.busy && !MediaStudio.aiAuto) { MediaStudio.aiAuto = true; setTimeout(() => studioAIFollow()); } // vidéo payée en attente (page rechargée) : suivi repris
   const vf = V.path && readWorkspaceFile(V.path);
   el.innerHTML = `<div class="st-vgrid">
     <section class="st-panel" aria-label="Vidéo locale">
@@ -18315,7 +18508,7 @@ function studioVidPrice(m, { dur = 5, res = '', audio = false, i2v = false } = {
   const sec = Object.keys(P).filter((k) => /second/.test(k) && !/megapixel|continuation|reference/.test(k) && num(k) != null);
   if (!sec.length) return null;
   const r = String(res).toLowerCase();
-  const score = (k) => (r && k.includes(r) ? 4 : /\d+p|_\dk/.test(k) ? -3 : 0) + (audio ? (/with_audio/.test(k) ? 2 : /without_audio/.test(k) ? -2 : 0) : (/without_audio/.test(k) ? 2 : /with_audio/.test(k) ? -2 : 0)) + (i2v ? (/image_to_video/.test(k) ? 1 : /text_to_video/.test(k) ? -1 : 0) : (/text_to_video/.test(k) ? 1 : /image_to_video/.test(k) ? -1 : 0));
+  const score = (k) => (r && k.includes(r) ? 4 : /\d+p|_\dk/.test(k) ? -3 : 0) + (audio ? (/with_audio/.test(k) ? 6 : /without_audio/.test(k) ? -6 : 0) : (/without_audio/.test(k) ? 6 : /with_audio/.test(k) ? -6 : 0)) + (i2v ? (/image_to_video/.test(k) ? 1 : /text_to_video/.test(k) ? -1 : 0) : (/text_to_video/.test(k) ? 1 : /image_to_video/.test(k) ? -1 : 0));
   let cost = num(sec.sort((a, b) => score(b) - score(a))[0]) * dur;
   if (i2v && num('cents_per_image_input') != null) cost += num('cents_per_image_input');
   if (num('minimum_cents_per_generation') != null) cost = Math.max(cost, num('minimum_cents_per_generation'));
@@ -18346,7 +18539,8 @@ function studioAIHTML(shots) {
       <div class="field"><label for="stAIModel">Modèle</label><select class="sel" id="stAIModel" data-sf="aiModel">${MediaStudio.vmodels.map((x) => { const r = studioVidRate(x); return `<option value="${esc(x.id)}" ${x.id === m.id ? 'selected' : ''}>${esc(x.name.replace(/^[^:]+:\s*/, ''))} — ${r != null ? '≈ ' + fmtCost(r, true) + '/s' : 'tarif au jeton'}</option>`; }).join('')}</select></div>
       <div class="grid3 st-aiopts">${ui.field('Durée', ui.select('stAIDur', m.supported_durations.map((d) => [d, d + ' s']), P.aiDur))}${ui.field('Résolution', ui.select('stAIRes', (m.supported_resolutions || ['auto']).map((r) => [r, r]), P.aiRes))}${ui.field('Format', ui.select('stAIRatio', m.supported_aspect_ratios.map((r) => [r, r]), P.aiRatio))}</div>
       <div class="row wrap" style="gap:14px;margin:-4px 0 12px">${m.generate_audio === true ? `<label class="row small"><input type="checkbox" id="stAIAudio" ${P.aiAudio ? 'checked' : ''}> Avec son</label>` : ''}${canFrame ? `<label class="row small"><input type="checkbox" id="stAIFrame" ${P.aiFrame ? 'checked' : ''}> Partir de la 1re image du montage</label>` : ''}</div>
-      <button class="btn primary st-gen" data-st="${A.busy ? 'stop-ai' : 'ai-video'}">${A.busy ? icon('stop', 'sm') + ' Ne plus suivre' : icon('video', 'sm') + ` Générer la vidéo IA · ${est != null ? '≈ ' + fmtCost(est, true) : 'coût au jeton'}`}</button>
+      ${!A.busy && P.aiJob ? `<div class="st-callout">${icon('video', 'sm')}<span>Une vidéo IA payée (lancée le ${esc(fmtDateTime(P.aiJob.t0))}) est en cours chez OpenRouter : son suivi a été interrompu.</span><button class="btn sm primary" data-st="ai-resume">Reprendre le suivi</button><button class="btn sm ghost" data-st="ai-forget">Oublier</button></div>`
+      : `<button class="btn primary st-gen" data-st="${A.busy ? 'stop-ai' : 'ai-video'}">${A.busy ? icon('stop', 'sm') + ' Ne plus suivre' : icon('video', 'sm') + ` Générer la vidéo IA · ${est != null ? '≈ ' + fmtCost(est, true) : 'coût au jeton'}`}</button>`}
       <div class="st-note center">Estimation d'après le tarif publié par OpenRouter ; vous confirmez avant tout débit.</div>
       ${A.busy ? `<div class="st-progress"><div class="st-bar indet"><i></i></div><div class="st-note" id="stAIMsg">${esc(studioAIMsg())}</div></div>` : A.err ? `<div class="st-callout err">${icon('alert', 'sm')}<span>${esc(A.err)}</span></div>` : A.path ? `<div class="st-callout ok">${icon('check', 'sm')}<span>Vidéo IA enregistrée : ${esc(A.path)}${A.cost != null ? (A.real ? ' · coût réel ' : ' · coût estimé ') + fmtCost(A.cost, true) : ''}</span></div>` : ''}`;
   }
@@ -18355,7 +18549,8 @@ function studioAIHTML(shots) {
 const studioAIMsg = () => { const A = MediaStudio.ai || {}; return `${A.msg || ''} · ${fmtDur(now() - (A.t0 || now()))}`; };
 async function studioAIVideo() {
   const P = MediaStudio.p, m = studioVModel();
-  if (!m) return;
+  if (!m || MediaStudio.ai?.busy) return;
+  if (P.aiJob) { toast('Une vidéo IA payée est encore en cours : reprenez son suivi d\'abord', 'err'); return; }
   const prompt = String(P.aiPrompt || '').trim();
   if (!prompt) { toast('Décrivez la vidéo à générer', 'err'); $('#stAIPrompt')?.focus(); return; }
   const shots = studioShots(), frame = P.aiFrame && shots[0]?.path && (m.supported_frame_images || []).includes('first_frame') ? shots[0].path : null;
@@ -18369,32 +18564,51 @@ async function studioAIVideo() {
   if (frame) body.frame_images = [{ type: 'image_url', image_url: { url: await compressImage(readWorkspaceFile(frame).content, 1280, 0.9) }, frame_type: 'first_frame' }];
   const ctrl = new AbortController(), t0 = now();
   MediaStudio.ai = { busy: true, msg: 'Envoi de la demande…', ctrl, t0 };
-  const ui2 = () => { if (S.ui.page === 'studio' && MediaStudio.tab === 'video') renderPage(); };
-  ui2();
-  const tick = setInterval(() => { const n = $('#stAIMsg'); if (n) n.textContent = studioAIMsg(); }, 1000); // mise à jour sur place : la saisie en cours n'est pas perturbée
+  studioAIUI();
+  let sub;
   try {
-    const sub = await OR.request('/videos', { method: 'POST', body, signal: ctrl.signal, retries: 0, timeout: 60000 });
+    sub = await OR.request('/videos', { method: 'POST', body, signal: ctrl.signal, retries: 0, timeout: 60000 });
     if (!sub?.id) throw new Error('Réponse inattendue d\'OpenRouter (aucun identifiant de tâche).');
-    let st = sub;
-    for (let k = 0; !['completed', 'failed', 'cancelled', 'expired'].includes(st.status); k++) {
+  } catch (e) { MediaStudio.ai = { err: ctrl.signal.aborted ? 'Suivi arrêté. Si la demande avait été acceptée, la génération continue chez OpenRouter et reste facturée.' : e.message }; studioAIUI(); return; }
+  // Tâche payée : mémorisée pour reprendre le suivi après un rechargement ou la fermeture de l'onglet
+  P.aiJob = { id: sub.id, model: m.id, prompt, ratio: P.aiRatio, est, t0, status: sub.status };
+  saveSettings();
+  MediaStudio.ai = null;
+  await studioAIFollow(ctrl);
+}
+const studioAIUI = () => { if (S.ui.page === 'studio' && MediaStudio.tab === 'video') renderPage(); };
+async function studioAIFollow(ctrl = new AbortController()) {
+  const P = MediaStudio.p, J = P.aiJob, FIN = ['completed', 'failed', 'cancelled', 'expired'];
+  if (!J || MediaStudio.ai?.busy) return;
+  MediaStudio.aiAuto = true; // reprise automatique : une seule fois par chargement (« Ne plus suivre » reste respecté)
+  MediaStudio.ai = { busy: true, msg: 'En file d\'attente', ctrl, t0: J.t0 };
+  studioAIUI();
+  const tick = setInterval(() => { const n = $('#stAIMsg'); if (n) n.textContent = studioAIMsg(); }, 1000); // mise à jour sur place : la saisie en cours n'est pas perturbée
+  const end = () => { if (P.aiJob === J) { delete P.aiJob; saveSettings(); } };
+  try {
+    let st = { status: J.status || 'pending' };
+    for (let k = 0; !FIN.includes(st.status); k++) {
       MediaStudio.ai.msg = st.status === 'in_progress' ? 'Génération en cours' : 'En file d\'attente';
       await studioSleep(k < 6 ? 5000 : 10000, ctrl.signal);
-      st = await OR.request('/videos/' + encodeURIComponent(sub.id), { signal: ctrl.signal, retries: 2, timeout: 30000 });
-      if (now() - t0 > 20 * 60e3) throw new Error('Délai dépassé (20 min) : la vidéo n\'est pas prête. Consultez votre tableau de bord OpenRouter.');
+      try { st = await OR.request('/videos/' + encodeURIComponent(J.id), { signal: ctrl.signal, retries: 2, timeout: 30000 }); }
+      catch (e) { if (e.status === 404) { end(); throw new Error('Cette vidéo n\'est plus disponible chez OpenRouter (tâche introuvable ou expirée).'); } throw e; }
+      if (!FIN.includes(st.status) && now() - J.t0 > 20 * 60e3) throw new Error('Délai dépassé (20 min) : la vidéo n\'est pas prête. Consultez votre tableau de bord OpenRouter ou reprenez le suivi plus tard.');
     }
-    if (st.status !== 'completed') throw new Error({ failed: 'Génération échouée', cancelled: 'Génération annulée', expired: 'Génération expirée' }[st.status] + (st.error ? ' : ' + truncate(String(st.error.message || st.error), 200) : '') + '.');
-    const real = st.usage?.cost != null, cost = real ? +st.usage.cost : est ?? 0;
-    logUsage({ kind: 'video', model: m.id, cost });
+    if (st.status !== 'completed') { end(); throw new Error({ failed: 'Génération échouée', cancelled: 'Génération annulée', expired: 'Génération expirée' }[st.status] + (st.error ? ' : ' + truncate(String(st.error.message || st.error), 200) : '') + '.'); }
+    const real = st.usage?.cost != null, cost = real ? +st.usage.cost : J.est ?? 0;
+    if (!J.logged) { logUsage({ kind: 'video', model: J.model, cost }); J.logged = true; saveSettings(); }
     MediaStudio.ai.msg = 'Téléchargement de la vidéo';
-    const resp = await OR.request(`/videos/${encodeURIComponent(sub.id)}/content?index=0`, { raw: true, signal: ctrl.signal, timeout: 120000, retries: 1 });
-    const blob = await resp.blob();
-    const path = await saveExport('video-ia-' + slugify(prompt).slice(0, 30), blob, /webm/.test(blob.type) ? 'webm' : 'mp4');
-    const f = readWorkspaceFile(path); f.studio = { engine: 'openrouter-video', model: m.id, prompt, cost, ratio: P.aiRatio, at: now() }; persist('files', f);
+    const resp = await OR.request(`/videos/${encodeURIComponent(J.id)}/content?index=0`, { raw: true, signal: ctrl.signal, timeout: 120000, retries: 1 });
+    const blob = await resp.blob(), ext = /webm/.test(blob.type) ? 'webm' : 'mp4';
+    const path = studioFreePath('exports/' + safeFileName('video-ia-' + slugify(J.prompt).slice(0, 30), ext)); // une vidéo déjà payée n'est jamais écrasée
+    const f = writeWorkspaceFile(path, await blobToDataURL(blob), 'base64');
+    f.studio = { engine: 'openrouter-video', model: J.model, prompt: J.prompt, cost, ratio: J.ratio, at: now() }; persist('files', f);
+    end();
     MediaStudio.ai = { path, cost, real }; MediaStudio.video = { path };
     toast('Vidéo IA prête : ' + path, 'ok');
   } catch (e) {
-    MediaStudio.ai = { err: ctrl.signal.aborted ? 'Suivi arrêté. Si la demande avait été acceptée, la génération continue chez OpenRouter et reste facturée.' : e.message };
-  } finally { clearInterval(tick); ui2(); }
+    MediaStudio.ai = { err: ctrl.signal.aborted ? 'Suivi arrêté : la génération continue chez OpenRouter et reste facturée — « Reprendre le suivi » récupère la vidéo.' : e.message };
+  } finally { clearInterval(tick); studioAIUI(); }
 }
 async function studioRenderVideo() {
   const P = MediaStudio.p, shots = studioShots();
@@ -18408,7 +18622,7 @@ async function studioRenderVideo() {
   MediaStudio.video = { busy: true, progress: 0, msg: 'Préparation des images…', ctrl, path: prev };
   renderPage();
   try {
-    const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-'); // à la seconde : deux rendus successifs ne s'écrasent pas
     const r = await TOOLS.get('create_video').run({ file_name: 'video-studio-' + stamp, format: P.vFormat, motion: P.vMotion, slides }, studioCtx(ctrl.signal, (m) => {
       const pc = +(String(m).match(/(\d+) %/) || [])[1];
       MediaStudio.video.msg = String(m).replace(/…$/, '') + (pc >= 0 ? '' : '…'); if (pc >= 0) MediaStudio.video.progress = pc;
@@ -18599,7 +18813,7 @@ async function studioClick(e) {
   const P = MediaStudio.p, path = el.dataset.path, i = +el.dataset.i;
   switch (el.dataset.st) {
     case 'generate': studioGenerate(); break;
-    case 'stop': MediaStudio.ctrl?.abort(); break;
+    case 'stop': if (e.detail < 2) MediaStudio.ctrl?.abort(); break; // 2e clic d'un double-clic sur « Générer » : ignoré
     case 'retry': { const j = MediaStudio.jobs.find((x) => x.id === el.closest('[data-job]')?.dataset.job); if (j) studioGenerate(j); break; }
     case 'clear-jobs': MediaStudio.jobs = []; studioJobsUI(); break;
     case 'enhance': studioEnhance(); break;
@@ -18628,7 +18842,7 @@ async function studioClick(e) {
     case 'shot-del': P.shots.splice(i, 1); MediaStudio.save(); renderPage(); break;
     case 'dur-all': P.shots.forEach((s) => s.duration = +P.vDur); MediaStudio.save(); renderPage(); break;
     case 'render-video': studioRenderVideo(); break;
-    case 'stop-video': MediaStudio.video?.ctrl?.abort(); break;
+    case 'stop-video': if (e.detail < 2) MediaStudio.video?.ctrl?.abort(); break;
     case 'plan': studioPlan(); break;
     case 'plan-pick': { const [p] = await studioPick({ multi: false, title: 'Image à animer' }); if (p) { MediaStudio.plan = { ...(MediaStudio.plan || {}), path: p, result: null, err: '' }; renderPage(); } break; }
     case 'plan-shots': { const sl = MediaStudio.plan?.slides || []; const pth = MediaStudio.plan?.path; if (pth) { for (const s of sl) P.shots.push({ path: s.image || pth, title: s.title || '', text: s.text || '', duration: clamp(+s.duration || 5, 2, 20) }); MediaStudio.save(); renderPage(); toast(`${sl.length} plan(s) ajouté(s) au montage`, 'ok'); } break; }
@@ -18636,6 +18850,8 @@ async function studioClick(e) {
     case 'copy': copyText(el.dataset.v || ''); break;
     case 'ai-video': studioAIVideo(); break;
     case 'stop-ai': MediaStudio.ai?.ctrl?.abort(); break;
+    case 'ai-resume': studioAIFollow(); break;
+    case 'ai-forget': if (await confirmDialog('Oublier cette vidéo IA ? Elle reste facturée par OpenRouter mais ne sera pas téléchargée dans Cortex.', { title: 'Vidéo IA en cours', ok: 'Oublier', danger: true })) { delete P.aiJob; saveSettings(); MediaStudio.ai = null; renderPage(); } break;
     case 'vm-reload': MediaStudio.vmErr = ''; studioLoadVModels(); break;
     case 'open-api': S.ui.setTab = 'api'; openPage('settings'); break;
     case 'open-skills': openPage('skills'); break;
@@ -18649,6 +18865,7 @@ async function studioClick(e) {
 }
 function studioInput(e) {
   const el = e.target, P = MediaStudio.p;
+  if (el.id === 'stIntent') { (MediaStudio.plan ||= {}).intention = el.value; return; } // conservée lors des re-rendus
   if (el.dataset.sf) {
     let v = el.value;
     if (el.dataset.sf === 'seed') { v = v.replace(/\D/g, '').slice(0, 10); if (v !== el.value) el.value = v; }
