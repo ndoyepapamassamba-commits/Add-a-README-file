@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio Comédie Abidjan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>{{CSS}}</style>
+</head>
+<body>
+<header class="entete">
+  <div class="marque"><span class="logo-txt">🎬</span> <b>Studio Comédie Abidjan</b> <span id="nb-banque" class="petit"></span></div>
+  <div class="compteurs">
+    <span>dépensé cette session <b id="depense-session">0.00 $</b></span>
+    <span>total <b id="depense-total">0.00 $</b></span>
+    <span id="solde-cle" class="petit">solde inconnu</span>
+  </div>
+</header>
+<nav class="onglets">
+  <button class="onglet" data-onglet="banque">1. Banque de sketchs</button>
+  <button class="onglet" data-onglet="production">2. Production</button>
+  <button class="onglet" data-onglet="montage">3. Montage</button>
+  <button class="onglet" data-onglet="reglages">Réglages</button>
+  <button class="onglet" data-onglet="aide">Aide</button>
+</nav>
+<div id="alertes"></div>
+<dialog id="modale"></dialog>
+
+<main>
+<section id="p-banque" class="panneau">
+  <div class="barre-filtres">
+    <input id="f-recherche" type="search" placeholder="Rechercher (mot du dialogue, titre, thème, id)…">
+    <select id="f-theme"></select>
+    <label class="curseur">note ≥ <span id="f-note-val">0</span><input id="f-note" type="range" min="0" max="10" step="0.5" value="0"></label>
+    <select id="f-statut"><option value="">tous</option><option value="libre">non tournés</option><option value="tourne">déjà tournés</option></select>
+    <select id="f-tri"><option value="note">meilleurs d'abord</option><option value="id">par numéro</option></select>
+  </div>
+  <div class="barre-actions">
+    <span>Sélection :</span>
+    <input id="f-nombre" type="number" min="1" max="500" value="3" class="court"> <button id="b-meilleurs">les meilleurs non tournés</button>
+    <button id="b-tout">tout le filtre</button> <button id="b-aucun">aucun</button>
+    <button id="b-produire-sel" class="principal">Envoyer la sélection en production →</button>
+    <span class="espace"></span>
+    <span>Exporter (sélection, sinon le filtre) :</span>
+    <button id="b-export-json">JSON</button> <button id="b-export-csv">CSV</button> <button id="b-export-txt">TXT</button>
+    <button id="b-export-lot" title="format des lots du pipeline Python">lot Python</button>
+    <label class="bouton">Importer des sketchs <input id="b-importer" type="file" accept=".json,application/json" hidden></label>
+  </div>
+  <p id="banque-compte" class="petit"></p>
+  <div id="banque-liste"></div>
+</section>
+
+<section id="p-production" class="panneau" hidden>
+  <div class="barre-actions">
+    <button id="b-demarrer" class="principal">Démarrer la production</button>
+    <button id="b-pause">Pause</button>
+    <label>Plafond de dépense de la session <input id="prod-budget" type="number" min="0" step="0.1" class="court"> $</label>
+    <button id="b-vider">Vider la file</button>
+  </div>
+  <p id="prod-resume" class="petit"></p>
+  <p class="petit aide-ligne">Chaque sketch : une image (≈ 0,03 $), puis un clip vidéo de 6 à 12 s (≈ 0,02 $/s), puis le contrôle IA (≈ 0,02 $).
+    Une vidéo lancée est toujours récupérée, même si tu fermes la page : rouvre simplement le fichier.</p>
+  <div id="prod-liste"></div>
+</section>
+
+<section id="p-montage" class="panneau" hidden>
+  <div class="colonnes">
+    <div>
+      <h3>Clips prêts</h3>
+      <div class="barre-actions"><input id="m-nombre" type="number" min="1" max="12" value="3" class="court"> <button id="m-meilleurs">prendre les meilleurs</button></div>
+      <div id="m-clips"></div>
+    </div>
+    <div>
+      <h3>Ordre de la compilation</h3>
+      <div id="m-ordre"></div>
+      <p id="m-estimation"></p>
+      <h3>Options</h3>
+      <label><input id="m-teaser" type="checkbox" checked> Ouverture choc (« COMMENT ON EN EST ARRIVÉ LÀ ? »)</label>
+      <label><input id="m-accroche" type="checkbox" checked> Accroche du début (réglable dans Réglages)</label>
+      <label><input id="m-rejouer" type="checkbox" checked> Replay de chaque chute</label>
+      <label><input id="m-metre" type="checkbox" checked> RIRE-O-MÈTRE + « ÉCRIS « DÊH » EN COMMENTAIRE »</label>
+      <label><input id="m-gags" type="checkbox"> Gags 3D libres de droit entre les sketchs</label>
+      <div class="encart petit">Ajoute tes extraits 3D libres de droit (ex. Big Buck Bunny, Caminandes 3 — licence CC BY, crédit
+        affiché automatiquement) : <label class="bouton">ajouter des vidéos <input id="m-ajout-gag" type="file" accept="video/*" multiple hidden></label>
+        <div id="m-gags-liste"></div></div>
+      <label><input id="m-boucle" type="checkbox" checked> Fin qui reboucle sur le début</label>
+      <label><input id="m-atteindre" type="checkbox" checked> Atteindre 62 s en allongeant gratuitement le RIRE-O-MÈTRE et le vote</label>
+      <div class="encart petit">Musique de fond : celle de la chaîne est incluse. <label class="bouton">la remplacer <input id="m-musique" type="file" accept="audio/*" hidden></label></div>
+      <div class="barre-actions"><button id="m-creer" class="principal">Créer la compilation</button> <button id="m-telecharger">Télécharger</button></div>
+      <progress id="m-progres" value="0" max="1"></progress>
+      <p id="m-progres-texte" class="petit"></p>
+      <video id="m-apercu" controls playsinline hidden></video>
+    </div>
+  </div>
+</section>
+
+<section id="p-reglages" class="panneau" hidden>
+  <div class="colonnes">
+    <div>
+      <h3>Clé OpenRouter</h3>
+      <p class="petit">Ta clé reste dans ce navigateur : elle n'est envoyée qu'à openrouter.ai. Sans « se souvenir », elle est oubliée à la fermeture de l'onglet.</p>
+      <input id="r-cle" type="password" placeholder="sk-or-…" autocomplete="off">
+      <label><input id="r-souvenir" type="checkbox"> se souvenir de la clé sur cet ordinateur</label>
+      <div class="barre-actions"><button id="r-enregistrer-cle" class="principal">Enregistrer</button> <button id="r-tester">Tester / voir le solde</button> <button id="r-oublier">Oublier la clé</button></div>
+      <h3>Sécurité des dépenses</h3>
+      <label>Ne jamais descendre sous ce solde de clé <input id="r-plancher" type="number" min="0" step="0.1" class="court"> $</label>
+      <label>Images en parallèle <input id="r-conc-images" type="number" min="1" max="6" class="court"></label>
+      <label>Vidéos en parallèle <input id="r-conc-videos" type="number" min="1" max="8" class="court"></label>
+      <label><input id="r-controle" type="checkbox"> Contrôle IA de chaque clip (réalisme, accent, synchro : ≈ 0,02 $)</label>
+      <label><input id="r-reprise" type="checkbox"> Refaire automatiquement une fois un clip jugé mauvais (coûte une vidéo de plus)</label>
+      <h3>Moteurs</h3>
+      <label>Image <input id="r-modele-image" type="text"></label>
+      <label>Vidéo <input id="r-modele-video" type="text"></label>
+      <label>Juge (contrôle) <input id="r-modele-juge" type="text"></label>
+      <label>Résolution vidéo <select id="r-resolution"><option>480p</option><option>720p</option></select> (480p ≈ 0,02 $/s ; 720p ≈ 0,03 $/s)</label>
+    </div>
+    <div>
+      <h3>Ta chaîne (montage)</h3>
+      <label>Nom <input id="r-nom" type="text"></label>
+      <label>Pseudo <input id="r-pseudo" type="text"></label>
+      <label class="bouton">Logo / photo de profil <input id="r-avatar" type="file" accept="image/*" hidden></label>
+      <label>Accroche, ligne 1 <input id="r-accroche1" type="text"></label>
+      <label>Accroche, ligne 2 <input id="r-accroche2" type="text"></label>
+      <label>Crédit des gags 3D <input id="r-credit" type="text"></label>
+      <h3>Fichiers</h3>
+      <p class="petit">Chrome et Edge peuvent écrire directement les images, les clips et les compilations dans un dossier de ton ordinateur.</p>
+      <div class="barre-actions"><button id="r-dossier">Choisir un dossier de sortie</button> <span id="r-dossier-nom" class="petit"></span></div>
+      <div class="barre-actions"><button id="r-journal">Télécharger le journal des dépenses</button> <button id="r-effacer" class="danger">Tout effacer</button></div>
+    </div>
+  </div>
+</section>
+
+<section id="p-aide" class="panneau" hidden>
+  <div class="aide">
+    <h3>Comment produire une vidéo</h3>
+    <ol>
+      <li><b>Réglages</b> : colle ta clé OpenRouter, fixe le plancher (l'application s'arrête avant que la clé descende dessous), mets le nom et le pseudo de ta chaîne.</li>
+      <li><b>Banque</b> : les sketchs sont rangés du plus drôle au moins drôle (note du jury). Clique « les meilleurs non tournés » (3 par défaut), puis « Envoyer la sélection en production ». Le bouton « Prompts » montre et copie le prompt image et le prompt vidéo de chaque sketch.</li>
+      <li><b>Production</b> : fixe le plafond de dépense (1 $ suffit pour 3 sketchs), puis « Démarrer ». L'application génère l'image, puis le clip animé, puis le contrôle IA. Un clip « à revoir » peut être refait d'un clic.</li>
+      <li><b>Montage</b> : coche les clips (3 suffisent avec les transitions), ajoute si tu veux des gags 3D libres de droit, puis « Créer la compilation ». La vidéo fait plus de 62 s (monétisation TikTok).</li>
+    </ol>
+    <h3>Coûts</h3>
+    <p>Un sketch ≈ 0,25 à 0,30 $ (image + clip de 10 à 12 s + contrôle). Une compilation de 3 sketchs avec transitions ≈ 0,90 $. Le montage lui-même est gratuit : il est calculé dans ton navigateur.</p>
+    <h3>Gags 3D libres de droit</h3>
+    <p>Les films de la Blender Foundation <i>Big Buck Bunny</i> (CC BY) et <i>Caminandes 3 : Llamigos</i> (licence « Attribution ») autorisent l'usage commercial avec crédit. L'application affiche le crédit à l'écran ; ajoute aussi dans la description TikTok : « Extraits 3D : Big Buck Bunny, Caminandes 3 — (CC) Blender Foundation | studio.blender.org ». Garde les extraits courts (TikTok peut juger « non original » un contenu dominé par des extraits).</p>
+    <h3>Navigateur</h3>
+    <p>Utilise Chrome ou Edge récent sur ordinateur. Le fichier s'ouvre directement (double-clic), sans installation. Tout est gardé dans le navigateur : ne l'ouvre pas en navigation privée.</p>
+  </div>
+</section>
+</main>
+
+<script>{{MP4MUXER}}</script>
+<script>{{MP4BOX}}</script>
+<script>{{WEBMMUXER}}</script>
+<script>const BANQUE = {{BANQUE}};
+const SONS_EMBARQUES = {{SONS}};</script>
+<script>{{JS}}</script>
+</body>
+</html>

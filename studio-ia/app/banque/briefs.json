@@ -1,0 +1,2102 @@
+[
+ {
+  "id": "B001",
+  "domaine": "couple marié à la maison",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "saffron-and-turquoise",
+   "peach-and-sunflower",
+   "sand-and-cream",
+   "ruby-and-aubergine",
+   "rose-and-salmon",
+   "saffron-and-cobalt",
+   "olive-and-lilac",
+   "rust-and-maroon",
+   "coral-and-maroon"
+  ],
+  "quartiers": [
+   "Treichville",
+   "Marcory",
+   "Koumassi"
+  ]
+ },
+ {
+  "id": "B002",
+  "domaine": "couple marié à la maison",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "emerald-and-cyan",
+   "tangerine-and-navy",
+   "fuchsia-and-cyan",
+   "teal-and-peach",
+   "navy-and-salmon",
+   "lilac-and-violet",
+   "cobalt-and-silver",
+   "lavender-and-crimson",
+   "turquoise-and-indigo"
+  ],
+  "quartiers": [
+   "Adjamé",
+   "Plateau",
+   "Port-Bouët"
+  ]
+ },
+ {
+  "id": "B003",
+  "domaine": "couple marié à la maison",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "cream-and-maroon",
+   "turquoise-and-tangerine",
+   "violet-and-cherry",
+   "lavender-and-burgundy",
+   "emerald-and-rose",
+   "ochre-and-indigo",
+   "cream-and-charcoal",
+   "peach-and-tangerine",
+   "sky-blue-and-apricot"
+  ],
+  "quartiers": [
+   "Attécoubé",
+   "Bingerville",
+   "Anyama"
+  ]
+ },
+ {
+  "id": "B004",
+  "domaine": "couple marié à la maison",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "peach-and-cream",
+   "mint-and-pistachio",
+   "plum-and-aubergine",
+   "lilac-and-jade",
+   "fuchsia-and-cherry",
+   "coral-and-rose",
+   "olive-and-copper",
+   "rose-and-ivory",
+   "copper-and-navy"
+  ],
+  "quartiers": [
+   "Riviera",
+   "Angré",
+   "Deux-Plateaux"
+  ]
+ },
+ {
+  "id": "B005",
+  "domaine": "fiançailles, dot et belle-famille",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "lilac-and-crimson",
+   "gold-and-amber",
+   "peach-and-silver",
+   "ruby-and-silver",
+   "rust-and-ruby",
+   "copper-and-apricot",
+   "plum-and-lavender",
+   "cobalt-and-sunflower",
+   "coral-and-mustard"
+  ],
+  "quartiers": [
+   "Songon",
+   "Williamsville",
+   "Abatta"
+  ]
+ },
+ {
+  "id": "B006",
+  "domaine": "fiançailles, dot et belle-famille",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "cyan-and-maroon",
+   "mustard-and-rust",
+   "coral-and-sunflower",
+   "saffron-and-emerald",
+   "gold-and-salmon",
+   "ochre-and-amber",
+   "fuchsia-and-chocolate",
+   "mint-and-ruby",
+   "cream-and-violet"
+  ],
+  "quartiers": [
+   "Biétry",
+   "Zone 4",
+   "Abobo"
+  ]
+ },
+ {
+  "id": "B007",
+  "domaine": "fiançailles, dot et belle-famille",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "silver-and-cherry",
+   "sky-blue-and-cream",
+   "coral-and-aubergine",
+   "mint-and-lime",
+   "sand-and-gold",
+   "violet-and-salmon",
+   "violet-and-charcoal",
+   "rust-and-cobalt",
+   "sand-and-lime"
+  ],
+  "quartiers": [
+   "Yopougon",
+   "Cocody",
+   "Treichville"
+  ]
+ },
+ {
+  "id": "B008",
+  "domaine": "fiançailles, dot et belle-famille",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "saffron-and-sky-blue",
+   "mint-and-gold",
+   "peach-and-cherry",
+   "gold-and-maroon",
+   "mustard-and-silver",
+   "burgundy-and-maroon",
+   "mint-and-navy",
+   "mustard-and-turquoise",
+   "emerald-and-turquoise"
+  ],
+  "quartiers": [
+   "Marcory",
+   "Koumassi",
+   "Adjamé"
+  ]
+ },
+ {
+  "id": "B009",
+  "domaine": "belle-mère et gendre ou belle-fille",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "indigo-and-navy",
+   "lavender-and-cream",
+   "rust-and-sunflower",
+   "apricot-and-sunflower",
+   "ivory-and-cherry",
+   "mustard-and-lavender",
+   "plum-and-copper",
+   "magenta-and-cherry",
+   "turquoise-and-lilac"
+  ],
+  "quartiers": [
+   "Plateau",
+   "Port-Bouët",
+   "Attécoubé"
+  ]
+ },
+ {
+  "id": "B010",
+  "domaine": "belle-mère et gendre ou belle-fille",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "rust-and-peach",
+   "cobalt-and-olive",
+   "lilac-and-cyan",
+   "peach-and-lilac",
+   "rust-and-copper",
+   "crimson-and-indigo",
+   "peach-and-chocolate",
+   "magenta-and-cobalt",
+   "burgundy-and-cream"
+  ],
+  "quartiers": [
+   "Bingerville",
+   "Anyama",
+   "Riviera"
+  ]
+ },
+ {
+  "id": "B011",
+  "domaine": "belle-mère et gendre ou belle-fille",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "chocolate-and-cyan",
+   "magenta-and-pistachio",
+   "maroon-and-cherry",
+   "sky-blue-and-cyan",
+   "sky-blue-and-ivory",
+   "ivory-and-charcoal",
+   "rust-and-crimson",
+   "plum-and-violet",
+   "lime-and-chocolate"
+  ],
+  "quartiers": [
+   "Angré",
+   "Deux-Plateaux",
+   "Songon"
+  ]
+ },
+ {
+  "id": "B012",
+  "domaine": "belle-mère et gendre ou belle-fille",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "chocolate-and-salmon",
+   "copper-and-maroon",
+   "copper-and-cherry",
+   "indigo-and-cherry",
+   "plum-and-salmon",
+   "cobalt-and-navy",
+   "peach-and-lime",
+   "maroon-and-charcoal",
+   "plum-and-crimson"
+  ],
+  "quartiers": [
+   "Williamsville",
+   "Abatta",
+   "Biétry"
+  ]
+ },
+ {
+  "id": "B013",
+  "domaine": "parents et petits enfants",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "fuchsia-and-sunflower",
+   "ochre-and-ruby",
+   "peach-and-pistachio",
+   "teal-and-lime",
+   "crimson-and-violet",
+   "copper-and-pistachio",
+   "cobalt-and-cream",
+   "lavender-and-violet",
+   "cobalt-and-maroon"
+  ],
+  "quartiers": [
+   "Zone 4",
+   "Abobo",
+   "Yopougon"
+  ]
+ },
+ {
+  "id": "B014",
+  "domaine": "parents et petits enfants",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "lime-and-apricot",
+   "mustard-and-chocolate",
+   "coral-and-tangerine",
+   "sand-and-indigo",
+   "cobalt-and-crimson",
+   "rose-and-gold",
+   "cobalt-and-pistachio",
+   "mint-and-turquoise",
+   "saffron-and-lime"
+  ],
+  "quartiers": [
+   "Cocody",
+   "Treichville",
+   "Marcory"
+  ]
+ },
+ {
+  "id": "B015",
+  "domaine": "parents et petits enfants",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "rose-and-charcoal",
+   "mint-and-burgundy",
+   "teal-and-charcoal",
+   "emerald-and-salmon",
+   "mint-and-indigo",
+   "mint-and-lilac",
+   "apricot-and-cherry",
+   "mint-and-salmon",
+   "apricot-and-cyan"
+  ],
+  "quartiers": [
+   "Koumassi",
+   "Adjamé",
+   "Plateau"
+  ]
+ },
+ {
+  "id": "B016",
+  "domaine": "parents et petits enfants",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "magenta-and-apricot",
+   "indigo-and-lime",
+   "jade-and-violet",
+   "cyan-and-sunflower",
+   "sand-and-salmon",
+   "fuchsia-and-charcoal",
+   "turquoise-and-fuchsia",
+   "lavender-and-aubergine",
+   "saffron-and-gold"
+  ],
+  "quartiers": [
+   "Port-Bouët",
+   "Attécoubé",
+   "Bingerville"
+  ]
+ },
+ {
+  "id": "B017",
+  "domaine": "parents et ados ou jeunes adultes",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "teal-and-apricot",
+   "lavender-and-indigo",
+   "navy-and-chocolate",
+   "sand-and-pistachio",
+   "copper-and-cyan",
+   "saffron-and-apricot",
+   "mint-and-amber",
+   "indigo-and-silver",
+   "mint-and-ivory"
+  ],
+  "quartiers": [
+   "Anyama",
+   "Riviera",
+   "Angré"
+  ]
+ },
+ {
+  "id": "B018",
+  "domaine": "parents et ados ou jeunes adultes",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "burgundy-and-rose",
+   "coral-and-cobalt",
+   "lavender-and-sky-blue",
+   "plum-and-lilac",
+   "ruby-and-gold",
+   "magenta-and-charcoal",
+   "lilac-and-cream",
+   "mint-and-crimson",
+   "coral-and-lavender"
+  ],
+  "quartiers": [
+   "Deux-Plateaux",
+   "Songon",
+   "Williamsville"
+  ]
+ },
+ {
+  "id": "B019",
+  "domaine": "parents et ados ou jeunes adultes",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "mint-and-chocolate",
+   "navy-and-silver",
+   "saffron-and-cyan",
+   "lavender-and-maroon",
+   "navy-and-cherry",
+   "sky-blue-and-salmon",
+   "ivory-and-sunflower",
+   "emerald-and-copper",
+   "saffron-and-violet"
+  ],
+  "quartiers": [
+   "Abatta",
+   "Biétry",
+   "Zone 4"
+  ]
+ },
+ {
+  "id": "B020",
+  "domaine": "parents et ados ou jeunes adultes",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "teal-and-turquoise",
+   "sand-and-aubergine",
+   "rust-and-turquoise",
+   "lime-and-silver",
+   "navy-and-ivory",
+   "mustard-and-lime",
+   "indigo-and-chocolate",
+   "saffron-and-sand",
+   "cobalt-and-aubergine"
+  ],
+  "quartiers": [
+   "Abobo",
+   "Yopougon",
+   "Cocody"
+  ]
+ },
+ {
+  "id": "B021",
+  "domaine": "école, maître, bulletins, devoirs",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "burgundy-and-chocolate",
+   "rust-and-saffron",
+   "teal-and-ochre",
+   "navy-and-aubergine",
+   "apricot-and-violet",
+   "rust-and-pistachio",
+   "teal-and-mint",
+   "crimson-and-fuchsia",
+   "apricot-and-amber"
+  ],
+  "quartiers": [
+   "Treichville",
+   "Marcory",
+   "Koumassi"
+  ]
+ },
+ {
+  "id": "B022",
+  "domaine": "école, maître, bulletins, devoirs",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "lavender-and-magenta",
+   "peach-and-sand",
+   "crimson-and-chocolate",
+   "burgundy-and-violet",
+   "burgundy-and-sand",
+   "mint-and-sunflower",
+   "lime-and-maroon",
+   "saffron-and-peach",
+   "magenta-and-fuchsia"
+  ],
+  "quartiers": [
+   "Adjamé",
+   "Plateau",
+   "Port-Bouët"
+  ]
+ },
+ {
+  "id": "B023",
+  "domaine": "école, maître, bulletins, devoirs",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "turquoise-and-navy",
+   "crimson-and-maroon",
+   "silver-and-cyan",
+   "cream-and-salmon",
+   "magenta-and-lilac",
+   "coral-and-violet",
+   "peach-and-copper",
+   "lime-and-salmon",
+   "crimson-and-silver"
+  ],
+  "quartiers": [
+   "Attécoubé",
+   "Bingerville",
+   "Anyama"
+  ]
+ },
+ {
+  "id": "B024",
+  "domaine": "école, maître, bulletins, devoirs",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "violet-and-pistachio",
+   "emerald-and-ivory",
+   "gold-and-sunflower",
+   "lavender-and-sand",
+   "ruby-and-indigo",
+   "magenta-and-rose",
+   "lilac-and-cherry",
+   "aubergine-and-charcoal",
+   "sky-blue-and-pistachio"
+  ],
+  "quartiers": [
+   "Riviera",
+   "Angré",
+   "Deux-Plateaux"
+  ]
+ },
+ {
+  "id": "B025",
+  "domaine": "patron, bureau, recrutement, salaire",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "lime-and-violet",
+   "sand-and-violet",
+   "cyan-and-amber",
+   "navy-and-maroon",
+   "plum-and-maroon",
+   "lime-and-cream",
+   "crimson-and-rose",
+   "sky-blue-and-cherry",
+   "ochre-and-maroon"
+  ],
+  "quartiers": [
+   "Songon",
+   "Williamsville",
+   "Abatta"
+  ]
+ },
+ {
+  "id": "B026",
+  "domaine": "patron, bureau, recrutement, salaire",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "coral-and-lime",
+   "lime-and-ivory",
+   "mint-and-copper",
+   "magenta-and-ivory",
+   "saffron-and-crimson",
+   "lilac-and-salmon",
+   "rust-and-amber",
+   "olive-and-salmon",
+   "saffron-and-indigo"
+  ],
+  "quartiers": [
+   "Biétry",
+   "Zone 4",
+   "Abobo"
+  ]
+ },
+ {
+  "id": "B027",
+  "domaine": "patron, bureau, recrutement, salaire",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "apricot-and-aubergine",
+   "ochre-and-sunflower",
+   "lilac-and-charcoal",
+   "copper-and-silver",
+   "sky-blue-and-navy",
+   "crimson-and-copper",
+   "saffron-and-silver",
+   "magenta-and-amber",
+   "ochre-and-rose"
+  ],
+  "quartiers": [
+   "Yopougon",
+   "Cocody",
+   "Treichville"
+  ]
+ },
+ {
+  "id": "B028",
+  "domaine": "patron, bureau, recrutement, salaire",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "mustard-and-pistachio",
+   "rust-and-violet",
+   "indigo-and-aubergine",
+   "emerald-and-burgundy",
+   "coral-and-magenta",
+   "turquoise-and-cream",
+   "magenta-and-sky-blue",
+   "teal-and-cream",
+   "mint-and-cream"
+  ],
+  "quartiers": [
+   "Marcory",
+   "Koumassi",
+   "Adjamé"
+  ]
+ },
+ {
+  "id": "B029",
+  "domaine": "argent, dettes, crédit, prêts entre amis",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "rose-and-cyan",
+   "rose-and-cherry",
+   "olive-and-cream",
+   "maroon-and-salmon",
+   "peach-and-sky-blue",
+   "saffron-and-lilac",
+   "emerald-and-cherry",
+   "violet-and-sunflower",
+   "fuchsia-and-silver"
+  ],
+  "quartiers": [
+   "Plateau",
+   "Port-Bouët",
+   "Attécoubé"
+  ]
+ },
+ {
+  "id": "B030",
+  "domaine": "argent, dettes, crédit, prêts entre amis",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "rust-and-cherry",
+   "teal-and-chocolate",
+   "turquoise-and-ivory",
+   "teal-and-saffron",
+   "emerald-and-olive",
+   "emerald-and-sky-blue",
+   "burgundy-and-ochre",
+   "plum-and-cherry",
+   "coral-and-apricot"
+  ],
+  "quartiers": [
+   "Bingerville",
+   "Anyama",
+   "Riviera"
+  ]
+ },
+ {
+  "id": "B031",
+  "domaine": "argent, dettes, crédit, prêts entre amis",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "lavender-and-apricot",
+   "tangerine-and-lilac",
+   "burgundy-and-sunflower",
+   "rose-and-aubergine",
+   "cyan-and-pistachio",
+   "teal-and-amber",
+   "magenta-and-copper",
+   "lavender-and-cobalt",
+   "cobalt-and-tangerine"
+  ],
+  "quartiers": [
+   "Angré",
+   "Deux-Plateaux",
+   "Songon"
+  ]
+ },
+ {
+  "id": "B032",
+  "domaine": "argent, dettes, crédit, prêts entre amis",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "sand-and-copper",
+   "chocolate-and-aubergine",
+   "silver-and-salmon",
+   "copper-and-charcoal",
+   "salmon-and-sunflower",
+   "plum-and-mint",
+   "rust-and-salmon",
+   "teal-and-cyan",
+   "pistachio-and-charcoal"
+  ],
+  "quartiers": [
+   "Williamsville",
+   "Abatta",
+   "Biétry"
+  ]
+ },
+ {
+  "id": "B033",
+  "domaine": "tontine, cotisations, associations de femmes",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "violet-and-ivory",
+   "sky-blue-and-ruby",
+   "fuchsia-and-aubergine",
+   "teal-and-maroon",
+   "rust-and-gold",
+   "magenta-and-crimson",
+   "magenta-and-silver",
+   "lavender-and-emerald",
+   "ochre-and-jade"
+  ],
+  "quartiers": [
+   "Zone 4",
+   "Abobo",
+   "Yopougon"
+  ]
+ },
+ {
+  "id": "B034",
+  "domaine": "tontine, cotisations, associations de femmes",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "lavender-and-silver",
+   "cobalt-and-amber",
+   "peach-and-navy",
+   "lime-and-cherry",
+   "rust-and-rose",
+   "aubergine-and-ivory",
+   "ruby-and-rose",
+   "cream-and-ivory",
+   "ruby-and-cyan"
+  ],
+  "quartiers": [
+   "Cocody",
+   "Treichville",
+   "Marcory"
+  ]
+ },
+ {
+  "id": "B035",
+  "domaine": "tontine, cotisations, associations de femmes",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "emerald-and-ruby",
+   "teal-and-lilac",
+   "sunflower-and-cherry",
+   "ruby-and-ivory",
+   "emerald-and-tangerine",
+   "olive-and-indigo",
+   "rose-and-amber",
+   "olive-and-burgundy",
+   "lavender-and-copper"
+  ],
+  "quartiers": [
+   "Koumassi",
+   "Adjamé",
+   "Plateau"
+  ]
+ },
+ {
+  "id": "B036",
+  "domaine": "tontine, cotisations, associations de femmes",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "crimson-and-sunflower",
+   "lime-and-gold",
+   "salmon-and-cherry",
+   "lavender-and-jade",
+   "jade-and-maroon",
+   "indigo-and-gold",
+   "saffron-and-pistachio",
+   "plum-and-jade",
+   "sand-and-ruby"
+  ],
+  "quartiers": [
+   "Port-Bouët",
+   "Attécoubé",
+   "Bingerville"
+  ]
+ },
+ {
+  "id": "B037",
+  "domaine": "maquis, garba, attiéké, alloco, nourriture de rue",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "tangerine-and-copper",
+   "copper-and-cream",
+   "ochre-and-violet",
+   "fuchsia-and-indigo",
+   "gold-and-ivory",
+   "lavender-and-navy",
+   "cyan-and-salmon",
+   "magenta-and-cyan",
+   "rose-and-silver"
+  ],
+  "quartiers": [
+   "Anyama",
+   "Riviera",
+   "Angré"
+  ]
+ },
+ {
+  "id": "B038",
+  "domaine": "maquis, garba, attiéké, alloco, nourriture de rue",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "saffron-and-sunflower",
+   "lilac-and-aubergine",
+   "chocolate-and-violet",
+   "teal-and-olive",
+   "ruby-and-charcoal",
+   "ochre-and-ivory",
+   "saffron-and-fuchsia",
+   "violet-and-amber",
+   "coral-and-cream"
+  ],
+  "quartiers": [
+   "Deux-Plateaux",
+   "Songon",
+   "Williamsville"
+  ]
+ },
+ {
+  "id": "B039",
+  "domaine": "maquis, garba, attiéké, alloco, nourriture de rue",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "olive-and-sand",
+   "cream-and-apricot",
+   "coral-and-mint",
+   "teal-and-plum",
+   "cobalt-and-salmon",
+   "mustard-and-sunflower",
+   "mustard-and-crimson",
+   "emerald-and-jade",
+   "crimson-and-ruby"
+  ],
+  "quartiers": [
+   "Abatta",
+   "Biétry",
+   "Zone 4"
+  ]
+ },
+ {
+  "id": "B040",
+  "domaine": "maquis, garba, attiéké, alloco, nourriture de rue",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "olive-and-apricot",
+   "cobalt-and-cyan",
+   "olive-and-sky-blue",
+   "magenta-and-chocolate",
+   "jade-and-amber",
+   "ruby-and-lime",
+   "fuchsia-and-lime",
+   "crimson-and-amber",
+   "mustard-and-rose"
+  ],
+  "quartiers": [
+   "Abobo",
+   "Yopougon",
+   "Cocody"
+  ]
+ },
+ {
+  "id": "B041",
+  "domaine": "transport : gbaka, woro-woro, taxi, moto, apprenti",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "fuchsia-and-navy",
+   "teal-and-crimson",
+   "cobalt-and-apricot",
+   "turquoise-and-ruby",
+   "lavender-and-salmon",
+   "silver-and-violet",
+   "lime-and-rose",
+   "peach-and-gold",
+   "sky-blue-and-indigo"
+  ],
+  "quartiers": [
+   "Treichville",
+   "Marcory",
+   "Koumassi"
+  ]
+ },
+ {
+  "id": "B042",
+  "domaine": "transport : gbaka, woro-woro, taxi, moto, apprenti",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "cobalt-and-chocolate",
+   "peach-and-salmon",
+   "coral-and-salmon",
+   "violet-and-aubergine",
+   "rust-and-cream",
+   "fuchsia-and-apricot",
+   "fuchsia-and-gold",
+   "emerald-and-aubergine",
+   "fuchsia-and-rose"
+  ],
+  "quartiers": [
+   "Adjamé",
+   "Plateau",
+   "Port-Bouët"
+  ]
+ },
+ {
+  "id": "B043",
+  "domaine": "transport : gbaka, woro-woro, taxi, moto, apprenti",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "cream-and-cherry",
+   "ochre-and-crimson",
+   "emerald-and-navy",
+   "cream-and-cyan",
+   "tangerine-and-cherry",
+   "crimson-and-pistachio",
+   "burgundy-and-silver",
+   "tangerine-and-pistachio",
+   "cream-and-pistachio"
+  ],
+  "quartiers": [
+   "Attécoubé",
+   "Bingerville",
+   "Anyama"
+  ]
+ },
+ {
+  "id": "B044",
+  "domaine": "transport : gbaka, woro-woro, taxi, moto, apprenti",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "rust-and-lilac",
+   "sand-and-apricot",
+   "magenta-and-gold",
+   "saffron-and-ivory",
+   "teal-and-pistachio",
+   "navy-and-sunflower",
+   "tangerine-and-violet",
+   "navy-and-cream",
+   "maroon-and-ivory"
+  ],
+  "quartiers": [
+   "Riviera",
+   "Angré",
+   "Deux-Plateaux"
+  ]
+ },
+ {
+  "id": "B045",
+  "domaine": "santé : docteur, pharmacie, dispensaire, régime",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "olive-and-sunflower",
+   "salmon-and-aubergine",
+   "emerald-and-cobalt",
+   "sky-blue-and-maroon",
+   "magenta-and-peach",
+   "mustard-and-ochre",
+   "mint-and-cobalt",
+   "mustard-and-apricot",
+   "mustard-and-copper"
+  ],
+  "quartiers": [
+   "Songon",
+   "Williamsville",
+   "Abatta"
+  ]
+ },
+ {
+  "id": "B046",
+  "domaine": "santé : docteur, pharmacie, dispensaire, régime",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "olive-and-silver",
+   "plum-and-chocolate",
+   "turquoise-and-chocolate",
+   "sky-blue-and-silver",
+   "lavender-and-pistachio",
+   "olive-and-pistachio",
+   "emerald-and-fuchsia",
+   "rust-and-ochre",
+   "emerald-and-ochre"
+  ],
+  "quartiers": [
+   "Biétry",
+   "Zone 4",
+   "Abobo"
+  ]
+ },
+ {
+  "id": "B047",
+  "domaine": "santé : docteur, pharmacie, dispensaire, régime",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "jade-and-cyan",
+   "coral-and-olive",
+   "peach-and-crimson",
+   "tangerine-and-rose",
+   "rust-and-aubergine",
+   "olive-and-aubergine",
+   "mustard-and-burgundy",
+   "lavender-and-amber",
+   "silver-and-sunflower"
+  ],
+  "quartiers": [
+   "Yopougon",
+   "Cocody",
+   "Treichville"
+  ]
+ },
+ {
+  "id": "B048",
+  "domaine": "santé : docteur, pharmacie, dispensaire, régime",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "jade-and-ivory",
+   "silver-and-maroon",
+   "teal-and-emerald",
+   "burgundy-and-salmon",
+   "indigo-and-violet",
+   "teal-and-cobalt",
+   "crimson-and-apricot",
+   "mint-and-olive",
+   "burgundy-and-ruby"
+  ],
+  "quartiers": [
+   "Marcory",
+   "Koumassi",
+   "Adjamé"
+  ]
+ },
+ {
+  "id": "B049",
+  "domaine": "voisinage et cour commune",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "mustard-and-saffron",
+   "emerald-and-gold",
+   "lavender-and-turquoise",
+   "jade-and-chocolate",
+   "plum-and-ruby",
+   "chocolate-and-cherry",
+   "magenta-and-salmon",
+   "fuchsia-and-salmon",
+   "plum-and-cream"
+  ],
+  "quartiers": [
+   "Plateau",
+   "Port-Bouët",
+   "Attécoubé"
+  ]
+ },
+ {
+  "id": "B050",
+  "domaine": "voisinage et cour commune",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "gold-and-violet",
+   "sky-blue-and-copper",
+   "copper-and-amber",
+   "jade-and-indigo",
+   "teal-and-copper",
+   "sand-and-silver",
+   "navy-and-amber",
+   "coral-and-turquoise",
+   "crimson-and-cherry"
+  ],
+  "quartiers": [
+   "Bingerville",
+   "Anyama",
+   "Riviera"
+  ]
+ },
+ {
+  "id": "B051",
+  "domaine": "voisinage et cour commune",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "rose-and-apricot",
+   "lime-and-copper",
+   "teal-and-ruby",
+   "burgundy-and-fuchsia",
+   "saffron-and-aubergine",
+   "apricot-and-charcoal",
+   "ruby-and-apricot",
+   "lilac-and-rose",
+   "mint-and-emerald"
+  ],
+  "quartiers": [
+   "Angré",
+   "Deux-Plateaux",
+   "Songon"
+  ]
+ },
+ {
+  "id": "B052",
+  "domaine": "voisinage et cour commune",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "teal-and-lavender",
+   "sky-blue-and-chocolate",
+   "ruby-and-navy",
+   "turquoise-and-sand",
+   "burgundy-and-gold",
+   "teal-and-violet",
+   "mustard-and-gold",
+   "turquoise-and-amber",
+   "saffron-and-chocolate"
+  ],
+  "quartiers": [
+   "Williamsville",
+   "Abatta",
+   "Biétry"
+  ]
+ },
+ {
+  "id": "B053",
+  "domaine": "mobile money, téléphone, WhatsApp, réseaux sociaux",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "teal-and-sunflower",
+   "gold-and-cream",
+   "rose-and-sunflower",
+   "sky-blue-and-sunflower",
+   "emerald-and-magenta",
+   "teal-and-magenta",
+   "plum-and-olive",
+   "teal-and-salmon",
+   "tangerine-and-jade"
+  ],
+  "quartiers": [
+   "Zone 4",
+   "Abobo",
+   "Yopougon"
+  ]
+ },
+ {
+  "id": "B054",
+  "domaine": "mobile money, téléphone, WhatsApp, réseaux sociaux",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "amber-and-charcoal",
+   "fuchsia-and-sand",
+   "sky-blue-and-sand",
+   "cobalt-and-lime",
+   "jade-and-sand",
+   "ochre-and-pistachio",
+   "coral-and-plum",
+   "plum-and-charcoal",
+   "crimson-and-jade"
+  ],
+  "quartiers": [
+   "Cocody",
+   "Treichville",
+   "Marcory"
+  ]
+ },
+ {
+  "id": "B055",
+  "domaine": "mobile money, téléphone, WhatsApp, réseaux sociaux",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "copper-and-rose",
+   "saffron-and-burgundy",
+   "lavender-and-fuchsia",
+   "olive-and-fuchsia",
+   "lavender-and-chocolate",
+   "coral-and-cyan",
+   "apricot-and-salmon",
+   "copper-and-ivory",
+   "maroon-and-amber"
+  ],
+  "quartiers": [
+   "Koumassi",
+   "Adjamé",
+   "Plateau"
+  ]
+ },
+ {
+  "id": "B056",
+  "domaine": "mobile money, téléphone, WhatsApp, réseaux sociaux",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "silver-and-cream",
+   "burgundy-and-ivory",
+   "olive-and-ochre",
+   "pistachio-and-ivory",
+   "sand-and-maroon",
+   "cobalt-and-violet",
+   "navy-and-cyan",
+   "magenta-and-maroon",
+   "plum-and-burgundy"
+  ],
+  "quartiers": [
+   "Port-Bouët",
+   "Attécoubé",
+   "Bingerville"
+  ]
+ },
+ {
+  "id": "B057",
+  "domaine": "influenceurs, TikTok, lives, célébrité",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "pistachio-and-sunflower",
+   "cobalt-and-turquoise",
+   "lilac-and-sand",
+   "teal-and-fuchsia",
+   "plum-and-turquoise",
+   "plum-and-cobalt",
+   "tangerine-and-charcoal",
+   "mustard-and-ruby",
+   "rust-and-silver"
+  ],
+  "quartiers": [
+   "Anyama",
+   "Riviera",
+   "Angré"
+  ]
+ },
+ {
+  "id": "B058",
+  "domaine": "influenceurs, TikTok, lives, célébrité",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "mustard-and-cream",
+   "coral-and-ruby",
+   "saffron-and-ruby",
+   "emerald-and-indigo",
+   "magenta-and-sunflower",
+   "teal-and-sky-blue",
+   "ruby-and-chocolate",
+   "ochre-and-sky-blue",
+   "emerald-and-cream"
+  ],
+  "quartiers": [
+   "Deux-Plateaux",
+   "Songon",
+   "Williamsville"
+  ]
+ },
+ {
+  "id": "B059",
+  "domaine": "influenceurs, TikTok, lives, célébrité",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "lime-and-navy",
+   "lilac-and-amber",
+   "mustard-and-cobalt",
+   "indigo-and-maroon",
+   "magenta-and-tangerine",
+   "mint-and-violet",
+   "gold-and-cherry",
+   "emerald-and-chocolate",
+   "cobalt-and-gold"
+  ],
+  "quartiers": [
+   "Abatta",
+   "Biétry",
+   "Zone 4"
+  ]
+ },
+ {
+  "id": "B060",
+  "domaine": "influenceurs, TikTok, lives, célébrité",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "indigo-and-apricot",
+   "peach-and-indigo",
+   "fuchsia-and-violet",
+   "rust-and-lime",
+   "ruby-and-cream",
+   "burgundy-and-crimson",
+   "ruby-and-sunflower",
+   "amber-and-ivory",
+   "rust-and-jade"
+  ],
+  "quartiers": [
+   "Abobo",
+   "Yopougon",
+   "Cocody"
+  ]
+ },
+ {
+  "id": "B061",
+  "domaine": "mariage, baptême, anniversaire, fêtes (jamais de funérailles)",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "olive-and-gold",
+   "tangerine-and-sky-blue",
+   "lavender-and-ochre",
+   "plum-and-fuchsia",
+   "aubergine-and-cherry",
+   "plum-and-apricot",
+   "sand-and-rose",
+   "saffron-and-cream",
+   "amber-and-sunflower"
+  ],
+  "quartiers": [
+   "Treichville",
+   "Marcory",
+   "Koumassi"
+  ]
+ },
+ {
+  "id": "B062",
+  "domaine": "mariage, baptême, anniversaire, fêtes (jamais de funérailles)",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "turquoise-and-charcoal",
+   "peach-and-fuchsia",
+   "ochre-and-navy",
+   "silver-and-aubergine",
+   "saffron-and-cherry",
+   "peach-and-violet",
+   "ruby-and-cherry",
+   "mustard-and-amber",
+   "cobalt-and-charcoal"
+  ],
+  "quartiers": [
+   "Adjamé",
+   "Plateau",
+   "Port-Bouët"
+  ]
+ },
+ {
+  "id": "B063",
+  "domaine": "mariage, baptême, anniversaire, fêtes (jamais de funérailles)",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "copper-and-gold",
+   "peach-and-ivory",
+   "mint-and-charcoal",
+   "sky-blue-and-amber",
+   "turquoise-and-lime",
+   "copper-and-aubergine",
+   "indigo-and-pistachio",
+   "crimson-and-ivory",
+   "turquoise-and-maroon"
+  ],
+  "quartiers": [
+   "Attécoubé",
+   "Bingerville",
+   "Anyama"
+  ]
+ },
+ {
+  "id": "B064",
+  "domaine": "mariage, baptême, anniversaire, fêtes (jamais de funérailles)",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "burgundy-and-amber",
+   "tangerine-and-aubergine",
+   "tangerine-and-sunflower",
+   "navy-and-gold",
+   "silver-and-pistachio",
+   "burgundy-and-pistachio",
+   "lilac-and-lime",
+   "peach-and-maroon",
+   "apricot-and-maroon"
+  ],
+  "quartiers": [
+   "Riviera",
+   "Angré",
+   "Deux-Plateaux"
+  ]
+ },
+ {
+  "id": "B065",
+  "domaine": "marché, boutique, vendeuses, marchandage",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "jade-and-cream",
+   "tangerine-and-maroon",
+   "olive-and-turquoise",
+   "aubergine-and-amber",
+   "mustard-and-lilac",
+   "teal-and-cherry",
+   "lavender-and-ivory",
+   "ruby-and-violet",
+   "cream-and-sunflower"
+  ],
+  "quartiers": [
+   "Songon",
+   "Williamsville",
+   "Abatta"
+  ]
+ },
+ {
+  "id": "B066",
+  "domaine": "marché, boutique, vendeuses, marchandage",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "coral-and-lilac",
+   "cyan-and-aubergine",
+   "mustard-and-indigo",
+   "sky-blue-and-rose",
+   "tangerine-and-gold",
+   "turquoise-and-apricot",
+   "jade-and-lime",
+   "ochre-and-copper",
+   "ruby-and-maroon"
+  ],
+  "quartiers": [
+   "Biétry",
+   "Zone 4",
+   "Abobo"
+  ]
+ },
+ {
+  "id": "B067",
+  "domaine": "marché, boutique, vendeuses, marchandage",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "tangerine-and-silver",
+   "mustard-and-aubergine",
+   "olive-and-violet",
+   "plum-and-sky-blue",
+   "mint-and-peach",
+   "plum-and-navy",
+   "cream-and-aubergine",
+   "mint-and-sand",
+   "peach-and-apricot"
+  ],
+  "quartiers": [
+   "Yopougon",
+   "Cocody",
+   "Treichville"
+  ]
+ },
+ {
+  "id": "B068",
+  "domaine": "marché, boutique, vendeuses, marchandage",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "teal-and-jade",
+   "burgundy-and-charcoal",
+   "turquoise-and-copper",
+   "silver-and-chocolate",
+   "chocolate-and-amber",
+   "plum-and-emerald",
+   "silver-and-amber",
+   "peach-and-burgundy",
+   "turquoise-and-sky-blue"
+  ],
+  "quartiers": [
+   "Marcory",
+   "Koumassi",
+   "Adjamé"
+  ]
+ },
+ {
+  "id": "B069",
+  "domaine": "coiffure, couture, beauté, mode",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "lilac-and-silver",
+   "olive-and-jade",
+   "magenta-and-olive",
+   "navy-and-apricot",
+   "ochre-and-charcoal",
+   "indigo-and-ivory",
+   "tangerine-and-crimson",
+   "sky-blue-and-charcoal",
+   "emerald-and-crimson"
+  ],
+  "quartiers": [
+   "Plateau",
+   "Port-Bouët",
+   "Attécoubé"
+  ]
+ },
+ {
+  "id": "B070",
+  "domaine": "coiffure, couture, beauté, mode",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "lilac-and-apricot",
+   "pistachio-and-cherry",
+   "burgundy-and-apricot",
+   "saffron-and-jade",
+   "rust-and-burgundy",
+   "lavender-and-tangerine",
+   "crimson-and-navy",
+   "rust-and-olive",
+   "lime-and-amber"
+  ],
+  "quartiers": [
+   "Bingerville",
+   "Anyama",
+   "Riviera"
+  ]
+ },
+ {
+  "id": "B071",
+  "domaine": "coiffure, couture, beauté, mode",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "crimson-and-aubergine",
+   "plum-and-ochre",
+   "turquoise-and-gold",
+   "cyan-and-violet",
+   "teal-and-tangerine",
+   "teal-and-sand",
+   "plum-and-magenta",
+   "ochre-and-cherry",
+   "tangerine-and-sand"
+  ],
+  "quartiers": [
+   "Angré",
+   "Deux-Plateaux",
+   "Songon"
+  ]
+ },
+ {
+  "id": "B072",
+  "domaine": "coiffure, couture, beauté, mode",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "plum-and-cyan",
+   "gold-and-chocolate",
+   "sand-and-navy",
+   "lilac-and-sunflower",
+   "ochre-and-chocolate",
+   "indigo-and-charcoal",
+   "chocolate-and-maroon",
+   "lilac-and-pistachio",
+   "sand-and-cherry"
+  ],
+  "quartiers": [
+   "Williamsville",
+   "Abatta",
+   "Biétry"
+  ]
+ },
+ {
+  "id": "B073",
+  "domaine": "football, Éléphants, sport, paris sportifs",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "jade-and-fuchsia",
+   "plum-and-rust",
+   "mint-and-magenta",
+   "plum-and-pistachio",
+   "sky-blue-and-jade",
+   "copper-and-chocolate",
+   "olive-and-lime",
+   "cobalt-and-fuchsia",
+   "salmon-and-charcoal"
+  ],
+  "quartiers": [
+   "Zone 4",
+   "Abobo",
+   "Yopougon"
+  ]
+ },
+ {
+  "id": "B074",
+  "domaine": "football, Éléphants, sport, paris sportifs",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "emerald-and-lime",
+   "jade-and-apricot",
+   "salmon-and-ivory",
+   "mint-and-ochre",
+   "olive-and-amber",
+   "jade-and-copper",
+   "cobalt-and-burgundy",
+   "mustard-and-salmon",
+   "coral-and-cherry"
+  ],
+  "quartiers": [
+   "Cocody",
+   "Treichville",
+   "Marcory"
+  ]
+ },
+ {
+  "id": "B075",
+  "domaine": "football, Éléphants, sport, paris sportifs",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "cream-and-amber",
+   "pistachio-and-aubergine",
+   "apricot-and-pistachio",
+   "teal-and-mustard",
+   "indigo-and-salmon",
+   "crimson-and-sky-blue",
+   "burgundy-and-turquoise",
+   "mint-and-cherry",
+   "emerald-and-silver"
+  ],
+  "quartiers": [
+   "Koumassi",
+   "Adjamé",
+   "Plateau"
+  ]
+ },
+ {
+  "id": "B076",
+  "domaine": "football, Éléphants, sport, paris sportifs",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "mint-and-maroon",
+   "olive-and-chocolate",
+   "indigo-and-copper",
+   "fuchsia-and-amber",
+   "rust-and-fuchsia",
+   "copper-and-violet",
+   "magenta-and-ruby",
+   "emerald-and-charcoal",
+   "peach-and-amber"
+  ],
+  "quartiers": [
+   "Port-Bouët",
+   "Attécoubé",
+   "Bingerville"
+  ]
+ },
+ {
+  "id": "B077",
+  "domaine": "coupures CIE et Sodeci, loyer, propriétaire, logement",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "emerald-and-pistachio",
+   "ochre-and-lime",
+   "mint-and-apricot",
+   "lavender-and-ruby",
+   "olive-and-cyan",
+   "lavender-and-cherry",
+   "teal-and-gold",
+   "teal-and-silver",
+   "fuchsia-and-maroon"
+  ],
+  "quartiers": [
+   "Anyama",
+   "Riviera",
+   "Angré"
+  ]
+ },
+ {
+  "id": "B078",
+  "domaine": "coupures CIE et Sodeci, loyer, propriétaire, logement",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "burgundy-and-indigo",
+   "gold-and-apricot",
+   "mint-and-aubergine",
+   "rust-and-navy",
+   "ruby-and-pistachio",
+   "rust-and-ivory",
+   "mint-and-cyan",
+   "ochre-and-apricot",
+   "indigo-and-cyan"
+  ],
+  "quartiers": [
+   "Deux-Plateaux",
+   "Songon",
+   "Williamsville"
+  ]
+ },
+ {
+  "id": "B079",
+  "domaine": "coupures CIE et Sodeci, loyer, propriétaire, logement",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "crimson-and-cream",
+   "emerald-and-sand",
+   "burgundy-and-cyan",
+   "turquoise-and-cherry",
+   "turquoise-and-violet",
+   "maroon-and-sunflower",
+   "magenta-and-turquoise",
+   "mint-and-lavender",
+   "magenta-and-lime"
+  ],
+  "quartiers": [
+   "Abatta",
+   "Biétry",
+   "Zone 4"
+  ]
+ },
+ {
+  "id": "B080",
+  "domaine": "coupures CIE et Sodeci, loyer, propriétaire, logement",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "turquoise-and-jade",
+   "lavender-and-lime",
+   "jade-and-sunflower",
+   "mustard-and-magenta",
+   "crimson-and-salmon",
+   "saffron-and-copper",
+   "lime-and-sunflower",
+   "teal-and-navy",
+   "tangerine-and-ochre"
+  ],
+  "quartiers": [
+   "Abobo",
+   "Yopougon",
+   "Cocody"
+  ]
+ },
+ {
+  "id": "B081",
+  "domaine": "grands-parents, village, traditions contre modernité",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "jade-and-pistachio",
+   "plum-and-lime",
+   "chocolate-and-apricot",
+   "turquoise-and-silver",
+   "chocolate-and-sunflower",
+   "rose-and-violet",
+   "turquoise-and-crimson",
+   "plum-and-amber",
+   "jade-and-aubergine"
+  ],
+  "quartiers": [
+   "Treichville",
+   "Marcory",
+   "Koumassi"
+  ]
+ },
+ {
+  "id": "B082",
+  "domaine": "grands-parents, village, traditions contre modernité",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "olive-and-ivory",
+   "lavender-and-gold",
+   "silver-and-apricot",
+   "ruby-and-copper",
+   "cyan-and-cherry",
+   "mustard-and-plum",
+   "saffron-and-amber",
+   "burgundy-and-tangerine",
+   "olive-and-charcoal"
+  ],
+  "quartiers": [
+   "Adjamé",
+   "Plateau",
+   "Port-Bouët"
+  ]
+ },
+ {
+  "id": "B083",
+  "domaine": "grands-parents, village, traditions contre modernité",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "olive-and-navy",
+   "burgundy-and-sky-blue",
+   "mustard-and-cyan",
+   "mustard-and-ivory",
+   "navy-and-pistachio",
+   "sand-and-ivory",
+   "ochre-and-sand",
+   "rose-and-maroon",
+   "lavender-and-lilac"
+  ],
+  "quartiers": [
+   "Attécoubé",
+   "Bingerville",
+   "Anyama"
+  ]
+ },
+ {
+  "id": "B084",
+  "domaine": "grands-parents, village, traditions contre modernité",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "ruby-and-salmon",
+   "plum-and-rose",
+   "magenta-and-violet",
+   "sand-and-amber",
+   "rust-and-emerald",
+   "coral-and-silver",
+   "teal-and-rose",
+   "ochre-and-cyan",
+   "magenta-and-sand"
+  ],
+  "quartiers": [
+   "Riviera",
+   "Angré",
+   "Deux-Plateaux"
+  ]
+ },
+ {
+  "id": "B085",
+  "domaine": "chômage, débrouille, jeunes qui cherchent leur chance",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "mustard-and-sky-blue",
+   "turquoise-and-aubergine",
+   "gold-and-pistachio",
+   "tangerine-and-ivory",
+   "teal-and-coral",
+   "mustard-and-jade",
+   "coral-and-peach",
+   "ochre-and-fuchsia",
+   "gold-and-cyan"
+  ],
+  "quartiers": [
+   "Songon",
+   "Williamsville",
+   "Abatta"
+  ]
+ },
+ {
+  "id": "B086",
+  "domaine": "chômage, débrouille, jeunes qui cherchent leur chance",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "mustard-and-navy",
+   "plum-and-ivory",
+   "peach-and-cyan",
+   "rust-and-magenta",
+   "coral-and-copper",
+   "mint-and-silver",
+   "maroon-and-aubergine",
+   "cobalt-and-copper",
+   "crimson-and-gold"
+  ],
+  "quartiers": [
+   "Biétry",
+   "Zone 4",
+   "Abobo"
+  ]
+ },
+ {
+  "id": "B087",
+  "domaine": "chômage, débrouille, jeunes qui cherchent leur chance",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "olive-and-cherry",
+   "mustard-and-sand",
+   "cobalt-and-sky-blue",
+   "cobalt-and-indigo",
+   "copper-and-salmon",
+   "cobalt-and-ochre",
+   "tangerine-and-apricot",
+   "chocolate-and-ivory",
+   "navy-and-charcoal"
+  ],
+  "quartiers": [
+   "Yopougon",
+   "Cocody",
+   "Treichville"
+  ]
+ },
+ {
+  "id": "B088",
+  "domaine": "chômage, débrouille, jeunes qui cherchent leur chance",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "coral-and-burgundy",
+   "sand-and-sunflower",
+   "jade-and-ruby",
+   "sky-blue-and-lime",
+   "ochre-and-salmon",
+   "turquoise-and-ochre",
+   "jade-and-salmon",
+   "mustard-and-cherry",
+   "emerald-and-peach"
+  ],
+  "quartiers": [
+   "Marcory",
+   "Koumassi",
+   "Adjamé"
+  ]
+ },
+ {
+  "id": "B089",
+  "domaine": "rêves de voyage, visa, diaspora qui rentre au pays",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "pistachio-and-salmon",
+   "ochre-and-silver",
+   "magenta-and-navy",
+   "turquoise-and-pistachio",
+   "violet-and-maroon",
+   "plum-and-indigo",
+   "teal-and-rust",
+   "saffron-and-magenta",
+   "lavender-and-rose"
+  ],
+  "quartiers": [
+   "Plateau",
+   "Port-Bouët",
+   "Attécoubé"
+  ]
+ },
+ {
+  "id": "B090",
+  "domaine": "rêves de voyage, visa, diaspora qui rentre au pays",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "mint-and-fuchsia",
+   "lilac-and-maroon",
+   "burgundy-and-lilac",
+   "teal-and-burgundy",
+   "rust-and-cyan",
+   "sky-blue-and-gold",
+   "rust-and-apricot",
+   "lime-and-pistachio",
+   "mint-and-tangerine"
+  ],
+  "quartiers": [
+   "Bingerville",
+   "Anyama",
+   "Riviera"
+  ]
+ },
+ {
+  "id": "B091",
+  "domaine": "rêves de voyage, visa, diaspora qui rentre au pays",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "coral-and-charcoal",
+   "charcoal-and-sunflower",
+   "rust-and-chocolate",
+   "magenta-and-aubergine",
+   "jade-and-silver",
+   "magenta-and-ochre",
+   "cobalt-and-ivory",
+   "fuchsia-and-cream",
+   "lavender-and-sunflower"
+  ],
+  "quartiers": [
+   "Angré",
+   "Deux-Plateaux",
+   "Songon"
+  ]
+ },
+ {
+  "id": "B092",
+  "domaine": "rêves de voyage, visa, diaspora qui rentre au pays",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "tangerine-and-indigo",
+   "peach-and-ruby",
+   "plum-and-tangerine",
+   "lavender-and-charcoal",
+   "tangerine-and-ruby",
+   "cobalt-and-rose",
+   "cream-and-chocolate",
+   "mint-and-rust",
+   "coral-and-amber"
+  ],
+  "quartiers": [
+   "Williamsville",
+   "Abatta",
+   "Biétry"
+  ]
+ },
+ {
+  "id": "B093",
+  "domaine": "animaux domestiques et animaux du quartier",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "gold-and-silver",
+   "cobalt-and-lilac",
+   "cobalt-and-ruby",
+   "lavender-and-peach",
+   "sand-and-charcoal",
+   "plum-and-saffron",
+   "silver-and-ivory",
+   "indigo-and-cream",
+   "rust-and-sky-blue"
+  ],
+  "quartiers": [
+   "Zone 4",
+   "Abobo",
+   "Yopougon"
+  ]
+ },
+ {
+  "id": "B094",
+  "domaine": "animaux domestiques et animaux du quartier",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "pistachio-and-amber",
+   "burgundy-and-lime",
+   "mustard-and-violet",
+   "ochre-and-cream",
+   "mint-and-saffron",
+   "magenta-and-burgundy",
+   "olive-and-ruby",
+   "teal-and-indigo",
+   "emerald-and-amber"
+  ],
+  "quartiers": [
+   "Cocody",
+   "Treichville",
+   "Marcory"
+  ]
+ },
+ {
+  "id": "B095",
+  "domaine": "animaux domestiques et animaux du quartier",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "gold-and-charcoal",
+   "cobalt-and-peach",
+   "fuchsia-and-ivory",
+   "saffron-and-olive",
+   "peach-and-aubergine",
+   "rose-and-chocolate",
+   "jade-and-navy",
+   "lilac-and-indigo",
+   "crimson-and-charcoal"
+  ],
+  "quartiers": [
+   "Koumassi",
+   "Adjamé",
+   "Plateau"
+  ]
+ },
+ {
+  "id": "B096",
+  "domaine": "animaux domestiques et animaux du quartier",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "saffron-and-salmon",
+   "fuchsia-and-copper",
+   "sand-and-cyan",
+   "coral-and-jade",
+   "coral-and-indigo",
+   "sky-blue-and-violet",
+   "jade-and-cherry",
+   "olive-and-maroon",
+   "lavender-and-cyan"
+  ],
+  "quartiers": [
+   "Port-Bouët",
+   "Attécoubé",
+   "Bingerville"
+  ]
+ },
+ {
+  "id": "B097",
+  "domaine": "mensonges, alibis, jalousie, téléphone du mari ou de la femme",
+  "mecanisme": "le retournement logique à double cible (comme « Ça doit être ta mère, moi j'ai encore la mienne »)",
+  "couleurs": [
+   "mustard-and-peach",
+   "navy-and-violet",
+   "coral-and-navy",
+   "olive-and-crimson",
+   "lime-and-charcoal",
+   "lilac-and-copper",
+   "chocolate-and-charcoal",
+   "lilac-and-ivory",
+   "emerald-and-sunflower"
+  ],
+  "quartiers": [
+   "Anyama",
+   "Riviera",
+   "Angré"
+  ]
+ },
+ {
+  "id": "B098",
+  "domaine": "mensonges, alibis, jalousie, téléphone du mari ou de la femme",
+  "mecanisme": "le témoin innocent (enfant, voisin, employé) qui révèle la vérité, ou l'arroseur arrosé",
+  "couleurs": [
+   "jade-and-charcoal",
+   "emerald-and-apricot",
+   "chocolate-and-pistachio",
+   "rose-and-navy",
+   "lime-and-cyan",
+   "lilac-and-sky-blue",
+   "tangerine-and-chocolate",
+   "indigo-and-rose",
+   "coral-and-pistachio"
+  ],
+  "quartiers": [
+   "Deux-Plateaux",
+   "Songon",
+   "Williamsville"
+  ]
+ },
+ {
+  "id": "B099",
+  "domaine": "mensonges, alibis, jalousie, téléphone du mari ou de la femme",
+  "mecanisme": "la logique absurde prise au pied de la lettre (comme « Mange vite avant de te réveiller »)",
+  "couleurs": [
+   "sky-blue-and-aubergine",
+   "teal-and-ivory",
+   "peach-and-turquoise",
+   "burgundy-and-jade",
+   "plum-and-silver",
+   "emerald-and-violet",
+   "ruby-and-amber",
+   "plum-and-sunflower",
+   "charcoal-and-cherry"
+  ],
+  "quartiers": [
+   "Abatta",
+   "Biétry",
+   "Zone 4"
+  ]
+ },
+ {
+  "id": "B100",
+  "domaine": "mensonges, alibis, jalousie, téléphone du mari ou de la femme",
+  "mecanisme": "la relance assassine : la chute, puis une toute dernière réplique de 2 à 6 mots d'un autre personnage qui achève",
+  "couleurs": [
+   "burgundy-and-cherry",
+   "cyan-and-charcoal",
+   "amber-and-cherry",
+   "ochre-and-gold",
+   "saffron-and-tangerine",
+   "peach-and-charcoal",
+   "sand-and-chocolate",
+   "emerald-and-maroon",
+   "silver-and-charcoal"
+  ],
+  "quartiers": [
+   "Abobo",
+   "Yopougon",
+   "Cocody"
+  ]
+ }
+]

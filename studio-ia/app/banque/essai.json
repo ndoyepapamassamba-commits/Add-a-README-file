@@ -1,0 +1,932 @@
+[
+{
+"id": "T601",
+"titre": "Le parfum",
+"lieu": "living room of a house in Yopougon, Abidjan, at night, a brown sofa, a TV on a stand, warm lamp light",
+"persos": [
+{
+"nom": "the suspicious wife sniffing",
+"desc": "wife in her 30s, coral-red house kaftan with white embroidery, hair in a short twist-out, arms crossed",
+"pose": "standing very close to her husband, sniffing his shirt suspiciously"
+},
+{
+"nom": "the sweating husband",
+"desc": "husband in his 40s, navy pinstripe office shirt, loosened yellow tie, car keys in his hand",
+"pose": "standing in the foreground next to his wife, sweating, nervous smile"
+},
+{
+"nom": "the little girl on the sofa",
+"desc": "little girl around 7, sunflower-yellow ruffled frock, two puffy pigtails, holding a doll",
+"pose": "sitting on the sofa on the right, facing the camera, listening"
+}
+],
+"dialogue": [
+[
+0,
+"Chéri, tu sens le parfum de femme ! Tu quittes où ?!"
+],
+[
+1,
+"Dans le woro-woro dêh, on était trop serrés !"
+],
+[
+2,
+"Papa, pourtant tu as pris ta voiture ce matin dêh."
+]
+],
+"jeu": "Nobody walks; all three stay in their places for the whole video. The wife sniffs his shirt and shouts, suspicious. The husband answers fast with a nervous smile, waving his car keys without noticing. The little girl, facing the camera, speaks innocently, her lips clearly visible.",
+"chute": "The wife slowly turns her head toward her husband and looks at the car keys in his hand. The camera slowly pushes in to a close-up of the husband's busted face looking into the camera.",
+"fin": 1,
+"emoji": "choc",
+"cles": [
+"parfum",
+"woro-woro",
+"voiture"
+],
+"note": 8.6,
+"theme": "famille"
+},
+{
+"id": "T602",
+"titre": "Maman est fâchée",
+"lieu": "kitchen of a family house in Koumassi, Abidjan, pots on the stove, a window with afternoon light",
+"persos": [
+{
+"nom": "the furious mother with the ladle",
+"desc": "mother in her 40s, mint-green-and-white wax wrap, matching mint head tie, holding a big wooden ladle",
+"pose": "standing with her hands on her hips, furious, facing her son"
+},
+{
+"nom": "the teenage son filming",
+"desc": "teenage boy around 14, burnt-orange hoodie, holding up a smartphone filming his mother",
+"pose": "standing a few steps away, calmly filming his mother with his phone"
+}
+],
+"dialogue": [
+[
+0,
+"Pourquoi tu filmes ma colère-là ?!"
+],
+[
+1,
+"Papa dit qu'il va envoyer ça à ton papa dêh."
+],
+[
+0,
+"Pour faire quoi ?"
+],
+[
+1,
+"Service après-vente. Il dit ton produit-là est gâté."
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The mother holds ONE single wooden ladle in her right hand for the whole video and keeps her left hand on her hip; no other spoon or ladle ever appears. The mother shouts, waving her ladle. Then she closes her mouth and listens while the son answers calmly, still filming, his face and moving lips clearly visible beside the phone. The mother asks, confused, then closes her mouth again. The son answers very seriously, still filming, while the mother keeps her mouth closed.",
+"chute": "The mother freezes with the ladle in the air, her face staying exactly the same. The camera slowly pushes in to a close-up of the mother's shocked face looking into the camera.",
+"fin": 0,
+"emoji": "mdr",
+"cles": [
+"filmes",
+"après-vente",
+"gâté"
+],
+"note": 8.8,
+"theme": "famille"
+},
+{
+"id": "T603",
+"titre": "Le grand ménage",
+"lieu": "storage room of a family house in Marcory, Abidjan, cardboard boxes full of old objects, a broom, dusty afternoon light",
+"persos": [
+{
+"nom": "the offended father with the photo",
+"desc": "father in his 50s, round belly, tan-and-white striped polo shirt, holding his own framed portrait taken out of a box",
+"pose": "standing in the foreground, holding up his framed portrait, offended"
+},
+{
+"nom": "the daughter doing the cleaning",
+"desc": "young woman in her 20s, khaki cargo jumpsuit with rolled sleeves, a red bandana on her hair, holding a big cardboard box marked with a sad face drawing",
+"pose": "standing on the left holding the cardboard box, sheepish"
+}
+],
+"dialogue": [
+[
+0,
+"Pourquoi ma photo-là est dans le carton des choses inutiles ?!"
+],
+[
+1,
+"Pardon papa dêh. Je savais pas comment te faire entrer dedans."
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The father shouts, holding up his framed portrait. The daughter answers sheepishly and sincerely, her face clearly visible.",
+"chute": "The father slowly lowers his framed portrait. The camera slowly pushes in to a close-up of the father's offended face looking into the camera.",
+"fin": 0,
+"emoji": "mdr",
+"cles": [
+"photo",
+"inutiles",
+"dedans"
+],
+"note": 8.3,
+"theme": "famille"
+},
+{
+"id": "T604",
+"titre": "Le fiancé",
+"lieu": "veranda of a family house in Riviera, Abidjan, a wooden bench, potted plants, late afternoon",
+"persos": [
+{
+"nom": "the excited daughter with the phone",
+"desc": "young woman in her 20s, emerald satin slip dress, long wavy wig, showing a photo on her phone",
+"pose": "sitting on the bench, excited, showing her phone to her father"
+},
+{
+"nom": "the greedy father with the newspaper",
+"desc": "father in his 60s, thick grey moustache, olive-and-gold dashiki, a folded newspaper on his knees",
+"pose": "sitting next to her on the bench, looking at the phone with great interest"
+}
+],
+"dialogue": [
+[
+0,
+"Papa, mon fiancé a une Mercedes dêh !"
+],
+[
+1,
+"Le papier est à son nom ?"
+],
+[
+0,
+"Non, c'est au nom de son oncle."
+],
+[
+1,
+"L'oncle-là est libre ? On change de cible."
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The daughter shows the photo, excited. The father asks seriously, like a businessman. The daughter answers innocently. The father answers immediately, very serious, his face clearly visible.",
+"chute": "The daughter's excited smile slowly freezes. The camera slowly pushes in to a close-up of the daughter's shocked face looking into the camera.",
+"fin": 0,
+"emoji": "choc",
+"cles": [
+"Mercedes",
+"oncle",
+"cible"
+],
+"note": 8.3,
+"theme": "famille"
+},
+{
+"id": "T605",
+"titre": "La chaise dehors",
+"lieu": "small open-plan office in Plateau, Abidjan, desks with computers, a glass door with an office chair standing alone outside in the corridor, morning",
+"persos": [
+{
+"nom": "the shocked employee in the tie",
+"desc": "employee in his 30s, pale-pink shirt with a navy tie, holding a briefcase",
+"pose": "standing next to his empty desk, pointing at the chair outside the glass door"
+},
+{
+"nom": "the cold boss with the coffee",
+"desc": "boss in his 50s, bald, charcoal double-breasted blazer, holding a coffee mug at chest level",
+"pose": "standing on the right, calm and cold, his coffee mug held low at chest level"
+}
+],
+"dialogue": [
+[
+0,
+"Patron, pourquoi ma chaise-là est dehors ?!"
+],
+[
+1,
+"Tu voulais un poste avec vue, mon vieux."
+],
+[
+0,
+"Et mon bureau-là ?"
+],
+[
+1,
+"Vue sur ton remplaçant dêh."
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The boss never drinks; his mug stays low at chest level so his mouth is always visible. The employee shouts, pointing at the chair outside. The boss answers calmly. The employee points at his desk, worried. The boss answers coldly, his face and moving lips clearly visible.",
+"chute": "The employee freezes with his finger still pointing. The camera slowly pushes in to a close-up of the employee's devastated face looking into the camera.",
+"fin": 0,
+"emoji": "choc",
+"cles": [
+"chaise",
+"vue",
+"remplaçant"
+],
+"note": 7.8,
+"theme": "famille"
+},
+{
+"id": "T606",
+"titre": "Le copain",
+"lieu": "living room of a modest house in Abobo, Abidjan, a worn armchair, a small TV, a ceiling fan, evening",
+"persos": [
+{
+"nom": "the happy daughter",
+"desc": "teenage girl around 17, cropped baby-blue sweatshirt with a red heart, high puff ponytail",
+"pose": "standing in front of her father, happy and proud"
+},
+{
+"nom": "the broke father in the armchair",
+"desc": "father in his 40s, big round nose, faded blue football jersey with holes, old slippers",
+"pose": "sitting in the worn armchair, smiling proudly at first"
+}
+],
+"dialogue": [
+[
+0,
+"Papa, mes copines disent que mon copain te ressemble trop dêh !"
+],
+[
+1,
+"Ehh, ma fille… Donc le petit-là n'a vraiment pas l'argent non plus ?"
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The daughter speaks happily and proudly. The father's proud smile turns into worry, and he asks seriously, his face clearly visible.",
+"chute": "The daughter's happy smile slowly freezes. The camera slowly pushes in to a close-up of the daughter's shocked face looking into the camera.",
+"fin": 0,
+"emoji": "mdr",
+"cles": [
+"ressemble",
+"l'argent"
+],
+"note": 7.6,
+"theme": "famille"
+},
+{
+"id": "T607",
+"titre": "Le prix du garba",
+"lieu": "small garba stall on a street in Treichville, Abidjan, a wooden bench, a big pot of attiéké and fried fish, colorful plastic plates, midday",
+"persos": [
+{
+"nom": "the influencer filming her plate",
+"desc": "young woman in her 20s, neon-pink sunglasses on her head, white crop top, filming her plate with a phone on a selfie stick",
+"pose": "standing in front of the stall, holding her selfie stick, annoyed"
+},
+{
+"nom": "the garba seller",
+"desc": "garba seller in her 50s, brown-and-orange pagne wrap, orange head tie, holding a serving spoon",
+"pose": "standing behind the stall, calm"
+},
+{
+"nom": "the customer eating",
+"desc": "man in his 30s, grey sleeveless top, eating garba with his fingers",
+"pose": "sitting on the bench in the right foreground, eating quietly"
+}
+],
+"dialogue": [
+[
+0,
+"Tantie, pourquoi mon garba coûte plus cher que son garba-là ?!"
+],
+[
+1,
+"Lui, il mange. Toi, tu filmes dêh. Tu loues mon décor."
+]
+],
+"jeu": "Nobody walks; all three stay in their places for the whole video. The man keeps eating quietly on the bench. The influencer keeps her selfie stick in one hand and her plate in the other hand the whole time, and complains with a nod of her head toward the man's plate. The seller answers calmly, pointing at the man with her spoon, then at the phone, her face clearly visible.",
+"chute": "The influencer slowly lowers her selfie stick. The camera slowly pushes in to a close-up of the influencer's shocked face looking into the camera.",
+"fin": 0,
+"emoji": "mdr",
+"cles": [
+"garba",
+"filmes",
+"décor"
+],
+"note": 7.7,
+"theme": "famille"
+},
+{
+"id": "T701",
+"titre": "Les noces d'or",
+"source": "classique mondial : Henny Youngman",
+"lieu": "golden wedding anniversary party in a courtyard in Cocody, Abidjan, gold and white balloons, a banner without text, string lights, evening",
+"persos": [
+{
+"nom": "the young TV journalist with the microphone",
+"desc": "young TV journalist in her 20s, bright red blazer, short bob haircut, holding a microphone",
+"pose": "standing on the left, holding the microphone toward the old man, smiling"
+},
+{
+"nom": "the proud old husband",
+"desc": "proud old husband in his 70s, white hair, cream-and-gold embroidered grand boubou, a gold watch",
+"pose": "standing in the middle facing the camera, proud"
+},
+{
+"nom": "the smiling old wife",
+"desc": "smiling old wife in her 70s, gold lace kaba with a matching gold gele, holding her husband's arm",
+"pose": "standing on the right, holding her husband's arm, smiling proudly at the camera"
+}
+],
+"dialogue": [
+[
+0,
+"Tonton, cinquante ans de mariage ! C'est quoi votre secret dêh ?"
+],
+[
+1,
+"J'aime la même femme depuis cinquante ans."
+],
+[
+0,
+"Ehh, c'est trop beau !"
+],
+[
+1,
+"Si ma femme apprend ça, elle va me tuer dêh."
+]
+],
+"jeu": "Nobody walks; all three stay in their places for the whole video. The old wife keeps smiling silently, holding his arm. The journalist asks with excitement. The old man answers proudly. The journalist is moved. The old man answers in a low confidential voice toward the microphone, his face clearly visible, forgetting his wife is holding his arm.",
+"chute": "The old wife's proud smile slowly freezes and she slowly turns her head toward her husband, still holding his arm. The camera slowly pushes in to a close-up of the old wife's shocked face looking into the camera.",
+"fin": 2,
+"emoji": "choc",
+"cles": [
+"secret",
+"même femme",
+"tuer"
+],
+"note": 8.9,
+"theme": "couple"
+},
+{
+"id": "T702",
+"titre": "La prière du soir",
+"lieu": "small courtyard of a house in Abobo, Abidjan, at dusk, the open wooden door of the house on the right showing a bedroom with a man lying on a mat inside, a plastic bucket, a clothesline",
+"persos": [
+{
+"nom": "the wife at the door",
+"desc": "wife in her 30s, purple-and-green wax pagne wrapped as a dress, hair tied in a yellow scarf, hands on her hips",
+"pose": "standing in front of the open door on the right, hands on her hips"
+},
+{
+"nom": "the neighbor praying loudly",
+"desc": "neighbor in her 40s, long sky-white prayer robe, a white headscarf, both hands raised to the sky",
+"pose": "standing in the middle of the courtyard facing the door, praying loudly with both hands raised"
+},
+{
+"nom": "the husband lying on the mat",
+"desc": "husband in his 40s, big belly, faded blue shorts, lying on his back on a mat inside the bedroom, sleeping",
+"pose": "lying on the mat inside the room behind the open door, sleeping, he never moves"
+}
+],
+"dialogue": [
+[
+0,
+"Ma sœur, pourquoi tu pries fort comme ça devant ma porte-là ?!"
+],
+[
+1,
+"On a dit de chasser les démons de la pauvreté dêh !"
+],
+[
+0,
+"Ya fohi. Entre dans la chambre, il est couché."
+]
+],
+"jeu": "Nobody walks; the two women stay in their places and the husband stays lying asleep on the mat behind the door for the whole video. The wife asks, annoyed. The neighbor answers with passion, hands still raised. The wife answers calmly, pointing with her thumb at the sleeping husband behind her, her face clearly visible.",
+"chute": "The neighbor slowly lowers her hands and stares at the sleeping husband on the mat. The camera slowly pushes in to a close-up of the neighbor's shocked face looking into the camera.",
+"fin": 1,
+"emoji": "mdr",
+"cles": [
+"pries",
+"pauvreté",
+"couché"
+],
+"note": 8.7,
+"theme": "couple"
+},
+{
+"id": "T703",
+"titre": "L'enlèvement",
+"lieu": "living room of an apartment in Marcory, Abidjan, a grey sofa, a dining table, afternoon light",
+"persos": [
+{
+"nom": "the panicked wife with the phone",
+"desc": "wife in her 30s, sky-blue satin blouse, white jeans, long braids, holding her phone with both hands",
+"pose": "standing in front of the sofa, panicked, showing her phone"
+},
+{
+"nom": "the calm husband eating peanuts",
+"desc": "husband in his 40s, thick beard, plum-purple kaftan shirt with gold buttons, holding a small bowl of peanuts",
+"pose": "sitting on the sofa, calmly eating peanuts"
+}
+],
+"dialogue": [
+[
+0,
+"Chéri ! On a kidnappé ton petit frère ! Ils demandent deux millions dêh !"
+],
+[
+1,
+"Ya fohi. Envoie-leur sa photo quand il mange. C'est eux qui vont nous payer pour le ramener."
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The wife shouts in panic, showing her phone. The husband answers calmly, still eating peanuts, his face clearly visible.",
+"chute": "The wife freezes with the phone in her hands. The camera slowly pushes in to a close-up of the wife's shocked face looking into the camera.",
+"fin": 0,
+"emoji": "choc",
+"cles": [
+"kidnappé",
+"deux millions",
+"mange"
+],
+"note": 8.2,
+"theme": "couple"
+},
+{
+"id": "T704",
+"titre": "Le code secret",
+"lieu": "bedroom of an apartment in Riviera, Abidjan, a bed with a patterned bedspread, a bedside lamp, evening",
+"persos": [
+{
+"nom": "the tender wife on the bed",
+"desc": "wife in her 30s, rose-pink satin pyjamas, short curly hair, holding her husband's phone",
+"pose": "sitting on the bed, holding the phone, smiling tenderly"
+},
+{
+"nom": "the husband by the wardrobe",
+"desc": "husband in his 30s, thin glasses, plain navy pyjama top",
+"pose": "standing next to the wardrobe, folding a towel"
+}
+],
+"dialogue": [
+[
+0,
+"Chéri, ton code Mobile Money-là, c'est notre date de mariage ?"
+],
+[
+1,
+"Non. Le système a refusé dêh."
+],
+[
+0,
+"Pourquoi ?"
+],
+[
+1,
+"Ils disent on met pas une erreur comme mot de passe."
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The wife asks tenderly. The husband answers simply while folding his towel. The wife asks, curious. The husband answers calmly and sincerely, his face clearly visible.",
+"chute": "The wife's tender smile slowly freezes. The camera slowly pushes in to a close-up of the wife's offended face looking into the camera.",
+"fin": 0,
+"emoji": "mdr",
+"cles": [
+"Mobile Money",
+"mariage",
+"erreur"
+],
+"note": 8.1,
+"theme": "couple"
+},
+{
+"id": "T705",
+"titre": "L'autoroute du Nord",
+"source": "classique mondial : le fou à contresens",
+"lieu": "inside an old car at night on a highway near Abidjan, seen from the dashboard, headlights of many cars coming straight toward them through the windshield",
+"persos": [
+{
+"nom": "the worried wife in the passenger seat",
+"desc": "wife in her 40s, orange-and-brown wax blouse, a matching head tie, holding a small radio",
+"pose": "sitting in the passenger seat, holding the radio, worried"
+},
+{
+"nom": "the confident husband driving",
+"desc": "husband in his 40s, flat cap, checkered mint-and-brown shirt, both hands on the steering wheel",
+"pose": "driving with both hands on the wheel, confident"
+}
+],
+"dialogue": [
+[
+0,
+"Chéri, la radio dit qu'un fou roule à contresens sur l'autoroute du Nord dêh !"
+],
+[
+1,
+"Un seul ? Ma chérie, ils sont des centaines en face de moi !"
+]
+],
+"jeu": "Nobody moves from their seat; both stay seated for the whole video and the camera stays on the dashboard looking at them. Headlights keep coming toward the car through the windshield. The wife warns him, worried. The husband answers proudly, annoyed by the other cars, his face clearly visible.",
+"chute": "The wife slowly turns her head toward the headlights coming at them. The camera slowly pushes in to a close-up of the wife's horrified face looking into the camera.",
+"fin": 0,
+"emoji": "choc",
+"cles": [
+"contresens",
+"centaines"
+],
+"note": 7.5,
+"theme": "couple"
+},
+{
+"id": "T706",
+"titre": "La dispute",
+"lieu": "living room of a house in Yopougon, Abidjan, a red sofa, a fan, framed photos on the wall, afternoon",
+"persos": [
+{
+"nom": "the shouting wife with the fitness bracelet",
+"desc": "wife in her 30s, black sportswear with a fitness bracelet on her wrist, a high ponytail",
+"pose": "standing, shouting and waving her arms"
+},
+{
+"nom": "the smiling husband on the sofa",
+"desc": "husband in his 30s, white headband, bright green tracksuit jacket, calm smile",
+"pose": "sitting on the sofa, smiling calmly"
+}
+],
+"dialogue": [
+[
+0,
+"Chéri, pourquoi tu souris pendant que je crie-là ?!"
+],
+[
+1,
+"Bébé, ton bracelet compte chaque geste comme un pas. Encore deux insultes, tu atteins ton objectif dêh."
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The wife shouts, waving her arms. The husband answers calmly and kindly, pointing at her fitness bracelet, his face clearly visible.",
+"chute": "The wife freezes with her arms in the air and looks at her bracelet. The camera slowly pushes in to a close-up of the wife's shocked face looking into the camera.",
+"fin": 0,
+"emoji": "mdr",
+"cles": [
+"souris",
+"bracelet",
+"objectif"
+],
+"note": 7.5,
+"theme": "couple"
+},
+{
+"id": "T707",
+"titre": "La bourse",
+"lieu": "small living room in Koumassi, Abidjan, a wooden table with school books, a plastic chair, a wall clock, morning",
+"persos": [
+{
+"nom": "the proud student with the letter",
+"desc": "student around 18, pale-blue school uniform with a navy tie, holding an official letter",
+"pose": "standing in front of his father, holding up the letter, very proud"
+},
+{
+"nom": "the father at the table",
+"desc": "father in his 50s, short white beard, faded brown polo shirt, sitting at the table",
+"pose": "sitting at the table, listening"
+}
+],
+"dialogue": [
+[
+0,
+"Papa, j'ai eu la bourse dêh !"
+],
+[
+1,
+"Ehh ! C'est combien, mon fils ?"
+],
+[
+0,
+"Cinquante mille chaque mois !"
+],
+[
+1,
+"Ya fohi. À partir d'aujourd'hui, c'est toi le père. Moi, je vais réviser."
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The student announces it proudly. The father asks, very interested. The student answers proudly. The father answers seriously, pushing the school books toward himself, his face clearly visible.",
+"chute": "The student's proud smile slowly freezes. The camera slowly pushes in to a close-up of the student's shocked face looking into the camera.",
+"fin": 0,
+"emoji": "mdr",
+"cles": [
+"bourse",
+"cinquante mille",
+"père"
+],
+"note": 7.4,
+"theme": "couple"
+},
+{
+"id": "T801",
+"titre": "Le poste du patron",
+"lieu": "office of a small company in Plateau, Abidjan, a big desk with a leather chair, a window with city view, a framed certificate without text, morning",
+"persos": [
+{
+"nom": "the worried boss behind the desk",
+"desc": "boss in his 50s, round belly, wine-red suspenders over a white-and-grey checkered shirt, gold-rimmed glasses",
+"pose": "sitting behind his big desk, worried, leaning forward"
+},
+{
+"nom": "the calm young employee",
+"desc": "young employee in his 20s, slim, teal blazer with a black t-shirt, small notebook in his hand",
+"pose": "standing in front of the desk, calm and confident"
+}
+],
+"dialogue": [
+[
+0,
+"Tu veux mon poste maintenant, mon gars ?!"
+],
+[
+1,
+"Non, patron. Votre salaire-là seulement dêh."
+],
+[
+0,
+"Et moi, je vais manger quoi ?"
+],
+[
+1,
+"Vos conseils-là, patron : faut être passionné."
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The boss asks, worried. The employee answers calmly. The boss panics, both hands on his desk. The employee answers very calmly and respectfully, his face clearly visible.",
+"chute": "The boss freezes with both hands on the desk. The camera slowly pushes in to a close-up of the boss's shocked face looking into the camera.",
+"fin": 0,
+"emoji": "choc",
+"cles": [
+"poste",
+"salaire",
+"passionné"
+],
+"duree": 11,
+"note": 8.2,
+"theme": "travail"
+},
+{
+"id": "T802",
+"titre": "Chez la couturière",
+"lieu": "small tailor shop in Adjamé, Abidjan, rolls of colorful wax fabric on shelves, a sewing machine, a mannequin, afternoon light",
+"persos": [
+{
+"nom": "the plump aunt with her handbag",
+"desc": "plump aunt in her 50s, royal-purple-and-orange boubou, a matching tall head tie, a red handbag on her arm",
+"pose": "standing in front of the counter, hands on her hips, suspicious"
+},
+{
+"nom": "the calm tailor with the tape measure",
+"desc": "tailor in her 30s, mustard-and-green wax blouse, a tape measure around her neck, holding two finished dresses on hangers, one much smaller than the other",
+"pose": "standing behind the counter, holding up the two dresses"
+}
+],
+"dialogue": [
+[
+0,
+"Couturière, pourquoi tu as cousu deux robes-là ?!"
+],
+[
+1,
+"Une pour toi, Tantie."
+],
+[
+0,
+"Et l'autre, dêh ?"
+],
+[
+1,
+"Pour la taille que tu m'as annoncée, Tantie."
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The aunt asks, suspicious. The tailor raises the big dress. The aunt points at the tiny dress. The tailor raises the tiny dress and answers calmly and sincerely, her face clearly visible.",
+"chute": "The aunt freezes, staring at the tiny dress. The camera slowly pushes in to a close-up of the aunt's offended face looking into the camera.",
+"fin": 0,
+"emoji": "mdr",
+"cles": [
+"deux robes",
+"taille"
+],
+"duree": 11,
+"note": 7.9,
+"theme": "travail"
+},
+{
+"id": "T803",
+"titre": "Le pourboire",
+"lieu": "inside an old orange Abidjan gbaka minibus parked at a station in Adjamé, worn seats, colorful stickers without text, sunny afternoon through the windows",
+"persos": [
+{
+"nom": "the excited young apprentice",
+"desc": "young bus apprentice around 18, faded yellow tank top, a money pouch on his waist, holding a 10,000 franc banknote up",
+"pose": "standing at the sliding door, holding up the banknote, very excited"
+},
+{
+"nom": "the tired old driver",
+"desc": "tired driver in his 50s, grey stubble, faded khaki shirt, both hands on the big steering wheel",
+"pose": "sitting in the driver's seat, turned toward the apprentice, tired"
+}
+],
+"dialogue": [
+[
+0,
+"Chauffeur ! Le client a donné dix mille et il a dit garde la monnaie dêh !"
+],
+[
+1,
+"Ferme tes yeux, mon petit. C'est le palu qui commence."
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The apprentice shouts with joy, waving the banknote. The driver answers calmly and seriously, like a doctor, his face clearly visible.",
+"chute": "The apprentice freezes and slowly looks at the banknote in his hand. The camera slowly pushes in to a close-up of the apprentice's shocked face looking into the camera.",
+"fin": 0,
+"emoji": "mdr",
+"cles": [
+"dix mille",
+"monnaie",
+"palu"
+],
+"duree": 10,
+"note": 8.1,
+"theme": "travail"
+},
+{
+"id": "T804",
+"titre": "Le piment",
+"lieu": "street food stall in Yopougon, Abidjan, a wooden bench, a big pot of sauce and rice, a small bowl of red chili, an office building at the far end of the street, midday",
+"persos": [
+{
+"nom": "the office worker eating",
+"desc": "office worker in his 30s, light-grey shirt with a loosened burgundy tie, an employee badge on his chest, holding a spoon",
+"pose": "sitting on the bench in the foreground, eating, surprised"
+},
+{
+"nom": "the stall lady with the chili spoon",
+"desc": "stall lady in her 40s, lime-green apron over a brown wax dress, a white head tie, holding a spoon full of red chili",
+"pose": "standing behind the stall, adding chili into his plate"
+},
+{
+"nom": "the stern boss at the end of the street",
+"desc": "stern boss in his 50s, black suit, dark sunglasses, standing far away at the end of the street, small in the background",
+"pose": "standing still far away in the background, looking toward the stall"
+}
+],
+"dialogue": [
+[
+0,
+"Tantie, pourquoi tu ajoutes piment ? J'ai pas demandé dêh !"
+],
+[
+1,
+"Ton patron-là arrive. Faut que tes larmes aient une explication."
+]
+],
+"jeu": "Nobody walks; all three stay in their places for the whole video. The boss stays still far away in the background. The office worker protests with his spoon. The stall lady keeps adding chili and answers calmly, nodding toward the far background, her face clearly visible.",
+"chute": "The office worker slowly turns his head toward the boss far away in the background. The camera slowly pushes in to a close-up of the office worker's terrified face looking into the camera.",
+"fin": 0,
+"emoji": "mdr",
+"cles": [
+"piment",
+"patron",
+"larmes"
+],
+"duree": 10,
+"note": 8.0,
+"theme": "travail"
+},
+{
+"id": "T901",
+"titre": "La tontine des femmes mariées",
+"lieu": "courtyard of a house in Treichville, Abidjan, plastic chairs in a circle, a small table with a metal cash box and a notebook, afternoon",
+"persos": [
+{
+"nom": "the tontine president with the notebook",
+"desc": "tontine president in her 50s, ochre-and-black wax kaba, big round glasses, holding a notebook",
+"pose": "standing on the left, holding the notebook, very serious"
+},
+{
+"nom": "the confused member",
+"desc": "member in her 30s, pink-and-gold head tie, sky-blue jumpsuit with a white belt, a small purse",
+"pose": "standing in the middle, hands open, confused"
+},
+{
+"nom": "the treasurer with the cash box",
+"desc": "treasurer in her 40s, emerald-green kaftan with gold trim, hands on the metal cash box",
+"pose": "sitting at the small table on the right, both hands on the cash box, glaring"
+}
+],
+"dialogue": [
+[
+0,
+"Ma sœur, on t'a renvoyée de la tontine des femmes mariées dêh !"
+],
+[
+1,
+"Mais je suis mariée !"
+],
+[
+0,
+"Oui, mais avec le mari de la trésorière-là."
+],
+[
+2,
+"Rembourse mes cotisations et le monsieur dêh !"
+]
+],
+"jeu": "Nobody walks; all three stay in their places for the whole video. The president announces it very seriously. The member protests, hands open. The president answers calmly, pointing her pen at the treasurer. The treasurer, seated, slams one hand on the cash box and shouts, her face clearly visible.",
+"chute": "The member freezes, her mouth open. The camera slowly pushes in to a close-up of the member's busted face looking into the camera.",
+"fin": 1,
+"emoji": "choc",
+"cles": [
+"tontine",
+"trésorière",
+"monsieur"
+],
+"gag_legende": "LE MARI QUAND IL VA RENTRER CE SOIR :",
+"note": 9.1,
+"theme": "argent"
+},
+{
+"id": "T902",
+"titre": "La télé de papa",
+"lieu": "living room of a house in Abobo, Abidjan, an empty TV stand with dangling cables, a big empty cardboard TV box on the floor, a sofa, evening",
+"persos": [
+{
+"nom": "the furious father pointing at the TV stand",
+"desc": "father in his 50s, grey beard, ivory singlet, a long blue-and-white checkered sarong",
+"pose": "standing next to the empty TV stand, pointing at it, furious"
+},
+{
+"nom": "the calm son with the box",
+"desc": "young man around 20, black hoodie with a big orange star, sneakers, hands resting on the empty cardboard TV box",
+"pose": "standing on the right next to the empty cardboard box, calm"
+}
+],
+"dialogue": [
+[
+0,
+"Pourquoi tu as vendu ma télé-là ?!"
+],
+[
+1,
+"Papa, c'est une avance sur mon héritage dêh."
+],
+[
+0,
+"Mais je suis pas encore mort !"
+],
+[
+1,
+"Ya fohi. J'ai gardé le carton pour toi."
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The father shouts, pointing at the empty stand. The son answers calmly. The father shouts, outraged. The son answers kindly, patting the empty cardboard box, his face clearly visible.",
+"chute": "The father freezes, staring at the cardboard box. The camera slowly pushes in to a close-up of the father's shocked face looking into the camera.",
+"fin": 0,
+"emoji": "mdr",
+"cles": [
+"télé",
+"héritage",
+"carton"
+],
+"gag_legende": "PAPA EN CHERCHANT SA CEINTURE :",
+"note": 8.4,
+"theme": "argent"
+},
+{
+"id": "T903",
+"titre": "Le transfert",
+"lieu": "small studio apartment in Cocody, Abidjan, a bed, a mirror, a phone charger on the wall, morning light",
+"persos": [
+{
+"nom": "the happy boyfriend with the phone",
+"desc": "young man in his 20s, mint-green t-shirt, short twists, holding his phone up",
+"pose": "standing on the left, showing his phone, very happy"
+},
+{
+"nom": "the cold girlfriend with the sunglasses",
+"desc": "young woman in her 20s, cream trench coat, big round sunglasses on her head, a packed travel bag on her shoulder",
+"pose": "standing on the right near the door, arms crossed, cold"
+}
+],
+"dialogue": [
+[
+0,
+"Bébé, tu m'as envoyé cinquante mille par erreur dêh !"
+],
+[
+1,
+"C'est pas une erreur. C'est pour ton transport."
+],
+[
+0,
+"Mon transport ? Pour aller où ?"
+],
+[
+1,
+"Hors de ma vie. Bon voyage !"
+]
+],
+"jeu": "Nobody walks; both stay in their places for the whole video. The boyfriend shows his phone, delighted. The girlfriend answers coldly. The boyfriend asks, confused. The girlfriend answers with a big fake smile and waves goodbye, her face clearly visible.",
+"chute": "The boyfriend's happy smile slowly freezes, his phone still raised. The camera slowly pushes in to a close-up of the boyfriend's devastated face looking into the camera.",
+"fin": 0,
+"emoji": "choc",
+"cles": [
+"cinquante mille",
+"transport",
+"bon voyage"
+],
+"gag_legende": "LE GARS APRÈS LE « BON VOYAGE » :",
+"note": 8.0,
+"theme": "argent"
+}
+]

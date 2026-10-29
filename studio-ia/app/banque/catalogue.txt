@@ -1,0 +1,217 @@
+001 : Tantie, ton poisson-là, il est frais ? / Frais ? Ce matin même il m'a dit bonjour !
+002 : Si ton papa te donne mille francs, tu as combien ? / Zéro, maître. / Faux ! / Vous ne connaissez pas mon papa !
+003 : Papa ! La lumière est revenue ! / Chut ! Ne crie pas, ils vont entendre et la reprendre !
+004 : Serveuse, une mouche dans ma sauce ! / Chut ! Les autres vont tous vouloir la même !
+005 : Papa, tous mes amis ont une PlayStation ! / Mes amis ont tous une voiture. Je pleure ?
+006 : Monsieur, il faut arrêter la viande. / Docteur, c'est la viande qui m'a arrêté !
+007 : Serrez-vous ! Il reste une place ! / Où ça ? Sur mes genoux ?! / Tonton, tes genoux sont libres, non ?
+008 : Chéri, tu m'aimes combien ? / Bébé, pas de chiffres le 25 du mois !
+009 : Ma robe devait être prête depuis un mois ! / La robe est prête. C'est le tissu qui manque.
+010 : Trois mois sans payer le loyer ! / Tonton, c'est toi-même qui as dit : fais comme chez toi !
+011 : Ton pagne-là, c'est combien ? / Dix mille. / Je donne mille, je te laisse le merci.
+012 : Bébé, tu as dit restaurant cinq étoiles ! / Lève la tête. Compte les étoiles.
+013 : Maman, on mange quoi ce soir ? / Comme hier. / Mais hier on n'a rien mangé ! / Tu vois, tu connais déjà.
+014 : Docteur, ce sirop a des effets secondaires ? / Oui. Quand tu vois le prix, tu tousses plus fort.
+015 : Chauffeur, ta portière ne ferme pas ! / Tiens-la bien, ma fille. C'est la climatisation.
+016 : Je t'ai dit : un peu sur les côtés ! / Oui, j'ai enlevé les côtés… et le milieu.
+017 : Mon petit, c'est quoi le wifi ? / Internet sans fil, papi. / Ah ! Comme ton père : salaire sans argent.
+018 : Vous avez une garantie pour le prêt ? / Oui ! Je vous garantis que je vais revenir.
+019 : Chéri, donne-moi ton téléphone. / Il est en mode avion. / Parfait. Qu'il décolle vers ma main !
+020 : Tu es malade, c'est ça ? / Oui patron… très malade… BUUUT !
+021 : Envoie cinq mille à ma femme au village. / Son numéro ? / Pas besoin. Elle va reconnaître son argent.
+022 : Mon frère, tu as attrapé quoi aujourd'hui ? / Un rhume.
+023 : Mon fils, tu as apporté quel cadeau ? / Ma présence, Tantie. Le transport est cher !
+024 : Fais-moi les tresses comme sur la photo ! / Ma sœur, la photo-là, c'est perruque plus filtre.
+025 : Debout ! Même les poules sont réveillées ! / Maman, les poules dorment à dix-huit heures !
+026 : Pourquoi tu m'as enregistrée : Délestage ?! / Parce que quand tu arrives, toute la joie s'éteint.
+027 : Chéri ! Je suis enceinte ! / Dis au bébé de patienter. La fin du mois n'est pas arrivée.
+028 : Chéri, on dit que l'amour rend aveugle. / Oui. Et le mariage m'a rendu la vue.
+029 : Tu m'as dit que tu es médecin ! / Oui, bébé. Je soigne les poulets braisés.
+030 : Ma chérie, je t'ai écrit une chanson ! / Chante ! / Elle s'appelle : prête-moi cinq mille.
+031 : Monsieur, acceptez-vous de prendre Madame pour épouse ? / Sa maman est comprise dans le paquet ?
+032 : Je veux le divorce ! / D'accord. On partage les dettes aussi. / Euh… on peut encore parler, chéri.
+033 : Papa, c'est quoi la différence entre riche et pauvre ? / Le riche mange quand il a faim. Nous, on mange quand on trouve.
+034 : Papa, à l'école ils disent que je ne te ressemble pas. / Jaloux ! Tu es mon portrait craché ! / Bonjour, fiston !
+035 : Papa, je veux devenir médecin ! / Commence par soigner mon porte-monnaie. Il est malade depuis ta naissance.
+036 : Papa ! Je suis deuxième de la classe ! / Bravo ! Vous êtes combien ? / Deux.
+037 : Qui a mangé la viande dans la sauce ?! / C'est le chat, maman ! / On n'a pas de chat ! / Il est venu, il a mangé, il est parti.
+038 : À ton âge, je marchais dix kilomètres pour l'école ! / Et tu es arrivé où avec ça, papa ?
+039 : À mon époque, avec cent francs, je ramenais riz, huile et poisson ! / Mamie, aujourd'hui il y a des caméras partout.
+040 : Maman, pourquoi tu as marié papa-là ? / Ma fille… À l'époque, il avait cheveux et salaire dêh ! / Et toi, tu avais taille fine !
+041 : Mon vieux, tu as maigri dêh ! C'est le sport ? / Non. C'est la fin du mois… depuis trois mois.
+042 : Tantie, mets beaucoup de thon, dêh ! / Voilà. Le thon est timide aujourd'hui.
+043 : La tomate est à combien ? / Trois cents l'une. / Donne-moi juste la photo alors.
+044 : Pourquoi tu marches avec tes chaussures à la main ? / Elles sont neuves. Je ne veux pas les fatiguer.
+045 : Bébé, je t'ai acheté une maison à Cocody ! / Wouah ! Elle est où ? / Voilà la première brique.
+046 : Cite trois choses qu'on trouve en Côte d'Ivoire. / Le cacao, l'attiéké… et le délestage.
+047 : Où est ton devoir ? / Maître, le délestage l'a mangé.
+048 : Maître, on peut punir quelqu'un pour une chose qu'il n'a pas faite ? / Non, bien sûr. / Merci. Je n'ai pas fait mes devoirs.
+049 : C'est ton père qui a fait ton devoir ? / Il a essayé, maître. Mais c'est trop dur pour lui.
+050 : Pourquoi ton père n'est pas venu à la réunion ? / Il dit que lui, il a déjà fini l'école.
+051 : Patron, augmentez-moi. Trois entreprises me cherchent ! / Lesquelles ? / La CIE, la SODECI et mon propriétaire. / Assieds-toi. Ils me cherchent aussi.
+052 : Tu dors au travail ?! / Non patron… je réfléchissais les yeux fermés pour l'entreprise.
+053 : Il faut changer le moteur, les freins et les pneus. / Donc tu gardes seulement le klaxon ?
+054 : Fais-moi le dégradé ! / Tonton, il n'y a plus rien à dégrader.
+055 : N'aie pas peur, ça ne fait pas mal. / Alors pique-toi d'abord. Moi je regarde.
+056 : Pour vivre longtemps : plus de sucre, plus de sel, plus de bière. / Docteur, vivre longtemps pour faire quoi alors ?
+057 : Votre facture : quatre-vingt-cinq mille francs. / Vous allumez le soleil chez moi ou quoi ?
+058 : Ma sœur, c'est ton tour de cotiser ! / Moi, je suis dans la tontine pour recevoir seulement.
+059 : Tu me dois déjà vingt mille ! / Note encore. Ton cahier est épais.
+060 : Ton téléphone-là, c'est un original ? / Original ! Original d'Adjamé !
+061 : Doucement ! Tu roules trop vite ! / Ferme les yeux comme moi, tu n'auras plus peur.
+062 : Je suis vieille. Je paie moitié prix. / Alors on te dépose à moitié chemin, Mamie.
+063 : Ma sœur, prête-moi ta marmite, ton riz et ton huile. / Et tu vas cuisiner où ? / Chez toi. Mon gaz est fini.
+064 : Ça fait trois ans que tu regardes ma télé ! / Change de chaîne. Ce film-là, je l'ai déjà vu.
+065 : Ton coq me réveille chaque matin ! / Normal. C'est le seul du quartier qui a un travail.
+066 : Ton groupe électrogène fait trop de bruit ! / Ma sœur, c'est le bruit de la richesse.
+067 : C'est quoi le code du wifi ? / Tu as mangé ici, tu as bu ici… et tu veux aussi le wifi ?
+068 : Qui a pris mon pagne sur la corde ?! / Ma sœur, ton pagne-là, il me cherchait.
+069 : Tu as appris ? La femme de Kouamé est partie ! / Le pauvre… Il doit beaucoup souffrir…
+070 : Ma chérie, ta photo de profil est trop belle ! / Merci ! / C'est qui sur la photo ?
+071 : Bébé, prends mon meilleur côté ! / Je cherche encore.
+072 : À Paris, je mangeais au restaurant chaque jour ! / Tonton, la photo montre que tu faisais la plonge.
+073 : Il fait trop chaud ici, je ne suis plus habitué. / Tu es parti il y a deux semaines !
+074 : Cousin, pourquoi les gens marchent vite à Abidjan ? / Ils fuient ceux qui demandent l'argent. Comme toi.
+075 : Papi, tu as connu la vie sans téléphone ? / Oui. On l'appelait : la paix.
+076 : Mamie, tu as vu les dinosaures ? / Oui. C'est ton grand-père qui les nourrissait.
+077 : Mamie, pourquoi ta sauce est toujours meilleure ? / Parce que moi, je ne cuisine pas avec le téléphone.
+078 : Je viens passer deux jours seulement. / Deux jours… de quelle année ?
+079 : Mon fils, ma fille ne sait pas cuisiner. / Pas grave, Tantie. Moi, je ne sais pas payer.
+080 : Ma fille a fait l'université. La dot : cinq millions. / Elle a eu le diplôme ? / …Trois millions. / Elle sait cuisiner ? / Prends-la gratuitement, mon fils !
+081 : Papa, mon copain veut venir se présenter. / Dis-lui d'apporter son CV… et un sac de riz.
+082 : Qui a insulté ma petite sœur ? Montre-le-moi ! / Ah… Grand frère, merci d'avoir corrigé ma sœur. Elle parle trop.
+083 : Papa, pourquoi tu cries contre la télé ? / Parce que l'entraîneur ne m'écoute pas !
+084 : Coach, pourquoi tu me remplaces ? / Onze buts, mon fils. Même le filet est fatigué.
+085 : Le poulet braisé, c'est combien ? / Cinq mille. / Et l'odeur ? Je reste juste à côté.
+086 : La machine dit : solde insuffisant ! / Même la machine te connaît maintenant.
+087 : Prête-moi dix mille. Je te rembourse lundi. / Quel lundi ? / Choisis. Il y en a beaucoup.
+088 : Tonton, c'est ta cinquième assiette ! / Non, c'est la même. Je la remplis seulement.
+089 : Chéri, je veux un gros téléphone ! / Ferme les yeux. / Maintenant, imagine.
+090 : Un voleur qui rentre ici, je le corrige ! / Chéri… il y a quelqu'un au salon. / Dis-lui que je ne suis pas là.
+091 : Conjugue le verbe manger au futur. / Je mangerai… si papa est payé.
+092 : Papa, je suis amoureux de la fille du boutiquier. / Bravo, mon fils ! On aura enfin du crédit.
+093 : Papa, le devoir que tu as fait pour moi… / Oui ? / Le maître dit que tu redoubles.
+094 : On arrive bientôt, Tonton. C'est juste le pont. / Quand je suis monté, je n'avais pas de barbe ! / Et moi, je n'étais même pas enceinte !
+095 : Tu vas où avec ce pantalon déchiré ? / C'est la mode, papa ! / Moi aussi j'étais à la mode : on était pauvres.
+096 : Papa, le coiffeur, c'est mille francs seulement ! / Assieds-toi. Papa a une marmite et des ciseaux.
+097 : Chérie, c'est quoi cette sauce noire ? / La recette de ta maman ! / Ah… c'est pour ça que j'ai quitté la maison.
+098 : Tonton, achète mes bonbons ! / Je n'ai pas de monnaie. / Pas de problème. J'accepte aussi les gros billets.
+099 : Ta maman est là ? / Elle dit de vous dire qu'elle n'est pas là.
+100 : Hier le pain était à cent francs ! / Oui. Mais il a dormi ici. Il paie le loyer.
+034 : Papa, à l'école ils disent que je ne te ressemble pas. / Jaloux ! Tu es mon portrait craché ! / Bonjour, fiston !
+040 : Maman, pourquoi tu as marié papa-là ? / Ma fille… À l'époque, il avait cheveux et salaire dêh ! / Et toi, tu avais taille fine !
+041 : Mon vieux, tu as maigri dêh ! C'est le sport ? / Non. C'est la fin du mois… depuis trois mois.
+051 : Patron, augmentez-moi. Trois entreprises me cherchent ! / Lesquelles ? / La CIE, la SODECI et mon propriétaire. / Assieds-toi. Ils me cherchent aussi.
+080 : Ma fille a fait l'université. La dot : cinq millions. / Elle a eu le diplôme ? / …Trois millions. / Elle sait cuisiner ? / Prends-la gratuitement, mon fils !
+090 : Un voleur qui rentre ici, je le corrige ! / Chéri… il y a quelqu'un au salon. / Dis-lui que je ne suis pas là.
+094 : On arrive bientôt, Tonton. C'est juste le pont. / Quand je suis monté, je n'avais pas de barbe ! / Et moi, je n'étais même pas enceinte !
+501 : Qui a mangé le poulet que j'ai caché dans le congélateur-là ?! / Madame, je jure c'est pas moi dêh. Patron et moi on était à Bassam toute la journée.
+502 : Papa, le voleur a laissé la télé et il a sauté par la fenêtre dêh ! / Chérie, je t'ai dit de pas te promener la nuit sans ta perruque. Voilà, tu as traumatisé l'enfant d'autrui !
+503 : Papa ! Il y a la viande dans ma sauce dêh ! / Mange vite avant de te réveiller.
+504 : Maman, j'ai pris ma beauté de qui ? / De moi, ma fille. / Ahh… C'est pour ça toi tu as plus rien dêh.
+505 : Docteur, je veux maigrir vite dêh ! / Tantie, marie un chômeur dêh. C'est le régime le plus rapide d'Abidjan.
+506 : Chéri, tu as mis ma photo en fond d'écran ? / Oui bébé. Pour faire peur aux voleurs de téléphone dêh.
+507 : Chéri, le docteur dit que je dois manger trois fois par jour dêh. / Ya fohi. On va changer de docteur.
+508 : Bébé, tu lis quel livre depuis ce matin en souriant comme ça dêh ? / Une histoire qui parle exactement de notre couple, ma chérie. / Ehh, tu es trop romantique ! C'est quoi le titre ? / « Comment survivre en enfer. »
+601 : Chéri, tu sens le parfum de femme ! Tu quittes où ?! / Dans le woro-woro dêh, on était trop serrés ! / Papa, pourtant tu as pris ta voiture ce matin dêh.
+602 : Pourquoi tu filmes ma colère-là ?! / Papa dit qu'il va envoyer ça à ton papa dêh. / Pour faire quoi ? / Service après-vente. Il dit ton produit-là est gâté.
+603 : Pourquoi ma photo-là est dans le carton des choses inutiles ?! / Pardon papa dêh. Je savais pas comment te faire entrer dedans.
+604 : Papa, mon fiancé a une Mercedes dêh ! / Le papier est à son nom ? / Non, c'est au nom de son oncle. / L'oncle-là est libre ? On change de cible.
+605 : Patron, pourquoi ma chaise-là est dehors ?! / Tu voulais un poste avec vue, mon vieux. / Et mon bureau-là ? / Vue sur ton remplaçant dêh.
+606 : Papa, mes copines disent que mon copain te ressemble trop dêh ! / Ehh, ma fille… Donc le petit-là n'a vraiment pas l'argent non plus ?
+607 : Tantie, pourquoi mon garba coûte plus cher que son garba-là ?! / Lui, il mange. Toi, tu filmes dêh. Tu loues mon décor.
+701 : Tonton, cinquante ans de mariage ! C'est quoi votre secret dêh ? / J'aime la même femme depuis cinquante ans. / Ehh, c'est trop beau ! / Si ma femme apprend ça, elle va me tuer dêh.
+702 : Ma sœur, pourquoi tu pries fort comme ça devant ma porte-là ?! / On a dit de chasser les démons de la pauvreté dêh ! / Ya fohi. Entre dans la chambre, il est couché.
+703 : Chéri ! On a kidnappé ton petit frère ! Ils demandent deux millions dêh ! / Ya fohi. Envoie-leur sa photo quand il mange. C'est eux qui vont nous payer pour le ramener.
+704 : Chéri, ton code Mobile Money-là, c'est notre date de mariage ? / Non. Le système a refusé dêh. / Pourquoi ? / Ils disent on met pas une erreur comme mot de passe.
+705 : Chéri, la radio dit qu'un fou roule à contresens sur l'autoroute du Nord dêh ! / Un seul ? Ma chérie, ils sont des centaines en face de moi !
+706 : Chéri, pourquoi tu souris pendant que je crie-là ?! / Bébé, ton bracelet compte chaque geste comme un pas. Encore deux insultes, tu atteins ton objectif dêh.
+707 : Papa, j'ai eu la bourse dêh ! / Ehh ! C'est combien, mon fils ? / Cinquante mille chaque mois ! / Ya fohi. À partir d'aujourd'hui, c'est toi le père. Moi, je vais réviser.
+801 : Tu veux mon poste maintenant, mon gars ?! / Non, patron. Votre salaire-là seulement dêh. / Et moi, je vais manger quoi ? / Vos conseils-là, patron : faut être passionné.
+802 : Couturière, pourquoi tu as cousu deux robes-là ?! / Une pour toi, Tantie. / Et l'autre, dêh ? / Pour la taille que tu m'as annoncée, Tantie.
+803 : Chauffeur ! Le client a donné dix mille et il a dit garde la monnaie dêh ! / Ferme tes yeux, mon petit. C'est le palu qui commence.
+804 : Tantie, pourquoi tu ajoutes piment ? J'ai pas demandé dêh ! / Ton patron-là arrive. Faut que tes larmes aient une explication.
+901 : Ma sœur, on t'a renvoyée de la tontine des femmes mariées dêh ! / Mais je suis mariée ! / Oui, mais avec le mari de la trésorière-là. / Rembourse mes cotisations et le monsieur dêh !
+902 : Pourquoi tu as vendu ma télé-là ?! / Papa, c'est une avance sur mon héritage dêh. / Mais je suis pas encore mort ! / Ya fohi. J'ai gardé le carton pour toi.
+903 : Bébé, tu m'as envoyé cinquante mille par erreur dêh ! / C'est pas une erreur. C'est pour ton transport. / Mon transport ? Pour aller où ? / Hors de ma vie. Bon voyage !
+101 : Tu étais où jusqu'à deux heures, hein ?! / Réunion des maris fidèles, chérie. / Jusqu'à deux heures ? / On était deux. On attendait les autres dêh.
+102 : Mon petit, où est ton devoir ? / Maître, hier y avait délestage dêh. / Et ce matin ? / Ce matin, y avait sommeil.
+103 : Tantie, mets beaucoup thon dêh, j'ai faim ! / Voilà. Thon est timide aujourd'hui.
+104 : Ma fille, ta maman-là est là ? / Elle dit elle n'est pas là. / Et ton papa ? / Lui, il est caché sous lit dêh.
+105 : Serrez-vous, serrez-vous ! Y a encore place ! / Où ça ? Sur mes genoux ?! / Tonton, tes genoux sont libres, non ?
+106 : Vieux père, ton groupe fait trop bruit dêh ! / Ma sœur, c'est bruit de la richesse. / Hum… Richesse-là vient de partir.
+107 : Mamie, tu as vu les dinosaures ? / Oui. C'est ton grand-père qui les nourrissait. / Et c'est toi qui les as mangés dêh !
+108 : Pourquoi on doit vous prendre, mon gars ? / Mon papa a dit : sans travail, faut pas rentrer. / Et alors ? / Donc je dors chez vous ce soir dêh.
+109 : Chéri, donne-moi ton téléphone-là. / Il est en mode avion, bébé. / Ya fohi. Qu'il atterrisse dans ma main !
+110 : Dans mon temps, avec cent francs, je ramenais riz, huile et poisson dêh ! / Mamie, maintenant y a caméras partout.
+111 : À partir de ce mois, je double loyer ! / Ya fohi, Tonton. Même premier-là, je payais pas.
+112 : Allô patron… Je suis vraiment malade dêh… Je peux pas venir… / BUUUUT !
+113 : Chérie, c'est quoi sauce noire-là ? / C'est recette de ta maman ! / Ahh… C'est pour ça j'ai quitté la maison.
+114 : Papa, coiffeur c'est mille francs seulement dêh ! / Assieds-toi. Papa a marmite et ciseaux.
+115 : Papa, mon copain veut venir se présenter. / Qu'il apporte CV et sac de riz. / Il est étudiant, papa ! / Alors riz seulement suffit dêh.
+116 : Tonton, votre facture : quatre-vingt-cinq mille. / Vous allumez soleil chez moi ou bien ?
+117 : Mon fils, je suis vieille dêh. Je paie moitié prix. / Ya fohi, Mamie. On te dépose à moitié chemin.
+118 : Tu m'as dit que tu es médecin, hein ?! / Oui bébé. Je soigne poulets braisés.
+119 : Papa, donne-moi cinq cents pour la récré dêh ! / Ma fille, moi-même je suis en récré depuis 2019.
+120 : Ça fait trois ans tu regardes ma télé ! / Change chaîne, Vieux père. Film-là je connais déjà.
+121 : Tonton, faut arrêter la viande. / Docteur, c'est viande-là qui m'a arrêté depuis longtemps !
+122 : Chéri, ma maman vient habiter avec nous dêh ! / Ya fohi. Moi aussi je pars habiter chez elle.
+123 : Chauffeur, ta portière-là ne ferme pas ! / Tiens ça bien, ma fille. C'est climatisation.
+124 : Mon petit, ta maman cuisine bien, hein ? / Oui ! Quand y a visiteurs.
+125 : Vieux père, faut changer moteur, frein et pneus. / Donc tu laisses seulement klaxon ?
+126 : Ma chérie, je t'ai écrit une chanson dêh ! / Chante ! / Ça s'appelle : prête-moi cinq mille.
+127 : Hier, pain-là était cent francs dêh ! / Oui. Mais il a dormi ici. Il paie loyer.
+128 : Papi, dans ton temps-là, y avait pas téléphone ? / Non mon petit. Nous on appelait ça la paix dêh !
+129 : C'est fini dêh ! Je veux divorce ! / Ya fohi. Mais on va partager dettes aussi. / Euh… Chéri, on peut encore causer, hein.
+130 : Penalty ! Penalty ! Arbitre-là est voleur ! / Chéri, c'est match de 2012. Tu as enregistré ça. / Et il vole encore dêh !
+131 : Mon gars, faut pas avoir peur dêh. Ça fait pas mal. / Toi-même pique-toi d'abord. Moi je regarde.
+132 : Ma sœur, prête-moi marmite, riz et huile. / Et tu vas préparer où ? / Chez toi dêh. Mon gaz est fini.
+133 : Bébé, pour toi, je vais décrocher la lune dêh ! / Commence par décrocher mon transport.
+134 : Papa, pourquoi on n'a pas voiture ? / Pour ta santé, mon fils. On fait sport. / Tu vois ? Même douche est gratuite dêh !
+135 : Couturier, ma robe devait être prête depuis un mois dêh ! / Elle est prête, Tantie. C'est tissu qui n'est pas arrivé.
+136 : Tonton, c'est ta cinquième assiette dêh ! / Non ma fille, c'est même assiette-là. Je remplis seulement.
+137 : Doucement, mon fils ! Tu roules trop vite ! / Tantie, ferme les yeux comme moi. Tu vas plus avoir peur.
+138 : Papa, le devoir que tu as fait pour moi-là… / Oui ? C'est vingt sur vingt ? / Maître dit que tu redoubles dêh.
+139 : Vieux père, ton coq me réveille chaque matin ! / Normal. C'est seul dans quartier-là qui a travail.
+140 : Chéri, robe-là me va bien, hein ? / Elle te va… mais elle ne va pas à mon salaire dêh.
+141 : Ma fille, envoie cinq mille à ma femme au village dêh. / Son numéro, Tonton ? / Faut pas fatiguer. Elle va reconnaître son l'argent.
+142 : Bébé, prends mon meilleur côté dêh ! / Je cherche encore, attends.
+143 : Monsieur, acceptez-vous de prendre Madame pour épouse ? / Euh… Sa maman est comprise dans paquet-là ?
+144 : Mon vieux, prête-moi dix mille. Je rembourse lundi. / Quel lundi ? / Choisis. Y en a beaucoup dêh.
+145 : Mamie, à Abidjan on a eau courante dêh ! / Ici aussi. Tu prends seau et tu cours au puits.
+146 : Petit, fais-moi bon dégradé ! / Tonton, y a plus rien à dégrader dêh.
+147 : Chéri, tu m'aimes combien ? / Bébé, on parle pas chiffres le 25 du mois dêh. / Et le 30 ? / Le 30, je t'aime gratuit.
+148 : Tantie, ton poisson-là est frais vraiment ? / Frais ? Ce matin même, il m'a dit bonjour dêh !
+149 : Papa, je suis amoureux de la fille du boutiquier dêh. / Mon fils ! Marie-la vite. On aura crédit chez eux !
+150 : Chéri, mon papa veut te voir dêh. / Dis-lui que je suis en voyage. / Jusqu'à quand ? / Jusqu'à la fin de ma vie.
+151 : Qui a pris mon pagne sur la corde, hein ?! / Ma sœur, ton pagne-là me cherchait.
+152 : À Paris, je mangeais au restaurant chaque jour dêh ! / Tonton, sur la photo-là, tu fais vaisselle.
+153 : Ma sœur, c'est ton tour de cotiser dêh ! / Moi je suis dans tontine pour recevoir seulement.
+154 : Chéri, pour mon anniversaire, je veux gros téléphone dêh ! / Ferme les yeux. / Maintenant… imagine.
+155 : Mon gars, tu me dois déjà vingt mille dêh ! / Note encore, Tonton. Ton cahier est épais.
+156 : Bébé, pour Saint-Valentin, je veux quelque chose qui brille ! / Tiens. Avec délestage-là, tu vas me remercier dêh.
+157 : Mon fils, ma fille ne sait pas cuisiner dêh. / Ya fohi, Tantie. Moi aussi, je ne sais pas payer.
+158 : Mon fils, tu as apporté quel cadeau ? / Ma présence, Tantie. Transport est cher dêh ! / Ah bon ? Toi, tu vas t'asseoir là-bas, hein ?
+201 : Vieux père, donne-moi tout ton argent ! / Attends, on va chercher ensemble. Si tu trouves, on partage dêh.
+202 : Chéri, regarde ! Bébé a commencé à marcher dêh ! / Il a vu qu'on n'a pas l'argent du transport.
+203 : Grande sœur, ton copain-là est trop laid dêh ! / Lui, il a l'argent. / Ahh… Donc le vrai laid ici, c'est papa.
+204 : Mon fils, tu as maigri ! Ma fille te nourrit pas ? / Si, Maman. Mais sa cuisine-là, même le chien a démissionné.
+205 : Papa, pourquoi on mange jamais viande ? / Mon fils, les végétariens vivent longtemps. / Mais on mange même pas légumes ! / Voilà ! Nous on va vivre encore plus longtemps.
+206 : Ma chérie, Tantie est jolie comme ça, hein ? Dis-moi gbê ! / Oui Tantie. Ce matin-là tu étais laide, mais maintenant ça va dêh.
+207 : Mon petit, ton papa-là fait quel travail ? / Il est influenceur, maîtresse ! / Ah bon ? Sur TikTok ? / Non, au maquis dêh. Il influence les gens à payer sa bière.
+301 : Maman, dis-moi la vérité dêh : on m'a adopté ? / Adopté ? Mon fils, si on avait choisi, on allait prendre un plus joli.
+302 : Maman, pourquoi papa n'a plus cheveux sur la tête ? / Parce qu'il réfléchit beaucoup, mon bébé. / Ahh… C'est pour ça toi tu as les cheveux jusqu'au dos dêh.
+303 : Mon fils, comment on supprime WhatsApp dêh ? / Pourquoi, papa ? / Ta mère-là a acheté des lunettes.
+304 : Ma chérie, tu es contente que Tantie est venue, hein ? / Oui Tantie ! Maman a dit : quand tu viens, on cache la viande. Mais moi je vais te montrer où dêh.
+305 : Ta voisine-là a eu dix-huit, et toi tu as eu deux ! Pourquoi ?! / Papa, c'est pas ma faute dêh. Elle, ses parents sont intelligents.
+306 : Bébé, tu vois cette grosse villa-là ? C'est chez moi dêh. / Ehh, vraiment ? / Papa, le patron a dit tu dois laver sa voiture avant six heures.
+307 : Tonton, je veux marier votre fille. / Mon petit, tu fais quel travail ? / Je suis artiste-chanteur, Tonton. / Ma fille, va lui chercher à manger dêh. Il a faim.
+308 : Ma chérie, parmi tous les gars d'Abidjan, pourquoi c'est moi tu as choisi ? / Mon vieux, à trente-neuf ans, on choisit plus dêh. On ramasse.
+401 : Je rentre chez ma mère dêh ! / Ya fohi. Tiens deux mille pour le woro-woro. / Mais c'est cinq cents seulement ! / Prends tes sœurs avec toi.
+402 : Vieux père, ton chien-là me regarde bizarre. Il mord dêh ? / Non mon vieux. Il mord seulement les gens qui ont l'argent. Toi, passe tranquille.
+403 : Papa, pourquoi mon bulletin-là est dans ton dossier de prêt ? / Mon fils, la banque veut savoir si je finance un projet sans avenir.
+404 : Ehh, le bébé-là ressemble trop à son papa dêh ! / Merci Tantie, c'est mon bébé d'amour dêh ! / Ya fohi. Il va grandir, ça va passer.
+405 : Chéri, tu as payé ma dot-là combien ? / Trois cent mille, ma chérie. / Seulement ?! / Il a même demandé la monnaie dêh.
+406 : Pourquoi mon micro-là est coupé ? Je donnais conseils aux mariés dêh ! / Tantie, depuis tu parles, même le gâteau-là commence à se séparer.
+407 : Ma fille, ton copain-là est pauvre. Laisse-le ! / Papa, toi aussi tu étais pauvre quand maman t'a choisi. / Voilà ! Regarde ta mère : elle regrette. / Chaque jour dêh.
+408 : Papa, quand je serai grand, je veux être riche comme Tonton Koffi ! / Pourquoi pas comme moi ? / Papa, c'est toi-même qui as dit de viser haut dêh.

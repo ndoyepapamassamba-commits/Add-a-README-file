@@ -1,0 +1,75 @@
+:root { --nuit: #10092a; --nuit2: #24103a; --cyan: #25f4ee; --rose: #fe2c55; --jaune: #ffd23f; --texte: #f3eefe; --gris: #a99fc2; --carte: #1c1236; --bord: #3a2a5e; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--nuit); color: var(--texte); font: 15px/1.45 Montserrat, system-ui, sans-serif; }
+.entete { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 16px;
+  background: linear-gradient(90deg, var(--nuit2), var(--nuit)); border-bottom: 3px solid var(--cyan); }
+.marque b { font-weight: 900; letter-spacing: .3px; }
+.compteurs { display: flex; gap: 14px; flex-wrap: wrap; }
+.compteurs b { color: var(--jaune); }
+.onglets { display: flex; gap: 4px; padding: 8px 16px 0; flex-wrap: wrap; border-bottom: 3px solid var(--rose); background: var(--nuit2); }
+.onglet { border: 0; border-radius: 10px 10px 0 0; background: transparent; color: var(--gris); padding: 9px 14px; font-weight: 800; cursor: pointer; }
+.onglet.actif { background: var(--rose); color: #fff; }
+main { padding: 12px 16px 40px; }
+.panneau[hidden] { display: none; }
+button, .bouton { font: inherit; font-weight: 700; background: #2c1d4d; color: var(--texte); border: 1px solid var(--bord); border-radius: 8px; padding: 6px 11px; cursor: pointer; display: inline-block; }
+button:hover, .bouton:hover { border-color: var(--cyan); }
+button.principal { background: var(--rose); border-color: var(--rose); color: #fff; }
+button.danger { background: #5a1020; border-color: #a02040; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+input, select { font: inherit; background: #140c2b; color: var(--texte); border: 1px solid var(--bord); border-radius: 8px; padding: 6px 9px; }
+input[type=checkbox] { width: 18px; height: 18px; vertical-align: middle; accent-color: var(--rose); }
+input.court { width: 76px; }
+label { display: block; margin: 6px 0; }
+.barre-filtres, .barre-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.barre-actions label, .barre-filtres label { display: inline-flex; gap: 6px; align-items: center; margin: 0; }
+#f-recherche { flex: 1 1 280px; }
+.espace { flex: 1; }
+.petit { color: var(--gris); font-size: 13px; }
+.ligne-sketch { display: grid; grid-template-columns: 22px 46px 1fr auto; gap: 10px; align-items: start; padding: 10px; border-bottom: 1px solid var(--bord); }
+.ligne-sketch:hover { background: #1a1133; }
+.note { display: inline-block; min-width: 40px; text-align: center; font-weight: 900; color: var(--nuit); background: var(--jaune); border-radius: 8px; padding: 2px 6px; }
+.titre { font-weight: 800; }
+.id { color: var(--gris); font-size: 12px; font-weight: 600; }
+.dialogue div { margin: 1px 0; }
+.dialogue b { color: var(--cyan); font-weight: 700; }
+.theme { color: var(--gris); font-size: 12px; margin-top: 3px; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.puce { font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 20px; background: #2c1d4d; color: var(--gris); }
+.puce.pret { background: #0f5a3a; color: #b7ffd8; } .puce.a_revoir { background: #6a4a00; color: #ffe39a; }
+.puce.erreur { background: #6a0f22; color: #ffc0cc; } .puce.video_lancee, .puce.image, .puce.controle { background: #123a6a; color: #b9dcff; }
+.plus { margin: 14px auto; display: block; }
+dialog { background: var(--carte); color: var(--texte); border: 2px solid var(--cyan); border-radius: 14px; max-width: min(980px, 96vw); width: 100%; padding: 0; }
+dialog::backdrop { background: rgba(0, 0, 0, .65); }
+.modale-boite { padding: 16px 18px; }
+.modale-tete { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.modale-tete h3 { margin: 0; }
+pre { white-space: pre-wrap; word-wrap: break-word; background: #0d0720; border: 1px solid var(--bord); border-radius: 8px; padding: 10px; font-size: 12.5px; max-height: 260px; overflow: auto; }
+.droite { text-align: right; }
+#alertes { position: fixed; right: 14px; bottom: 14px; z-index: 50; display: flex; flex-direction: column; gap: 8px; max-width: min(420px, 92vw); }
+.alerte { background: #20134a; border-left: 5px solid var(--cyan); padding: 10px 12px; border-radius: 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, .4); }
+.alerte.attention { border-color: var(--jaune); } .alerte.erreur { border-color: var(--rose); }
+.carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 12px; margin: 10px 0; padding: 10px; }
+.carte-tete { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.carte-tete .cout { margin-left: auto; color: var(--jaune); font-weight: 800; }
+.carte-corps { display: grid; grid-template-columns: minmax(180px, 320px) 1fr; gap: 12px; margin-top: 8px; }
+.apercu { width: 100%; border-radius: 8px; background: #000; aspect-ratio: 4/3; object-fit: cover; }
+.apercu.vide { display: grid; place-items: center; color: var(--gris); }
+.controle { margin-top: 6px; font-size: 13px; padding: 6px 8px; border-radius: 8px; }
+.controle.bon { background: #0d3a28; } .controle.mauvais { background: #4a3300; }
+.erreur { color: #ff9fb2; font-size: 13px; margin-top: 6px; }
+.boutons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.ligne-clip { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--bord); flex-wrap: wrap; }
+.ligne-ordre { display: flex; gap: 6px; align-items: center; padding: 4px 0; }
+.encart { background: #160d2e; border: 1px dashed var(--bord); border-radius: 8px; padding: 8px; margin: 6px 0; }
+progress { width: 100%; height: 14px; accent-color: var(--rose); }
+#m-apercu { width: 100%; max-width: 360px; border-radius: 10px; margin-top: 8px; background: #000; }
+.vide { color: var(--gris); padding: 20px 0; }
+.attention { color: var(--jaune); }
+.aide { max-width: 860px; }
+.aide-ligne { margin-top: 0; }
+@media (max-width: 760px) {
+  .colonnes, .carte-corps { grid-template-columns: 1fr; }
+  .ligne-sketch { grid-template-columns: 22px 40px 1fr; }
+  .ligne-sketch .actions { grid-column: 2 / -1; }
+}
