@@ -126,6 +126,18 @@ contrôle IA avec plafond de budget, puis montage au design de la chaîne en MP4
   pas de limite ; prix 720p pris en compte ; une vidéo lancée n'est jamais relancée et toujours récupérée, même après
   fermeture de la page et même si la clé n'était pas mémorisée ; un seul onglet peut produire (Web Locks) ; retirer ou
   vider la file est refusé pendant une étape payée.
+- Premier film produit avec l'application (30/10/2026) : 3 sketchs choisis à l'aveugle par le panel de 3 juges parmi les 45
+  mieux notés (B059-14, B062-03, B037-15 ; tous devant la référence 6 fois sur 6), gags Big Buck Bunny et Caminandes 3,
+  63,6 s, 1,45 $ en tout dont 0,50 $ de deux vidéos refaites. Leçons :
+  - avec un petit crédit, OpenRouter refuse des requêtes en parallèle (402 « in_flight_budget_exhausted », rien n'est
+    créé) : l'application les refait après quelques secondes ;
+  - le juge Flash notait « ivoirien » d'après les mots (« dêh », « là ») : l'oreille de l'accent est maintenant Gemini
+    Argon, qui juge la prononciation (calibrée sur 702 et 903 « ivoirien », 601 « France ») ; 2 clips sur 3 sortaient avec
+    un accent de France, et une reprise ne l'a pas corrigé : l'accent de Grok est aléatoire ;
+  - légendes des gags coupées à 2 lignes (« … RENTRER DU » sans « MARCHÉ : ») : la police baisse désormais jusqu'à ce
+    que tout tienne ;
+  - en navigateur sans encodeur AAC, le MP4 sort en H.264 + Opus : `ffmpeg -i f.mp4 -c:v copy -c:a aac -b:a 192k
+    -movflags +faststart publication.mp4` avant TikTok.
 - Montage : lecture séquentielle mp4box.js + VideoDecoder (une recherche image par image coûtait 90 ms par image),
   encodage WebCodecs (MP4 H.264 + AAC si le navigateur sait l'encoder, sinon Opus, sinon WebM).
 - Bibliothèques embarquées : mp4-muxer et webm-muxer (MIT), mp4box.js 0.5.4 (BSD-3) — licences dans `app/vendor/`.

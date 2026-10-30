@@ -24,7 +24,9 @@ const QUESTION_REGARD = (d, persos) => `Ces 16 images sont extraites DANS L'ORDR
   `pendant un zoom. NE SONT PAS des défauts : un personnage qui se lève, s'assoit, marche ou sort normalement du ` +
   `cadre, un zoom ou un recadrage vers un visage. ` +
   `Réponds sur UNE ligne : REALISME=OK ou REALISME=MINEUR ou REALISME=GRAVE ; puis le défaut précis avec le temps.`;
-const QUESTION_ACCENT = "Écoute les voix de ce sketch. Réponds sur UNE ligne au format : ACCENT=<ivoirien|ouest-africain|" +
+const QUESTION_ACCENT = "Écoute les voix de ce sketch. Juge la PRONONCIATION (R roulé ou R du fond de la gorge, mélodie, " +
+  "rythme, voyelles), PAS les mots : des mots ivoiriens (« dêh », « là », « ya fohi ») dits avec une prononciation de France " +
+  "= français de France. Réponds sur UNE ligne au format : ACCENT=<ivoirien|ouest-africain|" +
   "africain autre|français de France|autre> ; NATUREL=<note sur 10> ; DRÔLE=<note sur 10> ; remarque courte.";
 const QUESTION_SYNCHRO = (persos) => `Images extraites d'un plan d'animation 3D, deux par réplique, dans l'ordre. Sur chaque image est écrit ` +
   `le numéro de la réplique et LE PERSONNAGE QUI DOIT PARLER à ce moment. Personnages : ${persos}. Pour chaque ` +
@@ -271,7 +273,7 @@ async function controler(s, blob) {
   if (!muet) {
     const wav = wavBase64(audio, 16000, 40);
     const ecoute = async () => {
-      const r = await chatJuge([{ type: "text", text: QUESTION_ACCENT }, { type: "input_audio", input_audio: { data: wav, format: "wav" } }], s.id);
+      const r = await chatJuge([{ type: "text", text: QUESTION_ACCENT }, { type: "input_audio", input_audio: { data: wav, format: "wav" } }], s.id, R.modeleOreille || R.modeleJuge);
       cout += r.cout;
       return r.texte.replace(/\s+/g, " ").trim();
     };

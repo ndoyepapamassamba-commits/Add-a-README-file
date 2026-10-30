@@ -83,6 +83,9 @@ const REGLAGES_DEFAUT = {
   modeleImage: "google/gemini-3.1-flash-lite-image",
   modeleVideo: "x-ai/grok-imagine-video-1.5-lite",
   modeleJuge: "google/gemini-3.8-flash",
+  // oreille de l'accent : Flash se fiait aux mots (« dêh », « là ») et laissait passer un accent de France ; Argon juge la
+  // prononciation (R, mélodie). Mesuré le 30/10 sur 3 vrais clips : Flash « ivoirien » ×3, Argon « France » ×2 et « ivoirien » ×1.
+  modeleOreille: "google/gemini-4-argon",
   resolution: "480p", format: "4:3",
   budget: 1.0, plancher: 0.4,
   concurrenceImages: 2, concurrenceVideos: 3,
@@ -182,7 +185,7 @@ async function api(chemin, { methode = "GET", corps = null, brut = false, essais
   const url = chemin.startsWith("http") ? chemin : API + chemin;
   const payant = methode !== "GET";
   const idem = payant && crypto.randomUUID ? crypto.randomUUID() : null;
-  let derniere = null;
+  let derniere = null, attentes = 0;
   for (let k = 0; k < essais; k++) {
     let r;
     try {
@@ -201,6 +204,13 @@ async function api(chemin, { methode = "GET", corps = null, brut = false, essais
     if (r.ok) return brut ? r : r.json();
     const texte = (await r.text().catch(() => "")).slice(0, 400);
     derniere = new ErreurAPI(r.status, texte);
+    // 402 « in_flight_budget_exhausted » : petit crédit et plusieurs requêtes en cours ; refusée AVANT d'être créée, donc
+    // sans risque de la renvoyer quand les autres ont fini (Retry-After). Mesuré le 30/10 avec 2,69 $ de crédit.
+    if (r.status === 402 && /in_flight/i.test(texte) && attentes < 12) {
+      attentes++; k--;
+      await dormir(Math.min(20, Math.max(3, +r.headers.get("retry-after") || 0)) * 1000);
+      continue;
+    }
     // erreurs définitives : pas de nouvel essai (clé, crédit, requête refusée, contenu expiré)
     if ([400, 401, 402, 403, 404, 410, 422].includes(r.status)) throw derniere;
     if (payant && r.status !== 429) { derniere.incertain = r.status >= 500; throw derniere; }
@@ -262,10 +272,10 @@ async function telechargerVideo(job) {
 }
 
 // chaque appel du juge est noté dès sa réponse : un appel suivant qui échoue ne fait pas oublier celui-ci
-async function chatJuge(contenu, ref) {
-  const d = await api("/chat/completions", { methode: "POST", corps: { model: R.modeleJuge, messages: [{ role: "user", content: contenu }] } });
+async function chatJuge(contenu, ref, modele = R.modeleJuge) {
+  const d = await api("/chat/completions", { methode: "POST", corps: { model: modele, messages: [{ role: "user", content: contenu }] } });
   const cout = +(d.usage || {}).cost || PRIX.controle;
-  await noterDepense("controle", R.modeleJuge, cout, ref).catch(() => {});
+  await noterDepense("controle", modele, cout, ref).catch(() => {});
   return { texte: (((d.choices || [])[0] || {}).message || {}).content || "", cout };
 }
 

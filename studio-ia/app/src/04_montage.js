@@ -134,9 +134,10 @@ function hautTitre(g, titre, rang, total) {
   arrondi(g, CX - lw / 2, k(78), lw, k(22), k(11)); g.fill(); g.stroke();
   g.fillStyle = JAUNE; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(lab, CX, k(89));
   const taille = ajuster(g, titre, k(40), W - k(60));
-  const lignes = taille < k(30) ? couper(g, titre, W - k(60), k(34)) : [titre];
-  const t2 = lignes.length > 1 ? k(34) : taille;
-  lignes.slice(0, 2).forEach((l, i) => texteDouble(g, l, CX, k(140) + (i - (lignes.length - 1) / 2) * t2 * 1.12, t2, JAUNE));
+  let lignes = taille < k(30) ? couper(g, titre, W - k(60), k(34)) : [titre];
+  let t2 = lignes.length > 1 ? k(34) : taille;
+  while (lignes.length > 2 && t2 > k(20)) { t2 -= 2; lignes = couper(g, titre, W - k(60), t2); }   // aucun mot perdu
+  lignes.forEach((l, i) => texteDouble(g, l, CX, k(140) + (i - (lignes.length - 1) / 2) * t2 * 1.12, t2, JAUNE));
 }
 function hautReaction(g, u, rang) {
   const choc = u < 1.0, p = pop(choc ? u : u - 1.0);
@@ -155,11 +156,11 @@ function hautRejoue(g, u) {
 }
 function hautLegende(g, txt, u) {
   const p = Math.min(pop(u), 1); if (p < 0.05) return;
-  let taille = k(40);
-  g.font = police(taille);
-  while (g.measureText(txt).width > 2 * (W - k(60)) && taille > k(24)) { taille -= 2; g.font = police(taille); }
-  const lignes = couper(g, txt, W - k(60), taille * p).slice(0, 2);
-  lignes.forEach((l, i) => texteContour(g, l, CX, k(150) + (i - (lignes.length - 1) / 2) * taille * 1.1, taille * p));
+  // la police baisse jusqu'à ce que la légende tienne sur 2 lignes RÉELLES (coupure aux mots) ; jamais de mot perdu
+  // (« MAMAN QUAND ELLE VA RENTRER DU » perdait « MARCHÉ : » au film du 30/10)
+  let taille = k(40), lignes = couper(g, txt, W - k(60), taille);
+  while (lignes.length > 2 && taille > k(22)) { taille -= 2; lignes = couper(g, txt, W - k(60), taille); }
+  lignes.forEach((l, i) => texteContour(g, l, CX, k(150) + (i - (lignes.length - 1) / 2) * taille * 1.05, taille * p));
 }
 function hautMetre(g, u) { const p = pop(u); if (p > 0.05) texteDouble(g, "RIRE-O-MÈTRE", CX, k(150), k(44) * p); }
 function hautFin(g, a, LOGO) {

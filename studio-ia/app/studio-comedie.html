@@ -192,6 +192,7 @@ progress { width: 100%; height: 14px; accent-color: var(--rose); }
       <label>Image <input id="r-modele-image" type="text"></label>
       <label>Vidéo <input id="r-modele-video" type="text"></label>
       <label>Juge (contrôle) <input id="r-modele-juge" type="text"></label>
+      <label>Oreille (accent) <input id="r-modele-oreille" type="text"></label>
       <label>Résolution vidéo <select id="r-resolution"><option>480p</option><option>720p</option></select> (480p ≈ 0,02 $/s ; 720p ≈ 0,03 $/s)</label>
     </div>
     <div>
@@ -336,6 +337,9 @@ const REGLAGES_DEFAUT = {
   modeleImage: "google/gemini-3.1-flash-lite-image",
   modeleVideo: "x-ai/grok-imagine-video-1.5-lite",
   modeleJuge: "google/gemini-3.8-flash",
+  // oreille de l'accent : Flash se fiait aux mots (« dêh », « là ») et laissait passer un accent de France ; Argon juge la
+  // prononciation (R, mélodie). Mesuré le 30/10 sur 3 vrais clips : Flash « ivoirien » ×3, Argon « France » ×2 et « ivoirien » ×1.
+  modeleOreille: "google/gemini-4-argon",
   resolution: "480p", format: "4:3",
   budget: 1.0, plancher: 0.4,
   concurrenceImages: 2, concurrenceVideos: 3,
@@ -435,7 +439,7 @@ async function api(chemin, { methode = "GET", corps = null, brut = false, essais
   const url = chemin.startsWith("http") ? chemin : API + chemin;
   const payant = methode !== "GET";
   const idem = payant && crypto.randomUUID ? crypto.randomUUID() : null;
-  let derniere = null;
+  let derniere = null, attentes = 0;
   for (let k = 0; k < essais; k++) {
     let r;
     try {
@@ -454,6 +458,13 @@ async function api(chemin, { methode = "GET", corps = null, brut = false, essais
     if (r.ok) return brut ? r : r.json();
     const texte = (await r.text().catch(() => "")).slice(0, 400);
     derniere = new ErreurAPI(r.status, texte);
+    // 402 « in_flight_budget_exhausted » : petit crédit et plusieurs requêtes en cours ; refusée AVANT d'être créée, donc
+    // sans risque de la renvoyer quand les autres ont fini (Retry-After). Mesuré le 30/10 avec 2,69 $ de crédit.
+    if (r.status === 402 && /in_flight/i.test(texte) && attentes < 12) {
+      attentes++; k--;
+      await dormir(Math.min(20, Math.max(3, +r.headers.get("retry-after") || 0)) * 1000);
+      continue;
+    }
     // erreurs définitives : pas de nouvel essai (clé, crédit, requête refusée, contenu expiré)
     if ([400, 401, 402, 403, 404, 410, 422].includes(r.status)) throw derniere;
     if (payant && r.status !== 429) { derniere.incertain = r.status >= 500; throw derniere; }
@@ -515,10 +526,10 @@ async function telechargerVideo(job) {
 }
 
 // chaque appel du juge est noté dès sa réponse : un appel suivant qui échoue ne fait pas oublier celui-ci
-async function chatJuge(contenu, ref) {
-  const d = await api("/chat/completions", { methode: "POST", corps: { model: R.modeleJuge, messages: [{ role: "user", content: contenu }] } });
+async function chatJuge(contenu, ref, modele = R.modeleJuge) {
+  const d = await api("/chat/completions", { methode: "POST", corps: { model: modele, messages: [{ role: "user", content: contenu }] } });
   const cout = +(d.usage || {}).cost || PRIX.controle;
-  await noterDepense("controle", R.modeleJuge, cout, ref).catch(() => {});
+  await noterDepense("controle", modele, cout, ref).catch(() => {});
   return { texte: (((d.choices || [])[0] || {}).message || {}).content || "", cout };
 }
 
@@ -820,7 +831,9 @@ const QUESTION_REGARD = (d, persos) => `Ces 16 images sont extraites DANS L'ORDR
   `pendant un zoom. NE SONT PAS des défauts : un personnage qui se lève, s'assoit, marche ou sort normalement du ` +
   `cadre, un zoom ou un recadrage vers un visage. ` +
   `Réponds sur UNE ligne : REALISME=OK ou REALISME=MINEUR ou REALISME=GRAVE ; puis le défaut précis avec le temps.`;
-const QUESTION_ACCENT = "Écoute les voix de ce sketch. Réponds sur UNE ligne au format : ACCENT=<ivoirien|ouest-africain|" +
+const QUESTION_ACCENT = "Écoute les voix de ce sketch. Juge la PRONONCIATION (R roulé ou R du fond de la gorge, mélodie, " +
+  "rythme, voyelles), PAS les mots : des mots ivoiriens (« dêh », « là », « ya fohi ») dits avec une prononciation de France " +
+  "= français de France. Réponds sur UNE ligne au format : ACCENT=<ivoirien|ouest-africain|" +
   "africain autre|français de France|autre> ; NATUREL=<note sur 10> ; DRÔLE=<note sur 10> ; remarque courte.";
 const QUESTION_SYNCHRO = (persos) => `Images extraites d'un plan d'animation 3D, deux par réplique, dans l'ordre. Sur chaque image est écrit ` +
   `le numéro de la réplique et LE PERSONNAGE QUI DOIT PARLER à ce moment. Personnages : ${persos}. Pour chaque ` +
@@ -1067,7 +1080,7 @@ async function controler(s, blob) {
   if (!muet) {
     const wav = wavBase64(audio, 16000, 40);
     const ecoute = async () => {
-      const r = await chatJuge([{ type: "text", text: QUESTION_ACCENT }, { type: "input_audio", input_audio: { data: wav, format: "wav" } }], s.id);
+      const r = await chatJuge([{ type: "text", text: QUESTION_ACCENT }, { type: "input_audio", input_audio: { data: wav, format: "wav" } }], s.id, R.modeleOreille || R.modeleJuge);
       cout += r.cout;
       return r.texte.replace(/\s+/g, " ").trim();
     };
@@ -1568,9 +1581,10 @@ function hautTitre(g, titre, rang, total) {
   arrondi(g, CX - lw / 2, k(78), lw, k(22), k(11)); g.fill(); g.stroke();
   g.fillStyle = JAUNE; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(lab, CX, k(89));
   const taille = ajuster(g, titre, k(40), W - k(60));
-  const lignes = taille < k(30) ? couper(g, titre, W - k(60), k(34)) : [titre];
-  const t2 = lignes.length > 1 ? k(34) : taille;
-  lignes.slice(0, 2).forEach((l, i) => texteDouble(g, l, CX, k(140) + (i - (lignes.length - 1) / 2) * t2 * 1.12, t2, JAUNE));
+  let lignes = taille < k(30) ? couper(g, titre, W - k(60), k(34)) : [titre];
+  let t2 = lignes.length > 1 ? k(34) : taille;
+  while (lignes.length > 2 && t2 > k(20)) { t2 -= 2; lignes = couper(g, titre, W - k(60), t2); }   // aucun mot perdu
+  lignes.forEach((l, i) => texteDouble(g, l, CX, k(140) + (i - (lignes.length - 1) / 2) * t2 * 1.12, t2, JAUNE));
 }
 function hautReaction(g, u, rang) {
   const choc = u < 1.0, p = pop(choc ? u : u - 1.0);
@@ -1589,11 +1603,11 @@ function hautRejoue(g, u) {
 }
 function hautLegende(g, txt, u) {
   const p = Math.min(pop(u), 1); if (p < 0.05) return;
-  let taille = k(40);
-  g.font = police(taille);
-  while (g.measureText(txt).width > 2 * (W - k(60)) && taille > k(24)) { taille -= 2; g.font = police(taille); }
-  const lignes = couper(g, txt, W - k(60), taille * p).slice(0, 2);
-  lignes.forEach((l, i) => texteContour(g, l, CX, k(150) + (i - (lignes.length - 1) / 2) * taille * 1.1, taille * p));
+  // la police baisse jusqu'à ce que la légende tienne sur 2 lignes RÉELLES (coupure aux mots) ; jamais de mot perdu
+  // (« MAMAN QUAND ELLE VA RENTRER DU » perdait « MARCHÉ : » au film du 30/10)
+  let taille = k(40), lignes = couper(g, txt, W - k(60), taille);
+  while (lignes.length > 2 && taille > k(22)) { taille -= 2; lignes = couper(g, txt, W - k(60), taille); }
+  lignes.forEach((l, i) => texteContour(g, l, CX, k(150) + (i - (lignes.length - 1) / 2) * taille * 1.05, taille * p));
 }
 function hautMetre(g, u) { const p = pop(u); if (p > 0.05) texteDouble(g, "RIRE-O-MÈTRE", CX, k(150), k(44) * p); }
 function hautFin(g, a, LOGO) {
@@ -2336,6 +2350,7 @@ function initReglages() {
   champ("#r-modele-image", "modeleImage");
   champ("#r-modele-video", "modeleVideo");
   champ("#r-modele-juge", "modeleJuge");
+  champ("#r-modele-oreille", "modeleOreille");
   champ("#r-resolution", "resolution");
   champ("#r-plancher", "plancher", (x) => Math.max(0, +x || 0));
   champ("#r-conc-images", "concurrenceImages", (x) => Math.max(1, Math.min(6, +x || 1)));

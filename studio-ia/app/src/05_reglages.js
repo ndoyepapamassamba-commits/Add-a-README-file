@@ -20,6 +20,7 @@ function initReglages() {
   champ("#r-modele-image", "modeleImage");
   champ("#r-modele-video", "modeleVideo");
   champ("#r-modele-juge", "modeleJuge");
+  champ("#r-modele-oreille", "modeleOreille");
   champ("#r-resolution", "resolution");
   champ("#r-plancher", "plancher", (x) => Math.max(0, +x || 0));
   champ("#r-conc-images", "concurrenceImages", (x) => Math.max(1, Math.min(6, +x || 1)));
