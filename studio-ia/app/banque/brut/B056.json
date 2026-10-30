@@ -1,0 +1,927 @@
+[
+ {
+  "id": "B056-01",
+  "titre": "Le direct de Madame",
+  "lieu": "living room of a small apartment in Port-Bouët, Abidjan, a worn sofa, a ring light on a tripod in the corner, a low table, evening",
+  "persos": [
+   {
+    "nom": "the jealous husband",
+    "desc": "husband in his 40s, navy-and-cyan polo shirt, thin moustache, holding ONE single smartphone",
+    "pose": "standing in the foreground on the right, pointing his free hand at his wife, furious"
+   },
+   {
+    "nom": "the wife on the sofa",
+    "desc": "wife in her 30s, magenta-and-maroon kaba, long braids, holding ONE single smartphone",
+    "pose": "sitting on the sofa in the middle, phone in hand, very relaxed"
+   },
+   {
+    "nom": "the daughter with the tablet",
+    "desc": "girl around 10, pistachio-and-ivory dress, two puffs of hair, holding ONE single tablet",
+    "pose": "sitting on the floor on the left, looking at the tablet"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi tu dis en direct que tu es célibataire-là ?!"
+   ],
+   [
+    1,
+    "Chéri, les cadeaux tombent seulement pour les célibataires dêh."
+   ],
+   [
+    2,
+    "Papa, c'est toi qui as envoyé les dix roses."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband shouts, pointing his free hand at his wife, his face turned three-quarters to the camera. The wife shrugs calmly and answers, her phone resting in her hand. The girl lifts her eyes from the tablet, turns her head to her father and says her line innocently, her face clearly visible.",
+  "chute": "The husband freezes, mouth open, and presses his phone flat against his chest; the wife slowly turns her head to him and raises one eyebrow. The camera slowly pushes in to a close-up of the jealous husband's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "célibataire",
+   "cadeaux",
+   "dix roses"
+  ],
+  "gag_legende": "PAPA QUAND MAMAN DEMANDE SON TÉLÉPHONE :",
+  "mecanisme": "arroseur arrosé : l'accusateur démasqué par l'enfant, double cible"
+ },
+ {
+  "id": "B056-02",
+  "titre": "Une demande de paiement",
+  "lieu": "veranda of a family house in Bingerville, Abidjan, plastic chairs, a low wooden table, potted plants, late afternoon",
+  "persos": [
+   {
+    "nom": "the father with the phone",
+    "desc": "father in his 50s, olive-and-ochre boubou, grey beard, holding ONE single smartphone",
+    "pose": "sitting on a plastic chair on the left, staring at his phone screen, outraged"
+   },
+   {
+    "nom": "the engaged daughter",
+    "desc": "young woman in her 20s, cobalt-and-violet jumpsuit, short twists, a small engagement ring",
+    "pose": "standing in the foreground in the middle, hands clasped, hopeful smile"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 50s, burgundy-and-ivory kaba, a head scarf, bracelets",
+    "pose": "sitting on a plastic chair on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi ton fiancé-là m'envoie une demande de paiement ?!"
+   ],
+   [
+    1,
+    "Papa, il dit pour me marier, c'est toi qui paies dêh."
+   ],
+   [
+    2,
+    "Paie vite avant qu'il change d'avis."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father shouts, shaking his phone toward the camera, his face turned three-quarters to the camera. The daughter answers with an embarrassed smile, hands still clasped. The mother uncrosses her arms, leans forward on her chair and says her line urgently to the father, pointing at his phone, her face clearly visible.",
+  "chute": "The daughter's smile freezes, then her mouth drops open in outrage; the father nods slowly and starts typing on his phone. The camera slowly pushes in to a close-up of the engaged daughter's outraged face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "demande de paiement",
+   "fiancé",
+   "paie vite"
+  ],
+  "gag_legende": "LA FILLE QUAND PAPA TAPE SON CODE :",
+  "mecanisme": "relance assassine : la mère achève sa fille en pressant le père de payer"
+ },
+ {
+  "id": "B056-03",
+  "titre": "Le groupe du couple",
+  "lieu": "living room of a modest house in Attécoubé, Abidjan, a sofa, an armchair, a small television, evening light",
+  "persos": [
+   {
+    "nom": "the angry wife",
+    "desc": "wife in her 30s, sand-and-maroon wrap dress, short curly hair, holding ONE single smartphone",
+    "pose": "standing in the foreground on the left, phone raised, other hand on her hip, furious"
+   },
+   {
+    "nom": "the husband on the sofa",
+    "desc": "husband in his 30s, silver-and-cream shirt, round glasses",
+    "pose": "sitting on the sofa in the middle, hands open, embarrassed"
+   },
+   {
+    "nom": "the mother-in-law in the armchair",
+    "desc": "mother-in-law in her 60s, plum-and-burgundy boubou, big earrings, holding ONE single smartphone",
+    "pose": "sitting in the armchair on the right, phone in hand, smug"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, pourquoi ta maman est dans notre groupe de couple-là ?!"
+   ],
+   [
+    1,
+    "Bébé, c'est elle-même qui a créé le groupe dêh."
+   ],
+   [
+    2,
+    "Et je viens de te retirer."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife shouts, waving her phone, her face turned three-quarters to the camera. The husband answers with a helpless shrug. The mother-in-law taps her phone screen once with one finger, then looks up and says her line with a sweet smile, her face clearly visible.",
+  "chute": "The wife looks down at her phone screen and freezes, mouth wide open; the husband slowly sinks into the sofa. The camera slowly pushes in to a close-up of the angry wife's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "groupe de couple",
+   "créé",
+   "retirer"
+  ],
+  "gag_legende": "LA BELLE-FILLE APRÈS CETTE NOTIFICATION :",
+  "mecanisme": "relance assassine : la belle-mère agit au lieu de répondre"
+ },
+ {
+  "id": "B056-04",
+  "titre": "Une notification suspecte",
+  "lieu": "bedroom of an apartment in Port-Bouët, Abidjan, a bed with a flowered sheet, a wardrobe, a calendar on the wall, morning",
+  "persos": [
+   {
+    "nom": "the wife with the phone",
+    "desc": "wife in her 30s, pistachio-and-ivory kaba, hair in a bun, holding ONE single smartphone",
+    "pose": "standing on the left, holding the phone screen toward her husband, eyes wide"
+   },
+   {
+    "nom": "the lying husband",
+    "desc": "husband in his 40s, cobalt-and-violet shirt, round belly",
+    "pose": "standing in the foreground on the right, both hands raised in panic"
+   },
+   {
+    "nom": "the little daughter",
+    "desc": "girl around 9, magenta-and-maroon dress, braided hair, holding ONE single teddy bear",
+    "pose": "sitting on the bed in the middle, hugging the teddy bear"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, ton téléphone dit : salaire reçu, trois cent mille !"
+   ],
+   [
+    1,
+    "Bébé, c'est une arnaque dêh ! Supprime ça vite !"
+   ],
+   [
+    2,
+    "Papa, ton arnaque arrive chaque 25."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife reads aloud, showing the phone screen, her face turned three-quarters to the camera. The husband answers fast, both hands raised in panic. The girl says her line innocently, hugging her teddy bear, her face clearly visible.",
+  "chute": "The husband freezes, his raised hands stuck in the air; the wife slowly narrows her eyes at him. The camera slowly pushes in to a close-up of the lying husband's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "salaire",
+   "arnaque",
+   "chaque 25"
+  ],
+  "gag_legende": "PAPA EN CHERCHANT UNE NOUVELLE EXCUSE :",
+  "mecanisme": "relance assassine : l'enfant démonte le mensonge en une phrase"
+ },
+ {
+  "id": "B056-05",
+  "titre": "Les likes du mari",
+  "lieu": "terrace of a house in Bingerville, Abidjan, rattan chairs, a small round table, a green garden behind, afternoon",
+  "persos": [
+   {
+    "nom": "the jealous wife",
+    "desc": "wife in her 30s, navy-and-cyan dress, short natural hair, holding ONE single smartphone",
+    "pose": "standing in the foreground on the left, showing her phone screen to her husband, furious"
+   },
+   {
+    "nom": "the honest husband",
+    "desc": "husband in his 30s, sand-and-maroon polo shirt, neat goatee",
+    "pose": "sitting on a rattan chair in the middle, legs crossed, very calm"
+   },
+   {
+    "nom": "the younger sister",
+    "desc": "young woman in her 20s, silver-and-cream jumpsuit, big hoop earrings",
+    "pose": "sitting on a rattan chair on the right, smiling"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi tu as liké la photo de ma sœur avant la mienne ?!"
+   ],
+   [
+    1,
+    "Bébé, j'ai liké par ordre de beauté dêh."
+   ],
+   [
+    2,
+    "Merci beaucoup, mon beau-frère dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife shouts, pushing her phone screen forward, her face turned three-quarters to the camera. The husband answers calmly with a small shrug. The sister puts one hand on her chest and says her line with a delighted smile, her face clearly visible.",
+  "chute": "The wife slowly turns her head to her sister, eyes narrowing; the sister keeps smiling proudly. The camera slowly pushes in to a close-up of the jealous wife's furious face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "liké",
+   "ordre de beauté",
+   "beau-frère"
+  ],
+  "gag_legende": "LA GRANDE SŒUR AU PROCHAIN REPAS :",
+  "mecanisme": "relance assassine : la rivale remercie et enfonce le clou"
+ },
+ {
+  "id": "B056-06",
+  "titre": "Un sondage dans le groupe",
+  "lieu": "living room in Attécoubé, Abidjan, a sofa with plastic covers, a wall clock, a standing fan, evening",
+  "persos": [
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, burgundy-and-ivory shirt, bald head, holding ONE single smartphone",
+    "pose": "standing in the foreground on the right, phone raised, outraged"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 40s, olive-and-ochre kaba, big earrings",
+    "pose": "sitting on the sofa on the left, arms crossed, cold"
+   },
+   {
+    "nom": "the son with the phone",
+    "desc": "boy around 11, navy-and-cyan t-shirt, short haircut, holding ONE single smartphone",
+    "pose": "sitting on the sofa in the middle, reading his phone"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi tu as fait un sondage sur moi dans le groupe famille ?!"
+   ],
+   [
+    1,
+    "Chéri, je demande si je dois te pardonner dêh."
+   ],
+   [
+    2,
+    "Même ta maman a voté non."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband shouts, shaking his phone, his face turned three-quarters to the camera. The wife answers coldly without uncrossing her arms. The boy looks up from his phone, turns to his father and says his line plainly, his face clearly visible.",
+  "chute": "The husband's arm drops slowly, his mouth hanging open; the wife gives one small satisfied nod. The camera slowly pushes in to a close-up of the husband's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "sondage",
+   "pardonner",
+   "voté non"
+  ],
+  "gag_legende": "PAPA EN APPELANT SA MAMAN CE SOIR :",
+  "mecanisme": "relance assassine : le dernier allié trahit"
+ },
+ {
+  "id": "B056-07",
+  "titre": "Le message supprimé",
+  "lieu": "courtyard of a family house in Bingerville, Abidjan, a mango tree, plastic chairs, a clothesline in the background, Sunday afternoon",
+  "persos": [
+   {
+    "nom": "the mother",
+    "desc": "mother in her 50s, magenta-and-maroon boubou, a head scarf, holding ONE single smartphone",
+    "pose": "sitting on a plastic chair on the left, phone in hand, suspicious"
+   },
+   {
+    "nom": "the son",
+    "desc": "young man in his 20s, pistachio-and-ivory shirt, fresh haircut",
+    "pose": "standing in the foreground in the middle, hands in front of him, nervous"
+   },
+   {
+    "nom": "the uncle",
+    "desc": "uncle in his 50s, sand-and-maroon boubou, round glasses, holding ONE single smartphone",
+    "pose": "sitting on a plastic chair on the right, holding his phone, grinning"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, pourquoi tu as supprimé ton message dans le groupe famille ?!"
+   ],
+   [
+    1,
+    "Maman, j'avais écrit que j'ai eu le travail dêh."
+   ],
+   [
+    2,
+    "Trop tard. Tonton a fait capture."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother asks, frowning and pointing at her phone, her face turned three-quarters to the camera. The son whispers his answer nervously, glancing left and right. The uncle turns his phone screen toward the son and says his line with a big grin, his face clearly visible.",
+  "chute": "The son freezes, eyes wide, and slowly puts both hands on his head; the mother's frown turns into a big smile. The camera slowly pushes in to a close-up of the son's horrified face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "supprimé",
+   "travail",
+   "capture"
+  ],
+  "gag_legende": "LA FAMILLE LE JOUR DE SA PAIE :",
+  "mecanisme": "relance assassine : le parasite a déjà la preuve"
+ },
+ {
+  "id": "B056-08",
+  "titre": "Le prêt en ligne",
+  "lieu": "small living room in Port-Bouët, Abidjan, a sofa, a plastic table, a standing fan, morning",
+  "persos": [
+   {
+    "nom": "the furious wife",
+    "desc": "wife in her 30s, cobalt-and-violet kaba, short hair, holding ONE single smartphone",
+    "pose": "standing in the foreground on the left, phone in hand, furious"
+   },
+   {
+    "nom": "the indebted husband",
+    "desc": "husband in his 30s, plum-and-burgundy tracksuit, thin beard",
+    "pose": "sitting on the sofa in the middle, one hand scratching his head"
+   },
+   {
+    "nom": "the wife's mother",
+    "desc": "mother in her 60s, silver-and-cream boubou, big glasses",
+    "pose": "sitting on a chair on the right, hands on her knees, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi le prêt en ligne-là appelle tous mes contacts ?!"
+   ],
+   [
+    1,
+    "Bébé, c'est toi j'ai mise comme garantie dêh."
+   ],
+   [
+    2,
+    "Ils m'ont appelée. J'ai dit : prenez-la."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife shouts, waving her phone, her face turned three-quarters to the camera. The husband answers sheepishly, scratching his head with one hand. The mother answers calmly with a small shrug, her face clearly visible.",
+  "chute": "The wife slowly turns her head to her mother, mouth wide open; the husband nods in approval. The camera slowly pushes in to a close-up of the furious wife's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "prêt en ligne",
+   "garantie",
+   "prenez-la"
+  ],
+  "gag_legende": "MADAME EN FAISANT SES BAGAGES CE SOIR :",
+  "mecanisme": "relance assassine : la mère livre sa propre fille aux créanciers"
+ },
+ {
+  "id": "B056-09",
+  "titre": "Le vocal de belle-maman",
+  "lieu": "living room of a house in Attécoubé, Abidjan, a sofa, an armchair, a coffee table with a vase of plastic flowers, evening",
+  "persos": [
+   {
+    "nom": "the son-in-law",
+    "desc": "husband in his 30s, olive-and-ochre shirt, neat beard, holding ONE single smartphone",
+    "pose": "standing in the foreground on the right, phone held at arm's length, exasperated"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, burgundy-and-ivory dress, long braids",
+    "pose": "sitting on the sofa in the middle, legs crossed"
+   },
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, navy-and-cyan kaba, big earrings, holding ONE single smartphone",
+    "pose": "sitting in the armchair on the left, holding her phone at chest level, satisfied"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi ta maman m'envoie un vocal de trente minutes-là ?!"
+   ],
+   [
+    1,
+    "Chéri, c'est la liste de tes défauts dêh."
+   ],
+   [
+    2,
+    "C'était l'introduction seulement, mon fils."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband complains, shaking his phone, his face turned three-quarters to the camera. The wife answers casually with a small shrug. The mother-in-law looks up from her phone and says her line sweetly, her face clearly visible.",
+  "chute": "The husband looks down at his phone screen and his shoulders drop in despair; the mother-in-law smiles sweetly. The camera slowly pushes in to a close-up of the son-in-law's desperate face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "vocal",
+   "défauts",
+   "introduction"
+  ],
+  "gag_legende": "LE GENDRE EN VOYANT LA PARTIE DEUX :",
+  "mecanisme": "relance assassine : la belle-mère aggrave en annonçant la suite"
+ },
+ {
+  "id": "B056-10",
+  "titre": "Papi veut bloquer quelqu'un",
+  "lieu": "veranda of an old house in Bingerville, Abidjan, two wooden armchairs, a small bench, a radio on a shelf, late afternoon",
+  "persos": [
+   {
+    "nom": "the grandfather",
+    "desc": "grandfather in his 70s, sand-and-maroon kaftan, white beard, holding ONE single smartphone",
+    "pose": "sitting in a wooden armchair in the foreground on the right, holding the phone far from his eyes"
+   },
+   {
+    "nom": "the grandson",
+    "desc": "boy around 10, cobalt-and-violet t-shirt, short hair",
+    "pose": "sitting on the small bench in the middle, leaning toward the phone"
+   },
+   {
+    "nom": "the grandmother",
+    "desc": "grandmother in her 70s, pistachio-and-ivory boubou, a head scarf, holding ONE single straw hand fan",
+    "pose": "sitting in a wooden armchair on the left, fanning herself slowly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, comment on bloque quelqu'un sur ce téléphone-là ?"
+   ],
+   [
+    1,
+    "Tu veux bloquer qui, papi ?"
+   ],
+   [
+    0,
+    "Ta grand-mère-là. Elle parle trop dêh."
+   ],
+   [
+    2,
+    "Moi, je t'ai bloqué au mariage."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandfather asks, squinting at the phone, his face turned three-quarters to the camera. The boy answers, leaning closer. The grandfather whispers his answer, tilting his head toward the grandmother. The grandmother stops fanning and says her line flatly, her face clearly visible.",
+  "chute": "The grandfather slowly turns his head toward the grandmother, mouth open; the boy presses his lips together, trying not to laugh. The camera slowly pushes in to a close-up of the grandfather's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "bloquer",
+   "grand-mère",
+   "mariage"
+  ],
+  "gag_legende": "PAPI EN COMPTANT SES ANNÉES DE MARIAGE :",
+  "mecanisme": "relance assassine : la cible visée avait déjà frappé depuis longtemps"
+ },
+ {
+  "id": "B056-11",
+  "titre": "Les transferts du vendredi",
+  "lieu": "kitchen of a house in Port-Bouët, Abidjan, a gas stove, a big cooking pot, a wooden table, evening",
+  "persos": [
+   {
+    "nom": "the suspicious wife",
+    "desc": "wife in her 30s, plum-and-burgundy kaba, hair in a high bun, holding ONE single smartphone",
+    "pose": "standing on the left, holding the phone screen toward her husband, furious"
+   },
+   {
+    "nom": "the caught husband",
+    "desc": "husband in his 40s, magenta-and-maroon shirt, receding hairline",
+    "pose": "standing in the foreground in the middle, one hand on his heart, offended"
+   },
+   {
+    "nom": "the husband's old mother",
+    "desc": "old mother in her 70s, silver-and-cream kaba, small glasses, holding ONE single wooden ladle",
+    "pose": "sitting at the wooden table on the right, holding the ladle, eyebrows raised"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, tu envoies dix mille chaque vendredi à « Maman Chérie » ?!"
+   ],
+   [
+    1,
+    "Bébé, c'est ma vieille maman dêh ! Tu es jalouse ?"
+   ],
+   [
+    2,
+    "Mon fils, tu as deux mamans ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife reads accusingly, showing the screen, her face turned three-quarters to the camera. The husband answers, one hand on his heart, offended. The old mother tilts her head and asks her line slowly, her face clearly visible.",
+  "chute": "The husband freezes with his hand still on his heart, sweat on his forehead; the wife slowly lowers the phone and stares at him. The camera slowly pushes in to a close-up of the caught husband's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "Maman Chérie",
+   "vendredi",
+   "deux mamans"
+  ],
+  "gag_legende": "MAMAN CHÉRIE EN VOYANT CETTE VIDÉO :",
+  "mecanisme": "relance assassine : le témoin cité démonte l'alibi"
+ },
+ {
+  "id": "B056-12",
+  "titre": "Les abonnés de ma fille",
+  "lieu": "living room in Attécoubé, Abidjan, a ring light on a tripod, a sofa, a framed family photo, afternoon",
+  "persos": [
+   {
+    "nom": "the influencer daughter",
+    "desc": "teenage girl around 17, navy-and-cyan hoodie, long braids, holding ONE single smartphone",
+    "pose": "standing on the left, phone raised proudly"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, pistachio-and-ivory polo shirt, small belly",
+    "pose": "sitting on the sofa in the foreground on the right, leaning forward, excited"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 40s, sand-and-maroon kaba, a head scarf",
+    "pose": "sitting on a chair in the middle, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, j'ai cent mille abonnés maintenant dêh !"
+   ],
+   [
+    1,
+    "Ehh ! Ils paient combien chaque mois ?"
+   ],
+   [
+    0,
+    "Rien, papa. Ils regardent seulement."
+   ],
+   [
+    2,
+    "Comme ton papa au bureau."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The girl announces it proudly, phone raised, her face turned three-quarters to the camera. The father leans forward, eyes shining. The girl answers with a shrug. The mother says her line flatly, without uncrossing her arms, her face clearly visible.",
+  "chute": "The father's excited smile freezes, then slowly melts; the girl turns her head to him and bursts out laughing. The camera slowly pushes in to a close-up of the father's offended face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "abonnés",
+   "regardent seulement",
+   "bureau"
+  ],
+  "gag_legende": "PAPA LUNDI MATIN AU BUREAU :",
+  "mecanisme": "relance assassine : la comparaison retourne la moquerie contre le père"
+ },
+ {
+  "id": "B056-13",
+  "titre": "Le cadeau de la fête des mères",
+  "lieu": "bedroom of an apartment in Bingerville, Abidjan, a bed, a dressing table with a mirror, a teddy bear on the pillow, morning",
+  "persos": [
+   {
+    "nom": "the generous little girl",
+    "desc": "girl around 9, burgundy-and-ivory pyjamas, two braids, holding ONE single smartphone",
+    "pose": "standing on the left, holding the phone with both hands, proud"
+   },
+   {
+    "nom": "the touched mother",
+    "desc": "mother in her 30s, cobalt-and-violet wrap dress, short hair",
+    "pose": "sitting on the edge of the bed in the foreground on the right, hands on her chest, moved"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, je t'ai envoyé cinq cents pour la fête des mères dêh !"
+   ],
+   [
+    1,
+    "Ehh merci, ma chérie ! Tu as eu l'argent où ?"
+   ],
+   [
+    0,
+    "Sur ton compte, maman. Bonne fête !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl announces it proudly, holding up the phone, her face turned three-quarters to the camera. The mother answers with both hands on her chest, very moved. The girl answers happily with a big innocent smile, her face clearly visible.",
+  "chute": "The mother's tender smile freezes, her hands still on her chest; then her eyes slowly widen. The camera slowly pushes in to a close-up of the touched mother's stunned face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "cinq cents",
+   "fête des mères",
+   "ton compte"
+  ],
+  "gag_legende": "MAMAN EN CHANGEANT SON CODE SECRET :",
+  "mecanisme": "cadeau empoisonné : l'enfant offre à la mère son propre argent"
+ },
+ {
+  "id": "B056-14",
+  "titre": "La visite de Tantie",
+  "lieu": "living room of a house in Port-Bouët, Abidjan, a sofa, an armchair, a small table with a tray of glasses, afternoon",
+  "persos": [
+   {
+    "nom": "the panicking mother",
+    "desc": "mother in her 40s, olive-and-ochre wrap dress, braided bun, holding ONE single smartphone",
+    "pose": "standing in the foreground on the left, phone in hand, panicking"
+   },
+   {
+    "nom": "the teenage daughter",
+    "desc": "girl around 15, plum-and-burgundy t-shirt, short afro",
+    "pose": "sitting on the sofa in the middle, arms crossed"
+   },
+   {
+    "nom": "the visiting aunt",
+    "desc": "aunt in her 50s, magenta-and-maroon kaftan, big earrings, holding ONE single smartphone",
+    "pose": "sitting in the armchair on the right, phone on her lap, smiling coldly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi ta tante a reçu mon vocal où je parle d'elle ?!"
+   ],
+   [
+    1,
+    "Maman, c'est toi-même qui as appuyé dêh."
+   ],
+   [
+    2,
+    "J'ai écouté deux fois, ma chérie."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother whisper-shouts to her daughter, phone in hand, her face turned three-quarters to the camera. The daughter answers with a shrug. The aunt lifts her phone slightly and says her line with a cold smile, her face clearly visible.",
+  "chute": "The mother freezes, then turns her head very slowly toward the aunt with a forced smile. The camera slowly pushes in to a close-up of the panicking mother's frozen smiling face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "vocal",
+   "appuyé",
+   "deux fois"
+  ],
+  "gag_legende": "MAMAN QUAND TANTIE SORT SON TÉLÉPHONE :",
+  "mecanisme": "relance assassine : la victime était là et savoure"
+ },
+ {
+  "id": "B056-15",
+  "titre": "La robe de mariée",
+  "lieu": "bedroom in Attécoubé, Abidjan, a wardrobe with a mirror, a wedding photo frame on the wall, a bed, evening",
+  "persos": [
+   {
+    "nom": "the offended husband",
+    "desc": "husband in his 40s, silver-and-cream polo shirt, bald head, holding ONE single smartphone",
+    "pose": "standing in the foreground on the right, phone raised, offended"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 40s, pistachio-and-ivory wrap dress, hair in a bun",
+    "pose": "sitting on the bed in the middle, legs crossed, calm"
+   },
+   {
+    "nom": "the teenage daughter",
+    "desc": "girl around 16, olive-and-ochre t-shirt, long braids, holding ONE single smartphone",
+    "pose": "sitting on a stool on the left, scrolling her phone"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi ton statut dit : robe de mariée à vendre ?!"
+   ],
+   [
+    1,
+    "Oui chéri. Avec le mari offert dêh."
+   ],
+   [
+    2,
+    "Les clients veulent la robe seulement."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband shouts, showing his phone screen, his face turned three-quarters to the camera. The wife answers calmly with a small smile. The girl looks up from her phone and says her line plainly, her face clearly visible.",
+  "chute": "The husband slowly lowers his phone, his face dropping in humiliation; the wife shrugs. The camera slowly pushes in to a close-up of the offended husband's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "robe de mariée",
+   "mari offert",
+   "robe seulement"
+  ],
+  "gag_legende": "PAPA EN SE REGARDANT DANS LE MIROIR :",
+  "mecanisme": "relance assassine : même offert, personne n'en veut"
+ },
+ {
+  "id": "B056-16",
+  "titre": "Chez le réparateur",
+  "lieu": "small phone repair kiosk at the roadside in Attécoubé, Abidjan, a glass counter full of phone parts, chargers hanging, midday",
+  "persos": [
+   {
+    "nom": "the client",
+    "desc": "man in his 40s, burgundy-and-ivory polo shirt, thin moustache, holding ONE single smartphone",
+    "pose": "standing in the foreground on the left in front of the counter, showing his phone, worried"
+   },
+   {
+    "nom": "the repairman",
+    "desc": "repairman in his 30s, navy-and-cyan overalls, short beard",
+    "pose": "sitting behind the glass counter on the right, hands flat on the counter, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon vieux, depuis ta réparation-là, ma femme ne peut plus m'appeler dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Je l'ai bloquée. C'est cadeau de la maison."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The client complains, holding out his phone, his face turned three-quarters to the camera. The repairman answers proudly with a wink and a thumbs-up, his face clearly visible.",
+  "chute": "The client freezes; his worried face slowly turns into a huge grateful smile and he presses the phone against his chest. The camera slowly pushes in to a close-up of the client's delighted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "réparation",
+   "bloquée",
+   "cadeau"
+  ],
+  "gag_legende": "LES MARIS EN CHERCHANT L'ADRESSE DU KIOSQUE :",
+  "mecanisme": "service non demandé + joie coupable du client, double cible"
+ },
+ {
+  "id": "B056-17",
+  "titre": "Le vieux téléphone de Papa",
+  "lieu": "living room of a family house in Bingerville, Abidjan, an old wooden cabinet, a sofa, a small radio, late afternoon",
+  "persos": [
+   {
+    "nom": "the teenage son",
+    "desc": "boy around 15, sand-and-maroon t-shirt, short twists, holding ONE single smartphone",
+    "pose": "standing on the left, showing his phone screen, excited"
+   },
+   {
+    "nom": "the proud father",
+    "desc": "father in his 50s, plum-and-burgundy shirt, grey moustache, holding ONE single old phone with a small antenna",
+    "pose": "sitting on the sofa in the foreground on the right, holding his old phone proudly"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 50s, cobalt-and-violet boubou, a head scarf",
+    "pose": "sitting on a chair in the middle, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, le musée veut acheter ton téléphone-là dêh !"
+   ],
+   [
+    1,
+    "Ehh, mon téléphone est célèbre ! Ils donnent combien ?"
+   ],
+   [
+    2,
+    "Ils prennent le propriétaire avec."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boy announces it excitedly, his face turned three-quarters to the camera. The father lifts his old phone proudly and asks, smiling. The mother says her line flatly, without uncrossing her arms, her face clearly visible.",
+  "chute": "The father's proud smile freezes and he slowly lowers the old phone; the boy presses his lips together, trying not to laugh. The camera slowly pushes in to a close-up of the proud father's offended face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "musée",
+   "célèbre",
+   "propriétaire"
+  ],
+  "gag_legende": "PAPA EN CACHANT SA DATE DE NAISSANCE :",
+  "mecanisme": "relance assassine : de l'objet ancien à l'homme ancien"
+ },
+ {
+  "id": "B056-18",
+  "titre": "La photo de profil de Papa",
+  "lieu": "living room of an apartment in Port-Bouët, Abidjan, a sofa, a coffee table, a framed baby photo on the wall, evening",
+  "persos": [
+   {
+    "nom": "the grown-up daughter",
+    "desc": "young woman in her 20s, magenta-and-maroon jumpsuit, long braids, holding ONE single smartphone",
+    "pose": "standing in the foreground on the left, showing her phone screen to her father, embarrassed"
+   },
+   {
+    "nom": "the nostalgic father",
+    "desc": "father in his 50s, navy-and-cyan shirt, grey temples",
+    "pose": "sitting on the sofa on the right, legs crossed, tender smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, pourquoi ta photo de profil, c'est moi bébé ?!"
+   ],
+   [
+    1,
+    "Ma fille, c'est la dernière fois que tu m'as souri gratuitement dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The daughter asks, showing her phone screen, embarrassed, her face turned three-quarters to the camera. The father answers with a tender, nostalgic smile, one hand on his heart, his face clearly visible.",
+  "chute": "The daughter's mouth drops open and she slowly lowers her phone; the father keeps his tender smile and nods slowly. The camera slowly pushes in to a close-up of the grown-up daughter's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "photo de profil",
+   "bébé",
+   "gratuitement"
+  ],
+  "gag_legende": "LA FILLE QUAND ELLE VEUT DEMANDER L'ARGENT :",
+  "mecanisme": "nostalgie assassine : le compliment cache la facture"
+ },
+ {
+  "id": "B056-19",
+  "titre": "La flaque devant la cour",
+  "lieu": "muddy dirt street in front of a courtyard in Attécoubé, Abidjan, a big puddle, a corrugated iron gate, after the rain, morning",
+  "persos": [
+   {
+    "nom": "the woman in the puddle",
+    "desc": "woman in her 40s, plum-and-burgundy dress splashed with mud, a head scarf",
+    "pose": "sitting in the foreground in the middle of the big puddle, both hands in the mud, furious"
+   },
+   {
+    "nom": "the filming neighbor",
+    "desc": "neighbor woman in her 30s, olive-and-ochre tracksuit, big hoop earrings, holding ONE single smartphone",
+    "pose": "standing on the left at the edge of the puddle, filming with the phone"
+   },
+   {
+    "nom": "the woman's daughter",
+    "desc": "girl around 12, silver-and-cream dress, two puffs of hair, holding ONE single smartphone",
+    "pose": "standing on the right at the edge of the puddle, filming with the phone"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu me vois dans la boue-là et tu sors ton téléphone ?!"
+   ],
+   [
+    1,
+    "Pardon ma sœur, tombe encore. J'ai raté le début."
+   ],
+   [
+    2,
+    "Maman, refais. Moi aussi j'ai raté."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The woman shouts from the puddle, both hands in the mud, her face turned three-quarters to the camera. The neighbor answers apologetically without lowering her phone. The girl says her line seriously, still filming, her face clearly visible.",
+  "chute": "The woman freezes, then slowly turns her head toward her own daughter, mouth wide open. The camera slowly pushes in to a close-up of the woman in the puddle's betrayed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "boue",
+   "tombe encore",
+   "raté"
+  ],
+  "gag_legende": "MAMAN EN RENTRANT À LA MAISON CE SOIR :",
+  "mecanisme": "relance assassine : sa propre fille réclame une deuxième prise"
+ },
+ {
+  "id": "B056-20",
+  "titre": "Le statut d'anniversaire",
+  "lieu": "hair salon in Bingerville, Abidjan, a big mirror, two salon chairs, a hood dryer, shelves of unlabeled hair products, afternoon",
+  "persos": [
+   {
+    "nom": "the offended friend",
+    "desc": "woman in her 40s, burgundy-and-ivory kaftan, fresh braids, holding ONE single smartphone",
+    "pose": "sitting in a salon chair in the foreground on the left, phone raised, outraged"
+   },
+   {
+    "nom": "the hairdresser friend",
+    "desc": "woman in her 40s, sand-and-maroon jumpsuit, short hair, holding ONE single comb",
+    "pose": "standing behind the second chair in the middle, comb in hand, embarrassed"
+   },
+   {
+    "nom": "the hairdresser's daughter",
+    "desc": "girl around 14, pistachio-and-ivory t-shirt, ponytail, holding ONE single smartphone",
+    "pose": "sitting on a stool on the right, typing on her phone"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi ton statut dit « Joyeux anniversaire maman » sous ma photo ?!"
+   ],
+   [
+    1,
+    "Ma sœur, pardon, c'est ma fille qui a écrit dêh."
+   ],
+   [
+    2,
+    "Pardon Tantie. Je corrige : mamie."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The woman shouts, showing her phone screen, her face turned three-quarters to the camera. The hairdresser answers apologetically, pointing her comb at her daughter. The girl looks up from her phone and says her line politely, her face clearly visible.",
+  "chute": "The woman freezes, mouth open, phone still raised; the hairdresser slowly covers her eyes with her free hand. The camera slowly pushes in to a close-up of the offended friend's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "anniversaire",
+   "ma fille",
+   "mamie"
+  ],
+  "gag_legende": "TANTIE EN CHERCHANT SON ACTE DE NAISSANCE :",
+  "mecanisme": "relance assassine : la correction aggrave l'insulte"
+ }
+]

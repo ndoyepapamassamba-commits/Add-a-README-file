@@ -117,8 +117,15 @@ contrôle IA avec plafond de budget, puis montage au design de la chaîne en MP4
 - Banque : écrite par 100 agents auteurs (fiches `banque/briefs.json` : 25 domaines × 4 mécanismes comiques, couleurs de
   tenues réservées à chaque auteur), notée par deux juges indépendants (regard CHOC et regard PUBLIC, barème
   `banque/jury.md` calé sur les meilleurs sketchs de la chaîne), dédoublonnée contre les sketchs déjà écrits.
-- Sécurité des dépenses : plafond par session et plancher de clé vérifiés avant chaque appel payant ; une vidéo lancée
-  n'est jamais relancée et toujours récupérée, même après fermeture de la page (IndexedDB).
+- Banque actuelle : 1 990 sketchs écrits, 1 062 gardés (note ≥ 5,5 ; 776 à 6 et plus, 178 à 7 et plus) → 2 124 prompts ;
+  rejetés : 344 « déjà vus », 214 doublons, 36 « danger », 10 trop longs (`banque/rapport.txt`).
+- Sécurité des dépenses (revue adverse : 25 défauts confirmés, tous corrigés, rejoués par `test_garde`) : chaque dépense est
+  réservée avant son premier `await` (plafond et plancher tiennent même avec plusieurs lancements dans le même tour) ;
+  un POST payant n'est jamais renvoyé après une 5xx ou une coupure (message « vérifie openrouter.ai/activity ») ; le
+  solde suit les dépenses depuis la dernière lecture et tient compte du crédit du compte (`/credits`) quand la clé n'a
+  pas de limite ; prix 720p pris en compte ; une vidéo lancée n'est jamais relancée et toujours récupérée, même après
+  fermeture de la page et même si la clé n'était pas mémorisée ; un seul onglet peut produire (Web Locks) ; retirer ou
+  vider la file est refusé pendant une étape payée.
 - Montage : lecture séquentielle mp4box.js + VideoDecoder (une recherche image par image coûtait 90 ms par image),
   encodage WebCodecs (MP4 H.264 + AAC si le navigateur sait l'encoder, sinon Opus, sinon WebM).
 - Bibliothèques embarquées : mp4-muxer et webm-muxer (MIT), mp4box.js 0.5.4 (BSD-3) — licences dans `app/vendor/`.

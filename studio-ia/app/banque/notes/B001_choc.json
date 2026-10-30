@@ -1,0 +1,22 @@
+[
+  {"id": "B001-01", "note": 7, "drapeaux": [], "remarque": "Triple escalade de voleurs avec une belle-mère fière qui achève tout ; la relance « j'ai déjà vidé ton matelas » frappe plus fort que la chaussette, même si on ne sait pas trop à qui elle parle."},
+  {"id": "B001-02", "note": 4, "drapeaux": ["connu"], "remarque": "L'ex qui remercie le mari de l'avoir débarrassé est une blague d'internet usée, la chute se devine dès la question."},
+  {"id": "B001-03", "note": 5, "drapeaux": [], "remarque": "La double cible « comme l'or / comme une princesse » est féroce mais demande une seconde de calcul, et la deuxième moitié affaiblit le coup."},
+  {"id": "B001-04", "note": 6, "drapeaux": [], "remarque": "Bon retournement à double cible (le mari et sa propre mère qui voulait s'en débarrasser), même si la question de départ arrive un peu de travers face au sac de riz vide."},
+  {"id": "B001-05", "note": 5, "drapeaux": [], "remarque": "La correction qui aggrave (« comme ta maman ») est un mécanisme vu mille fois, on la sent venir dès « j'ai pas dit méchante »."},
+  {"id": "B001-06", "note": 5, "drapeaux": ["connu"], "remarque": "Reprend la blague du voisin modèle ; l'aveu d'adultère dit tranquillement choque, mais la situation est trop connue pour surprendre vraiment."},
+  {"id": "B001-07", "note": 6, "drapeaux": [], "remarque": "Comparer les pleurs du bébé à ceux du mariage est cruel et inattendu, mais la phrase est un peu plate et rien ne vient l'achever."},
+  {"id": "B001-08", "note": 4.5, "drapeaux": ["connu"], "remarque": "La sauce à l'image de l'argent de la popote est un classique ivoirien déjà exploité par le catalogue (salaire sans argent), donc peu de choc."},
+  {"id": "B001-09", "note": 5, "drapeaux": ["connu"], "remarque": "« Personne veut nous reprendre » est une chute en autodérision qui circule déjà en mème, efficace mais sans vraie surprise."},
+  {"id": "B001-10", "note": 7, "drapeaux": [], "remarque": "La fausse piste de la cousine puis la relance « toi, tu dors ici chaque nuit » retourne l'accusation contre la femme avec une vraie férocité."},
+  {"id": "B001-11", "note": 5.5, "drapeaux": [], "remarque": "Le compliment ironique de la copine qui l'a refusé est un retournement correct, mais il faut une seconde pour comprendre « la même chance »."},
+  {"id": "B001-12", "note": 5, "drapeaux": [], "remarque": "Le « quatrième bébé de l'année » fait sourire, mais la colère qui tourne en cupidité est un virage mou plutôt qu'une chute qui claque."},
+  {"id": "B001-13", "note": 5.5, "drapeaux": [], "remarque": "L'excuse déguisée en service rendu (« qui a accepté ça ? ») est maligne et vise les deux, mais elle est longue à décoder pour un vrai éclat de rire."},
+  {"id": "B001-14", "note": 4.5, "drapeaux": [], "remarque": "« J'ai arrêté de mentir, la dot est payée » est prévisible et proche du « le mariage m'a rendu la vue » du catalogue."},
+  {"id": "B001-15", "note": 6, "drapeaux": [], "remarque": "La petite sœur quémandeuse que le gardien « reconnaît tout seul » est une bonne double cible, mais le thème de ceux qui demandent l'argent est déjà dans le catalogue."},
+  {"id": "B001-16", "note": 4, "drapeaux": ["connu"], "remarque": "« J'ai jamais dit que c'est toi » est une chute archi-connue, devinée dès le mot prince."},
+  {"id": "B001-17", "note": 7, "drapeaux": [], "remarque": "Le « Oui chérie » automatique qui prouve l'accusation, suivi de la double cible beau-père et belle-mère, fait un vrai coup de massue en une seule réplique."},
+  {"id": "B001-18", "note": 4.5, "drapeaux": ["connu"], "remarque": "Le chien mieux traité parce qu'il travaille reprend le mécanisme du coq qui « a un travail » du catalogue, donc peu de surprise."},
+  {"id": "B001-19", "note": 7, "drapeaux": [], "remarque": "« Moi je vais fuir où ? » est court, féroce et clair en deux secondes : le maquis devient le refuge contre elle."},
+  {"id": "B001-20", "note": 7, "drapeaux": [], "remarque": "Le compliment « femme de ta vie » retourné en « ma vie est gâtée, il fallait une femme qui va avec » frappe les deux avec élégance et surprise."}
+]

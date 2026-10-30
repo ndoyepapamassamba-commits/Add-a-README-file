@@ -1,0 +1,22 @@
+[
+  {"id": "B041-01", "note": 6, "drapeaux": [], "remarque": "Insulte bien cachée (gratuit pour l'épouse donc pas une question de beauté), mais la relance « Ça veut dire quoi » est un remplissage qui ralentit le coup."},
+  {"id": "B041-02", "note": 5, "drapeaux": [], "remarque": "Double cible sur le père qui ne ramène rien, retournement correct mais attendu, le thème du papa fauché est usé."},
+  {"id": "B041-03", "note": 7, "drapeaux": [], "remarque": "Vrai retournement féroce : l'argument du maître devient la preuve de son échec, et « Payez double » achève proprement."},
+  {"id": "B041-04", "note": 6.5, "drapeaux": [], "remarque": "Bonne surprise, la fierté du père se transforme en soupçon sur son propre permis, chute nette et à double cible."},
+  {"id": "B041-05", "note": 5, "drapeaux": ["connu"], "remarque": "Hyperbole classique du véhicule dépassé par un piéton, aucune vraie surprise."},
+  {"id": "B041-06", "note": 5, "drapeaux": ["confus"], "remarque": "Idée forte du chauffeur qui sait tout, mais « chez l'autre-là » et « chez la sienne » brouillent qui trompe qui, et le rire arrive trop tard."},
+  {"id": "B041-07", "note": 6, "drapeaux": [], "remarque": "La fierté de la femme se retourne contre elle via son propre mari, efficace mais le mécanisme du double tarif se devine un peu."},
+  {"id": "B041-08", "note": 6, "drapeaux": [], "remarque": "Enchaînement malin rétroviseur, créanciers, dot impayée, mais il faut deux crans de réflexion pour que la chute tombe."},
+  {"id": "B041-09", "note": 5.5, "drapeaux": [], "remarque": "Double cible chauffeur et cuisine de la femme, chute logique mais sans férocité ni vraie surprise."},
+  {"id": "B041-10", "note": 4.5, "drapeaux": [], "remarque": "La comparaison avec la beauté du père tombe à plat, on ne sait pas trop qui est visé et ça ne claque pas."},
+  {"id": "B041-11", "note": 5, "drapeaux": ["connu"], "remarque": "Situation de la vocation de l'enfant déjà au catalogue (408), la chute « fuir maman » se voit venir."},
+  {"id": "B041-12", "note": 6.5, "drapeaux": [], "remarque": "Joli renversement absurde, l'absence de permis devient une prime de risque, court et efficace."},
+  {"id": "B041-13", "note": 7, "drapeaux": [], "remarque": "Vengeance cinglante et inattendue du fils avec le test ADN, la chute frappe fort et donne envie de rejouer."},
+  {"id": "B041-14", "note": 6.5, "drapeaux": [], "remarque": "L'apprenti s'accuse lui-même en voulant accuser, autodénonciation drôle et surprenante."},
+  {"id": "B041-15", "note": 5.5, "drapeaux": [], "remarque": "Le reniement du fiancé radin est drôle, mais le conseil final de l'apprenti adoucit le coup au lieu de l'achever."},
+  {"id": "B041-16", "note": 5.5, "drapeaux": ["connu"], "remarque": "Situation connue de l'adulte qui passe pour un enfant afin de payer moins, sauvée en partie par la voix grave et « Ma femme m'attend »."},
+  {"id": "B041-17", "note": 4.5, "drapeaux": ["connu"], "remarque": "Situation du fiancé riche déjà au catalogue (604), et dès que le père insulte son patron la révélation est prévisible."},
+  {"id": "B041-18", "note": 5, "drapeaux": [], "remarque": "Fausse excuse démasquée, l'idée est correcte mais l'image de l'accouchement au maquis manque de netteté et de mordant."},
+  {"id": "B041-19", "note": 7, "drapeaux": [], "remarque": "Triple coup bien construit, transportée contre écoutée, puis la relance sur le mari achève vraiment."},
+  {"id": "B041-20", "note": 6.5, "drapeaux": [], "remarque": "Riposte élégante et cruelle sur l'âge et la beauté de la cliente, propre mais structure de réplique assez classique."}
+]

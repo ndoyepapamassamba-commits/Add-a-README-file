@@ -329,7 +329,8 @@ function basVote(g, a, n, credit) {
 // ---------- lecture image par image : mp4box.js (démultiplexage) + VideoDecoder (WebCodecs) ----------
 // Chercher une image avec <video>.currentTime redécode depuis l'image-clé : ≈ 90 ms par image (mesuré). En lisant les
 // images DANS L'ORDRE avec le décodeur, chaque image coûte ≈ 1 à 2 ms. Retour en arrière (replay) : on repart de la clé.
-function demuxer(blob) {
+function ceder() { return new Promise((r) => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0); }); }
+function demuxer(blob, maxSec = Infinity) {
   return blob.arrayBuffer().then((buf) => new Promise((ok, ko) => {
     const f = MP4Box.createFile();
     let piste = null;
@@ -350,9 +351,18 @@ function demuxer(blob) {
       const box = e.avcC || e.hvcC || e.vpcC || e.av1C;
       if (box) { const ds = new DS(undefined, 0, DS.BIG_ENDIAN); box.write(ds); description = new Uint8Array(ds.buffer, 8); break; }
     }
-    const base = Math.min(...ech.map((s) => s.cts / s.timescale));
-    ok({ codec: piste.codec, largeur: piste.video.width, hauteur: piste.video.height, description,
-      ech: ech.map((s) => ({ data: s.data, cle: s.is_sync, t: Math.round((s.cts / s.timescale - base) * 1e6), d: Math.round(s.duration / s.timescale * 1e6) })) });
+    // origine du temps : la liste d'édition (extrait coupé sans réencodage) si elle en donne une, sinon le 1er instant
+    let base = Math.min(...ech.map((s) => s.cts / s.timescale));
+    const trak = f.getTrackById(piste.id), elst = trak.edts && trak.edts.elst && trak.edts.elst.entries;
+    const edit = elst && elst.find((e) => e.media_time >= 0);
+    if (edit && edit.media_time > 0) base = edit.media_time / (trak.mdia.mdhd.timescale || piste.timescale);
+    let liste = ech.map((s) => ({ data: s.data, cle: s.is_sync, t: Math.round((s.cts / s.timescale - base) * 1e6), d: Math.round(s.duration / s.timescale * 1e6) }));
+    if (Number.isFinite(maxSec)) {           // gag : seules les premières secondes servent (le reste n'est pas gardé en mémoire)
+      const tri = [...liste].sort((a, b) => a.t - b.t), lim = maxSec * 1e6;
+      const dernier = tri.findIndex((s) => s.t > lim);
+      if (dernier > 0) { const garde = new Set(tri.slice(0, dernier + 1)); liste = liste.filter((s) => garde.has(s)); }
+    }
+    ok({ codec: piste.codec, largeur: piste.video.width, hauteur: piste.video.height, description, ech: liste });
   }));
 }
 class Lecteur {
@@ -371,9 +381,10 @@ class Lecteur {
     this.suivant = k; this.fin = false;
   }
   async image(t) {
-    const us = t * 1e6;
+    const us = t * 1e6, limite = Date.now() + 8000;      // décodeur bloqué → erreur, et repli sur <video> (imageA)
     if (!this.dec || (this.courant && this.courant.timestamp > us + 1000)) this.reprendre(t);
     for (let garde = 0; garde < 2000; garde++) {
+      if (Date.now() > limite) throw new Error("décodeur bloqué");
       if (this.erreur) throw this.erreur;
       while (this.file.length && this.file[0].timestamp <= us + 1000) { if (this.courant) this.courant.close(); this.courant = this.file.shift(); }
       if ((this.file.length || this.fin) && (this.courant || this.file.length)) return this.courant || this.file[0];
@@ -383,8 +394,8 @@ class Lecteur {
           const s = this.info.ech[this.suivant];
           this.dec.decode(new EncodedVideoChunk({ type: s.cle ? "key" : "delta", timestamp: s.t, duration: s.d, data: s.data }));
         }
-        while (this.dec.decodeQueueSize > 0) await dormir(1);
-        await dormir(0);
+        while (this.dec.decodeQueueSize > 0 && Date.now() < limite) await ceder();
+        await ceder();
       } else if (!this.fin) { await this.dec.flush(); this.fin = true; }
       else return this.courant;
     }
@@ -392,10 +403,10 @@ class Lecteur {
   }
   fermer() { try { this.file.forEach((x) => x.close()); if (this.courant) this.courant.close(); if (this.dec && this.dec.state !== "closed") this.dec.close(); } catch (e) { } }
 }
-async function creerLecteur(blob) {
+async function creerLecteur(blob, maxSec) {
   if (!window.VideoDecoder || !window.MP4Box) return null;
   try {
-    const info = await demuxer(blob);
+    const info = await demuxer(blob, maxSec);
     const ok = await VideoDecoder.isConfigSupported({ codec: info.codec, codedWidth: info.largeur, codedHeight: info.hauteur, description: info.description });
     return ok.supported ? new Lecteur(info) : null;
   } catch (e) { console.warn("lecture séquentielle impossible, recherche image par image", e); return null; }
@@ -403,7 +414,7 @@ async function creerLecteur(blob) {
 // image du clip à l'instant t : décodeur séquentiel si possible, sinon recherche dans l'élément <video>
 async function imageA(c, t) {
   if (c.lecteur) {
-    try { const fr = await c.lecteur.image(t); if (fr) return { src: fr, w: fr.displayWidth, h: fr.displayHeight }; } catch (e) { console.warn(e); c.lecteur = null; }
+    try { const fr = await c.lecteur.image(t); if (fr) return { src: fr, w: fr.displayWidth, h: fr.displayHeight }; } catch (e) { console.warn(e); c.lecteur.fermer(); c.lecteur = null; }
   }
   await allerA(c.video, t);
   return { src: c.video, w: c.video.videoWidth, h: c.video.videoHeight };
@@ -416,6 +427,7 @@ async function preparerClip(id, options) {
   if (!blob) throw new Error(`${id} : pas de clip`);
   const video = await chargerVideo(blob);
   const audio = await decoderAudio(blob);
+  if (!sonPresent(audio)) { URL.revokeObjectURL(video.src); throw new Error(`${id} (« ${s.titre} ») : le clip n'a pas de son lisible. Refais sa vidéo ou décoche-le.`); }
   const segs = segmentsParole(audio);
   const lignes = tempsLignes(s, segs, video.duration);
   const finParole = lignes.length ? lignes[lignes.length - 1].fin : video.duration - MARGE_CHUTE;
@@ -432,7 +444,7 @@ async function preparerClip(id, options) {
 async function preparerGag(fichier) {
   const video = await chargerVideo(fichier.blob);
   const audio = await decoderAudio(fichier.blob);
-  return { video, audio, G: Math.min(GAG_MAX, video.duration), lecteur: await creerLecteur(fichier.blob) };
+  return { video, audio, G: Math.min(GAG_MAX, video.duration), lecteur: await creerLecteur(fichier.blob, GAG_MAX + 1) };
 }
 
 const CIBLE = 62.5;              // monétisation TikTok : plus d'une minute (62 s + marge)
@@ -458,30 +470,33 @@ function planifier(clips, gags, options) {
   let tFin = calculer();
   const boucle = options.boucle ? BOUCLE_S : 0;
   let manque = CIBLE - (tFin + boucle);
-  if (options.atteindre && manque > 0) {           // temps gratuit : RIRE-O-MÈTRE plus long (2 s max chacun), vote plus long (6 s max)
+  if (options.atteindre && manque > 0) {           // temps gratuit : RIRE-O-MÈTRE plus long (2,5 s max chacun), vote plus long (12 s max)
     const metres = clips.filter((c) => c.M);
-    const parM = metres.length ? Math.min(2, manque / (metres.length + 1)) : 0;
+    const parM = metres.length ? Math.min(2.5, manque / (metres.length + 1)) : 0;
     metres.forEach((c) => { c.M += parM; });
     manque -= parM * metres.length;
-    queue += Math.min(6, Math.max(0, manque));
+    queue += Math.min(12, Math.max(0, manque));
     tFin = calculer();
   }
   return { t0, tFin, total: tFin + boucle, queue };
 }
 
 function estimerDuree(ids, options, nGags) {
-  // estimation avant préparation : clip ≈ durée demandée − 0,8 s ; replay ≈ 2,9 s ; gag ≈ 3,5 s
+  // estimation avant préparation : clip coupé 2,6 s après la fin de parole (mesurée par le contrôle IA quand il a tourné,
+  // sinon durée demandée − 1,5 s) ; replay ≈ 2,5 s ; gag ≈ 3,5 s
   let t = options.teaser ? TEASER_S : 0;
   ids.forEach((id, r) => {
     const s = SKETCHS.get(id); if (!s) return;
+    const fp = ((ETATS.get(id) || {}).controle || {}).finParole;
+    const d = fp ? Math.min(dureeClip(s) - 0.05, fp + MARGE_CHUTE) : dureeClip(s) - 1.5;
     const dernier = r === ids.length - 1;
-    const R0 = options.rejouer ? 2.9 : 0, G = options.gags && nGags ? 3.5 : 0;
-    t += dureeClip(s) - 0.8 + (dernier ? R0 + G + QUEUE : R0 + G + (options.metre ? METRE_S : 0) + T_CARTE);
+    const R0 = options.rejouer ? 2.5 : 0, G = options.gags && nGags ? 3.5 : 0;
+    t += d + (dernier ? R0 + G + QUEUE : R0 + G + (options.metre ? METRE_S : 0) + T_CARTE);
   });
   const brut = t + (options.boucle ? BOUCLE_S : 0);
   if (!options.atteindre || brut >= CIBLE) return { brut, final: brut };
   const nM = options.metre ? Math.max(0, ids.length - 1) : 0;
-  const ajout = Math.min(CIBLE - brut, nM * 2 + 6);
+  const ajout = Math.min(CIBLE - brut, nM * 2.5 + 12);
   return { brut, final: brut + ajout };
 }
 
@@ -529,7 +544,7 @@ async function mixer(clips, plan, options, sons) {
       t += c.R0;
     }
     if (c.gag) {
-      jouer(c.gag.audio, t, 0, c.G, 0.7, 0.2);
+      if (c.gag.audio) jouer(c.gag.audio, t, 0, c.G, 0.7, 0.2);
       if (sons.rires.length) jouer(sons.rires[(i + 1) % sons.rires.length], t + 0.4, 0, null, 0.7, 0);
       t += c.G;
     }
@@ -541,7 +556,12 @@ async function mixer(clips, plan, options, sons) {
     const src = ctx.createBufferSource(); src.buffer = sons.musique; src.loop = true;
     const gn = ctx.createGain(), base = 0.22, bas = 0.07;
     gn.gain.setValueAtTime(base, 0);
-    for (const [a, b] of voix) {
+    const fusion = [];
+    for (const [a, b] of [...voix].sort((x, y) => x[0] - y[0])) {
+      const der = fusion[fusion.length - 1];
+      if (der && a - 0.1 <= der[1] + 0.3) der[1] = Math.max(der[1], b); else fusion.push([a, b]);
+    }
+    for (const [a, b] of fusion) {
       gn.gain.setTargetAtTime(bas, Math.max(0, a - 0.1), 0.05);
       gn.gain.setTargetAtTime(base, b + 0.05, 0.25);
     }
@@ -588,6 +608,7 @@ async function encoder(canvas, nbImages, dessiner, mix, codecs, progres) {
     codecs.conteneur === "mp4" ? { avc: { format: "avc" } } : {}));
   const ae = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: (e) => { erreur = e; } });
   ae.configure({ codec: codecs.audio.codec, sampleRate: 48000, numberOfChannels: 2, bitrate: 128000 });
+  try {
   // son : tranches de 1024 échantillons
   const g = mix.getChannelData(0), d = mix.numberOfChannels > 1 ? mix.getChannelData(1) : g;
   for (let i = 0; i < mix.length; i += 1024) {
@@ -601,13 +622,16 @@ async function encoder(canvas, nbImages, dessiner, mix, codecs, progres) {
     const vf = new VideoFrame(canvas, { timestamp: Math.round(f * 1e6 / IPS), duration: Math.round(1e6 / IPS) });
     ve.encode(vf, { keyFrame: f % (IPS * 2) === 0 });
     vf.close();
-    while (ve.encodeQueueSize > 8) await dormir(5);
+    while (ve.encodeQueueSize > 8) await ceder();
     if (f % 15 === 0) progres(f / nbImages);
   }
   await ve.flush(); await ae.flush();
   if (erreur) throw erreur;
   muxer.finalize();
   return new Blob([cible.buffer], { type: codecs.conteneur === "mp4" ? "video/mp4" : "video/webm" });
+  } finally {
+    for (const x of [ve, ae]) try { if (x.state !== "closed") x.close(); } catch (e) { }
+  }
 }
 
 // ---------- montage complet ----------
@@ -635,10 +659,10 @@ async function creerCompilation(ids, options, progres) {
   if (!codecs) throw new Error("ce navigateur ne sait pas encoder la vidéo (utilise Chrome ou Edge récent)");
   await document.fonts.load(police(40)); await document.fonts.load(police(20, 800));
   progres(0, "Préparation des clips…");
-  const clips = [];
+  const clips = [], gags = [];
+  try {
   for (const id of ids) clips.push(await preparerClip(id, options));
-  const gags = [];
-  if (options.gags) for (const f of await listeGags()) gags.push(await preparerGag(f));
+  if (options.gags) for (const f of (await listeGags()).slice(0, ids.length)) gags.push(await preparerGag(f));
   const plan = planifier(clips, gags, options);
   const sons = await chargerSons();
   progres(0.02, "Mixage du son…");
@@ -657,7 +681,7 @@ async function creerCompilation(ids, options, progres) {
     const tg = f / IPS;
     // boucle : la fin se fond dans la toute première image
     if (options.boucle && tg >= plan.tFin) {
-      const x = Math.min(1, (tg - plan.tFin) / BOUCLE_S);
+      const x = Math.min(1, (tg - plan.tFin + 1 / IPS) / BOUCLE_S);      // la dernière image EST la première
       await dessinerTemps(plan.tFin - 1 / IPS);
       if (premiere) { g.globalAlpha = x; g.drawImage(premiere, 0, 0); g.globalAlpha = 1; }
       return;
@@ -731,9 +755,10 @@ async function creerCompilation(ids, options, progres) {
   }
   progres(0.05, "Encodage des images…");
   const blob = await encoder(canvas, nb, dessiner, mix, codecs, (x) => progres(0.05 + 0.95 * x, `Encodage… ${Math.round(x * 100)} %`));
-  for (const c of clips) { URL.revokeObjectURL(c.video.src); if (c.lecteur) c.lecteur.fermer(); }
-  for (const gg of gags) { URL.revokeObjectURL(gg.video.src); if (gg.lecteur) gg.lecteur.fermer(); }
   return { blob, duree: plan.total, codecs };
+  } finally {
+    for (const c of [...clips, ...gags]) { URL.revokeObjectURL(c.video.src); if (c.lecteur) c.lecteur.fermer(); }
+  }
 }
 
 // ---------- gags 3D fournis par l'utilisateur ----------
@@ -748,7 +773,7 @@ async function listeGags() {
 const MONTAGE = { ordre: [], dernier: null };
 function clipsDisponibles() {
   return FILE.concat([...ETATS.keys()].filter((id) => !FILE.includes(id)))
-    .filter((id) => ["video_ok", "pret", "a_revoir"].includes((ETATS.get(id) || {}).statut) && SKETCHS.has(id));
+    .filter((id) => { const e = ETATS.get(id) || {}; return (e.clip || ["video_ok", "pret", "a_revoir"].includes(e.statut)) && SKETCHS.has(id); });
 }
 function scoreMontage(id) {
   const s = SKETCHS.get(id), c = (ETATS.get(id) || {}).controle || {};
@@ -807,7 +832,12 @@ function initMontage() {
     afficherMontage();
   });
   $("#m-ajout-gag").addEventListener("change", async (ev) => {
-    for (const f of ev.target.files) await DB.put("fichiers", `gag:${f.name}`, f);
+    for (const f of ev.target.files) {
+      let duree = 0;
+      try { const v = await chargerVideo(f); duree = v.duration; URL.revokeObjectURL(v.src); } catch (e) { alerte(`${f.name} : vidéo illisible.`, "erreur"); continue; }
+      if (!(duree <= 30)) { alerte(`${f.name} fait ${Math.round(duree)} s : ajoute un extrait déjà coupé de 3 à 4 s (seules les 4 premières secondes servent).`, "attention"); continue; }
+      await DB.put("fichiers", `gag:${f.name}`, f);
+    }
     ev.target.value = "";
     $("#m-gags").checked = true;
     afficherMontage();
@@ -819,24 +849,33 @@ function initMontage() {
   });
   $("#m-creer").addEventListener("click", async () => {
     if (MONTAGE.ordre.length < 1) { alerte("Coche au moins un clip.", "attention"); return; }
+    if (R.nom === REGLAGES_DEFAUT.nom || R.pseudo === REGLAGES_DEFAUT.pseudo) {
+      alerte("Mets d'abord le nom et le pseudo de ta chaîne dans Réglages : sinon la vidéo afficherait « @ma_chaine ».", "attention");
+      montrerOnglet("reglages");
+      return;
+    }
     const b = $("#m-creer"); b.disabled = true;
+    const figees = [$("#m-ordre"), $("#m-clips")];
+    figees.forEach((z) => z.classList.add("occupe"));
     const barre = $("#m-progres"), texte = $("#m-progres-texte");
     try {
-      const { blob, duree, codecs } = await creerCompilation(MONTAGE.ordre, optionsMontage(), (x, msg) => { barre.value = x; if (msg) texte.textContent = msg; });
+      const { blob, duree, codecs } = await creerCompilation([...MONTAGE.ordre], optionsMontage(), (x, msg) => { barre.value = x; if (msg) texte.textContent = msg; });
       const nom = `compilation_${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.${codecs.conteneur}`;
-      await DB.put("fichiers", `montage:${nom}`, blob);
       MONTAGE.dernier = { nom, blob };
-      $("#m-apercu").src = URL.createObjectURL(blob);
+      if (MONTAGE.url) URL.revokeObjectURL(MONTAGE.url);
+      MONTAGE.url = URL.createObjectURL(blob);
+      $("#m-apercu").src = MONTAGE.url;
       $("#m-apercu").hidden = false;
       texte.textContent = `Terminé : ${duree.toFixed(1)} s, ${(blob.size / 1e6).toFixed(1)} Mo — ${codecs.note}.`;
       barre.value = 1;
+      if (duree < 62) alerte(`La compilation fait ${duree.toFixed(1)} s, moins des 62 s de la monétisation : ajoute un sketch ou les gags 3D.`, "attention");
       if (!(await ecrireFichier("compilations", nom, blob))) telecharger(nom, blob);
       else alerte(`Compilation enregistrée dans le dossier choisi : compilations/${nom}`);
     } catch (e) {
       console.error(e);
       texte.textContent = `Échec du montage : ${e.message}`;
       alerte(`Échec du montage : ${e.message}`, "erreur");
-    } finally { b.disabled = false; }
+    } finally { b.disabled = false; figees.forEach((z) => z.classList.remove("occupe")); }
   });
   $("#m-telecharger").addEventListener("click", () => { if (MONTAGE.dernier) telecharger(MONTAGE.dernier.nom, MONTAGE.dernier.blob); });
 }

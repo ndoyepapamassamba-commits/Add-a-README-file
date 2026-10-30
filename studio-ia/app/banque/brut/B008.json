@@ -1,0 +1,922 @@
+[
+ {
+  "id": "B008-01",
+  "titre": "La question piège de la belle-mère",
+  "lieu": "living room of a family house in Marcory, Abidjan, two armchairs and a sofa, a low table with a tray of glasses, the wooden front door on the right side of the room, Sunday afternoon",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 50s, saffron-and-sky-blue kaba, high cheekbones, big hoop earrings, holding ONE single folded hand fan",
+    "pose": "sitting in an armchair in the foreground on the left, holding the closed fan, eyes narrowed, testing"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 30s, emerald-and-turquoise shirt, short beard, hands resting on his knees",
+    "pose": "sitting on the sofa in the middle, calm, polite smile"
+   },
+   {
+    "nom": "the father-in-law",
+    "desc": "father-in-law in his 60s, mustard-and-turquoise boubou, bald head, thick moustache, hands behind his back",
+    "pose": "standing right next to the front door on the right, hands behind his back, tired face"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon gendre, si ma fille et moi on se dispute, tu prends quel côté ?"
+   ],
+   [
+    1,
+    "Le côté de la porte, Maman."
+   ],
+   [
+    2,
+    "Mon côté depuis vingt ans dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The mother-in-law asks her trap question, tapping the closed fan on her palm. The son-in-law answers calmly with a tiny smile, pointing his thumb toward the front door. The father-in-law, standing by the door, nods slowly and says his line with a tired, knowing face, clearly visible.",
+  "chute": "After the last line, the son-in-law presses his lips together to hold back his laugh, and the mother-in-law slowly turns her head toward her husband, outraged, then back to the camera. The camera slowly pushes in to a close-up of the mother-in-law's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "côté",
+   "porte",
+   "vingt ans"
+  ],
+  "gag_legende": "BELLE-MAMAN CE SOIR À LA MAISON :",
+  "mecanisme": "relance assassine : le beau-père avoue qu'il fuit par la même porte depuis vingt ans (double cible : la belle-mère et sa fille)"
+ },
+ {
+  "id": "B008-02",
+  "titre": "Un invité réclame sa dot",
+  "lieu": "courtyard of a family compound in Koumassi, Abidjan, plastic chairs, a long table with folded pagnes and drink crates for a dowry ceremony, decorative cloth on the wall, late afternoon",
+  "persos": [
+   {
+    "nom": "the former fiancé",
+    "desc": "man in his 30s, mint-and-navy jacket, thin moustache, holding ONE single crumpled paper receipt",
+    "pose": "standing on the left, holding up the receipt, angry"
+   },
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, burgundy-and-maroon kaftan, short goatee, round belly, hands free",
+    "pose": "sitting in a plastic chair in the middle, palms raised to calm everyone"
+   },
+   {
+    "nom": "the new fiancé",
+    "desc": "groom in his late 20s, mustard-and-silver suit, neat haircut, holding ONE single thick envelope",
+    "pose": "standing in the foreground on the right, holding the envelope against his chest, smiling"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, rendez-moi d'abord ma dot de l'année passée dêh !"
+   ],
+   [
+    1,
+    "Calme-toi. On te rembourse avec la dot de ce monsieur-là."
+   ],
+   [
+    0,
+    "Mon frère, le prochain te rembourse."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The former fiancé shouts his line, waving the receipt. The father answers calmly, palms down, then tilts his head toward the new fiancé's envelope; the new fiancé's smile freezes. The former fiancé turns his head toward the new fiancé and says his last line with a falsely sympathetic face, clearly visible.",
+  "chute": "After the last line, the new fiancé slowly looks down at the envelope in his hands, his mouth falling open. The camera slowly pushes in to a close-up of the new fiancé's horrified face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "dot",
+   "rembourse",
+   "prochain"
+  ],
+  "gag_legende": "LE FIANCÉ EN SERRANT SON ENVELOPPE :",
+  "mecanisme": "relance assassine : l'ancien fiancé révèle au nouveau que la dot tourne en chaîne (double cible : la famille et la fiancée)"
+ },
+ {
+  "id": "B008-03",
+  "titre": "La délégation s'est trompée de cour",
+  "lieu": "front courtyard of a house in Adjamé, Abidjan, dowry drink crates and folded pagnes stacked on a mat, a metal gate on the right, evening",
+  "persos": [
+   {
+    "nom": "the panicked groom",
+    "desc": "groom in his late 20s, gold-and-maroon suit, wide nervous eyes, holding ONE single phone",
+    "pose": "standing in the foreground on the left, phone in hand, panicking"
+   },
+   {
+    "nom": "the groom's uncle",
+    "desc": "uncle in his 60s, peach-and-cherry agbada, big round belly, both hands on ONE single wooden walking cane",
+    "pose": "standing in the middle, both hands on the cane, totally unbothered"
+   },
+   {
+    "nom": "the mother of the house",
+    "desc": "mother in her 50s, mint-and-gold kaba, big hoop earrings, hands clasped",
+    "pose": "standing by the gate on the right, hands clasped, delighted"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, c'est pas la maison de Mariam ici dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. La dot est déjà déchargée. On prend la fille d'ici."
+   ],
+   [
+    2,
+    "Fatou ! Ta valise, vite dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The groom, in the foreground, says his line in panic, showing his phone screen. The uncle answers calmly, tapping his cane once on the ground and nodding toward the gate. The mother of the house calls out over her shoulder toward the house, overjoyed, her face still clearly visible.",
+  "chute": "After the last line, the groom freezes, his phone slowly lowering, his mouth wide open. The camera slowly pushes in to a close-up of the panicked groom's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "Mariam",
+   "d'ici",
+   "valise"
+  ],
+  "gag_legende": "MARIAM QUI ATTEND TOUJOURS LA DÉLÉGATION :",
+  "mecanisme": "logique absurde de l'oncle + relance assassine de la mère trop pressée de caser sa fille"
+ },
+ {
+  "id": "B008-04",
+  "titre": "La dot après trois enfants",
+  "lieu": "living room of a house in Koumassi, Abidjan, an old sofa, an armchair, a low table, children's drawings on the wall, morning",
+  "persos": [
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, saffron-and-sky-blue boubou, thick glasses, holding ONE single dowry envelope",
+    "pose": "sitting in an armchair in the foreground on the left, holding the envelope, suspicious"
+   },
+   {
+    "nom": "the relaxed groom",
+    "desc": "groom in his 30s, mint-and-gold shirt, short dreadlocks, hands free",
+    "pose": "standing in the middle, very relaxed, proud smile"
+   },
+   {
+    "nom": "the pregnant bride",
+    "desc": "bride in her late 20s, mustard-and-turquoise dress, visibly pregnant round belly, braided hair",
+    "pose": "standing on the right, one hand resting on her round belly, sweet smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Trois enfants avant la dot ?! Tu fais crédit chez moi, mon fils ?"
+   ],
+   [
+    1,
+    "Oui Tonton. Les trois enfants-là, c'est les intérêts dêh."
+   ],
+   [
+    2,
+    "Et lui-là, c'est les pénalités."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The father, seated in the foreground, shakes the envelope and asks his line, eyebrows high. The groom answers proudly, holding up three fingers. The bride pats her round belly once and says her line with a sweet smile, her face clearly visible.",
+  "chute": "After the last line, the father's mouth drops open and the envelope slips onto his lap. The camera slowly pushes in to a close-up of the bride's father's flabbergasted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "crédit",
+   "intérêts",
+   "pénalités"
+  ],
+  "gag_legende": "LE BEAU-PÈRE EN RECOMPTANT L'ENVELOPPE :",
+  "mecanisme": "logique bancaire prise au pied de la lettre + relance assassine de la fiancée enceinte"
+ },
+ {
+  "id": "B008-05",
+  "titre": "Retrouvailles à la présentation",
+  "lieu": "living room of a house in Marcory, Abidjan, armchairs facing each other, a low table with a tray of kola nuts, framed family photos on the wall, evening",
+  "persos": [
+   {
+    "nom": "the bride's father",
+    "desc": "father in his late 50s, mint-and-navy tunic, receding hairline, small belly, hands free",
+    "pose": "standing in the foreground on the left, pointing at the groom's mother, shocked"
+   },
+   {
+    "nom": "the groom's mother",
+    "desc": "elegant mother in her late 50s, burgundy-and-maroon kaba, big hoop earrings, holding ONE single small handbag on her knees",
+    "pose": "sitting in an armchair on the right, handbag on her knees, chin up"
+   },
+   {
+    "nom": "the bride's mother",
+    "desc": "mother in her 50s, mustard-and-silver wrapper dress, short hair, arms crossed",
+    "pose": "standing in the middle, a step behind her husband, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Toi ?! C'est toi tu m'as refusé en quatre-vingt-quinze dêh !"
+   ],
+   [
+    1,
+    "Tu avais pas l'argent. Maintenant tu as quoi ?"
+   ],
+   [
+    2,
+    "Il a toujours rien, ma sœur."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The bride's father points at the groom's mother and says his line, eyes wide. The groom's mother answers coolly, looking him up and down, one eyebrow raised. The bride's mother, arms crossed, shakes her head and says her line flatly, her face clearly visible.",
+  "chute": "After the last line, the bride's father slowly lowers his pointing finger, his face falling. The camera slowly pushes in to a close-up of the bride's father's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "refusé",
+   "l'argent",
+   "toujours rien"
+  ],
+  "gag_legende": "PAPA APRÈS LE DÉPART DES INVITÉS :",
+  "mecanisme": "vieille rancune révélée + relance assassine de sa propre épouse (double cible : le père toujours fauché et la mère du fiancé intéressée)"
+ },
+ {
+  "id": "B008-06",
+  "titre": "La fiancée trop mince",
+  "lieu": "front porch of a house in Adjamé, Abidjan, a wooden bench, a bathroom scale on the floor next to the bride, potted plants, afternoon",
+  "persos": [
+   {
+    "nom": "the groom's mother",
+    "desc": "mother in her 50s, gold-and-maroon boubou, plump cheeks, hands on her hips",
+    "pose": "standing on the left, hands on hips, worried, staring at the bride"
+   },
+   {
+    "nom": "the proud groom",
+    "desc": "groom in his late 20s, peach-and-cherry polo shirt, big grin, hands free",
+    "pose": "standing in the foreground in the middle, chest out, proud"
+   },
+   {
+    "nom": "the skinny bride",
+    "desc": "very thin young woman in her mid-20s, emerald-and-turquoise dress, tired eyes, hollow cheeks, hands free",
+    "pose": "standing on the right next to the bathroom scale, shoulders slumped"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, ta fiancée-là est trop maigre dêh !"
+   ],
+   [
+    1,
+    "Maman, chez eux, la dot se paie au kilo."
+   ],
+   [
+    2,
+    "J'ai faim depuis trois mois dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The groom's mother says her line, hands on hips, frowning at the bride. The groom answers proudly, rubbing his thumb against his fingers as if counting money. The skinny bride raises one weak hand and says her line with a pitiful face, clearly visible.",
+  "chute": "After the last line, the groom's proud grin freezes while his mother slowly turns her head toward him, shocked. The camera slowly pushes in to a close-up of the proud groom's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "maigre",
+   "kilo",
+   "faim"
+  ],
+  "gag_legende": "MAMAN EN SORTANT LA GROSSE MARMITE :",
+  "mecanisme": "logique absurde (dot payée au poids) + relance assassine de la fiancée affamée exprès"
+ },
+ {
+  "id": "B008-07",
+  "titre": "Où va vivre la mariée ?",
+  "lieu": "living room of a modest house in Koumassi, Abidjan, a sofa, an armchair, a low table, a calendar on the wall, evening",
+  "persos": [
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, saffron-and-sky-blue kaftan, salt-and-pepper beard, arms crossed",
+    "pose": "sitting in an armchair on the left, arms crossed, stern"
+   },
+   {
+    "nom": "the romantic suitor",
+    "desc": "suitor in his early 30s, peach-and-cherry shirt, neat side parting, right hand on his heart",
+    "pose": "standing in the foreground in the middle, hand on his heart, dreamy smile"
+   },
+   {
+    "nom": "the bride",
+    "desc": "young woman in her late 20s, mustard-and-turquoise jumpsuit, long braids, holding ONE single phone",
+    "pose": "standing on the right, phone in hand, unimpressed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, tu vas loger ma fille où ?"
+   ],
+   [
+    1,
+    "Dans mon cœur, Tonton."
+   ],
+   [
+    0,
+    "Ton cœur-là a combien de chambres ?"
+   ],
+   [
+    2,
+    "Papa, sa maman-là dort déjà dedans."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The father asks sternly, arms crossed. The suitor answers dreamily, pressing his hand on his heart. The father leans forward slightly and asks his second line, one eyebrow raised. The bride rolls her eyes and says her line flatly, her face clearly visible.",
+  "chute": "After the last line, the suitor's dreamy smile freezes, his hand still on his heart, while the father slowly turns his head toward him. The camera slowly pushes in to a close-up of the romantic suitor's embarrassed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "cœur",
+   "chambres",
+   "maman"
+  ],
+  "gag_legende": "LA MAMAN DU FIANCÉ EN APPRENANT ÇA :",
+  "mecanisme": "métaphore romantique prise au pied de la lettre + relance assassine de la fiancée (le fiancé vit encore avec sa mère)"
+ },
+ {
+  "id": "B008-08",
+  "titre": "Le gendre vient se plaindre",
+  "lieu": "veranda of the in-laws' house in Marcory, Abidjan, rattan chairs, a small table with a tray, a potted plant, Sunday morning",
+  "persos": [
+   {
+    "nom": "the exhausted son-in-law",
+    "desc": "son-in-law in his 30s, mint-and-navy polo shirt, dark circles under his eyes, hands free",
+    "pose": "sitting in a rattan chair in the foreground on the left, leaning forward, exhausted"
+   },
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 50s, emerald-and-turquoise kaba, elegant posture, hands clasped on her lap",
+    "pose": "sitting in the middle, hands clasped, sweet smile"
+   },
+   {
+    "nom": "the father-in-law",
+    "desc": "father-in-law in his 60s, mustard-and-silver boubou, reading glasses on his nose, holding ONE single folded newspaper",
+    "pose": "sitting on the right, newspaper on his lap, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, vingt-cinq ans avec votre fille, comment vous avez supporté ?!"
+   ],
+   [
+    1,
+    "Mon fils, on attendait un gendre comme toi dêh."
+   ],
+   [
+    2,
+    "Même la dot, on a baissé."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The son-in-law asks desperately, both palms open. The mother-in-law answers sweetly, tilting her head with a warm smile. The father-in-law lowers his newspaper slightly and says his line calmly, his face clearly visible.",
+  "chute": "After the last line, the son-in-law's jaw drops and he slowly looks from one in-law to the other. The camera slowly pushes in to a close-up of the exhausted son-in-law's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "supporté",
+   "gendre",
+   "baissé"
+  ],
+  "gag_legende": "LE GENDRE SUR LE CHEMIN DU RETOUR :",
+  "mecanisme": "aveu des beaux-parents + relance assassine du beau-père (la fille a été bradée exprès pour le piéger)"
+ },
+ {
+  "id": "B008-09",
+  "titre": "Le porte-parole du fiancé",
+  "lieu": "courtyard in Adjamé, Abidjan, two rows of plastic chairs facing each other for a dowry negotiation, a table with drink crates and folded pagnes, afternoon",
+  "persos": [
+   {
+    "nom": "the betrayed groom",
+    "desc": "groom in his late 20s, burgundy-and-maroon suit, sweaty forehead, hands free",
+    "pose": "standing in the foreground on the left, hands open, outraged"
+   },
+   {
+    "nom": "the spokesman uncle",
+    "desc": "uncle in his 60s, gold-and-maroon agbada, big belly, a big watch, holding ONE single folded handkerchief",
+    "pose": "sitting in the middle, handkerchief in hand, satisfied smile"
+   },
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, mint-and-gold boubou, short beard, holding ONE single small notebook",
+    "pose": "sitting on the right, notebook on his lap, sly smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, tu es mon porte-parole ! Pourquoi la dot a doublé ?!"
+   ],
+   [
+    1,
+    "Mon fils, plus la dot monte, plus ma commission monte dêh."
+   ],
+   [
+    2,
+    "Nous aussi, on l'a payé dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The groom says his line, hands open in outrage. The uncle answers proudly, raising his handkerchief like a trophy. The bride's father taps his notebook and says his line with a sly grin, his face clearly visible.",
+  "chute": "After the last line, the uncle's smile freezes and he slowly looks away, while the groom's mouth falls open. The camera slowly pushes in to a close-up of the betrayed groom's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "porte-parole",
+   "commission",
+   "payé"
+  ],
+  "gag_legende": "LE FIANCÉ EN CHERCHANT UN AUTRE TONTON :",
+  "mecanisme": "trahison révélée + relance assassine du camp adverse qui a aussi acheté l'oncle (double trahison)"
+ },
+ {
+  "id": "B008-10",
+  "titre": "Le partage de la dot",
+  "lieu": "courtyard of a family compound in Koumassi, Abidjan, a mat with empty drink crates, plastic chairs, string lights, evening after the ceremony",
+  "persos": [
+   {
+    "nom": "the robbed groom",
+    "desc": "groom in his early 30s, saffron-and-sky-blue shirt, thin moustache, holding ONE single empty envelope",
+    "pose": "standing in the foreground on the left, holding the empty envelope upside down, outraged"
+   },
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, emerald-and-turquoise kaftan, round face, both hands on his belly",
+    "pose": "sitting in a plastic chair in the middle, hands on his belly, satisfied"
+   },
+   {
+    "nom": "the bride",
+    "desc": "bride in her late 20s, mustard-and-turquoise kaba, braided bun, arms crossed",
+    "pose": "standing on the right, arms crossed, sulking"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, chacun a pris sa part de ma dot. Et ma femme alors ?!"
+   ],
+   [
+    1,
+    "Ta femme a eu sa part, mon fils : c'est toi."
+   ],
+   [
+    2,
+    "Papa, je peux échanger avec Tantie ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The groom shakes the empty envelope upside down and asks his line, outraged. The father answers calmly, pointing at the groom with an open hand. The bride turns her head toward her father and asks her line hopefully, her face clearly visible.",
+  "chute": "After the last line, the groom freezes, the empty envelope hanging from his fingers. The camera slowly pushes in to a close-up of the robbed groom's insulted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "part",
+   "dot",
+   "échanger"
+  ],
+  "gag_legende": "TANTIE EN CACHANT VITE SON PAGNE :",
+  "mecanisme": "retournement (le mari est le lot de la mariée) + relance assassine de la mariée qui veut échanger"
+ },
+ {
+  "id": "B008-11",
+  "titre": "L'inspection de la valise",
+  "lieu": "living room in Marcory, Abidjan, an open suitcase full of folded pagnes on a low table, armchairs around, dowry ceremony, afternoon",
+  "persos": [
+   {
+    "nom": "the bride's aunt",
+    "desc": "aunt in her 50s, mint-and-navy kaba, big round glasses, holding ONE single folded pagne in both hands",
+    "pose": "standing behind the open suitcase on the left, holding up the folded pagne, suspicious"
+   },
+   {
+    "nom": "the nervous groom",
+    "desc": "groom in his late 20s, mint-and-gold suit, nervous smile, hands free",
+    "pose": "standing in the foreground in the middle, hands clasped, nervous"
+   },
+   {
+    "nom": "the groom's mother",
+    "desc": "groom's mother in her 50s, burgundy-and-maroon wrapper dress, sharp eyebrows, hands on her hips",
+    "pose": "standing on the right, hands on hips, frowning"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, les pagnes de ta valise-là sentent déjà le parfum de quelqu'un !"
+   ],
+   [
+    1,
+    "Tantie, c'est le parfum de l'amour dêh."
+   ],
+   [
+    2,
+    "C'est mon parfum-là ! Rends mes pagnes !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The aunt lifts the folded pagne slightly toward the groom and says her line, frowning. The groom answers with a forced romantic smile, one hand on his chest. The groom's mother, hands on hips, says her line angrily, her face clearly visible.",
+  "chute": "After the last line, the groom's forced smile freezes while the aunt slowly lowers the pagne. The camera slowly pushes in to a close-up of the nervous groom's exposed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "valise",
+   "parfum",
+   "pagnes"
+  ],
+  "gag_legende": "MAMAN EN VÉRIFIANT SON ARMOIRE CE SOIR :",
+  "mecanisme": "excuse romantique + relance assassine de la propre mère du fiancé (les pagnes de la dot sont les siens)"
+ },
+ {
+  "id": "B008-12",
+  "titre": "Le gendre au marché d'Adjamé",
+  "lieu": "fabric stall at Adjamé market, Abidjan, stacks of folded pagnes on a wooden table, a big parasol, busy market background, morning",
+  "persos": [
+   {
+    "nom": "the shocked son-in-law",
+    "desc": "son-in-law in his 30s, gold-and-maroon t-shirt, wide eyes, hands free",
+    "pose": "standing in the foreground on the left, in front of the stall, pointing at the pagnes, shocked"
+   },
+   {
+    "nom": "the father-in-law",
+    "desc": "father-in-law in his 60s, peach-and-cherry boubou, short beard, holding ONE single folded pagne",
+    "pose": "standing behind the stall in the middle, holding up a folded pagne, calm"
+   },
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 50s, mint-and-gold wrapper dress, big smile, one hand on the stack of pagnes",
+    "pose": "sitting behind the stall on the right, one hand on the stack, smiling like a saleswoman"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton ?! Vous vendez les pagnes de ma dot au marché ?!"
+   ],
+   [
+    1,
+    "Mon fils, la dot doit circuler. C'est l'économie dêh."
+   ],
+   [
+    2,
+    "Prends-en un. Prix famille dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The son-in-law points at the pagnes and shouts his line. The father-in-law answers calmly, holding up the folded pagne as if it were obvious. The mother-in-law pats the stack and says her line with a big commercial smile, her face clearly visible.",
+  "chute": "After the last line, the son-in-law's pointing hand slowly drops, his mouth open. The camera slowly pushes in to a close-up of the shocked son-in-law's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "pagnes",
+   "circuler",
+   "Prix famille"
+  ],
+  "gag_legende": "LE GENDRE EN SORTANT SON PORTE-MONNAIE :",
+  "mecanisme": "justification absurde du beau-père + relance assassine commerciale de la belle-mère"
+ },
+ {
+  "id": "B008-13",
+  "titre": "Le cabri de la dot",
+  "lieu": "backyard of a house in Koumassi, Abidjan, a goat tied to a wooden post, a water basin, plastic chairs, morning",
+  "persos": [
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, mustard-and-silver tunic, bald head, bushy eyebrows, hands free",
+    "pose": "standing in the foreground on the left, pointing at the goat, shocked"
+   },
+   {
+    "nom": "the innocent groom",
+    "desc": "groom in his late 20s, emerald-and-turquoise polo shirt, innocent round face, holding ONE single rope tied to the goat",
+    "pose": "standing in the middle next to the goat, holding the rope, innocent"
+   },
+   {
+    "nom": "the bride",
+    "desc": "bride in her late 20s, saffron-and-sky-blue dress, braided bun, arms crossed",
+    "pose": "standing on the right, arms crossed, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, le cabri de ta dot-là, c'est mon cabri dêh !"
+   ],
+   [
+    1,
+    "Oui Tonton. Votre femme me l'a vendu hier soir."
+   ],
+   [
+    2,
+    "Papa, c'est moi j'ai négocié."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The father points at the goat and says his line, eyes wide. The groom answers innocently, lifting the rope slightly; the goat stays calm. The bride raises her chin and says her line proudly, her face clearly visible.",
+  "chute": "After the last line, the father's pointing arm stays frozen in the air as he slowly turns his head toward his daughter. The camera slowly pushes in to a close-up of the bride's father's robbed, disbelieving face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "cabri",
+   "vendu",
+   "négocié"
+  ],
+  "gag_legende": "PAPA EN COMPTANT SES POULES CE SOIR :",
+  "mecanisme": "révélation en cascade (l'épouse puis la fille) + relance assassine de la fille complice"
+ },
+ {
+  "id": "B008-14",
+  "titre": "La liste de la dot",
+  "lieu": "living room in Adjamé, Abidjan, a sofa, an armchair, a single light bulb hanging from the ceiling, evening",
+  "persos": [
+   {
+    "nom": "the outraged groom",
+    "desc": "groom in his early 30s, mint-and-navy shirt, thick eyebrows, holding ONE single long handwritten list with both hands",
+    "pose": "standing in the foreground on the left, holding the long list with both hands, outraged"
+   },
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, mustard-and-turquoise kaftan, salt-and-pepper hair, hands free",
+    "pose": "sitting in an armchair in the middle, solemn"
+   },
+   {
+    "nom": "the bride's mother",
+    "desc": "mother in her 50s, peach-and-cherry wrapper dress, round glasses, hands free",
+    "pose": "sitting on the sofa on the right, very serious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, pourquoi votre facture CIE est dans la liste de la dot ?!"
+   ],
+   [
+    1,
+    "Mon fils, c'est mon courant qui a fait grandir ta femme."
+   ],
+   [
+    2,
+    "Et Sodeci-là a lavé ta femme."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The groom, holding the long list with both hands, reads and asks his line in outrage. The father answers solemnly, pointing up at the light bulb. The mother raises one finger and adds her line very seriously, her face clearly visible.",
+  "chute": "After the last line, the groom slowly lowers the list, his mouth hanging open. The camera slowly pushes in to a close-up of the outraged groom's ruined face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "facture CIE",
+   "courant",
+   "Sodeci"
+  ],
+  "gag_legende": "LE FIANCÉ EN LISANT LA PAGE DEUX :",
+  "mecanisme": "logique absurde de remboursement des factures + relance assassine de la belle-mère"
+ },
+ {
+  "id": "B008-15",
+  "titre": "Le tonton directeur de banque",
+  "lieu": "living room of the bride's family in Marcory, Abidjan, armchairs, a sofa, a coffee table with a tray of glasses, framed photos on the wall, evening visit",
+  "persos": [
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, burgundy-and-maroon boubou, thick glasses, hands on his knees",
+    "pose": "sitting in an armchair on the left, impressed"
+   },
+   {
+    "nom": "the lying groom",
+    "desc": "groom in his late 20s, peach-and-cherry suit, proud smile, hands free",
+    "pose": "sitting on the sofa in the foreground in the middle, proud"
+   },
+   {
+    "nom": "the fake uncle",
+    "desc": "man in his 50s, mint-and-navy suit, jacket far too big for him, slicked-back hair, holding ONE single cheap briefcase on his knees",
+    "pose": "sitting on the right, briefcase on his knees, chest out"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, ton tonton-là est vraiment directeur de banque ?"
+   ],
+   [
+    1,
+    "Oui Tonton ! Il est venu exprès pour moi dêh."
+   ],
+   [
+    2,
+    "Petit, mes cinq mille de figuration-là, c'est quand ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The father asks, leaning forward, impressed. The groom answers proudly, gesturing toward the fake uncle with an open hand. The fake uncle leans toward the groom and says his line in a loud whisper, his face clearly visible.",
+  "chute": "After the last line, the groom's proud smile freezes and the father slowly turns his head toward him, eyebrows rising. The camera slowly pushes in to a close-up of the lying groom's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "directeur",
+   "cinq mille",
+   "figuration"
+  ],
+  "gag_legende": "PAPA EN FERMANT LE PORTAIL :",
+  "mecanisme": "arroseur arrosé : le faux tonton payé révèle lui-même la supercherie"
+ },
+ {
+  "id": "B008-16",
+  "titre": "La dot payée à distance",
+  "lieu": "courtyard of a house in Koumassi, Abidjan, an empty wooden post with a loose rope where a sheep should be tied, plastic chairs, afternoon",
+  "persos": [
+   {
+    "nom": "the modern groom",
+    "desc": "groom in his late 20s, gold-and-maroon tracksuit, trendy haircut, holding ONE single phone",
+    "pose": "standing in the foreground on the left, holding up his phone, proud"
+   },
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, emerald-and-turquoise tunic, short beard, holding ONE single phone",
+    "pose": "standing on the right next to the empty post, holding his own phone, unimpressed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, le mouton de la dot, je l'ai envoyé par mobile money dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Ta femme aussi, tu vas la voir en appel vidéo."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The groom, in the foreground, holds up his phone proudly and says his line. The father, unimpressed, raises his own phone, taps it once and says his line calmly, his face clearly visible.",
+  "chute": "After the last line, the groom's phone starts ringing; he looks at the screen and his proud smile collapses. The camera slowly pushes in to a close-up of the modern groom's dumbfounded face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "mouton",
+   "mobile money",
+   "appel vidéo"
+  ],
+  "gag_legende": "LE FIANCÉ EN CHARGEANT SON TÉLÉPHONE :",
+  "mecanisme": "arroseur arrosé par logique absurde : dot virtuelle, donc épouse virtuelle"
+ },
+ {
+  "id": "B008-17",
+  "titre": "Le fiancé attend au salon",
+  "lieu": "living room in Adjamé, Abidjan, a sofa, an armchair, a low table, a ceiling fan, hot afternoon",
+  "persos": [
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, mustard-and-silver kaftan, salt-and-pepper beard, right hand on his heart",
+    "pose": "sitting in an armchair in the foreground on the left, hand on his heart, solemn"
+   },
+   {
+    "nom": "the thirsty groom",
+    "desc": "groom in his early 30s, mustard-and-turquoise shirt, sweat drops on his forehead, holding ONE single empty glass",
+    "pose": "sitting on the sofa in the middle, holding the empty glass, thirsty"
+   },
+   {
+    "nom": "the little brother",
+    "desc": "boy around 8, burgundy-and-maroon t-shirt, missing front tooth, hands free",
+    "pose": "standing on the right, wide innocent eyes"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, chez nous, l'argent ne compte pas. Seul l'amour compte dêh."
+   ],
+   [
+    2,
+    "Papa, tu as dit pas d'eau pour lui tant qu'il a pas payé."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The father, seated in the foreground, says his line solemnly, hand on his heart, while the groom nods politely, holding the empty glass. The little boy points at the empty glass and says his line innocently, his face clearly visible.",
+  "chute": "After the last line, the groom slowly looks down at his empty glass, then at the father. The camera slowly pushes in to a close-up of the bride's father's frozen, busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "l'amour",
+   "d'eau",
+   "payé"
+  ],
+  "gag_legende": "LE FIANCÉ EN CHERCHANT LE ROBINET :",
+  "mecanisme": "témoin innocent : le petit frère révèle la consigne cachée du père hypocrite"
+ },
+ {
+  "id": "B008-18",
+  "titre": "La promesse du gendre",
+  "lieu": "small living room of a couple's apartment in Marcory, Abidjan, a sofa, a TV on a stand, a framed wedding photo on the wall, Saturday afternoon",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 50s, mustard-and-silver kaba, big hoop earrings, holding ONE single handbag on her arm",
+    "pose": "standing in the foreground on the left, handbag on her arm, pointing an accusing finger"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 30s, saffron-and-sky-blue t-shirt, relaxed face, short hair, hands free",
+    "pose": "sitting on the sofa on the right, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon gendre, tu as promis de rendre ma fille heureuse dêh !"
+   ],
+   [
+    1,
+    "Elle est heureuse, Maman. Depuis qu'elle a quitté chez vous."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The mother-in-law, in the foreground, points her accusing finger and says her line. The son-in-law answers calmly with a gentle smile, opening his palms, his face clearly visible.",
+  "chute": "After the last line, the mother-in-law's finger stays frozen in the air, her mouth open. The camera slowly pushes in to a close-up of the mother-in-law's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "heureuse",
+   "quitté"
+  ],
+  "gag_legende": "BELLE-MAMAN EN APPELANT SA FILLE :",
+  "mecanisme": "retournement à double cible : le bonheur de la fille vient de l'absence de sa mère, pas du gendre"
+ },
+ {
+  "id": "B008-19",
+  "titre": "Le premier déjeuner des deux familles",
+  "lieu": "dining room of the bride's family house in Koumassi, Abidjan, a big table with covered dishes, chairs, lunchtime",
+  "persos": [
+   {
+    "nom": "the little girl",
+    "desc": "girl around 7, gold-and-maroon dress, two puff ponytails, hands free",
+    "pose": "standing on the left near the table, pointing at the covered dishes, excited"
+   },
+   {
+    "nom": "the groom's mother",
+    "desc": "groom's mother in her 50s, mint-and-gold kaftan, big glasses, holding ONE single handbag on her arm",
+    "pose": "standing in the foreground in the middle, handbag on her arm, polite smile"
+   },
+   {
+    "nom": "the bride's mother",
+    "desc": "bride's mother in her 50s, mint-and-navy boubou, plump face, holding ONE single serving spoon",
+    "pose": "standing behind the table on the right, holding the serving spoon, welcoming"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, c'est ici on va venir manger chaque dimanche ?"
+   ],
+   [
+    1,
+    "Chut ! On a dit après la dot seulement dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The bride's mother keeps a welcoming smile, holding the serving spoon. The little girl asks her line loudly and innocently, pointing at the covered dishes. The groom's mother, in the foreground, turns her head toward the girl and says her line in a sharp whisper, her face clearly visible.",
+  "chute": "After the last line, the groom's mother turns back with a huge frozen fake smile while the bride's mother slowly lowers the spoon. The camera slowly pushes in to a close-up of the groom's mother's busted, fake-smiling face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "dimanche",
+   "après la dot"
+  ],
+  "gag_legende": "LA BELLE-FAMILLE CHAQUE DIMANCHE À MIDI :",
+  "mecanisme": "témoin innocent : la petite révèle le plan et la mère le confirme en croyant corriger"
+ },
+ {
+  "id": "B008-20",
+  "titre": "Le conseil du futur beau-père",
+  "lieu": "courtyard of a house in Marcory, Abidjan, a mango tree, plastic chairs and a wooden bench, late afternoon",
+  "persos": [
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, emerald-and-turquoise agbada, bald head, deep wrinkles, tired eyes, hands free",
+    "pose": "sitting on a plastic chair in the foreground on the left, leaning forward, wise"
+   },
+   {
+    "nom": "the handsome suitor",
+    "desc": "suitor in his late 20s, gold-and-maroon shirt, very handsome, neat haircut, hands free",
+    "pose": "standing in the middle, smiling"
+   },
+   {
+    "nom": "the bride's mother",
+    "desc": "mother in her 50s, peach-and-cherry kaba, elegant, holding ONE single hand fan",
+    "pose": "sitting on the bench on the right, fanning herself gently, flattered"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, avant la fille, regarde bien la maman."
+   ],
+   [
+    1,
+    "Je regarde, Tonton. Elle est jolie."
+   ],
+   [
+    0,
+    "Maintenant regarde-moi. C'est toi dans vingt ans."
+   ],
+   [
+    2,
+    "Je l'ai reçu comme ça, dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Each speaker keeps a three-quarter face toward the camera. The father, seated in the foreground, says his first line wisely, nodding toward his wife. The suitor looks at the mother and answers with an admiring smile. The father taps his own chest with one hand and says his second line gravely. The mother stops fanning and says her line with a shrug, her face clearly visible.",
+  "chute": "After the last line, the father slowly turns his head toward his wife, insulted, then back to the camera. The camera slowly pushes in to a close-up of the bride's father's insulted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "maman",
+   "vingt ans",
+   "reçu"
+  ],
+  "gag_legende": "LE FIANCÉ DEVANT LE MIROIR CE SOIR :",
+  "mecanisme": "retournement à double cible (le mariage l'a abîmé) + relance assassine de l'épouse qui refuse toute responsabilité"
+ }
+]

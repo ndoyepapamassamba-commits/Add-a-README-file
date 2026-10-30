@@ -1,0 +1,22 @@
+[
+  {"id": "B003-01", "note": 6, "drapeaux": [], "remarque": "Triple jeu moitié/quart/quartiers qui cache un aveu d'autres femmes : retournement malin, mais il faut une seconde pour comprendre et ça ne fait pas éclater de rire."},
+  {"id": "B003-02", "note": 5.5, "drapeaux": [], "remarque": "Le double sens de « tenir » (sa promesse, le bébé) est propre et vise bien le mari, mais la chute fait sourire plus qu'elle ne choque."},
+  {"id": "B003-03", "note": 6, "drapeaux": [], "remarque": "« Tu es livré avec » achève bien le mari qui fait partie des meubles, mais l'idée se voit venir dès la deuxième réplique."},
+  {"id": "B003-04", "note": 7, "drapeaux": ["danger"], "remarque": "Vraie gifle : le compliment devient une demande d'argent et la belle-mère cupide fait une deuxième cible, mais il y a une marque (CIE) et « vendre son cœur » touche au corps."},
+  {"id": "B003-05", "note": 4, "drapeaux": ["connu"], "remarque": "La souris dans la cuisine vide qui ne trouvera rien à manger est un classique d'internet, et la petite variante (« appelle-moi s'il trouve ») ne suffit pas à surprendre."},
+  {"id": "B003-06", "note": 5.5, "drapeaux": [], "remarque": "La relance absurde « tu sens pas que tu es rassasiée ? » est drôle, mais l'argument « un seul corps » est un peu forcé et la chute manque de férocité."},
+  {"id": "B003-07", "note": 5, "drapeaux": ["danger"], "remarque": "« Lumière de ma vie » qui remplace le courant se devine dès que la phrase est dite ; « le match commence » relance un peu ; il y a une marque (CIE)."},
+  {"id": "B003-08", "note": 6, "drapeaux": [], "remarque": "Lire le serment comme un forfait mobile (« pire seulement, le meilleur était trop cher ») est un angle neuf et méchant, sans aller jusqu'à l'éclat de rire."},
+  {"id": "B003-09", "note": 6, "drapeaux": [], "remarque": "La réplique est implacable et frappe deux cibles (la caisse vidée et la belle-mère), mais la blague de la belle-mère qui gâche la journée reste un ressort usé."},
+  {"id": "B003-10", "note": 5.5, "drapeaux": [], "remarque": "Vérifier « je ne peux pas vivre sans toi » comme une expérience est féroce, mais c'est un retournement assez attendu, déjà vu sous d'autres formes."},
+  {"id": "B003-11", "note": 6, "drapeaux": ["connu"], "remarque": "La relance « avec ton salaire, il va rester neuf » est cruelle et achève bien le mari, mais la situation des deux habits pareils, « un pour toi, l'autre pour... », reprend le 802 du catalogue."},
+  {"id": "B003-12", "note": 4, "drapeaux": ["connu"], "remarque": "Le « voisin modèle » qui gâte sa femme est une situation classique, et la commande d'omelette ne crée aucun vrai choc."},
+  {"id": "B003-13", "note": 5.5, "drapeaux": [], "remarque": "« Ce qui commence à pourrir, faut congeler » est une image noire et inattendue sur le couple, mais on ne sait pas trop si c'est tendre ou cruel, ce qui affaiblit l'impact."},
+  {"id": "B003-14", "note": 5, "drapeaux": [], "remarque": "Le retournement jalousie → poulet marche, mais la relance (« elle cachait le poulet ») ne fait que répéter la deuxième réplique au lieu d'achever."},
+  {"id": "B003-15", "note": 7, "drapeaux": [], "remarque": "Le surnom secret « le locataire » révélé par l'enfant trahit papa et maman à la fois : retournement fort et réplique qu'on a envie de rejouer."},
+  {"id": "B003-16", "note": 4.5, "drapeaux": [], "remarque": "Tendre mais prévisible : dès « je viens avec l'argent », on sait qu'elle attend toujours, et la relance n'ajoute aucune surprise."},
+  {"id": "B003-17", "note": 7, "drapeaux": [], "remarque": "« Tu es déjà amortie » est une insulte glaciale déguisée en compliment, avec un double sens comptable très féroce qui surprend vraiment."},
+  {"id": "B003-18", "note": 7, "drapeaux": [], "remarque": "La relance de l'enfant, « donc moi-même je suis à crédit ?! », achève la logique de la dette avec une vraie surprise et vise toute la famille."},
+  {"id": "B003-19", "note": 5.5, "drapeaux": [], "remarque": "La révélation froide (« je cotise depuis le jour du mariage ») fait son effet, mais l'idée de la caisse secrète du divorce est assez attendue."},
+  {"id": "B003-20", "note": 5.5, "drapeaux": [], "remarque": "La provocation retournée en insulte sur la sauce est nette et méchante, mais c'est une pique classique sur la cuisine plutôt qu'un éclat de rire."}
+]

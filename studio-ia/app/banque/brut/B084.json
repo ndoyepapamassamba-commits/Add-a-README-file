@@ -1,0 +1,971 @@
+[
+ {
+  "id": "B084-01",
+  "titre": "Le fiancé d'Amérique",
+  "lieu": "living room of a villa in Riviera Golf, Abidjan, a big sofa, a low table, framed family photos on the wall, late afternoon",
+  "persos": [
+   {
+    "nom": "the furious grandfather",
+    "desc": "grandfather in his 70s, ruby-and-salmon boubou, long goatee, holding ONE single wooden walking stick",
+    "pose": "sitting in an armchair in the foreground on the left, both hands on the walking stick, glaring"
+   },
+   {
+    "nom": "the granddaughter in love",
+    "desc": "young woman around 25, plum-and-rose jumpsuit, long braids, holding ONE single smartphone against her chest",
+    "pose": "standing in the middle, the phone pressed to her chest, pleading"
+   },
+   {
+    "nom": "the dreamy grandmother",
+    "desc": "grandmother in her 70s, magenta-and-violet kaba, round glasses, a headscarf, holding ONE single smartphone",
+    "pose": "sitting on the sofa on the right, looking at her phone with a soft smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton fiancé d'Amérique-là, tu l'as jamais vu, et tu lui envoies l'argent ?!"
+   ],
+   [
+    1,
+    "Papi, il est bloqué à la douane, c'est pas sa faute dêh !"
+   ],
+   [
+    2,
+    "Le mien aussi est bloqué dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandfather, in the foreground, frowns and taps his walking stick on the floor as he accuses, his face turned three-quarters to the camera. The granddaughter, the phone pressed to her chest, answers with a pleading look. The grandmother looks up from her phone and says her line calmly with a tender smile, her face clearly visible.",
+  "chute": "The grandfather slowly turns his head toward the grandmother, eyes wide, mouth open, frozen. The camera slowly pushes in to a close-up of the furious grandfather's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "Amérique",
+   "douane",
+   "bloqué"
+  ],
+  "gag_legende": "PAPI EN FOUILLANT LE TÉLÉPHONE DE MAMIE :",
+  "mecanisme": "relance assassine : la grand-mère avoue la même arnaque, double cible"
+ },
+ {
+  "id": "B084-02",
+  "titre": "Le téléphone des jeunes",
+  "lieu": "shaded terrace of a house in Angré 8e tranche, Abidjan, two cushioned chairs, potted plants, morning light",
+  "persos": [
+   {
+    "nom": "the cocky grandson",
+    "desc": "teenage boy around 15, sand-and-amber tracksuit, short twists, earphones around his neck",
+    "pose": "standing in the foreground in the middle, hands on his hips, smug"
+   },
+   {
+    "nom": "the influencer grandmother",
+    "desc": "grandmother in her late 60s, rust-and-emerald kaftan, big earrings, holding ONE single smartphone",
+    "pose": "sitting on a chair on the left, holding the phone up, confident"
+   },
+   {
+    "nom": "the grandfather with the newspaper",
+    "desc": "grandfather in his 70s, coral-and-silver shirt, bald head, holding ONE single folded newspaper",
+    "pose": "sitting on a chair on the right, the newspaper on his knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mamie, laisse le téléphone-là, c'est pour les jeunes dêh !"
+   ],
+   [
+    1,
+    "Mon petit, j'ai trois cent mille abonnés. Toi, tu as combien ?"
+   ],
+   [
+    2,
+    "Lui, il a sa maman seulement."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandson, in the foreground, says his line with a mocking smile, his face turned three-quarters to the camera. The grandmother raises an eyebrow and answers proudly, tapping her phone screen with one finger. The grandfather lowers his newspaper and says his line with a sly grin, his face clearly visible.",
+  "chute": "The grandson's smile collapses; he stares into space, crushed. The camera slowly pushes in to a close-up of the cocky grandson's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "abonnés",
+   "jeunes",
+   "maman"
+  ],
+  "gag_legende": "LE PETIT EN SUPPRIMANT SON COMPTE :",
+  "mecanisme": "relance assassine : la grand-mère humilie, le grand-père achève le petit-fils"
+ },
+ {
+  "id": "B084-03",
+  "titre": "Trente ans sans enfant",
+  "lieu": "living room of an apartment in Deux-Plateaux Vallons, Abidjan, a sofa, a coffee table with a bowl of fruit, evening lamp light",
+  "persos": [
+   {
+    "nom": "the boasting grandfather",
+    "desc": "grandfather in his late 70s, teal-and-rose boubou, thin moustache, holding ONE single fly whisk",
+    "pose": "sitting in an armchair in the foreground on the left, chest puffed out"
+   },
+   {
+    "nom": "the single granddaughter",
+    "desc": "woman around 30, ochre-and-cyan dress, short natural hair, a small handbag on her shoulder",
+    "pose": "standing in the middle, arms crossed, amused"
+   },
+   {
+    "nom": "the grandmother who counts",
+    "desc": "grandmother in her 70s, magenta-and-sand kaba, reading glasses, a headscarf, hands folded on her lap",
+    "pose": "sitting on the sofa on the right, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Trente ans sans enfant ?! À ton âge, j'avais dix enfants dêh !"
+   ],
+   [
+    1,
+    "Ehh papi, cite-moi leurs prénoms alors."
+   ],
+   [
+    0,
+    "Euh… demande à ta grand-mère-là."
+   ],
+   [
+    2,
+    "Moi, j'en connais que sept dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandfather, in the foreground, waves his fly whisk proudly as he scolds, his face turned three-quarters to the camera. The granddaughter tilts her head and asks with a teasing smile. The grandfather hesitates, his smile stiffening, and points the fly whisk toward the grandmother. The grandmother answers very calmly, looking straight at him, her face clearly visible.",
+  "chute": "The grandfather stops moving, eyes wide, his fly whisk frozen in the air. The camera slowly pushes in to a close-up of the boasting grandfather's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "dix enfants",
+   "prénoms",
+   "sept"
+  ],
+  "gag_legende": "PAPI QUAND MAMIE COMPTE SUR SES DOIGTS :",
+  "mecanisme": "relance assassine : la vantardise cale, la grand-mère révèle trois enfants cachés"
+ },
+ {
+  "id": "B084-04",
+  "titre": "Le papa qui garde le bébé",
+  "lieu": "living room of a modern apartment in Angré Château, Abidjan, a baby bouncer on the floor with a sleeping baby, a sofa, morning",
+  "persos": [
+   {
+    "nom": "the shocked grandmother",
+    "desc": "grandmother in her 60s, ruby-and-salmon kaba, a headscarf, big earrings, hands on her hips",
+    "pose": "standing on the left, hands on her hips"
+   },
+   {
+    "nom": "the stay-at-home husband",
+    "desc": "man in his 30s, plum-and-rose t-shirt, short beard, holding ONE single baby bottle",
+    "pose": "standing in the foreground in the middle, holding the baby bottle, proud"
+   },
+   {
+    "nom": "the working wife",
+    "desc": "woman in her 30s, coral-and-silver trouser suit, short hair, a laptop bag on her shoulder",
+    "pose": "standing on the right near the door, ready to leave"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Toi tu gardes bébé-là, et ta femme va au bureau ?!"
+   ],
+   [
+    1,
+    "Oui mamie, on est modernes dêh."
+   ],
+   [
+    0,
+    "Ya fohi. Donc ta dot-là, elle a payé combien ?"
+   ],
+   [
+    2,
+    "Il est encore à l'essai dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandmother, hands on her hips, says her line in disbelief, her face turned three-quarters to the camera. The husband, in the foreground, lifts the baby bottle slightly and answers proudly. The grandmother narrows her eyes and asks her question slowly. The wife adjusts the strap of her bag and answers casually, her face clearly visible.",
+  "chute": "The husband's proud smile freezes, the baby bottle still in his hand. The camera slowly pushes in to a close-up of the stay-at-home husband's devastated face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "bébé",
+   "dot",
+   "essai"
+  ],
+  "gag_legende": "LE MARI EN RELISANT SON CONTRAT :",
+  "mecanisme": "relance assassine : la dot inversée, l'épouse achève le mari moderne"
+ },
+ {
+  "id": "B084-05",
+  "titre": "Papi et le mobile money",
+  "lieu": "veranda of a villa in Riviera Palmeraie, Abidjan, a long wooden bench, a small radio on a stool, afternoon",
+  "persos": [
+   {
+    "nom": "the broke grandson",
+    "desc": "young man around 20, magenta-and-violet hoodie, high-top haircut, hands pressed together",
+    "pose": "standing on the right, hands pressed together, begging smile"
+   },
+   {
+    "nom": "the innocent grandfather",
+    "desc": "grandfather in his 70s, sand-and-amber kaftan, thin moustache, holding ONE single smartphone",
+    "pose": "sitting on the bench in the foreground on the left, the phone in his hand, playing innocent"
+   },
+   {
+    "nom": "the honest grandmother",
+    "desc": "grandmother in her 70s, teal-and-rose wrap dress, a headscarf, a small bracelet",
+    "pose": "sitting at the other end of the bench on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papi, envoie-moi cinq mille par mobile money dêh !"
+   ],
+   [
+    1,
+    "Mon petit, ce téléphone moderne-là, je comprends rien dedans."
+   ],
+   [
+    2,
+    "Pourtant, hier soir, il t'a bloqué dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandson, hands pressed together, begs with a big smile, his face turned three-quarters to the camera. The grandfather, in the foreground, stares at the phone with an exaggerated confused face and slowly shakes his head as he answers. The grandmother turns her head toward the grandson and says her line flatly, her face clearly visible.",
+  "chute": "The grandfather freezes with a fake innocent smile while the grandson's jaw drops. The camera slowly pushes in to a close-up of the innocent grandfather's guilty face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "mobile money",
+   "bloqué"
+  ],
+  "gag_legende": "LE PETIT QUAND IL VA RAPPELER PAPI :",
+  "mecanisme": "révélation par un tiers : le faux vieux dépassé est un expert qui bloque"
+ },
+ {
+  "id": "B084-06",
+  "titre": "Le copain qui dit bébé",
+  "lieu": "living room of a house in Deux-Plateaux 7e tranche, Abidjan, two armchairs, a coffee table with a teapot, evening",
+  "persos": [
+   {
+    "nom": "the indignant grandmother",
+    "desc": "grandmother in her late 60s, rust-and-emerald boubou, a headscarf, holding ONE single hand fan",
+    "pose": "sitting in an armchair in the foreground on the left, fanning herself"
+   },
+   {
+    "nom": "the modern granddaughter",
+    "desc": "young woman around 22, magenta-and-sand dress, big hoop earrings, holding ONE single smartphone",
+    "pose": "standing in the middle, smiling"
+   },
+   {
+    "nom": "the forgetful grandfather",
+    "desc": "grandfather in his 70s, ochre-and-cyan abacost, round glasses, hands on his knees",
+    "pose": "sitting in an armchair on the right, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi ton copain-là t'appelle bébé ? Il t'a mise au monde ?"
+   ],
+   [
+    1,
+    "Mamie, c'est l'amour moderne. Papi t'appelait comment, lui ?"
+   ],
+   [
+    0,
+    "Il disait « ma femme », avec respect dêh."
+   ],
+   [
+    2,
+    "J'avais oublié son prénom dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandmother, in the foreground, stops fanning and asks in outrage, her face turned three-quarters to the camera. The granddaughter laughs softly and answers, pointing at the grandfather. The grandmother lifts her chin proudly and says her line. The grandfather nods peacefully and says his line with total honesty, his face clearly visible.",
+  "chute": "The grandmother slowly turns her head toward the grandfather, her hand fan frozen, eyes narrowing. The camera slowly pushes in to a close-up of the indignant grandmother's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "bébé",
+   "ma femme",
+   "prénom"
+  ],
+  "gag_legende": "MAMIE APRÈS CINQUANTE ANS DE MARIAGE :",
+  "mecanisme": "aveu qui démolit : le souvenir romantique devient un simple oubli du prénom"
+ },
+ {
+  "id": "B084-07",
+  "titre": "La machine qui balaie",
+  "lieu": "living room of a modern villa in Riviera 3, Abidjan, shiny tiled floor, a round robot vacuum on the floor in front of the sofa, morning",
+  "persos": [
+   {
+    "nom": "the impressed grandmother",
+    "desc": "grandmother in her 70s, coral-and-silver kaba, a headscarf, a big bracelet",
+    "pose": "sitting on the sofa in the foreground on the left, leaning forward, pointing at the robot vacuum"
+   },
+   {
+    "nom": "the embarrassed son",
+    "desc": "man in his 40s, ruby-and-salmon polo shirt, glasses, holding ONE single TV remote",
+    "pose": "standing in the middle, awkward smile"
+   },
+   {
+    "nom": "the sharp daughter-in-law",
+    "desc": "woman in her 40s, sand-and-amber maxi dress, short locs, arms crossed",
+    "pose": "standing on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, la machine qui balaie-là, c'est ta deuxième femme ?"
+   ],
+   [
+    1,
+    "Non maman, c'est un aspirateur robot dêh."
+   ],
+   [
+    0,
+    "Ya fohi. Elle travaille plus que la première."
+   ],
+   [
+    2,
+    "Elle, elle a pas de belle-mère."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandmother, in the foreground, points at the robot vacuum and asks suspiciously, her face turned three-quarters to the camera. The son shakes his head with an awkward laugh and answers. The grandmother nods slowly, impressed, and says her line with a side glance at the daughter-in-law. The daughter-in-law answers without uncrossing her arms, a cold smile, her face clearly visible.",
+  "chute": "The grandmother's mouth drops open, her pointing finger frozen in the air. The camera slowly pushes in to a close-up of the impressed grandmother's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "deuxième femme",
+   "première",
+   "belle-mère"
+  ],
+  "gag_legende": "LA BELLE-MÈRE APRÈS CETTE RÉPONSE :",
+  "mecanisme": "relance assassine : la belle-fille retourne la pique contre la belle-mère"
+ },
+ {
+  "id": "B084-08",
+  "titre": "La femme d'autrefois",
+  "lieu": "courtyard of a house in Angré, Abidjan, under a mango tree, two plastic chairs and a wooden stool, late afternoon",
+  "persos": [
+   {
+    "nom": "the lecturing grandmother",
+    "desc": "grandmother in her 70s, plum-and-rose kaftan, a headscarf, big earrings, one finger raised",
+    "pose": "sitting on a plastic chair in the foreground on the left, lecturing"
+   },
+   {
+    "nom": "the curious granddaughter",
+    "desc": "girl around 16, teal-and-rose t-shirt, two puffs of hair, holding ONE single school notebook",
+    "pose": "sitting on the stool in the middle, curious"
+   },
+   {
+    "nom": "the happy grandfather",
+    "desc": "grandfather in his late 70s, magenta-and-violet tunic, flat cap, hands on his belly",
+    "pose": "sitting on a plastic chair on the right, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "À mon époque, la femme se taisait devant son mari dêh !"
+   ],
+   [
+    1,
+    "Ehh mamie, toi tu t'es déjà tue ?"
+   ],
+   [
+    0,
+    "Oui ! Une semaine, en soixante-quatorze dêh."
+   ],
+   [
+    2,
+    "Meilleure semaine de ma vie dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandmother, in the foreground, raises one finger and lectures proudly, her face turned three-quarters to the camera. The granddaughter tilts her head and asks with a mischievous smile. The grandmother answers proudly, nodding. The grandfather closes his eyes with a dreamy smile and says his line softly, his face clearly visible.",
+  "chute": "The grandmother turns her head toward the grandfather, her raised finger frozen, eyes furious. The camera slowly pushes in to a close-up of the lecturing grandmother's furious face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "se taisait",
+   "semaine",
+   "ma vie"
+  ],
+  "gag_legende": "PAPI PENDANT LA SEMAINE DE SILENCE :",
+  "mecanisme": "relance assassine : l'aveu de la grand-mère achevé par la nostalgie du grand-père"
+ },
+ {
+  "id": "B084-09",
+  "titre": "Trois femmes sans téléphone",
+  "lieu": "living room of a villa in Deux-Plateaux Vallons, Abidjan, a leather sofa, a low table, an old framed wedding photo on the wall, evening",
+  "persos": [
+   {
+    "nom": "the curious grandson",
+    "desc": "young man around 20, ochre-and-cyan hoodie, short dreadlocks, hands in his hoodie pocket",
+    "pose": "standing on the right, curious"
+   },
+   {
+    "nom": "the proud grandfather",
+    "desc": "grandfather in his 80s, magenta-and-sand boubou, thin goatee, holding ONE single wooden walking stick",
+    "pose": "sitting in an armchair in the foreground on the left, smug"
+   },
+   {
+    "nom": "the first wife with the phone",
+    "desc": "grandmother in her 70s, rust-and-emerald kaba, a headscarf, holding ONE single smartphone",
+    "pose": "sitting on the sofa in the middle, the phone in her hand"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papi, comment tu as géré trois femmes sans téléphone dêh ?"
+   ],
+   [
+    1,
+    "Sans téléphone, mon petit, personne ne comparait mes promesses."
+   ],
+   [
+    2,
+    "Maintenant, on a un groupe dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandson asks with admiration, his face turned three-quarters to the camera. The grandfather, in the foreground, taps his walking stick and answers with a smug wink. The grandmother raises her phone slightly and says her line calmly, her face clearly visible.",
+  "chute": "The grandfather's wink freezes and his smile melts away. The camera slowly pushes in to a close-up of the proud grandfather's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "trois femmes",
+   "promesses",
+   "groupe"
+  ],
+  "gag_legende": "PAPI QUAND SON TÉLÉPHONE VIBRE :",
+  "mecanisme": "relance assassine : la vieille ruse du polygame détruite par la modernité"
+ },
+ {
+  "id": "B084-10",
+  "titre": "Le chien du salon",
+  "lieu": "living room of a villa in Riviera Golf, Abidjan, an air conditioner on the wall, a small fluffy dog sleeping on a cushion right under it, evening",
+  "persos": [
+   {
+    "nom": "the jealous grandfather",
+    "desc": "grandfather in his 70s, ruby-and-salmon tunic, wrinkled face, holding ONE single rolled-up straw mat under his arm",
+    "pose": "standing in the foreground on the left, the mat under his arm, outraged"
+   },
+   {
+    "nom": "the blunt son",
+    "desc": "man in his 40s, magenta-and-violet shirt, glasses, hands resting on his knees",
+    "pose": "sitting on the sofa in the middle, relaxed"
+   },
+   {
+    "nom": "the daughter-in-law",
+    "desc": "woman in her 40s, teal-and-rose maxi dress, long braids, a bracelet",
+    "pose": "sitting on the sofa on the right, legs crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton chien-là dort dans la clim, et moi tu me mets au garage ?!"
+   ],
+   [
+    1,
+    "Papa, le chien-là m'a jamais demandé l'argent du transport dêh."
+   ],
+   [
+    2,
+    "Et lui, il ronfle pas dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandfather, in the foreground, points at the sleeping dog with his free hand and protests, his face turned three-quarters to the camera. The son shrugs and answers calmly. The daughter-in-law nods and adds her line with a straight face, her face clearly visible.",
+  "chute": "The grandfather slowly looks at the dog, then back at them, speechless, the mat still under his arm. The camera slowly pushes in to a close-up of the jealous grandfather's insulted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "chien",
+   "transport",
+   "ronfle"
+  ],
+  "gag_legende": "PAPI EN APPRENANT À ABOYER :",
+  "mecanisme": "relance assassine : le fils préfère le chien, la belle-fille enfonce le clou"
+ },
+ {
+  "id": "B084-11",
+  "titre": "Le prénom du bébé",
+  "lieu": "bedroom of an apartment in Angré 8e tranche, Abidjan, a wooden baby cradle with a sleeping baby, a window with curtains, midday",
+  "persos": [
+   {
+    "nom": "the outraged grandfather",
+    "desc": "grandfather in his 70s, plum-and-rose boubou, thick eyebrows, holding ONE single birth announcement card",
+    "pose": "standing on the left next to the cradle"
+   },
+   {
+    "nom": "the trendy son",
+    "desc": "man around 30, sand-and-amber shirt, trimmed beard, a watch on his wrist",
+    "pose": "standing in the foreground in the middle, hands open"
+   },
+   {
+    "nom": "the grandmother",
+    "desc": "grandmother in her late 60s, ochre-and-cyan kaba, a headscarf, hands folded",
+    "pose": "sitting on a chair on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, pourquoi ton bébé-là s'appelle Jayden ?!"
+   ],
+   [
+    1,
+    "Papa, c'est moderne. Ça veut rien dire dêh."
+   ],
+   [
+    0,
+    "Ya fohi. Comme ton diplôme-là."
+   ],
+   [
+    2,
+    "Et ton salaire-là aussi."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandfather shakes the card and asks in outrage, his face turned three-quarters to the camera. The son, in the foreground, opens his hands and answers proudly. The grandfather nods slowly and answers coldly. The grandmother adds her line calmly from her chair, her face clearly visible.",
+  "chute": "The son's proud smile collapses, his hands still open. The camera slowly pushes in to a close-up of the trendy son's wounded face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "Jayden",
+   "diplôme",
+   "salaire"
+  ],
+  "gag_legende": "LE FILS EN CHANGEANT LE PRÉNOM :",
+  "mecanisme": "relance assassine : double humiliation du fils, le diplôme puis le salaire"
+ },
+ {
+  "id": "B084-12",
+  "titre": "Le plus beau du village",
+  "lieu": "terrace of a house in Deux-Plateaux, Abidjan, two rattan armchairs, a low wooden stool, sunset",
+  "persos": [
+   {
+    "nom": "the vain grandfather",
+    "desc": "grandfather in his 80s, rust-and-emerald abacost, flat cap, hands resting on his knees",
+    "pose": "sitting in a rattan armchair in the foreground on the left, chest puffed out"
+   },
+   {
+    "nom": "the skeptical grandson",
+    "desc": "boy around 12, coral-and-silver t-shirt, short hair, holding ONE single football on his lap",
+    "pose": "sitting on the stool in the middle, skeptical"
+   },
+   {
+    "nom": "the regretful grandmother",
+    "desc": "grandmother in her 70s, teal-and-rose kaba, a headscarf, round glasses",
+    "pose": "sitting in a rattan armchair on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, à ton âge, j'étais le plus beau du village dêh !"
+   ],
+   [
+    1,
+    "Papi, vous étiez combien d'hommes au village ?"
+   ],
+   [
+    0,
+    "Deux. Moi et mon frère jumeau."
+   ],
+   [
+    2,
+    "Et moi, j'ai pris le mauvais."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandfather, in the foreground, brags with his chin up, his face turned three-quarters to the camera. The boy narrows his eyes and asks. The grandfather answers proudly, raising two fingers. The grandmother sighs and says her line with deep regret, her face clearly visible.",
+  "chute": "The grandfather's two fingers freeze in the air and his proud smile vanishes. The camera slowly pushes in to a close-up of the vain grandfather's crushed face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "plus beau",
+   "jumeau",
+   "mauvais"
+  ],
+  "gag_legende": "PAPI EN APPELANT SON FRÈRE JUMEAU :",
+  "mecanisme": "relance assassine : vantardise dégonflée puis achevée par le regret de la grand-mère"
+ },
+ {
+  "id": "B084-13",
+  "titre": "Le voisin qui ne salue pas",
+  "lieu": "front yard of a villa in Angré Château, Abidjan, a low wall separating it from the neighbour's yard, a plastic chair, morning",
+  "persos": [
+   {
+    "nom": "the nosy grandmother",
+    "desc": "grandmother in her 70s, magenta-and-sand kaftan, a headscarf, holding ONE single short straw broom",
+    "pose": "standing in the foreground on the left, holding the broom"
+   },
+   {
+    "nom": "the city son",
+    "desc": "man in his 40s, rust-and-emerald polo shirt, glasses, a car key in his hand",
+    "pose": "standing in the middle, patient"
+   },
+   {
+    "nom": "the neighbour's wife",
+    "desc": "woman in her 40s, ruby-and-salmon dress, long braids, small earrings",
+    "pose": "standing behind the low wall on the right, only her upper body visible"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton voisin-là m'a pas saluée depuis trois jours dêh !"
+   ],
+   [
+    1,
+    "Maman, à Angré, personne connaît son voisin dêh."
+   ],
+   [
+    0,
+    "Ya fohi. Moi, je connais déjà sa deuxième femme."
+   ],
+   [
+    2,
+    "Quelle deuxième femme, Tantie ?!"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandmother, in the foreground, complains loudly, pointing the broom toward the neighbour's yard, her face turned three-quarters to the camera. The son shakes his head and answers patiently. The grandmother answers with a proud, knowing smile. Behind the low wall, the neighbour's wife frowns and asks sharply, her face clearly visible.",
+  "chute": "The grandmother freezes, her proud smile turning into a guilty grimace, eyes sliding sideways. The camera slowly pushes in to a close-up of the nosy grandmother's guilty face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "voisin",
+   "deuxième femme"
+  ],
+  "gag_legende": "LE VOISIN QUAND IL VA RENTRER :",
+  "mecanisme": "relance assassine : la commère du village démolit le voisin devant sa propre femme"
+ },
+ {
+  "id": "B084-14",
+  "titre": "Le prix du poulet",
+  "lieu": "kitchen of an apartment in Riviera 3, Abidjan, a counter with a packaged whole chicken and a big price tag on it, afternoon",
+  "persos": [
+   {
+    "nom": "the shocked son",
+    "desc": "man in his 40s, plum-and-rose shirt, short beard, pointing at the chicken",
+    "pose": "standing on the right next to the counter"
+   },
+   {
+    "nom": "the outraged grandfather",
+    "desc": "grandfather in his 70s, coral-and-silver boubou, thin moustache, hands on his hips",
+    "pose": "standing in the foreground on the left, hands on his hips"
+   },
+   {
+    "nom": "the grandmother who knows",
+    "desc": "grandmother in her 70s, sand-and-amber kaba, a headscarf, arms crossed",
+    "pose": "sitting on a stool in the middle, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, au supermarché, le poulet du village coûte quinze mille dêh !"
+   ],
+   [
+    1,
+    "Quinze mille ?! Ces voleurs d'Abidjan-là n'ont pas honte !"
+   ],
+   [
+    2,
+    "C'est ton père-là qui livre chaque samedi."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The son points at the chicken and complains, his face turned three-quarters to the camera. The grandfather, in the foreground, shakes his head in loud fake outrage, hands on his hips. The grandmother looks at the grandfather and says her line flatly, her face clearly visible.",
+  "chute": "The grandfather's outrage freezes into an awkward smile as he avoids the son's eyes. The camera slowly pushes in to a close-up of the outraged grandfather's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "poulet du village",
+   "quinze mille",
+   "samedi"
+  ],
+  "gag_legende": "PAPI EN COMPTANT SES POULETS :",
+  "mecanisme": "hypocrite démasqué par un tiers : l'indigné est le fournisseur"
+ },
+ {
+  "id": "B084-15",
+  "titre": "L'argent du toit",
+  "lieu": "living room of a villa in Riviera Palmeraie, Abidjan, a sofa, a coffee table, a big window, afternoon",
+  "persos": [
+   {
+    "nom": "the suspicious son",
+    "desc": "man in his 40s, teal-and-rose shirt, glasses, arms crossed",
+    "pose": "standing on the right, arms crossed"
+   },
+   {
+    "nom": "the shameless grandfather",
+    "desc": "grandfather in his 70s, ochre-and-cyan kaftan, wrinkled face, holding ONE single brand-new large smartphone with three camera lenses",
+    "pose": "sitting in an armchair in the foreground on the left, showing off the phone"
+   },
+   {
+    "nom": "the grandmother on the sofa",
+    "desc": "grandmother in her 70s, ruby-and-salmon wrap dress, a headscarf, big earrings, hands folded",
+    "pose": "sitting on the sofa in the middle"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, l'argent du toit-là, c'est quoi tu as fait ? Il pleut toujours dedans !"
+   ],
+   [
+    1,
+    "Mon fils, j'ai acheté ce téléphone pour te prévenir quand il pleut."
+   ],
+   [
+    2,
+    "Avec trois caméras, dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The son, arms crossed, asks sternly, his face turned three-quarters to the camera. The grandfather, in the foreground, lifts the phone proudly and answers with a very serious face. The grandmother nods toward the phone and says her line with a mocking smile, her face clearly visible.",
+  "chute": "The grandfather keeps holding up the phone with a frozen proud grin while the son stares at him. The camera slowly pushes in to a close-up of the shameless grandfather's guilty face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "toit",
+   "téléphone",
+   "trois caméras"
+  ],
+  "gag_legende": "LE FILS DEVANT LA VIDÉO DE LA PLUIE :",
+  "mecanisme": "relance assassine : excuse absurde du grand-père, la grand-mère enfonce le clou"
+ },
+ {
+  "id": "B084-16",
+  "titre": "La dot à crédit",
+  "lieu": "living room of a villa in Deux-Plateaux 7e tranche, Abidjan, dowry gifts on a low table: folded fabrics and a basket of kola nuts, afternoon",
+  "persos": [
+   {
+    "nom": "the young groom",
+    "desc": "man around 30, magenta-and-violet suit, neat haircut, hands joined politely",
+    "pose": "standing in the foreground on the right, hopeful smile"
+   },
+   {
+    "nom": "the bride's grandfather",
+    "desc": "grandfather in his 70s, sand-and-amber boubou, long goatee, holding ONE single fly whisk",
+    "pose": "sitting in an armchair on the left, very serious"
+   },
+   {
+    "nom": "the bride's grandmother",
+    "desc": "grandmother in her 70s, plum-and-rose kaba, a headscarf, big earrings",
+    "pose": "sitting on a chair in the middle"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papi, la dot-là, je peux payer en plusieurs fois dêh ?"
+   ],
+   [
+    1,
+    "Ya fohi. Ma petite-fille aussi, tu vas la recevoir en plusieurs fois."
+   ],
+   [
+    2,
+    "Premier mois, sa photo seulement dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The groom, in the foreground, asks politely with a hopeful smile, his face turned three-quarters to the camera. The grandfather nods slowly and answers very seriously, waving his fly whisk. The grandmother adds her line with a sweet smile, her face clearly visible.",
+  "chute": "The groom's hopeful smile freezes, his joined hands sinking slightly. The camera slowly pushes in to a close-up of the young groom's dismayed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "dot",
+   "plusieurs fois",
+   "photo"
+  ],
+  "gag_legende": "LE GENDRE EN ENCADRANT LA PHOTO :",
+  "mecanisme": "relance assassine : la logique du crédit appliquée à la mariée"
+ },
+ {
+  "id": "B084-17",
+  "titre": "Le papier à signer",
+  "lieu": "veranda of a villa in Angré 8e tranche, Abidjan, a small table, two chairs, afternoon",
+  "persos": [
+   {
+    "nom": "the sneaky grandson",
+    "desc": "young man around 25, rust-and-emerald tracksuit, short haircut, holding ONE single pen",
+    "pose": "standing in the foreground on the right, leaning slightly toward the grandfather, fake smile"
+   },
+   {
+    "nom": "the reading grandfather",
+    "desc": "grandfather in his 70s, magenta-and-sand tunic, glasses, holding ONE single sheet of paper",
+    "pose": "sitting on a chair on the left, reading the paper"
+   },
+   {
+    "nom": "the proud grandmother",
+    "desc": "grandmother in her 70s, coral-and-silver kaftan, a headscarf, hands folded",
+    "pose": "sitting on a chair in the middle"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papi, signe juste ici, c'est pour toucher ta pension dêh."
+   ],
+   [
+    1,
+    "Mon petit, ton papier-là dit : vente du champ de cacao."
+   ],
+   [
+    2,
+    "Il sait lire depuis lundi dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandson, in the foreground, holds out the pen and says his line sweetly, his face turned three-quarters to the camera. The grandfather lowers the paper and reads it aloud slowly, staring at the grandson over his glasses. The grandmother says her line proudly, her face clearly visible.",
+  "chute": "The grandson's fake smile freezes, the pen still held out. The camera slowly pushes in to a close-up of the sneaky grandson's caught face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "pension",
+   "champ de cacao",
+   "lire"
+  ],
+  "gag_legende": "LE PETIT-FILS EN RANGEANT SON STYLO :",
+  "mecanisme": "relance assassine : l'arnaque du petit-fils tombe sur le seul lundi qui compte"
+ },
+ {
+  "id": "B084-18",
+  "titre": "Le restaurant chic",
+  "lieu": "chic restaurant in Deux-Plateaux, Abidjan, a table with ONE large plate holding a tiny portion of food in the middle, evening",
+  "persos": [
+   {
+    "nom": "the scandalised grandmother",
+    "desc": "grandmother in her 70s, ochre-and-cyan boubou, a headscarf, big earrings, pointing at the plate",
+    "pose": "sitting at the table in the foreground on the left"
+   },
+   {
+    "nom": "the granddaughter who invited",
+    "desc": "woman around 28, magenta-and-violet dress, sleek ponytail, a small clutch bag",
+    "pose": "sitting at the table in the middle"
+   },
+   {
+    "nom": "the youngest son",
+    "desc": "man in his 50s, magenta-and-sand shirt, receding hairline, hands flat on the table",
+    "pose": "sitting at the table on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma fille, vingt mille pour trois grains de riz ?!"
+   ],
+   [
+    1,
+    "Mamie, c'est gastronomique, c'est raffiné dêh."
+   ],
+   [
+    0,
+    "Au village, ça s'appelle la part du dernier enfant."
+   ],
+   [
+    2,
+    "Moi, j'ai mangé ça vingt ans."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. Nobody eats. The grandmother, in the foreground, points at the tiny portion and protests, her face turned three-quarters to the camera. The granddaughter answers with an embarrassed smile. The grandmother answers with authority, tapping the table with one finger. The son says his line with a dark, haunted stare, his face clearly visible.",
+  "chute": "The grandmother slowly turns toward her son, her pointing finger frozen, caught. The camera slowly pushes in to a close-up of the scandalised grandmother's embarrassed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "trois grains",
+   "dernier enfant",
+   "vingt ans"
+  ],
+  "gag_legende": "LE DERNIER ENFANT DEVANT SON ASSIETTE :",
+  "mecanisme": "relance assassine : la comparaison de la grand-mère se retourne contre elle"
+ },
+ {
+  "id": "B084-19",
+  "titre": "Le message vocal de Mamie",
+  "lieu": "living room of a villa in Riviera Golf, Abidjan, a sofa, two armchairs, morning",
+  "persos": [
+   {
+    "nom": "the exhausted grandson",
+    "desc": "young man around 18, ruby-and-salmon hoodie, short twists, holding ONE single smartphone",
+    "pose": "standing on the right, showing the phone"
+   },
+   {
+    "nom": "the long-winded grandmother",
+    "desc": "grandmother in her 70s, teal-and-rose kaftan, a headscarf, round glasses, hands on her lap",
+    "pose": "sitting in an armchair in the foreground on the left"
+   },
+   {
+    "nom": "the weary grandfather",
+    "desc": "grandfather in his 70s, plum-and-rose tunic, thick eyebrows, hands on his knees",
+    "pose": "sitting in an armchair on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mamie, ton message vocal-là dure quarante minutes dêh !"
+   ],
+   [
+    1,
+    "Mon petit, c'est court ! J'ai même pas fini les salutations."
+   ],
+   [
+    2,
+    "Elle saluait encore les chèvres dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandson holds up the phone and complains, his face turned three-quarters to the camera. The grandmother, in the foreground, waves one hand dismissively and answers, offended. The grandfather nods wearily and says his line, his face clearly visible.",
+  "chute": "The grandmother turns her head sharply toward the grandfather, offended, lips pressed. The camera slowly pushes in to a close-up of the long-winded grandmother's offended face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "quarante minutes",
+   "salutations",
+   "chèvres"
+  ],
+  "gag_legende": "LE PETIT À LA MINUTE TRENTE-NEUF :",
+  "mecanisme": "relance assassine : la tradition des salutations poussée à l'absurde par le grand-père"
+ },
+ {
+  "id": "B084-20",
+  "titre": "La salutation à genoux",
+  "lieu": "living room of a house in Angré, Abidjan, a sofa, a small purse lying on the floor in front of it, afternoon",
+  "persos": [
+   {
+    "nom": "the flattered grandmother",
+    "desc": "grandmother in her 70s, sand-and-amber wrap dress, a headscarf, big earrings, hands on her heart",
+    "pose": "sitting on the sofa on the left, beaming"
+   },
+   {
+    "nom": "the grandfather who sees everything",
+    "desc": "grandfather in his 70s, magenta-and-violet kaftan, glasses, pointing at the floor",
+    "pose": "sitting on the sofa on the right"
+   },
+   {
+    "nom": "the kneeling grandson",
+    "desc": "boy around 14, ochre-and-cyan t-shirt, short hair, one hand resting on ONE single small purse on the floor",
+    "pose": "kneeling on the floor in the foreground in the middle, head bowed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu vois ? Mon petit-fils s'agenouille pour me saluer, comme au village dêh !"
+   ],
+   [
+    1,
+    "Ma femme, ton porte-monnaie-là est sous sa main."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandson stays kneeling in the foreground the whole time, head bowed, one hand on the purse. The grandmother, hands on her heart, says her line proudly, her face turned three-quarters to the camera. The grandfather points at the floor and says his line dryly, his face clearly visible.",
+  "chute": "The grandson slowly raises his head with a frozen guilty smile, his hand still on the purse. The camera slowly pushes in to a close-up of the kneeling grandson's caught face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "saluer",
+   "porte-monnaie"
+  ],
+  "gag_legende": "MAMIE EN COMPTANT SON ARGENT :",
+  "mecanisme": "révélation par un tiers : la tradition du respect cache un vol en direct"
+ }
+]

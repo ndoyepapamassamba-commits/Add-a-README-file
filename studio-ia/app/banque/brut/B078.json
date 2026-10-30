@@ -1,0 +1,895 @@
+[
+ {
+  "id": "B078-01",
+  "titre": "Le préavis d'un mois",
+  "lieu": "small front yard of a rented house in Williamsville, Abidjan, a cracked concrete wall, a metal gate, a plastic chair, late afternoon",
+  "persos": [
+   {
+    "nom": "the angry landlord",
+    "desc": "landlord in his 60s, burgundy-and-indigo boubou, thick grey mustache, holding ONE single small notebook",
+    "pose": "standing in the foreground on the right, holding the notebook, pointing his finger at the tenant, furious"
+   },
+   {
+    "nom": "the calm tenant",
+    "desc": "tenant man in his 30s, gold-and-apricot shirt, short beard, holding ONE single folded sheet of paper",
+    "pose": "standing on the left, holding the folded paper, very calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Toi-là, tu as un mois pour quitter ma maison dêh !"
+   ],
+   [
+    1,
+    "Tonton, ta femme m'a vendu la maison hier. Toi, tu as un mois."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The landlord, in the foreground, points his finger and shouts angrily, his face turned three-quarters toward the camera. The tenant calmly raises the folded paper a little and answers with a slow smile, his face clearly visible.",
+  "chute": "The landlord freezes, his finger still raised, his mouth falling open. The camera slowly pushes in to a close-up of the angry landlord's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "mois",
+   "ta femme",
+   "vendu"
+  ],
+  "gag_legende": "LE PROPRIÉTAIRE EN RENTRANT CHEZ LUI :",
+  "mecanisme": "arroseur arrosé : l'expulseur se retrouve expulsé, vendu par sa propre femme"
+ },
+ {
+  "id": "B078-02",
+  "titre": "Le compteur qui ne bouge pas",
+  "lieu": "small courtyard of a family house in Songon, Abidjan, an electricity meter box on the wall, a thin black cable running over the back wall toward the house behind, morning",
+  "persos": [
+   {
+    "nom": "the electricity inspector",
+    "desc": "electricity inspector man in his 40s, rust-and-navy work uniform, plain cap, holding ONE single clipboard",
+    "pose": "standing in the foreground on the right, next to the meter box, frowning at the meter"
+   },
+   {
+    "nom": "the nervous father",
+    "desc": "father in his 40s, mint-and-aubergine polo shirt, round belly, nervous smile",
+    "pose": "standing in the middle, hands clasped, smiling nervously"
+   },
+   {
+    "nom": "the little boy",
+    "desc": "boy around 7, ochre-and-apricot t-shirt, big curious eyes",
+    "pose": "standing on the left next to his father, looking up at the inspector"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Monsieur, ton compteur-là ne bouge pas depuis six mois !"
+   ],
+   [
+    1,
+    "Mon frère, on économise beaucoup dêh."
+   ],
+   [
+    2,
+    "Tonton, papa dit merci pour ton courant. Ta maison est juste derrière."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The inspector, in the foreground, taps his clipboard and frowns at the meter, then turns his face toward the father. The father shrugs with a nervous smile. The boy points at the cable on the back wall and speaks proudly, his face clearly visible.",
+  "chute": "The inspector slowly turns his head toward the cable, his eyes wide. The camera slowly pushes in to a close-up of the electricity inspector's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "compteur",
+   "courant",
+   "ta maison"
+  ],
+  "gag_legende": "L'INSPECTEUR EN VOYANT SA PROPRE FACTURE :",
+  "mecanisme": "témoin innocent (enfant) : le volé est l'inspecteur lui-même"
+ },
+ {
+  "id": "B078-03",
+  "titre": "Le propriétaire coupe le courant",
+  "lieu": "shared courtyard of a rental compound in Williamsville, Abidjan, an electrical switch box with a big lever on the wall, the landlord's house with an open window in the background, evening",
+  "persos": [
+   {
+    "nom": "the furious landlord",
+    "desc": "landlord in his 50s, gold-and-apricot kaftan, bald head, one hand on the lever of the switch box",
+    "pose": "standing in the foreground on the right, one hand on the switch box lever"
+   },
+   {
+    "nom": "the relaxed tenant",
+    "desc": "tenant woman in her 30s, rust-and-ivory wrap dress, short braids, arms crossed",
+    "pose": "standing on the left, arms crossed, relaxed"
+   },
+   {
+    "nom": "the landlord's wife",
+    "desc": "landlord's wife in her 50s, ruby-and-pistachio kaba, headscarf, leaning at the open window",
+    "pose": "standing behind the open window in the background, both hands on the window sill"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tant que tu paies pas, je coupe ton courant dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, Tonton. Coupe bien."
+   ],
+   [
+    2,
+    "Chéri ! Pourquoi notre télé et notre congélateur sont coupés dêh ?!"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The landlord, in the foreground, shouts and pulls the lever down with one hand. The tenant answers calmly, arms crossed, with a small smile. In the background, the wife leans at the window and shouts toward her husband, her face clearly visible.",
+  "chute": "The landlord freezes, his hand still on the lever, his eyes wide. The camera slowly pushes in to a close-up of the furious landlord's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "courant",
+   "télé",
+   "congélateur"
+  ],
+  "gag_legende": "LE PROPRIÉTAIRE DEVANT SON PROPRE COMPTEUR :",
+  "mecanisme": "arroseur arrosé : il coupe sa propre maison, branchée en cachette chez la locataire"
+ },
+ {
+  "id": "B078-04",
+  "titre": "Les trois mois de loyer",
+  "lieu": "shaded terrace of the landlord's house in Deux-Plateaux, Abidjan, two armchairs, a low table with a receipt book, noon",
+  "persos": [
+   {
+    "nom": "the landlord",
+    "desc": "landlord in his 50s, rust-and-navy boubou, grey beard, holding ONE single receipt book",
+    "pose": "sitting in an armchair in the foreground on the right, holding the receipt book"
+   },
+   {
+    "nom": "the tenant with the phone",
+    "desc": "tenant man in his 30s, indigo-and-cyan shirt, holding ONE single smartphone",
+    "pose": "standing on the left, showing his phone screen"
+   },
+   {
+    "nom": "the landlord's wife",
+    "desc": "landlord's wife in her 50s, gold-and-apricot dress, big earrings, arms crossed",
+    "pose": "sitting in the other armchair in the middle, next to her husband"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Trois mois sans loyer, tu te moques de moi ?!"
+   ],
+   [
+    1,
+    "Tonton, j'ai tout envoyé sur ton deuxième numéro dêh."
+   ],
+   [
+    2,
+    "Quel deuxième numéro-là, chéri ?!"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The landlord, seated in the foreground, waves the receipt book angrily. The tenant calmly holds up his phone screen toward him. The wife slowly turns her head toward her husband, eyebrows raised, and speaks, her face clearly visible.",
+  "chute": "The landlord freezes, his angry face melting into panic, his eyes darting left and right. The camera slowly pushes in to a close-up of the landlord's panicked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "loyer",
+   "deuxième numéro"
+  ],
+  "gag_legende": "LE PROPRIÉTAIRE CE SOIR À LA MAISON :",
+  "mecanisme": "témoin innocent (locataire) qui trahit un secret + la victime cachée relance"
+ },
+ {
+  "id": "B078-05",
+  "titre": "Le loyer enfin payé",
+  "lieu": "front porch of a rented house in Songon, Abidjan, a wooden bench, potted plants, afternoon",
+  "persos": [
+   {
+    "nom": "the greedy landlord",
+    "desc": "landlord in his 60s, mint-and-aubergine kaftan, white goatee, holding ONE single thick envelope of banknotes",
+    "pose": "standing in the foreground on the left, holding the envelope with both hands, delighted"
+   },
+   {
+    "nom": "the proud tenant",
+    "desc": "tenant woman in her 40s, burgundy-and-indigo kaba, headwrap, hands on her hips",
+    "pose": "standing on the right, hands on her hips, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Six mois de loyer d'un coup ?! Tu as trouvé ça où dêh ?"
+   ],
+   [
+    1,
+    "Ta femme m'a prêté, Tonton. C'était caché sous ton matelas dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The landlord, in the foreground, holds the envelope up with both hands, amazed and greedy. The tenant, hands on her hips, answers with a satisfied smile, her face clearly visible.",
+  "chute": "The landlord's greedy smile freezes and he slowly lowers the envelope. The camera slowly pushes in to a close-up of the greedy landlord's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "loyer",
+   "ta femme",
+   "matelas"
+  ],
+  "gag_legende": "LE PROPRIÉTAIRE EN SOULEVANT SON MATELAS :",
+  "mecanisme": "arroseur arrosé : il est payé avec son propre argent caché"
+ },
+ {
+  "id": "B078-06",
+  "titre": "Le déménagement de deux heures",
+  "lieu": "courtyard of a rental compound in Deux-Plateaux, Abidjan, at two in the morning, ONE single street lamp, a metal gate, night",
+  "persos": [
+   {
+    "nom": "the fleeing tenant",
+    "desc": "tenant man in his 30s, rust-and-ivory tracksuit, holding ONE single rolled-up mattress under one arm",
+    "pose": "standing in the foreground on the left near the gate, holding the mattress under his arm"
+   },
+   {
+    "nom": "the landlord with the suitcase",
+    "desc": "landlord in his 50s, ruby-and-pistachio pyjamas, round belly, holding ONE single big suitcase",
+    "pose": "standing on the right, holding the suitcase handle, surprised"
+   }
+  ],
+  "dialogue": [
+   [
+    1,
+    "Toi-là, tu fuis à deux heures du matin sans payer ?!"
+   ],
+   [
+    0,
+    "Tonton, et toi, pourquoi tu as ta valise aussi dêh ?"
+   ],
+   [
+    1,
+    "Parle doucement, mon petit. La banque prend la maison demain."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The landlord, holding his suitcase, whispers angrily in surprise. The tenant, in the foreground, points at the landlord's suitcase with his free hand. The landlord glances left and right and whispers nervously, his face clearly visible.",
+  "chute": "The tenant freezes, his mouth wide open. The camera slowly pushes in to a close-up of the fleeing tenant's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "deux heures",
+   "valise",
+   "banque"
+  ],
+  "gag_legende": "LE LOCATAIRE QUI A FUI POUR RIEN :",
+  "mecanisme": "arroseur arrosé : le propriétaire qui coince le fuyard fuit lui-même"
+ },
+ {
+  "id": "B078-07",
+  "titre": "Le terrain à vendre",
+  "lieu": "empty plot of land in Songon, Abidjan, dry grass, a few wooden stakes in the ground, the lagoon visible far in the background, late morning",
+  "persos": [
+   {
+    "nom": "the suspicious buyer",
+    "desc": "buyer woman in her 50s, burgundy-and-indigo dress, small handbag, suspicious look",
+    "pose": "standing in the foreground on the left, handbag on her arm, suspicious"
+   },
+   {
+    "nom": "the land seller",
+    "desc": "land seller man in his 40s, ochre-and-apricot shirt, gold chain, big confident smile",
+    "pose": "standing in the middle, arms wide open, showing the land"
+   },
+   {
+    "nom": "the seller's son",
+    "desc": "boy around 10, mint-and-aubergine t-shirt, holding ONE single wooden paddle",
+    "pose": "standing on the right, holding the paddle upright"
+   }
+  ],
+  "dialogue": [
+   [
+    1,
+    "Tantie, ce terrain-là ne voit jamais l'eau, même en saison des pluies !"
+   ],
+   [
+    0,
+    "Mon frère, tu es sûr dêh ?"
+   ],
+   [
+    2,
+    "Papa, je rends la pirogue-là au voisin maintenant ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The seller spreads his arms proudly over the plot. The buyer, in the foreground, raises one eyebrow and asks. The boy lifts the paddle a little and asks his father innocently, his face clearly visible.",
+  "chute": "The seller's smile freezes. The buyer slowly turns her head toward the camera, eyes wide. The camera slowly pushes in to a close-up of the suspicious buyer's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "terrain",
+   "pirogue"
+  ],
+  "gag_legende": "LA TANTIE EN REPRENANT SON ARGENT :",
+  "mecanisme": "témoin innocent (enfant) qui révèle l'inondation"
+ },
+ {
+  "id": "B078-08",
+  "titre": "Le contrôle des appareils",
+  "lieu": "small living room of a rented studio in Williamsville, Abidjan, ONE single small table fan, a long low box covered with a plain cloth used as a bench, daytime",
+  "persos": [
+   {
+    "nom": "the suspicious landlord",
+    "desc": "landlord in his 60s, indigo-and-cyan boubou, thick glasses, holding ONE single small notebook",
+    "pose": "sitting in the foreground on the long box covered with the plain cloth, notebook on his knee"
+   },
+   {
+    "nom": "the smiling mother",
+    "desc": "mother in her 30s, rust-and-navy kaba, hair in a bun, hands on her hips",
+    "pose": "standing in the middle, hands on her hips, smiling too much"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 6, ruby-and-pistachio dress, two puffy pigtails",
+    "pose": "standing on the right, looking at the cloth-covered box"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Un seul ventilateur-là ? Tu caches quoi chez moi ?!"
+   ],
+   [
+    1,
+    "Oui Tonton, on vit simple dêh."
+   ],
+   [
+    2,
+    "Tonton, lève-toi doucement. Tu es assis sur le congélateur."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The landlord, seated in the foreground, taps his notebook and squints suspiciously at the mother. The mother answers with a big frozen smile. The little girl points at the cloth under the landlord and speaks kindly, her face clearly visible.",
+  "chute": "The landlord slowly looks down at the cloth under him, eyes wide. The camera slowly pushes in to a close-up of the suspicious landlord's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "ventilateur",
+   "congélateur"
+  ],
+  "gag_legende": "LE PROPRIÉTAIRE EN SOULEVANT LE DRAP :",
+  "mecanisme": "témoin innocent (enfant) : la preuve est sous les fesses de l'enquêteur"
+ },
+ {
+  "id": "B078-09",
+  "titre": "La caution du locataire",
+  "lieu": "empty kitchen of a rented apartment in Deux-Plateaux, Abidjan, white walls covered with children's crayon scribbles, an empty counter, morning",
+  "persos": [
+   {
+    "nom": "the landlord",
+    "desc": "landlord in his 50s, mint-and-cyan shirt, receding hairline",
+    "pose": "standing in the foreground on the right, pointing at the scribbled wall"
+   },
+   {
+    "nom": "the leaving tenant",
+    "desc": "tenant woman in her 30s, ochre-and-apricot jumpsuit, holding ONE single set of keys",
+    "pose": "standing on the left, holding the keys, indignant"
+   },
+   {
+    "nom": "the landlord's son",
+    "desc": "boy around 7, rust-and-ivory t-shirt, holding ONE single crayon",
+    "pose": "standing in the middle near the wall, holding the crayon"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu as gâté mes murs ! Je garde toute ta caution dêh !"
+   ],
+   [
+    1,
+    "Tonton, j'ai jamais touché ces murs-là !"
+   ],
+   [
+    2,
+    "Papa, je dessine aussi dans le salon-là maintenant ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The landlord, in the foreground, points angrily at the scribbled wall. The tenant protests, keys raised in one hand. The boy raises his crayon and asks his father innocently, his face clearly visible.",
+  "chute": "The landlord freezes with his finger still pointing at the wall, a fake smile stuck on his face. The camera slowly pushes in to a close-up of the landlord's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "murs",
+   "caution",
+   "dessine"
+  ],
+  "gag_legende": "LA LOCATAIRE EN REPRENANT SA CAUTION :",
+  "mecanisme": "témoin innocent (enfant) qui révèle l'arnaque du père"
+ },
+ {
+  "id": "B078-10",
+  "titre": "L'eau qui finit chaque soir",
+  "lieu": "front garden of a big villa in Deux-Plateaux, Abidjan, a swimming pool behind, a garden hose on the ground, a small rental building next to the villa, evening",
+  "persos": [
+   {
+    "nom": "the landlord",
+    "desc": "landlord in his 60s, rust-and-ivory kaftan, round glasses, hands behind his back",
+    "pose": "standing in the foreground on the right, hands behind his back, calm"
+   },
+   {
+    "nom": "the angry tenant",
+    "desc": "tenant man in his 40s, ruby-and-pistachio shirt, holding ONE single empty plastic bucket",
+    "pose": "standing on the left, holding the empty bucket"
+   },
+   {
+    "nom": "the watchman",
+    "desc": "watchman in his 50s, burgundy-and-indigo overalls, holding ONE single garden hose",
+    "pose": "standing in the background by the pool, holding the hose"
+   }
+  ],
+  "dialogue": [
+   [
+    1,
+    "Tonton, chaque soir notre eau finit à six heures dêh !"
+   ],
+   [
+    0,
+    "Mon fils, c'est la Sodeci. Ces gens-là sont méchants."
+   ],
+   [
+    2,
+    "Patron, la piscine-là est pleine. Je rends l'eau aux locataires maintenant ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The tenant shakes his empty bucket and complains. The landlord, in the foreground, shakes his head with fake sadness. The watchman, by the pool, raises the hose a little and asks loudly, his face clearly visible.",
+  "chute": "The tenant slowly turns his head toward the pool. The landlord's fake sad face freezes. The camera slowly pushes in to a close-up of the landlord's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "eau",
+   "Sodeci",
+   "piscine"
+  ],
+  "gag_legende": "LES LOCATAIRES DEVANT LA PISCINE :",
+  "mecanisme": "témoin innocent (employé) qui trahit le patron"
+ },
+ {
+  "id": "B078-11",
+  "titre": "La commission du démarcheur",
+  "lieu": "in front of a gated house for rent in Williamsville, Abidjan, a closed metal gate, a dusty street, noon",
+  "persos": [
+   {
+    "nom": "the young broker",
+    "desc": "real-estate broker man in his 20s, mint-and-aubergine shirt, sunglasses resting on his head, holding ONE single bunch of keys",
+    "pose": "standing in the foreground on the right, holding up the keys, smiling"
+   },
+   {
+    "nom": "the old client",
+    "desc": "man in his 60s, gold-and-apricot boubou, white beard, holding ONE single small travel bag",
+    "pose": "standing on the left, holding the travel bag, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Commission d'abord, Tonton ! Le propriétaire est à Paris, il vient jamais dêh."
+   ],
+   [
+    1,
+    "Mon petit, le propriétaire-là est rentré hier. C'est moi."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The broker, in the foreground, jingles the keys and talks with a big confident smile. The old man answers calmly with a slow smile, his face clearly visible.",
+  "chute": "The broker's smile freezes and the keys stop moving in his hand. The camera slowly pushes in to a close-up of the young broker's terrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "commission",
+   "propriétaire",
+   "C'est moi"
+  ],
+  "gag_legende": "LE DÉMARCHEUR EN CHERCHANT UNE EXCUSE :",
+  "mecanisme": "arroseur arrosé : l'arnaqueur arnaque le vrai propriétaire"
+ },
+ {
+  "id": "B078-12",
+  "titre": "Le loyer en nature",
+  "lieu": "courtyard of a rental compound in Songon, Abidjan, a mango tree, a small wooden chicken coop against the wall, morning",
+  "persos": [
+   {
+    "nom": "the landlord",
+    "desc": "landlord in his 60s, indigo-and-cyan kaftan, bald head, arms crossed",
+    "pose": "standing in the foreground on the right, arms crossed, frowning"
+   },
+   {
+    "nom": "the tenant with the rooster",
+    "desc": "tenant man in his 30s, ruby-and-pistachio t-shirt, holding ONE single big rooster in both arms",
+    "pose": "standing in the middle, holding the rooster forward"
+   },
+   {
+    "nom": "the tenant's daughter",
+    "desc": "girl around 8, mint-and-cyan dress, braids with beads",
+    "pose": "standing on the left, looking at the rooster"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Trois mois de loyer, et tu me donnes ce coq-là ?!"
+   ],
+   [
+    1,
+    "Tonton, c'est un coq de race dêh !"
+   ],
+   [
+    2,
+    "Papa, c'est pas le coq de Tonton qui s'est perdu hier ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The landlord, in the foreground, arms crossed, looks at the rooster with disgust. The tenant proudly lifts the rooster a little. The girl tilts her head and asks innocently, her face clearly visible.",
+  "chute": "The landlord's eyes go wide as he stares at the rooster. The camera slowly pushes in to a close-up of the landlord's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "loyer",
+   "coq",
+   "perdu"
+  ],
+  "gag_legende": "LE COQ EN RECONNAISSANT SON PATRON :",
+  "mecanisme": "témoin innocent (enfant) : le loyer est payé avec le bien du propriétaire"
+ },
+ {
+  "id": "B078-13",
+  "titre": "La facture de la CIE",
+  "lieu": "dark living room of a house in Williamsville, Abidjan, during a power cut, lit by ONE single camping lantern on the table, night",
+  "persos": [
+   {
+    "nom": "the proud husband",
+    "desc": "husband in his 40s, rust-and-navy shirt, thin mustache, holding ONE single paper receipt",
+    "pose": "standing in the foreground on the left, holding up the receipt"
+   },
+   {
+    "nom": "the angry wife",
+    "desc": "wife in her 30s, rust-and-ivory kaba, headscarf, hands on her hips",
+    "pose": "standing on the right, hands on her hips"
+   },
+   {
+    "nom": "the little boy",
+    "desc": "boy around 8, mint-and-cyan pyjamas, sitting on a small stool",
+    "pose": "sitting on a small stool in the middle, hands on his knees"
+   }
+  ],
+  "dialogue": [
+   [
+    1,
+    "Tu as payé la CIE, hein ?! Pourquoi on est dans le noir ?!"
+   ],
+   [
+    0,
+    "Je jure, chérie, j'ai payé dêh ! Voilà le reçu."
+   ],
+   [
+    2,
+    "Oui maman. Chez Tantie Awa. Sa lumière est revenue."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife shouts, hands on her hips. The husband, in the foreground, holds up the receipt proudly. The boy, seated, nods and says it innocently, his face clearly visible.",
+  "chute": "The husband's proud smile freezes and the receipt slowly lowers. The camera slowly pushes in to a close-up of the proud husband's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "CIE",
+   "reçu",
+   "Tantie Awa"
+  ],
+  "gag_legende": "PAPA QUAND LA LUMIÈRE VA REVENIR :",
+  "mecanisme": "témoin innocent (enfant) qui révèle chez qui l'argent est parti"
+ },
+ {
+  "id": "B078-14",
+  "titre": "La chambre sous-louée",
+  "lieu": "tiny back room of a rental house in Deux-Plateaux, Abidjan, a single mattress on the floor, piles of books, the door open to the courtyard, afternoon",
+  "persos": [
+   {
+    "nom": "the landlord",
+    "desc": "landlord in his 50s, mint-and-cyan boubou, gold watch",
+    "pose": "standing in the foreground on the left, pointing his finger toward the student"
+   },
+   {
+    "nom": "the main tenant",
+    "desc": "tenant man in his 30s, gold-and-apricot t-shirt, short hair",
+    "pose": "standing in the middle, hands open, embarrassed"
+   },
+   {
+    "nom": "the student",
+    "desc": "student boy around 20, burgundy-and-indigo hoodie, holding ONE single thick book",
+    "pose": "sitting on the mattress on the right, holding the book"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu as sous-loué ma chambre-là sans me dire ?!"
+   ],
+   [
+    1,
+    "Tonton, c'est juste un étudiant fauché dêh."
+   ],
+   [
+    2,
+    "Papa ?! Tu m'as dit qu'on a pas de maison dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The landlord, in the foreground, points furiously toward the room. The tenant opens his hands, embarrassed. The student, seated on the mattress, looks up from his book in shock and speaks, his face clearly visible.",
+  "chute": "The landlord freezes, his finger still pointing, a nervous smile appearing. The camera slowly pushes in to a close-up of the landlord's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "sous-loué",
+   "étudiant",
+   "maison"
+  ],
+  "gag_legende": "PAPA QUAND LE FILS VA DEMANDER L'HÉRITAGE :",
+  "mecanisme": "révélation par la victime cachée : le fils découvre que son père pauvre est propriétaire"
+ },
+ {
+  "id": "B078-15",
+  "titre": "L'enquête du propriétaire",
+  "lieu": "veranda of a rented house in Songon, Abidjan, a plastic chair, a closed wooden door, morning",
+  "persos": [
+   {
+    "nom": "the sly landlord",
+    "desc": "landlord in his 60s, rust-and-navy kaftan, white hair",
+    "pose": "standing on the right, leaning slightly toward the boy, smiling slyly"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, ochre-and-apricot polo shirt, tired eyes, arms crossed",
+    "pose": "standing in the foreground on the left, arms crossed, trying to look poor"
+   },
+   {
+    "nom": "the little boy",
+    "desc": "boy around 6, indigo-and-cyan t-shirt, very proud",
+    "pose": "standing in the middle between them, very proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, ton papa-là est vraiment fauché ?"
+   ],
+   [
+    2,
+    "Oui Tonton. Il a compté ses trois cent mille toute la nuit pour être sûr."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The landlord leans slightly toward the boy and asks with a sly smile. The father, in the foreground, keeps his arms crossed and nods sadly. The boy answers proudly, counting on his fingers, his face clearly visible.",
+  "chute": "The father's sad face turns into pure panic. The camera slowly pushes in to a close-up of the father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "fauché",
+   "trois cent mille"
+  ],
+  "gag_legende": "PAPA EN RENTRANT AVEC LE PETIT :",
+  "mecanisme": "témoin innocent (enfant) qui croit défendre son père"
+ },
+ {
+  "id": "B078-16",
+  "titre": "La saisie des meubles",
+  "lieu": "completely empty living room of a rented apartment in Williamsville, Abidjan, bare walls, ONE single plastic chair, a window, morning",
+  "persos": [
+   {
+    "nom": "the bailiff",
+    "desc": "bailiff man in his 50s, rust-and-navy suit, thick glasses, holding ONE single clipboard",
+    "pose": "standing on the right, holding the clipboard, looking around the empty room"
+   },
+   {
+    "nom": "the abandoned husband",
+    "desc": "husband in his 40s, mint-and-aubergine tracksuit, sad droopy eyes",
+    "pose": "sitting on the plastic chair in the foreground on the left, hands on his knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Je viens saisir tous vos meubles pour le loyer dêh !"
+   ],
+   [
+    1,
+    "Mon frère, ma femme est partie hier avec tout."
+   ],
+   [
+    0,
+    "Même la télé-là ?"
+   ],
+   [
+    1,
+    "Même le propriétaire dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The bailiff announces it officially, tapping his clipboard. The husband, seated in the foreground, answers with a sad calm voice. The bailiff looks around the empty room, shocked, and asks. The husband nods slowly and answers, his face clearly visible.",
+  "chute": "The bailiff slowly lowers his clipboard, speechless. The camera slowly pushes in to a close-up of the abandoned husband's deadpan face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "saisir",
+   "ma femme",
+   "propriétaire"
+  ],
+  "gag_legende": "L'HUISSIER EN CHERCHANT QUI VA PAYER :",
+  "mecanisme": "surenchère de la liste : le dernier bien emporté est le créancier lui-même"
+ },
+ {
+  "id": "B078-17",
+  "titre": "Six mois de retard",
+  "lieu": "office room in the landlord's house in Deux-Plateaux, Abidjan, a wooden desk with an open ledger, a ceiling fan, afternoon",
+  "persos": [
+   {
+    "nom": "the landlord",
+    "desc": "landlord in his 60s, ochre-and-apricot boubou, grey beard, ONE single open ledger on the desk",
+    "pose": "sitting behind the desk in the foreground on the right, hands on the open ledger"
+   },
+   {
+    "nom": "the bold tenant",
+    "desc": "tenant man in his 30s, mint-and-cyan polo shirt, big pleading eyes",
+    "pose": "standing on the left, hands joined, pleading"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Six mois de retard, et tu demandes quoi encore ?!"
+   ],
+   [
+    1,
+    "Tonton, prête-moi cinq mille pour la CIE dêh."
+   ],
+   [
+    0,
+    "Et mon loyer-là alors ?!"
+   ],
+   [
+    1,
+    "Tu veux je cherche ton argent dans le noir ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The landlord, seated in the foreground, slaps one hand on the ledger and shouts. The tenant joins his hands and begs. The landlord frowns, outraged. The tenant spreads his hands as if it were obvious and answers, his face clearly visible.",
+  "chute": "The landlord freezes, mouth open, unable to answer. The camera slowly pushes in to a close-up of the landlord's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "loyer",
+   "CIE",
+   "noir"
+  ],
+  "gag_legende": "LE PROPRIÉTAIRE EN SORTANT SON PORTE-MONNAIE :",
+  "mecanisme": "culot logique : la dette devient l'argument d'une nouvelle dette"
+ },
+ {
+  "id": "B078-18",
+  "titre": "La voisine et le courant",
+  "lieu": "two neighbouring courtyards in Songon, Abidjan, separated by a low wall, a black electric cable running over the wall from one house to the other, a chest freezer by the wall on the left, evening",
+  "persos": [
+   {
+    "nom": "the bold neighbour",
+    "desc": "neighbour woman in her 40s, gold-and-apricot kaba, headscarf, hands on her hips",
+    "pose": "standing on the left behind the low wall, next to her freezer, hands on her hips, annoyed"
+   },
+   {
+    "nom": "the victim",
+    "desc": "woman in her 30s, indigo-and-cyan dress, short hair, holding ONE single electricity bill",
+    "pose": "standing in the foreground on the right, holding the bill"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, depuis hier ton courant-là est trop faible dêh !"
+   ],
+   [
+    1,
+    "Mon courant ?! Comment tu sais ça ?"
+   ],
+   [
+    0,
+    "Paye ta facture à l'heure dêh. Mon congélateur souffre."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The neighbour complains loudly, hands on her hips, nodding toward the cable. The victim, in the foreground, frowns, the bill in her hand. The neighbour points at her freezer and lectures her, her face clearly visible.",
+  "chute": "The victim slowly looks up at the cable on the wall, eyes wide. The camera slowly pushes in to a close-up of the victim's flabbergasted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "courant",
+   "facture",
+   "congélateur"
+  ],
+  "gag_legende": "MOI EN SUIVANT LE CÂBLE :",
+  "mecanisme": "culot inversé : la voleuse de courant fait la leçon à sa victime"
+ },
+ {
+  "id": "B078-19",
+  "titre": "Trois jours sans eau",
+  "lieu": "back courtyard of a house in Deux-Plateaux, Abidjan, a dry water tap on the wall, a row of empty buckets, morning",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, rust-and-ivory boubou, big headwrap, holding ONE single empty bucket",
+    "pose": "standing on the left, holding the empty bucket"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "husband in his 40s, burgundy-and-indigo shirt, fake sad face",
+    "pose": "standing in the foreground on the right, hands open, fake sad"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 7, mint-and-aubergine dress, short puffs of hair",
+    "pose": "standing in the middle next to the tap, looking at her father"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon beau-fils, trois jours sans eau chez toi dêh !"
+   ],
+   [
+    1,
+    "Maman, c'est la Sodeci. Ils sont trop méchants."
+   ],
+   [
+    2,
+    "Papa, on rouvre le robinet quand Mamie va partir ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother-in-law lifts her empty bucket and complains. The son-in-law, in the foreground, shakes his head with fake sadness. The girl looks up at her father and asks innocently, her face clearly visible.",
+  "chute": "The son-in-law's fake sad face freezes into panic while the mother-in-law slowly turns her head toward him. The camera slowly pushes in to a close-up of the son-in-law's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "Sodeci",
+   "robinet",
+   "Mamie"
+  ],
+  "gag_legende": "MAMIE EN DÉFAISANT SA VALISE :",
+  "mecanisme": "témoin innocent (enfant) qui révèle le plan du père"
+ },
+ {
+  "id": "B078-20",
+  "titre": "Pitié pour le loyer",
+  "lieu": "doorway of a small rented house in Williamsville, Abidjan, a small dining table inside, evening",
+  "persos": [
+   {
+    "nom": "the landlord",
+    "desc": "landlord in his 50s, ochre-and-apricot kaftan, thick mustache, holding ONE single receipt book",
+    "pose": "standing on the right at the doorway, holding the receipt book"
+   },
+   {
+    "nom": "the begging mother",
+    "desc": "mother in her 30s, indigo-and-cyan kaba, tired face",
+    "pose": "standing in the foreground on the left, hands joined, begging"
+   },
+   {
+    "nom": "the little boy",
+    "desc": "boy around 8, mint-and-cyan t-shirt, holding ONE single grilled chicken leg",
+    "pose": "standing in the middle behind his mother, holding the chicken leg"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton loyer aujourd'hui même, sinon dehors dêh !"
+   ],
+   [
+    1,
+    "Pardon Tonton, les enfants ont même pas mangé dêh."
+   ],
+   [
+    2,
+    "Maman, le poulet braisé-là, je finis ou on garde pour demain ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The landlord waves the receipt book and threatens. The mother, in the foreground, joins her hands and begs with sad eyes. The boy lifts the chicken leg and asks innocently, his face clearly visible.",
+  "chute": "The mother's sad face freezes and her eyes go wide. The camera slowly pushes in to a close-up of the begging mother's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "loyer",
+   "mangé",
+   "poulet braisé"
+  ],
+  "gag_legende": "LE PROPRIÉTAIRE EN AUGMENTANT LE LOYER :",
+  "mecanisme": "témoin innocent (enfant) qui contredit la mère"
+ }
+]

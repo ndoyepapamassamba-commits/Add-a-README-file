@@ -1,0 +1,874 @@
+[
+ {
+  "id": "B085-01",
+  "titre": "La fierté de papa",
+  "lieu": "living room of a modest house in Abatta, Abidjan, three framed diplomas hanging side by side on the wall, a worn sofa, a wooden armchair in the foreground, evening",
+  "persos": [
+   {
+    "nom": "the proud father",
+    "desc": "father in his 50s, mustard-and-sky-blue boubou, short grey beard, sitting in the wooden armchair",
+    "pose": "sitting in the wooden armchair in the foreground on the right, chest out, pointing proudly at the diplomas on the wall"
+   },
+   {
+    "nom": "the jobless son",
+    "desc": "son in his late 20s, turquoise-and-aubergine tracksuit, thin moustache, empty hands",
+    "pose": "slumped on the sofa on the left, arms crossed"
+   },
+   {
+    "nom": "the tired mother",
+    "desc": "mother in her 50s, gold-and-pistachio kaba, a headscarf, hands on her hips",
+    "pose": "standing behind the sofa in the middle, hands on her hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mes trois enfants ont tous le master dêh ! Je suis fier !"
+   ],
+   [
+    1,
+    "Et aucun des trois-là ne travaille, papa."
+   ],
+   [
+    2,
+    "Et leur papa non plus. Ça fait quatre dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father, seated in the foreground, points proudly at the three diplomas and speaks with his chest out. The son, slumped on the sofa, shrugs and answers flatly. The mother, standing behind the sofa with her hands on her hips, tilts her head toward the father and says the last line clearly, her face visible.",
+  "chute": "The father's proud smile freezes and slowly collapses. The camera slowly pushes in to a close-up of the proud father's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "master",
+   "travaille",
+   "quatre"
+  ],
+  "gag_legende": "PAPA QUAND IL A RECOMPTÉ :",
+  "mecanisme": "retournement logique à double cible : la fierté du père devient le compte des chômeurs de la maison, lui compris"
+ },
+ {
+  "id": "B085-02",
+  "titre": "La menace du fils",
+  "lieu": "courtyard of an unfinished family house in Songon, Abidjan, grey cinder-block walls, two plastic chairs, a small table, morning",
+  "persos": [
+   {
+    "nom": "the angry son",
+    "desc": "son in his late 20s, tangerine-and-ivory shirt, short dreadlocks, holding ONE single cardboard folder of CVs",
+    "pose": "standing in the foreground on the left, holding the folder against his chest, defiant"
+   },
+   {
+    "nom": "the calm father",
+    "desc": "father in his 60s, teal-and-coral kaftan, round glasses, arms crossed",
+    "pose": "sitting on a plastic chair in the middle, arms crossed, calm"
+   },
+   {
+    "nom": "the smiling mother",
+    "desc": "mother in her 50s, mustard-and-jade wrap dress, braided hair, holding ONE single small white wifi box",
+    "pose": "standing on the right, holding the wifi box in both hands, smiling"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Si je trouve pas travail cette année, je quitte cette maison dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, mon fils. J'ai déjà caché tes diplômes."
+   ],
+   [
+    2,
+    "Et moi, j'ai coupé le wifi dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The son, in the foreground, lifts his chin and announces his threat, gripping the folder. The father, seated, nods calmly without uncrossing his arms and answers. The mother, standing on the right, raises the little wifi box slightly and says the last line with a satisfied smile, her face clearly visible.",
+  "chute": "The son's defiant face drops; he looks from one parent to the other. The camera slowly pushes in to a close-up of the angry son's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "travail",
+   "diplômes",
+   "wifi"
+  ],
+  "gag_legende": "LES PARENTS PENDANT LE DÉMÉNAGEMENT :",
+  "mecanisme": "retournement logique : les parents sabotent sa recherche pour être sûrs qu'il parte (double cible : le fils et les parents pressés)"
+ },
+ {
+  "id": "B085-03",
+  "titre": "L'entretien d'embauche",
+  "lieu": "small recruitment office in Williamsville, Abidjan, a wooden desk with ONE single printed CV on it, a standing fan, a window with afternoon light",
+  "persos": [
+   {
+    "nom": "the recruiter",
+    "desc": "recruiter woman in her 40s, ochre-and-fuchsia blazer, short natural hair, earrings, both hands flat on the desk",
+    "pose": "sitting behind the desk in the background on the right, both hands flat on the desk, very serious"
+   },
+   {
+    "nom": "the young candidate",
+    "desc": "young man in his mid-20s, gold-and-cyan suit, neat haircut, hands on his knees",
+    "pose": "sitting on a chair in the foreground on the left, hands on his knees, hopeful"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Une seule question, mon petit : ton papa travaille où ?"
+   ],
+   [
+    1,
+    "Mon papa-là est chômeur, Tantie."
+   ],
+   [
+    0,
+    "Ya fohi. On te rappelle quand il trouve."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The recruiter leans forward and asks her only question, very serious. The candidate, in the foreground, answers honestly with a small hopeful smile. The recruiter calmly pushes the CV back across the desk with one finger and says the last line, her face clearly visible.",
+  "chute": "The candidate's hopeful smile freezes. The camera slowly pushes in to a close-up of the young candidate's stunned face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "papa",
+   "chômeur",
+   "rappelle"
+  ],
+  "gag_legende": "MOI EN APPELANT MON PAPA CE SOIR :",
+  "mecanisme": "retournement logique à double cible : l'embauche du fils dépend du travail du papa (le piston et le père chômeur)"
+ },
+ {
+  "id": "B085-04",
+  "titre": "La morale de maman",
+  "lieu": "living room in Abatta, Abidjan, an old sofa in the foreground, a low table, a small wooden stool, afternoon light",
+  "persos": [
+   {
+    "nom": "the scolding mother",
+    "desc": "mother in her 40s, coral-and-peach boubou, hair in a bun, hands on her hips",
+    "pose": "standing on the left, hands on her hips, furious, looking at her son"
+   },
+   {
+    "nom": "the jobless son",
+    "desc": "young man in his early 20s, gold-and-pistachio t-shirt, short hair, head down",
+    "pose": "sitting on the small wooden stool in the middle, head down"
+   },
+   {
+    "nom": "the lazy uncle",
+    "desc": "uncle in his 50s, teal-and-coral tracksuit, round belly, holding ONE single TV remote",
+    "pose": "lying back on the sofa in the foreground on the right, holding the remote on his belly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Si tu trouves pas travail, tu vas finir comme ton tonton dêh !"
+   ],
+   [
+    2,
+    "Ma sœur, je suis assis juste ici dêh !"
+   ],
+   [
+    0,
+    "Je sais, mon frère. Depuis 2014."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother points at her son and shouts her warning. The uncle, lying on the sofa in the foreground, lifts his head and protests, offended, the remote still on his belly. The mother turns her head toward the uncle and answers calmly, her face clearly visible.",
+  "chute": "The uncle freezes, his mouth open, the remote still in his hand. The camera slowly pushes in to a close-up of the lazy uncle's offended face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "travail",
+   "tonton",
+   "2014"
+  ],
+  "gag_legende": "TONTON QUAND ON PARLE DU LOYER :",
+  "mecanisme": "retournement à double cible : la menace lancée au fils dénonce l'oncle installé au salon depuis des années"
+ },
+ {
+  "id": "B085-05",
+  "titre": "Le diplômé découragé",
+  "lieu": "front porch of a house in Williamsville, Abidjan, a wooden bench in the foreground, a plastic chair, potted plants, late afternoon",
+  "persos": [
+   {
+    "nom": "the graduate son",
+    "desc": "son in his mid-20s, mustard-and-sky-blue shirt, glasses, holding ONE single rolled diploma",
+    "pose": "standing on the left, holding the rolled diploma, discouraged"
+   },
+   {
+    "nom": "the romantic father",
+    "desc": "father in his 50s, turquoise-and-aubergine boubou, bald head, hands resting on his knees",
+    "pose": "sitting on the wooden bench in the foreground on the right, relaxed, smiling"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 50s, ochre-and-fuchsia kaba, short braids, arms crossed",
+    "pose": "sitting on the plastic chair in the background in the middle, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, j'ai le master, je trouve rien dêh !"
+   ],
+   [
+    1,
+    "Courage, mon fils. Moi j'avais rien, j'ai trouvé ta maman."
+   ],
+   [
+    2,
+    "Et moi, j'ai trouvé le rien-là dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The son lifts the rolled diploma and complains. The father, seated on the bench in the foreground, answers with a proud romantic smile, pointing at the mother. The mother, seated in the background, turns her head toward the father and says the last line flatly, her face clearly visible.",
+  "chute": "The father's romantic smile freezes. The camera slowly pushes in to a close-up of the romantic father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "master",
+   "rien",
+   "maman"
+  ],
+  "gag_legende": "PAPA APRÈS SA DÉCLARATION D'AMOUR :",
+  "mecanisme": "retournement à triple cible : le fils diplômé, le père qui n'avait rien, la mère qui a « trouvé » ce rien"
+ },
+ {
+  "id": "B085-06",
+  "titre": "Cinq ans d'attente",
+  "lieu": "front steps of a house in Songon, Abidjan, a plastic chair, a mango tree, dusk",
+  "persos": [
+   {
+    "nom": "the waiting son",
+    "desc": "son in his late 20s, gold-and-cyan polo shirt, short beard, holding ONE single cardboard folder",
+    "pose": "sitting on the front step in the foreground on the left, the folder on his knees"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 50s, mustard-and-jade kaftan, grey temples, hands on his knees",
+    "pose": "sitting on the plastic chair on the right, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, cinq ans j'attends un travail. Cette patience-là, je l'ai prise de qui ?"
+   ],
+   [
+    1,
+    "De ta maman dêh. Elle attend mon augmentation depuis vingt ans."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son, in the foreground, taps the folder on his knees and asks, half proud, half tired. The father, seated on the right, shrugs calmly and answers with a small honest smile, his face clearly visible.",
+  "chute": "The son's proud expression slowly falls. The camera slowly pushes in to a close-up of the waiting son's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "patience",
+   "maman",
+   "augmentation"
+  ],
+  "gag_legende": "MAMAN QUAND ELLE VA ENTENDRE ÇA :",
+  "mecanisme": "retournement logique à double cible : la patience héritée prouve que le père n'a jamais été augmenté"
+ },
+ {
+  "id": "B085-07",
+  "titre": "Le CV chez papa",
+  "lieu": "small dining room in Abatta, Abidjan, a wooden table with two plates of attiéké, a ceiling bulb, night",
+  "persos": [
+   {
+    "nom": "the employed father",
+    "desc": "father in his 50s, ochre-and-fuchsia shirt, an employee badge clipped on the pocket, moustache",
+    "pose": "sitting at the table in the foreground on the right, both hands flat on the table"
+   },
+   {
+    "nom": "the son",
+    "desc": "son in his mid-20s, coral-and-peach t-shirt, short twists, hands folded on the table",
+    "pose": "sitting at the table on the left, facing his father"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, tu as déposé ton CV dans ma société-là ?"
+   ],
+   [
+    1,
+    "Oui papa. Ils ont dit : un seul de cette famille-là, c'est déjà trop dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. Nobody eats. The father, in the foreground, frowns and asks, tapping one finger on the table. The son shrugs innocently and answers, his face clearly visible.",
+  "chute": "The father freezes, his finger still on the table, eyes wide. The camera slowly pushes in to a close-up of the employed father's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "CV",
+   "société",
+   "famille"
+  ],
+  "gag_legende": "PAPA DEMAIN MATIN AU BUREAU :",
+  "mecanisme": "retournement logique à double cible : le refus du fils révèle ce que l'entreprise pense du père"
+ },
+ {
+  "id": "B085-08",
+  "titre": "Le petit frère aux bonbons",
+  "lieu": "in front of a house in Williamsville, Abidjan, a tiny wooden table with ONE single glass jar of candies, a small stool, a low wall, afternoon",
+  "persos": [
+   {
+    "nom": "the broke big brother",
+    "desc": "young man in his late 20s, gold-and-pistachio tracksuit, sleepy eyes, one hand held out",
+    "pose": "standing in the foreground on the left, one hand held out, smiling sweetly"
+   },
+   {
+    "nom": "the little brother with candies",
+    "desc": "boy around 9, mustard-and-sky-blue t-shirt, big round eyes, holding ONE single small notebook",
+    "pose": "sitting on the small stool behind the tiny table on the right, holding the notebook"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Petit, prête-moi deux mille dêh."
+   ],
+   [
+    1,
+    "Maman aussi m'a emprunté ce matin, grand frère."
+   ],
+   [
+    0,
+    "Et elle-là, elle rembourse quand ?"
+   ],
+   [
+    1,
+    "Quand toi tu vas trouver travail dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The big brother, in the foreground, holds out one hand with a sweet smile. The little boy opens his notebook and answers like a serious banker. The big brother frowns and asks. The little boy points his finger at him and says the last line seriously, his face clearly visible.",
+  "chute": "The big brother's hand drops slowly. The camera slowly pushes in to a close-up of the broke big brother's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "deux mille",
+   "maman",
+   "travail"
+  ],
+  "gag_legende": "LE GRAND FRÈRE QUAND MAMAN RENTRE :",
+  "mecanisme": "retournement logique à double cible : la mère emprunte au petit et compte sur le travail du chômeur pour rembourser"
+ },
+ {
+  "id": "B085-09",
+  "titre": "La bonne nouvelle du gars",
+  "lieu": "doorstep of a small house in Abatta, Abidjan, a wooden door, a plastic chair, a bucket, early morning light",
+  "persos": [
+   {
+    "nom": "the newly hired friend",
+    "desc": "young man in his mid-20s, teal-and-coral shirt, wide smile, a wristwatch",
+    "pose": "sitting on the plastic chair on the left, proud, arms crossed"
+   },
+   {
+    "nom": "the sleepy friend",
+    "desc": "young man in his mid-20s, turquoise-and-aubergine hoodie, messy hair, puffy sleepy eyes",
+    "pose": "sitting on the doorstep in the foreground on the right, elbows on his knees, half asleep"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon gars, j'ai enfin trouvé un travail dêh !"
+   ],
+   [
+    1,
+    "Ehh ! Félicitations, mon frère ! C'est où ?"
+   ],
+   [
+    0,
+    "Ici même. Ta maman me paie pour te réveiller chaque matin."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The new worker announces his news with a big proud smile. The sleepy friend lifts his head, suddenly happy, and congratulates him. The new worker points at the sleepy friend and says the last line calmly, his face clearly visible.",
+  "chute": "The sleepy friend's happy face freezes, his eyes now wide open. The camera slowly pushes in to a close-up of the sleepy friend's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "travail",
+   "maman",
+   "réveiller"
+  ],
+  "gag_legende": "LUI DEMAIN À SIX HEURES PILE :",
+  "mecanisme": "retournement à double cible : le travail du copain, c'est le chômage de l'autre (et la mère à bout)"
+ },
+ {
+  "id": "B085-10",
+  "titre": "Deux ans de stage",
+  "lieu": "office of a small company in Williamsville, Abidjan, a large wooden desk in the foreground, a leather office chair, shelves of binders, morning light through blinds",
+  "persos": [
+   {
+    "nom": "the tired intern",
+    "desc": "intern in his mid-20s, coral-and-peach shirt, thin moustache, holding ONE single stack of folders",
+    "pose": "standing on the left, holding the stack of folders against his chest with both arms, exhausted"
+   },
+   {
+    "nom": "the boss",
+    "desc": "boss in his 50s, mustard-and-sky-blue suit, round belly, a wristwatch, hands folded on the desk",
+    "pose": "sitting in the leather chair behind the desk in the foreground on the right, hands folded, wise smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Patron, deux ans de stage gratuit dêh !"
+   ],
+   [
+    1,
+    "Patience, mon petit. Moi aussi j'étais stagiaire, avant de marier la fille du patron."
+   ],
+   [
+    0,
+    "Ya fohi. Votre fille-là est célibataire, patron ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The intern, holding his folders with both arms, complains with a tired face. The boss leans back slightly and answers with a wise, proud smile. The intern's face lights up and he asks the last question eagerly, his face clearly visible.",
+  "chute": "The boss's wise smile freezes, his eyes widen. The camera slowly pushes in to a close-up of the boss's shocked face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "stage",
+   "fille",
+   "célibataire"
+  ],
+  "gag_legende": "LE PATRON EN RENTRANT À LA MAISON :",
+  "mecanisme": "retournement : le conseil du patron se retourne contre lui (double cible : le patron qui s'est marié pour le poste et sa fille)"
+ },
+ {
+  "id": "B085-11",
+  "titre": "La question de la petite",
+  "lieu": "courtyard of a family house in Songon, Abidjan, a plastic chair, a small table with ONE single school notebook, a clothesline, evening",
+  "persos": [
+   {
+    "nom": "the little girl",
+    "desc": "girl around 8, mustard-and-jade dress, two puffs of hair, holding ONE single pencil",
+    "pose": "standing on the left next to the small table, holding the pencil, curious"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, ochre-and-fuchsia dashiki, short beard, hands on his knees",
+    "pose": "sitting on the plastic chair in the foreground on the right, hands on his knees, teaching proudly"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 40s, gold-and-cyan kaba, a headscarf, arms crossed",
+    "pose": "standing in the background in the middle, arms crossed, leaning against the wall"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, c'est quoi stage-là ?"
+   ],
+   [
+    1,
+    "Ma fille, tu travailles beaucoup, mais on te paie pas."
+   ],
+   [
+    0,
+    "Ahh ! Comme maman avec toi-là ?"
+   ],
+   [
+    2,
+    "Quinze ans de stage, toujours pas de contrat dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The girl asks her question, pencil in hand. The father, seated in the foreground, explains proudly with one raised finger. The girl tilts her head and asks innocently, pointing her pencil at her father. The mother, arms crossed in the background, says the last line loudly, her face clearly visible.",
+  "chute": "The father lowers his finger slowly, his teacher smile frozen. The camera slowly pushes in to a close-up of the father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "stage",
+   "maman",
+   "contrat"
+  ],
+  "gag_legende": "PAPA QUAND ON PARLE DE DOT :",
+  "mecanisme": "retournement à double cible par l'enfant : la définition du stage décrit le couple (le père qui n'épouse pas, la mère stagiaire à vie)"
+ },
+ {
+  "id": "B085-12",
+  "titre": "Le trou dans le CV",
+  "lieu": "small recruitment agency office in Abatta, Abidjan, a metal desk in the foreground, a wall clock, a stack of files, a window with late morning light",
+  "persos": [
+   {
+    "nom": "the strict recruiter",
+    "desc": "recruiter in his 50s, turquoise-and-aubergine suit, thick glasses, holding ONE single sheet of paper",
+    "pose": "sitting behind the desk in the foreground on the right, holding the sheet up, suspicious"
+   },
+   {
+    "nom": "the candidate",
+    "desc": "young woman in her late 20s, tangerine-and-ivory skirt suit, neat braids in a bun, a small handbag on her lap",
+    "pose": "sitting on a chair on the left facing the desk, calm, hands on the handbag"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma fille, c'est quoi ce trou de trois ans dans ton CV-là ?"
+   ],
+   [
+    1,
+    "C'est le temps que votre agence-là a mis pour me répondre, Tonton."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The recruiter, in the foreground, taps the sheet with one finger and asks suspiciously. The candidate answers calmly with a polite smile, her face clearly visible.",
+  "chute": "The recruiter slowly lowers the sheet, speechless. The camera slowly pushes in to a close-up of the strict recruiter's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "trou",
+   "trois ans",
+   "répondre"
+  ],
+  "gag_legende": "LE RECRUTEUR EN OUVRANT SA BOÎTE MAIL :",
+  "mecanisme": "retournement de l'accusation : le reproche fait à la candidate revient sur celui qui le pose"
+ },
+ {
+  "id": "B085-13",
+  "titre": "Le poste de gardien",
+  "lieu": "gate of a construction site in Songon, Abidjan, a small wooden guard booth, a plastic table with ONE single notebook, piles of bricks, late afternoon",
+  "persos": [
+   {
+    "nom": "the site manager",
+    "desc": "site manager woman in her 40s, teal-and-coral kaba, short hair, holding ONE single pen",
+    "pose": "sitting at the plastic table in the foreground on the right, pen above the notebook"
+   },
+   {
+    "nom": "the eager candidate",
+    "desc": "young man in his early 20s, mustard-and-jade t-shirt, skinny, big hopeful smile",
+    "pose": "standing on the left near the guard booth, hands clasped in front of him"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi tu veux être gardien de nuit, mon petit ?"
+   ],
+   [
+    1,
+    "Tantie, chez nous on dort à six dans une chambre. Ici, je dors seul dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The manager, in the foreground, looks up from her notebook and asks. The candidate clasps his hands and answers with a dreamy, happy smile, his face clearly visible.",
+  "chute": "The manager freezes, her pen stopped above the notebook. The camera slowly pushes in to a close-up of the site manager's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "gardien",
+   "six",
+   "seul"
+  ],
+  "gag_legende": "LE CHANTIER À DEUX HEURES DU MATIN :",
+  "mecanisme": "retournement de la motivation : le poste de surveillance devient enfin une chambre pour dormir"
+ },
+ {
+  "id": "B085-14",
+  "titre": "Le cousin du village",
+  "lieu": "courtyard of a house in Williamsville, Abidjan, two plastic chairs, a kitchen door in the background, midday",
+  "persos": [
+   {
+    "nom": "the village cousin",
+    "desc": "cousin in his early 20s, mustard-and-sky-blue tunic, short hair, a small travel bag at his feet",
+    "pose": "sitting on a plastic chair on the left, impressed"
+   },
+   {
+    "nom": "the city cousin",
+    "desc": "young man in his mid-20s, gold-and-cyan shirt, a thin chain around his neck, hands on his hips",
+    "pose": "standing in the foreground in the middle, chest out, hands on his hips"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 50s, gold-and-pistachio boubou, a head wrap, holding ONE single empty rice basin",
+    "pose": "standing at the kitchen door in the background on the right, holding the empty basin, listening"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Cousin, à Abidjan, tu fais quel travail ?"
+   ],
+   [
+    1,
+    "Je suis dans l'import-export, mon frère."
+   ],
+   [
+    0,
+    "Ehh ! Tu importes quoi dêh ?"
+   ],
+   [
+    1,
+    "Le riz de ma maman. J'exporte chez ma copine."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The village cousin asks, impressed. The city cousin, in the foreground, answers proudly with his chest out. The village cousin leans forward, amazed, and asks. The city cousin answers proudly, his face clearly visible.",
+  "chute": "Behind him, the mother slowly turns her head toward her son and glares, holding the empty basin. The camera slowly pushes in to a close-up of the city cousin's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "import-export",
+   "riz",
+   "copine"
+  ],
+  "gag_legende": "MAMAN EN COMPTANT SES SACS DE RIZ :",
+  "mecanisme": "retournement à double cible : le « business » vole la mère et entretient la copine"
+ },
+ {
+  "id": "B085-15",
+  "titre": "L'apprenti du gbaka",
+  "lieu": "gbaka minibus stop in Abatta, Abidjan, an old minibus with its side door open, a dusty roadside, morning",
+  "persos": [
+   {
+    "nom": "the old passenger",
+    "desc": "old man in his 60s, tangerine-and-ivory boubou, white beard, holding ONE single small plastic bag",
+    "pose": "standing in the foreground on the right at the roadside, holding the bag, admiring"
+   },
+   {
+    "nom": "the gbaka apprentice",
+    "desc": "young man in his mid-20s, ochre-and-fuchsia jersey, a towel on his shoulder, one hand gripping the door frame",
+    "pose": "standing on the step of the minibus's open side door on the left, one hand gripping the door frame"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, tu cries bien dêh ! Tu as appris où ?"
+   ],
+   [
+    1,
+    "Master en communication, Tonton. Et le chauffeur-là a son doctorat."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The old passenger, in the foreground, nods with admiration and asks. The apprentice, standing on the minibus step, answers proudly and points his free thumb toward the driver's seat, his face clearly visible.",
+  "chute": "The old man's admiring smile freezes, his mouth open. The camera slowly pushes in to a close-up of the old passenger's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "master",
+   "communication",
+   "doctorat"
+  ],
+  "gag_legende": "LES PARENTS QUI ONT PAYÉ L'UNIVERSITÉ :",
+  "mecanisme": "retournement à double cible : le compliment révèle deux diplômés surqualifiés dans le même gbaka"
+ },
+ {
+  "id": "B085-16",
+  "titre": "Le nouveau métier du fils",
+  "lieu": "small bedroom in Songon, Abidjan, a phone on a small tripod, a ring light, a mattress against the wall, afternoon",
+  "persos": [
+   {
+    "nom": "the suspicious mother",
+    "desc": "mother in her 50s, turquoise-and-aubergine kaba, hair in a bun, hands on her hips",
+    "pose": "standing at the bedroom door in the foreground on the right, hands on her hips"
+   },
+   {
+    "nom": "the coach son",
+    "desc": "son in his late 20s, coral-and-peach hoodie, small goatee, holding ONE single small microphone",
+    "pose": "sitting on a stool on the left in front of the phone on the tripod, holding the microphone"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu parles à qui dans téléphone-là ?"
+   ],
+   [
+    1,
+    "Je suis coach en réussite, maman."
+   ],
+   [
+    0,
+    "Mais toi-même, tu as rien réussi dêh !"
+   ],
+   [
+    1,
+    "J'ai réussi à trouver deux cents élèves dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother, in the foreground, asks suspiciously, hands on her hips. The son turns his head three-quarters toward the camera and answers proudly, the microphone in his hand. The mother raises her eyebrows and protests. The son smiles calmly and answers, his face clearly visible.",
+  "chute": "The mother's mouth falls open; she freezes. The camera slowly pushes in to a close-up of the suspicious mother's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "coach",
+   "réussite",
+   "élèves"
+  ],
+  "gag_legende": "LES DEUX CENTS ÉLÈVES EN LISANT ÇA :",
+  "mecanisme": "retournement logique à double cible : sa seule réussite, c'est d'avoir trouvé deux cents personnes plus naïves que lui"
+ },
+ {
+  "id": "B085-17",
+  "titre": "Le projet de mariage",
+  "lieu": "small kitchen in Williamsville, Abidjan, a gas stove with ONE single pot, a wooden stool, a window, noon",
+  "persos": [
+   {
+    "nom": "the lovestruck son",
+    "desc": "son in his mid-20s, mustard-and-jade polo shirt, neat haircut, hands clasped on his knees",
+    "pose": "sitting on the wooden stool in the foreground on the left, hands clasped, dreamy smile"
+   },
+   {
+    "nom": "the mother with the ladle",
+    "desc": "mother in her 50s, tangerine-and-ivory kaftan, short braids, holding ONE single wooden ladle",
+    "pose": "standing by the stove on the right, holding the ladle, not cooking, looking at her son"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, je veux me marier dêh !"
+   ],
+   [
+    1,
+    "Avec quel salaire, mon fils ?"
+   ],
+   [
+    0,
+    "Le sien, maman. Elle est fonctionnaire."
+   ],
+   [
+    1,
+    "Ya fohi. Dis-lui que belle-maman aussi cherche travail dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son announces his news with a dreamy smile. The mother raises the ladle slightly and asks sharply. The son answers proudly. The mother's face suddenly lights up and she says the last line eagerly, pointing the ladle at him, her face clearly visible.",
+  "chute": "The son's dreamy smile freezes. The camera slowly pushes in to a close-up of the lovestruck son's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "salaire",
+   "fonctionnaire",
+   "belle-maman"
+  ],
+  "gag_legende": "LA FIANCÉE EN APPRENANT LA NOUVELLE :",
+  "mecanisme": "retournement à double cible : la mère, au lieu de gronder le fils qui vise un salaire, se met elle aussi sur la liste"
+ },
+ {
+  "id": "B085-18",
+  "titre": "La grande sœur salariée",
+  "lieu": "front yard of a house in Songon, Abidjan, a low cement wall, a wooden bench, a clothesline, evening",
+  "persos": [
+   {
+    "nom": "the working big sister",
+    "desc": "woman in her early 30s, gold-and-cyan blazer, sleek bun, holding ONE single handbag",
+    "pose": "standing in the foreground on the left, holding her handbag, annoyed"
+   },
+   {
+    "nom": "the jobless little brother",
+    "desc": "young man around 27, gold-and-pistachio hoodie, short twists, one hand held out",
+    "pose": "sitting on the low wall in the middle, one hand held out, palm up"
+   },
+   {
+    "nom": "the mother on the bench",
+    "desc": "mother in her 50s, coral-and-peach kaba, a head wrap, arms crossed",
+    "pose": "sitting on the wooden bench on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Vingt-sept ans, et tu me demandes encore l'argent dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Maman a cinquante ans, elle te demande aussi."
+   ],
+   [
+    2,
+    "Moi, c'est pas demander. C'est remboursement dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The big sister, in the foreground, clutches her handbag and scolds her brother. The brother, still holding out his palm, shrugs and nods toward the mother. The mother, seated on the bench, lifts her chin and says the last line firmly, her face clearly visible.",
+  "chute": "The big sister slowly turns her head toward her mother, speechless. The camera slowly pushes in to a close-up of the working big sister's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "argent",
+   "maman",
+   "remboursement"
+  ],
+  "gag_legende": "MON SALAIRE APRÈS LA FAMILLE :",
+  "mecanisme": "retournement à triple cible : le frère accuse la mère, la mère transforme sa demande en dette de la sœur"
+ },
+ {
+  "id": "B085-19",
+  "titre": "Le diplôme et Mamie",
+  "lieu": "courtyard of a family house in Abatta, Abidjan, a big mango tree, a wooden stool, a wooden armchair in the foreground, afternoon",
+  "persos": [
+   {
+    "nom": "the graduate grandson",
+    "desc": "young man in his mid-20s, teal-and-coral polo shirt, glasses, holding ONE single framed diploma",
+    "pose": "standing on the left, holding the framed diploma with both hands, discouraged"
+   },
+   {
+    "nom": "the grandmother",
+    "desc": "grandmother in her 70s, mustard-and-sky-blue kaba, short white hair, hands resting on her knees",
+    "pose": "sitting on the wooden stool in the middle, calm and wise"
+   },
+   {
+    "nom": "the grandfather",
+    "desc": "grandfather in his 70s, mustard-and-jade boubou, bald head, white moustache, hands on the armrests",
+    "pose": "sitting in the wooden armchair in the foreground on the right, half dozing"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mamie, mon master-là ne sert à rien dêh !"
+   ],
+   [
+    1,
+    "Garde-le quand même, mon petit. Moi je garde ton grand-père depuis cinquante ans."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandfather dozes in his armchair. The grandson lifts the framed diploma and complains. The grandmother, seated, answers calmly and wisely, tilting her head toward the grandfather, her face clearly visible.",
+  "chute": "The grandfather opens his eyes wide and slowly turns his head toward his wife, offended. The camera slowly pushes in to a close-up of the grandfather's offended face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "master",
+   "garde",
+   "grand-père"
+  ],
+  "gag_legende": "PAPI APRÈS CINQUANTE ANS DE MARIAGE :",
+  "mecanisme": "retournement logique à double cible : le conseil pour le diplôme inutile range le grand-père dans la même catégorie"
+ },
+ {
+  "id": "B085-20",
+  "titre": "Le réveil de six heures",
+  "lieu": "small bedroom in Williamsville, Abidjan, a single bed in the foreground, a curtain with dawn light, a wall clock showing six o'clock, early morning",
+  "persos": [
+   {
+    "nom": "the sleepy son",
+    "desc": "son in his mid-20s, ochre-and-fuchsia t-shirt, messy hair, half under a bedsheet",
+    "pose": "propped on one elbow in the bed in the foreground on the left, annoyed"
+   },
+   {
+    "nom": "the father in a suit",
+    "desc": "father in his 50s, teal-and-coral suit, neat grey beard, holding ONE single briefcase",
+    "pose": "standing next to the bed on the right, holding the briefcase, serious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, pourquoi tu me réveilles à six heures ? J'ai pas de travail dêh !"
+   ],
+   [
+    1,
+    "Moi non plus, depuis mars. Ta maman sait pas. Habille-toi vite dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son, propped on one elbow in the bed in the foreground, complains with a grumpy face. The father leans slightly toward him and whispers the answer urgently, glancing once toward the door, then back, his face clearly visible.",
+  "chute": "The son freezes, his eyes wide open, fully awake. The camera slowly pushes in to a close-up of the sleepy son's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "six heures",
+   "travail",
+   "maman"
+  ],
+  "gag_legende": "LES DEUX COLLÈGUES À SEPT HEURES :",
+  "mecanisme": "révélation retournée : le père qui réveille le chômeur est lui-même chômeur en cachette (double cible : le père et la mère trompée)"
+ }
+]

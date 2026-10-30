@@ -1,0 +1,22 @@
+[
+  {"id": "B026-01", "note": 7.5, "drapeaux": [], "remarque": "Le « moi je connais les faux » se retourne net contre le recruteur et grille aussi le candidat faussaire : double cible féroce, même si la présence de l'enfant en entretien est un peu forcée."},
+  {"id": "B026-02", "note": 5.5, "drapeaux": ["connu"], "remarque": "Le chantage croisé « Madame croit que vous êtes à Paris » fonctionne et la relance du congé prolongé conclut bien, mais la situation du faux malade surpris par le patron est déjà au catalogue."},
+  {"id": "B026-03", "note": 6.0, "drapeaux": ["connu"], "remarque": "La base « sous pression = je suis marié » est une blague d'internet usée, sauvée en partie par la relance du patron qui s'excuse pour sa propre sœur."},
+  {"id": "B026-04", "note": 7.0, "drapeaux": [], "remarque": "La référence qui accuse est en fait la maîtresse du mari, et « chaque jeudi soir » donne un détail précis qui fait mal, même si « la vraie voleuse » laisse un peu deviner la réponse."},
+  {"id": "B026-05", "note": 5.0, "drapeaux": [], "remarque": "Un mari qui ment pris par un tiers, c'est attendu : le patron surgit pile au bon moment et la prime oubliée n'ajoute pas de vraie surprise."},
+  {"id": "B026-06", "note": 5.0, "drapeaux": ["confus"], "remarque": "L'idée d'une épouse complice du patron est bonne, mais on ne sait pas si « elle attend ça » veut dire l'augmentation ou le refus, et ce doute tue la chute."},
+  {"id": "B026-07", "note": 5.5, "drapeaux": [], "remarque": "L'ironie « rien ne sort d'ici » contre le téléphone volé est correcte, mais le téléphone qui dépasse de la poche dès le début annonce la chute et le mécanisme de l'enfant qui dénonce est déjà vu."},
+  {"id": "B026-08", "note": 7.5, "drapeaux": [], "remarque": "« Ça fait trois ans qu'on est au premier mois » tombe de nulle part avec une satire féroce de l'exploitation, et on a envie de la rejouer."},
+  {"id": "B026-09", "note": 5.5, "drapeaux": [], "remarque": "Le jeu de mots sur la ceinture est malin, mais l'hypocrisie du patron dénoncée par sa fille au téléphone reste prévisible et peu féroce."},
+  {"id": "B026-10", "note": 6.5, "drapeaux": [], "remarque": "Le patron qui se vante d'arriver tôt alors que sa femme l'a mis dehors : un bon retournement d'humiliation en deux répliques, mais sans éclat de rire franc."},
+  {"id": "B026-11", "note": 6.0, "drapeaux": [], "remarque": "Le piège qui se retourne contre le patron est classique, mais la relance « ils vous proposent un poste de gardien » l'achève bien."},
+  {"id": "B026-12", "note": 6.5, "drapeaux": [], "remarque": "Le sous-entendu sur l'épouse est cruel et prouve la discrétion par l'absurde, mais la dernière réplique demande une seconde de réflexion avant de faire mouche."},
+  {"id": "B026-13", "note": 6.0, "drapeaux": [], "remarque": "Le planton qui a éliminé la concurrence à la poubelle est une surprise culottée et nette, mais le rire reste moyen et il n'y a pas de relance."},
+  {"id": "B026-14", "note": 5.0, "drapeaux": [], "remarque": "La vantardise de la patronne appelle une chute sur le salaire de misère que tout le monde voit venir : satire correcte mais sans choc."},
+  {"id": "B026-15", "note": 7.0, "drapeaux": [], "remarque": "Le directeur qui exige l'honnêteté et se fait griller par sa secrétaire avec « votre moitié est dans votre tiroir » : une triple cible et un retournement efficace."},
+  {"id": "B026-16", "note": 4.5, "drapeaux": ["connu", "titre"], "remarque": "Le détecteur de mensonges qui sonne sur le salaire promis est une blague d'internet connue, et le titre annonce déjà le mécanisme."},
+  {"id": "B026-17", "note": 7.0, "drapeaux": [], "remarque": "La boîte à idées dictée par la mère qui veut « faire pareil à la maison » transforme la colère du patron en panique conjugale : bonne double cible."},
+  {"id": "B026-18", "note": 5.0, "drapeaux": [], "remarque": "Le patron qui retourne le mariage avec sa fille en dette de dot est logique mais tiède, la chute ne surprend pas vraiment."},
+  {"id": "B026-19", "note": 7.5, "drapeaux": [], "remarque": "Le fils qui persiste dans son mensonge en face du vrai patron avec « il est encore en période d'essai » est une relance culottée qui achève vraiment."},
+  {"id": "B026-20", "note": 5.5, "drapeaux": ["connu"], "remarque": "« Il ne demande jamais d'augmentation parce qu'il se sert dans la caisse » est une blague connue, bien exécutée mais sans surprise."}
+]

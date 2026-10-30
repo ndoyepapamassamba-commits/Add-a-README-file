@@ -11,16 +11,14 @@ const PAGE = 120;
 let affiches = PAGE;
 
 const LIBELLES = {
-  attente: "en file", image: "image en cours", image_ok: "image prête", video_lancee: "vidéo en cours",
+  attente: "en file", image: "image en cours", image_ok: "image prête", video_envoi: "envoi de la vidéo", video_lancee: "vidéo en cours",
   video_ok: "vidéo prête", controle: "contrôle en cours", pret: "prêt", a_revoir: "à revoir", erreur: "erreur",
 };
 
 async function chargerBanque() {
   for (const s of BANQUE) SKETCHS.set(s.id, s);
   for (const s of (await DB.tout("sketchs")) || []) SKETCHS.set(s.id, s);
-  const cles = await DB.cles("etat");
-  const vals = await DB.tout("etat");
-  cles.forEach((k, i) => ETATS.set(k, vals[i]));
+  for (const [k, v] of await DB.entrees("etat")) ETATS.set(k, v);
 }
 
 function texteDialogue(s) { return s.dialogue.map(([, t]) => t).join(" / "); }
@@ -121,9 +119,10 @@ function exporter(format) {
   if (format === "json") {
     blob = new Blob([JSON.stringify(lignes, null, 1)], { type: "application/json" }); nom = "prompts.json";
   } else if (format === "csv") {
-    const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
+    // Excel en français : « ; » entre colonnes, virgule décimale ; une cellule qui commence par = + - @ est neutralisée
+    const esc = (v) => { let x = typeof v === "number" ? String(v).replace(".", ",") : String(v); if (/^[=+\-@\t\r]/.test(x)) x = "'" + x; return `"${x.replace(/"/g, '""')}"`; };
     const tete = ["id", "titre", "theme", "note", "duree", "dialogue", "gag_legende", "prompt_image", "prompt_video"];
-    blob = new Blob(["﻿" + [tete.join(";"), ...lignes.map((l) => tete.map((k) => esc(l[k] ?? "")).join(";"))].join("\n")], { type: "text/csv" });
+    blob = new Blob(["\ufeff" + [tete.join(";"), ...lignes.map((l) => tete.map((k) => esc(l[k] ?? "")).join(";"))].join("\n")], { type: "text/csv" });
     nom = "prompts.csv";
   } else if (format === "lot") {          // format des lots du pipeline Python (generer.py / chaine.py)
     blob = new Blob([JSON.stringify(liste.map(versLot), null, 1)], { type: "application/json" }); nom = "lot.json";
@@ -141,27 +140,37 @@ function versLot(s) {
   return o;
 }
 
+const texteOk = (x) => typeof x === "string" && x.trim().length > 0;
 function sketchValide(s) {
-  return s && typeof s.id === "string" && s.titre && s.lieu && Array.isArray(s.persos) && s.persos.length >= 1 &&
-    Array.isArray(s.dialogue) && s.dialogue.length >= 1 && s.dialogue.every(([i, t]) => s.persos[i] && typeof t === "string") &&
-    s.jeu && typeof s.fin === "number" && s.persos[s.fin];
+  return !!(s && typeof s === "object" && texteOk(s.id) && /^[\w.-]{1,40}$/.test(s.id) && texteOk(s.titre) && texteOk(s.lieu) && texteOk(s.jeu) &&
+    Array.isArray(s.persos) && s.persos.length >= 1 && s.persos.length <= 4 &&
+    s.persos.every((p) => p && texteOk(p.nom) && texteOk(p.desc) && texteOk(p.pose)) &&
+    Array.isArray(s.dialogue) && s.dialogue.length >= 1 && s.dialogue.length <= 6 &&
+    s.dialogue.every((l) => Array.isArray(l) && Number.isInteger(l[0]) && s.persos[l[0]] && texteOk(l[1])) &&
+    Number.isInteger(s.fin) && s.persos[s.fin] && (s.chute == null || typeof s.chute === "string") &&
+    (s.duree == null || (Number.isInteger(s.duree) && s.duree >= 3 && s.duree <= 15)) &&
+    (s.coupe == null || (typeof s.coupe === "number" && s.coupe > 1)));
 }
 async function importer(fichier) {
   let donnees;
   try { donnees = JSON.parse(await fichier.text()); } catch (e) { alerte("Fichier JSON illisible.", "erreur"); return; }
   const liste = Array.isArray(donnees) ? donnees : [donnees];
-  let n = 0, rejet = 0;
-  for (const s of liste) {
+  let n = 0, rejet = 0, renommes = 0;
+  for (const [k, s] of liste.entries()) {
     if (!sketchValide(s)) { rejet++; continue; }
-    s.cles = s.cles || [];
-    s.emoji = s.emoji || "mdr";
+    s.cles = Array.isArray(s.cles) ? s.cles.filter((c) => typeof c === "string") : [];
+    s.emoji = ["choc", "mdr"].includes(s.emoji) ? s.emoji : "mdr";
+    if (s.note != null && !Number.isFinite(+s.note)) delete s.note;
+    // même id qu'un sketch existant mais texte différent : nouvel id (l'état et le clip de l'ancien ne passent pas au nouveau)
+    const ancien = SKETCHS.get(s.id);
+    if (ancien && JSON.stringify(versLot(ancien)) !== JSON.stringify(versLot(s))) { s.id = `${s.id}-${Date.now().toString(36)}${k}`; renommes++; }
     await DB.put("sketchs", s.id, s);
     SKETCHS.set(s.id, s);
     n++;
   }
   remplirThemes();
   afficherBanque();
-  alerte(`${n} sketchs importés${rejet ? `, ${rejet} rejetés (format incomplet)` : ""}.`, rejet ? "attention" : "info");
+  alerte(`${n} sketchs importés${renommes ? ` (${renommes} renommés : leur id existait déjà avec un autre texte)` : ""}${rejet ? `, ${rejet} rejetés (format incomplet)` : ""}.`, rejet ? "attention" : "info");
 }
 
 function remplirThemes() {

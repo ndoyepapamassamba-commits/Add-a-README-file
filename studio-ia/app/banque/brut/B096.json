@@ -1,0 +1,894 @@
+[
+ {
+  "id": "B096-01",
+  "titre": "Les chaussures du voisin",
+  "lieu": "sandy courtyard of a house in Attécoubé, Abidjan, a low cement wall separating it from the neighbor's yard, a skinny brown dog lying on the ground with one sneaker between its paws, early morning",
+  "persos": [
+   {
+    "nom": "the barefoot neighbor",
+    "desc": "neighbor man in his 40s, coral-and-jade tracksuit, barefoot, thick mustache, holding ONE single sneaker",
+    "pose": "standing on the left behind the low wall, holding up the sneaker, furious"
+   },
+   {
+    "nom": "the dog owner",
+    "desc": "dog owner in his 50s, olive-and-maroon boubou, bald head, round belly",
+    "pose": "standing in the foreground on the right, hands open, fake innocent smile"
+   },
+   {
+    "nom": "the owner's son",
+    "desc": "boy around 9, sky-blue-and-violet t-shirt, gap-toothed smile",
+    "pose": "standing in the middle next to the dog, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Vieux père, ton chien-là vole mes chaussures chaque nuit dêh !"
+   ],
+   [
+    1,
+    "Pardon mon vieux, c'est un animal. Il connaît rien dêh."
+   ],
+   [
+    2,
+    "Papa a dit : pointure quarante-trois seulement !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The barefoot neighbor shakes his single sneaker toward the owner and shouts. The dog owner spreads his hands with a fake innocent smile, his face turned three-quarters to the camera. The boy proudly raises one finger and says his line, his face clearly visible.",
+  "chute": "The dog owner's fake smile freezes while the barefoot neighbor looks down at his own bare feet. The camera slowly pushes in to a close-up of the dog owner's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "chaussures",
+   "quarante-trois"
+  ],
+  "gag_legende": "LE CHIEN DEVANT UNE POINTURE 42 :",
+  "mecanisme": "relance assassine : l'enfant révèle que le père a dressé le chien voleur"
+ },
+ {
+  "id": "B096-02",
+  "titre": "La gamelle du chien",
+  "lieu": "front yard of a big villa in Bingerville, Abidjan, a tall metal gate, a guard's plastic chair, a big shiny dog bowl full of meat next to a sleeping German shepherd, evening",
+  "persos": [
+   {
+    "nom": "the night guard",
+    "desc": "night guard in his 40s, sand-and-cyan guard uniform, thin mustache, holding ONE single flashlight",
+    "pose": "standing in the foreground on the left, pointing the flashlight at the dog bowl, outraged"
+   },
+   {
+    "nom": "the villa owner",
+    "desc": "villa owner in his 50s, fuchsia-and-copper kaftan, a big watch, big belly",
+    "pose": "standing on the right, arms crossed, calm"
+   },
+   {
+    "nom": "the owner's wife",
+    "desc": "owner's wife in her 40s, jade-and-cherry kaba, big earrings",
+    "pose": "standing in the middle next to her husband, hands on her hips, cold stare"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Patron, le chien-là mange viande, et moi je mange quoi ?!"
+   ],
+   [
+    1,
+    "Lui, il aboie quand les voleurs arrivent, mon vieux."
+   ],
+   [
+    2,
+    "Toi, tu les aides à porter."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The night guard points his flashlight at the bowl of meat and complains, his face turned three-quarters to the camera. The villa owner answers calmly, nodding toward the sleeping dog. The owner's wife says her line coldly, hands on her hips, her face clearly visible.",
+  "chute": "The night guard freezes, mouth open, the flashlight trembling in his hand. The camera slowly pushes in to a close-up of the night guard's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "viande",
+   "voleurs",
+   "porter"
+  ],
+  "gag_legende": "LE GARDIEN EN CHERCHANT UN AUTRE TRAVAIL :",
+  "mecanisme": "relance assassine : la patronne transforme la plainte du gardien en accusation"
+ },
+ {
+  "id": "B096-03",
+  "titre": "Le chien de la cour",
+  "lieu": "small courtyard of a house in Port-Bouët, Abidjan, a metal door, a scruffy white dog barking near the door, a plastic chair, evening after work",
+  "persos": [
+   {
+    "nom": "the angry father",
+    "desc": "father in his 40s, coral-and-indigo shirt, receding hairline, holding ONE single briefcase",
+    "pose": "standing in the foreground on the left near the dog, pointing at it, outraged"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 40s, saffron-and-salmon boubou, headscarf",
+    "pose": "standing in the middle, arms crossed, unimpressed"
+   },
+   {
+    "nom": "the daughter",
+    "desc": "girl around 10, lavender-and-cyan dress, two hair puffs",
+    "pose": "standing on the right, innocent face"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi ce chien-là aboie sur moi dans ma propre cour ?!"
+   ],
+   [
+    1,
+    "Il te connaît pas, chéri. Tu rentres jamais ici."
+   ],
+   [
+    2,
+    "Il a quatre ans, papa."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The angry father points at the barking dog and shouts, his face turned three-quarters to the camera. The mother answers calmly, arms crossed. The daughter says her line with an innocent face, her face clearly visible.",
+  "chute": "The angry father freezes and slowly lowers his pointing finger. The camera slowly pushes in to a close-up of the angry father's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "chien",
+   "quatre ans"
+  ],
+  "gag_legende": "PAPA EN COMPTANT SUR SES DOIGTS :",
+  "mecanisme": "relance assassine : l'enfant chiffre l'absence du père"
+ },
+ {
+  "id": "B096-04",
+  "titre": "Le téléphone avalé",
+  "lieu": "living room of a modest house in Attécoubé, Abidjan, an old sofa, a fat sleepy dog lying on a rug, a low table, night",
+  "persos": [
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, fuchsia-and-copper kaba, long braids, holding ONE single smartphone low at her hip",
+    "pose": "standing on the right, fake worried face, the phone held low at her hip"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, sand-and-cyan tracksuit, thin goatee",
+    "pose": "sitting on the sofa in the foreground on the left, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, ton chien-là a avalé ton téléphone dêh !"
+   ],
+   [
+    1,
+    "Ya fohi ! Bon chien ! Ce soir, il mange double viande !"
+   ],
+   [
+    0,
+    "Ton code, chéri. Maintenant."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife announces the news with a fake worried face, the phone held low at her hip. The husband, seated, raises both fists in joy and grins at the dog, his face turned three-quarters to the camera. The wife raises the phone to her chest and says her line coldly, her face clearly visible.",
+  "chute": "The husband's grin freezes, his fists still in the air. The camera slowly pushes in to a close-up of the husband's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "téléphone",
+   "double viande",
+   "code"
+  ],
+  "gag_legende": "LE MARI EN CHERCHANT UN NOUVEAU CODE :",
+  "mecanisme": "piège de l'épouse + relance assassine : la joie du mari le trahit"
+ },
+ {
+  "id": "B096-05",
+  "titre": "Le chien chez la voisine",
+  "lieu": "two neighboring courtyards in Port-Bouët, Abidjan, separated by a low cement wall, a small air conditioner unit on the right neighbor's wall, a fat yellow dog lying happily in front of the right neighbor's door, hot afternoon",
+  "persos": [
+   {
+    "nom": "the jealous owner",
+    "desc": "woman in her 40s, coral-and-jade kaba, headscarf",
+    "pose": "standing in the foreground on the left, hands on her hips, angry"
+   },
+   {
+    "nom": "the neighbor",
+    "desc": "woman in her 40s, saffron-and-salmon house dress, short hair",
+    "pose": "standing on the right behind the low wall, arms crossed, calm"
+   },
+   {
+    "nom": "the owner's husband",
+    "desc": "husband in his 40s, olive-and-maroon polo shirt, sweaty forehead, round belly",
+    "pose": "standing in the middle behind his wife, looking at the air conditioner with envy"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, pourquoi mon chien-là passe toute la journée chez toi ?!"
+   ],
+   [
+    1,
+    "Ici y a la clim, ma sœur. Chez toi, CIE a coupé."
+   ],
+   [
+    2,
+    "Moi aussi, je peux venir ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The jealous owner, hands on her hips, shouts at the neighbor, her face turned three-quarters to the camera. The neighbor answers calmly, arms crossed, nodding toward the air conditioner. The husband timidly raises one hand and asks his question, his face clearly visible.",
+  "chute": "The jealous owner's jaw drops and she freezes, eyes wide. The camera slowly pushes in to a close-up of the jealous owner's betrayed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "chien",
+   "clim",
+   "venir"
+  ],
+  "gag_legende": "LE MARI EN PRÉPARANT SON SAC :",
+  "mecanisme": "relance assassine : le mari veut suivre le chien chez la voisine"
+ },
+ {
+  "id": "B096-06",
+  "titre": "Le perroquet de belle-maman",
+  "lieu": "veranda of a family house in Bingerville, Abidjan, a grey parrot in a round metal cage hanging from the ceiling, wicker chairs, a low table, Sunday afternoon",
+  "persos": [
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 30s, lavender-and-cyan shirt, skinny, short beard",
+    "pose": "standing on the left, pointing at the cage, offended"
+   },
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, jade-and-cherry boubou, big glasses, a necklace",
+    "pose": "sitting in a wicker chair in the foreground, one hand on her chest, fake innocent face"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, coral-and-indigo dress, tired eyes",
+    "pose": "standing on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Belle-maman, pourquoi ton perroquet-là m'appelle « le fauché » ?!"
+   ],
+   [
+    1,
+    "Ah mon fils, je lui ai jamais appris ça dêh !"
+   ],
+   [
+    2,
+    "Maman, tu le dis chaque matin."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The son-in-law points at the parrot cage, offended. The mother-in-law, seated, presses one hand on her chest with a fake innocent face, her face turned three-quarters to the camera. The wife says her line flatly to her mother, arms crossed, her face clearly visible.",
+  "chute": "The mother-in-law freezes, her hand still on her chest, her fake smile stuck. The camera slowly pushes in to a close-up of the mother-in-law's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "perroquet",
+   "fauché",
+   "chaque matin"
+  ],
+  "gag_legende": "LE PERROQUET EN RÉVISANT SA LEÇON :",
+  "mecanisme": "relance assassine : la fille dénonce sa propre mère"
+ },
+ {
+  "id": "B096-07",
+  "titre": "Le retour de Madame",
+  "lieu": "big kitchen of a villa in Bingerville, Abidjan, a large fridge, a very skinny dog lying next to an empty dog bowl, a big open bag of dog kibble on the counter, morning",
+  "persos": [
+   {
+    "nom": "the lady of the house",
+    "desc": "lady of the house in her 40s, sky-blue-and-violet kaftan, big earrings, a travel handbag on her shoulder",
+    "pose": "standing on the left, pointing at the skinny dog, shocked"
+   },
+   {
+    "nom": "the housemaid",
+    "desc": "housemaid in her 20s, olive-and-maroon dress, hair tied up",
+    "pose": "standing in the middle, hands clasped, nervous"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 50s, coral-and-jade pyjamas, round belly",
+    "pose": "sitting at the kitchen table in the foreground on the right, very relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi mon chien-là a maigri pendant mon voyage ?!"
+   ],
+   [
+    1,
+    "Madame, c'est Monsieur qui mangeait ses croquettes chaque soir dêh."
+   ],
+   [
+    2,
+    "Avec piment, c'est bon dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The lady points at the skinny dog, shocked. The housemaid answers nervously, tilting her head toward the husband. The husband, seated, raises one thumb with a satisfied smile and says his line, his face clearly visible.",
+  "chute": "The lady stares at him, frozen in disgust, while he keeps his thumb up. The camera slowly pushes in to a close-up of the husband's proud satisfied face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "croquettes",
+   "piment"
+  ],
+  "gag_legende": "LE CHIEN EN CACHANT SA GAMELLE :",
+  "mecanisme": "relance assassine : le coupable aggrave son cas avec fierté"
+ },
+ {
+  "id": "B096-08",
+  "titre": "La dot en cabris",
+  "lieu": "courtyard of a family house in Bingerville, Abidjan, plastic chairs in a row, ONE single small brown goat tied with a rope held by the groom, afternoon",
+  "persos": [
+   {
+    "nom": "the bride's father",
+    "desc": "bride's father in his 60s, sand-and-cyan boubou, long beard",
+    "pose": "sitting in a plastic chair on the left, very serious"
+   },
+   {
+    "nom": "the poor groom",
+    "desc": "groom in his 20s, coral-and-indigo suit, skinny, holding ONE single rope tied to the goat",
+    "pose": "standing in the foreground in the middle, hopeful smile"
+   },
+   {
+    "nom": "the bride",
+    "desc": "bride in her 20s, fuchsia-and-copper gown, elegant headwrap",
+    "pose": "standing on the right, calm and practical"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, la dot, c'est trois cabris dêh !"
+   ],
+   [
+    1,
+    "Tonton, j'ai un seul cabri. Je complète avec mon amour."
+   ],
+   [
+    2,
+    "Papa, prends juste le cabri."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The bride's father announces the price very seriously, raising three fingers. The groom puts his free hand on his heart with a hopeful smile, his face turned three-quarters to the camera. The bride says her line calmly to her father, her face clearly visible.",
+  "chute": "The groom's smile freezes while the little goat bleats. The camera slowly pushes in to a close-up of the poor groom's devastated face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "dot",
+   "cabri",
+   "amour"
+  ],
+  "gag_legende": "LE CABRI QUAND IL APPREND QU'IL SE MARIE :",
+  "mecanisme": "relance assassine : la mariée préfère l'animal au fiancé"
+ },
+ {
+  "id": "B096-09",
+  "titre": "Le nom de la tortue",
+  "lieu": "small sandy courtyard of a house in Port-Bouët, Abidjan, a big tortoise on the ground near a plastic chair, a clothesline, late afternoon",
+  "persos": [
+   {
+    "nom": "the curious boy",
+    "desc": "boy around 8, jade-and-cherry t-shirt, big round eyes",
+    "pose": "standing on the right, pointing at the tortoise"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, sky-blue-and-violet shirt, small mustache",
+    "pose": "sitting on a plastic chair in the foreground on the left, proud of himself"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 40s, lavender-and-cyan boubou, headscarf",
+    "pose": "standing in the middle, hands on her hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, pourquoi tu as appelé la tortue « Salaire » ?"
+   ],
+   [
+    1,
+    "Parce qu'elle arrive toujours en retard, mon fils."
+   ],
+   [
+    2,
+    "Elle, au moins, elle arrive dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boy points at the tortoise, curious. The father, seated, answers with a proud knowing smile, wagging one finger, his face turned three-quarters to the camera. The mother says her line dryly, hands on her hips, her face clearly visible.",
+  "chute": "The father's proud smile collapses. The camera slowly pushes in to a close-up of the father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "tortue",
+   "Salaire",
+   "retard"
+  ],
+  "gag_legende": "LA TORTUE APRÈS CETTE COMPARAISON :",
+  "mecanisme": "relance assassine : la mère retourne la blague du père contre lui"
+ },
+ {
+  "id": "B096-10",
+  "titre": "Le margouillat sur le mur",
+  "lieu": "courtyard of a house in Attécoubé, Abidjan, a sunny cement wall with a big orange-headed agama lizard bobbing its head, a wooden bench, midday",
+  "persos": [
+   {
+    "nom": "the little girl",
+    "desc": "girl around 7, saffron-and-salmon dress, two pigtails",
+    "pose": "standing on the left, pointing at the lizard on the wall"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, olive-and-maroon tracksuit, big round belly",
+    "pose": "sitting on the wooden bench in the foreground, tired"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 40s, coral-and-indigo kaba, headscarf",
+    "pose": "standing on the right, arms crossed, eyes on her husband's belly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, pourquoi le margouillat-là dit oui avec sa tête ?"
+   ],
+   [
+    1,
+    "Il est marié, ma fille. Comme moi."
+   ],
+   [
+    2,
+    "Et lui, il fait les pompes."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The girl points at the lizard, curious. The father, seated, sighs and slowly nods his head like the lizard, his face turned three-quarters to the camera. The mother looks at his belly and says her line, her face clearly visible.",
+  "chute": "The father stops nodding and freezes, sucking in his belly. The camera slowly pushes in to a close-up of the father's vexed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "margouillat",
+   "marié",
+   "pompes"
+  ],
+  "gag_legende": "PAPA EN ESSAYANT SA PREMIÈRE POMPE :",
+  "mecanisme": "relance assassine : la mère achève le père sur son ventre"
+ },
+ {
+  "id": "B096-11",
+  "titre": "L'âge du chien",
+  "lieu": "small living room of a house in Attécoubé, Abidjan, an old sofa, a lazy old dog sleeping on a mat, a small TV, afternoon",
+  "persos": [
+   {
+    "nom": "the schoolboy",
+    "desc": "boy around 10, sand-and-cyan t-shirt, short hair, holding ONE single open schoolbook",
+    "pose": "standing on the left, reading from the book, excited"
+   },
+   {
+    "nom": "the old father",
+    "desc": "father in his 60s, coral-and-jade boubou, reading glasses, receding hair",
+    "pose": "sitting in an armchair on the right, suspicious look"
+   },
+   {
+    "nom": "the big brother",
+    "desc": "man in his 30s, lavender-and-cyan tracksuit, unshaven, belly",
+    "pose": "slumped on the sofa in the foreground, lazy"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, un an de chien, c'est sept ans d'homme dêh !"
+   ],
+   [
+    1,
+    "Donc le chien-là a trente-cinq ans et il cherche pas travail ?"
+   ],
+   [
+    2,
+    "Papa, laisse le chien tranquille dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The schoolboy reads from his book, excited. The old father, seated, glares sideways at the big brother while talking about the dog, his face turned three-quarters to the camera. The big brother sits up a little and says his line defensively, his face clearly visible.",
+  "chute": "The old father and the schoolboy slowly turn their heads toward the big brother, who freezes. The camera slowly pushes in to a close-up of the big brother's busted face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "sept ans",
+   "travail",
+   "tranquille"
+  ],
+  "gag_legende": "LE GRAND FRÈRE EN CHERCHANT SON CV :",
+  "mecanisme": "relance assassine : la cible cachée se dénonce en défendant le chien"
+ },
+ {
+  "id": "B096-12",
+  "titre": "La mémoire du poisson rouge",
+  "lieu": "living room of an apartment in Port-Bouët, Abidjan, a round fishbowl with one goldfish on a low table, a sofa, evening",
+  "persos": [
+   {
+    "nom": "the curious girl",
+    "desc": "girl around 9, coral-and-indigo overalls, braids",
+    "pose": "standing on the left next to the fishbowl, pointing at it"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, jade-and-cherry polo shirt, smug smile",
+    "pose": "sitting on the sofa in the foreground, legs crossed"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 40s, sky-blue-and-violet boubou, big earrings",
+    "pose": "standing on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, c'est vrai que le poisson rouge oublie tout vite ?"
+   ],
+   [
+    1,
+    "Oui, ma fille. Comme ta maman avec mes cadeaux dêh."
+   ],
+   [
+    2,
+    "Cite un seul cadeau, chéri."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The girl points at the fishbowl, curious. The father answers with a smug smile, tilting his head toward the mother, his face turned three-quarters to the camera. The mother raises one eyebrow and says her line calmly, arms crossed, her face clearly visible.",
+  "chute": "The father opens his mouth, finds nothing, and freezes. The camera slowly pushes in to a close-up of the father's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "poisson rouge",
+   "cadeaux"
+  ],
+  "gag_legende": "PAPA EN CHERCHANT UN CADEAU DANS SA TÊTE :",
+  "mecanisme": "relance assassine : la mère transforme l'accusation en défi impossible"
+ },
+ {
+  "id": "B096-13",
+  "titre": "Le rat de la cuisine",
+  "lieu": "tiny kitchen of a house in Attécoubé, Abidjan, empty shelves, an empty rice bag, a small mouse hole at the bottom of the wall with ONE single coin lying in front of it, evening",
+  "persos": [
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, olive-and-maroon kaba, headscarf",
+    "pose": "standing on the left, hands on her hips, dramatic"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, saffron-and-salmon shirt, skinny",
+    "pose": "standing in the foreground in the middle, relieved"
+   },
+   {
+    "nom": "the little boy",
+    "desc": "boy around 6, fuchsia-and-copper t-shirt, chubby cheeks",
+    "pose": "standing on the right near the hole, pointing at the coin"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, même le rat-là a déménagé de notre maison dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Une bouche de moins à nourrir."
+   ],
+   [
+    2,
+    "Papa, il a laissé cent francs !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife announces it dramatically, hands on her hips. The husband shrugs with relief, waving one hand, his face turned three-quarters to the camera. The little boy points at the coin near the hole and says his line, his face clearly visible.",
+  "chute": "The husband freezes, staring at the coin. The camera slowly pushes in to a close-up of the husband's humiliated face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "rat",
+   "déménagé",
+   "cent francs"
+  ],
+  "gag_legende": "LE RAT EN CHERCHANT UNE FAMILLE RICHE :",
+  "mecanisme": "relance assassine : même le rat a pitié de la famille"
+ },
+ {
+  "id": "B096-14",
+  "titre": "Le patron invité à dîner",
+  "lieu": "courtyard of a house in Port-Bouët, Abidjan, a plastic table set for dinner with plates, a fat lazy dog sleeping under the table, evening",
+  "persos": [
+   {
+    "nom": "the boss",
+    "desc": "boss in his 50s, olive-and-maroon suit, round glasses, big belly",
+    "pose": "sitting at the table on the left, kind smile"
+   },
+   {
+    "nom": "the little son",
+    "desc": "boy around 7, coral-and-jade t-shirt, gap-toothed smile",
+    "pose": "standing in the middle next to the sleeping dog, proud"
+   },
+   {
+    "nom": "the employee father",
+    "desc": "father in his 40s, sand-and-cyan shirt, neat haircut, nervous",
+    "pose": "sitting at the table in the foreground on the right, frozen polite smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, ton chien-là s'appelle comment, hein ?"
+   ],
+   [
+    1,
+    "Patron ! Papa dit qu'il dort toute la journée comme vous dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boss, seated, points kindly at the sleeping dog and asks, his face turned three-quarters to the camera. The little son answers proudly, pointing at the boss, his face clearly visible.",
+  "chute": "The boss's smile slowly disappears while the employee father stays frozen with his polite smile. The camera slowly pushes in to a close-up of the employee father's terrified face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "chien",
+   "Patron",
+   "journée"
+  ],
+  "gag_legende": "PAPA DEMAIN MATIN AU BUREAU :",
+  "mecanisme": "trahison innocente de l'enfant : le patron et le père touchés d'un coup"
+ },
+ {
+  "id": "B096-15",
+  "titre": "Le chien du copain",
+  "lieu": "courtyard of a house in Bingerville, Abidjan, a mango tree, a big black dog lying near the gate and growling, plastic chairs, afternoon",
+  "persos": [
+   {
+    "nom": "the girlfriend",
+    "desc": "young woman in her 20s, lavender-and-cyan sundress, long braids, a small handbag",
+    "pose": "standing on the left, pointing at the dog, offended"
+   },
+   {
+    "nom": "the boyfriend",
+    "desc": "young man in his 20s, fuchsia-and-copper shirt, trimmed beard",
+    "pose": "standing in the foreground on the right, relaxed smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, pourquoi ton chien-là grogne seulement sur moi ?!"
+   ],
+   [
+    1,
+    "Ya fohi, bébé. Il grogne sur toutes les nouvelles."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girlfriend points at the growling dog, offended, her face turned three-quarters to the camera. The boyfriend waves one hand to reassure her with a relaxed smile and says his line, his face clearly visible.",
+  "chute": "The boyfriend realizes what he just said and his smile freezes. The camera slowly pushes in to a close-up of the boyfriend's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "chien",
+   "grogne",
+   "nouvelles"
+  ],
+  "gag_legende": "LE CHIEN EN COMPTANT LES COPINES :",
+  "mecanisme": "aveu involontaire : un pluriel qui trahit le copain"
+ },
+ {
+  "id": "B096-16",
+  "titre": "La facture et le cabri",
+  "lieu": "courtyard of a house in Attécoubé, Abidjan, a white goat chewing a piece of paper, a clothesline, a plastic chair, morning",
+  "persos": [
+   {
+    "nom": "the panicked wife",
+    "desc": "wife in her 30s, sand-and-cyan kaba, headscarf, holding ONE single torn envelope",
+    "pose": "standing on the right, showing the torn envelope, panicked"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, jade-and-cherry tracksuit, short beard",
+    "pose": "sitting on the plastic chair in the foreground on the left, next to the goat"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri ! Ton cabri-là a mangé la facture de la CIE dêh !"
+   ],
+   [
+    1,
+    "Bravo mon cabri ! Demain, je t'amène à la banque."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The panicked wife shows the torn envelope and shouts, her face turned three-quarters to the camera. The husband, seated, claps his hands once with joy, looks proudly at the goat and says his line, his face clearly visible.",
+  "chute": "The panicked wife stares at him, speechless, while the goat keeps chewing. The camera slowly pushes in to a close-up of the husband's delighted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "cabri",
+   "facture",
+   "banque"
+  ],
+  "gag_legende": "LE CABRI EN ENTRANT À LA BANQUE :",
+  "mecanisme": "logique absurde poussée au bout : la catastrophe devient un plan"
+ },
+ {
+  "id": "B096-17",
+  "titre": "Le concours de chiens",
+  "lieu": "sandy street corner in Port-Bouët, Abidjan, near the beach, a small dog sitting obediently, a wooden bench, late afternoon",
+  "persos": [
+   {
+    "nom": "the proud boy",
+    "desc": "boy around 9, coral-and-indigo t-shirt, short hair, holding ONE single dog leash",
+    "pose": "standing on the left next to the sitting dog, proud"
+   },
+   {
+    "nom": "the other boy",
+    "desc": "boy around 9, saffron-and-salmon t-shirt, cheeky smile",
+    "pose": "standing in the middle, unimpressed"
+   },
+   {
+    "nom": "the dad",
+    "desc": "father in his 40s, fuchsia-and-copper tracksuit, small mustache",
+    "pose": "sitting on the wooden bench in the foreground on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon chien-là fait « assis », « couché », « donne la patte » dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Mon papa aussi, quand maman siffle."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The proud boy shows off, holding the leash next to his sitting dog, his face turned three-quarters to the camera. The other boy shrugs, unimpressed, pointing his thumb at his father on the bench, and says his line, his face clearly visible.",
+  "chute": "The dad on the bench freezes, then sits up very straight like an obedient dog. The camera slowly pushes in to a close-up of the dad's humiliated face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "assis",
+   "couché",
+   "siffle"
+  ],
+  "gag_legende": "PAPA QUAND MAMAN SIFFLE À LA MAISON :",
+  "mecanisme": "comparaison enfantine qui humilie le père devant le quartier"
+ },
+ {
+  "id": "B096-18",
+  "titre": "Le bruit chez la locataire",
+  "lieu": "shared courtyard of rented rooms in Attécoubé, Abidjan, a row of numbered doors, a plastic bucket, a bench, evening",
+  "persos": [
+   {
+    "nom": "the landlord",
+    "desc": "landlord in his 60s, coral-and-indigo boubou, beard, holding ONE single notebook",
+    "pose": "standing on the left, pointing his notebook at the tenant's door, suspicious"
+   },
+   {
+    "nom": "the tenant",
+    "desc": "woman in her 30s, sky-blue-and-violet dress, headscarf",
+    "pose": "standing in the middle in front of her door, hands on her hips, calm"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 30s, coral-and-jade shirt, holding ONE single phone in his hand",
+    "pose": "sitting on the bench in the foreground on the right, looking up from his phone"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma fille, j'entends un chien aboyer chez toi ! Pas d'animaux ici !"
+   ],
+   [
+    1,
+    "Tonton, c'est mon mari. Il parle avec sa maman au téléphone."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The landlord points his notebook at the tenant's door, suspicious, his face turned three-quarters to the camera. The tenant answers calmly, nodding toward her husband, her face clearly visible.",
+  "chute": "The husband freezes, his phone in his hand, mouth wide open. The camera slowly pushes in to a close-up of the husband's outraged face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "chien",
+   "mari",
+   "maman"
+  ],
+  "gag_legende": "BELLE-MAMAN QUAND ELLE APPREND ÇA :",
+  "mecanisme": "excuse qui sacrifie deux cibles d'un coup : le mari et sa mère"
+ },
+ {
+  "id": "B096-19",
+  "titre": "La visite de belle-maman",
+  "lieu": "front gate of a house in Bingerville, Abidjan, a big brown dog barking behind the open gate, a sandy path, morning",
+  "persos": [
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, fuchsia-and-copper boubou, headwrap, holding ONE single big suitcase",
+    "pose": "standing in the foreground on the left, outraged"
+   },
+   {
+    "nom": "the son-in-law",
+    "desc": "son-in-law in his 40s, saffron-and-salmon polo shirt, fake polite smile",
+    "pose": "standing at the open gate on the right, next to the barking dog"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, pourquoi ton chien-là aboie seulement quand j'arrive ?!"
+   ],
+   [
+    1,
+    "Pardon Maman, il est dressé contre les valises dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother-in-law, holding her big suitcase, shouts at her son-in-law, her face turned three-quarters to the camera. The son-in-law answers with a fake polite smile, pointing at her suitcase, his face clearly visible.",
+  "chute": "The mother-in-law freezes and slowly looks down at her suitcase. The camera slowly pushes in to a close-up of the mother-in-law's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "chien",
+   "dressé",
+   "valises"
+  ],
+  "gag_legende": "BELLE-MAMAN EN CACHANT SA VALISE :",
+  "mecanisme": "aveu cynique du gendre qui vise la belle-mère"
+ },
+ {
+  "id": "B096-20",
+  "titre": "L'anniversaire du chien",
+  "lieu": "living room of a house in Port-Bouët, Abidjan, a small cake with candles on a low table, a happy dog sitting next to the cake, balloons, evening",
+  "persos": [
+   {
+    "nom": "the angry wife",
+    "desc": "wife in her 40s, sky-blue-and-violet kaba, big earrings",
+    "pose": "standing in the foreground on the left, hands on her hips, furious"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, lavender-and-cyan polo shirt, short beard",
+    "pose": "sitting next to the cake in the middle, relaxed"
+   },
+   {
+    "nom": "the wife's mother",
+    "desc": "grandmother in her 60s, olive-and-maroon kaftan, headwrap, big glasses",
+    "pose": "sitting in an armchair on the right, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, tu fêtes l'anniversaire du chien et pas le mien ?!"
+   ],
+   [
+    1,
+    "Le chien-là, je connais son vrai âge dêh."
+   ],
+   [
+    2,
+    "Même moi, sa maman, j'ai oublié."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The angry wife shouts, hands on her hips, her face turned three-quarters to the camera. The husband, seated, shrugs and points at the candles on the cake. The wife's mother shrugs calmly and says her line, her face clearly visible.",
+  "chute": "The angry wife freezes, mouth wide open, eyes wide. The camera slowly pushes in to a close-up of the angry wife's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "anniversaire",
+   "vrai âge",
+   "oublié"
+  ],
+  "gag_legende": "MAMAN EN COMPTANT SES BOUGIES EN CACHETTE :",
+  "mecanisme": "relance assassine : la propre mère confirme le mystère de l'âge"
+ }
+]

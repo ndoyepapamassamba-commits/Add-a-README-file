@@ -1,12 +1,20 @@
 "use strict";
 /* ============================================================================================================
    Production : file d'attente image → vidéo → contrôle IA, plafond de budget, reprise après fermeture.
-   Une vidéo déjà lancée (donc payée) n'est jamais relancée par accident : son identifiant est gardé et la vidéo
-   est récupérée dès qu'elle est prête (le contenu expire chez OpenRouter au bout de quelques heures).
+   Règles d'argent : (1) chaque dépense est RÉSERVÉE avant son premier « await », donc deux lancements d'un même tour ne
+   voient jamais le même budget ; (2) une requête payante n'est jamais renvoyée à l'aveugle (voir api()) ; (3) une vidéo
+   lancée garde son identifiant et est récupérée même après fermeture de la page (le contenu expire chez OpenRouter au
+   bout de quelques heures) ; (4) un seul onglet produit à la fois.
    ============================================================================================================ */
 
 let FILE = lireJSON(localStorage, "studio-file") || [];
-const RUN = { actif: false, pause: false, enCours: new Set(), engage: 0, derniereVerifCle: 0, resteCle: null, interroge: new Map() };
+const RUN = { actif: false, pause: false, enCours: new Set(), engage: 0, derniereVerifCle: 0, resteCle: null, sessionVerif: 0,
+  lecture: null, interroge: new Map(), repris: false, seul: true, alerteSolde: false };
+// étapes payantes en cours : un sketch dans l'une d'elles n'est jamais retiré, vidé ni relancé
+const EN_VOL = ["image", "video_envoi", "video_lancee", "controle"];
+const DEJA_OUVERT = "Le studio est déjà ouvert dans un autre onglet : la production ne marche que dans un seul onglet à la " +
+  "fois (sinon tout serait payé deux fois). Ferme cet onglet et utilise l'autre.";
+const MAX_CONTROLES = 2;
 
 const QUESTION_REGARD = (d, persos) => `Ces 16 images sont extraites DANS L'ORDRE (de gauche à droite, ligne par ligne, temps en jaune) d'un même plan ` +
   `d'animation 3D de ${d.toFixed(0)} secondes. Personnages prévus : ${persos}. Juge la CONTINUITÉ DES PERSONNAGES. ` +
@@ -27,20 +35,34 @@ const QUESTION_SYNCHRO = (persos) => `Images extraites d'un plan d'animation 3D,
 function sauverFile() { localStorage.setItem("studio-file", JSON.stringify(FILE)); }
 async function majEtat(id, champs) {
   const e = Object.assign({}, ETATS.get(id) || {}, champs, { maj: Date.now() });
-  ETATS.set(id, e);
-  await DB.put("etat", id, e);
+  ETATS.set(id, e);                     // la mémoire d'abord : même si l'écriture échoue, l'onglet garde le bon état
   afficherCarte(id);
   majResume();
+  await DB.put("etat", id, e);
   return e;
 }
+const statutDe = (id) => (ETATS.get(id) || {}).statut;
 
 function ajouterFile(ids) {
+  if (!RUN.seul) { alerte(DEJA_OUVERT, "erreur"); return; }
   let n = 0;
   for (const id of ids) if (SKETCHS.has(id) && !FILE.includes(id)) { FILE.push(id); n++; }
   sauverFile();
-  for (const id of ids) if (!ETATS.get(id)) majEtat(id, { statut: "attente", couts: {}, essaisVideo: 0 });
+  for (const id of ids) {
+    const s = SKETCHS.get(id);
+    if (!s) continue;
+    // copie du sketch : il reste lisible même si une nouvelle version de la banque ne le contient plus
+    DB.put("sketchs", id, s).catch(() => {});
+    if (!ETATS.get(id)) majEtat(id, { statut: "attente", couts: {}, essaisVideo: 0 }).catch(() => {});
+  }
   afficherProduction();
-  alerte(`${n} sketch(s) ajouté(s) à la production. Estimation : ${dollars(ids.reduce((a, id) => a + coutEstime(SKETCHS.get(id)), 0))}.`);
+  alerte(`${n} sketch(s) ajouté(s) à la production. Estimation : ${dollars(ids.reduce((a, id) => a + (SKETCHS.has(id) ? coutEstime(SKETCHS.get(id)) : 0), 0))}.`);
+}
+// une vidéo en vol hors de la file (ancienne version, retrait pendant un envoi) y est remise : elle est payée
+function rattacherEnVol() {
+  let n = 0;
+  for (const [id, e] of ETATS) if (["video_envoi", "video_lancee"].includes(e.statut) && !FILE.includes(id)) { FILE.push(id); n++; }
+  if (n) { sauverFile(); afficherProduction(); }
 }
 
 // ---------- budget ----------
@@ -54,16 +76,43 @@ function coutRestantFile() {
   }
   return c;
 }
-async function budgetPermet(montant, quoi) {
-  if (DEPENSES.session + RUN.engage + montant > R.budget + 1e-9) {
-    pauseBudget(`Plafond de budget atteint (${dollars(R.budget)}) : ${quoi} non lancé. Monte le plafond pour continuer.`);
+// solde de la clé lu au dernier GET /key, moins ce qui a été dépensé depuis
+function soldeEstime() { return RUN.resteCle == null ? null : RUN.resteCle - (DEPENSES.session - RUN.sessionVerif); }
+async function lireSolde() {
+  if (!RUN.lecture) {
+    RUN.lecture = infoCle().then((i) => {
+      RUN.resteCle = i.reste; RUN.sessionVerif = DEPENSES.session; RUN.derniereVerifCle = Date.now(); majCle();
+      return i;
+    }).finally(() => { RUN.lecture = null; });
+  }
+  return RUN.lecture;
+}
+function liberer(montant) { RUN.engage = Math.max(0, RUN.engage - (+montant || 0)); }
+// Réserve « montant » et renvoie true (à libérer ensuite avec liberer), ou false si le plafond ou le plancher l'interdit.
+// Le plafond est testé et la somme réservée AVANT le premier await.
+async function reserver(montant, quoi) {
+  if (!Number.isFinite(montant) || montant < 0 || !Number.isFinite(RUN.engage)) {
+    pauseBudget(`Coût inconnu pour ${quoi} : rien n'est lancé.`);
     return false;
   }
-  if (Date.now() - RUN.derniereVerifCle > 60000) {
-    try { RUN.resteCle = (await infoCle()).reste; RUN.derniereVerifCle = Date.now(); majCle(); } catch (e) { /* on garde l'ancienne valeur */ }
+  if (DEPENSES.session + RUN.engage + montant > R.budget + 1e-9) {
+    pauseBudget(`Plafond de dépense atteint (${dollars(R.budget)}) : ${quoi} non lancé. Monte le plafond puis clique « Reprendre ».`);
+    return false;
   }
-  if (RUN.resteCle != null && RUN.resteCle - RUN.engage - montant < R.plancher) {
-    pauseBudget(`Il ne resterait que ${dollars(RUN.resteCle - RUN.engage - montant)} sur la clé (plancher ${dollars(R.plancher)}) : ${quoi} non lancé.`);
+  RUN.engage += montant;
+  if (Date.now() - RUN.derniereVerifCle > 60000) {
+    try { await lireSolde(); } catch (e) { RUN.derniereVerifCle = Date.now() - 45000; }   // nouvel essai dans 15 s
+  }
+  const reste = soldeEstime();
+  if (reste == null) {
+    if (R.plancher > 0 && !RUN.alerteSolde) {
+      RUN.alerteSolde = true;
+      alerte("Solde de la clé inconnu : le plancher ne peut pas être vérifié, seul le plafond de session protège.", "attention");
+    }
+  } else if (reste - RUN.engage < R.plancher - 1e-9) {
+    const apres = reste - RUN.engage;
+    liberer(montant);
+    pauseBudget(`Il ne resterait que ${dollars(apres)} sur la clé (plancher ${dollars(R.plancher)}) : ${quoi} non lancé.`);
     return false;
   }
   return true;
@@ -73,38 +122,65 @@ function pauseBudget(msg) {
   RUN.pause = true;
   majBoutons();
 }
+// clé refusée (401) ou crédit épuisé (402) : toute la production se met en pause, le sketch garde sa place dans la file
+async function echec(id, err, etape, statutAvant) {
+  const msg = (err && err.message) || String(err);
+  if ([401, 402].includes(err && err.statut)) {
+    await majEtat(id, { statut: statutAvant, erreur: `${etape} : ${msg}` });
+    pauseBudget(err.statut === 402 ? "Crédit OpenRouter insuffisant : production en pause. Recharge ton compte, puis clique « Reprendre »."
+      : "Clé OpenRouter refusée : production en pause. Vérifie ta clé dans Réglages, puis clique « Reprendre ».");
+    return;
+  }
+  const texte = err && err.incertain
+    ? `${etape} : envoi interrompu (${msg}). Il a peut-être été créé et payé : vérifie sur openrouter.ai/activity avant de le refaire.`
+    : `${etape} : ${msg}`;
+  if (etape === "vidéo") await videoRatee(id, texte);
+  else await majEtat(id, { statut: "erreur", erreur: texte, etapeErreur: "image" });
+}
+// une nouvelle vidéo a échoué : si le sketch avait déjà un clip, il le garde (et retrouve son statut d'avant)
+async function videoRatee(id, msg) {
+  const e = ETATS.get(id) || {};
+  if (e.clip) await majEtat(id, { statut: e.statutAvant || "pret", job: null, erreur: `${msg} — l'ancien clip est gardé` });
+  else await majEtat(id, { statut: "erreur", etapeErreur: "video", job: null, erreur: msg });
+}
 
 // ---------- étapes ----------
 async function etapeImage(id) {
   const s = SKETCHS.get(id);
-  if (!(await budgetPermet(PRIX.image, `l'image de ${id}`))) return;
-  RUN.engage += PRIX.image;
-  await majEtat(id, { statut: "image", erreur: null });
+  if (!(await reserver(PRIX.image, `l'image de ${id}`))) return;
   try {
+    await majEtat(id, { statut: "image", erreur: null });
     const { blob, cout } = await genererImage(s);
     await DB.put("fichiers", `${id}:image`, blob);
     ecrireFichier("images", `${id}.${blob.type === "image/png" ? "png" : "jpg"}`, blob);
     const e = ETATS.get(id) || {};
-    await majEtat(id, { statut: "image_ok", couts: Object.assign({}, e.couts, { image: cout }) });
+    await majEtat(id, { statut: "image_ok", couts: Object.assign({}, e.couts, { image: (e.couts?.image || 0) + cout }) });
   } catch (err) {
-    await majEtat(id, { statut: "erreur", erreur: `image : ${err.message}`, etapeErreur: "image" });
-  } finally { RUN.engage -= PRIX.image; }
+    await echec(id, err, "image", "attente");
+  } finally { liberer(PRIX.image); }
 }
 
 async function etapeVideo(id) {
   const s = SKETCHS.get(id);
-  const estim = dureeClip(s) * PRIX.video_seconde + PRIX.video_image;
-  if (!(await budgetPermet(estim, `la vidéo de ${id}`))) return;
-  const image = await DB.get("fichiers", `${id}:image`);
-  if (!image) { await majEtat(id, { statut: "attente" }); return; }
-  RUN.engage += estim;
+  const estim = coutVideo(s);
+  if (!(await reserver(estim, `la vidéo de ${id}`))) return;
+  let job;
   try {
-    const job = await lancerVideo(s, image);
-    const e = ETATS.get(id) || {};
-    await majEtat(id, { statut: "video_lancee", job, estimVideo: estim, lancee: Date.now(), essaisVideo: (e.essaisVideo || 0) + 1 });
+    const image = await DB.get("fichiers", `${id}:image`);
+    if (!image) { liberer(estim); await majEtat(id, { statut: "attente" }); return; }
+    // statut gardé en mémoire ET sur disque pendant l'envoi : on ne peut ni retirer ni relancer ce sketch
+    await majEtat(id, { statut: "video_envoi", envoi: Date.now(), erreur: null });
+    job = await lancerVideo(s, image);
   } catch (err) {
-    RUN.engage -= estim;
-    await majEtat(id, { statut: "erreur", erreur: `vidéo : ${err.message}`, etapeErreur: "video" });
+    liberer(estim);
+    await echec(id, err, "vidéo", "image_ok");
+    return;
+  }
+  const e = ETATS.get(id) || {};
+  try {
+    await majEtat(id, { statut: "video_lancee", job, estimVideo: estim, coutNote: false, lancee: Date.now(), essaisVideo: (e.essaisVideo || 0) + 1 });
+  } catch (err) {
+    alerte(`${id} : vidéo lancée mais pas enregistrée dans le navigateur (${err.message}). Garde la page ouverte jusqu'à sa récupération.`, "erreur");
   }
 }
 
@@ -112,46 +188,66 @@ async function etapeAttente(id) {
   const e = ETATS.get(id);
   if (!e || !e.job) return;
   let et;
-  try { et = await etatVideo(e.job); } catch (err) { return; }      // on réessaie au tour suivant
-  if (et.status === "completed") {
-    try {
-      const blob = await telechargerVideo(e.job, et);
-      const cout = (et.usage || {}).cost ?? e.estimVideo;
-      RUN.engage = Math.max(0, RUN.engage - (e.estimVideo || 0));
-      await noterDepense("video", R.modeleVideo, cout, id);
-      const ancien = await DB.get("fichiers", `${id}:video`);
-      if (ancien) await DB.put("fichiers", `${id}:video_v${(e.essaisVideo || 1) - 1}`, ancien);
-      await DB.put("fichiers", `${id}:video`, blob);
-      ecrireFichier("clips", `${id}.mp4`, blob);
-      await majEtat(id, { statut: "video_ok", couts: Object.assign({}, e.couts, { video: (e.couts?.video || 0) + (+cout || 0) }), controle: null });
-    } catch (err) {
-      await majEtat(id, { erreur: `téléchargement : ${err.message} (nouvel essai au prochain tour)` });
-      if (err.statut === 410) await majEtat(id, { statut: "erreur", erreur: "la vidéo a expiré chez OpenRouter avant d'être récupérée", etapeErreur: "video" });
+  try { et = await etatVideo(e.job); } catch (err) {
+    // vidéo introuvable (purgée, autre clé) ou lancée il y a plus de 12 h : on arrête d'attendre ; sinon nouvel essai
+    if ([404, 410].includes(err.statut) || Date.now() - (e.lancee || 0) > 12 * 3600e3) {
+      if (!e.coutNote) liberer(e.estimVideo);
+      await videoRatee(id, `vidéo introuvable ou expirée chez OpenRouter (${String(err.message).slice(0, 80)})`);
     }
+    return;
+  }
+  if (et.status === "completed") {
+    if (!e.coutNote) {                     // dépense notée une seule fois, dès que la vidéo est finie (avant le téléchargement)
+      const cout = +((et.usage || {}).cost ?? e.estimVideo) || 0;
+      liberer(e.estimVideo);
+      await majEtat(id, { coutNote: true, couts: Object.assign({}, e.couts, { video: (e.couts?.video || 0) + cout }) }).catch(() => {});
+      await noterDepense("video", R.modeleVideo, cout, id).catch(() => {});
+    }
+    let blob;
+    try { blob = await telechargerVideo(e.job); } catch (err) {
+      if ([404, 410].includes(err.statut)) await videoRatee(id, "la vidéo a expiré chez OpenRouter avant d'être récupérée");
+      else await majEtat(id, { erreur: `téléchargement : ${err.message} (nouvel essai dans 10 s)` });
+      return;
+    }
+    const n = (ETATS.get(id) || {}).essaisVideo || 1;
+    ecrireFichier("clips", `${id}_v${n}.mp4`, blob);
+    let avant = false;
+    try {
+      const ancien = await DB.get("fichiers", `${id}:video`);
+      if (ancien) { await DB.put("fichiers", `${id}:video_avant`, ancien); avant = true; }
+      await DB.put("fichiers", `${id}:video`, blob);
+    } catch (err) {                        // mémoire du navigateur pleine : le clip payé est remis à l'utilisateur
+      telecharger(`${id}_v${n}.mp4`, blob);
+      await videoRatee(id, `mémoire du navigateur pleine (${err.message}) : le clip a été téléchargé sous ${id}_v${n}.mp4`);
+      return;
+    }
+    await majEtat(id, { statut: "video_ok", clip: true, clipAvant: avant || !!e.clipAvant, job: null, controle: null, erreur: null });
   } else if (["failed", "cancelled", "expired"].includes(et.status)) {
-    RUN.engage = Math.max(0, RUN.engage - (e.estimVideo || 0));
-    await majEtat(id, { statut: "erreur", erreur: `vidéo ${et.status} : ${JSON.stringify(et.error || "").slice(0, 200)}`, etapeErreur: "video", job: null });
+    if (!e.coutNote) liberer(e.estimVideo);
+    await videoRatee(id, `vidéo ${et.status} : ${JSON.stringify(et.error || "").slice(0, 200)}`);
   }
 }
 
 async function etapeControle(id) {
   const s = SKETCHS.get(id);
   if (!R.controle) { await majEtat(id, { statut: "pret" }); return; }
-  if (!(await budgetPermet(PRIX.controle * 3, `le contrôle de ${id}`))) return;
-  await majEtat(id, { statut: "controle" });
+  const montant = PRIX.controle * 4;                 // jusqu'à 4 appels du juge (2 écoutes)
+  if (!(await reserver(montant, `le contrôle de ${id}`))) return;
   try {
+    await majEtat(id, { statut: "controle" });
     const blob = await DB.get("fichiers", `${id}:video`);
     const res = await controler(s, blob);
     const e = ETATS.get(id) || {};
     const couts = Object.assign({}, e.couts, { controle: (e.couts?.controle || 0) + res.cout });
     if (res.mauvais && R.repriseAuto && (e.essaisVideo || 1) < 2) {
-      await majEtat(id, { statut: "image_ok", controle: res, couts, job: null, erreur: `contrôle : ${res.raison} → nouvelle vidéo` });
+      await majEtat(id, { statut: "image_ok", statutAvant: "a_revoir", controle: res, couts, erreur: `contrôle : ${res.raison} → nouvelle vidéo` });
       return;
     }
     await majEtat(id, { statut: res.mauvais ? "a_revoir" : "pret", controle: res, couts });
   } catch (err) {
-    await majEtat(id, { statut: "pret", erreur: `contrôle impossible : ${err.message}` });
-  }
+    if ([401, 402].includes(err.statut)) await echec(id, err, "contrôle", "video_ok");
+    else await majEtat(id, { statut: "pret", erreur: `contrôle impossible : ${err.message}` });
+  } finally { liberer(montant); }
 }
 
 // ---------- contrôle IA ----------
@@ -159,36 +255,40 @@ async function controler(s, blob) {
   const video = await chargerVideo(blob);
   const d = video.duration;
   const audio = await decoderAudio(blob);
-  const segs = segmentsParole(audio);
+  const muet = !sonPresent(audio);
+  const segs = muet ? [] : segmentsParole(audio);
   const lignes = tempsLignes(s, segs, d);
   let cout = 0;
   // 1) réalisme : planche de 16 images
   const planche = await plancheImages(video, 16, 4, 320, (t) => `${t.toFixed(1)}s`);
   const persos = s.persos.map((p) => p.nom).join(" ; ");
-  const r1 = await chatJuge([{ type: "text", text: QUESTION_REGARD(d, persos) }, { type: "image_url", image_url: { url: planche } }]);
+  const r1 = await chatJuge([{ type: "text", text: QUESTION_REGARD(d, persos) }, { type: "image_url", image_url: { url: planche } }], s.id);
   cout += r1.cout;
   const realisme = (r1.texte.match(/REALISME\s*=\s*(OK|MINEUR|GRAVE)/i) || [, "?"])[1].toUpperCase();
   // 2) accent : deux écoutes si la première dit « France » (juge capricieux, test 4)
-  const wav = wavBase64(audio, 16000, 40);
-  const ecoute = async () => {
-    const r = await chatJuge([{ type: "text", text: QUESTION_ACCENT }, { type: "input_audio", input_audio: { data: wav, format: "wav" } }]);
-    cout += r.cout;
-    return r.texte.replace(/\s+/g, " ").trim();
-  };
-  let avis = await ecoute();
   const france = (t) => /ACCENT\s*=\s*(français de france|autre)/i.test(t);
-  if (france(avis)) { const a2 = await ecoute(); if (!france(a2)) avis = a2 + " (2e écoute)"; }
+  let avis = "ACCENT=aucun son ; clip muet";
+  if (!muet) {
+    const wav = wavBase64(audio, 16000, 40);
+    const ecoute = async () => {
+      const r = await chatJuge([{ type: "text", text: QUESTION_ACCENT }, { type: "input_audio", input_audio: { data: wav, format: "wav" } }], s.id);
+      cout += r.cout;
+      return r.texte.replace(/\s+/g, " ").trim();
+    };
+    avis = await ecoute();
+    if (france(avis)) { const a2 = await ecoute(); if (!france(a2)) avis = a2 + " (2e écoute)"; }
+  }
   const note = (cle) => { const m = avis.match(new RegExp(`${cle}\\s*=\\s*(\\d+(?:[.,]\\d+)?)`, "i")); return m ? +m[1].replace(",", ".") : null; };
   // 3) synchro : deux images par réplique, étiquetées avec le personnage qui doit parler
   const etiquettes = [];
   for (const [k, l] of lignes.entries()) for (const f of [0.35, 0.8]) etiquettes.push({ t: l.debut + (l.fin - l.debut) * f, txt: `réplique ${k + 1} : ${s.persos[s.dialogue[k][0]].nom} parle` });
   const plancheS = await plancheImages(video, etiquettes.length, 4, 400, null, etiquettes);
-  const r3 = await chatJuge([{ type: "text", text: QUESTION_SYNCHRO(persos) }, { type: "image_url", image_url: { url: plancheS } }]);
+  const r3 = await chatJuge([{ type: "text", text: QUESTION_SYNCHRO(persos) }, { type: "image_url", image_url: { url: plancheS } }], s.id);
   cout += r3.cout;
   const synchro = /SYNCHRO\s*=\s*ERREUR/i.test(r3.texte) ? "ERREUR" : "OK";
   URL.revokeObjectURL(video.src);
-  await noterDepense("controle", R.modeleJuge, cout, s.id);
   const raisons = [];
+  if (muet) raisons.push("clip sans son");
   if (realisme === "GRAVE") raisons.push("défaut grave d'image");
   if (france(avis)) raisons.push("accent jugé « France » deux fois");
   if (synchro === "ERREUR") raisons.push("le mauvais personnage parle");
@@ -235,10 +335,17 @@ async function plancheImages(video, n, colonnes, largeur, legende, etiquettes = 
 }
 
 let CONTEXTE_AUDIO = null;
+// null si le fichier n'a pas de son lisible (jamais un faux silence : un clip muet doit se voir)
 async function decoderAudio(blob) {
   CONTEXTE_AUDIO = CONTEXTE_AUDIO || new AudioContext({ sampleRate: 48000 });
   const buf = await blob.arrayBuffer();
-  try { return await CONTEXTE_AUDIO.decodeAudioData(buf); } catch (e) { return CONTEXTE_AUDIO.createBuffer(2, 48000, 48000); }
+  try { return await CONTEXTE_AUDIO.decodeAudioData(buf); } catch (e) { return null; }
+}
+function sonPresent(buffer) {
+  if (!buffer) return false;
+  const d = buffer.getChannelData(0);
+  for (let i = 0; i < d.length; i += 97) if (Math.abs(d[i]) > 1e-3) return true;
+  return false;
 }
 function wavBase64(buffer, taux = 16000, maxSec = 40) {
   // ré-échantillonnage simple (moyenne des voies + interpolation linéaire) puis PCM 16 bits
@@ -315,37 +422,83 @@ function tempsLignes(s, segs, duree) {
 async function tour() {
   if (!RUN.actif) return;
   const occupe = (id) => RUN.enCours.has(id);
-  const lancer = (id, f) => { RUN.enCours.add(id); f(id).finally(() => { RUN.enCours.delete(id); }); };
-  const parStatut = (st) => FILE.filter((id) => (ETATS.get(id) || {}).statut === st);
+  const lancer = (id, f) => {
+    RUN.enCours.add(id);
+    f(id).catch((e) => console.warn(id, e)).finally(() => { RUN.enCours.delete(id); majResume(); });
+  };
+  const parStatut = (st) => FILE.filter((id) => statutDe(id) === st && SKETCHS.has(id));
+  rattacherEnVol();
   // récupération des vidéos lancées : toujours, même en pause (déjà payées) ; une interrogation toutes les 10 s par vidéo
-  for (const id of parStatut("video_lancee")) {
+  for (const id of FILE.filter((x) => statutDe(x) === "video_lancee")) {
     if (!occupe(id) && Date.now() - (RUN.interroge.get(id) || 0) > 10000) { RUN.interroge.set(id, Date.now()); lancer(id, etapeAttente); }
   }
   if (!RUN.pause) {
-    for (const id of parStatut("video_ok")) if (!occupe(id)) lancer(id, etapeControle);
-    const imagesEnCours = FILE.filter((id) => (ETATS.get(id) || {}).statut === "image").length;
-    const videosEnCours = parStatut("video_lancee").length;
+    // les tâches qui attendent encore leur réponse comptent dans le parallélisme (sinon un /key lent en lance d'autres)
+    let placesC = MAX_CONTROLES - FILE.filter((id) => statutDe(id) === "controle" || (statutDe(id) === "video_ok" && occupe(id))).length;
+    for (const id of parStatut("video_ok")) if (placesC > 0 && !occupe(id) && !RUN.pause) { lancer(id, etapeControle); placesC--; }
+    const videosEnCours = FILE.filter((id) => ["video_envoi", "video_lancee"].includes(statutDe(id)) || (statutDe(id) === "image_ok" && occupe(id))).length;
     let placesV = R.concurrenceVideos - videosEnCours;
-    for (const id of parStatut("image_ok")) if (placesV > 0 && !occupe(id)) { lancer(id, etapeVideo); placesV--; }
+    for (const id of parStatut("image_ok")) if (placesV > 0 && !occupe(id) && !RUN.pause) { lancer(id, etapeVideo); placesV--; }
+    const imagesEnCours = FILE.filter((id) => statutDe(id) === "image" || ((!statutDe(id) || statutDe(id) === "attente") && occupe(id))).length;
     let placesI = R.concurrenceImages - imagesEnCours;
     for (const id of FILE) {
-      const st = (ETATS.get(id) || {}).statut;
-      if ((!st || st === "attente") && placesI > 0 && !occupe(id) && !RUN.pause) { lancer(id, etapeImage); placesI--; }
+      const st = statutDe(id);
+      if ((!st || st === "attente") && SKETCHS.has(id) && placesI > 0 && !occupe(id) && !RUN.pause) { lancer(id, etapeImage); placesI--; }
     }
   }
-  const restant = FILE.some((id) => !["pret", "a_revoir", "erreur"].includes((ETATS.get(id) || {}).statut));
+  const restant = FILE.some((id) => SKETCHS.has(id) && !["pret", "a_revoir", "erreur"].includes(statutDe(id)));
   if (!restant && !RUN.enCours.size) { RUN.actif = false; alerte("Production terminée.", "info"); majBoutons(); majResume(); return; }
   majResume();
   setTimeout(tour, RUN.enCours.size ? 4000 : 1500);
 }
+// vidéos lancées avant une fermeture de la page : récupérées dès que la clé est là (déjà payées) ; réservées une fois
+function reprendreVideosLancees() {
+  if (!CLE || !RUN.seul) return;
+  rattacherEnVol();
+  const lancees = FILE.filter((id) => statutDe(id) === "video_lancee");
+  if (!RUN.repris) {
+    RUN.repris = true;
+    for (const id of lancees) { const e = ETATS.get(id); if (!e.coutNote) RUN.engage += +e.estimVideo || 0; }
+  }
+  if (!RUN.actif && lancees.length) {
+    RUN.actif = true; RUN.pause = true;
+    alerte(`${lancees.length} vidéo(s) lancée(s) avant la fermeture : récupération en cours (rien de nouveau n'est lancé).`);
+    majBoutons();
+    tour();
+  }
+}
 function demarrer() {
+  if (!RUN.seul) { alerte(DEJA_OUVERT, "erreur"); return; }
   if (!CLE) { alerte("Ajoute ta clé OpenRouter dans l'onglet Réglages.", "attention"); montrerOnglet("reglages"); return; }
+  autoriserDossier();                      // pendant le clic : Chrome redemande l'accès au dossier de sortie gardé
+  reprendreVideosLancees();
   if (!FILE.length) { alerte("La file est vide : choisis des sketchs dans la Banque.", "attention"); return; }
   RUN.pause = false;
   if (!RUN.actif) { RUN.actif = true; tour(); }
   majBoutons();
 }
 function mettrePause() { RUN.pause = true; majBoutons(); alerte("Pause : plus rien de nouveau n'est lancé (les vidéos déjà payées sont quand même récupérées)."); }
+
+// ---------- un seul onglet ----------
+async function prendreVerrou() {
+  if (navigator.locks && navigator.locks.request) {
+    return new Promise((ok) => {
+      navigator.locks.request("studio-comedie-production", { ifAvailable: true }, (verrou) => {
+        if (!verrou) { ok(false); return null; }
+        ok(true);
+        return new Promise(() => {});      // gardé tant que la page est ouverte
+      }).catch(() => ok(true));
+    });
+  }
+  // repli sans Web Locks : battement dans localStorage (un onglet muet depuis 90 s est considéré fermé)
+  const autre = lireJSON(localStorage, "studio-onglet");
+  if (autre && Date.now() - autre.t < 90000) return false;
+  const moi = Math.random().toString(36).slice(2);
+  const battre = () => localStorage.setItem("studio-onglet", JSON.stringify({ id: moi, t: Date.now() }));
+  battre(); setInterval(battre, 3000);
+  addEventListener("pagehide", () => { const x = lireJSON(localStorage, "studio-onglet"); if (x && x.id === moi) localStorage.removeItem("studio-onglet"); });
+  return true;
+}
 
 // ---------- interface ----------
 function afficherProduction() {
@@ -373,12 +526,13 @@ async function afficherCarte(id) {
   const couts = e.couts || {};
   const total = (couts.image || 0) + (couts.video || 0) + (couts.controle || 0);
   const ctrl = e.controle;
-  const img = ["image_ok", "video_lancee", "video_ok", "controle", "pret", "a_revoir"].includes(e.statut) || (e.statut === "erreur" && e.etapeErreur === "video")
-    ? await urlFichier(`${id}:image`) : null;
-  const vid = ["video_ok", "controle", "pret", "a_revoir"].includes(e.statut) ? await urlFichier(`${id}:video`) : null;
+  const aClip = e.clip || ["video_ok", "controle", "pret", "a_revoir"].includes(e.statut);
+  const img = !["attente", "image"].includes(e.statut) && e.statut ? await urlFichier(`${id}:image`) : null;
+  const vid = aClip ? await urlFichier(`${id}:video`) : null;
+  const bloque = !RUN.seul || RUN.enCours.has(id) || EN_VOL.includes(e.statut);
   c.innerHTML = "";
   c.append(
-    el("div", { class: "carte-tete" }, el("b", {}, s ? s.titre : id), " ", el("span", { class: "id" }, id), " ", puceStatut(id),
+    el("div", { class: "carte-tete" }, el("b", {}, s ? s.titre : `${id} (absent de la banque)`), " ", el("span", { class: "id" }, id), " ", puceStatut(id),
       el("span", { class: "cout" }, total ? dollars(total) : `≈ ${dollars(s ? coutEstime(s) : 0)}`)),
     el("div", { class: "carte-corps" },
       vid ? el("video", { src: vid, controls: true, playsinline: true, class: "apercu" }) : img ? el("img", { src: img, class: "apercu" }) : el("div", { class: "apercu vide" }, "…"),
@@ -389,65 +543,95 @@ async function afficherCarte(id) {
           ctrl.mauvais ? el("div", {}, `À revoir : ${ctrl.raison}`) : null) : null,
         e.erreur ? el("div", { class: "erreur" }, e.erreur) : null,
         el("div", { class: "boutons" },
-          el("button", { onclick: () => refaire(id, "video"), disabled: !["pret", "a_revoir", "erreur", "video_ok"].includes(e.statut) }, "Refaire la vidéo"),
-          el("button", { onclick: () => refaire(id, "image"), disabled: ["image", "video_lancee", "controle"].includes(e.statut) }, "Refaire l'image"),
+          el("button", { onclick: () => refaire(id, "video"), disabled: bloque || !s || !["pret", "a_revoir", "erreur", "video_ok"].includes(e.statut) }, "Refaire la vidéo"),
+          el("button", { onclick: () => refaire(id, "image"), disabled: bloque || !s || e.statut === "attente" || !e.statut }, "Refaire l'image"),
           vid ? el("button", { onclick: async () => telecharger(`${id}.mp4`, await DB.get("fichiers", `${id}:video`)) }, "Télécharger le clip") : null,
+          e.clipAvant && !bloque ? el("button", { onclick: () => revenirClipAvant(id), title: "échange le clip actuel avec le précédent" }, "Clip d'avant") : null,
           img ? el("button", { onclick: async () => { const b = await DB.get("fichiers", `${id}:image`); telecharger(`${id}.${b.type === "image/png" ? "png" : "jpg"}`, b); } }, "Télécharger l'image") : null,
-          el("button", { onclick: () => retirer(id), disabled: ["image", "video_lancee", "controle"].includes(e.statut) }, "Retirer")))));
+          el("button", { onclick: () => retirer(id), disabled: bloque }, "Retirer")))));
 }
 async function refaire(id, quoi) {
-  const e = ETATS.get(id) || {};
+  const e = ETATS.get(id) || {}, s = SKETCHS.get(id);
+  if (!s || !RUN.seul || RUN.enCours.has(id) || EN_VOL.includes(e.statut)) return;
   if (quoi === "video" && !(await DB.get("fichiers", `${id}:image`))) quoi = "image";
-  await majEtat(id, { statut: quoi === "image" ? "attente" : "image_ok", erreur: null, job: null, controle: null, essaisVideo: quoi === "video" ? e.essaisVideo || 0 : 0 });
-  alerte(`${id} : ${quoi === "image" ? "nouvelle image puis nouvelle vidéo" : "nouvelle vidéo"} au prochain démarrage (≈ ${dollars(coutEstime(SKETCHS.get(id), quoi === "image", true))}).`);
+  const cout = coutEstime(s, quoi === "image", true);
+  const quoiTxt = quoi === "image" ? "une nouvelle image puis une nouvelle vidéo" : "une nouvelle vidéo";
+  if (!confirm(`« ${s.titre} » : ${quoiTxt}, environ ${dollars(cout)}.${e.clip ? " Le clip actuel reste utilisable tant que le nouveau n'est pas prêt." : ""}`)) return;
+  if (!FILE.includes(id)) { FILE.push(id); sauverFile(); afficherProduction(); }
+  await majEtat(id, { statut: quoi === "image" ? "attente" : "image_ok", erreur: null, job: null,
+    statutAvant: ["pret", "a_revoir", "video_ok"].includes(e.statut) ? e.statut : e.statutAvant,
+    essaisVideo: quoi === "video" ? e.essaisVideo || 0 : 0 });
+  alerte(RUN.actif && !RUN.pause ? `${id} : relancé (≈ ${dollars(cout)}).` : `${id} : sera relancé quand tu cliques « Démarrer » ou « Reprendre » (≈ ${dollars(cout)}).`);
+}
+async function revenirClipAvant(id) {
+  const a = await DB.get("fichiers", `${id}:video`), b = await DB.get("fichiers", `${id}:video_avant`);
+  if (!a || !b) return;
+  await DB.put("fichiers", `${id}:video`, b);
+  await DB.put("fichiers", `${id}:video_avant`, a);
+  await majEtat(id, { controle: null, erreur: "clip d'avant remis (le contrôle IA n'a pas été refait)" });
+}
+// un sketch retiré qui n'a rien coûté redevient « non tourné » (il revient dans « les meilleurs non tournés »)
+async function oublierSiGratuit(id) {
+  const e = ETATS.get(id);
+  if (!e || RUN.enCours.has(id)) return;
+  const paye = e.clip || (e.couts && ((e.couts.image || 0) + (e.couts.video || 0) > 0));
+  if (!paye && ["attente", "erreur"].includes(e.statut)) { ETATS.delete(id); await DB.del("etat", id).catch(() => {}); }
 }
 function retirer(id) {
+  if (!RUN.seul || RUN.enCours.has(id) || EN_VOL.includes(statutDe(id))) { alerte("Une étape payée est en cours pour ce sketch : attends qu'elle finisse.", "attention"); return; }
   FILE = FILE.filter((x) => x !== id);
   sauverFile();
-  afficherProduction();
+  oublierSiGratuit(id).finally(() => { afficherProduction(); });
 }
 function majResume() {
-  const n = (st) => FILE.filter((id) => (ETATS.get(id) || {}).statut === st).length;
+  majCle();
+  const n = (st) => FILE.filter((id) => statutDe(id) === st).length;
   const r = $("#prod-resume");
-  if (r) r.textContent = `${FILE.length} dans la file · ${n("pret")} prêts · ${n("a_revoir")} à revoir · ${n("erreur")} en erreur · ` +
-    `${n("video_lancee")} vidéos en cours · reste à payer ≈ ${dollars(coutRestantFile())} · dépensé cette session ${dollars(DEPENSES.session)} / plafond ${dollars(R.budget)}`;
+  if (r) r.textContent = !RUN.seul ? DEJA_OUVERT : `${FILE.length} dans la file · ${n("pret")} prêts · ${n("a_revoir")} à revoir · ${n("erreur")} en erreur · ` +
+    `${n("video_lancee") + n("video_envoi")} vidéos en cours · reste à payer ≈ ${dollars(coutRestantFile())} · dépensé cette session ${dollars(DEPENSES.session)} / plafond ${dollars(R.budget)}`;
 }
 function majBoutons() {
   const b = $("#b-demarrer"), p = $("#b-pause");
   if (!b) return;
-  b.textContent = RUN.actif && !RUN.pause ? "Production en cours…" : RUN.actif ? "Reprendre" : "Démarrer la production";
-  b.disabled = RUN.actif && !RUN.pause;
-  p.disabled = !RUN.actif || RUN.pause;
+  b.textContent = !RUN.seul ? "Ouvert dans un autre onglet" : RUN.actif && !RUN.pause ? "Production en cours…" : RUN.actif ? "Reprendre" : "Démarrer la production";
+  b.disabled = !RUN.seul || (RUN.actif && !RUN.pause);
+  p.disabled = !RUN.seul || !RUN.actif || RUN.pause;
 }
 function majCle() {
   const z = $("#solde-cle");
-  if (z) z.textContent = RUN.resteCle == null ? "solde inconnu" : `solde de la clé ${dollars(RUN.resteCle)}`;
+  if (z) z.textContent = RUN.resteCle == null ? "solde inconnu (plancher inactif)" : `solde de la clé ${dollars(soldeEstime())}`;
 }
 
-function initProduction() {
+async function initProduction() {
+  RUN.seul = await prendreVerrou();
   $("#b-demarrer").addEventListener("click", demarrer);
   $("#b-pause").addEventListener("click", mettrePause);
-  $("#b-vider").addEventListener("click", () => {
-    const bloques = FILE.filter((id) => ["image", "video_lancee", "controle"].includes((ETATS.get(id) || {}).statut));
-    FILE = bloques;
+  $("#b-vider").addEventListener("click", async () => {
+    if (!RUN.seul) { alerte(DEJA_OUVERT, "erreur"); return; }
+    const garder = (id) => RUN.enCours.has(id) || EN_VOL.includes(statutDe(id));
+    const partis = FILE.filter((id) => !garder(id));
+    FILE = FILE.filter(garder);
     sauverFile();
+    for (const id of partis) await oublierSiGratuit(id);
     afficherProduction();
-    if (bloques.length) alerte(`${bloques.length} sketch(s) gardés : leur image ou leur vidéo est en cours (déjà payée).`, "attention");
+    if (FILE.length) alerte(`${FILE.length} sketch(s) gardés : une étape déjà payée est en cours.`, "attention");
   });
   $("#prod-budget").value = R.budget;
   $("#prod-budget").addEventListener("change", (ev) => { R.budget = Math.max(0, +ev.target.value || 0); sauverReglages(); majResume(); if (RUN.pause && RUN.actif) alerte("Plafond modifié : clique « Reprendre »."); });
-  afficherProduction();
-  // vidéos lancées avant la fermeture de la page : on les récupère tout de suite (déjà payées)
-  if (CLE && FILE.some((id) => (ETATS.get(id) || {}).statut === "video_lancee")) {
-    RUN.actif = true; RUN.pause = true;
-    for (const id of FILE) { const e = ETATS.get(id) || {}; if (e.statut === "video_lancee") RUN.engage += e.estimVideo || 0; }
-    alerte("Des vidéos lancées avant la fermeture sont en cours de récupération.");
-    tour();
+  addEventListener("beforeunload", (ev) => {     // un envoi payant en cours : on prévient avant de fermer
+    if ([...RUN.enCours].some((id) => ["image", "video_envoi"].includes(statutDe(id)))) { ev.preventDefault(); ev.returnValue = ""; }
+  });
+  if (!RUN.seul) { afficherProduction(); alerte(DEJA_OUVERT, "erreur"); return; }
+  // un sketch resté « en cours » sans tâche (page fermée en pleine étape) : on ne repaie jamais à l'aveugle une vidéo
+  for (const [id, e] of ETATS) {
+    if (e.statut === "image") majEtat(id, { statut: "attente", erreur: "page fermée pendant l'image : elle sera refaite (≈ 0,03 $)" }).catch(() => {});
+    if (e.statut === "controle") majEtat(id, { statut: "video_ok" }).catch(() => {});
+    if (e.statut === "video_envoi") videoRatee(id, "page fermée pendant l'envoi de la vidéo : elle a peut-être été créée et payée. Vérifie sur openrouter.ai/activity avant de la refaire.").catch(() => {});
   }
-  // un sketch resté « en cours » sans tâche (page fermée en pleine image ou en plein contrôle) repart de l'étape d'avant
-  for (const id of FILE) {
-    const st = (ETATS.get(id) || {}).statut;
-    if (st === "image") majEtat(id, { statut: "attente" });
-    if (st === "controle") majEtat(id, { statut: "video_ok" });
+  afficherProduction();
+  if (CLE) reprendreVideosLancees();
+  else {
+    const n = [...ETATS.values()].filter((e) => e.statut === "video_lancee").length;
+    if (n) alerte(`${n} vidéo(s) déjà payée(s) attendent d'être récupérées : colle ta clé dans Réglages (elles expirent au bout de quelques heures).`, "attention");
   }
 }

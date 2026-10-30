@@ -1,0 +1,22 @@
+[
+ {"id": "B031-01", "note": 5.5, "drapeaux": [], "remarque": "Le proverbe pris au pied de la lettre se comprend vite et « garde la monnaie » fait sourire, mais ça reste une ruse de débiteur assez attendue."},
+ {"id": "B031-02", "note": 5, "drapeaux": [], "remarque": "Le jeu de mots « je te dois la vie » est clair, mais la chute s'explique trop elle-même (« pas dans la phrase ») et ne surprend pas un ado."},
+ {"id": "B031-03", "note": 4.5, "drapeaux": ["confus"], "remarque": "L'enveloppe d'anniversaire est très ivoirienne, mais offrir « les cinquante mille que je te dois » avec une enveloppe vide oblige à réfléchir, et la relance arrive avant qu'on ait compris."},
+ {"id": "B031-04", "note": 6, "drapeaux": [], "remarque": "Le billet scotché au téléphone est une image drôle, et le tonton qui appelle pour emprunter se comprend en deux secondes : on a envie de taguer le tonton de la famille."},
+ {"id": "B031-05", "note": 5, "drapeaux": [], "remarque": "La règle « on ne parle pas d'argent à table » se comprend, mais « depuis six mois » est trop abstrait pour faire rire tout de suite et la chute manque de mordant."},
+ {"id": "B031-06", "note": 6, "drapeaux": [], "remarque": "Emprunter le téléphone de l'ami pour l'appeler lui-même par honte est absurde, frais et immédiat, avec un tournage très simple."},
+ {"id": "B031-07", "note": 4, "drapeaux": ["connu"], "remarque": "« Qui paie ses dettes s'enrichit, alors paie les miennes » est un détournement qui circule déjà, et dès qu'il sort la liste on voit venir la chute."},
+ {"id": "B031-08", "note": 7, "drapeaux": [], "remarque": "La coutume de l'homonyme, typiquement ivoirienne, retourne la dette contre le créancier de façon claire et inattendue : très partageable."},
+ {"id": "B031-09", "note": 5, "drapeaux": [], "remarque": "Le « merci pour le gâteau » de la mariée relance bien, mais « ton argent est à la table d'honneur » est un peu flou à la première écoute."},
+ {"id": "B031-10", "note": 5.5, "drapeaux": [], "remarque": "« Tu me nourris, donc tu es mon patron, donc paie-moi le 30 » est une logique insolente qu'on suit facilement, mais l'effet reste moyen."},
+ {"id": "B031-11", "note": 4.5, "drapeaux": [], "remarque": "« Le silence est d'or » comme paiement demande un temps de décodage, et la scène à deux répliques est trop courte pour faire monter le rire."},
+ {"id": "B031-12", "note": 4, "drapeaux": ["connu"], "remarque": "Le débiteur qui s'affiche en neuf avec ton argent est un mème vu partout sur internet, et le compliment « tu as bon goût » ne suffit pas à le renouveler."},
+ {"id": "B031-13", "note": 7, "drapeaux": [], "remarque": "La petite fille qui prend « manger l'argent » au pied de la lettre et demande quand papa va « accoucher les cahiers » est une image forte qu'on comprend tout de suite et qui donne envie de taguer."},
+ {"id": "B031-14", "note": 6.5, "drapeaux": [], "remarque": "Corriger sa dette à la hausse puis refuser de payer un « menteur » fait un double retournement frais et clair, avec un vrai réflexe ivoirien de mauvaise foi."},
+ {"id": "B031-15", "note": 5.5, "drapeaux": [], "remarque": "Le proverbe des œufs appliqué aux crédits et le « sixième panier » se comprennent bien, mais la situation est universelle et peu ivoirienne."},
+ {"id": "B031-16", "note": 5, "drapeaux": [], "remarque": "La date de remboursement qui renvoie à sa propre dette veut dire « jamais » et se comprend, mais la chute est un peu molle et ressemble à des blagues du genre « quel lundi »."},
+ {"id": "B031-17", "note": 6, "drapeaux": [], "remarque": "Le gag visuel du menton levé, « endetté jusqu'au cou », marche bien en image, et « tu fais monter le niveau » le pousse jusqu'à l'absurde de façon lisible."},
+ {"id": "B031-18", "note": 5, "drapeaux": [], "remarque": "« Payer de sa personne » n'est pas une expression qu'un ado d'Abobo saisit en deux secondes, et s'installer chez quelqu'un en prenant une phrase au mot rappelle des blagues du catalogue."},
+ {"id": "B031-19", "note": 7, "drapeaux": [], "remarque": "« Mettre l'argent à gauche » chez le voisin de gauche est purement ivoirien, la villa du voisin fait l'image et « bien logé » achève proprement."},
+ {"id": "B031-20", "note": 5.5, "drapeaux": [], "remarque": "Comparer le prêt à un couple est bien vu et « le mariage finit, le prêt jamais » se comprend, mais c'est plus malin que vraiment explosif."}
+]

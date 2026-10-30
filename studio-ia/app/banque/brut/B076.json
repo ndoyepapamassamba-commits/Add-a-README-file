@@ -1,0 +1,956 @@
+[
+ {
+  "id": "B076-01",
+  "titre": "Le pari du salon",
+  "lieu": "living room of a house in Bingerville, Abidjan, a sofa facing a flat TV showing a football match, a low table, evening",
+  "persos": [
+   {
+    "nom": "the betting husband",
+    "desc": "husband in his 40s, mint-and-maroon tracksuit, thick mustache, holding ONE single TV remote",
+    "pose": "sitting on the left end of the sofa in the foreground, holding the remote, smug"
+   },
+   {
+    "nom": "the chatty wife",
+    "desc": "wife in her 40s, fuchsia-and-amber kaba, big hoop earrings, empty hands",
+    "pose": "standing in the middle behind the sofa, hands on her hips, eyebrows raised"
+   },
+   {
+    "nom": "the son with the phone",
+    "desc": "boy around 12, indigo-and-copper jersey, short hair, holding ONE single smartphone",
+    "pose": "sitting on the right end of the sofa, holding the smartphone, grinning"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Bébé, j'ai misé cinquante mille : tu restes muette tout le match dêh !"
+   ],
+   [
+    1,
+    "Ehh ! Tu as parié ça avec qui ?!"
+   ],
+   [
+    2,
+    "Avec moi, papa. Paie-moi dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband announces his bet proudly, waving the remote, face turned three-quarters to the camera. The wife immediately leans forward and asks loudly, pointing at him. The boy raises the smartphone and says his line calmly with a big grin, his face clearly visible.",
+  "chute": "The husband freezes, mouth open, the remote hanging in his hand. The camera slowly pushes in to a close-up of the betting husband's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "muette",
+   "parié",
+   "paie-moi"
+  ],
+  "gag_legende": "PAPA EN CHERCHANT LES CINQUANTE MILLE :",
+  "mecanisme": "pari perdu à la seconde où la femme ouvre la bouche + relance assassine : le fils était l'adversaire du pari"
+ },
+ {
+  "id": "B076-02",
+  "titre": "L'équipe de maman",
+  "lieu": "small living room of a house in Port-Bouët, Abidjan, an armchair, a TV showing a football match, a fan on a stool, night",
+  "persos": [
+   {
+    "nom": "the curious wife",
+    "desc": "wife in her 30s, rust-and-fuchsia boubou, braided hair in a bun, empty hands",
+    "pose": "standing on the right, arms crossed, suspicious"
+   },
+   {
+    "nom": "the betting husband",
+    "desc": "husband in his 30s, olive-and-chocolate polo shirt, round belly, holding ONE single smartphone",
+    "pose": "sitting in the armchair in the foreground on the left, holding the smartphone, confident"
+   },
+   {
+    "nom": "the honest son",
+    "desc": "boy around 10, copper-and-violet t-shirt, big round eyes, empty hands",
+    "pose": "sitting on the floor in the middle, looking up at his parents"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, pourquoi tu me demandes toujours mon équipe avant le match ?"
+   ],
+   [
+    1,
+    "Bébé, tout ce que tu soutiens perd dêh. Moi, je mise contre."
+   ],
+   [
+    2,
+    "C'est vrai dêh. Regarde papa."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife asks, frowning, face turned three-quarters to the camera. The husband answers proudly, tapping his smartphone, smiling. The boy points his finger at his father and says his line innocently, his face clearly visible.",
+  "chute": "The wife slowly turns her head toward her husband and nods. The husband's smile freezes. The camera slowly pushes in to a close-up of the betting husband's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "soutiens",
+   "contre",
+   "papa"
+  ],
+  "gag_legende": "PAPA QUAND IL A COMPRIS LA PHRASE :",
+  "mecanisme": "double sens de « soutenir » (le foot et le mari qu'elle nourrit) + relance assassine de l'enfant"
+ },
+ {
+  "id": "B076-03",
+  "titre": "Maman a tout découvert",
+  "lieu": "courtyard of a family house in Attécoubé, Abidjan, a water barrel, plastic chairs, an empty clothesline, morning",
+  "persos": [
+   {
+    "nom": "the big brother",
+    "desc": "young man around 19, peach-and-amber tracksuit, short dreadlocks, holding ONE single crumpled betting slip",
+    "pose": "standing in the foreground on the left, holding the betting slip, panicked"
+   },
+   {
+    "nom": "the little brother",
+    "desc": "boy around 10, emerald-and-charcoal jersey, gap-toothed smile, holding ONE single smartphone",
+    "pose": "sitting on a plastic chair in the middle, holding the smartphone, relaxed"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 40s, magenta-and-ruby kaba, headscarf, empty hands",
+    "pose": "standing on the right, hands on her hips, smiling slyly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Petit, comment maman a su que j'ai misé son argent-là ?!"
+   ],
+   [
+    1,
+    "Grand frère, j'avais parié qu'elle allait savoir avant midi dêh."
+   ],
+   [
+    2,
+    "On partage moitié-moitié, mon bébé."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The big brother asks in a panicked whisper, showing the betting slip, face turned three-quarters to the camera. The little brother shrugs and answers calmly, raising the smartphone. The mother turns her head to the little brother and says her line with a sly smile, her face clearly visible.",
+  "chute": "The big brother's mouth drops open. The camera slowly pushes in to a close-up of the big brother's betrayed face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "misé",
+   "parié",
+   "moitié-moitié"
+  ],
+  "gag_legende": "GRAND FRÈRE DEVANT SA PROPRE FAMILLE :",
+  "mecanisme": "le mouchard avait parié sur la dénonciation + relance assassine de la mère complice"
+ },
+ {
+  "id": "B076-04",
+  "titre": "La moto de papa",
+  "lieu": "small yard in front of a house in Attécoubé, Abidjan, an empty spot with a cut padlock chain on the ground where a motorbike used to stand, afternoon",
+  "persos": [
+   {
+    "nom": "the seated father",
+    "desc": "father in his 50s, olive-and-chocolate boubou, bushy beard, sitting on ONE single plastic chair",
+    "pose": "sitting on the plastic chair in the foreground on the left, hands on his knees, angry"
+   },
+   {
+    "nom": "the gambling son",
+    "desc": "young man around 20, mint-and-maroon hoodie, thin mustache, empty hands",
+    "pose": "standing on the right, head down, embarrassed"
+   },
+   {
+    "nom": "the little sister",
+    "desc": "girl around 12, fuchsia-and-amber dress, two puffs of hair, empty hands",
+    "pose": "standing in the middle behind the father, arms crossed, serious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, où est ma moto-là ?!"
+   ],
+   [
+    1,
+    "Papa, je l'ai misée sur le match d'hier. On a perdu dêh."
+   ],
+   [
+    2,
+    "Lève-toi, papa. Chaise-là aussi dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father asks angrily from his chair, pointing at the empty spot, face turned three-quarters to the camera. The son answers with a guilty face, shrugging. The little sister points at the plastic chair and says her line flatly, her face clearly visible.",
+  "chute": "The father grips the edges of his chair with both hands, eyes wide. The camera slowly pushes in to a close-up of the seated father's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "moto",
+   "perdu",
+   "chaise"
+  ],
+  "gag_legende": "PAPA QUI SE CRAMPONNE À SA CHAISE :",
+  "mecanisme": "aveu de la perte + relance assassine de la petite sœur : même la chaise sous papa est jouée"
+ },
+ {
+  "id": "B076-05",
+  "titre": "Le vieux pantalon",
+  "lieu": "front yard of a house with a metal gate in Bingerville, Abidjan, a small guard booth next to the gate, morning",
+  "persos": [
+   {
+    "nom": "the desperate husband",
+    "desc": "husband in his 40s, indigo-and-copper shirt, receding hairline, empty hands",
+    "pose": "standing in the foreground on the left, hands on his head, desperate"
+   },
+   {
+    "nom": "the tidy wife",
+    "desc": "wife in her 40s, copper-and-violet wrapper dress, short natural hair, holding ONE single broom",
+    "pose": "standing on the right, holding the broom, calm"
+   },
+   {
+    "nom": "the gate guard",
+    "desc": "guard in his 50s, olive-and-chocolate trousers clearly too big for him, tucked-in undershirt, small cap, holding ONE single smartphone",
+    "pose": "standing in the background next to the gate, holding the smartphone, smiling widely"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chérie, mon vieux pantalon-là ! Le ticket de deux millions était dedans dêh !"
+   ],
+   [
+    1,
+    "Ehh ! J'ai donné ça au gardien ce matin dêh."
+   ],
+   [
+    2,
+    "Patron, je démissionne dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband shouts in panic, hands on his head, face turned three-quarters to the camera. The wife answers calmly, leaning on her broom, nodding toward the gate. The guard raises the smartphone, gives a polite little wave and says his line with a huge smile, his face clearly visible.",
+  "chute": "The husband slowly turns his head toward the guard's trousers, frozen. The camera slowly pushes in to a close-up of the desperate husband's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "ticket",
+   "gardien",
+   "démissionne"
+  ],
+  "gag_legende": "LE GARDIEN EN ROUTE POUR L'AÉROPORT :",
+  "mecanisme": "ticket gagnant donné par erreur + relance assassine du gardien devenu millionnaire"
+ },
+ {
+  "id": "B076-06",
+  "titre": "Le recruteur du centre de formation",
+  "lieu": "sandy football pitch near the beach in Port-Bouët, Abidjan, wooden goals, palm trees, a plastic table with registration forms, afternoon",
+  "persos": [
+   {
+    "nom": "the academy recruiter",
+    "desc": "man in his 30s, emerald-and-charcoal tracksuit, whistle around his neck, holding ONE single clipboard",
+    "pose": "standing on the right behind the plastic table, holding the clipboard, enthusiastic"
+   },
+   {
+    "nom": "the thin father",
+    "desc": "father in his 40s, peach-and-amber shirt, very thin, empty hands",
+    "pose": "standing in the foreground on the left, hands clasped, eyes shining"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 40s, mint-and-maroon kaba, headscarf, empty hands",
+    "pose": "standing in the middle, arms crossed, looking at her husband"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, notre centre veut ton fils. Logé, nourri, gratuit dêh !"
+   ],
+   [
+    1,
+    "Nourri chaque jour ? Prenez aussi ses trois frères dêh !"
+   ],
+   [
+    2,
+    "Le papa aussi joue bien dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The recruiter announces it proudly, tapping the clipboard, face turned three-quarters to the camera. The thin father answers with shining eyes, raising three fingers. The mother points at her husband with her chin and says her line very seriously, her face clearly visible.",
+  "chute": "The father slowly turns his head toward his wife, stunned. The camera slowly pushes in to a close-up of the thin father's shocked face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "nourri",
+   "trois frères",
+   "papa"
+  ],
+  "gag_legende": "PAPA EN PRÉPARANT SON SAC DE SPORT :",
+  "mecanisme": "surenchère du père affamé + relance assassine de l'épouse qui veut caser le mari aussi"
+ },
+ {
+  "id": "B076-07",
+  "titre": "Le champion de la course",
+  "lieu": "dusty schoolyard in Attécoubé, Abidjan, a running lane drawn in chalk on the ground, a low wall, morning",
+  "persos": [
+   {
+    "nom": "the sports teacher",
+    "desc": "sports teacher in his 50s, rust-and-fuchsia tracksuit, whistle around his neck, holding ONE single stopwatch",
+    "pose": "standing in the foreground on the left, holding the stopwatch, impressed"
+   },
+   {
+    "nom": "the fast boy",
+    "desc": "boy around 10, magenta-and-ruby t-shirt, skinny legs, empty hands",
+    "pose": "standing on the right at the end of the chalk lane, out of breath, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Petit, qui t'a appris à courir comme ça ?!"
+   ],
+   [
+    1,
+    "Mon papa. On fuit le propriétaire chaque fin du mois dêh."
+   ],
+   [
+    0,
+    "Petit… le propriétaire, c'est moi."
+   ],
+   [
+    1,
+    "Ya fohi. Vous courez pas vite."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher asks, impressed, raising the stopwatch, face turned three-quarters to the camera. The boy answers proudly, still out of breath. The teacher's smile freezes and he says his line slowly, pointing at his own chest. The boy shrugs and says his line calmly, his face clearly visible.",
+  "chute": "The teacher's jaw drops and he lowers the stopwatch. The camera slowly pushes in to a close-up of the sports teacher's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "courir",
+   "propriétaire",
+   "vite"
+  ],
+  "gag_legende": "LE PROPRIÉTAIRE À LA FIN DU MOIS :",
+  "mecanisme": "le prof découvre qu'il est le propriétaire qu'on fuit + relance assassine de l'enfant"
+ },
+ {
+  "id": "B076-08",
+  "titre": "Les souvenirs de 1992",
+  "lieu": "under a big mango tree in a courtyard in Bingerville, Abidjan, a long wooden bench, a small old radio on a stool, afternoon",
+  "persos": [
+   {
+    "nom": "the young neighbor",
+    "desc": "young man in his 20s, copper-and-violet jersey, small earring, empty hands",
+    "pose": "sitting on a plastic chair on the right, leaning forward, curious"
+   },
+   {
+    "nom": "the proud old man",
+    "desc": "old man in his 70s, indigo-and-copper boubou, long thin beard, old cap, empty hands",
+    "pose": "sitting on the left end of the bench in the foreground, chest out, proud"
+   },
+   {
+    "nom": "the old creditor",
+    "desc": "old man in his 70s, emerald-and-charcoal kaftan, thick glasses, holding ONE single walking cane",
+    "pose": "sitting on the other end of the bench, both hands on the cane, glaring"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Vieux père, tu te rappelles la victoire de 1992 ?"
+   ],
+   [
+    1,
+    "Mon petit, j'ai payé garba à tout le quartier dêh !"
+   ],
+   [
+    2,
+    "Avec mon argent-là. Rembourse dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The young neighbor asks with admiration, face turned three-quarters to the camera. The proud old man answers loudly, chest out, opening his arms wide. The old creditor taps his cane once on the ground and says his line coldly, his face clearly visible.",
+  "chute": "The proud old man's arms freeze in the air and his smile disappears. The camera slowly pushes in to a close-up of the proud old man's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "1992",
+   "garba",
+   "rembourse"
+  ],
+  "gag_legende": "TRENTE ANS DE DETTE EN UNE PHRASE :",
+  "mecanisme": "souvenir glorieux + relance assassine du créancier, trente ans après"
+ },
+ {
+  "id": "B076-09",
+  "titre": "Le penalty décisif",
+  "lieu": "sandy neighborhood football pitch in Port-Bouët, Abidjan, a goal made of wooden poles, a ball on the penalty spot, late afternoon",
+  "persos": [
+   {
+    "nom": "the coach",
+    "desc": "coach in his 50s, magenta-and-ruby tracksuit, cap, whistle around his neck, empty hands",
+    "pose": "standing on the left, pointing at the ball, excited"
+   },
+   {
+    "nom": "the coach's daughter",
+    "desc": "young woman in her 20s, peach-and-amber jumpsuit, long braids, holding ONE single smartphone",
+    "pose": "standing on the right, holding the smartphone, unimpressed"
+   },
+   {
+    "nom": "the young player",
+    "desc": "young man in his 20s, olive-and-chocolate jersey, high-top haircut, empty hands",
+    "pose": "standing in the foreground in the middle behind the ball, determined"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, si tu marques ce penalty-là, je te donne ma fille dêh !"
+   ],
+   [
+    1,
+    "Papa, j'ai déjà misé sur raté."
+   ],
+   [
+    0,
+    "Mon petit, tire au-dessus dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The coach makes his promise loudly, pointing at the ball, face turned three-quarters to the camera. The daughter raises her smartphone and says her line flatly. The coach immediately turns back to the player and says his line very seriously, pointing over the goal, his face clearly visible.",
+  "chute": "The young player freezes, looking from the coach to the daughter. The camera slowly pushes in to a close-up of the young player's crushed face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "penalty",
+   "raté",
+   "au-dessus"
+  ],
+  "gag_legende": "LE JOUEUR DEVANT LE BALLON MAINTENANT :",
+  "mecanisme": "promesse de mariage sabotée par le pari de la fille + relance assassine du coach qui change de camp"
+ },
+ {
+  "id": "B076-10",
+  "titre": "Maman au bord du terrain",
+  "lieu": "children's football pitch in Bingerville, Abidjan, a touchline with plastic chairs, a small goal, morning",
+  "persos": [
+   {
+    "nom": "the mother on the touchline",
+    "desc": "mother in her 40s, emerald-and-charcoal boubou, headscarf, empty hands",
+    "pose": "standing on the left by the touchline, pointing at the pitch, furious"
+   },
+   {
+    "nom": "the referee",
+    "desc": "referee in his 30s, mint-and-maroon referee shirt, whistle around his neck, holding ONE single referee card",
+    "pose": "standing on the right, holding the card down, confused"
+   },
+   {
+    "nom": "the number ten boy",
+    "desc": "boy around 11, rust-and-fuchsia jersey with the number 10, sweaty face, empty hands",
+    "pose": "standing in the foreground in the middle, hands on his hips, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Arbitre ! Carton rouge pour mon fils, le numéro dix dêh !"
+   ],
+   [
+    1,
+    "Tantie, il a rien fait de mal !"
+   ],
+   [
+    0,
+    "Justement. Ce matin, il a pas fait la vaisselle."
+   ],
+   [
+    1,
+    "Sors, mon petit. Va laver."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother shouts, pointing at her son, face turned three-quarters to the camera. The referee protests, palms open. The mother answers firmly, hands on her hips. The referee nods, raises the card toward the boy and says his line seriously, his face clearly visible.",
+  "chute": "The boy's proud smile collapses, his hands still on his hips. The camera slowly pushes in to a close-up of the number ten boy's devastated face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "carton rouge",
+   "vaisselle",
+   "laver"
+  ],
+  "gag_legende": "LE NUMÉRO DIX DEVANT L'ÉVIER :",
+  "mecanisme": "la mère arbitre la maison sur le terrain + relance assassine de l'arbitre qui obéit à la mère"
+ },
+ {
+  "id": "B076-11",
+  "titre": "Le ticket à cote mille",
+  "lieu": "living room of a house in Port-Bouët, Abidjan, a sofa, an armchair, a TV showing a football match, evening",
+  "persos": [
+   {
+    "nom": "the suspicious wife",
+    "desc": "wife in her 30s, olive-and-chocolate kaftan, short braids, holding ONE single smartphone",
+    "pose": "standing on the right, holding her husband's smartphone, frowning"
+   },
+   {
+    "nom": "the dreaming husband",
+    "desc": "husband in his 30s, fuchsia-and-amber shirt, goatee, empty hands",
+    "pose": "sitting on the sofa in the foreground on the left, smiling dreamily"
+   },
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, indigo-and-copper kaba, big headscarf, glasses, holding ONE single handbag on her lap",
+    "pose": "sitting in the armchair in the middle, handbag on her lap, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, pourquoi ton ticket-là a une cote de mille ?!"
+   ],
+   [
+    1,
+    "Combiné, bébé : les Éléphants gagnent et ta maman rentre au village."
+   ],
+   [
+    2,
+    "Mon gendre, tu as perdu dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife asks, showing the smartphone screen, face turned three-quarters to the camera. The husband answers with a dreamy smile, eyes to the ceiling. The mother-in-law, seated, pats her handbag and says her line sweetly, her face clearly visible.",
+  "chute": "The husband's dreamy smile freezes. The camera slowly pushes in to a close-up of the dreaming husband's broken face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "cote de mille",
+   "village",
+   "perdu"
+  ],
+  "gag_legende": "LE GENDRE EN DÉCHIRANT SON TICKET :",
+  "mecanisme": "pari impossible sur le départ de la belle-mère + relance assassine de la belle-mère"
+ },
+ {
+  "id": "B076-12",
+  "titre": "La question du ticket",
+  "lieu": "small living room in Attécoubé, Abidjan, a worn sofa, a plastic table, a ceiling fan, night",
+  "persos": [
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, copper-and-violet boubou, long braids, wedding ring, empty hands",
+    "pose": "standing on the right, arms crossed, curious"
+   },
+   {
+    "nom": "the gambling husband",
+    "desc": "husband in his 30s, emerald-and-charcoal t-shirt, short beard, holding ONE single smartphone",
+    "pose": "sitting on the sofa in the foreground on the left, eyes on the smartphone"
+   },
+   {
+    "nom": "the son",
+    "desc": "boy around 10, peach-and-amber polo shirt, round cheeks, holding ONE single school bag",
+    "pose": "standing in the middle, hugging the school bag"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, c'est quoi « cash out » sur ton ticket-là ?"
+   ],
+   [
+    1,
+    "Tu sors avant de tout perdre, bébé."
+   ],
+   [
+    0,
+    "Ya fohi. Je fais cash out de ce mariage dêh."
+   ],
+   [
+    2,
+    "Maman, je sors avec toi."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife asks, leaning toward the phone, face turned three-quarters to the camera. The husband explains without looking up, proud of his knowledge. The wife nods slowly and says her line coldly, pointing at her wedding ring. The boy hugs his school bag tighter and says his line quickly, his face clearly visible.",
+  "chute": "The husband finally looks up from the phone, mouth open. The camera slowly pushes in to a close-up of the gambling husband's stunned face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "cash out",
+   "mariage",
+   "sors"
+  ],
+  "gag_legende": "PAPA SEUL AVEC SON TICKET CE SOIR :",
+  "mecanisme": "le jargon du pari retourné contre le parieur + relance assassine du fils"
+ },
+ {
+  "id": "B076-13",
+  "titre": "L'arbitre du dimanche",
+  "lieu": "local football pitch in Bingerville, Abidjan, dusty grass, a wooden bench on the side, afternoon",
+  "persos": [
+   {
+    "nom": "the angry coach",
+    "desc": "coach in his 40s, fuchsia-and-amber tracksuit, cap, holding ONE single smartphone",
+    "pose": "standing in the foreground on the left, holding the smartphone, furious"
+   },
+   {
+    "nom": "the referee",
+    "desc": "referee in his 40s, copper-and-violet referee shirt, whistle around his neck, empty hands",
+    "pose": "standing on the right, relaxed, hands behind his back"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Arbitre, pourquoi tu siffles tout pour eux-là ?!"
+   ],
+   [
+    1,
+    "Mon vieux, eux, ils ont payé dêh."
+   ],
+   [
+    0,
+    "Mais nous aussi on a payé, gbê !"
+   ],
+   [
+    1,
+    "Votre mobile money est encore en attente."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The coach shouts, pointing at the referee, face turned three-quarters to the camera. The referee answers calmly with a shrug. The coach raises his smartphone and protests, outraged. The referee glances at the smartphone and says his line calmly, his face clearly visible.",
+  "chute": "The coach looks down at his smartphone screen, frozen. The camera slowly pushes in to a close-up of the angry coach's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "payé",
+   "mobile money",
+   "en attente"
+  ],
+  "gag_legende": "LE COACH EN RELANÇANT SON MOBILE MONEY :",
+  "mecanisme": "aveu cynique de l'arbitre + double chute : le pot-de-vin bloqué par le réseau"
+ },
+ {
+  "id": "B076-14",
+  "titre": "Mamie devant le match",
+  "lieu": "veranda of an old house in Attécoubé, Abidjan, a small TV on a table showing a football match, wooden chairs, evening",
+  "persos": [
+   {
+    "nom": "the grandson",
+    "desc": "teenage boy around 14, rust-and-fuchsia hoodie, short hair, empty hands",
+    "pose": "standing on the right, pointing at the TV, shocked"
+   },
+   {
+    "nom": "the cheering grandma",
+    "desc": "grandmother in her 70s, mint-and-maroon wrapper dress, headscarf, holding ONE single betting slip",
+    "pose": "sitting in the foreground on the left, raising the betting slip in victory, delighted"
+   },
+   {
+    "nom": "the grandpa",
+    "desc": "grandfather in his 70s, magenta-and-ruby boubou, short beard, old glasses, empty hands",
+    "pose": "sitting in the middle on a wooden chair, sulking"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mamie ! Tu cries pour l'équipe d'en face ?!"
+   ],
+   [
+    1,
+    "Mon petit, patriotisme paie pas. Cote à huit, ça paie dêh."
+   ],
+   [
+    2,
+    "Avec ma pension-là, en plus !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandson asks, outraged, pointing at the TV, face turned three-quarters to the camera. The grandma answers with a big grin, waving the betting slip. The grandpa, seated, crosses his arms and says his line bitterly, his face clearly visible.",
+  "chute": "The grandma's grin turns into a guilty frozen smile. The camera slowly pushes in to a close-up of the cheering grandma's guilty face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "d'en face",
+   "cote à huit",
+   "pension"
+  ],
+  "gag_legende": "MAMIE QUAND PAPI DEMANDE SA PENSION :",
+  "mecanisme": "trahison du pays assumée par la grand-mère + relance assassine du grand-père ruiné"
+ },
+ {
+  "id": "B076-15",
+  "titre": "L'inscription des cadets",
+  "lieu": "dusty football field in Port-Bouët, Abidjan, a folding table with registration papers, morning",
+  "persos": [
+   {
+    "nom": "the registration officer",
+    "desc": "man in his 40s, peach-and-amber safari suit, glasses, holding ONE single passport",
+    "pose": "sitting behind the folding table on the right, holding the passport up, suspicious"
+   },
+   {
+    "nom": "the bearded player",
+    "desc": "man in his 30s with a thick beard, fuchsia-and-amber jersey, muscular, empty hands",
+    "pose": "standing in the foreground on the left, chest out, confident"
+   },
+   {
+    "nom": "the little boy",
+    "desc": "boy around 6, olive-and-chocolate t-shirt, chubby cheeks, empty hands",
+    "pose": "standing next to the bearded player, looking up at him"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton papier dit quinze ans, mon petit ?!"
+   ],
+   [
+    1,
+    "Oui, monsieur. Je suis grand pour mon âge dêh."
+   ],
+   [
+    2,
+    "Papa, maman dit de rentrer manger dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The officer asks, raising the passport and an eyebrow, face turned three-quarters to the camera. The bearded player answers confidently, chest out. The little boy looks up at the bearded player and says his line loudly, his face clearly visible.",
+  "chute": "The bearded player freezes, his confident smile cracking. The camera slowly pushes in to a close-up of the bearded player's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "quinze ans",
+   "âge",
+   "papa"
+  ],
+  "gag_legende": "LE CADET DE QUINZE ANS À LA MAISON :",
+  "mecanisme": "mensonge sur l'âge pulvérisé par le propre enfant du « cadet »"
+ },
+ {
+  "id": "B076-16",
+  "titre": "L'invitation à la villa",
+  "lieu": "front yard of a modest house in Port-Bouët, Abidjan, a plastic table, a plastic chair, a bucket, afternoon",
+  "persos": [
+   {
+    "nom": "the wife with the invitation",
+    "desc": "wife in her 40s, magenta-and-ruby wrapper dress, short hair, holding ONE single invitation card",
+    "pose": "standing on the right, holding the invitation card, suspicious"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, mint-and-maroon polo shirt, potbelly, empty hands",
+    "pose": "standing in the foreground on the left, hands raised in denial"
+   },
+   {
+    "nom": "the son",
+    "desc": "boy around 12, emerald-and-charcoal hoodie, big glasses, holding ONE single smartphone",
+    "pose": "sitting on the plastic chair in the middle, holding the smartphone"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, le monsieur des paris t'invite à sa villa dêh !"
+   ],
+   [
+    1,
+    "Moi ? Je le connais pas dêh !"
+   ],
+   [
+    0,
+    "Il dit que c'est toi le premier investisseur."
+   ],
+   [
+    2,
+    "Salon-là porte ton nom, papa."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife reads the invitation aloud, face turned three-quarters to the camera. The husband protests, hands raised. The wife taps the card and answers coldly. The boy shows the smartphone screen and says his line innocently, his face clearly visible.",
+  "chute": "The husband's raised hands slowly drop. The camera slowly pushes in to a close-up of the husband's guilty face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "villa",
+   "investisseur",
+   "salon"
+  ],
+  "gag_legende": "PAPA EN VISITANT SA PROPRE VILLA :",
+  "mecanisme": "le parieur démasqué en financeur de la villa du bookmaker + relance assassine du fils"
+ },
+ {
+  "id": "B076-17",
+  "titre": "Papa et la coupe d'Afrique",
+  "lieu": "living room of a house in Bingerville, Abidjan, an old framed photo on the wall, a sofa, afternoon",
+  "persos": [
+   {
+    "nom": "the admiring son",
+    "desc": "boy around 9, fuchsia-and-amber t-shirt, big curious eyes, empty hands",
+    "pose": "sitting on the floor on the right, looking up at his father"
+   },
+   {
+    "nom": "the bragging father",
+    "desc": "father in his 40s, peach-and-amber jersey, round belly, empty hands",
+    "pose": "standing in the foreground on the left, chest out, proud"
+   },
+   {
+    "nom": "the grandmother",
+    "desc": "grandmother in her 70s, olive-and-chocolate kaba, headscarf, thick glasses, holding ONE single straw hand fan",
+    "pose": "sitting on the sofa in the middle, fanning herself slowly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, tu as vraiment gagné la coupe avec les Éléphants ?"
+   ],
+   [
+    1,
+    "Oui ! Ils m'ont porté sur leurs épaules dêh !"
+   ],
+   [
+    2,
+    "Mon petit, il était dans le costume de la mascotte."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boy asks with admiration, face turned three-quarters to the camera. The father answers proudly, thumping his chest once. The grandmother keeps fanning herself below her chin and says her line calmly, her face clearly visible.",
+  "chute": "The father's proud chest deflates and his smile freezes. The camera slowly pushes in to a close-up of the bragging father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "coupe",
+   "épaules",
+   "mascotte"
+  ],
+  "gag_legende": "PAPA QUAND IL ENTEND LE MOT MASCOTTE :",
+  "mecanisme": "vantardise démasquée par la grand-mère : le héros était dans le costume"
+ },
+ {
+  "id": "B076-18",
+  "titre": "L'arbitre du quartier",
+  "lieu": "small dirt football pitch between houses in Attécoubé, Abidjan, goals made of stones, afternoon",
+  "persos": [
+   {
+    "nom": "the opposing coach",
+    "desc": "woman coach in her 40s, indigo-and-copper tracksuit, cap, holding ONE single clipboard",
+    "pose": "standing on the right, pointing at the referee, furious"
+   },
+   {
+    "nom": "the referee father",
+    "desc": "father in his 40s acting as referee, peach-and-amber referee shirt, whistle around his neck, empty hands",
+    "pose": "standing in the foreground on the left, hands behind his back, innocent"
+   },
+   {
+    "nom": "the referee's son",
+    "desc": "boy around 12, mint-and-maroon jersey, sweaty face, empty hands",
+    "pose": "standing in the middle next to his father, honest look"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Arbitre, ton fils a fait faute ! Siffle penalty dêh !"
+   ],
+   [
+    1,
+    "Tu es sûre, Tantie ? Moi, j'ai rien vu dêh."
+   ],
+   [
+    2,
+    "Papa, tu as vu. Tu as même applaudi dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The opposing coach shouts, pointing at the referee, face turned three-quarters to the camera. The referee father shrugs innocently, looking away. The boy looks up at his father and says his line very honestly, his face clearly visible.",
+  "chute": "The referee father freezes, eyes wide. The camera slowly pushes in to a close-up of the referee father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "faute",
+   "penalty",
+   "applaudi"
+  ],
+  "gag_legende": "L'ARBITRE QUAND SON FILS EST HONNÊTE :",
+  "mecanisme": "l'enfant trop honnête balance son père arbitre"
+ },
+ {
+  "id": "B076-19",
+  "titre": "Maman appelle papa",
+  "lieu": "courtyard of a house in Port-Bouët, Abidjan, a low wall, a plastic chair near the closed front door, evening",
+  "persos": [
+   {
+    "nom": "the little sister",
+    "desc": "girl around 9, emerald-and-charcoal dress, two braids, empty hands",
+    "pose": "standing in the middle near the door, pointing toward the house"
+   },
+   {
+    "nom": "the big brother",
+    "desc": "boy around 14, magenta-and-ruby jersey, shaved head, holding ONE single smartphone",
+    "pose": "sitting on the low wall on the right, holding the smartphone"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, peach-and-amber boubou, receding hairline, empty hands",
+    "pose": "sitting on the plastic chair in the foreground on the left, nervous"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, maman t'appelle dans la chambre. Elle est fâchée dêh !"
+   ],
+   [
+    1,
+    "Gbê, je mise mille sur maman. Cote un virgule un."
+   ],
+   [
+    2,
+    "Moi aussi, cinq cents sur elle."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The little sister announces it urgently, pointing at the house, face turned three-quarters to the camera. The big brother answers immediately, tapping his smartphone, very calm. The father, still seated, sighs, raises one hand and says his line in a defeated voice, his face clearly visible.",
+  "chute": "The two children slowly turn their heads toward their father. The camera slowly pushes in to a close-up of the father's resigned face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "fâchée",
+   "cote",
+   "cinq cents"
+  ],
+  "gag_legende": "PAPA EN ENTRANT DANS LA CHAMBRE :",
+  "mecanisme": "les enfants parient sur la dispute + relance assassine du père qui mise contre lui-même"
+ },
+ {
+  "id": "B076-20",
+  "titre": "Le secret de Mamie",
+  "lieu": "veranda of a family house in Attécoubé, Abidjan, two wooden armchairs, a small table, afternoon",
+  "persos": [
+   {
+    "nom": "the grandson",
+    "desc": "young man around 17, olive-and-chocolate hoodie, short twists, holding ONE single smartphone",
+    "pose": "sitting on a stool on the right, holding the smartphone, curious"
+   },
+   {
+    "nom": "the winning grandma",
+    "desc": "grandmother in her 70s, emerald-and-charcoal kaba, headscarf, big earrings, holding ONE single roll of banknotes",
+    "pose": "sitting in an armchair in the middle, holding the roll of banknotes, proud"
+   },
+   {
+    "nom": "the grandpa",
+    "desc": "grandfather in his 70s, copper-and-violet kaftan, thin mustache, old cap, empty hands",
+    "pose": "sitting in the armchair in the foreground on the left, smiling innocently"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mamie, comment tu gagnes tous tes paris dêh ?"
+   ],
+   [
+    1,
+    "Je mise toujours contre ce que ton papi dit dêh."
+   ],
+   [
+    0,
+    "Et tu l'as jamais écouté ?"
+   ],
+   [
+    1,
+    "Une seule fois : le jour du mariage."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandson asks with admiration, face turned three-quarters to the camera. The grandma answers proudly, raising the roll of banknotes. The grandson asks again, intrigued. The grandma glances at the grandpa and says her line calmly, her face clearly visible.",
+  "chute": "The grandpa's innocent smile slowly freezes. The camera slowly pushes in to a close-up of the grandpa's betrayed face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "paris",
+   "contre",
+   "mariage"
+  ],
+  "gag_legende": "PAPI APRÈS QUARANTE ANS DE MARIAGE :",
+  "mecanisme": "méthode de pari infaillible + chute : la seule fois qu'elle l'a écouté, c'est le mariage"
+ }
+]

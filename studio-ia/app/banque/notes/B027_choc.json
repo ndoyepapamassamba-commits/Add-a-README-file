@@ -1,0 +1,22 @@
+[
+ {"id": "B027-01", "note": 6, "drapeaux": [], "remarque": "Le slogan « on est une famille » pris au mot marche, et le « Papi » de la petite qui présente la facture donne une vraie relance, mais le retournement reste assez attendu."},
+ {"id": "B027-02", "note": 7, "drapeaux": [], "remarque": "Double coup efficace : le mari traite sa femme de problème, puis elle riposte aussitôt avec « ce soir tu restes à la porte », une relance qui achève vraiment."},
+ {"id": "B027-03", "note": 5, "drapeaux": [], "remarque": "Le jeu de mots sur « traverser la crise » en voiture se voit venir dès qu'on parle de la voiture neuve, ça fait sourire sans plus."},
+ {"id": "B027-04", "note": 6, "drapeaux": [], "remarque": "Bonne pique sur le patron sourd au mot salaire, et l'image des oreilles « en congé » est assez féroce, mais le retournement n'est pas foudroyant."},
+ {"id": "B027-05", "note": 5.5, "drapeaux": ["confus"], "remarque": "La réplique amère de l'employé est bonne, mais on ne sait pas comment l'enfant sait qu'ils ne sont pas payés, donc la déduction arrive un peu de nulle part."},
+ {"id": "B027-06", "note": 5, "drapeaux": [], "remarque": "Inverser la dette est un ressort classique, et l'énumération « tu manges ici, tu dors ici » rappelle trop le catalogue 067 pour surprendre."},
+ {"id": "B027-07", "note": 6, "drapeaux": [], "remarque": "L'aveu naïf « l'école refusait de signer » fonctionne et fait rire, mais la cible est unique et la surprise moyenne."},
+ {"id": "B027-08", "note": 5.5, "drapeaux": [], "remarque": "L'idée d'une enveloppe vide qui protège de la femme qui fouille est originale, mais le gag tient mal parce que l'ouvrier perd quand même tout, et le rire est un peu tiède."},
+ {"id": "B027-09", "note": 7, "drapeaux": [], "remarque": "Retournement sec en deux répliques qui renvoie au patron son propre portrait (arriver à onze heures, ne payer personne), donc féroce et facile à rejouer."},
+ {"id": "B027-10", "note": 6, "drapeaux": [], "remarque": "Le double sens de « traîner » démasque bien la paresse du patron, et la chute est propre mais pas explosive."},
+ {"id": "B027-11", "note": 6, "drapeaux": [], "remarque": "Chute courte et logique où l'employé imite le salaire qui ne vient pas : bien vu, mais dans la même famille que le repère 6 du barème."},
+ {"id": "B027-12", "note": 7, "drapeaux": [], "remarque": "Vraie surprise : la « faute grave », c'est d'avoir dit à la femme du patron que la boutique marche bien, avec une double cible (patron menteur, épouse dépensière)."},
+ {"id": "B027-13", "note": 6.5, "drapeaux": [], "remarque": "« Rien du tout, patron. J'apprends vite » est un bon coup de massue sur le patron, même si l'idée qu'apprendre le travail du chef revient à ne rien faire est assez répandue."},
+ {"id": "B027-14", "note": 5.5, "drapeaux": [], "remarque": "Payer pour toucher son propre salaire est absurde et juste, mais la deuxième réplique annonce déjà la chute, qui n'ajoute qu'un petit cran."},
+ {"id": "B027-15", "note": 5, "drapeaux": [], "remarque": "« Nettoyer le compte » est une expression courante, donc le jeu de mots sur des « comptes propres » se devine et fait peu d'effet."},
+ {"id": "B027-16", "note": 6, "drapeaux": [], "remarque": "La relance de la mère qui fait verser le salaire sur son numéro achève bien le fils, mais la première chute sur l'expérience est un peu molle."},
+ {"id": "B027-17", "note": 5, "drapeaux": ["confus"], "remarque": "Le double sens de « prétentions » demande un temps de réflexion et l'aveu sur l'âge arrive de travers, alors le rire se perd en route."},
+ {"id": "B027-18", "note": 6.5, "drapeaux": [], "remarque": "Dénégation qui confirme l'accusation à l'échelle de tout Treichville, ce qui est féroce, même si cette mécanique est assez classique."},
+ {"id": "B027-19", "note": 6, "drapeaux": [], "remarque": "Humiliation sympa (la fille du patron paie mieux que lui), mais le retournement reste sage et sans double cible forte."},
+ {"id": "B027-20", "note": 4.5, "drapeaux": ["connu"], "remarque": "« Payé en visibilité » est un gag archi-connu d'internet, et la chute de dormir dehors n'en est qu'une variante."}
+]

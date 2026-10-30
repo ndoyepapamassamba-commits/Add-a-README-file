@@ -43,7 +43,10 @@ function normaliser(texte) {
 }
 function motsDialogue(s) { return s.dialogue.reduce((n, [, t]) => n + normaliser(t).length, 0); }
 // débit mesuré chez Grok : ≈ 3 mots par seconde, + 2 s pour la chute et la réaction finale
-function dureeClip(s) { return s.duree || Math.min(12, Math.max(6, Math.round(motsDialogue(s) / 3 + 2))); }
+function dureeClip(s) {
+  const d = Math.round(+s.duree);                // une durée importée illisible (« 10 s ») ne doit jamais fausser le budget
+  return d >= 3 && d <= 15 ? d : Math.min(12, Math.max(6, Math.round(motsDialogue(s) / 3 + 2)));
+}
 function majuscule1(t) { return t ? t[0].toUpperCase() + t.slice(1) : t; }
 
 function voixDe(p) {
@@ -68,8 +71,11 @@ function promptVideo(s) {
   return `${VOIX} ${REALISME} Animate this exact image, keep the same characters, faces, skin tones and setting. ${CHOC} ` +
     `${s.jeu} ${chute} ${SYNCHRO} Dialogue: ${lignes}`;
 }
+// prix à la seconde selon la résolution choisie (mesuré sur grok-imagine-video : 480p ≈ 0,02 $/s, 720p ≈ 0,03 $/s)
+function prixSeconde() { return R.resolution === "720p" ? 0.03 : PRIX.video_seconde; }
+function coutVideo(s) { return dureeClip(s) * prixSeconde() + PRIX.video_image; }
 function coutEstime(s, image = true, video = true) {
-  return (image ? PRIX.image : 0) + (video ? dureeClip(s) * PRIX.video_seconde + PRIX.video_image : 0);
+  return (image ? PRIX.image : 0) + (video ? coutVideo(s) : 0);
 }
 
 // ---------- réglages (localStorage ; la clé API n'y est écrite que si l'utilisateur coche « se souvenir ») ----------
@@ -133,6 +139,15 @@ const DB = (() => {
     put: (m, k, v) => tx(m, "readwrite", (st) => (m === "journal" ? st.add(v) : st.put(v, k))),
     del: (m, k) => tx(m, "readwrite", (st) => st.delete(k)),
     tout: (m) => tx(m, "readonly", (st) => st.getAll()),
+    entrees: async (m) => {                  // [clé, valeur] lus dans UNE transaction (clés et valeurs toujours alignées)
+      const db = await ouvrir();
+      return new Promise((ok, ko) => {
+        const t = db.transaction(m, "readonly"), res = [];
+        t.objectStore(m).openCursor().onsuccess = (ev) => { const c = ev.target.result; if (c) { res.push([c.key, c.value]); c.continue(); } };
+        t.oncomplete = () => ok(res);
+        t.onerror = () => ko(t.error);
+      });
+    },
     cles: (m) => tx(m, "readonly", (st) => st.getAllKeys()),
     vider: (m) => tx(m, "readwrite", (st) => st.clear()),
   };
@@ -144,8 +159,8 @@ async function noterDepense(genre, modele, cout, ref) {
   const c = +cout || 0;
   DEPENSES.session += c;
   DEPENSES.total += c;
-  await DB.put("journal", null, { t: Date.now(), genre, modele, cout: c, ref });
   majEntete();
+  await DB.put("journal", null, { t: Date.now(), genre, modele, cout: c, ref });
 }
 async function chargerDepenses() {
   const j = await DB.tout("journal");
@@ -158,35 +173,49 @@ class ErreurAPI extends Error {
 }
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Un GET est rejoué après une erreur passagère. Un POST (payant) n'est rejoué QUE sur 429 : c'est la seule réponse qui
+// garantit que rien n'a été créé ; après une 5xx ou une coupure, le travail a pu être créé et payé, l'erreur est
+// marquée « incertaine » pour que l'utilisateur vérifie avant de relancer. La clé n'est envoyée qu'à openrouter.ai.
 async function api(chemin, { methode = "GET", corps = null, brut = false, essais = 4 } = {}) {
   if (!CLE) throw new ErreurAPI(401, "aucune clé API (onglet Réglages)");
+  if (chemin.startsWith("http") && !chemin.startsWith(API + "/")) throw new ErreurAPI(400, `adresse refusée : ${chemin.slice(0, 60)}`);
   const url = chemin.startsWith("http") ? chemin : API + chemin;
+  const payant = methode !== "GET";
+  const idem = payant && crypto.randomUUID ? crypto.randomUUID() : null;
   let derniere = null;
   for (let k = 0; k < essais; k++) {
+    let r;
     try {
-      const r = await fetch(url, {
+      r = await fetch(url, {
         method: methode,
         headers: Object.assign({ Authorization: `Bearer ${CLE}`, "X-Title": "Studio Comedie Abidjan" },
-          corps ? { "Content-Type": "application/json" } : {}),
+          corps ? { "Content-Type": "application/json" } : {}, idem ? { "Idempotency-Key": idem } : {}),
         body: corps ? JSON.stringify(corps) : undefined,
       });
-      if (r.ok) return brut ? r : r.json();
-      const texte = (await r.text()).slice(0, 400);
-      derniere = new ErreurAPI(r.status, texte);
-      // erreurs définitives : pas de nouvel essai (clé, crédit, requête refusée, contenu expiré)
-      if ([400, 401, 402, 403, 404, 410, 422].includes(r.status)) throw derniere;
-    } catch (e) {
-      if (e instanceof ErreurAPI && [400, 401, 402, 403, 404, 410, 422].includes(e.statut)) throw e;
-      derniere = e;
+    } catch (e) {                                   // coupure réseau : la requête a pu arriver
+      derniere = new ErreurAPI(0, `connexion coupée (${e.message})`);
+      if (payant) { derniere.incertain = true; throw derniere; }
+      await dormir(2000 * 2 ** k);
+      continue;
     }
+    if (r.ok) return brut ? r : r.json();
+    const texte = (await r.text().catch(() => "")).slice(0, 400);
+    derniere = new ErreurAPI(r.status, texte);
+    // erreurs définitives : pas de nouvel essai (clé, crédit, requête refusée, contenu expiré)
+    if ([400, 401, 402, 403, 404, 410, 422].includes(r.status)) throw derniere;
+    if (payant && r.status !== 429) { derniere.incertain = r.status >= 500; throw derniere; }
     await dormir(2000 * 2 ** k);
   }
   throw derniere;
 }
 
+// solde utilisable = le plus petit entre la limite propre à la clé (null si la clé n'a pas de limite) et le crédit du compte
 async function infoCle() {
   const d = (await api("/key")).data || {};
-  return { reste: d.limit_remaining, limite: d.limit, usage: d.usage };
+  let compte = null;
+  try { const c = (await api("/credits", { essais: 1 })).data || {}; if (c.total_credits != null) compte = c.total_credits - (c.total_usage || 0); } catch (e) { /* facultatif */ }
+  const valeurs = [d.limit_remaining, compte].filter((x) => x != null && Number.isFinite(+x)).map(Number);
+  return { reste: valeurs.length ? Math.min(...valeurs) : null, limite: d.limit, compte, usage: d.usage };
 }
 
 function blobVersDataURL(blob) {
@@ -212,7 +241,7 @@ async function genererImage(s) {
 async function lancerVideo(s, imageBlob) {
   const url = await blobVersDataURL(imageBlob);
   const d = await api("/videos", {
-    methode: "POST", essais: 2, corps: {
+    methode: "POST", corps: {
       model: R.modeleVideo, prompt: promptVideo(s), duration: dureeClip(s), resolution: R.resolution,
       aspect_ratio: R.format, generate_audio: true,
       frame_images: [{ type: "image_url", image_url: { url }, frame_type: "first_frame" }],
@@ -224,27 +253,46 @@ async function lancerVideo(s, imageBlob) {
 
 async function etatVideo(job) { return api(`/videos/${job}`); }
 
-async function telechargerVideo(job, etat) {
-  const url = (etat.unsigned_urls || [])[0] || `${API}/videos/${job}/content?index=0`;
-  const r = await api(url, { brut: true });
-  return r.blob();
+// toujours par l'adresse d'OpenRouter (jamais par une URL de stockage tierce, qui recevrait la clé)
+async function telechargerVideo(job) {
+  const r = await api(`/videos/${job}/content?index=0`, { brut: true });
+  const b = await r.blob();
+  if (b.size < 1000) throw new ErreurAPI(500, "fichier vidéo vide");
+  return b;
 }
 
-async function chatJuge(contenu) {
+// chaque appel du juge est noté dès sa réponse : un appel suivant qui échoue ne fait pas oublier celui-ci
+async function chatJuge(contenu, ref) {
   const d = await api("/chat/completions", { methode: "POST", corps: { model: R.modeleJuge, messages: [{ role: "user", content: contenu }] } });
-  const cout = (d.usage || {}).cost;
-  return { texte: (((d.choices || [])[0] || {}).message || {}).content || "", cout: +cout || 0 };
+  const cout = +(d.usage || {}).cost || PRIX.controle;
+  await noterDepense("controle", R.modeleJuge, cout, ref).catch(() => {});
+  return { texte: (((d.choices || [])[0] || {}).message || {}).content || "", cout };
 }
 
 // ---------- dossier de sortie (File System Access API, Chrome / Edge) ----------
+// Le dossier choisi est gardé dans IndexedDB ; Chrome redemande l'autorisation à la réouverture (au premier clic).
 let DOSSIER = null;
 async function choisirDossier() {
-  if (!window.showDirectoryPicker) { alerte("Ce navigateur ne permet pas de choisir un dossier : les fichiers seront téléchargés un par un."); return null; }
+  if (!window.showDirectoryPicker) { alerte("Ce navigateur ne permet pas de choisir un dossier : les images et les clips restent dans le navigateur, télécharge-les depuis leur carte.", "attention"); return null; }
   DOSSIER = await window.showDirectoryPicker({ mode: "readwrite" });
+  await DB.put("fichiers", "config:dossier", DOSSIER).catch(() => {});
   return DOSSIER;
+}
+async function chargerDossier() {
+  const d = await DB.get("fichiers", "config:dossier").catch(() => null);
+  if (d && d.queryPermission) DOSSIER = d;
+  return DOSSIER;
+}
+async function autoriserDossier() {               // à appeler pendant un clic (Chrome l'exige)
+  if (!DOSSIER || !DOSSIER.queryPermission) return false;
+  try {
+    if ((await DOSSIER.queryPermission({ mode: "readwrite" })) === "granted") return true;
+    return (await DOSSIER.requestPermission({ mode: "readwrite" })) === "granted";
+  } catch (e) { return false; }
 }
 async function ecrireFichier(sousDossier, nom, blob) {
   if (!DOSSIER) return false;
+  try { if ((await DOSSIER.queryPermission({ mode: "readwrite" })) !== "granted") return false; } catch (e) { return false; }
   try {
     const d = sousDossier ? await DOSSIER.getDirectoryHandle(sousDossier, { create: true }) : DOSSIER;
     const f = await d.getFileHandle(nom, { create: true });

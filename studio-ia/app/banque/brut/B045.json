@@ -1,0 +1,902 @@
+[
+ {
+  "id": "B045-01",
+  "titre": "Les cheveux blancs de maman",
+  "lieu": "small consultation room of a private clinic in Williamsville, Abidjan, a wooden desk with a stethoscope and a notepad, a height chart on the wall, soft morning light from a window",
+  "persos": [
+   {
+    "nom": "the curious girl",
+    "desc": "girl around 10, magenta-and-peach dress, two puffy braided pigtails, big curious eyes, empty hands",
+    "pose": "standing in the foreground on the left, facing the doctor, one finger pointing at her mother's hair"
+   },
+   {
+    "nom": "the calm doctor",
+    "desc": "male doctor in his 50s, olive-and-sunflower lab coat, stethoscope around his neck, small round glasses, holding ONE single pen",
+    "pose": "sitting behind the desk in the middle, relaxed"
+   },
+   {
+    "nom": "the tired mother",
+    "desc": "mother in her 40s, emerald-and-cobalt kaba, a few white streaks in her black hair, tired eyes, ONE single handbag on her lap",
+    "pose": "sitting on a chair on the right, slightly behind the girl, both hands resting on the handbag"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Docteur, moi aussi je vais avoir cheveux blancs comme maman dêh ?"
+   ],
+   [
+    1,
+    "Non, ma fille. Toi, tu as pas une fille comme toi."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The girl asks innocently, her face in three-quarter view toward the camera, pointing one finger at her mother's white streaks. The doctor glances at the tired mother, then points his pen at the girl and answers calmly, his face clearly visible.",
+  "chute": "The mother slowly nods with a tired, satisfied smile. The girl freezes, her mouth open. The camera slowly pushes in to a close-up of the curious girl's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "cheveux blancs",
+   "maman",
+   "fille"
+  ],
+  "gag_legende": "LES MAMANS QUAND LE DOCTEUR A RAISON :",
+  "mecanisme": "retournement logique à double cible : l'enfant est elle-même la cause des cheveux blancs de sa mère"
+ },
+ {
+  "id": "B045-02",
+  "titre": "Les kilos du mariage",
+  "lieu": "diet consultation office of a small clinic in Abatta, Abidjan, a bathroom scale on the floor, a desk with a poster of fruits and vegetables, late morning",
+  "persos": [
+   {
+    "nom": "the plump wife",
+    "desc": "wife in her 30s, mustard-and-ochre boubou, round cheeks, gold earrings, ONE single small handbag on her arm",
+    "pose": "standing in the foreground on the left, one hand on her hip, outraged"
+   },
+   {
+    "nom": "the diet doctor",
+    "desc": "female diet doctor in her 40s, sky-blue-and-maroon lab coat, short natural hair, holding ONE single clipboard",
+    "pose": "sitting behind the desk on the right, calm, holding the clipboard"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Docteur, depuis mon mariage-là, j'ai pris quinze kilos dêh !"
+   ],
+   [
+    1,
+    "Et ton mari-là a perdu combien ?"
+   ],
+   [
+    0,
+    "Quinze aussi dêh, docteur !"
+   ],
+   [
+    1,
+    "Ya fohi. Enfin il t'a donné quelque chose."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife complains loudly, her face in three-quarter view toward the camera, one hand on her hip. The diet doctor raises her eyebrows and asks, tapping the clipboard with one finger. The wife answers with a proud nod. The diet doctor answers calmly with a small shrug, her face clearly visible.",
+  "chute": "The wife freezes, her mouth wide open, her handbag hanging still on her arm. The camera slowly pushes in to a close-up of the plump wife's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "quinze kilos",
+   "mari",
+   "donné"
+  ],
+  "gag_legende": "LE MARI QUAND ELLE VA RENTRER CE SOIR :",
+  "mecanisme": "retournement logique à double cible : le seul cadeau du mari, ce sont ses propres kilos"
+ },
+ {
+  "id": "B045-03",
+  "titre": "Les achats secrets du mari",
+  "lieu": "small neighborhood pharmacy in Songon, Abidjan, a glass counter, shelves of medicine boxes behind it, a glowing cross-shaped sign outside the window, early evening",
+  "persos": [
+   {
+    "nom": "the suspicious wife",
+    "desc": "wife in her 40s, salmon-and-aubergine kaba, big hoop earrings, narrowed eyes, holding ONE single phone",
+    "pose": "standing in the foreground on the left at the counter, leaning slightly forward, suspicious"
+   },
+   {
+    "nom": "the young pharmacist",
+    "desc": "female pharmacist in her late 20s, mint-and-cobalt lab coat, hair in a neat bun, both hands resting flat on the counter",
+    "pose": "standing behind the counter on the right, calm and polite"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, mon mari-là achète quoi ici chaque samedi ?"
+   ],
+   [
+    1,
+    "Bouchons d'oreilles, Tantie. Toujours deux boîtes dêh."
+   ],
+   [
+    0,
+    "Il achète ça depuis quand, ma fille ?"
+   ],
+   [
+    1,
+    "Le lendemain de votre mariage-là."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife asks in a low suspicious voice, her face in three-quarter view toward the camera, tapping her phone on the counter. The pharmacist answers politely, raising two fingers. The wife narrows her eyes and asks again. The pharmacist answers gently with a small sorry smile, her face clearly visible.",
+  "chute": "The wife freezes, her eyes wide, her mouth open. The camera slowly pushes in to a close-up of the suspicious wife's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "bouchons d'oreilles",
+   "deux boîtes",
+   "mariage"
+  ],
+  "gag_legende": "LE MARI QUAND SA FEMME VA RENTRER :",
+  "mecanisme": "retournement logique à double cible : l'enquêteuse découvre qu'elle est elle-même le problème du mari"
+ },
+ {
+  "id": "B045-04",
+  "titre": "Le médicament de papa",
+  "lieu": "pharmacy counter in Williamsville, Abidjan, shelves of medicine boxes, ONE single open debt notebook lying on the counter, morning",
+  "persos": [
+   {
+    "nom": "the little messenger boy",
+    "desc": "boy around 9, mustard-and-apricot tracksuit, very short hair, innocent face, holding ONE single crumpled piece of paper",
+    "pose": "standing on the left in front of the counter, holding up the paper"
+   },
+   {
+    "nom": "the pharmacist with the notebook",
+    "desc": "male pharmacist in his 50s, emerald-and-cobalt lab coat, grey moustache, one hand flat on the debt notebook",
+    "pose": "standing behind the counter in the foreground on the right, eyebrows raised"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, papa demande médicament pour la mémoire dêh."
+   ],
+   [
+    1,
+    "Ya fohi. Qu'il paye d'abord les trois boîtes d'avant !"
+   ],
+   [
+    0,
+    "Il dit qu'il se rappelle pas, Tonton."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy asks politely, his face in three-quarter view toward the camera, holding up the paper. The pharmacist taps the debt notebook with one finger and answers firmly. The boy answers with a calm innocent shrug, his face clearly visible.",
+  "chute": "The pharmacist freezes, his finger still on the notebook, his mouth open. The camera slowly pushes in to a close-up of the pharmacist with the notebook's speechless face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "mémoire",
+   "trois boîtes",
+   "rappelle"
+  ],
+  "gag_legende": "LE PHARMACIEN EN RELISANT SON CAHIER :",
+  "mecanisme": "boucle logique à double cible : le père a justement oublié sa dette, le pharmacien est piégé par sa propre exigence"
+ },
+ {
+  "id": "B045-05",
+  "titre": "Les lunettes de Madame",
+  "lieu": "small optician shop in Abatta, Abidjan, an eye chart on the wall, a display of glasses frames, a test chair, afternoon",
+  "persos": [
+   {
+    "nom": "the worried husband",
+    "desc": "husband in his 40s, olive-and-sunflower shirt, big belly, a wide gap between his front teeth, holding ONE single car key",
+    "pose": "standing in the foreground on the left, leaning toward the optician, worried"
+   },
+   {
+    "nom": "the old optician",
+    "desc": "male optician in his 60s, magenta-and-peach lab coat, thick glasses, holding ONE single pointer stick",
+    "pose": "standing on the right in front of the eye chart"
+   },
+   {
+    "nom": "the squinting wife",
+    "desc": "beautiful wife in her 30s, mint-and-cobalt dress, long braids, squinting eyes, empty hands",
+    "pose": "sitting on the test chair in the background in the middle, squinting at the eye chart"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Docteur, ma femme-là doit porter lunettes, ou bien ?"
+   ],
+   [
+    1,
+    "Surtout pas, mon vieux. Le jour où elle voit clair, tu es dehors dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife keeps squinting at the chart without speaking. The husband whispers his question, his face in three-quarter view toward the camera. The optician lowers his pointer stick and answers in a low serious voice, pointing at the husband's face, his face clearly visible.",
+  "chute": "The husband freezes with a stuck smile, the car key trembling in his hand. The camera slowly pushes in to a close-up of the worried husband's panicked face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "lunettes",
+   "voit clair",
+   "dehors"
+  ],
+  "gag_legende": "LE MARI EN CACHANT TOUTES LES LUNETTES :",
+  "mecanisme": "retournement logique à double cible : la mauvaise vue de la femme est la seule chance du mari"
+ },
+ {
+  "id": "B045-06",
+  "titre": "Les résultats de Tonton",
+  "lieu": "consultation room of a dispensary in Songon, Abidjan, a desk with a folder of lab results, a ceiling fan, a window with morning light",
+  "persos": [
+   {
+    "nom": "the smiling doctor",
+    "desc": "female doctor in her 40s, mustard-and-copper lab coat, stethoscope around her neck, holding ONE single sheet of lab results",
+    "pose": "sitting behind the desk on the right, smiling broadly"
+   },
+   {
+    "nom": "the panicked uncle",
+    "desc": "man in his 50s, sky-blue-and-maroon boubou, bald head, thick neck, holding ONE single phone",
+    "pose": "sitting on a chair in the foreground on the left, facing the doctor"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, bonne nouvelle : tu n'as absolument rien dêh !"
+   ],
+   [
+    1,
+    "Chut, docteur ! Mes frères du village ont déjà envoyé l'argent des soins-là !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The doctor announces the news happily, holding up the sheet. The uncle raises his free hand, palm out toward her, and answers in a panicked whisper, his face in three-quarter view toward the camera, clearly visible.",
+  "chute": "The doctor freezes with the sheet in the air, her smile fading. The uncle glances left and right, nervous. The camera slowly pushes in to a close-up of the panicked uncle's guilty face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "rien",
+   "frères du village",
+   "argent"
+  ],
+  "gag_legende": "LE VILLAGE QUAND IL VA APPRENDRE ÇA :",
+  "mecanisme": "révélation par la victime elle-même : la bonne nouvelle ruine l'arnaque familiale"
+ },
+ {
+  "id": "B045-07",
+  "titre": "Le stand des comprimés minceur",
+  "lieu": "small street stall in front of the market in Abatta, Abidjan, a wooden table covered with identical small boxes of diet pills, a big parasol, midday sun",
+  "persos": [
+   {
+    "nom": "the angry customer",
+    "desc": "woman in her 30s, magenta-and-peach kaba, hair in a high bun, holding ONE single small box of pills",
+    "pose": "standing in the foreground on the left in front of the table, holding up the box, furious"
+   },
+   {
+    "nom": "the fat pill seller",
+    "desc": "male seller in his 40s, salmon-and-aubergine tracksuit, huge round belly, wide confident smile, both hands resting on his belly",
+    "pose": "standing behind the table on the right, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, tu vends médicament pour maigrir et tu es gros comme ça ?!"
+   ],
+   [
+    1,
+    "Ma fille, c'est votre argent-là que je mange dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer shouts her accusation, her face in three-quarter view toward the camera, shaking the box. The seller pats his belly with both hands and answers calmly with a big satisfied smile, his face clearly visible.",
+  "chute": "The customer freezes, the box still raised, her mouth open. The camera slowly pushes in to a close-up of the angry customer's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "maigrir",
+   "argent",
+   "mange"
+  ],
+  "gag_legende": "MOI APRÈS TROIS MOIS DE COMPRIMÉS :",
+  "mecanisme": "retournement logique à double cible : le gros ventre du vendeur est la preuve que les clientes paient pour rien"
+ },
+ {
+  "id": "B045-08",
+  "titre": "Le ronflement du mari",
+  "lieu": "consultation room of a clinic in Williamsville, Abidjan, a desk with a notepad, a poster of a sleeping person on the wall, afternoon light",
+  "persos": [
+   {
+    "nom": "the complaining wife",
+    "desc": "wife in her 40s, emerald-and-cobalt boubou, short braids, ONE single handbag on her lap",
+    "pose": "sitting on a chair on the left, facing the doctor, upset"
+   },
+   {
+    "nom": "the doctor",
+    "desc": "male doctor in his 50s, mustard-and-apricot lab coat, grey beard, stethoscope around his neck, holding ONE single pen",
+    "pose": "sitting behind the desk in the middle"
+   },
+   {
+    "nom": "the sleepy husband",
+    "desc": "husband in his 50s, olive-and-sunflower boubou, big belly, heavy eyelids, empty hands",
+    "pose": "sitting on a chair in the foreground on the right, arms crossed, half asleep"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Docteur, mon mari-là ronfle comme un gbaka chaque nuit dêh !"
+   ],
+   [
+    1,
+    "Tantie, et toi, tu dors comment avec ça ?"
+   ],
+   [
+    0,
+    "Moi je sais pas. C'est ma voisine-là qui m'a dit."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband stays half asleep with his arms crossed. The wife complains, her face in three-quarter view toward the camera, pointing at her husband. The doctor asks kindly, pointing his pen at her. The wife answers innocently with a small shrug, her face clearly visible.",
+  "chute": "The husband's eyes snap wide open and he freezes. The doctor slowly turns his head toward him. The camera slowly pushes in to a close-up of the sleepy husband's busted face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "ronfle",
+   "gbaka",
+   "voisine"
+  ],
+  "gag_legende": "LE MARI EN CHERCHANT UNE EXCUSE :",
+  "mecanisme": "révélation involontaire par la victime : la voisine connaît les nuits du mari mieux que sa femme"
+ },
+ {
+  "id": "B045-09",
+  "titre": "Le lavage des mains",
+  "lieu": "small consultation room of a dispensary in Songon, Abidjan, a small sink with ONE single bar of soap, an examination table, a window, morning",
+  "persos": [
+   {
+    "nom": "the observant boy",
+    "desc": "boy around 7, mustard-and-ochre tracksuit, round face, a missing front tooth, empty hands",
+    "pose": "standing on the left next to the examination table, looking at the doctor"
+   },
+   {
+    "nom": "the young doctor",
+    "desc": "female doctor in her 30s, salmon-and-aubergine lab coat, braided hair in a bun, clean hands raised in front of her",
+    "pose": "standing near the sink in the middle, hands raised"
+   },
+   {
+    "nom": "the father on the table",
+    "desc": "father in his 40s, magenta-and-peach shirt, thin moustache, hands on his knees",
+    "pose": "sitting on the examination table in the foreground on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Docteur, pourquoi tu laves tes mains avant de toucher mon papa-là ?"
+   ],
+   [
+    1,
+    "Pour pas lui donner mes microbes, mon petit."
+   ],
+   [
+    0,
+    "Ahh. Maman, elle, lave ses mains après dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father waits on the table. The boy asks curiously, his face in three-quarter view toward the camera, pointing at the doctor's hands. The doctor smiles and answers gently, her hands still raised. The boy nods and answers innocently, pointing at his father, his face clearly visible.",
+  "chute": "The doctor freezes, her raised hands slowly lowering, and stares at the father. The father freezes, his mouth open. The camera slowly pushes in to a close-up of the father on the table's humiliated face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "mains",
+   "microbes",
+   "après"
+  ],
+  "gag_legende": "PAPA EN RENTRANT À LA MAISON CE SOIR :",
+  "mecanisme": "retournement logique à double cible : le microbe, c'est papa, et maman le sait déjà"
+ },
+ {
+  "id": "B045-10",
+  "titre": "La fatigue de Tonton",
+  "lieu": "consultation office of a private clinic in Abatta, Abidjan, a desk with a folder of lab results, an anatomy poster, a standing fan, morning",
+  "persos": [
+   {
+    "nom": "the old doctor",
+    "desc": "male doctor in his 60s, mustard-and-ochre lab coat, white goatee, holding ONE single folder",
+    "pose": "sitting behind the desk on the right"
+   },
+   {
+    "nom": "the exhausted husband",
+    "desc": "husband in his 40s, mint-and-cobalt shirt, dark circles under his eyes, slumped shoulders, empty hands",
+    "pose": "sitting on a chair in the middle, facing the doctor"
+   },
+   {
+    "nom": "the proud wife",
+    "desc": "wife in her 40s, sky-blue-and-maroon kaba, big gold necklace, chin up, empty hands",
+    "pose": "sitting on a chair in the foreground on the left, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    1,
+    "Docteur, je suis pas malade, pourquoi je suis toujours fatigué ?"
+   ],
+   [
+    0,
+    "Tonton, ta fatigue-là est héréditaire."
+   ],
+   [
+    1,
+    "Mais mon papa était jamais fatigué dêh !"
+   ],
+   [
+    0,
+    "Ta belle-mère-là aussi fatiguait son mari."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife sits with her arms crossed, not speaking. The husband complains wearily, his face in three-quarter view toward the camera. The doctor answers seriously, tapping the folder. The husband protests, hands open. The doctor answers calmly, tilting his head toward the wife, his face clearly visible.",
+  "chute": "The husband slowly turns his head toward his wife and nods. The wife freezes, her mouth open, offended. The camera slowly pushes in to a close-up of the proud wife's offended face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "fatigué",
+   "héréditaire",
+   "belle-mère"
+  ],
+  "gag_legende": "LA BELLE-MÈRE QUAND ELLE VA APPRENDRE ÇA :",
+  "mecanisme": "retournement logique à double cible : l'hérédité vient de la belle-famille, la femme et sa mère prennent ensemble"
+ },
+ {
+  "id": "B045-11",
+  "titre": "Le régime sans gras",
+  "lieu": "nutrition consultation room of a clinic in Williamsville, Abidjan, a desk with a plastic model of vegetables, a poster of fruits on the wall, midday",
+  "persos": [
+   {
+    "nom": "the strict diet doctor",
+    "desc": "female doctor in her 50s, olive-and-sunflower scrubs, short grey hair, holding ONE single pen",
+    "pose": "sitting behind the desk in the middle, serious"
+   },
+   {
+    "nom": "the chubby wife",
+    "desc": "wife in her 40s, mustard-and-apricot boubou, round face, big earrings, empty hands",
+    "pose": "sitting on a chair in the foreground on the left"
+   },
+   {
+    "nom": "the big husband",
+    "desc": "husband in his 40s, salmon-and-aubergine shirt, round belly, thick neck, empty hands",
+    "pose": "sitting on a chair on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, faut enlever tout ce qui est gras dans ta vie dêh."
+   ],
+   [
+    1,
+    "Même mon mari-là, docteur ?"
+   ],
+   [
+    2,
+    "Ya fohi. Et toi-même, tu vas t'enlever comment ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The doctor gives the order seriously, pointing her pen at the wife. The wife answers with a sly smile, her face in three-quarter view toward the camera, pointing her thumb at her husband. The husband uncrosses his arms and answers calmly, pointing at his wife, his face clearly visible.",
+  "chute": "The wife freezes, her sly smile vanishing, her mouth open. The doctor holds back a laugh. The camera slowly pushes in to a close-up of the chubby wife's outraged face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "gras",
+   "mari",
+   "t'enlever"
+  ],
+  "gag_legende": "LA VOITURE AU RETOUR DE LA CLINIQUE :",
+  "mecanisme": "retournement logique à double cible : la consigne du docteur se retourne contre celle qui voulait l'utiliser"
+ },
+ {
+  "id": "B045-12",
+  "titre": "Le sirop des enfants",
+  "lieu": "pharmacy counter in Songon, Abidjan, shelves full of medicine boxes, a small bell on the counter, late afternoon",
+  "persos": [
+   {
+    "nom": "the careful pharmacist",
+    "desc": "female pharmacist in her 30s, sky-blue-and-maroon pharmacist smock, neat bun, holding ONE single bottle of syrup",
+    "pose": "standing behind the counter on the left"
+   },
+   {
+    "nom": "the clever mother",
+    "desc": "mother in her 30s, mustard-and-copper boubou, short twists, empty hands",
+    "pose": "standing in front of the counter in the middle"
+   },
+   {
+    "nom": "the broke father",
+    "desc": "father in his 40s, emerald-and-cobalt shirt, thin moustache, hands in his pockets",
+    "pose": "standing in the foreground on the right, next to his wife"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, cache ce sirop-là loin des enfants dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Je cache ça dans le portefeuille de leur papa."
+   ],
+   [
+    0,
+    "Pourquoi là-bas, Tantie ?"
+   ],
+   [
+    1,
+    "Même les voleurs fouillent plus là-bas dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The pharmacist warns seriously, holding up the bottle. The mother answers confidently, her face in three-quarter view toward the camera, pointing her thumb at her husband. The pharmacist frowns and asks. The mother answers with a calm shrug, her face clearly visible.",
+  "chute": "The father freezes, his hands still in his pockets, his smile collapsing. The pharmacist bites her lip to hold back a laugh. The camera slowly pushes in to a close-up of the broke father's humiliated face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "sirop",
+   "portefeuille",
+   "voleurs"
+  ],
+  "gag_legende": "PAPA DEVANT TOUTE LA PHARMACIE :",
+  "mecanisme": "retournement logique à double cible : la cachette parfaite est le portefeuille vide du père"
+ },
+ {
+  "id": "B045-13",
+  "titre": "L'ordonnance de Madame",
+  "lieu": "consultation room of a clinic in Abatta, Abidjan, a desk with a prescription pad, a stethoscope on the desk, a framed diploma on the wall, afternoon",
+  "persos": [
+   {
+    "nom": "the scheming wife",
+    "desc": "wife in her 30s, magenta-and-peach boubou, long braids, bright confident smile, empty hands",
+    "pose": "sitting on a chair on the left, leaning toward the doctor"
+   },
+   {
+    "nom": "the puzzled doctor",
+    "desc": "male doctor in his 40s, mint-and-cobalt scrubs, short beard, holding ONE single pen above the prescription pad",
+    "pose": "sitting behind the desk in the middle"
+   },
+   {
+    "nom": "the stingy husband",
+    "desc": "husband in his 40s, mustard-and-ochre shirt, thin face, holding ONE single wallet tightly",
+    "pose": "sitting on a chair in the foreground on the right, elbows close to his body"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Docteur, écris sur l'ordonnance : une robe et deux pagnes dêh !"
+   ],
+   [
+    1,
+    "Madame, ça c'est pas médicament dêh !"
+   ],
+   [
+    0,
+    "Docteur, c'est seulement l'ordonnance que mon mari-là paie sans discuter."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband clutches his wallet, silent. The wife dictates sweetly, her face in three-quarter view toward the camera, counting on her fingers. The doctor freezes his pen and protests. The wife answers calmly, pointing her thumb at her husband, her face clearly visible.",
+  "chute": "The doctor slowly looks at the husband. The husband freezes, clutching his wallet tighter, his mouth open. The camera slowly pushes in to a close-up of the stingy husband's trapped face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "ordonnance",
+   "robe",
+   "sans discuter"
+  ],
+  "gag_legende": "LE MARI EN LISANT LA PROCHAINE ORDONNANCE :",
+  "mecanisme": "détournement logique à double cible : l'avarice du mari et l'ordonnance du docteur se piègent l'une l'autre"
+ },
+ {
+  "id": "B045-14",
+  "titre": "Le mari à la pharmacie",
+  "lieu": "pharmacy in Williamsville, Abidjan, a counter with medicine boxes lined up, shelves behind, evening light",
+  "persos": [
+   {
+    "nom": "the stingy husband",
+    "desc": "husband in his 50s, mustard-and-apricot shirt, small moustache, holding ONE single coin between two fingers",
+    "pose": "standing in the foreground on the left at the counter, proud"
+   },
+   {
+    "nom": "the pharmacist",
+    "desc": "male pharmacist in his 30s, olive-and-sunflower pharmacist smock, short hair, both hands on the counter",
+    "pose": "standing behind the counter on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, donne-moi le médicament le moins cher dêh."
+   ],
+   [
+    1,
+    "Pour quelle maladie, Tonton ?"
+   ],
+   [
+    0,
+    "Ma femme-là va choisir sa maladie selon le prix."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The husband asks proudly, his face in three-quarter view toward the camera, showing the coin. The pharmacist raises an eyebrow and asks. The husband answers with total confidence, tapping the counter with the coin, his face clearly visible.",
+  "chute": "The pharmacist freezes, his mouth open. The husband nods slowly, very proud of himself. The camera slowly pushes in to a close-up of the stingy husband's proud face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "moins cher",
+   "maladie",
+   "prix"
+  ],
+  "gag_legende": "LA FEMME QUAND ELLE VA APPRENDRE ÇA :",
+  "mecanisme": "retournement logique à double cible : on choisit la maladie selon le prix, et c'est la femme qui paie l'avarice"
+ },
+ {
+  "id": "B045-15",
+  "titre": "Trois jours en observation",
+  "lieu": "small ward of a dispensary in Songon, Abidjan, ONE single metal bed with a white sheet, a bedside table, a window with morning light",
+  "persos": [
+   {
+    "nom": "the doctor with the clipboard",
+    "desc": "female doctor in her 40s, emerald-and-cobalt scrubs, glasses on her nose, holding ONE single clipboard",
+    "pose": "standing on the left beside the bed"
+   },
+   {
+    "nom": "the hopeful wife",
+    "desc": "wife in her 40s, salmon-and-aubergine boubou, big hopeful smile, holding ONE single handbag",
+    "pose": "standing in the foreground in the middle, facing the doctor"
+   },
+   {
+    "nom": "the husband in the bed",
+    "desc": "husband in his 50s, mustard-and-copper pajamas, short grey hair, hands resting on the white sheet",
+    "pose": "sitting up in the bed on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Madame, votre mari reste trois jours ici en observation dêh."
+   ],
+   [
+    1,
+    "Docteur, on peut pas faire trois semaines, ou bien ?"
+   ],
+   [
+    2,
+    "Docteur, moi je paye pour trois mois dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The doctor announces it, reading her clipboard. The wife asks hopefully, her face in three-quarter view toward the camera, clasping her handbag. The husband raises one hand from the sheet and answers loudly and happily, his face clearly visible.",
+  "chute": "The wife freezes, her hopeful smile turning into outrage. The camera slowly pushes in to a close-up of the hopeful wife's offended face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "trois jours",
+   "trois semaines",
+   "trois mois"
+  ],
+  "gag_legende": "LE COUPLE EN RENTRANT ENSEMBLE À LA MAISON :",
+  "mecanisme": "surenchère à double cible : chacun veut fuir l'autre plus longtemps"
+ },
+ {
+  "id": "B045-16",
+  "titre": "La file d'attente du dispensaire",
+  "lieu": "waiting area of a public dispensary in Abatta, Abidjan, a long wooden bench, a wall air conditioner, a small nurse's desk with a register, midday",
+  "persos": [
+   {
+    "nom": "the grumpy grandmother",
+    "desc": "grandmother in her 70s, mint-and-cobalt boubou, short grey hair, holding ONE single straw hand fan",
+    "pose": "sitting on the bench on the left, right under the air conditioner"
+   },
+   {
+    "nom": "the bored nurse",
+    "desc": "female nurse in her 30s, magenta-and-peach nurse uniform, long painted nails, holding ONE single pen",
+    "pose": "sitting at the small desk in the foreground on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma fille, pourquoi le petit-là passe avant moi ?!"
+   ],
+   [
+    1,
+    "Mamie, lui il est malade. Toi, tu viens chaque jour pour la clim !"
+   ],
+   [
+    0,
+    "Et toi, tu viens chaque jour pour le salaire dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The grandmother protests loudly, her face in three-quarter view toward the camera, pointing her fan toward the consultation door. The nurse answers lazily without standing up, pointing her pen at the air conditioner. The grandmother points her fan at the nurse and answers sharply, her face clearly visible.",
+  "chute": "The nurse freezes, her pen in the air, her mouth open. The camera slowly pushes in to a close-up of the bored nurse's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "malade",
+   "clim",
+   "salaire"
+  ],
+  "gag_legende": "LE DIRECTEUR DU DISPENSAIRE EN ÉCOUTANT ÇA :",
+  "mecanisme": "retour à l'envoyeur à double cible : la profiteuse de clim démasque la profiteuse de salaire"
+ },
+ {
+  "id": "B045-17",
+  "titre": "Les piqûres de moustique",
+  "lieu": "small pharmacy in Williamsville, Abidjan, a counter with tubes of cream and medicine boxes, shelves behind, evening",
+  "persos": [
+   {
+    "nom": "the itchy wife",
+    "desc": "wife in her 30s, sky-blue-and-maroon dress, small mosquito bites on her arms, hair in a short afro, empty hands",
+    "pose": "standing in front of the counter on the left, scratching her arm"
+   },
+   {
+    "nom": "the pharmacist",
+    "desc": "female pharmacist in her 50s, mustard-and-ochre pharmacist smock, glasses on a chain, holding ONE single tube of anti-mosquito cream",
+    "pose": "standing behind the counter in the middle"
+   },
+   {
+    "nom": "the untouched husband",
+    "desc": "husband in his 40s, emerald-and-cobalt polo shirt, smooth face, smug smile",
+    "pose": "standing in the foreground on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, pourquoi les moustiques piquent jamais mon mari-là ?"
+   ],
+   [
+    1,
+    "Ils ont goûté une fois, ma fille. Comme toi, ils regrettent dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband stands with his arms crossed, smug. The wife complains, her face in three-quarter view toward the camera, scratching her arm and pointing at her husband. The pharmacist looks the husband up and down, then answers calmly, holding up the tube, her face clearly visible.",
+  "chute": "The wife slowly nods in agreement. The husband freezes, his smug smile collapsing. The camera slowly pushes in to a close-up of the untouched husband's humiliated face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "moustiques",
+   "goûté",
+   "regrettent"
+  ],
+  "gag_legende": "LES MOUSTIQUES EN VOYANT LE MARI CE SOIR :",
+  "mecanisme": "retournement logique à double cible : les moustiques et la femme regrettent le même mari"
+ },
+ {
+  "id": "B045-18",
+  "titre": "Le mal de tête de Papi",
+  "lieu": "consultation room of a clinic in Songon, Abidjan, a desk with a notepad, a calendar on the wall, a window, morning",
+  "persos": [
+   {
+    "nom": "the doctor",
+    "desc": "male doctor in his 40s, salmon-and-aubergine scrubs, glasses, holding ONE single pen",
+    "pose": "sitting behind the desk on the right"
+   },
+   {
+    "nom": "the grandfather",
+    "desc": "grandfather in his 70s, olive-and-sunflower kaftan, white beard, tired eyes, hands resting on his knees",
+    "pose": "sitting on a chair in the middle, facing the doctor"
+   },
+   {
+    "nom": "the borrowing son",
+    "desc": "son in his 30s, mustard-and-copper tracksuit, big charming smile, empty hands",
+    "pose": "standing in the foreground on the left, one hand on his chest"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papi, ce mal de tête-là a commencé quand ?"
+   ],
+   [
+    1,
+    "Hier, docteur. J'ai prêté cinq mille à mon fils-là."
+   ],
+   [
+    2,
+    "Mais papa, je vais te rembourser dêh !"
+   ],
+   [
+    1,
+    "Voilà, docteur. Ça recommence dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The doctor asks gently, his pen on the notepad. The grandfather answers wearily, his face in three-quarter view toward the camera, pointing his thumb at his son. The son protests with a big smile, his hand on his chest. The grandfather presses two fingers on his temple and answers, his face clearly visible.",
+  "chute": "The doctor slowly turns his head toward the son. The son freezes, his smile stuck. The camera slowly pushes in to a close-up of the borrowing son's busted face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "mal de tête",
+   "cinq mille",
+   "rembourser"
+  ],
+  "gag_legende": "LE FILS LE LENDEMAIN AVEC UN NOUVEAU PROJET :",
+  "mecanisme": "retournement logique à double cible : la promesse de remboursement du fils est le symptôme lui-même"
+ },
+ {
+  "id": "B045-19",
+  "titre": "Le tour de ventre de Tonton",
+  "lieu": "check-up room of a dispensary in Abatta, Abidjan, a scale, a poster about healthy eating, a small desk, morning",
+  "persos": [
+   {
+    "nom": "the nurse with the tape",
+    "desc": "female nurse in her 20s, sky-blue-and-maroon nurse uniform, hair in a ponytail, holding ONE single measuring tape around the man's belly",
+    "pose": "standing on the right, holding the measuring tape around the uncle's belly"
+   },
+   {
+    "nom": "the proud uncle",
+    "desc": "man in his 50s, magenta-and-peach kaftan, huge round belly, proud smile, hands on his hips",
+    "pose": "standing in the foreground in the middle, belly forward"
+   },
+   {
+    "nom": "the furious wife",
+    "desc": "wife in her 40s, mint-and-cobalt kaba, hoop earrings, ONE single handbag on her arm",
+    "pose": "standing on the left, one hand on her hip"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, ton ventre-là fait cent vingt centimètres dêh !"
+   ],
+   [
+    1,
+    "Ma fille, c'est mon épargne pour les jours durs."
+   ],
+   [
+    2,
+    "Ahh ! Donc c'est là-dedans ma tontine-là est partie ?!"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The nurse reads the tape, surprised. The uncle pats his belly proudly and answers, his face in three-quarter view toward the camera. The wife points at his belly and shouts, her face clearly visible.",
+  "chute": "The uncle freezes, his proud smile collapsing, his hands frozen on his belly. The camera slowly pushes in to a close-up of the proud uncle's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "ventre",
+   "épargne",
+   "tontine"
+  ],
+  "gag_legende": "TONTON EN RENTRANT LE VENTRE :",
+  "mecanisme": "révélation par la victime : l'épargne du mari, c'est la tontine de sa femme"
+ },
+ {
+  "id": "B045-20",
+  "titre": "Les conseils du docteur",
+  "lieu": "consultation room of a small private clinic in Williamsville, Abidjan, a desk, a framed diploma, a calendar, early evening light",
+  "persos": [
+   {
+    "nom": "the strict doctor",
+    "desc": "male doctor in his 50s, emerald-and-cobalt medical tunic, round belly, serious face, holding ONE single pen",
+    "pose": "sitting behind the desk on the right, serious"
+   },
+   {
+    "nom": "the regular patient",
+    "desc": "man in his 40s, mustard-and-apricot kaftan, small beard, empty hands",
+    "pose": "sitting on a chair in the foreground on the left, facing the doctor"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, faut arrêter le maquis chaque soir dêh !"
+   ],
+   [
+    1,
+    "Mais docteur, hier soir on était assis ensemble là-bas dêh !"
+   ],
+   [
+    0,
+    "Justement, mon vieux. Tu prends ma place près du ventilateur."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The doctor gives the order sternly, pointing his pen at the patient. The patient protests, his face in three-quarter view toward the camera, hands open. The doctor leans forward and answers in a low serious voice, tapping the desk with his pen, his face clearly visible.",
+  "chute": "The patient freezes, his hands still open, his mouth hanging. The camera slowly pushes in to a close-up of the regular patient's stunned face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "maquis",
+   "ensemble",
+   "ventilateur"
+  ],
+  "gag_legende": "LE MAQUIS CE SOIR À VINGT HEURES :",
+  "mecanisme": "retournement à double cible : le conseil médical cache l'intérêt personnel du docteur"
+ }
+]

@@ -1,0 +1,22 @@
+[
+  {"id": "B099-01", "note": 7, "drapeaux": [], "remarque": "« Deux pour le prix d'un » frappe deux cibles à la fois, le patron infidèle et radin, et la chute candide arrive sans prévenir."},
+  {"id": "B099-02", "note": 4, "drapeaux": ["connu"], "remarque": "Le retournement « et toi, tu faisais quoi sur le site ? » est une blague d'internet usée, sans aucune surprise."},
+  {"id": "B099-03", "note": 5, "drapeaux": ["connu"], "remarque": "L'alibi assis dans le salon est un gag connu (même situation que le retour tardif du catalogue) ; le soupçon sur la femme reste trop implicite pour vraiment achever."},
+  {"id": "B099-04", "note": 6, "drapeaux": [], "remarque": "L'alibi livré comme un colis déjà payé est une bonne idée, mais la relance arrive juste après une réplique de transition un peu molle."},
+  {"id": "B099-05", "note": 5, "drapeaux": [], "remarque": "L'aveu involontaire « c'est elle qui l'a ramassé » marche, mais la femme sait déjà tout, donc le choc est faible."},
+  {"id": "B099-06", "note": 5, "drapeaux": [], "remarque": "La chicane d'avocat entre parler, écrire et écouter est maligne mais tiède : on sourit sans éclater de rire."},
+  {"id": "B099-07", "note": 4, "drapeaux": [], "remarque": "« Il est déjà guéri » esquive le vrai sujet (« Mon bébé d'amour ») au lieu de l'aggraver, donc la chute tombe à plat."},
+  {"id": "B099-08", "note": 6, "drapeaux": [], "remarque": "Reprocher au voisin d'arroser mal des fleurs qui n'existent pas est une esquive absurde efficace, avec un joli retournement de culpabilité."},
+  {"id": "B099-09", "note": 7, "drapeaux": [], "remarque": "« Ils ont trop insisté » fait monter l'absurde d'un cran inattendu, c'est une relance qui achève vraiment."},
+  {"id": "B099-10", "note": 5, "drapeaux": ["connu"], "remarque": "« Je t'ai trouvée en arrivant » est féroce, mais l'opposition femme choisie / mère non choisie circule déjà beaucoup."},
+  {"id": "B099-11", "note": 7, "drapeaux": [], "remarque": "Double cible réussie : le mari humilie la belle-mère, qui retourne aussitôt sa logique contre lui, et la relance finale le piège."},
+  {"id": "B099-12", "note": 7, "drapeaux": [], "remarque": "La femme qui a déjà touché l'acompte pour vendre son mari est un retournement froid et féroce qui donne envie de rejouer."},
+  {"id": "B099-13", "note": 5, "drapeaux": [], "remarque": "La fausse déclaration romantique qui aggrave l'aveu fonctionne, mais après quatre répliques la chute se devine un peu."},
+  {"id": "B099-14", "note": 5, "drapeaux": ["connu"], "remarque": "La correction indignée qui aggrave (« c'est le troisième ») est un schéma classique de blague, efficace mais prévisible dès le « Faux ! »."},
+  {"id": "B099-15", "note": 5, "drapeaux": [], "remarque": "Même mécanique de correction trop précise que le sketch du deuxième bureau ; « en dansant » ajoute un petit aveu mais sans éclat."},
+  {"id": "B099-16", "note": 4, "drapeaux": [], "remarque": "Le doigt somnambule est une excuse faible, et « il rêvait aussi » répète l'idée au lieu de la retourner."},
+  {"id": "B099-17", "note": 6, "drapeaux": [], "remarque": "L'enfant se dénonce en se croyant innocent, puis la mère avoue calmement : la double révélation est bonne même si le doigt du dormeur est un ressort connu."},
+  {"id": "B099-18", "note": 5, "drapeaux": [], "remarque": "« C'est toi après le régime » est une bonne vacherie, mais « même ta robe te reconnaît » est une relance plus faible que la réplique d'avant."},
+  {"id": "B099-19", "note": 5, "drapeaux": [], "remarque": "« Il porte tout le poids du mariage » vise bien le mari et le mariage, mais la réplique fait sourire plus qu'elle ne choque."},
+  {"id": "B099-20", "note": 6, "drapeaux": [], "remarque": "Le mari fâché d'avoir raté le foutou de Fatou retourne bien l'accusation, avec une double lecture piquante sur la cuisine de madame."}
+]

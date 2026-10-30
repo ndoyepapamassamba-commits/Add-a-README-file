@@ -1,0 +1,852 @@
+[
+ {
+  "id": "B090-01",
+  "titre": "L'entretien du visa",
+  "lieu": "visa application office in Riviera, Abidjan, a glass counter with a rubber stamp and a folder of documents, plain walls, morning",
+  "persos": [
+   {
+    "nom": "the visa officer",
+    "desc": "woman in her 40s, visa officer, sky-blue-and-gold blazer, hair in a neat bun, holding ONE single rubber stamp",
+    "pose": "sitting behind the glass counter in the middle background, leaning toward the little girl, friendly"
+   },
+   {
+    "nom": "the nervous father",
+    "desc": "father in his 40s, rust-and-cyan shirt, small moustache, holding ONE single folder of documents with both hands",
+    "pose": "standing in the foreground on the right, in front of the counter, holding the folder, forced confident smile"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 7, lime-and-pistachio dress, two puffy braids, nothing in her hands",
+    "pose": "standing in the foreground on the left, next to her father, proud and cheerful"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma fille, ton papa-là va revenir après les vacances ?"
+   ],
+   [
+    2,
+    "Oui madame ! Il revient vendre la maison, après on part tous dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The visa officer asks kindly, leaning toward the girl, her face three-quarters to the camera, the stamp resting on the counter. The father keeps his forced smile without moving. The little girl answers loudly and proudly, pointing at her father with one finger, her face clearly visible.",
+  "chute": "The father freezes, his smile cracking, while the officer slowly lifts her rubber stamp above the folder. The camera slowly pushes in to a close-up of the nervous father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "revenir",
+   "vendre",
+   "maison"
+  ],
+  "gag_legende": "PAPA DANS LE TAXI DU RETOUR :",
+  "mecanisme": "témoin innocent : l'enfant dit oui, puis révèle le vrai plan de la famille"
+ },
+ {
+  "id": "B090-02",
+  "titre": "Le relevé de compte",
+  "lieu": "visa application office in Riviera, Abidjan, a wooden desk with a stamp pad, a row of plastic waiting chairs, morning",
+  "persos": [
+   {
+    "nom": "the visa officer",
+    "desc": "man in his 50s, visa officer, teal-and-burgundy suit, round glasses, holding ONE single sheet of paper",
+    "pose": "sitting behind the desk on the left, looking at the sheet, suspicious"
+   },
+   {
+    "nom": "the applicant",
+    "desc": "young man in his 30s, mint-and-tangerine shirt, short beard, nothing in his hands",
+    "pose": "standing in the foreground in the middle, in front of the desk, chest out, confident"
+   },
+   {
+    "nom": "the lending aunt",
+    "desc": "aunt in her 60s, lilac-and-maroon kaba, big earrings, ONE single handbag on her knees",
+    "pose": "sitting on a waiting chair on the right, handbag on her knees, impatient"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Monsieur, vous avez vraiment cinq millions sur votre compte-là ?"
+   ],
+   [
+    1,
+    "Oui patron ! Moi je suis un homme sérieux dêh."
+   ],
+   [
+    2,
+    "Mon fils, après ton visa-là, ramène mes cinq millions dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The officer asks with suspicion, lowering the sheet, his face three-quarters to the camera. The applicant answers proudly, one hand on his chest. The aunt, seated, points at the applicant with one finger and calls out loudly, her face clearly visible.",
+  "chute": "The applicant freezes, his hand still on his chest, while the officer slowly raises one eyebrow. The camera slowly pushes in to a close-up of the applicant's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "cinq millions",
+   "sérieux",
+   "visa"
+  ],
+  "gag_legende": "LE VISA EN TRAIN DE S'ENVOLER :",
+  "mecanisme": "témoin innocent : la tantie prêteuse révèle le faux relevé de l'« homme sérieux »"
+ },
+ {
+  "id": "B090-03",
+  "titre": "La première demande",
+  "lieu": "visa application office in Riviera, Abidjan, a glass window desk, a security post with a stool near the door, morning",
+  "persos": [
+   {
+    "nom": "the visa officer",
+    "desc": "woman in her 30s, visa officer, burgundy-and-lilac blazer, short hair, holding ONE single pen",
+    "pose": "sitting behind the glass window desk on the left, pen raised, serious"
+   },
+   {
+    "nom": "the applicant",
+    "desc": "man in his 30s, rust-and-apricot shirt, round face, holding ONE single plastic bag with a food box inside",
+    "pose": "standing in the foreground in the middle, facing the window, big innocent smile"
+   },
+   {
+    "nom": "the security guard",
+    "desc": "man in his 50s, security guard, sky-blue-and-gold uniform, a cap, nothing in his hands",
+    "pose": "standing by the door on the right, hands behind his back, cheerful"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Monsieur, c'est votre toute première demande de visa ?"
+   ],
+   [
+    1,
+    "Oui madame, première fois de ma vie dêh !"
+   ],
+   [
+    2,
+    "Vieux père, bonjour ! Tu as amené mon garba de chaque lundi ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The officer asks seriously, pen raised, her face three-quarters to the camera. The applicant answers with a big innocent smile, holding the plastic bag. The guard brings one hand forward, waves happily at the applicant and calls out, his face clearly visible.",
+  "chute": "The applicant freezes, the plastic bag still in his hand, while the officer slowly puts down her pen. The camera slowly pushes in to a close-up of the applicant's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "première fois",
+   "garba",
+   "lundi"
+  ],
+  "gag_legende": "LA DAME EN PRENANT SON TAMPON :",
+  "mecanisme": "témoin innocent : le gardien trahit l'habitué sans le vouloir"
+ },
+ {
+  "id": "B090-04",
+  "titre": "La lettre de l'ambassade",
+  "lieu": "living room of a house in Bingerville, Abidjan, a sofa, a low table, evening light",
+  "persos": [
+   {
+    "nom": "the father with the letter",
+    "desc": "father in his 40s, rust-and-cyan boubou, bald head, holding ONE single opened letter",
+    "pose": "standing on the right, holding the letter, outraged"
+   },
+   {
+    "nom": "the offended mother",
+    "desc": "mother in her 40s, mint-and-fuchsia kaba, a head wrap, nothing in her hands",
+    "pose": "standing in the foreground on the left, hands on her hips, offended"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 8, lime-and-pistachio jumpsuit, short braids, nothing in her hands",
+    "pose": "sitting on the sofa in the middle, swinging her legs, innocent"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Visa refusé ! Ils disent j'ai aucune attache au pays dêh !"
+   ],
+   [
+    1,
+    "Ehh ! Et moi alors, je compte pas dêh ?!"
+   ],
+   [
+    2,
+    "Maman, c'est toi-même qui as dit à la dame : « Gardez-le, c'est cadeau. »"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father shakes the letter in one hand, outraged, his face three-quarters to the camera. The mother answers, offended, hands on her hips. The girl, seated, says it innocently, pointing at her mother, her face clearly visible.",
+  "chute": "The father slowly turns his head toward the mother; the mother freezes with a stiff fake smile. The camera slowly pushes in to a close-up of the offended mother's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "refusé",
+   "attache",
+   "cadeau"
+  ],
+  "gag_legende": "MAMAN QUAND PAPA VA SE RETOURNER :",
+  "mecanisme": "témoin innocent : l'enfant révèle que la mère a fait refuser le visa"
+ },
+ {
+  "id": "B090-05",
+  "titre": "Le terrain de Bingerville",
+  "lieu": "empty plot of red earth in Bingerville, Abidjan, four concrete boundary stones, a few weeds, a mango tree in the back, afternoon",
+  "persos": [
+   {
+    "nom": "the diaspora man",
+    "desc": "man in his 40s back from Paris, sky-blue-and-gold suit, sunglasses resting on his head, holding ONE single folded land document",
+    "pose": "standing in the foreground on the left, holding the document up, angry"
+   },
+   {
+    "nom": "the diaspora woman",
+    "desc": "woman in her 40s back from London, lilac-and-maroon jumpsuit, long braids, holding ONE single folder",
+    "pose": "standing on the right, folder pressed against her chest, defiant"
+   },
+   {
+    "nom": "the seller's little boy",
+    "desc": "boy around 8, rust-and-apricot tracksuit, big happy smile, nothing in his hands",
+    "pose": "sitting on a boundary stone in the middle, cheerful"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ce terrain-là est à moi ! J'ai payé depuis Paris dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, mon vieux. Moi j'ai payé depuis Londres."
+   ],
+   [
+    2,
+    "Merci Tonton, merci Tantie ! Papa a acheté sa voiture avec vous."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The man waves the document angrily, his face three-quarters to the camera. The woman answers coldly, pressing her folder against her chest. The boy, seated on the stone, thanks them both with a big smile, his face clearly visible.",
+  "chute": "The man and the woman slowly turn their heads toward each other, mouths open. The camera slowly pushes in to a close-up of the diaspora man's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "terrain",
+   "Londres",
+   "voiture"
+  ],
+  "gag_legende": "LE COUSIN QUAND ILS VONT L'APPELER :",
+  "mecanisme": "témoin innocent : le fils du vendeur révèle la double vente du terrain"
+ },
+ {
+  "id": "B090-06",
+  "titre": "L'argent de la villa",
+  "lieu": "gbaka station in Anyama, Abidjan, a shiny new minibus parked with its sliding door open, dusty ground, a wooden bench, midday",
+  "persos": [
+   {
+    "nom": "the diaspora brother",
+    "desc": "man in his 40s back from Europe, mint-and-tangerine polo shirt, a watch, holding ONE single phone",
+    "pose": "standing in the foreground on the left, phone in hand, furious"
+   },
+   {
+    "nom": "the younger brother",
+    "desc": "younger brother in his 30s, teal-and-burgundy tracksuit, wide nervous smile, both hands on the steering wheel",
+    "pose": "sitting behind the steering wheel of the new minibus in the middle, face visible through the open window"
+   },
+   {
+    "nom": "the apprentice",
+    "desc": "young man around 18, minibus apprentice, lime-and-pistachio t-shirt, a cap, nothing in his hands",
+    "pose": "standing at the open sliding door of the minibus on the right, one hand on the door frame"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Cinq ans je t'envoie l'argent pour ma villa ! Elle est où ?!"
+   ],
+   [
+    1,
+    "Doucement, grand frère. Les travaux avancent bien dêh."
+   ],
+   [
+    2,
+    "Patron, ton gbaka neuf-là est plein ! On démarre ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The diaspora brother shouts, pointing his phone at the younger brother, his face three-quarters to the camera. The younger brother answers with a nervous smile from the driver's window. The apprentice calls out happily to the younger brother, slapping the side of the minibus once, his face clearly visible.",
+  "chute": "The younger brother freezes behind the wheel; the diaspora brother slowly turns his head toward the minibus. The camera slowly pushes in to a close-up of the diaspora brother's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "villa",
+   "travaux",
+   "gbaka"
+  ],
+  "gag_legende": "LA VILLA EN ROUTE POUR ADJAMÉ :",
+  "mecanisme": "témoin innocent : l'apprenti appelle « patron » le frère qui a mangé l'argent"
+ },
+ {
+  "id": "B090-07",
+  "titre": "Le fils qui vit à Paris",
+  "lieu": "courtyard of a family house in Anyama, Abidjan, plastic chairs, a clothesline, an open kitchen door, afternoon",
+  "persos": [
+   {
+    "nom": "the proud mother",
+    "desc": "mother in her 50s, burgundy-and-lilac boubou, big earrings, nothing in her hands",
+    "pose": "sitting on a plastic chair in the foreground on the left, chin up, proud"
+   },
+   {
+    "nom": "the neighbor",
+    "desc": "neighbor woman in her 50s, rust-and-cyan kaba, a small handbag on her knees",
+    "pose": "sitting on a plastic chair on the right, impressed"
+   },
+   {
+    "nom": "the little sister",
+    "desc": "girl around 9, mint-and-fuchsia dress, two braids, holding ONE single empty plate",
+    "pose": "standing at the kitchen door in the middle, holding the plate"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, mon fils m'appelle chaque jour de Paris dêh !"
+   ],
+   [
+    1,
+    "Ehh, Tantie ! Ton fils-là a vraiment réussi dêh !"
+   ],
+   [
+    2,
+    "Maman, ton fils de Paris demande s'il reste attiéké dans la marmite."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother brags with her chin up, her face three-quarters to the camera. The neighbor answers, impressed, nodding. The girl calls out innocently from the kitchen door, holding the empty plate, her face clearly visible.",
+  "chute": "The mother freezes with a stiff proud smile; the neighbor slowly turns her head toward the kitchen. The camera slowly pushes in to a close-up of the proud mother's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "Paris",
+   "attiéké",
+   "marmite"
+  ],
+  "gag_legende": "LE FILS DE PARIS DANS LA CUISINE :",
+  "mecanisme": "témoin innocent : la petite sœur révèle que le « Parisien » n'a jamais quitté la maison"
+ },
+ {
+  "id": "B090-08",
+  "titre": "En direct de Paris",
+  "lieu": "small grocery shop in Riviera, Abidjan, a big open chest freezer full of frost and ice, shelves of unlabeled products behind, afternoon",
+  "persos": [
+   {
+    "nom": "the young vlogger",
+    "desc": "young man in his 20s, lilac-and-maroon tracksuit, frost on his eyebrows, holding ONE single phone at arm's length",
+    "pose": "leaning over the open chest freezer in the foreground on the left, filming himself, shivering smile"
+   },
+   {
+    "nom": "the shopkeeper",
+    "desc": "shopkeeper man in his 50s, sky-blue-and-gold kaftan, short beard, nothing in his hands",
+    "pose": "standing behind the counter on the right, arms crossed, annoyed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mes abonnés, Paris-là c'est moins dix ce matin dêh ! Regardez la neige !"
+   ],
+   [
+    1,
+    "Mon petit, ça fait une heure. Ferme mon congélateur ou paie le froid."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The young man talks to his phone with a shivering smile, cold mist around him, his face three-quarters to the camera. The shopkeeper answers sharply, pointing one finger at the freezer, his face clearly visible.",
+  "chute": "The young man freezes, his smile stuck, frost on his eyebrows. The camera slowly pushes in to a close-up of the young vlogger's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "Paris",
+   "neige",
+   "congélateur"
+  ],
+  "gag_legende": "SES ABONNÉS EN VOYANT LA VIDÉO :",
+  "mecanisme": "témoin (le boutiquier) : le faux Parisien démasqué en plein tournage"
+ },
+ {
+  "id": "B090-09",
+  "titre": "L'addition du maquis",
+  "lieu": "outdoor maquis in Riviera, Abidjan, a plastic table with ONE plate of attiéké and fish, plastic chairs, string lights, evening",
+  "persos": [
+   {
+    "nom": "the show-off customer",
+    "desc": "man in his 30s back from Europe, mint-and-fuchsia shirt, sunglasses, holding ONE single coin between two fingers",
+    "pose": "sitting at the table in the foreground on the left, holding the coin up, very proud"
+   },
+   {
+    "nom": "the waiter",
+    "desc": "young waiter in his 20s, rust-and-apricot polo shirt, holding ONE single small notebook",
+    "pose": "standing on the right next to the table, polite smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, tu sais c'est quoi ça ? Un euro ! Garde la monnaie dêh !"
+   ],
+   [
+    1,
+    "Merci Tonton. Donc il reste mille trois cents pour ton attiéké-là."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The man holds the coin up proudly and speaks loudly, his face three-quarters to the camera. The waiter answers politely, glancing at his small notebook, his face clearly visible.",
+  "chute": "The man's proud smile collapses, the coin still raised in the air. The camera slowly pushes in to a close-up of the show-off customer's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "euro",
+   "monnaie",
+   "attiéké"
+  ],
+  "gag_legende": "LE PARISIEN EN CHERCHANT MILLE TROIS CENTS :",
+  "mecanisme": "arroseur arrosé : le pourboire de luxe ne paie même pas le plat"
+ },
+ {
+  "id": "B090-10",
+  "titre": "La photo de vacances",
+  "lieu": "small photo studio in Anyama, Abidjan, a large painted backdrop of the Eiffel Tower under snow, a ring light, a wooden waiting bench, afternoon",
+  "persos": [
+   {
+    "nom": "the posing woman",
+    "desc": "young woman in her 20s, teal-and-burgundy dress, long braids, nothing in her hands",
+    "pose": "standing in the foreground in the middle, in front of the painted backdrop, posing with one hand on her hip"
+   },
+   {
+    "nom": "the ex-boyfriend",
+    "desc": "young man in his 20s, her ex-boyfriend, lime-and-pistachio suit, holding ONE single small numbered ticket",
+    "pose": "sitting on the waiting bench on the right, legs crossed, impatient"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Photographe, fais vite dêh ! Mon ex-là doit croire que je suis à Paris !"
+   ],
+   [
+    1,
+    "Pousse-toi vite, ma chérie. C'est mon tour d'être à Londres dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The young woman talks toward the camera as if to the photographer, posing, her face three-quarters to the camera. The ex-boyfriend, seated, raises his ticket and answers calmly, his face clearly visible.",
+  "chute": "The young woman slowly turns her head toward the bench and freezes, her mouth open. The camera slowly pushes in to a close-up of the posing woman's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "Paris",
+   "Londres",
+   "tour"
+  ],
+  "gag_legende": "LE PHOTOGRAPHE QUI GARDE LES DEUX SECRETS :",
+  "mecanisme": "arroseur arrosé : l'ex fait le même mensonge dans le même studio"
+ },
+ {
+  "id": "B090-11",
+  "titre": "La soirée d'adieu",
+  "lieu": "outdoor maquis in Bingerville, Abidjan, plastic tables with bottles of soft drinks, string lights, night",
+  "persos": [
+   {
+    "nom": "the departing man",
+    "desc": "man in his 30s, sky-blue-and-gold boubou, big confident smile, nothing in his hands",
+    "pose": "standing in the foreground on the left, arms wide open, triumphant"
+   },
+   {
+    "nom": "the maquis owner",
+    "desc": "maquis owner woman in her 50s, mint-and-tangerine kaba, a head wrap, holding ONE single thick open notebook",
+    "pose": "standing on the right behind a plastic table, unimpressed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "C'est fini ! Je pars en France demain, vous allez plus me voir dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, mon fils. Paie d'abord tes trois pots de départ de l'année passée."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The man announces it loudly, arms wide open, his face three-quarters to the camera. The owner answers flatly, tapping the open notebook with one finger, her face clearly visible.",
+  "chute": "The man freezes with his arms still open, his smile melting. The camera slowly pushes in to a close-up of the departing man's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "France",
+   "demain",
+   "pots de départ"
+  ],
+  "gag_legende": "SES AMIS AU QUATRIÈME POT DE DÉPART :",
+  "mecanisme": "révélation par un témoin (la gérante) : le départ éternel qui n'arrive jamais"
+ },
+ {
+  "id": "B090-12",
+  "titre": "Les vacances de Mamie",
+  "lieu": "veranda of a house in Anyama, Abidjan, two wooden chairs, a big suitcase standing next to the grandmother, morning",
+  "persos": [
+   {
+    "nom": "the proud grandmother",
+    "desc": "grandmother in her 70s, lilac-and-maroon boubou, round glasses, one hand on the suitcase handle",
+    "pose": "sitting on a wooden chair in the foreground on the left, very proud"
+   },
+   {
+    "nom": "the neighbor",
+    "desc": "neighbor woman in her 50s, burgundy-and-lilac kaba, nothing in her hands",
+    "pose": "sitting on the other wooden chair on the right, admiring"
+   },
+   {
+    "nom": "the grandson",
+    "desc": "boy around 10, mint-and-fuchsia tracksuit, holding ONE single phone",
+    "pose": "standing in the middle background, reading the phone"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils m'envoie en vacances en France dêh ! Billet payé !"
+   ],
+   [
+    1,
+    "Ehh, Mamie ! Tu vas bien te reposer là-bas, hein !"
+   ],
+   [
+    2,
+    "Mamie, Tonton demande si tu sais changer les couches des jumeaux."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandmother announces it proudly, patting the suitcase, her face three-quarters to the camera. The neighbor answers, admiring, hands joined. The boy looks up from the phone and reads the message innocently, his face clearly visible.",
+  "chute": "The grandmother's proud smile freezes, her hand still on the suitcase. The camera slowly pushes in to a close-up of the proud grandmother's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "vacances",
+   "reposer",
+   "jumeaux"
+  ],
+  "gag_legende": "MAMIE DANS L'AVION APRÈS CE MESSAGE :",
+  "mecanisme": "témoin innocent : le petit-fils lit le vrai programme des vacances"
+ },
+ {
+  "id": "B090-13",
+  "titre": "Le projet Canada",
+  "lieu": "living room of a house in Riviera, Abidjan, a sofa, a coffee table, an armchair, a closed bedroom door in the back, evening",
+  "persos": [
+   {
+    "nom": "the determined daughter",
+    "desc": "teenage girl around 17, rust-and-cyan dress, braids, holding ONE single school folder",
+    "pose": "standing in the foreground on the left, determined"
+   },
+   {
+    "nom": "the stingy father",
+    "desc": "father in his 40s, rust-and-apricot suit, small belly, nothing in his hands",
+    "pose": "sitting in the armchair in the foreground on the right, arms crossed, stern"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, je veux partir étudier au Canada dêh !"
+   ],
+   [
+    1,
+    "Avec quel argent, ma fille ?! Papa a rien dêh !"
+   ],
+   [
+    0,
+    "Les deux millions sous ton matelas, papa. Maman m'a montré dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl announces it with determination, holding her folder, her face three-quarters to the camera. The father answers, arms crossed, shaking his head. The girl answers calmly, pointing toward the bedroom door with one finger, her face clearly visible.",
+  "chute": "The father freezes, his arms still crossed, eyes wide and mouth open. The camera slowly pushes in to a close-up of the stingy father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "Canada",
+   "argent",
+   "matelas"
+  ],
+  "gag_legende": "PAPA EN CHERCHANT UNE NOUVELLE CACHETTE :",
+  "mecanisme": "arroseur arrosé + double trahison : le faux fauché vendu par sa femme via l'enfant"
+ },
+ {
+  "id": "B090-14",
+  "titre": "La pesée des bagages",
+  "lieu": "travel agency in Riviera, Abidjan, a counter with a big luggage scale, ONE huge overstuffed suitcase on the scale, morning",
+  "persos": [
+   {
+    "nom": "the agency employee",
+    "desc": "man in his 30s, travel agency employee, teal-and-burgundy shirt, neat haircut, nothing in his hands",
+    "pose": "standing behind the counter on the left, pointing at the scale"
+   },
+   {
+    "nom": "the proud aunt",
+    "desc": "aunt in her 50s, mint-and-tangerine boubou, a head wrap, nothing in her hands",
+    "pose": "standing in the foreground on the right next to the scale, hands on her hips, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ta valise-là a vingt kilos de trop dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, mon fils. Pèse-moi aussi : j'ai maigri vingt kilos exprès."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The employee announces it, pointing at the scale display, his face three-quarters to the camera. The aunt answers proudly, hands on her hips, chin up, her face clearly visible.",
+  "chute": "The employee freezes, his finger still pointing at the scale, mouth open; the aunt lifts her chin even higher. The camera slowly pushes in to a close-up of the proud aunt's triumphant face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "valise",
+   "vingt kilos",
+   "maigri"
+  ],
+  "gag_legende": "L'AVION EN VOYANT TANTIE ARRIVER :",
+  "mecanisme": "logique absurde imparable : compenser les bagages par son propre poids"
+ },
+ {
+  "id": "B090-15",
+  "titre": "Le retour surprise",
+  "lieu": "living room of a house in Anyama, Abidjan, a sofa, a big suitcase standing next to the father, afternoon",
+  "persos": [
+   {
+    "nom": "the returning father",
+    "desc": "father in his 40s back from Europe, teal-and-burgundy polo shirt, a watch, one hand on the suitcase handle",
+    "pose": "standing in the foreground on the left, other arm open wide, big emotional smile"
+   },
+   {
+    "nom": "the little boy",
+    "desc": "boy around 6, rust-and-cyan tracksuit, big curious eyes, nothing in his hands",
+    "pose": "standing on the right near the sofa, staring at the father"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Surprise, mon fils ! Papa est rentré de France dêh !"
+   ],
+   [
+    1,
+    "Tonton, c'est toi papa ? Moi je croyais papa c'est le message « argent reçu »."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father announces it with emotion, one arm open wide, his face three-quarters to the camera. The boy answers innocently, tilting his head, his face clearly visible.",
+  "chute": "The father's open arm freezes in the air, his smile collapsing. The camera slowly pushes in to a close-up of the returning father's heartbroken face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "surprise",
+   "papa",
+   "argent reçu"
+  ],
+  "gag_legende": "PAPA QUI REPREND L'AVION CE SOIR :",
+  "mecanisme": "témoin innocent : l'enfant ne connaît son père que par les transferts"
+ },
+ {
+  "id": "B090-16",
+  "titre": "Le goût du pays",
+  "lieu": "courtyard of a family house in Bingerville, Abidjan, a big basin full of sealed bags of attiéké, a wooden bench, morning",
+  "persos": [
+   {
+    "nom": "the Parisian son",
+    "desc": "man in his 30s back from Paris, mint-and-fuchsia suit, sunglasses resting on his head, nothing in his hands",
+    "pose": "sitting on the wooden bench in the foreground on the left, one hand on his chest, dramatic"
+   },
+   {
+    "nom": "the suspicious mother",
+    "desc": "mother in her 60s, rust-and-apricot boubou, a head wrap, nothing in her hands",
+    "pose": "standing in the middle, hands on her hips, suspicious"
+   },
+   {
+    "nom": "the little brother",
+    "desc": "boy around 10, sky-blue-and-gold tracksuit, cheeky face, nothing in his hands",
+    "pose": "sitting next to the basin of attiéké on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, à Paris-là, j'ai oublié le goût de l'attiéké dêh."
+   ],
+   [
+    1,
+    "Ah bon ? Et mes vingt kilos chaque mois, c'est qui mange ?"
+   ],
+   [
+    2,
+    "Personne, maman. Il revend tout aux Ivoiriens de là-bas."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The son sighs dramatically, one hand on his chest, his face three-quarters to the camera. The mother answers, hands on her hips, frowning. The little brother answers innocently, pointing at the son, his face clearly visible.",
+  "chute": "The son freezes, his hand still on his chest; the mother slowly turns her head toward him. The camera slowly pushes in to a close-up of the Parisian son's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "attiéké",
+   "vingt kilos",
+   "revend"
+  ],
+  "gag_legende": "LE COLIS DU MOIS PROCHAIN :",
+  "mecanisme": "témoin innocent : le petit frère révèle le business secret du Parisien"
+ },
+ {
+  "id": "B090-17",
+  "titre": "Le visa express",
+  "lieu": "tiny office in Anyama, Abidjan, a desk with a stamp pad and an old printer, a plastic chair, afternoon",
+  "persos": [
+   {
+    "nom": "the visa agent",
+    "desc": "man in his 40s, self-proclaimed visa agent, lilac-and-maroon suit, thin moustache, holding ONE single passport out",
+    "pose": "sitting behind the desk in the foreground on the left, handing the passport forward, big salesman smile"
+   },
+   {
+    "nom": "the calm client",
+    "desc": "young man in his 20s, burgundy-and-lilac shirt, calm face, holding ONE single thick envelope",
+    "pose": "standing on the right in front of the desk, holding out the envelope"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, ton visa est prêt ! Original, tamponné à l'ambassade dêh !"
+   ],
+   [
+    1,
+    "Merci, vieux père. Voilà tes cent mille. Originaux, photocopiés ce matin."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The agent hands the passport forward with a big salesman smile, his face three-quarters to the camera. The young man answers calmly, holding out the envelope, his face clearly visible.",
+  "chute": "The agent's smile freezes; he slowly lowers his eyes to the envelope. The camera slowly pushes in to a close-up of the visa agent's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "visa",
+   "original",
+   "photocopiés"
+  ],
+  "gag_legende": "LES DEUX À L'AÉROPORT DEMAIN MATIN :",
+  "mecanisme": "arroseur arrosé : l'arnaqueur au faux visa payé en faux billets"
+ },
+ {
+  "id": "B090-18",
+  "titre": "Le cadeau du retour",
+  "lieu": "front yard of a house in Riviera, Abidjan, a sewing machine on a small table under a mango tree, plastic chairs, afternoon",
+  "persos": [
+   {
+    "nom": "the generous uncle",
+    "desc": "uncle in his 50s back from Paris, rust-and-cyan suit, a chain around his neck, holding ONE single handbag out",
+    "pose": "standing in the foreground on the left, handing the handbag toward his niece, proud"
+   },
+   {
+    "nom": "the niece",
+    "desc": "young woman in her 20s, lime-and-pistachio kaba, braids, nothing in her hands",
+    "pose": "standing in the middle, both hands joined, delighted"
+   },
+   {
+    "nom": "the seamstress",
+    "desc": "neighbor woman in her 40s, seamstress, mint-and-tangerine jumpsuit, a measuring tape around her neck",
+    "pose": "sitting at the sewing machine on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma nièce, ce sac-là vient direct de Paris dêh !"
+   ],
+   [
+    1,
+    "Ehh, merci Tonton ! Il est trop joli !"
+   ],
+   [
+    2,
+    "Ehh, c'est mon sac-là ! Tonton, tu me dois encore deux mille dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The uncle holds out the handbag proudly, his face three-quarters to the camera. The niece answers, delighted, hands joined. The seamstress, seated, points at the handbag with one finger and calls out, her face clearly visible.",
+  "chute": "The uncle freezes, the handbag still held out; the niece slowly turns her head toward him. The camera slowly pushes in to a close-up of the generous uncle's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "Paris",
+   "sac",
+   "deux mille"
+  ],
+  "gag_legende": "TONTON EN CHERCHANT LES DEUX MILLE :",
+  "mecanisme": "témoin innocent : la couturière reconnaît son sac « de Paris » et relance la dette"
+ },
+ {
+  "id": "B090-19",
+  "titre": "La réunion de famille",
+  "lieu": "courtyard of a family house in Bingerville, Abidjan, plastic chairs, a big shiny new car parked by the gate, afternoon",
+  "persos": [
+   {
+    "nom": "the stingy uncle",
+    "desc": "uncle in his 50s back from Europe, lime-and-pistachio kaftan, a watch, nothing in his hands",
+    "pose": "sitting on a plastic chair in the foreground on the left, both palms raised, sorry face"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 8, burgundy-and-lilac tracksuit, puffy ponytail, nothing in her hands",
+    "pose": "standing on the right, pointing toward the car by the gate"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pardon la famille, cette année là-bas c'est la crise dêh ! Rien pour personne !"
+   ],
+   [
+    1,
+    "Tonton, c'est la crise-là qui a garé ta grosse voiture neuve devant le portail ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The uncle apologizes with both palms raised and a sad face, his face three-quarters to the camera. The girl asks innocently, pointing at the car by the gate, her face clearly visible.",
+  "chute": "The uncle freezes, palms still raised, his eyes sliding toward the car. The camera slowly pushes in to a close-up of the stingy uncle's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "crise",
+   "voiture",
+   "portail"
+  ],
+  "gag_legende": "LA FAMILLE EN REGARDANT LA VOITURE :",
+  "mecanisme": "témoin innocent : l'enfant démonte le faux fauché de la diaspora"
+ },
+ {
+  "id": "B090-20",
+  "titre": "Le mandat du mois",
+  "lieu": "veranda of a house in Anyama, Abidjan, a wooden bench, a small table, evening",
+  "persos": [
+   {
+    "nom": "the proud mother",
+    "desc": "mother in her 60s, sky-blue-and-gold kaba, a head wrap, holding ONE single phone",
+    "pose": "sitting on the bench in the foreground on the left, showing the phone screen, proud"
+   },
+   {
+    "nom": "the tired daughter",
+    "desc": "daughter in her 30s, teal-and-burgundy jumpsuit, short hair, nothing in her hands",
+    "pose": "standing on the right, arms crossed, tired"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton frère de Paris m'envoie cinquante mille chaque mois dêh ! Pas comme toi !"
+   ],
+   [
+    1,
+    "Maman, c'est moi j'envoie dêh. Lui, il me prête seulement son nom."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother brags, showing the phone screen, her face three-quarters to the camera. The daughter answers flatly, arms crossed, her face clearly visible.",
+  "chute": "The mother freezes, the phone still raised, her mouth open. The camera slowly pushes in to a close-up of the proud mother's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "Paris",
+   "cinquante mille",
+   "nom"
+  ],
+  "gag_legende": "LE FRÈRE DE PARIS AU PROCHAIN APPEL :",
+  "mecanisme": "révélation inversée : la fille méprisée finance en secret le fils préféré"
+ }
+]

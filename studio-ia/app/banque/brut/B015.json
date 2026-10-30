@@ -1,0 +1,867 @@
+[
+ {
+  "id": "B015-01",
+  "titre": "Le nouveau bébé de la maison",
+  "lieu": "small living room of an apartment in Koumassi, Abidjan, a worn brown sofa, a low wooden table, a wicker cradle with a sleeping baby wrapped in a white blanket, evening, warm lamp light",
+  "persos": [
+   {
+    "nom": "the little girl",
+    "desc": "girl around 6, mint-and-burgundy dress, two big puffy pigtails, holding ONE single small teddy bear",
+    "pose": "standing on the left next to the wicker cradle, the teddy bear in one hand"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, apricot-and-cherry kaba, hair in a neat bun, gold hoop earrings",
+    "pose": "sitting on the sofa in the middle, hands on her knees, tender smile"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, teal-and-charcoal tracksuit, round belly, short beard, holding ONE single TV remote",
+    "pose": "sitting in an armchair in the foreground on the right, the remote in his hand, lounging"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, le bébé-là, on peut le rendre au magasin dêh ?"
+   ],
+   [
+    1,
+    "Mais pourquoi, ma chérie ?"
+   ],
+   [
+    0,
+    "Il dort, il mange, il travaille pas. On a déjà papa pour ça dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The little girl, face three-quarters to the camera, points her free hand at the sleeping baby in the cradle and asks very seriously. The mother tilts her head, surprised, and answers softly. The father keeps lounging with the remote. The little girl turns her head toward her father, points at him calmly and says her last line, her face clearly visible.",
+  "chute": "The father freezes, the remote still in his hand, his mouth open; the mother bites her lip to hold back a laugh. The camera slowly pushes in to a close-up of the father's offended face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "bébé",
+   "magasin",
+   "papa"
+  ],
+  "gag_legende": "PAPA DEMAIN À SIX HEURES DU MATIN :",
+  "mecanisme": "logique absurde prise au pied de la lettre : on rend le bébé comme un article, le papa devient le doublon"
+ },
+ {
+  "id": "B015-02",
+  "titre": "Les pleurs du petit dernier",
+  "lieu": "living room of a modest house in Adjamé, Abidjan, two plastic chairs, a small standing fan, a low table, afternoon light through the window",
+  "persos": [
+   {
+    "nom": "the stern father",
+    "desc": "father in his 40s, emerald-and-salmon boubou, thin mustache, holding ONE single folded newspaper",
+    "pose": "sitting in an armchair in the foreground on the right, the newspaper on his lap, frowning"
+   },
+   {
+    "nom": "the crying boy",
+    "desc": "boy around 5, mint-and-indigo pyjamas, chubby cheeks, big round eyes with tears on his cheeks",
+    "pose": "sitting on a small plastic stool on the left, sniffling"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Arrête de pleurer pour rien, sinon je te donne une vraie raison dêh !"
+   ],
+   [
+    1,
+    "Donne vite, papa ! Maman dit toi tu donnes jamais rien."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father, face three-quarters to the camera, raises one finger toward the boy and threatens him in a deep voice. The boy instantly stops crying, holds out one open palm toward his father and answers eagerly, his face clearly visible.",
+  "chute": "The father freezes with his finger still raised, speechless, while the boy keeps his palm open, waiting. The camera slowly pushes in to a close-up of the stern father's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "raison",
+   "donne",
+   "jamais"
+  ],
+  "gag_legende": "PAPA QUAND MAMAN VA RENTRER CE SOIR :",
+  "mecanisme": "menace prise au pied de la lettre (« je te donne une raison ») + révélation de l'enfant : papa ne donne jamais rien"
+ },
+ {
+  "id": "B015-03",
+  "titre": "Le gâteau de la petite",
+  "lieu": "small kitchen of a house in Koumassi, Abidjan, a wooden table with an open, completely empty cake box, a small fridge, evening",
+  "persos": [
+   {
+    "nom": "the angry girl",
+    "desc": "girl around 7, apricot-and-cyan dress, two braids with white beads, hands on her hips",
+    "pose": "standing on the left next to the table with the empty cake box, hands on her hips, furious"
+   },
+   {
+    "nom": "the pregnant mother",
+    "desc": "pregnant mother in her 30s, rose-and-charcoal boubou, very round pregnant belly, a few cake crumbs at the corner of her mouth",
+    "pose": "sitting on a chair in the foreground on the right, one hand resting on her belly, innocent look"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, qui a mangé mon gâteau-là dêh ?!"
+   ],
+   [
+    1,
+    "C'est ton petit frère, mon bébé."
+   ],
+   [
+    0,
+    "Mais il est encore dans ton ventre !"
+   ],
+   [
+    1,
+    "Justement. Lui, il mange directement dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl, face three-quarters to the camera, points at the empty cake box and accuses. The mother answers sweetly, patting her round belly. The girl points at the mother's belly, outraged. The mother pats her belly again with a proud little nod and answers calmly, her face clearly visible.",
+  "chute": "The girl's jaw drops; the mother keeps an innocent smile, crumbs still at the corner of her mouth. The camera slowly pushes in to a close-up of the pregnant mother's falsely innocent face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "gâteau",
+   "petit frère",
+   "ventre"
+  ],
+  "gag_legende": "LE BÉBÉ DANS LE VENTRE APRÈS ÇA :",
+  "mecanisme": "logique absurde de la maman : le bébé à naître a mangé le gâteau « directement »"
+ },
+ {
+  "id": "B015-04",
+  "titre": "Le prénom du petit",
+  "lieu": "balcony of an apartment in a tall building in Plateau, Abidjan, office towers and the lagoon in the background, plastic chairs, a small round table, golden sunset",
+  "persos": [
+   {
+    "nom": "the curious boy",
+    "desc": "boy around 8, mint-and-salmon tracksuit, short hair, gap-toothed smile, holding ONE single school notebook",
+    "pose": "standing on the left, holding the notebook against his chest, curious"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, teal-and-charcoal kaftan, small round glasses, salt-and-pepper beard",
+    "pose": "sitting on a plastic chair in the middle, arms crossed, very serious"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, mint-and-lilac kaba, elegant braids in a high bun, a small handbag on her knees",
+    "pose": "sitting on a chair in the foreground on the right, hands on her handbag, smiling proudly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, pourquoi tu m'as appelé Fortune dêh ?"
+   ],
+   [
+    1,
+    "Ta maman a dit elle reste seulement si y a Fortune dans la maison."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boy, face three-quarters to the camera, taps his notebook and asks his father. The mother keeps her proud smile. The father, very serious, points one finger at the mother, then at the boy, while saying his line, his face clearly visible.",
+  "chute": "The mother's proud smile slowly freezes and drops; she grips her handbag. The camera slowly pushes in to a close-up of the mother's betrayed face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "Fortune",
+   "maman",
+   "maison"
+  ],
+  "gag_legende": "MAMAN EN CHERCHANT LA VRAIE FORTUNE :",
+  "mecanisme": "condition de la maman prise au pied de la lettre : la « fortune » de la maison, c'est l'enfant"
+ },
+ {
+  "id": "B015-05",
+  "titre": "La leçon de la maîtresse",
+  "lieu": "small room of a house in Adjamé, Abidjan, a wooden table with an open school notebook, a woven mat on the floor, an empty cooking pot on a stool, evening",
+  "persos": [
+   {
+    "nom": "the proud schoolboy",
+    "desc": "boy around 9, apricot-and-cherry school uniform, neat short hair, holding ONE single school notebook",
+    "pose": "standing in the foreground on the left, holding the notebook up proudly"
+   },
+   {
+    "nom": "the lazy father",
+    "desc": "father in his 40s, mint-and-burgundy boubou, big belly, sleepy eyes",
+    "pose": "sitting on the mat on the right, leaning back against the wall, one hand on his belly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, la maîtresse dit nous les enfants, on est l'avenir dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Alors l'avenir-là, va chercher garba. Le présent a faim."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy, face three-quarters to the camera, lifts his notebook and announces it proudly. The father, without getting up, rubs his belly, points lazily toward the door and answers, his face clearly visible.",
+  "chute": "The boy slowly lowers his notebook, his proud smile collapsing. The camera slowly pushes in to a close-up of the proud schoolboy's crushed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "avenir",
+   "garba",
+   "présent"
+  ],
+  "gag_legende": "L'AVENIR EN PARTANT CHERCHER LE GARBA :",
+  "mecanisme": "phrase de l'école prise au pied de la lettre : l'avenir doit nourrir le présent"
+ },
+ {
+  "id": "B015-06",
+  "titre": "L'anniversaire de la petite",
+  "lieu": "courtyard of a family house in Koumassi, Abidjan, a plastic table, plastic chairs, a clothesline in the background, a paper calendar hanging on the wall, late afternoon",
+  "persos": [
+   {
+    "nom": "the sad girl",
+    "desc": "girl around 7, mint-and-indigo dress, two puffy afro puffs, big sad eyes",
+    "pose": "standing in the foreground on the left, arms crossed, pouting"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, emerald-and-salmon kaba, short braids, holding ONE single wooden spoon",
+    "pose": "sitting at the plastic table in the middle, the spoon in her hand, calm"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, rose-and-charcoal tracksuit, bald head, short beard",
+    "pose": "sitting on a plastic chair on the right, legs crossed, very serious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, pourquoi on fête jamais mon anniversaire dêh ?"
+   ],
+   [
+    1,
+    "Ma fille, tu es née en fin du mois. C'est ta faute."
+   ],
+   [
+    2,
+    "L'année prochaine, essaie de naître le jour de paie dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The girl, face three-quarters to the camera, pouts and asks. The mother shrugs and points the spoon at the girl as if it were obvious. The father raises one finger like a wise advisor and gives his advice, his face clearly visible.",
+  "chute": "The girl's mouth falls open; she slowly turns her head toward the calendar on the wall. The camera slowly pushes in to a close-up of the sad girl's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "anniversaire",
+   "fin du mois",
+   "paie"
+  ],
+  "gag_legende": "LA PETITE DEVANT LE CALENDRIER CE SOIR :",
+  "mecanisme": "logique absurde : on reproche à l'enfant d'être née en fin du mois et on lui demande de renaître"
+ },
+ {
+  "id": "B015-07",
+  "titre": "La récompense du bulletin",
+  "lieu": "terrace of an apartment building in Plateau, Abidjan, office towers in the background, a potted plant, a tiled floor, late afternoon",
+  "persos": [
+   {
+    "nom": "the disappointed boy",
+    "desc": "boy around 10, apricot-and-cyan tracksuit, short twists, holding ONE single folded school report card",
+    "pose": "standing in the foreground on the left, the report card in one hand, staring at the wheel"
+   },
+   {
+    "nom": "the father with the wheel",
+    "desc": "father in his 40s, mint-and-lilac kaftan, thin glasses, holding ONE single bicycle wheel",
+    "pose": "standing on the right, holding the bicycle wheel up proudly with one hand"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, c'est quoi la roue-là ? Où est mon vélo ?!"
+   ],
+   [
+    1,
+    "Tu as eu dix sur vingt. Voilà la moitié du vélo dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy, face three-quarters to the camera, points at the single bicycle wheel, outraged. The father, holding the wheel up with one hand, points with the other hand at the report card in the boy's hand and answers proudly, his face clearly visible.",
+  "chute": "The boy stares at the lone wheel, his shoulders dropping. The camera slowly pushes in to a close-up of the disappointed boy's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "roue",
+   "vélo",
+   "moitié"
+  ],
+  "gag_legende": "LE PETIT EN RÉVISANT POUR LE GUIDON :",
+  "mecanisme": "promesse prise au pied de la lettre : dix sur vingt, c'est la moitié du vélo"
+ },
+ {
+  "id": "B015-08",
+  "titre": "La tirelire cassée",
+  "lieu": "children's bedroom in a house in Adjamé, Abidjan, a small bed, a wooden shelf, pieces of a broken clay piggy bank on the floor, morning",
+  "persos": [
+   {
+    "nom": "the little girl",
+    "desc": "girl around 8, mint-and-salmon dress, neat cornrows, holding ONE single broken half of a clay piggy bank",
+    "pose": "standing in the foreground on the left, holding the broken piggy bank half, furious"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, apricot-and-cyan boubou, thick eyebrows, calm smile",
+    "pose": "sitting on the edge of the bed on the right, hands on his knees, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, qui a cassé ma tirelire-là ? Mes pièces sont où ?!"
+   ],
+   [
+    1,
+    "Ya fohi, ma fille. C'est ta première cotisation pour ma retraite."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl, face three-quarters to the camera, lifts the broken piggy bank half and accuses. The father, very calm, puts one hand on his chest and answers like a wise banker, his face clearly visible.",
+  "chute": "The girl looks down at the empty broken piggy bank, then back up at her father, speechless. The camera slowly pushes in to a close-up of the little girl's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "tirelire",
+   "cotisation",
+   "retraite"
+  ],
+  "gag_legende": "LA PETITE EN CACHANT SA NOUVELLE TIRELIRE :",
+  "mecanisme": "logique absurde du papa : le vol de la tirelire devient une cotisation pour sa retraite"
+ },
+ {
+  "id": "B015-09",
+  "titre": "La photo de famille pour l'école",
+  "lieu": "living room of an apartment in Plateau, Abidjan, a sofa, a small shelf with framed photos, a window showing the building of the neighbors, evening",
+  "persos": [
+   {
+    "nom": "the schoolboy",
+    "desc": "boy around 7, teal-and-charcoal school uniform, round face, holding ONE single open school notebook",
+    "pose": "standing on the left, holding the notebook open"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, mint-and-indigo kaftan, receding hairline, small mustache",
+    "pose": "sitting in an armchair in the foreground on the right, relaxed"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, apricot-and-cherry dress, long braids, arms crossed",
+    "pose": "standing behind the sofa in the middle, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, la maîtresse demande une photo de famille dêh !"
+   ],
+   [
+    1,
+    "Prends la photo des voisins-là. Eux, ils ont une voiture."
+   ],
+   [
+    2,
+    "Ya fohi. Et leur papa-là est plus beau."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boy, face three-quarters to the camera, shows his notebook and asks. The father points his thumb toward the window and the neighbors' building and answers seriously. The mother nods slowly, arms crossed, and adds her line, her face clearly visible.",
+  "chute": "The father slowly turns his head toward the mother, offended, his mouth open. The camera slowly pushes in to a close-up of the father's wounded face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "photo",
+   "voisins",
+   "voiture"
+  ],
+  "gag_legende": "PAPA DEVANT LE MIROIR CE SOIR :",
+  "mecanisme": "substitution absurde (on emprunte la famille des voisins) + relance de la maman qui retourne la blague contre le papa"
+ },
+ {
+  "id": "B015-10",
+  "titre": "Le devoir fait par Junior",
+  "lieu": "living room of a house in Adjamé, Abidjan, a wooden table, a bench, a ceiling fan, evening",
+  "persos": [
+   {
+    "nom": "the angry father",
+    "desc": "father in his 40s, mint-and-salmon boubou, deep frown, holding ONE single exercise book",
+    "pose": "standing in the foreground on the right, holding the exercise book up"
+   },
+   {
+    "nom": "the boy",
+    "desc": "boy around 9, rose-and-charcoal pyjamas, big curious eyes",
+    "pose": "sitting on the bench at the table on the left, hands on the table"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, mint-and-burgundy kaba, gold earrings, hands on her hips",
+    "pose": "standing in the doorway in the background, hands on her hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Junior fait ton devoir ?! Faut jamais compter sur les autres dêh !"
+   ],
+   [
+    1,
+    "C'est pour ça toi tu comptes seulement sur maman ?"
+   ],
+   [
+    2,
+    "Et sur ma maman aussi, chaque 15 du mois dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father, face three-quarters to the camera, shakes the exercise book and scolds. The boy tilts his head, points at his mother and asks innocently. The mother, hands on her hips, adds her line with a satisfied smile, her face clearly visible.",
+  "chute": "The father slowly lowers the exercise book, frozen. The camera slowly pushes in to a close-up of the angry father's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "compter",
+   "maman",
+   "15 du mois"
+  ],
+  "gag_legende": "PAPA LE 15 DU MOIS PROCHAIN :",
+  "mecanisme": "expression « compter sur » prise au pied de la lettre + relance de la maman qui enfonce le papa"
+ },
+ {
+  "id": "B015-11",
+  "titre": "Le puzzle abandonné",
+  "lieu": "living room of an apartment in Plateau, Abidjan, a low table with an unfinished puzzle, a carpet, a sofa, evening",
+  "persos": [
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, apricot-and-cherry tracksuit, square glasses, short beard",
+    "pose": "sitting in an armchair in the foreground on the right, pointing at the puzzle"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 6, mint-and-lilac dress, two high puffs, holding ONE single puzzle piece",
+    "pose": "sitting on the carpet on the left next to the low table, holding the puzzle piece"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, emerald-and-salmon dress, long box braids, arms crossed",
+    "pose": "sitting on the sofa in the background in the middle, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Encore tu laisses ton puzzle ?! Faut finir ce qu'on commence dêh !"
+   ],
+   [
+    1,
+    "Ya fohi papa. Et la dot de maman-là, tu finis quand ?"
+   ],
+   [
+    2,
+    "Il a commencé en 2014 dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father, face three-quarters to the camera, points at the unfinished puzzle and lectures. The girl lifts her puzzle piece and asks innocently. The mother, arms crossed, raises her eyebrows and says her line flatly, her face clearly visible.",
+  "chute": "The father's pointing finger slowly drops; he swallows hard. The camera slowly pushes in to a close-up of the father's cornered face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "finir",
+   "dot",
+   "2014"
+  ],
+  "gag_legende": "PAPA EN APPELANT LA FAMILLE DE MAMAN :",
+  "mecanisme": "principe du papa pris au pied de la lettre (finir ce qu'on commence) retourné sur la dot + relance de la maman"
+ },
+ {
+  "id": "B015-12",
+  "titre": "Maman se fâche",
+  "lieu": "living room of a house in Koumassi, Abidjan, a worn sofa, a low table, a television switched off, evening",
+  "persos": [
+   {
+    "nom": "the furious mother",
+    "desc": "mother in her 30s, apricot-and-cyan kaba, head held high, hands on her hips",
+    "pose": "standing on the left, hands on her hips, furious"
+   },
+   {
+    "nom": "the cheeky boy",
+    "desc": "boy around 9, emerald-and-salmon tracksuit, short hair, big expressive eyebrows",
+    "pose": "standing in the middle, arms crossed"
+   },
+   {
+    "nom": "the lazy father",
+    "desc": "father in his 40s, mint-and-indigo boubou, round belly, holding ONE single TV remote",
+    "pose": "lying back on the sofa in the foreground on the right, the remote resting on his belly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Je t'ai porté neuf mois dans mon ventre, et tu me réponds dêh ?!"
+   ],
+   [
+    1,
+    "Et papa-là, tu le portes au dos depuis dix ans. Il descend quand dêh ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother, face three-quarters to the camera, taps her own belly with one hand and shouts. The father keeps lying still with the remote. The boy answers calmly, pointing his thumb at his father on the sofa, his face clearly visible.",
+  "chute": "The mother slowly turns her head toward the father and stares at him; the father freezes, the remote on his belly. The camera slowly pushes in to a close-up of the lazy father's guilty face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "neuf mois",
+   "dos",
+   "descend"
+  ],
+  "gag_legende": "PAPA EN CHERCHANT DU TRAVAIL DEMAIN :",
+  "mecanisme": "verbe « porter » pris au pied de la lettre : papa est un bébé que maman porte au dos"
+ },
+ {
+  "id": "B015-13",
+  "titre": "Le sermon de papa sur l'école",
+  "lieu": "small living room of a house in Adjamé, Abidjan, plastic chairs, a wall calendar, a low table, evening",
+  "persos": [
+   {
+    "nom": "the angry father",
+    "desc": "father in his 40s, mint-and-lilac boubou, deep frown, holding ONE single school report card",
+    "pose": "standing in the foreground on the right, raising the report card"
+   },
+   {
+    "nom": "the calm boy",
+    "desc": "boy around 10, mint-and-burgundy school uniform, short hair, calm face",
+    "pose": "sitting on a plastic chair on the left, hands on his knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Si tu travailles pas à l'école, tu vas finir dans la rue dêh !"
+   ],
+   [
+    1,
+    "Ya fohi papa. Le propriétaire dit on part tous ensemble samedi."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father, face three-quarters to the camera, shakes the report card and threatens. The boy shrugs calmly and answers, his face clearly visible.",
+  "chute": "The father freezes, the report card still raised, his anger melting into panic. The camera slowly pushes in to a close-up of the angry father's panicked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "rue",
+   "propriétaire",
+   "samedi"
+  ],
+  "gag_legende": "PAPA EN COMPTANT LES JOURS JUSQU'À SAMEDI :",
+  "mecanisme": "menace prise au pied de la lettre : finir dans la rue, c'est déjà le programme de toute la famille"
+ },
+ {
+  "id": "B015-14",
+  "titre": "Le jour de la paie",
+  "lieu": "sidewalk in front of an office building in Plateau, Abidjan, a low concrete bench, glass towers behind, end of the afternoon",
+  "persos": [
+   {
+    "nom": "the little boy",
+    "desc": "boy around 6, rose-and-charcoal overalls, round cheeks, big curious eyes",
+    "pose": "standing on the left next to the bench, looking up at his father"
+   },
+   {
+    "nom": "the tired father",
+    "desc": "father in his 40s, mint-and-salmon kaftan, tired eyes, holding ONE single empty envelope",
+    "pose": "standing in the middle, holding the empty envelope, shoulders low"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, teal-and-charcoal kaba, elegant braids, hugging ONE single big handbag",
+    "pose": "sitting on the concrete bench in the foreground on the right, hugging the handbag tightly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, ton salaire est tombé ? Il s'est fait mal dêh ?"
+   ],
+   [
+    1,
+    "Mon petit, il est tombé dans le sac de ta maman. Il se relève plus."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The little boy, face three-quarters to the camera, asks with worried eyes. The mother keeps hugging her handbag with a sweet smile. The father sighs, points the empty envelope at the mother's handbag and says his line, his face clearly visible.",
+  "chute": "The mother hugs the handbag even tighter and gives an innocent smile. The camera slowly pushes in to a close-up of the mother's falsely innocent face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "salaire",
+   "tombé",
+   "sac"
+  ],
+  "gag_legende": "LE SAC DE MAMAN LE JOUR DE PAIE :",
+  "mecanisme": "expression « le salaire est tombé » prise au pied de la lettre"
+ },
+ {
+  "id": "B015-15",
+  "titre": "Les bonbons de maman",
+  "lieu": "bedroom of a house in Koumassi, Abidjan, a bed, a small dressing table with a jar of face powder, a bedside lamp, night",
+  "persos": [
+   {
+    "nom": "the suspicious mother",
+    "desc": "mother in her 30s, mint-and-burgundy kaftan, braids in a bun, holding ONE single empty candy jar",
+    "pose": "standing on the left, holding the empty candy jar, eyes narrowed"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 6, apricot-and-cherry pyjamas, two pigtails, wide innocent eyes",
+    "pose": "standing in the middle, hands behind her back"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, apricot-and-cyan kaftan, short hair, a visible patch of white face powder on his forehead",
+    "pose": "sitting on the edge of the bed in the foreground on the right, hands on his knees, stiff smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu as pris mes bonbons ? Si tu mens, ton front va briller dêh !"
+   ],
+   [
+    1,
+    "Ahh, c'est pour ça papa met ta poudre sur son front chaque soir ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother, face three-quarters to the camera, raises the empty candy jar and narrows her eyes. The father keeps a stiff smile. The girl tilts her head, points at her father's powdered forehead and asks innocently, her face clearly visible.",
+  "chute": "The mother slowly turns her head toward the father's white forehead; his stiff smile freezes. The camera slowly pushes in to a close-up of the father's panicked face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "front",
+   "briller",
+   "poudre"
+  ],
+  "gag_legende": "PAPA EN RENTRANT TARD CE SOIR :",
+  "mecanisme": "menace inventée prise au pied de la lettre par l'enfant, qui dénonce les mensonges du papa"
+ },
+ {
+  "id": "B015-16",
+  "titre": "La lampe torche du petit",
+  "lieu": "living room of a house in Adjamé, Abidjan, an old armchair, a low stool, a ceiling fan, a small table with a pile of envelopes, evening",
+  "persos": [
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, rose-and-charcoal kaftan, thick mustache, wide eyes",
+    "pose": "sitting in an armchair in the foreground on the right, leaning back, surprised"
+   },
+   {
+    "nom": "the boy with the flashlight",
+    "desc": "boy around 7, mint-and-lilac tracksuit, short hair, very focused eyes, holding ONE single small flashlight",
+    "pose": "standing on a low stool on the left right next to the armchair, pointing the flashlight at his father's mouth"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi tu regardes dans ma bouche comme ça, mon fils ?!"
+   ],
+   [
+    1,
+    "Maman dit tu as mangé l'argent du loyer. Je cherche la monnaie dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father, face three-quarters to the camera, leans away from the flashlight and asks, annoyed. The boy keeps the flashlight pointed at his father's mouth and answers very seriously, his face clearly visible.",
+  "chute": "The father slowly closes his mouth, eyes wide. The camera slowly pushes in to a close-up of the father's caught face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "bouche",
+   "loyer",
+   "monnaie"
+  ],
+  "gag_legende": "PAPA QUAND LE PROPRIÉTAIRE VA FRAPPER :",
+  "mecanisme": "expression « manger l'argent » prise au pied de la lettre"
+ },
+ {
+  "id": "B015-17",
+  "titre": "Le caprice au marché",
+  "lieu": "vegetable stall at Adjamé market, Abidjan, piles of tomatoes, onions and chili peppers on a wooden counter, a big umbrella above, blurred morning crowd in the background",
+  "persos": [
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, mint-and-salmon kaba, hair in a bun, holding ONE single woven shopping basket",
+    "pose": "standing in the foreground on the left, the basket on her arm, irritated"
+   },
+   {
+    "nom": "the crying boy",
+    "desc": "boy around 5, teal-and-charcoal overalls, tears on his cheeks, big round eyes",
+    "pose": "standing in the middle in front of the counter, sniffling"
+   },
+   {
+    "nom": "the vegetable seller",
+    "desc": "vegetable seller in his 50s, emerald-and-salmon kaftan, grey beard, big friendly smile",
+    "pose": "standing behind the wooden counter on the right, hands resting on the counter"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu pleures encore ? Je te donne au Tonton-là !"
+   ],
+   [
+    1,
+    "Tonton, chez toi on mange combien de fois ?"
+   ],
+   [
+    2,
+    "Trois fois par jour, mon petit."
+   ],
+   [
+    1,
+    "Maman, je pleure encore plus fort dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother, face three-quarters to the camera, points at the seller and threatens the boy. The boy stops crying instantly, turns his head to the seller and asks with great interest. The seller smiles and answers kindly. The boy turns his head back to his mother and announces his line with determination, his face clearly visible.",
+  "chute": "The boy opens his mouth wide and starts fake-crying even louder while the seller laughs. The camera slowly pushes in to a close-up of the mother's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "Tonton",
+   "combien de fois",
+   "plus fort"
+  ],
+  "gag_legende": "MAMAN DEVANT SA MARMITE CE SOIR :",
+  "mecanisme": "menace prise au pied de la lettre : l'enfant négocie sa nouvelle famille"
+ },
+ {
+  "id": "B015-18",
+  "titre": "L'assiette de mariage",
+  "lieu": "kitchen of a house in Koumassi, Abidjan, pieces of a broken white plate on the floor, a wooden table, a small gas stove, afternoon",
+  "persos": [
+   {
+    "nom": "the furious mother",
+    "desc": "mother in her 30s, mint-and-lilac jumpsuit, braids in a high bun, hands on her hips",
+    "pose": "standing on the left near the broken plate, hands on her hips"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 8, mint-and-indigo school uniform, two braids, holding ONE single coin",
+    "pose": "standing in the middle, showing the coin in her open palm"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, apricot-and-cherry boubou, shiny bald head, nervous smile",
+    "pose": "sitting at the wooden table in the foreground on the right, hands flat on the table"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Qui a cassé mon assiette de mariage-là ?!"
+   ],
+   [
+    1,
+    "Papa a payé deux cents pour dire c'est moi. Toi, tu mets combien dêh ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother, face three-quarters to the camera, points at the broken plate and shouts. The father freezes with a nervous smile. The girl shows the coin in her palm, raises her eyebrows at her mother like a businesswoman and says her line, her face clearly visible.",
+  "chute": "The father's nervous smile collapses as the mother slowly turns her head toward him. The camera slowly pushes in to a close-up of the father's sweating face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "assiette",
+   "deux cents",
+   "combien"
+  ],
+  "gag_legende": "PAPA EN CHERCHANT MILLE FRANCS EN URGENCE :",
+  "mecanisme": "dénonciation mise aux enchères par l'enfant : la vérité au plus offrant"
+ },
+ {
+  "id": "B015-19",
+  "titre": "Le cinéma promis",
+  "lieu": "living room of a small apartment in Koumassi, Abidjan, an open window looking at the neighbors' house across the alley, a sofa, plastic chairs, evening",
+  "persos": [
+   {
+    "nom": "the little girl",
+    "desc": "girl around 8, emerald-and-salmon overalls, afro puffs, pouting",
+    "pose": "standing on the left next to the open window, arms crossed"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, teal-and-charcoal boubou, small goatee, relaxed",
+    "pose": "sitting on a plastic chair in the middle, pointing toward the window"
+   },
+   {
+    "nom": "the gossip mother",
+    "desc": "mother in her 30s, rose-and-charcoal kaba, big earrings, eyes shining with excitement",
+    "pose": "sitting on the sofa in the foreground on the right, leaning toward the window"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, tu as promis le cinéma ce soir dêh !"
+   ],
+   [
+    1,
+    "Regarde par la fenêtre. Les voisins-là commencent à huit heures."
+   ],
+   [
+    2,
+    "Et ce soir, c'est la suite : sa belle-mère arrive."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The girl, face three-quarters to the camera, crosses her arms and complains. The father calmly points at the open window and answers. The mother rubs her hands together with excitement and whispers her line, her face clearly visible.",
+  "chute": "The girl slowly turns her head toward the window, curious, while the mother grins. The camera slowly pushes in to a close-up of the gossip mother's delighted face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "cinéma",
+   "voisins",
+   "belle-mère"
+  ],
+  "gag_legende": "LES VOISINS QUAND ILS VONT SAVOIR :",
+  "mecanisme": "logique absurde : la dispute des voisins devient le cinéma gratuit + relance de la maman commère"
+ },
+ {
+  "id": "B015-20",
+  "titre": "Le téléphone de papa",
+  "lieu": "kitchen of an apartment in Plateau, Abidjan, a small fridge, a counter, a window showing office towers at night",
+  "persos": [
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, mint-and-indigo kaba, braids in a bun, holding ONE single frosty smartphone",
+    "pose": "standing on the left near the fridge, holding up the cold phone"
+   },
+   {
+    "nom": "the little boy",
+    "desc": "boy around 7, apricot-and-cyan pyjamas, big innocent eyes, gap in his teeth",
+    "pose": "standing in the middle, hands behind his back, proud"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, mint-and-burgundy tracksuit, short beard, nervous eyes",
+    "pose": "sitting on a kitchen stool in the foreground on the right, frozen"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi le téléphone de ton papa est dans le frigo-là ?!"
+   ],
+   [
+    1,
+    "Papa dit chaque fois que tu t'approches, son téléphone chauffe dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother, face three-quarters to the camera, holds up the frosty phone and questions the boy. The father stays frozen on his stool. The boy answers proudly, as if he had done a great service, his face clearly visible.",
+  "chute": "The mother slowly turns her head toward the father, the frosty phone still raised; the father swallows hard. The camera slowly pushes in to a close-up of the father's terrified face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "frigo",
+   "téléphone",
+   "chauffe"
+  ],
+  "gag_legende": "PAPA EN CHANGEANT SON MOT DE PASSE :",
+  "mecanisme": "phrase du papa prise au pied de la lettre : on refroidit le téléphone qui « chauffe »"
+ }
+]

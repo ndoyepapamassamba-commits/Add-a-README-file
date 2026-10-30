@@ -1,0 +1,22 @@
+[
+  {"id": "B077-01", "note": 6, "drapeaux": ["danger"], "remarque": "La panique du mari qui préfère payer un an d'avance plutôt que de regarder sa femme est une vraie double cible, mais le retournement reste attendu (et le titre nomme la CIE)."},
+  {"id": "B077-02", "note": 6, "drapeaux": [], "remarque": "Le propriétaire qui découvre qu'il est lui-même le patron mauvais payeur est un bon retournement, mais l'uniforme et la guérite le télégraphient."},
+  {"id": "B077-03", "note": 5, "drapeaux": [], "remarque": "Le trou rebaptisé « vue sur la lagune » est une cupidité amusante, mais c'est un ressort déjà vu, sans relance qui achève."},
+  {"id": "B077-04", "note": 5, "drapeaux": [], "remarque": "La riposte « toi aussi tu es chez ton papa » se voit venir dès la question sur le grand-père : peu de surprise et peu de férocité."},
+  {"id": "B077-05", "note": 7, "drapeaux": [], "remarque": "Le propriétaire qui attendait en silence au portail avec « moi aussi j'aime le frais » est une chute féroce, un peu affaiblie parce qu'on le voit dès le début."},
+  {"id": "B077-06", "note": 7, "drapeaux": [], "remarque": "La chaîne de dettes (le faux propriétaire, puis « lui aussi me doit quatre mois ») frappe deux fois et la relance achève bien."},
+  {"id": "B077-07", "note": 4, "drapeaux": [], "remarque": "La belle-mère déjà installée qui « dort dans la cuisine » est un cliché mou, et le mari qui expose son plan devant elle sonne faux."},
+  {"id": "B077-08", "note": 5, "drapeaux": ["danger"], "remarque": "Le beau-frère qui a mangé l'argent est trahi d'avance par sa chaîne en or, et « la famille d'abord » ne cogne pas assez fort (nomme la CIE)."},
+  {"id": "B077-09", "note": 7, "drapeaux": ["danger"], "remarque": "L'enfant qui balance que maman coupe le courant pour cacher sa sauce est une trahison surprenante et à double cible (nomme la CIE)."},
+  {"id": "B077-10", "note": 7, "drapeaux": [], "remarque": "L'ex-femme devenue voisine qui exige « trois mois d'avance » est une relance cruelle qui écrase le locataire déjà à terre."},
+  {"id": "B077-11", "note": 4, "drapeaux": ["confus"], "remarque": "« Propriétaire des cheveux blancs de ton papa » est une idée maligne, mais il faut trop réfléchir pour comprendre que c'est le locataire qui ne paie pas."},
+  {"id": "B077-12", "note": 4, "drapeaux": ["connu", "danger"], "remarque": "C'est la blague connue du « cacher dans un livre que personne n'ouvre », juste transposée au livre de cuisine (nomme la CIE)."},
+  {"id": "B077-13", "note": 5, "drapeaux": [], "remarque": "« Bienvenue dans le club, depuis douze ans » est une pique correcte mais sage, et la chute retombe en pitié au lieu d'exploser."},
+  {"id": "B077-14", "note": 5, "drapeaux": [], "remarque": "La clim payée avec le loyer est une effronterie drôle, mais la relance « tu es assis dedans » répète la chute au lieu de l'aggraver."},
+  {"id": "B077-15", "note": 6, "drapeaux": [], "remarque": "« On a pas encore appris les grands nombres » est une exagération innocente nette et rapide, efficace mais sans férocité."},
+  {"id": "B077-16", "note": 6, "drapeaux": ["danger"], "remarque": "L'argument « tes créanciers ne te trouveront pas » qui se retourne en « la CIE non plus » est une bonne relance, mais elle reste prévisible (nomme la CIE)."},
+  {"id": "B077-17", "note": 7.5, "drapeaux": [], "remarque": "« Tes trois fils l'ont déjà vendu, chacun une fois » est une chute sèche, féroce et typiquement ivoirienne : la meilleure du lot."},
+  {"id": "B077-18", "note": 6, "drapeaux": ["danger"], "remarque": "« La Sodeci coupe chez toi depuis notre mariage » est une humiliation féroce de la mère, qui demande pourtant une demi-seconde de décodage (nomme la Sodeci)."},
+  {"id": "B077-19", "note": 5, "drapeaux": ["connu"], "remarque": "C'est le même moule que le 601 (l'alibi du mari démoli par l'enfant), avec un petit trou de logique sur ce que sait la fillette."},
+  {"id": "B077-20", "note": 5, "drapeaux": ["connu"], "remarque": "Le jeu de mots des « neuf mois » de grossesse comme dette est malin, mais c'est un ressort maternel déjà très exploité."}
+]

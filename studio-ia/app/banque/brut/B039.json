@@ -1,0 +1,860 @@
+[
+ {
+  "id": "B039-01",
+  "titre": "L'alloco du lycéen",
+  "lieu": "alloco stand on a street corner in Abatta, Abidjan, a big black frying pan of very dark oil on a charcoal stove, a small wooden table with a pile of fried plantain, late afternoon",
+  "persos": [
+   {
+    "nom": "the high school boy",
+    "desc": "high school boy around 17, teal-and-plum school uniform, a school backpack on his shoulders, skinny with a thin mustache",
+    "pose": "standing in the foreground on the right, facing the stand, one finger pointing at the frying pan"
+   },
+   {
+    "nom": "the alloco seller",
+    "desc": "alloco seller in her 50s, mustard-and-sunflower boubou, a headscarf, round cheeks, holding ONE single long slotted spoon",
+    "pose": "standing behind the frying pan on the left, holding the slotted spoon, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ton huile-là, tu l'as changée quand ?"
+   ],
+   [
+    1,
+    "Mon petit, elle a commencé le CP avec toi."
+   ],
+   [
+    0,
+    "Mais je suis en terminale dêh !"
+   ],
+   [
+    1,
+    "Oui. Elle, elle a pas redoublé trois fois dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy points at the dark oil in the frying pan, suspicious, his face turned three-quarters to the camera. The seller answers calmly, tapping the slotted spoon on the edge of the pan. The boy protests, both hands open. The seller shrugs and says her last line with a little smile, her face clearly visible.",
+  "chute": "The boy freezes with his mouth open while the seller keeps smiling. The camera slowly pushes in to a close-up of the high school boy's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "huile",
+   "CP",
+   "redoublé"
+  ],
+  "gag_legende": "SES PARENTS QUAND ILS VONT VOIR LA VIDÉO :",
+  "mecanisme": "logique absurde au pied de la lettre : l'huile a fait toute sa scolarité, et mieux que lui"
+ },
+ {
+  "id": "B039-02",
+  "titre": "Le poulet DG",
+  "lieu": "open-air maquis in Zone 4, Abidjan, a plastic table with a plate of a very skinny braised chicken and fried plantain, plastic chairs, string lights, evening",
+  "persos": [
+   {
+    "nom": "the skinny husband",
+    "desc": "very skinny husband in his 40s, cobalt-and-salmon shirt a bit too big for him, a wristwatch",
+    "pose": "sitting at the table in the foreground on the left, one finger pointing at the skinny chicken, annoyed"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 40s, coral-and-mint kaba, a headscarf, big earrings",
+    "pose": "sitting at the table on the right, arms crossed"
+   },
+   {
+    "nom": "the waiter",
+    "desc": "young waiter in his 20s, olive-and-sand polo shirt, thin, holding ONE single small notepad",
+    "pose": "standing behind the table in the middle, holding the notepad against his chest, polite"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Serveur, ton poulet DG-là est maigre comme ça pourquoi ?!"
+   ],
+   [
+    2,
+    "Tonton, il a été licencié ce matin. Il mange plus dêh."
+   ],
+   [
+    1,
+    "Ahh, c'est pour ça il te ressemble, chéri !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband points at the skinny chicken, outraged, his face three-quarters to the camera. The waiter answers very seriously, holding his notepad against his chest. The wife turns her head toward her husband and says her line with a mocking smile, her face clearly visible.",
+  "chute": "The waiter bites his lip to hold back his laugh and the husband freezes. The camera slowly pushes in to a close-up of the skinny husband's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "poulet DG",
+   "licencié",
+   "ressemble"
+  ],
+  "gag_legende": "LE MARI EN RENTRANT À LA MAISON :",
+  "mecanisme": "logique absurde au pied de la lettre (le poulet DG licencié) + coup de grâce de l'épouse sur le mari"
+ },
+ {
+  "id": "B039-03",
+  "titre": "Un seul garba ce soir",
+  "lieu": "wooden bench next to a garba stall in Abatta, Abidjan, a big pot of attiéké and a tray of fried fish on the counter behind them, early evening",
+  "persos": [
+   {
+    "nom": "the little boy",
+    "desc": "boy around 8, cream-and-apricot t-shirt, big hungry eyes, holding ONE single plastic cup of water with both hands",
+    "pose": "sitting on the bench in the foreground on the right, holding the cup, sulking"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, emerald-and-jade tracksuit, small beard, holding ONE single plate of garba with a big fried fish",
+    "pose": "sitting on the bench on the left, the plate on his knees, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, pourquoi toi tu manges garba et moi je bois l'eau ?!"
+   ],
+   [
+    1,
+    "Mon fils, ta faim-là va se noyer. La mienne sait nager dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy lifts his cup of water a little and complains, his face three-quarters to the camera. The father does not eat; he raises one finger like a teacher and says his line very seriously, his face clearly visible.",
+  "chute": "The boy stares at his cup of water, then at the father's fish, speechless. The camera slowly pushes in to a close-up of the little boy's disgusted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "faim",
+   "noyer",
+   "nager"
+  ],
+  "gag_legende": "L'ENFANT EN BUVANT SON TROISIÈME VERRE :",
+  "mecanisme": "logique absurde au pied de la lettre : la faim de l'enfant se noie, celle du père sait nager"
+ },
+ {
+  "id": "B039-04",
+  "titre": "Le poisson du dimanche",
+  "lieu": "family table at an open-air maquis in Biétry, Abidjan, a big plate of braised fish with attiéké in the middle of the table, plastic chairs, Sunday afternoon",
+  "persos": [
+   {
+    "nom": "the boy",
+    "desc": "boy around 10, crimson-and-ruby t-shirt, big round eyes",
+    "pose": "sitting at the table on the right, one finger pointing at the fish head on the plate"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, cream-and-apricot kaba, a headscarf",
+    "pose": "sitting at the table on the left, hands on her hips, very serious"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, mustard-and-crimson shirt, thick mustache, holding ONE single fish tail between two fingers",
+    "pose": "sitting in the foreground in the middle, holding the fish tail, looking at it proudly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, pourquoi c'est toujours moi la tête du poisson ?"
+   ],
+   [
+    1,
+    "Pour devenir intelligent, mon fils. Mange-la dêh."
+   ],
+   [
+    0,
+    "Et papa, il mange toujours la queue-là ?"
+   ],
+   [
+    1,
+    "Ya fohi. Tu vois le résultat, non ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boy points at the fish head and complains, his face three-quarters to the camera. The mother answers seriously, hands on her hips. The boy turns his head toward his father and the fish tail and asks innocently. The mother points her chin at the father and says her last line, her face clearly visible.",
+  "chute": "The father freezes with the fish tail in his fingers while the boy slowly nods. The camera slowly pushes in to a close-up of the father's offended face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "tête",
+   "queue",
+   "résultat"
+  ],
+  "gag_legende": "PAPA EN CHERCHANT LA TÊTE DU POISSON :",
+  "mecanisme": "logique absurde au pied de la lettre (la tête rend intelligent, donc la queue…) qui frappe le père muet"
+ },
+ {
+  "id": "B039-05",
+  "titre": "La femme du client",
+  "lieu": "garba kiosk at lunchtime in Biétry, Abidjan, a wooden counter with a big pot of attiéké and a tray of fried fish, a long wooden bench, midday",
+  "persos": [
+   {
+    "nom": "the angry wife",
+    "desc": "wife in her 30s, emerald-and-jade kaba, braided hair",
+    "pose": "standing in the foreground on the right, hands on her hips, furious"
+   },
+   {
+    "nom": "the garba seller",
+    "desc": "garba seller in her 40s, coral-and-mint boubou, a headscarf, holding ONE single big ladle",
+    "pose": "standing behind the counter on the left, holding the ladle, calm"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, teal-and-plum shirt, round belly, ONE single plate of garba on his knees",
+    "pose": "sitting on the bench in the middle, frozen, hands on the plate on his knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "C'est toi qui nourris mon mari chaque midi-là ?!"
+   ],
+   [
+    1,
+    "Oui ma sœur. Je fais ton travail, donc donne-moi la moitié de ta dot dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife points at the seller with one finger, furious, her face three-quarters to the camera. The husband stays frozen on the bench, the plate on his knees. The seller rests her ladle on the pot, opens her other hand toward the wife and says her line very calmly, her face clearly visible.",
+  "chute": "The wife's mouth drops open while the husband slowly nods in agreement. The camera slowly pushes in to a close-up of the angry wife's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "mari",
+   "travail",
+   "dot"
+  ],
+  "gag_legende": "LA FAMILLE DE LA MARIÉE EN APPRENANT ÇA :",
+  "mecanisme": "logique absurde au pied de la lettre (je fais ton travail, donc je prends ta dot) qui touche la femme et le mari"
+ },
+ {
+  "id": "B039-06",
+  "titre": "Le panneau de Tantie",
+  "lieu": "attiéké stall in Abatta, Abidjan, a big basin of attiéké on a wooden table, a hand-painted wooden sign reading ATTIEKE A VOLONTE, a bench, midday",
+  "persos": [
+   {
+    "nom": "the hungry young man",
+    "desc": "young man in his 20s, mustard-and-crimson tracksuit, very skinny, holding ONE single empty plate with both hands",
+    "pose": "standing in the foreground on the right, holding the empty plate out, hopeful"
+   },
+   {
+    "nom": "the attiéké seller",
+    "desc": "attiéké seller in her 50s, olive-and-sand boubou, a headscarf, strong arms",
+    "pose": "standing behind the basin on the left, arms crossed, unimpressed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, c'est écrit attiéké à volonté ! Remets-moi encore dêh !"
+   ],
+   [
+    1,
+    "Mon fils, c'est ma volonté. Et ma volonté-là dit non."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The young man holds out his empty plate with both hands and nods toward the sign, his face three-quarters to the camera. The seller keeps her arms crossed, raises one eyebrow and says her line slowly, her face clearly visible.",
+  "chute": "The young man's hopeful smile freezes, the empty plate still held out. The camera slowly pushes in to a close-up of the hungry young man's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "volonté",
+   "encore"
+  ],
+  "gag_legende": "SON VENTRE EN RENTRANT À LA MAISON :",
+  "mecanisme": "prise au pied de la lettre : « à volonté » devient la volonté de la vendeuse"
+ },
+ {
+  "id": "B039-07",
+  "titre": "Le secret de Tantie",
+  "lieu": "garba stall at night in Abatta, Abidjan, during a power cut, only ONE single oil lamp on the wooden counter, a pot of attiéké and a tray of fried fish in the half-darkness, a bench",
+  "persos": [
+   {
+    "nom": "the customer",
+    "desc": "young man in his 20s, cobalt-and-salmon t-shirt, short dreadlocks, holding ONE single plate of garba",
+    "pose": "sitting on the bench in the foreground on the right, the plate on his knees, impressed"
+   },
+   {
+    "nom": "the garba seller",
+    "desc": "garba seller in her 50s, crimson-and-ruby boubou, a headscarf, a big proud smile",
+    "pose": "standing behind the counter on the left next to the oil lamp, hands on her hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ton garba est le plus vendu d'Abatta. C'est quoi ton secret ?"
+   ],
+   [
+    1,
+    "Je vends seulement pendant le délestage, mon petit. Dans le noir, tout est bon dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer, not eating, asks with admiration, his face three-quarters to the camera and lit by the lamp. The seller leans a little toward him, hands on her hips, and whispers her line with a proud wink, her face clearly visible in the lamplight.",
+  "chute": "The customer slowly looks down at his plate, then back up, horrified. The camera slowly pushes in to a close-up of the customer's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "secret",
+   "délestage",
+   "noir"
+  ],
+  "gag_legende": "MOI QUAND LA LUMIÈRE REVIENT :",
+  "mecanisme": "logique absurde assumée : le délestage devient l'argument de vente"
+ },
+ {
+  "id": "B039-08",
+  "titre": "Le poisson braisé",
+  "lieu": "lagoon-side maquis in Biétry, Abidjan, a plastic table with a big braised fish lying on a plate, its eye wide open, string lights, evening",
+  "persos": [
+   {
+    "nom": "the customer",
+    "desc": "man in his 40s, mustard-and-sunflower shirt, bald head, thick eyebrows",
+    "pose": "sitting at the table in the foreground on the right, pointing at the fish with one finger, uneasy"
+   },
+   {
+    "nom": "the waiter",
+    "desc": "waiter in his 30s, teal-and-plum polo shirt, serious face, holding ONE single small notepad",
+    "pose": "standing behind the table on the left, holding the notepad"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Serveur ! Pourquoi ton poisson braisé-là me regarde comme ça ?!"
+   ],
+   [
+    1,
+    "Tonton, il t'a reconnu. Tu as mangé son grand frère à crédit dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer points at the fish's open eye, uneasy, his face three-quarters to the camera. The waiter leans a little toward him, taps his notepad with one finger and says his line very seriously, his face clearly visible.",
+  "chute": "The customer slowly looks back at the fish, which seems to stare at him. The camera slowly pushes in to a close-up of the customer's guilty face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "poisson",
+   "grand frère",
+   "crédit"
+  ],
+  "gag_legende": "LE POISSON QUAND TU PRENDS TA FOURCHETTE :",
+  "mecanisme": "logique absurde au pied de la lettre : le poisson reconnaît le mauvais payeur de la famille"
+ },
+ {
+  "id": "B039-09",
+  "titre": "Le garba de Madame",
+  "lieu": "garba kiosk at the gate of a big villa in Zone 4, Abidjan, a counter with a pot of attiéké and a tray of fried fish, a tall villa gate behind, late morning",
+  "persos": [
+   {
+    "nom": "the rich lady",
+    "desc": "rich lady in her 50s, crimson-and-ruby kaftan, big sunglasses pushed up on her head, gold necklace, a small handbag",
+    "pose": "standing on the left, holding the handbag, nose in the air"
+   },
+   {
+    "nom": "the garba seller",
+    "desc": "garba seller in her 40s, cream-and-apricot boubou, a headscarf, holding ONE single ladle",
+    "pose": "standing behind the counter in the middle, holding the ladle"
+   },
+   {
+    "nom": "the security guard",
+    "desc": "skinny security guard in his 30s, olive-and-sand security uniform, a cap, hands joined in front of him",
+    "pose": "standing in the foreground on the right in front of the villa gate, hands joined, sad"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, garba avec deux poissons pour mon chien dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Et ton gardien-là ?"
+   ],
+   [
+    0,
+    "Lui, il a mangé hier dêh."
+   ],
+   [
+    2,
+    "Wouf ! Madame, depuis ce matin, moi aussi je suis chien dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The lady gives her order with a haughty wave of one hand, her face three-quarters to the camera. The seller points her ladle toward the guard. The lady shrugs without even looking at him. The guard, hands joined, tilts his head like a puppy and says his line with big pleading eyes, his face clearly visible.",
+  "chute": "The lady's mouth falls open while the seller bursts out laughing. The camera slowly pushes in to a close-up of the security guard's pleading puppy face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "chien",
+   "gardien",
+   "hier"
+  ],
+  "gag_legende": "LE VRAI CHIEN EN VOYANT ÇA :",
+  "mecanisme": "logique absurde au pied de la lettre : pour manger, le gardien devient le chien"
+ },
+ {
+  "id": "B039-10",
+  "titre": "Encore un peu de poisson",
+  "lieu": "garba stall in front of a primary school in Abatta, Abidjan, a counter with a pot of attiéké, a tray of small fried fish and ONE single tiny dish of fish bones, a school wall behind, noon",
+  "persos": [
+   {
+    "nom": "the schoolgirl",
+    "desc": "girl around 12, coral-and-mint school uniform, two puffy braided pigtails, holding ONE single plate of attiéké without fish",
+    "pose": "standing in the foreground on the right, holding the plate out, sweet smile"
+   },
+   {
+    "nom": "the garba seller",
+    "desc": "garba seller in her 50s, cobalt-and-salmon boubou, a headscarf, small reading glasses",
+    "pose": "standing behind the counter on the left, hands on the counter, suspicious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, mets-moi encore poisson dêh !"
+   ],
+   [
+    1,
+    "Ton bulletin-là, ta moyenne c'est combien ?"
+   ],
+   [
+    0,
+    "Sept sur vingt, Tantie."
+   ],
+   [
+    1,
+    "Ya fohi. Voilà tes sept arêtes, ma fille."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl holds out her plate with a sweet smile, her face three-quarters to the camera. The seller looks over her glasses and asks, suspicious. The girl answers in a small voice, her smile shrinking. The seller pushes the tiny dish of fish bones forward with one finger and says her line, her face clearly visible.",
+  "chute": "The girl stares at the fish bones, her lips trembling. The camera slowly pushes in to a close-up of the schoolgirl's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "moyenne",
+   "sept",
+   "arêtes"
+  ],
+  "gag_legende": "SON PAPA QUAND IL VA VOIR LE BULLETIN :",
+  "mecanisme": "logique absurde au pied de la lettre : le poisson servi au prorata de la moyenne"
+ },
+ {
+  "id": "B039-11",
+  "titre": "Le garba spécial",
+  "lieu": "garba stall in Biétry, Abidjan, a counter with a pot of attiéké and a tray of fried fish, a low wooden stool in front of the counter, late afternoon",
+  "persos": [
+   {
+    "nom": "the young customer",
+    "desc": "young man in his 20s, emerald-and-jade t-shirt, flat-top haircut, charming smile",
+    "pose": "standing on the right, leaning on the counter with one elbow, flirty"
+   },
+   {
+    "nom": "the garba seller",
+    "desc": "garba seller in her 40s, mustard-and-crimson boubou, a headscarf, holding ONE single ladle",
+    "pose": "standing behind the counter on the left, holding the ladle, unimpressed"
+   },
+   {
+    "nom": "the seller's husband",
+    "desc": "husband in his 50s, cream-and-apricot shirt, tired eyes, holding ONE single empty plate",
+    "pose": "sitting on the low stool in the foreground in the middle, the empty plate on his knees, sad"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, fais-moi garba comme tu fais pour ton mari dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Sans poisson, et tu dors dehors ce soir."
+   ],
+   [
+    2,
+    "Mon petit, demande plutôt comme pour les clients dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The young customer asks with a charming smile, leaning on the counter, his face three-quarters to the camera. The seller answers flatly, pointing her ladle at her husband on the stool. The husband, holding his empty plate, lifts his sad eyes toward the young man and says his line, his face clearly visible.",
+  "chute": "The young customer slowly straightens up while the seller crosses her arms. The camera slowly pushes in to a close-up of the seller's husband's resigned face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "mari",
+   "dehors",
+   "clients"
+  ],
+  "gag_legende": "LE MARI EN ATTENDANT SON GARBA :",
+  "mecanisme": "prise au pied de la lettre de la demande + confirmation par la victime cachée (le mari)"
+ },
+ {
+  "id": "B039-12",
+  "titre": "Le maquis self-service",
+  "lieu": "small modern maquis in Zone 4, Abidjan, a low wooden counter with a metal cash box on it and a sign reading SELF-SERVICE, a drinks fridge behind, evening",
+  "persos": [
+   {
+    "nom": "the clever customer",
+    "desc": "man in his 30s, olive-and-sand shirt, goatee, sly smile",
+    "pose": "standing on the right in front of the counter, one finger pointing at the sign"
+   },
+   {
+    "nom": "the maquis owner",
+    "desc": "maquis owner in his 50s, mustard-and-sunflower polo shirt, big belly, both hands on the metal cash box",
+    "pose": "standing in the foreground on the left behind the low counter, both hands on the cash box, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Patron, c'est écrit self-service ici. Je me sers moi-même ?"
+   ],
+   [
+    1,
+    "Oui mon vieux, tu te sers tout seul dêh."
+   ],
+   [
+    0,
+    "Ya fohi. Je commence par ta caisse-là."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer points at the sign and asks innocently, his face three-quarters to the camera. The owner answers proudly, both hands resting on the cash box. The customer lowers his eyes to the cash box and says his last line with a sly smile, his face clearly visible.",
+  "chute": "The owner's smile disappears and he hugs the cash box tight against his belly. The camera slowly pushes in to a close-up of the maquis owner's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "self-service",
+   "caisse"
+  ],
+  "gag_legende": "LE PATRON LE LENDEMAIN AVEC UN NOUVEAU PANNEAU :",
+  "mecanisme": "prise au pied de la lettre : « tu te sers tout seul » appliqué à la caisse"
+ },
+ {
+  "id": "B039-13",
+  "titre": "L'odeur du bureau",
+  "lieu": "open-space office in a glass tower in Zone 4, Abidjan, a desk with a computer and ONE single closed plastic bag of attiéké next to the keyboard, morning",
+  "persos": [
+   {
+    "nom": "the boss",
+    "desc": "boss in his 50s, cobalt-and-salmon suit, gold-rimmed glasses, frowning",
+    "pose": "standing in the foreground on the left, one hand on his hip, sniffing the air"
+   },
+   {
+    "nom": "the employee",
+    "desc": "employee in his 30s, coral-and-mint shirt, thin, a lanyard badge",
+    "pose": "sitting at the desk on the right, hands flat on the desk, innocent smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi ton bureau-là sent l'attiéké poisson comme ça ?!"
+   ],
+   [
+    1,
+    "Patron, avec votre salaire, je mange et je me parfume en même temps dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boss sniffs the air, frowns and asks angrily, his face three-quarters to the camera. The employee keeps his hands flat on the desk, smiles innocently and says his line proudly, his face clearly visible.",
+  "chute": "The boss freezes, his nose still in the air. The camera slowly pushes in to a close-up of the boss's embarrassed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "bureau",
+   "salaire",
+   "parfume"
+  ],
+  "gag_legende": "LES COLLÈGUES LE JOUR DE LA PAIE :",
+  "mecanisme": "logique absurde au pied de la lettre : l'attiéké sert aussi de parfum, la faute revient au salaire du patron"
+ },
+ {
+  "id": "B039-14",
+  "titre": "L'attiéké revisité",
+  "lieu": "chic restaurant in Zone 4, Abidjan, white tablecloth, a tiny portion of attiéké in a huge white plate with a sauce swirl, ONE single elegant menu card on the table, evening",
+  "persos": [
+   {
+    "nom": "the grandmother",
+    "desc": "grandmother in her 70s, teal-and-plum boubou, a headscarf, small round glasses",
+    "pose": "sitting at the table on the right, one finger on the menu card, suspicious"
+   },
+   {
+    "nom": "the waiter",
+    "desc": "waiter in his 20s, emerald-and-jade waiter jacket, very stiff posture, hands behind his back",
+    "pose": "standing in the foreground on the left, hands behind his back, snobbish"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, ton attiéké revisité-là a visité où pour coûter quinze mille ?"
+   ],
+   [
+    1,
+    "Mamie, notre chef l'a ramené de Paris."
+   ],
+   [
+    0,
+    "Ehh ! C'est moi je lui vends ça à Abatta, deux cents francs."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The grandmother taps the menu card and asks, frowning, her face three-quarters to the camera. The waiter answers with his nose in the air, hands behind his back. The grandmother looks over her glasses, points at the plate with one finger and says her last line, her face clearly visible.",
+  "chute": "The waiter's snobbish smile collapses, his eyes darting left and right. The camera slowly pushes in to a close-up of the waiter's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "revisité",
+   "Paris",
+   "deux cents"
+  ],
+  "gag_legende": "LE CHEF EN CUISINE EN ENTENDANT ÇA :",
+  "mecanisme": "prise au pied de la lettre (revisité = il a voyagé) puis révélation qui démasque le restaurant chic"
+ },
+ {
+  "id": "B039-15",
+  "titre": "Les heures supplémentaires",
+  "lieu": "busy maquis in Biétry, Abidjan, a bar counter with a stack of glasses and a basin of soapy water, string lights, late evening",
+  "persos": [
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, mustard-and-sunflower kaba, a headscarf, a handbag on her arm",
+    "pose": "standing on the right in front of the counter, hands on her hips"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, crimson-and-ruby shirt, sweaty forehead, a dish towel over his shoulder, holding ONE single wet glass",
+    "pose": "standing in the foreground in the middle behind the basin, holding the glass, nervous"
+   },
+   {
+    "nom": "the waiter",
+    "desc": "waiter in his 20s, cream-and-apricot polo shirt, holding ONE single tray against his chest",
+    "pose": "standing on the left behind the counter, holding the tray, casual"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu m'as dit tu fais heures supplémentaires dêh !"
+   ],
+   [
+    1,
+    "Mais bébé, je suis vraiment en train de travailler !"
+   ],
+   [
+    2,
+    "C'est vrai, Tantie. Il lave nos verres chaque soir pour payer son ardoise."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife, hands on her hips, accuses her husband, her face three-quarters to the camera. The husband lifts the wet glass a little and protests. The waiter nods calmly, points his chin at the basin and says his line, his face clearly visible.",
+  "chute": "The husband freezes with the glass in his hand while the wife slowly turns her head to him. The camera slowly pushes in to a close-up of the husband's ashamed face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "heures supplémentaires",
+   "verres",
+   "ardoise"
+  ],
+  "gag_legende": "LE MARI DEMAIN SOIR À LA MÊME HEURE :",
+  "mecanisme": "révélation par un tiers : le mensonge était vrai, mais en pire"
+ },
+ {
+  "id": "B039-16",
+  "titre": "Le congé maladie",
+  "lieu": "open-air maquis in Abatta, Abidjan, two plastic tables side by side, each with ONE single bottle and a glass, string lights, Friday afternoon",
+  "persos": [
+   {
+    "nom": "the boss",
+    "desc": "boss in his 50s, mustard-and-crimson suit, big belly, thick mustache",
+    "pose": "sitting at the table in the foreground on the left, turned toward his employee, one finger pointing at him"
+   },
+   {
+    "nom": "the employee",
+    "desc": "employee in his 30s, olive-and-sand tracksuit, a wristwatch, relaxed",
+    "pose": "sitting at the other table on the right, leaning back in his chair, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon gars, tu as dit tu es malade ! Pourquoi tu es au maquis-là ?!"
+   ],
+   [
+    1,
+    "Le docteur a dit beaucoup de liquide, patron. Et votre mission à Paris, c'est ici ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video, and nobody drinks. The boss points at his employee, furious, his face three-quarters to the camera. The employee calmly taps his bottle with one finger, then raises an eyebrow and says his line with a little smile, his face clearly visible.",
+  "chute": "The boss slowly lowers his finger and glances at his own bottle. The camera slowly pushes in to a close-up of the boss's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "malade",
+   "liquide",
+   "Paris"
+  ],
+  "gag_legende": "LES DEUX LUNDI MATIN AU BUREAU :",
+  "mecanisme": "prise au pied de la lettre de l'ordonnance + retournement qui démasque aussi le patron"
+ },
+ {
+  "id": "B039-17",
+  "titre": "Le chagrin d'amour",
+  "lieu": "garba stall in Biétry, Abidjan, a counter with a pot of attiéké and a tray of fried fish, a bench in front, early evening",
+  "persos": [
+   {
+    "nom": "the heartbroken girl",
+    "desc": "young woman in her 20s, teal-and-plum dress, long braids, teary eyes, ONE single plate of garba with two fish on her knees",
+    "pose": "sitting on the bench in the foreground on the right, one hand on the plate, sad"
+   },
+   {
+    "nom": "the garba seller",
+    "desc": "garba seller in her 40s, emerald-and-jade boubou, a headscarf, big earrings, holding ONE single ladle",
+    "pose": "standing behind the counter on the left, holding the ladle, motherly smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, mon chéri m'a laissée dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, ma fille. Garba va remplir le vide."
+   ],
+   [
+    0,
+    "Mais Tantie, il m'a laissée pour toi !"
+   ],
+   [
+    1,
+    "C'est pour ça je t'ai mis double poisson dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl, the plate on her knees, cries her line, her face three-quarters to the camera. The seller answers with a motherly smile, her ladle raised. The girl points at the seller with one finger, outraged. The seller shrugs, a little embarrassed, and says her last line, her face clearly visible.",
+  "chute": "The girl looks down at the two fish on her plate, then back up, speechless. The camera slowly pushes in to a close-up of the heartbroken girl's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "chéri",
+   "vide",
+   "double poisson"
+  ],
+  "gag_legende": "LE CHÉRI EN VENANT CHERCHER SON GARBA :",
+  "mecanisme": "aveu inattendu : la consolatrice est la rivale, et elle dédommage en poisson"
+ },
+ {
+  "id": "B039-18",
+  "titre": "La fourchette",
+  "lieu": "garba stall on a sidewalk in Zone 4, Abidjan, a wooden counter with a pot of attiéké and fried fish, a small plastic table with two plates of garba, noon",
+  "persos": [
+   {
+    "nom": "the show-off",
+    "desc": "man in his 30s, coral-and-mint suit, slicked hair, big fake smile, a wristwatch",
+    "pose": "sitting at the small table in the foreground on the right, one hand raised to call the seller"
+   },
+   {
+    "nom": "the garba seller",
+    "desc": "garba seller in her 50s, teal-and-plum kaba, a headscarf, holding ONE single ladle",
+    "pose": "standing behind the counter on the left, holding the ladle, squinting at him"
+   },
+   {
+    "nom": "the girlfriend",
+    "desc": "young woman in her 20s, cobalt-and-salmon dress, long straight hair, a small purse",
+    "pose": "sitting at the small table beside the show-off, hands on her purse, impressed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Madame, apportez-moi fourchette et couteau pour mon garba."
+   ],
+   [
+    1,
+    "Ehh Koffi ! Depuis quand tu as fourchette ? Paie d'abord ton ardoise de deux mille quinze dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The show-off raises one hand and orders in a posh voice, his face three-quarters to the camera, while his girlfriend smiles, impressed. The seller squints, recognizes him, points her ladle at him and says her line loudly, her face clearly visible.",
+  "chute": "The girlfriend slowly turns her head toward him and the show-off's fake smile freezes. The camera slowly pushes in to a close-up of the show-off's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "fourchette",
+   "ardoise",
+   "Koffi"
+  ],
+  "gag_legende": "LA COPINE EN RENTRANT SEULE À LA MAISON :",
+  "mecanisme": "démasquage du frimeur par un tiers + vieille dette révélée devant la copine"
+ },
+ {
+  "id": "B039-19",
+  "titre": "L'attiéké de ma femme",
+  "lieu": "living room of a small house in Abatta, Abidjan, a small table with ONE single plate of attiéké and fried fish, a plastic chair, evening",
+  "persos": [
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, mustard-and-sunflower t-shirt, round belly, satisfied smile",
+    "pose": "sitting at the table in the foreground on the left, both hands on his belly, delighted"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, emerald-and-jade dress, a headscarf",
+    "pose": "standing on the right, arms crossed, sweet smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chérie, ton attiéké-là est meilleur que celui de Tantie Awa dêh !"
+   ],
+   [
+    1,
+    "Mon chéri, c'est elle-même qui l'a préparé. Elle dit tu lui dois trois mois."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video, and nobody eats. The husband pats his belly and compliments his wife, delighted, his face three-quarters to the camera. The wife keeps her arms crossed and her sweet smile, and says her line slowly, her face clearly visible.",
+  "chute": "The husband's smile freezes, his hands still on his belly. The camera slowly pushes in to a close-up of the husband's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "attiéké",
+   "Tantie Awa",
+   "trois mois"
+  ],
+  "gag_legende": "TANTIE AWA DEMAIN DEVANT LA PORTE :",
+  "mecanisme": "aveu involontaire du mari + double révélation (elle ne cuisine pas, lui a une dette cachée)"
+ },
+ {
+  "id": "B039-20",
+  "titre": "La file du garba",
+  "lieu": "busy garba stall at lunchtime in Abatta, Abidjan, a counter with a big pot of attiéké and a tray of fried fish, a short queue of customers, noon",
+  "persos": [
+   {
+    "nom": "the waiting man",
+    "desc": "man in his 30s, teal-and-plum tracksuit, sweaty, holding ONE single empty plate in one hand",
+    "pose": "standing in the foreground on the right, holding his plate, one finger pointing at the boy"
+   },
+   {
+    "nom": "the garba seller",
+    "desc": "garba seller in her 40s, mustard-and-crimson kaba, a headscarf, holding ONE single ladle",
+    "pose": "standing behind the counter on the left, holding the ladle, proud"
+   },
+   {
+    "nom": "the little boy",
+    "desc": "boy around 7, cream-and-apricot school uniform, cheeky grin, holding ONE single full plate of garba",
+    "pose": "standing in front of the counter in the middle, holding his full plate, grinning"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, pourquoi ce petit-là passe devant tout le monde dêh ?!"
+   ],
+   [
+    1,
+    "Mon vieux, lui il a fait la queue neuf mois dans mon ventre."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The man points at the boy with his free hand and protests, his face three-quarters to the camera. The boy just grins, holding his full plate. The seller rests her free hand on her belly and says her line proudly, her face clearly visible.",
+  "chute": "The boy sticks out his tongue while the man stares at his empty plate. The camera slowly pushes in to a close-up of the waiting man's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "passe devant",
+   "queue",
+   "neuf mois"
+  ],
+  "gag_legende": "TOUTE LA FILE APRÈS CETTE RÉPONSE :",
+  "mecanisme": "logique absurde au pied de la lettre : la grossesse comptée comme temps d'attente"
+ }
+]

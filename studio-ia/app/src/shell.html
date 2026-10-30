@@ -82,8 +82,9 @@
       <label><input id="m-rejouer" type="checkbox" checked> Replay de chaque chute</label>
       <label><input id="m-metre" type="checkbox" checked> RIRE-O-MÈTRE + « ÉCRIS « DÊH » EN COMMENTAIRE »</label>
       <label><input id="m-gags" type="checkbox"> Gags 3D libres de droit entre les sketchs</label>
-      <div class="encart petit">Ajoute tes extraits 3D libres de droit (ex. Big Buck Bunny, Caminandes 3 — licence CC BY, crédit
-        affiché automatiquement) : <label class="bouton">ajouter des vidéos <input id="m-ajout-gag" type="file" accept="video/*" multiple hidden></label>
+      <div class="encart petit">Ajoute tes extraits 3D libres de droit DÉJÀ COUPÉS (3 à 4 s, pas le film entier : seules les 4 premières
+        secondes servent), par ex. tirés de Big Buck Bunny ou Caminandes 3 (licence CC BY, crédit affiché automatiquement) :
+        <label class="bouton">ajouter des extraits <input id="m-ajout-gag" type="file" accept="video/*" multiple hidden></label>
         <div id="m-gags-liste"></div></div>
       <label><input id="m-boucle" type="checkbox" checked> Fin qui reboucle sur le début</label>
       <label><input id="m-atteindre" type="checkbox" checked> Atteindre 62 s en allongeant gratuitement le RIRE-O-MÈTRE et le vote</label>
@@ -100,9 +101,10 @@
   <div class="colonnes">
     <div>
       <h3>Clé OpenRouter</h3>
-      <p class="petit">Ta clé reste dans ce navigateur : elle n'est envoyée qu'à openrouter.ai. Sans « se souvenir », elle est oubliée à la fermeture de l'onglet.</p>
+      <p class="petit">L'application n'envoie ta clé qu'à openrouter.ai. Sans « se souvenir », elle est oubliée à la fermeture de l'onglet.
+        Conseil : crée pour l'application une clé dédiée avec une limite de crédit (openrouter.ai → Keys → Credit limit).</p>
       <input id="r-cle" type="password" placeholder="sk-or-…" autocomplete="off">
-      <label><input id="r-souvenir" type="checkbox"> se souvenir de la clé sur cet ordinateur</label>
+      <label><input id="r-souvenir" type="checkbox"> se souvenir de la clé sur cet ordinateur <span class="petit attention">(un autre fichier HTML ouvert depuis ton disque pourrait la lire : seulement avec une clé limitée)</span></label>
       <div class="barre-actions"><button id="r-enregistrer-cle" class="principal">Enregistrer</button> <button id="r-tester">Tester / voir le solde</button> <button id="r-oublier">Oublier la clé</button></div>
       <h3>Sécurité des dépenses</h3>
       <label>Ne jamais descendre sous ce solde de clé <input id="r-plancher" type="number" min="0" step="0.1" class="court"> $</label>

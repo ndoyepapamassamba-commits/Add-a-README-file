@@ -1,0 +1,949 @@
+[
+ {
+  "id": "B040-01",
+  "titre": "Un garba pour ma chérie",
+  "lieu": "busy garba stall on a street corner in Yopougon, Abidjan, a wooden counter with a big basin of attiéké, fried tuna in a glass display box, a hanging light bulb, early evening",
+  "persos": [
+   {
+    "nom": "the young lover",
+    "desc": "young man in his early 20s, cobalt-and-cyan tracksuit, neat short haircut, big hopeful smile",
+    "pose": "standing in the foreground on the left, one hand resting on the counter, smiling"
+   },
+   {
+    "nom": "Tantie garba",
+    "desc": "garba seller woman in her 50s, magenta-and-chocolate kaba, head wrap, holding ONE single metal spoon",
+    "pose": "standing behind the counter in the middle, spoon in hand, calm"
+   },
+   {
+    "nom": "the girlfriend",
+    "desc": "young woman in her early 20s, mustard-and-rose dress, long braids, a small handbag on her shoulder",
+    "pose": "standing on the right, a little behind the young lover, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, fais-moi un garba en forme de cœur pour ma chérie dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Pour celle d'hier ou celle de lundi ?"
+   ],
+   [
+    2,
+    "Fais-en deux. Mon autre chéri arrive."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The young lover asks proudly, smiling, one hand on the counter. Tantie garba answers calmly and very seriously, raising her spoon slightly. The girlfriend, arms crossed, turns her head toward Tantie garba and says her line coolly, her face clearly visible.",
+  "chute": "The young lover's smile freezes, his eyes go wide and his mouth drops open. The camera slowly pushes in to a close-up of the young lover's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "cœur",
+   "lundi",
+   "autre chéri"
+  ],
+  "gag_legende": "LE GARS EN RECALCULANT SON PLANNING :",
+  "mecanisme": "relance assassine : la vendeuse trahit le dragueur, puis la copine achève en avouant son propre double jeu"
+ },
+ {
+  "id": "B040-02",
+  "titre": "La surprise dans l'attiéké",
+  "lieu": "open-air maquis in Cocody, Abidjan, a plastic table with a checkered tablecloth, one empty plate of attiéké with fish bones, string lights, night",
+  "persos": [
+   {
+    "nom": "the nervous fiancé",
+    "desc": "man in his late 20s, olive-and-apricot shirt, thin moustache, sweaty forehead",
+    "pose": "sitting at the table in the foreground on the left, both hands joined on the table, hopeful"
+   },
+   {
+    "nom": "the calm girlfriend",
+    "desc": "woman in her late 20s, fuchsia-and-lime wrap dress, big hoop earrings, a small handbag on her lap",
+    "pose": "sitting at the table on the right, relaxed, smiling"
+   },
+   {
+    "nom": "the waiter with the bill",
+    "desc": "waiter in his 30s, jade-and-amber polo shirt, shaved head, holding ONE single small bill folder",
+    "pose": "standing behind the table in the middle, holding the bill folder"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Bébé, tu as trouvé la bague dans ton attiéké-là ?"
+   ],
+   [
+    1,
+    "Oui chéri. Je l'ai donnée pour payer l'addition dêh."
+   ],
+   [
+    2,
+    "Il manque encore deux mille, Tonton."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The nervous fiancé asks with a trembling, hopeful smile, leaning slightly forward. The calm girlfriend answers sweetly with a small shrug. The waiter lifts the bill folder a little and says his line flatly, his face clearly visible.",
+  "chute": "The nervous fiancé's smile collapses and his eyes fill with horror. The camera slowly pushes in to a close-up of the nervous fiancé's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "bague",
+   "addition",
+   "deux mille"
+  ],
+  "gag_legende": "LE FIANCÉ EN RENTRANT À PIED :",
+  "mecanisme": "relance assassine : la bague a payé le repas, puis le serveur achève en révélant qu'elle ne valait presque rien"
+ },
+ {
+  "id": "B040-03",
+  "titre": "Le meilleur alloco d'Abobo",
+  "lieu": "alloco stand on a street in Abobo, Abidjan, a big frying pan of golden plantain slices on a charcoal stove, a small wooden bench, a pile of paper wrappers, late afternoon",
+  "persos": [
+   {
+    "nom": "the proud husband",
+    "desc": "man in his 40s, crimson-and-amber boubou, round belly, holding ONE single paper wrapper of alloco",
+    "pose": "standing in the foreground on the left, holding the wrapper, delighted"
+   },
+   {
+    "nom": "the alloco seller",
+    "desc": "alloco seller woman in her 50s, olive-and-sky-blue kaba, head wrap, holding ONE single slotted spoon",
+    "pose": "standing behind the frying pan in the middle"
+   },
+   {
+    "nom": "the teenage helper",
+    "desc": "girl around 16, ruby-and-lime t-shirt, short braids, mischievous eyes",
+    "pose": "sitting on the wooden bench on the right, hands on her knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ton alloco-là est meilleur que celui de ma femme dêh !"
+   ],
+   [
+    1,
+    "C'est le même, mon vieux. Elle achète ici chaque soir."
+   ],
+   [
+    2,
+    "Mais elle demande moins bon dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The proud husband lifts his wrapper happily as he speaks. The alloco seller answers casually with a shrug, her spoon still in her hand. The teenage helper leans forward on the bench and says her line with a mischievous smile, her face clearly visible.",
+  "chute": "The proud husband slowly looks down at his alloco, his smile dying. The camera slowly pushes in to a close-up of the proud husband's betrayed face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "alloco",
+   "ma femme",
+   "moins bon"
+  ],
+  "gag_legende": "MADAME EN SERVANT LE DÎNER CE SOIR :",
+  "mecanisme": "relance assassine : la cuisine de l'épouse est achetée chez la vendeuse, puis l'aide achève avec le sabotage volontaire"
+ },
+ {
+  "id": "B040-04",
+  "titre": "Le goût bizarre de l'alloco",
+  "lieu": "street food corner in Yopougon, Abidjan, a black frying pan of very dark oil on a charcoal stove, a tray of fried fish beside the fried plantain, a plastic stool, evening",
+  "persos": [
+   {
+    "nom": "the suspicious customer",
+    "desc": "man in his 30s, jade-and-amber tracksuit, short beard, holding ONE single paper wrapper of alloco",
+    "pose": "standing in the foreground on the left, frowning at his alloco"
+   },
+   {
+    "nom": "the street cook",
+    "desc": "cook woman in her 50s, mustard-and-rose kaba, head wrap, holding ONE single slotted spoon",
+    "pose": "standing behind the stove in the middle, proud"
+   },
+   {
+    "nom": "the cook's young helper",
+    "desc": "boy around 14, magenta-and-chocolate t-shirt, cap, very proud expression",
+    "pose": "sitting on the plastic stool on the right, hands on his knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, pourquoi ton alloco-là a goût de poisson dêh ?"
+   ],
+   [
+    1,
+    "C'est la même huile, mon fils. Elle a l'expérience."
+   ],
+   [
+    2,
+    "Elle a vu la CAN, Tonton."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The suspicious customer asks, frowning, holding his wrapper away from his face. The street cook answers proudly, pointing her spoon at the dark oil. The cook's young helper nods proudly and says his line, his face clearly visible.",
+  "chute": "The suspicious customer stares at the black oil, then at his alloco, disgusted. The camera slowly pushes in to a close-up of the suspicious customer's disgusted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "poisson",
+   "huile",
+   "CAN"
+  ],
+  "gag_legende": "MON VENTRE APRÈS CETTE RÉVÉLATION :",
+  "mecanisme": "relance assassine : la vendeuse avoue la vieille huile, puis l'aide achève en la datant"
+ },
+ {
+  "id": "B040-05",
+  "titre": "Le petit vendeur d'alloco",
+  "lieu": "alloco stand in front of a primary school in Abobo, Abidjan, a frying pan on a charcoal stove, a small table with paper wrappers and a few coins, the school wall behind, midday",
+  "persos": [
+   {
+    "nom": "the angry teacher",
+    "desc": "male teacher in his 40s, cobalt-and-cyan shirt, glasses, a pen clipped to his pocket",
+    "pose": "standing in the foreground on the left, pointing his finger at the boy"
+   },
+   {
+    "nom": "the little seller",
+    "desc": "boy around 10, crimson-and-amber t-shirt, big round eyes, holding ONE single paper wrapper of alloco",
+    "pose": "standing behind the small table in the middle, very calm"
+   },
+   {
+    "nom": "the boy's mother",
+    "desc": "mother in her 30s, fuchsia-and-lime kaba, head wrap, holding ONE single slotted spoon",
+    "pose": "sitting behind the frying pan on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, tu vends alloco au lieu de réviser tes leçons ?!"
+   ],
+   [
+    1,
+    "Je révise le calcul, maître. Vous me devez deux mille dêh."
+   ],
+   [
+    2,
+    "Plus trois mille du mois passé."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The angry teacher scolds the boy, pointing his finger. The little seller answers calmly, raising the alloco wrapper like a receipt. The boy's mother lifts her spoon toward the teacher and says her line firmly, her face clearly visible.",
+  "chute": "The angry teacher slowly lowers his finger, mouth open, completely trapped. The camera slowly pushes in to a close-up of the angry teacher's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "calcul",
+   "deux mille",
+   "trois mille"
+  ],
+  "gag_legende": "LE MAÎTRE DEMAIN À LA RÉCRÉ :",
+  "mecanisme": "relance assassine : l'élève accusé retourne la leçon en dette, puis la mère achève avec l'ardoise du mois passé"
+ },
+ {
+  "id": "B040-06",
+  "titre": "Papa invite au maquis",
+  "lieu": "open-air maquis in Yopougon, Abidjan, a plastic table with three plates of braised chicken and alloco, plastic chairs, string lights, evening",
+  "persos": [
+   {
+    "nom": "the little boy",
+    "desc": "boy around 8, olive-and-apricot t-shirt, chubby cheeks, holding ONE single chicken drumstick",
+    "pose": "sitting at the table in the foreground on the left"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, jade-and-amber shirt, thin moustache, big satisfied smile",
+    "pose": "sitting at the table in the middle, both hands resting on his belly"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, cobalt-and-cyan kaba, head wrap, gold earrings",
+    "pose": "sitting at the table on the right, arms crossed, amused"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, tu as dit que manger au maquis, c'est gaspiller l'argent dêh !"
+   ],
+   [
+    1,
+    "Ce soir, c'est pas mon argent, mon fils."
+   ],
+   [
+    2,
+    "C'est ta tirelire-là, mon bébé."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The little boy asks, surprised, holding his drumstick without eating. The father answers proudly, patting his belly with one hand. The mother tilts her head toward the boy and says her line sweetly, her face clearly visible.",
+  "chute": "The little boy freezes, staring at his drumstick, his lips trembling. The camera slowly pushes in to a close-up of the little boy's betrayed face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "maquis",
+   "argent",
+   "tirelire"
+  ],
+  "gag_legende": "LE PETIT EN COMPTANT SES PIÈCES CE SOIR :",
+  "mecanisme": "relance assassine : le père se défend, puis la mère achève en révélant que l'enfant paie lui-même le repas"
+ },
+ {
+  "id": "B040-07",
+  "titre": "Les deux poissons de papa",
+  "lieu": "garba stall in Abobo, Abidjan, a wooden counter with a basin of attiéké and fried tuna in a glass display box, plastic takeaway bags, midday",
+  "persos": [
+   {
+    "nom": "the curious girl",
+    "desc": "girl around 9, olive-and-sky-blue dress, two puffs of hair",
+    "pose": "standing at the counter on the left, looking up at her mother"
+   },
+   {
+    "nom": "the trusting mother",
+    "desc": "mother in her 30s, crimson-and-amber kaba, gold earrings, holding ONE single plastic bag",
+    "pose": "standing in the foreground in the middle, calm and proud"
+   },
+   {
+    "nom": "Tantie garba",
+    "desc": "garba seller woman in her 40s, jade-and-amber kaba, head wrap, bright lipstick, holding ONE single metal spoon",
+    "pose": "standing behind the counter on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, pourquoi Tantie garba donne toujours deux poissons à papa ?"
+   ],
+   [
+    1,
+    "Elle respecte les hommes mariés, ma fille."
+   ],
+   [
+    2,
+    "Ehh ! Il est marié, lui ?!"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The curious girl asks innocently, pointing at the fried tuna. The trusting mother answers calmly with a proud little smile. Tantie garba drops her jaw, puts her free hand on her chest and says her line loudly, her face clearly visible.",
+  "chute": "The trusting mother's smile freezes, then her eyes slowly narrow with anger. The camera slowly pushes in to a close-up of the trusting mother's furious face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "deux poissons",
+   "mariés",
+   "marié"
+  ],
+  "gag_legende": "PAPA EN SENTANT LE DANGER ARRIVER :",
+  "mecanisme": "révélation involontaire par un tiers : la vendeuse découvre en direct qu'elle était draguée par un homme marié"
+ },
+ {
+  "id": "B040-08",
+  "titre": "Le garba pour toute la famille",
+  "lieu": "garba stall in Yopougon, Abidjan, a wooden counter, a big basin of attiéké, a glass box of fried fish, a stack of takeaway bags, late afternoon",
+  "persos": [
+   {
+    "nom": "the honest boy",
+    "desc": "boy around 9, cobalt-and-cyan t-shirt, short hair, very curious eyes",
+    "pose": "standing on the left, next to his father"
+   },
+   {
+    "nom": "the scheming father",
+    "desc": "father in his 40s, magenta-and-chocolate boubou, round belly, holding ONE single coin purse",
+    "pose": "standing at the counter in the foreground in the middle, confident smile"
+   },
+   {
+    "nom": "Tantie garba",
+    "desc": "garba seller woman in her 50s, ruby-and-lime kaba, head wrap, glasses, holding ONE single metal spoon",
+    "pose": "standing behind the counter on the right, suspicious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, pourquoi tu dis à Tantie qu'on est dix à la maison ?"
+   ],
+   [
+    1,
+    "Pour qu'elle ajoute un peu, mon fils. C'est la stratégie."
+   ],
+   [
+    2,
+    "Hier vous étiez quinze dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The honest boy asks loudly and innocently, looking up at his father. The scheming father answers in a whisper, tapping his temple with one finger. Tantie garba leans over the counter, eyebrows raised, and says her line, her face clearly visible.",
+  "chute": "The scheming father's smile freezes and his eyes dart sideways. The camera slowly pushes in to a close-up of the scheming father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "dix",
+   "ajoute",
+   "quinze"
+  ],
+  "gag_legende": "PAPA EN COMPTANT SES ENFANTS IMAGINAIRES :",
+  "mecanisme": "relance assassine : l'enfant dénonce la ruse, puis la vendeuse achève avec la surenchère de la veille"
+ },
+ {
+  "id": "B040-09",
+  "titre": "Le garba du BAC",
+  "lieu": "garba stall near the university in Cocody, Abidjan, a wooden counter with a basin of attiéké and fried fish in a glass box, a wooden bench, morning",
+  "persos": [
+   {
+    "nom": "the student",
+    "desc": "young man around 18, fuchsia-and-lime hoodie, glasses, holding ONE single notebook",
+    "pose": "standing in the foreground on the left, hopeful smile"
+   },
+   {
+    "nom": "Tantie garba",
+    "desc": "garba seller woman in her 60s, mustard-and-rose boubou, head wrap, holding ONE single metal spoon",
+    "pose": "standing behind the counter in the middle, amused"
+   },
+   {
+    "nom": "the seller's helper",
+    "desc": "young woman in her 20s, olive-and-sky-blue t-shirt, ponytail",
+    "pose": "sitting on the wooden bench on the right, hands on her knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, si j'ai mon BAC, tu me donnes garba gratuit dêh ?"
+   ],
+   [
+    1,
+    "Ton papa-là a dit même chose en quatre-vingt-dix-huit."
+   ],
+   [
+    2,
+    "Il le passe encore cette année."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The student asks with a big hopeful smile, holding his notebook against his chest. Tantie garba answers with an amused smile, pointing her spoon at him. The seller's helper shakes her head slowly and says her line, her face clearly visible.",
+  "chute": "The student's smile disappears and his notebook slowly drops to his side. The camera slowly pushes in to a close-up of the student's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "BAC",
+   "ton papa",
+   "cette année"
+  ],
+  "gag_legende": "PAPA EN RÉVISANT AVEC SON FILS :",
+  "mecanisme": "relance assassine : la vendeuse ressort la même promesse du père, puis l'aide achève : il ne l'a toujours pas eu"
+ },
+ {
+  "id": "B040-10",
+  "titre": "Le petit riche de Cocody",
+  "lieu": "terrace of a luxury villa in Cocody, Abidjan, a white garden table, palm trees, a swimming pool in the background, afternoon",
+  "persos": [
+   {
+    "nom": "the rich little boy",
+    "desc": "boy around 10, mustard-and-rose polo shirt, neat haircut, holding ONE single tablet",
+    "pose": "sitting at the garden table on the left"
+   },
+   {
+    "nom": "the snobbish father",
+    "desc": "father in his 50s, olive-and-apricot kaftan, gold watch, big belly, chin raised",
+    "pose": "sitting at the garden table in the foreground in the middle, very proud"
+   },
+   {
+    "nom": "the housemaid",
+    "desc": "housemaid in her 30s, magenta-and-chocolate dress, short hair, holding ONE single plastic bag of takeaway food",
+    "pose": "standing on the right, beside the table"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, c'est quoi garba-là que mes copains mangent à l'école ?"
+   ],
+   [
+    1,
+    "La nourriture des pauvres, mon fils. Pas pour nous."
+   ],
+   [
+    2,
+    "Patron, vos trois garbas sont arrivés."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The rich little boy asks curiously, holding his tablet. The snobbish father answers with disdain, chin up, waving one hand. The housemaid lifts the plastic bag a little and says her line innocently, her face clearly visible.",
+  "chute": "The snobbish father freezes, eyes wide, his hand stuck in the air. The camera slowly pushes in to a close-up of the snobbish father's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "garba",
+   "pauvres",
+   "trois garbas"
+  ],
+  "gag_legende": "PAPA EN CHERCHANT UNE EXCUSE :",
+  "mecanisme": "hypocrisie démasquée par un tiers : la bonne livre la commande secrète du snob juste après son discours"
+ },
+ {
+  "id": "B040-11",
+  "titre": "Papi partage le poulet",
+  "lieu": "maquis in Yopougon, Abidjan, a plastic table with a big plate of braised chicken in front of the grandfather and a small plate with only chicken bones in front of the grandmother, plastic chairs, evening",
+  "persos": [
+   {
+    "nom": "the grandson",
+    "desc": "boy around 8, fuchsia-and-lime t-shirt, big curious eyes",
+    "pose": "sitting at the table on the left"
+   },
+   {
+    "nom": "Papi",
+    "desc": "grandfather in his 70s, olive-and-sky-blue boubou, white beard, holding ONE single chicken leg",
+    "pose": "sitting at the table in the middle, behind the big plate"
+   },
+   {
+    "nom": "Mamie",
+    "desc": "grandmother in her 70s, olive-and-apricot kaba, head wrap, glasses",
+    "pose": "sitting at the table in the foreground on the right, hands folded in front of the plate of bones"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papi, pourquoi tu donnes toujours les os à Mamie ?"
+   ],
+   [
+    1,
+    "Mon petit, ta mamie-là adore les os dêh."
+   ],
+   [
+    2,
+    "Ça fait cinquante ans que j'adore."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandson asks innocently, pointing at the plate of bones. Papi answers sweetly, raising the chicken leg like a gift. Mamie turns her head slowly toward the camera and says her line in a flat, tired voice, her face clearly visible.",
+  "chute": "Mamie holds a long deadpan stare while Papi keeps smiling happily. The camera slowly pushes in to a close-up of Mamie's deadpan, exhausted face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "os",
+   "adore",
+   "cinquante ans"
+  ],
+  "gag_legende": "MAMIE DEPUIS LE JOUR DU MARIAGE :",
+  "mecanisme": "relance assassine : le grand-père justifie l'injustice, puis la grand-mère achève avec cinquante ans d'ironie"
+ },
+ {
+  "id": "B040-12",
+  "titre": "Madame est jalouse du garba",
+  "lieu": "garba stall in Abobo, Abidjan, a wooden counter with a basin of attiéké and fried tuna in a glass box, a wooden bench in front of the counter, evening",
+  "persos": [
+   {
+    "nom": "the jealous wife",
+    "desc": "wife in her 30s, ruby-and-lime dress, long braids",
+    "pose": "standing on the left, hands on her hips"
+   },
+   {
+    "nom": "the garba-loving husband",
+    "desc": "husband in his 40s, crimson-and-amber tracksuit, round belly, holding ONE single plate of garba",
+    "pose": "sitting on the bench in the foreground in the middle, the plate on his knees"
+   },
+   {
+    "nom": "Tantie garba",
+    "desc": "garba seller woman in her 50s, cobalt-and-cyan boubou, head wrap, holding ONE single metal spoon",
+    "pose": "standing behind the counter on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, tu aimes ce garba-là plus que moi dêh !"
+   ],
+   [
+    1,
+    "Bébé, lui au moins, il demande pas l'argent."
+   ],
+   [
+    2,
+    "Moi je demande, Tonton. Trois mille."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The jealous wife accuses him, hands on her hips. The garba-loving husband answers smugly, holding his plate without eating. Tantie garba points her spoon at him and says her line coldly, her face clearly visible.",
+  "chute": "The husband's smug smile collapses while his wife raises her eyebrows. The camera slowly pushes in to a close-up of the garba-loving husband's cornered face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "garba",
+   "l'argent",
+   "trois mille"
+  ],
+  "gag_legende": "TONTON EN CHERCHANT LA SORTIE :",
+  "mecanisme": "relance assassine : le mari pique sa femme, puis la vendeuse l'achève avec sa dette"
+ },
+ {
+  "id": "B040-13",
+  "titre": "Une bougie au garba",
+  "lieu": "garba stall in Yopougon, Abidjan, a small wooden table in front of the stall with two plates of garba and ONE single lit candle, a hanging light bulb, night",
+  "persos": [
+   {
+    "nom": "the surprised wife",
+    "desc": "wife in her 30s, jade-and-amber wrap dress, short curly hair",
+    "pose": "sitting at the small table on the left, looking at the candle"
+   },
+   {
+    "nom": "the romantic husband",
+    "desc": "husband in his 30s, mustard-and-rose shirt, neat beard, proud smile",
+    "pose": "sitting at the small table in the foreground on the right, hands joined on the table"
+   },
+   {
+    "nom": "Tantie garba",
+    "desc": "garba seller woman in her 60s, fuchsia-and-lime boubou, glasses, holding ONE single metal spoon",
+    "pose": "standing behind the counter in the middle"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, pourquoi Tantie garba a mis une bougie sur notre table ?"
+   ],
+   [
+    1,
+    "Bébé, c'est ici notre premier rendez-vous, il y a dix ans !"
+   ],
+   [
+    2,
+    "Et c'est elle qui avait payé."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The surprised wife asks, pointing at the candle. The romantic husband answers tenderly, very proud of himself, hands joined. Tantie garba nods slowly, spoon raised, and says her line, her face clearly visible.",
+  "chute": "The romantic husband's tender smile freezes while his wife turns her head to stare at him. The camera slowly pushes in to a close-up of the romantic husband's exposed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "bougie",
+   "rendez-vous",
+   "payé"
+  ],
+  "gag_legende": "MADAME EN RECALCULANT SES DIX ANS :",
+  "mecanisme": "relance assassine : le mari joue le romantique, puis la vendeuse révèle qu'il était déjà radin le premier soir"
+ },
+ {
+  "id": "B040-14",
+  "titre": "Le bissap du village",
+  "lieu": "roadside juice stand in Abobo, Abidjan, a small table with a row of plastic bottles of red bissap juice, a big plastic basin of water, a cooler box, afternoon",
+  "persos": [
+   {
+    "nom": "the doubtful customer",
+    "desc": "man in his 30s, olive-and-sky-blue polo shirt, short hair, holding ONE single bottle of red juice",
+    "pose": "standing in the foreground on the left, inspecting the bottle"
+   },
+   {
+    "nom": "the juice seller",
+    "desc": "juice seller woman in her 40s, magenta-and-chocolate kaftan, head wrap, big confident smile",
+    "pose": "standing behind the small table in the middle"
+   },
+   {
+    "nom": "the seller's little son",
+    "desc": "boy around 7, jade-and-amber t-shirt, holding ONE single empty sachet",
+    "pose": "standing on the right, next to the basin"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, ton bissap-là est naturel vraiment ?"
+   ],
+   [
+    1,
+    "Cent pour cent naturel, mon frère ! Fleurs du village !"
+   ],
+   [
+    2,
+    "Maman, la poudre rouge est finie dêh."
+   ],
+   [
+    1,
+    "Ya fohi. Prends la poudre jaune."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The doubtful customer asks, squinting at the bottle. The juice seller answers proudly, one hand on her chest. The seller's little son raises the empty sachet and says his line innocently. The juice seller, without any shame, turns her head to the boy and says her last line, her face clearly visible.",
+  "chute": "The doubtful customer slowly lowers the bottle, disgusted. The camera slowly pushes in to a close-up of the doubtful customer's disgusted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "naturel",
+   "poudre rouge",
+   "poudre jaune"
+  ],
+  "gag_legende": "MON VENTRE APRÈS TROIS BOUTEILLES :",
+  "mecanisme": "trahison par l'enfant, puis relance assassine de la vendeuse qui récidive sans aucune honte"
+ },
+ {
+  "id": "B040-15",
+  "titre": "Le garba de Cocody",
+  "lieu": "trendy street food kiosk in Cocody, Abidjan, a clean white counter with small square bowls of attiéké and fish, a chalkboard menu, a cash register, fairy lights, evening",
+  "persos": [
+   {
+    "nom": "the shocked customer",
+    "desc": "man in his 30s, ruby-and-lime tracksuit, short dreadlocks, holding ONE single small square bowl",
+    "pose": "standing in the foreground on the left, staring at the tiny bowl"
+   },
+   {
+    "nom": "the chic seller",
+    "desc": "seller woman in her 40s, crimson-and-amber kaftan, big round glasses, holding ONE single wooden spoon",
+    "pose": "standing behind the counter in the middle, elegant"
+   },
+   {
+    "nom": "the young cashier",
+    "desc": "young man in his 20s, fuchsia-and-lime shirt, neat haircut, smug smile",
+    "pose": "standing behind the cash register on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, à Abobo garba c'est cinq cents ! Pourquoi trois mille ici ?!"
+   ],
+   [
+    1,
+    "Mon fils, ici c'est Cocody. C'est attiéké bowl dêh."
+   ],
+   [
+    2,
+    "L'anglais-là coûte deux mille cinq."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The shocked customer protests, lifting the tiny bowl. The chic seller answers elegantly with a polite smile, raising her spoon. The young cashier taps the cash register once and says his line with a smug smile, his face clearly visible.",
+  "chute": "The shocked customer looks at the tiny bowl, then into the camera, speechless. The camera slowly pushes in to a close-up of the shocked customer's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "cinq cents",
+   "attiéké bowl",
+   "anglais"
+  ],
+  "gag_legende": "LE GARBA D'ABOBO EN APPRENANT ÇA :",
+  "mecanisme": "relance assassine : la vendeuse rebaptise le garba en anglais, puis le caissier achève avec le prix de l'anglais"
+ },
+ {
+  "id": "B040-16",
+  "titre": "La leçon de la maîtresse",
+  "lieu": "attiéké and braised fish maquis in Yopougon, Abidjan, a plastic table with plates of attiéké, one braised fish on the girl's plate, and ONE single plate with three fish skeletons in front of the father, evening",
+  "persos": [
+   {
+    "nom": "the clever girl",
+    "desc": "girl around 9, olive-and-apricot dress, braids, holding ONE single fork",
+    "pose": "sitting at the table on the left"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, mustard-and-rose wrap dress, head wrap, gold earrings",
+    "pose": "sitting at the table on the right, arms crossed"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, cobalt-and-cyan polo shirt, round belly, satisfied smile",
+    "pose": "sitting at the table in the foreground in the middle, behind the plate of fish skeletons, hands on his belly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, la maîtresse dit que poisson rend intelligent dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Donne ton poisson à ton papa."
+   ],
+   [
+    0,
+    "Mais papa a déjà mangé trois dêh !"
+   ],
+   [
+    1,
+    "Tu vois ? Ça marche pas."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The clever girl announces it proudly, raising her fork. The mother answers at once, nodding toward the father. The clever girl points her fork at the fish skeletons and protests. The mother shrugs and says her last line calmly, her face clearly visible, while the father stays silent and keeps smiling.",
+  "chute": "The father's satisfied smile slowly freezes as he understands. The camera slowly pushes in to a close-up of the father's offended face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "intelligent",
+   "trois",
+   "marche pas"
+  ],
+  "gag_legende": "PAPA EN COMMANDANT UN QUATRIÈME POISSON :",
+  "mecanisme": "relance assassine : la mère vise le père, la fille confirme sans le vouloir, puis la mère achève"
+ },
+ {
+  "id": "B040-17",
+  "titre": "Les cinq fruits par jour",
+  "lieu": "alloco stand in Abobo, Abidjan, a frying pan on a charcoal stove, a small wooden table, a wooden bench, late afternoon",
+  "persos": [
+   {
+    "nom": "the hungry boy",
+    "desc": "boy around 9, mustard-and-rose t-shirt, skinny arms, big hopeful eyes",
+    "pose": "standing in the foreground on the left"
+   },
+   {
+    "nom": "the resourceful father",
+    "desc": "father in his 40s, olive-and-sky-blue shirt, small moustache, holding ONE single ripe plantain",
+    "pose": "standing in the middle, next to the frying pan"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, olive-and-apricot boubou, head wrap",
+    "pose": "sitting on the wooden bench on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, à la télé ils disent cinq fruits par jour dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Voilà une banane d'alloco. Coupe en cinq."
+   ],
+   [
+    2,
+    "Et partage avec tes frères."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The hungry boy says it with excitement. The resourceful father proudly holds the plantain out toward the boy. The mother nods very seriously and says her line, her face clearly visible.",
+  "chute": "The hungry boy stares at the single plantain, his hope vanishing. The camera slowly pushes in to a close-up of the hungry boy's crushed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "cinq fruits",
+   "banane",
+   "frères"
+  ],
+  "gag_legende": "LE PETIT EN COMPTANT SES RONDELLES :",
+  "mecanisme": "relance assassine : le père réduit la règle à une seule banane, puis la mère achève avec le partage"
+ },
+ {
+  "id": "B040-18",
+  "titre": "La grande tournée au maquis",
+  "lieu": "maquis in Cocody, Abidjan, a front plastic table covered with plates of braised chicken and fish, a second plastic table right behind it, plastic chairs, string lights, night",
+  "persos": [
+   {
+    "nom": "the generous husband",
+    "desc": "man in his 40s, ruby-and-lime shirt, gold chain, big proud smile",
+    "pose": "sitting at the front table in the foreground on the left, arms wide open"
+   },
+   {
+    "nom": "his friend",
+    "desc": "man in his 40s, olive-and-apricot polo shirt, shaved head, holding ONE single chicken leg",
+    "pose": "sitting at the front table on the right"
+   },
+   {
+    "nom": "the wife at the back table",
+    "desc": "wife in her 40s, olive-and-sky-blue wrap dress, head wrap, arms crossed",
+    "pose": "sitting at the back table in the middle, right behind the husband, facing the camera"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Les gars, ce soir c'est moi qui paie tout dêh !"
+   ],
+   [
+    1,
+    "Ehh ! Tu as eu ton salaire ?"
+   ],
+   [
+    0,
+    "Non. Ma femme a eu le sien."
+   ],
+   [
+    2,
+    "Et elle est assise derrière toi."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The generous husband announces it loudly, arms wide open. His friend asks, impressed, raising the chicken leg. The generous husband answers with a wink, proud of himself. The wife at the back table, arms crossed, says her line coldly, her face clearly visible.",
+  "chute": "The generous husband's arms slowly drop and his smile freezes, without turning around. The camera slowly pushes in to a close-up of the generous husband's terrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "paie",
+   "salaire",
+   "derrière toi"
+  ],
+  "gag_legende": "LE SALAIRE DE MADAME EN DIRECT :",
+  "mecanisme": "relance assassine : le mari avoue qu'il dépense le salaire de sa femme, qui l'achève depuis la table de derrière"
+ },
+ {
+  "id": "B040-19",
+  "titre": "Le garba secret de Mamie",
+  "lieu": "courtyard of a family house in Abobo, Abidjan, a plastic chair, a small low table, a garba stall visible across the street, late afternoon",
+  "persos": [
+   {
+    "nom": "Mamie",
+    "desc": "grandmother in her 70s, ruby-and-lime boubou, glasses, holding ONE single banknote",
+    "pose": "sitting on the plastic chair on the left, leaning forward"
+   },
+   {
+    "nom": "the cheeky grandson",
+    "desc": "boy around 10, crimson-and-amber football jersey, cap, cheeky grin",
+    "pose": "standing in the foreground on the right, hands behind his back"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, va m'acheter garba. Faut pas dire à ta maman !"
+   ],
+   [
+    1,
+    "Ya fohi, Mamie. Mais mon silence coûte cinq cents."
+   ],
+   [
+    0,
+    "Ehh ! Tu es vraiment ton papa."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. Mamie whispers, holding out the banknote and glancing sideways. The cheeky grandson answers with a big business grin, hands behind his back. Mamie slaps her knee with her free hand and says her line, half shocked, half proud, her face clearly visible.",
+  "chute": "The cheeky grandson raises his eyebrows proudly and grins even wider. The camera slowly pushes in to a close-up of the cheeky grandson's proud face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "garba",
+   "silence",
+   "ton papa"
+  ],
+  "gag_legende": "PAPA EN ENTENDANT SON NOM :",
+  "mecanisme": "relance assassine : chantage de l'enfant, puis la grand-mère achève en visant le père absent"
+ },
+ {
+  "id": "B040-20",
+  "titre": "L'invitation du patron",
+  "lieu": "maquis in Cocody, Abidjan, a long plastic table with many empty plates and juice bottles, plastic chairs, string lights, night",
+  "persos": [
+   {
+    "nom": "the happy employee",
+    "desc": "man in his 30s, magenta-and-chocolate shirt, ID badge on a lanyard, big grateful smile",
+    "pose": "sitting at the table in the foreground on the left"
+   },
+   {
+    "nom": "the stingy boss",
+    "desc": "boss in his 50s, jade-and-amber suit, gold watch, big belly",
+    "pose": "sitting at the head of the table in the middle, hands joined on his belly"
+   },
+   {
+    "nom": "the waitress with the bill",
+    "desc": "waitress in her 20s, crimson-and-amber polo shirt, ponytail, holding ONE single bill folder",
+    "pose": "standing on the right, next to the employee"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Patron, vous invitez toute l'équipe au maquis ? C'est quelle fête dêh ?"
+   ],
+   [
+    1,
+    "Ta promotion, mon petit. Tu es responsable des additions."
+   ],
+   [
+    2,
+    "Félicitations, Tonton. Soixante mille."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The happy employee asks, delighted, both hands on the table. The stingy boss answers solemnly, nodding like a king. The waitress holds the bill folder out toward the employee and says her line with a big smile, her face clearly visible.",
+  "chute": "The happy employee's smile freezes as he stares at the bill folder. The camera slowly pushes in to a close-up of the happy employee's ruined face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "promotion",
+   "additions",
+   "soixante mille"
+  ],
+  "gag_legende": "LE NOUVEAU RESPONSABLE EN OUVRANT SON PORTEFEUILLE :",
+  "mecanisme": "relance assassine : la promotion est un piège, puis la serveuse achève avec la facture"
+ }
+]

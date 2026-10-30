@@ -1,0 +1,801 @@
+[
+ {
+  "id": "B059-01",
+  "titre": "Le monsieur du marché",
+  "lieu": "courtyard of a family house in Abatta, Abidjan, cement floor, a plastic chair, an empty clothesline, a market basket on the ground, late afternoon",
+  "persos": [
+   {
+    "nom": "the suspicious mother",
+    "desc": "mother in her 50s, lime-and-navy kaba, a headscarf, round cheeks, hands on her hips",
+    "pose": "standing on the left, hands on her hips, frowning at the man"
+   },
+   {
+    "nom": "the influencer son",
+    "desc": "young man around 22, magenta-and-tangerine hoodie, thin moustache, holding ONE single smartphone",
+    "pose": "standing in the foreground in the middle, holding his smartphone up, proud"
+   },
+   {
+    "nom": "the creditor",
+    "desc": "man in his 40s, emerald-and-chocolate shirt, bald head, holding ONE single small notebook",
+    "pose": "standing right behind the son's shoulder on the right, staring at him"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, pourquoi ce monsieur-là te suit depuis le marché ?!"
+   ],
+   [
+    1,
+    "Maman, c'est mon seul abonné dêh. Il me suit partout."
+   ],
+   [
+    2,
+    "Rembourse mes vingt mille et je me désabonne dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother, hands on her hips, asks her question while pointing her chin at the man. The son answers proudly, lifting his smartphone a little, his face turned three-quarters to the camera. The creditor, standing right behind the son, taps his notebook once and says his line, his face clearly visible.",
+  "chute": "The son freezes, his proud smile collapsing. The camera slowly pushes in to a close-up of the influencer son's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "abonné",
+   "vingt mille",
+   "désabonne"
+  ],
+  "gag_legende": "LES ABONNÉS QUAND TU DOIS L'ARGENT :",
+  "mecanisme": "logique absurde au pied de la lettre : l'abonné qui « suit » vraiment + révélation par un tiers"
+ },
+ {
+  "id": "B059-02",
+  "titre": "Les bagages du locataire",
+  "lieu": "street in front of a rented house in Biétry, Abidjan, a metal gate, two big suitcases and a ring light standing on the sidewalk, morning",
+  "persos": [
+   {
+    "nom": "the evicted influencer",
+    "desc": "young woman in her 20s, lilac-and-amber jumpsuit, long braids, holding ONE single smartphone",
+    "pose": "standing in the foreground on the right next to the suitcases, holding her phone, outraged"
+   },
+   {
+    "nom": "the landlord",
+    "desc": "landlord in his 60s, gold-and-cherry boubou, grey beard, holding ONE single bunch of keys",
+    "pose": "standing on the left at the gate, calm, holding the keys"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, je t'ai tagué dans ma story ! Pourquoi mes bagages-là sont dehors ?!"
+   ],
+   [
+    1,
+    "Tu m'as payé en visibilité, non ? Maintenant, tout Biétry voit tes bagages dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The young woman, next to her suitcases, shouts her line and points at the suitcases with her free hand. The landlord, standing by the gate, answers calmly, jingling his keys once, his face clearly visible.",
+  "chute": "The young woman freezes, her mouth open, her phone hand slowly dropping. The camera slowly pushes in to a close-up of the evicted influencer's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "story",
+   "visibilité",
+   "bagages"
+  ],
+  "gag_legende": "LE PROPRIÉTAIRE QUAND TU PROPOSES LA VISIBILITÉ :",
+  "mecanisme": "logique absurde au pied de la lettre : le paiement « en visibilité » rendu littéralement"
+ },
+ {
+  "id": "B059-03",
+  "titre": "La grande nouvelle du fils",
+  "lieu": "in front of the closed metal gate of a house in Abatta, Abidjan, night, a street lamp, one plastic chair on the ground",
+  "persos": [
+   {
+    "nom": "the excited son",
+    "desc": "teenage boy around 17, mint-and-violet tracksuit, curly hair, holding ONE single smartphone",
+    "pose": "standing on the left, holding the phone up toward his father, very excited"
+   },
+   {
+    "nom": "the locked-out father",
+    "desc": "father in his 50s, cobalt-and-gold pyjamas, round belly, holding ONE single pillow against his chest",
+    "pose": "sitting on the plastic chair in the foreground on the right, hugging the pillow, exhausted"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa ! Je suis influenceur maintenant dêh ! Dix mille abonnés !"
+   ],
+   [
+    1,
+    "Ya fohi, mon fils. Va influencer ta maman. Elle m'a mis dehors."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son, standing, shows his phone proudly and announces the news. The father, seated on the plastic chair and hugging his pillow, answers wearily, nodding toward the closed gate, his face clearly visible.",
+  "chute": "The son's smile freezes and he slowly lowers his phone. The camera slowly pushes in to a close-up of the locked-out father's desperate face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "influenceur",
+   "maman",
+   "dehors"
+  ],
+  "gag_legende": "PAPA EN ATTENDANT LA PREMIÈRE INFLUENCE :",
+  "mecanisme": "logique absurde au pied de la lettre : « influencer » mis au service du père chassé"
+ },
+ {
+  "id": "B059-04",
+  "titre": "Chagrin d'algorithme",
+  "lieu": "living room of an apartment in Biétry, Abidjan, a sofa in front, an open kitchen behind with a cooking pot on a gas stove, evening",
+  "persos": [
+   {
+    "nom": "the heartbroken son",
+    "desc": "young man around 20, indigo-and-maroon t-shirt, short dreadlocks, holding ONE single smartphone",
+    "pose": "sitting on the left end of the sofa, phone in hand, sad"
+   },
+   {
+    "nom": "the wise father",
+    "desc": "father in his 50s, mustard-and-cobalt shirt, glasses, a wristwatch",
+    "pose": "sitting on the right of the sofa in the foreground, leaning toward his son"
+   },
+   {
+    "nom": "the listening mother",
+    "desc": "mother in her 40s, magenta-and-tangerine kaba, a headscarf, holding ONE single wooden ladle",
+    "pose": "standing in the kitchen behind the sofa, holding the ladle, listening"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, l'algorithme-là ne m'aime plus dêh !"
+   ],
+   [
+    1,
+    "Laisse-la, mon fils. Fille qui calcule tout-là, c'est comme ta maman."
+   ],
+   [
+    2,
+    "Répète ça si tu es un homme dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The son complains, staring at his phone, then turns his face to his father. The father answers wisely, one hand on his son's shoulder, his face turned three-quarters to the camera. The mother, behind them, raises her ladle slightly and says her line, her face clearly visible.",
+  "chute": "The father freezes, eyes wide, without turning around. The camera slowly pushes in to a close-up of the wise father's terrified face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "algorithme",
+   "calcule",
+   "maman"
+  ],
+  "gag_legende": "PAPA QUAND IL VA DORMIR CE SOIR :",
+  "mecanisme": "logique absurde au pied de la lettre : l'algorithme pris pour une fille + conseil qui vise la mère"
+ },
+ {
+  "id": "B059-05",
+  "titre": "Le tournage dans la cour",
+  "lieu": "courtyard of a shared house in Abatta, Abidjan, a big paper poster of the Eiffel Tower taped on a cement wall, one plastic chair in front of it, midday",
+  "persos": [
+   {
+    "nom": "the influencer nephew",
+    "desc": "young man in his 20s, lime-and-navy blazer, sunglasses resting on his head, holding ONE single smartphone",
+    "pose": "standing in the foreground on the right, holding the phone up to film, annoyed"
+   },
+   {
+    "nom": "the landlord uncle",
+    "desc": "uncle in his 60s, emerald-and-chocolate boubou, white goatee, holding ONE single small rent notebook",
+    "pose": "sitting on the plastic chair in front of the Eiffel Tower poster, legs crossed, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, pousse ta chaise ! Tu es assis dans Paris dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Dis à Paris-là qu'il me doit quatre mois de loyer."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The nephew, holding his phone up, complains and waves his free hand at the uncle. The uncle stays seated in front of the poster, taps his notebook and answers slowly, his face clearly visible.",
+  "chute": "The nephew slowly lowers his phone, frozen. The camera slowly pushes in to a close-up of the influencer nephew's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "Paris",
+   "quatre mois",
+   "loyer"
+  ],
+  "gag_legende": "SES ABONNÉS QUAND ILS VONT VOIR ÇA :",
+  "mecanisme": "logique absurde au pied de la lettre : le faux Paris pris au mot par le propriétaire"
+ },
+ {
+  "id": "B059-06",
+  "titre": "Le live interrompu",
+  "lieu": "teenager's bedroom in an apartment in Zone 4, Abidjan, a ring light on a stand, a bed, posters on the wall, evening",
+  "persos": [
+   {
+    "nom": "the angry father",
+    "desc": "father in his 40s, gold-and-cherry kaftan, short beard, hands on his hips",
+    "pose": "standing by the bedroom door on the left, hands on his hips, furious"
+   },
+   {
+    "nom": "the influencer daughter",
+    "desc": "teenage girl around 16, mustard-and-cobalt hoodie, two puffy hair buns, holding ONE single smartphone in front of the ring light",
+    "pose": "sitting on the bed in the foreground on the right, filming herself, smiling at the phone"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma fille, je te parle ! Lâche ton live-là !"
+   ],
+   [
+    1,
+    "Papa, écris ça en commentaire. Je lis à la fin dêh."
+   ],
+   [
+    0,
+    "Ya fohi. Commentaire : ta scolarité-là, paie-la avec tes likes."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father shouts from the doorway, hands on his hips. The daughter answers without looking at him, smiling at her phone, her face turned three-quarters to the camera. The father answers calmly, raising one finger, his face clearly visible.",
+  "chute": "The daughter's smile freezes and she slowly turns her head toward her father. The camera slowly pushes in to a close-up of the influencer daughter's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "commentaire",
+   "scolarité",
+   "likes"
+  ],
+  "gag_legende": "LE LIVE APRÈS LE COMMENTAIRE DE PAPA :",
+  "mecanisme": "logique absurde au pied de la lettre : le père répond vraiment « en commentaire »"
+ },
+ {
+  "id": "B059-07",
+  "titre": "Le cadeau du live",
+  "lieu": "bedroom of a couple in Biétry, Abidjan, a big bed, a nightstand with a lamp, night",
+  "persos": [
+   {
+    "nom": "the furious wife",
+    "desc": "wife in her 30s, indigo-and-maroon nightdress, hair in a bonnet, holding ONE single smartphone with the screen turned outward",
+    "pose": "standing on the left of the bed, holding the phone toward her husband, furious"
+   },
+   {
+    "nom": "the caught husband",
+    "desc": "husband in his 30s, lilac-and-amber pyjamas, small moustache, both hands free",
+    "pose": "sitting on the edge of the bed in the foreground on the right, hands raised in innocence"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, tu as envoyé un lion à une fille sur le live-là ?!"
+   ],
+   [
+    1,
+    "Bébé, je l'ai pas envoyé dêh. Il s'est échappé."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife shows the phone screen and accuses him, eyes wide. The husband, seated on the bed, answers with innocent eyes and both hands raised, his face clearly visible.",
+  "chute": "The wife slowly lowers the phone, speechless, while the husband keeps his innocent smile. The camera slowly pushes in to a close-up of the caught husband's falsely innocent face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "lion",
+   "live",
+   "échappé"
+  ],
+  "gag_legende": "MADAME EN CHERCHANT LE LION :",
+  "mecanisme": "logique absurde au pied de la lettre : le lion virtuel du live traité comme un vrai fauve"
+ },
+ {
+  "id": "B059-08",
+  "titre": "La vidéo virale",
+  "lieu": "small living room of a house in Abatta, Abidjan, a sofa, a low table, a standing fan, afternoon",
+  "persos": [
+   {
+    "nom": "the proud boy",
+    "desc": "boy around 13, cobalt-and-gold t-shirt, big smile, holding ONE single smartphone",
+    "pose": "standing in the middle, holding the phone up, overjoyed"
+   },
+   {
+    "nom": "the frightened mother",
+    "desc": "mother in her 40s, mint-and-violet boubou, a headscarf",
+    "pose": "sitting on the sofa in the foreground on the left, leaning back away from her son, one hand raised to stop him"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman ! Ma vidéo est devenue virale dêh !"
+   ],
+   [
+    1,
+    "Ehh ! Recule dêh ! Ton papa-là n'a même pas l'argent du paracétamol."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy announces the news, holding up his phone proudly. The mother, seated, leans back in fear, raises one hand toward him and answers, her face clearly visible.",
+  "chute": "The boy freezes, his smile fading. The camera slowly pushes in to a close-up of the frightened mother's deadly serious face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "virale",
+   "recule",
+   "paracétamol"
+  ],
+  "gag_legende": "MAMAN QUAND TU DIS QUE ÇA BUZZE :",
+  "mecanisme": "logique absurde au pied de la lettre : « virale » pris pour une maladie + pique au père fauché"
+ },
+ {
+  "id": "B059-09",
+  "titre": "Le nom de scène",
+  "lieu": "living room of a modest house in Abatta, Abidjan, an old sofa, a framed photo on the wall, morning",
+  "persos": [
+   {
+    "nom": "the self-proclaimed king",
+    "desc": "young man around 19, magenta-and-tangerine shirt, a chain necklace, holding ONE single smartphone",
+    "pose": "standing on the left, chest out, very proud"
+   },
+   {
+    "nom": "the smiling mother",
+    "desc": "mother in her 50s, emerald-and-chocolate kaba, a headscarf, holding ONE single paper bill",
+    "pose": "standing in the foreground on the right, holding the bill out toward her son"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, devant les gens, appelle-moi King Abatta dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, King Abatta. La facture CIE du palais est arrivée. Elle est pour toi."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son, chest out, announces his stage name with a proud gesture of his free hand. The mother answers with a sweet smile, holding the bill out toward him, her face clearly visible.",
+  "chute": "The son's proud chest deflates, his mouth open. The camera slowly pushes in to a close-up of the smiling mother's satisfied face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "King Abatta",
+   "palais",
+   "facture"
+  ],
+  "gag_legende": "LE ROI EN LISANT LA FACTURE :",
+  "mecanisme": "logique absurde au pied de la lettre : le titre de roi entraîne les charges du palais"
+ },
+ {
+  "id": "B059-10",
+  "titre": "Le live de madame",
+  "lieu": "living room of an apartment in Zone 4, Abidjan, a velvet sofa, a ring light on a stand, evening",
+  "persos": [
+   {
+    "nom": "the outraged husband",
+    "desc": "husband in his 40s, cobalt-and-gold shirt, short grey beard, holding ONE single smartphone showing the live",
+    "pose": "standing on the left, holding his phone out, outraged"
+   },
+   {
+    "nom": "the streaming wife",
+    "desc": "wife in her 30s, lime-and-navy dress, long straight hair, hands folded on her lap",
+    "pose": "sitting on the sofa in the foreground on the right, in front of the ring light, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chérie, tu dis en live-là que je t'ai abandonnée ?!"
+   ],
+   [
+    1,
+    "Oui. Les gens envoient l'argent dêh."
+   ],
+   [
+    0,
+    "Mais je suis là !"
+   ],
+   [
+    1,
+    "Ya fohi. Dors chez ta mère jusqu'à vendredi."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The husband shows the live on his phone and accuses her. The wife answers calmly, her face turned three-quarters to the camera. The husband protests, spreading his free hand. The wife answers with a sweet smile, her face clearly visible.",
+  "chute": "The husband freezes, his mouth open. The camera slowly pushes in to a close-up of the streaming wife's sweet and ruthless face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "live",
+   "abandonnée",
+   "vendredi"
+  ],
+  "gag_legende": "LE MARI EN ARRIVANT CHEZ SA MÈRE :",
+  "mecanisme": "logique absurde poussée au bout : pour garder les dons, le mari doit vraiment partir"
+ },
+ {
+  "id": "B059-11",
+  "titre": "L'anniversaire filmé",
+  "lieu": "decorated living room of a house in Biétry, Abidjan, balloons, a table with a big cardboard birthday cake and candles, afternoon",
+  "persos": [
+   {
+    "nom": "the birthday girl",
+    "desc": "girl around 7, gold-and-cherry party dress, two puffs of hair, standing behind the cardboard cake",
+    "pose": "standing behind the table on the left, pointing at the cake, outraged"
+   },
+   {
+    "nom": "the influencer mother",
+    "desc": "mother in her 30s, mint-and-violet jumpsuit, long braids, holding ONE single smartphone to film",
+    "pose": "standing in the foreground on the right, filming with the phone, big fixed smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, pourquoi mon gâteau d'anniversaire est en carton dêh ?!"
+   ],
+   [
+    1,
+    "Souris, mon bébé. Ton vrai anniversaire-là, c'est en mars. Aujourd'hui, c'est pour les abonnés."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl points at the cardboard cake and protests, her face visible. The mother keeps filming and answers through her fixed smile, her face turned three-quarters to the camera and clearly visible.",
+  "chute": "The girl freezes, her mouth wide open. The camera slowly pushes in to a close-up of the influencer mother's frozen smiling face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "carton",
+   "mars",
+   "abonnés"
+  ],
+  "gag_legende": "LA PETITE EN COMPTANT JUSQU'À MARS :",
+  "mecanisme": "logique absurde : faux gâteau parce que même la date d'anniversaire est fausse"
+ },
+ {
+  "id": "B059-12",
+  "titre": "Le dîner en direct",
+  "lieu": "dining room of a modest house in Abatta, Abidjan, a table with ONE plate of braised chicken, a smartphone on a small tripod facing the father, a wooden bench, evening",
+  "persos": [
+   {
+    "nom": "the hungry boy",
+    "desc": "boy around 10, lilac-and-amber t-shirt, big eyes, both hands on the bench",
+    "pose": "sitting on the wooden bench on the left, staring at the chicken"
+   },
+   {
+    "nom": "the streaming father",
+    "desc": "father in his 40s, indigo-and-maroon boubou, round belly, holding ONE single chicken drumstick",
+    "pose": "sitting at the table in the foreground on the right, facing the phone, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, pourquoi tu manges le poulet-là en live et nous on regarde ?!"
+   ],
+   [
+    1,
+    "Vous êtes mon public, mon fils. Envoie un cœur dêh, je t'envoie un os."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy complains from the bench, pointing at the chicken. The father, not eating while he speaks, holds the drumstick up like a microphone and answers, his face turned three-quarters to the camera and clearly visible.",
+  "chute": "The boy's jaw drops. The camera slowly pushes in to a close-up of the streaming father's proud face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "live",
+   "public",
+   "os"
+  ],
+  "gag_legende": "LES ENFANTS EN ATTENDANT LES OS :",
+  "mecanisme": "logique absurde du live appliquée à la famille : les enfants deviennent le public"
+ },
+ {
+  "id": "B059-13",
+  "titre": "Le frigo de maman",
+  "lieu": "kitchen of a house in Abatta, Abidjan, a brand-new fridge with a big gift ribbon still on it, a gas stove, morning",
+  "persos": [
+   {
+    "nom": "the betrayed mother",
+    "desc": "mother in her 50s, mustard-and-cobalt boubou, a headscarf, hands on her hips",
+    "pose": "standing on the left, hands on her hips, shocked"
+   },
+   {
+    "nom": "the shameless son",
+    "desc": "young man in his 20s, lime-and-navy tracksuit, sunglasses resting on his head, one hand on the fridge",
+    "pose": "standing in the foreground on the right, one hand on the fridge, unbothered"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, tu reprends le frigo-là que tu m'as offert en vidéo ?!"
+   ],
+   [
+    1,
+    "Maman, la vidéo a fait mille vues seulement. Le frigo n'a pas marché dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother, hands on her hips, accuses her son. The son, one hand on the fridge, shrugs and answers, his face clearly visible.",
+  "chute": "The mother's mouth falls open. The camera slowly pushes in to a close-up of the shameless son's shameless face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "frigo",
+   "mille vues",
+   "marché"
+  ],
+  "gag_legende": "MAMAN EN REGARDANT SON FRIGO :",
+  "mecanisme": "logique absurde : le cadeau à maman est repris parce qu'il n'a pas fait assez de vues"
+ },
+ {
+  "id": "B059-14",
+  "titre": "La caméra cachée",
+  "lieu": "living room of a house in Biétry, Abidjan, a sofa, an armchair, a school bag on the floor, a smartphone on a small tripod in the corner, late afternoon",
+  "persos": [
+   {
+    "nom": "the prankster son",
+    "desc": "teenage boy around 15, cobalt-and-gold hoodie, braces on his teeth, pointing at the tripod",
+    "pose": "standing on the left, pointing at the hidden camera, laughing"
+   },
+   {
+    "nom": "the unfazed father",
+    "desc": "father in his 50s, magenta-and-tangerine kaftan, bald head, arms crossed",
+    "pose": "sitting in the armchair in the foreground on the right, arms crossed, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, regarde la caméra ! C'est un prank, je suis pas renvoyé dêh !"
+   ],
+   [
+    1,
+    "Ta maman aussi m'a dit : c'est ton fils. J'attends encore la caméra-là."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son points at the hidden camera and laughs as he reveals the prank. The father, arms crossed, answers flatly without smiling, his face turned three-quarters to the camera and clearly visible.",
+  "chute": "The son's laugh stops dead. The camera slowly pushes in to a close-up of the unfazed father's deadpan face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "prank",
+   "caméra",
+   "ton fils"
+  ],
+  "gag_legende": "MAMAN QUAND ELLE VA RENTRER DU MARCHÉ :",
+  "mecanisme": "retournement : le prank du fils renvoyé à la mère, deux cibles d'un coup"
+ },
+ {
+  "id": "B059-15",
+  "titre": "Les likes de maman",
+  "lieu": "veranda of a house in Zone 4, Abidjan, two rattan chairs, a small table, potted plants, late afternoon",
+  "persos": [
+   {
+    "nom": "the needy son",
+    "desc": "young man around 20, mint-and-violet shirt, flat-top haircut, holding ONE single smartphone",
+    "pose": "sitting on the left chair, showing his phone to his mother"
+   },
+   {
+    "nom": "the savage mother",
+    "desc": "mother in her 50s, lilac-and-amber boubou, big gold earrings, hands folded on her lap",
+    "pose": "sitting on the right chair in the foreground, calm, hands folded"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, pourquoi tu likes jamais mes vidéos dêh ?!"
+   ],
+   [
+    1,
+    "J'ai liké ton papa-là une seule fois. Regarde le résultat."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son complains, holding his phone toward his mother. The mother answers calmly, looking him up and down, her face clearly visible.",
+  "chute": "The son freezes, his mouth open, phone still raised. The camera slowly pushes in to a close-up of the savage mother's calm face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "likes",
+   "papa",
+   "résultat"
+  ],
+  "gag_legende": "PAPA QUAND IL A ENTENDU ÇA :",
+  "mecanisme": "double sens : « liker » le père une fois, et le résultat c'est le fils"
+ },
+ {
+  "id": "B059-16",
+  "titre": "Les roses de minuit",
+  "lieu": "bedroom of a couple in Zone 4, Abidjan, a big bed, a ring light on the nightstand, night",
+  "persos": [
+   {
+    "nom": "the suspicious husband",
+    "desc": "husband in his 40s, emerald-and-chocolate pyjamas, thin moustache, arms crossed",
+    "pose": "sitting on the edge of the bed in the foreground on the left, arms crossed, suspicious"
+   },
+   {
+    "nom": "the calm wife",
+    "desc": "wife in her 30s, gold-and-cherry nightdress, hair in a bonnet, holding ONE single smartphone",
+    "pose": "sitting against the headboard on the right, phone in hand, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chérie, qui t'envoie des roses sur ton live-là chaque nuit ?!"
+   ],
+   [
+    1,
+    "Ton patron, chéri. C'est ta prime-là qui arrive enfin dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The husband, arms crossed, asks suspiciously, his face turned three-quarters to the camera. The wife answers sweetly, waving her phone a little, her face clearly visible.",
+  "chute": "The husband's arms drop and his face freezes. The camera slowly pushes in to a close-up of the suspicious husband's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "roses",
+   "patron",
+   "prime"
+  ],
+  "gag_legende": "MONSIEUR LUNDI MATIN AU BUREAU :",
+  "mecanisme": "révélation : la prime détournée par le patron arrive enfin… chez madame"
+ },
+ {
+  "id": "B059-17",
+  "titre": "La vidéo du mariage",
+  "lieu": "living room of a house in Biétry, Abidjan, a sofa in the middle, an armchair on the right, a framed wedding photo on the wall, evening",
+  "persos": [
+   {
+    "nom": "the proud daughter",
+    "desc": "teenage girl around 17, lime-and-navy t-shirt, long box braids, holding ONE single smartphone",
+    "pose": "standing on the left, showing her phone, triumphant"
+   },
+   {
+    "nom": "the weary father",
+    "desc": "father in his 50s, mustard-and-cobalt polo, grey temples",
+    "pose": "sitting on the sofa in the foreground in the middle, tired"
+   },
+   {
+    "nom": "the sweet mother",
+    "desc": "mother in her 50s, indigo-and-maroon kaba, a headscarf, holding ONE single remote control",
+    "pose": "sitting in the armchair on the right, holding the remote, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, ma vidéo a fait plus de vues que ton mariage dêh !"
+   ],
+   [
+    1,
+    "Normal. Mon mariage-là, même moi je regarde plus."
+   ],
+   [
+    2,
+    "Moi, je regarde. Mais j'avance rapide sur le marié."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The daughter shows her phone proudly. The father, seated, answers wearily, glancing at the wedding photo, his face turned three-quarters to the camera. The mother, in her armchair, lifts the remote control slightly and answers sweetly, her face clearly visible.",
+  "chute": "The father slowly turns his head toward his wife, stunned. The camera slowly pushes in to a close-up of the weary father's stunned face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "vues",
+   "mariage",
+   "marié"
+  ],
+  "gag_legende": "LE MARIÉ EN AVANCE RAPIDE :",
+  "mecanisme": "double coup : le père renie son mariage, la mère efface le marié"
+ },
+ {
+  "id": "B059-18",
+  "titre": "Les commentaires de maman",
+  "lieu": "content-creator corner of a small apartment in Zone 4, Abidjan, a ring light, a desk with a microphone, a sofa, afternoon",
+  "persos": [
+   {
+    "nom": "the embarrassed creator",
+    "desc": "young man in his 20s, gold-and-cherry hoodie, headphones around his neck, holding ONE single smartphone",
+    "pose": "sitting at the desk on the left, turned toward his mother, holding the phone up"
+   },
+   {
+    "nom": "the clever mother",
+    "desc": "mother in her 50s, cobalt-and-gold boubou, a headscarf, holding ONE single smartphone",
+    "pose": "sitting on the sofa in the foreground on the right, phone in hand, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, pourquoi tu commentes « rends mes vingt mille » sous mes vidéos dêh ?!"
+   ],
+   [
+    1,
+    "Mon fils, c'est seulement là-bas que tu réponds dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son, at his desk, shows the comment on his phone and complains. The mother, seated on the sofa, answers calmly, tapping her own phone once, her face clearly visible.",
+  "chute": "The son freezes, speechless. The camera slowly pushes in to a close-up of the clever mother's triumphant face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "commentes",
+   "vingt mille",
+   "réponds"
+  ],
+  "gag_legende": "LE FILS EN LISANT LES COMMENTAIRES :",
+  "mecanisme": "révélation : la mère utilise les commentaires comme huissier"
+ },
+ {
+  "id": "B059-19",
+  "titre": "Mamie en direct",
+  "lieu": "courtyard of a family house in Abatta, Abidjan, a big pot of sauce on a charcoal stove, three plastic chairs, a smartphone on a tripod facing the grandmother, midday",
+  "persos": [
+   {
+    "nom": "the excited grandson",
+    "desc": "boy around 12, emerald-and-chocolate t-shirt, gap-toothed smile, standing next to the tripod",
+    "pose": "standing on the left next to the tripod, very excited"
+   },
+   {
+    "nom": "the grandmother",
+    "desc": "grandmother in her 70s, magenta-and-tangerine boubou, a headscarf, holding ONE single wooden ladle",
+    "pose": "sitting on a low stool in the foreground on the right next to the pot, holding the ladle"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mamie, cinq mille personnes te regardent en direct dêh !"
+   ],
+   [
+    1,
+    "Ehh ! Ferme vite la marmite ! On a seulement trois chaises dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The grandson announces it excitedly, pointing at the phone on the tripod. The grandmother, seated by the pot, panics, points the ladle at the pot and answers, her face clearly visible.",
+  "chute": "The grandmother glares suspiciously at the phone on the tripod. The camera slowly pushes in to a close-up of the grandmother's suspicious face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "direct",
+   "marmite",
+   "trois chaises"
+  ],
+  "gag_legende": "LES CINQ MILLE SPECTATEURS DEVANT LA PORTE :",
+  "mecanisme": "logique absurde au pied de la lettre : les spectateurs du direct pris pour de vrais invités"
+ },
+ {
+  "id": "B059-20",
+  "titre": "La sieste du maître",
+  "lieu": "classroom of a primary school in Biétry, Abidjan, wooden desks, a blackboard, the teacher's desk, morning",
+  "persos": [
+   {
+    "nom": "the pleading teacher",
+    "desc": "male teacher in his 40s, mint-and-violet safari jacket, glasses, holding ONE single piece of chalk",
+    "pose": "standing behind his desk on the left, leaning forward, pleading"
+   },
+   {
+    "nom": "the blackmailing pupil",
+    "desc": "boy around 11, indigo-and-maroon school uniform, short hair, holding ONE single smartphone",
+    "pose": "sitting at the front desk in the foreground on the right, phone in hand, cool smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, supprime la vidéo où je dors en classe-là !"
+   ],
+   [
+    1,
+    "Ya fohi, maître. Dix-huit pour moi, quinze pour mon frère, et la vidéo disparaît."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The teacher, behind his desk, begs, leaning forward. The pupil, seated, answers coolly, waving his phone a little, his face turned three-quarters to the camera and clearly visible.",
+  "chute": "The teacher freezes, his mouth open, the chalk still in his hand. The camera slowly pushes in to a close-up of the blackmailing pupil's cool face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "vidéo",
+   "dix-huit",
+   "disparaît"
+  ],
+  "gag_legende": "LE MAÎTRE EN CORRIGEANT LES COPIES :",
+  "mecanisme": "renversement de pouvoir : l'élève négocie les notes de toute la famille avec la vidéo"
+ }
+]

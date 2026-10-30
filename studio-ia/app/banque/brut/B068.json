@@ -1,0 +1,951 @@
+[
+ {
+  "id": "B068-01",
+  "titre": "Le petit envoyé au marché",
+  "lieu": "vegetable stall at the Koumassi market, Abidjan, a wooden table piled with tomatoes and onions, a small metal scale, a big parasol, a low plastic stool behind the stall, morning",
+  "persos": [
+   {
+    "nom": "the boy sent by his mother",
+    "desc": "boy around 9, turquoise-and-sky-blue tracksuit, short hair, big innocent eyes, holding ONE single small plastic basket",
+    "pose": "standing in the foreground on the left, facing the vendor, the basket in one hand"
+   },
+   {
+    "nom": "the vegetable vendor",
+    "desc": "market vendor woman in her 40s, burgundy-and-charcoal kaba, head scarf, gold earrings, empty hands",
+    "pose": "standing in the foreground on the right, in front of her stall, hands on her hips"
+   },
+   {
+    "nom": "the vendor's husband",
+    "desc": "husband in his 50s, silver-and-chocolate boubou, grey beard, empty hands",
+    "pose": "sitting on the low stool behind the stall in the middle, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, maman dit tu dois diminuer le prix dêh."
+   ],
+   [
+    1,
+    "Dis-lui c'est prix fixe, mon petit."
+   ],
+   [
+    0,
+    "Sinon elle raconte à Tonton où tu étais hier."
+   ],
+   [
+    2,
+    "Mon petit, raconte d'abord. Je paie."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boy says his first line politely, face turned three-quarters to the camera. The vendor answers firmly, hands on her hips, shaking her head. The boy calmly says his second line, looking up at her with innocent eyes. The husband, seated behind, uncrosses his arms, leans forward with an eager smile and says his line, his face clearly visible.",
+  "chute": "The vendor freezes, her smile stuck and her eyes wide open. The camera slowly pushes in to a close-up of the vegetable vendor's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "diminuer",
+   "hier",
+   "raconte"
+  ],
+  "gag_legende": "TANTIE EN CHERCHANT UNE EXCUSE :",
+  "mecanisme": "chantage d'enfant puis relance assassine du mari qui paie pour savoir"
+ },
+ {
+  "id": "B068-02",
+  "titre": "Le fils qui marchande chez sa mère",
+  "lieu": "fabric stall at the Adjamé market, Abidjan, wooden shelves stacked with folded pagnes, a small cash tin on the counter, a wooden stool, midday",
+  "persos": [
+   {
+    "nom": "the son",
+    "desc": "young man in his 20s, plum-and-emerald polo shirt, thin mustache, holding ONE single folded pagne",
+    "pose": "standing in the foreground on the left, holding the pagne with both hands, big charming smile"
+   },
+   {
+    "nom": "the mother vendor",
+    "desc": "mother in her 50s, teal-and-jade boubou, round glasses, head scarf, empty hands",
+    "pose": "standing in the foreground on the right, in front of her shelves, one hand on her hip"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 60s, chocolate-and-amber kaftan, white goatee, empty hands",
+    "pose": "sitting on the wooden stool in the background between them, hands on his knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, fais-moi prix d'ami dêh, c'est ton fils !"
+   ],
+   [
+    1,
+    "Toi ? Tu me dois déjà neuf mois de loyer."
+   ],
+   [
+    2,
+    "Plus les couches, mon petit."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The son pleads with a big smile, holding up the pagne. The mother answers coldly, pointing one finger at him. The father, seated, raises one finger and says his line calmly, his face clearly visible.",
+  "chute": "The son's smile collapses, the pagne still in his hands. The camera slowly pushes in to a close-up of the son's defeated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "fils",
+   "loyer",
+   "couches"
+  ],
+  "gag_legende": "LE FILS EN FAISANT SES CALCULS :",
+  "mecanisme": "retournement absurde (le ventre loué neuf mois) puis relance assassine du père"
+ },
+ {
+  "id": "B068-03",
+  "titre": "La robe de la friperie",
+  "lieu": "second-hand clothes stall at the Marcory market, Abidjan, a white wedding dress hung on ONE single hanger on a rope line in front, piles of folded used clothes on a tarp, a plastic chair, afternoon",
+  "persos": [
+   {
+    "nom": "the wife",
+    "desc": "woman in her 30s, peach-and-burgundy wrap dress, braided hair, a small handbag on her shoulder",
+    "pose": "standing in the foreground on the left, pointing at the wedding dress"
+   },
+   {
+    "nom": "the second-hand seller",
+    "desc": "seller man in his 30s, silver-and-amber tracksuit, shaved head, empty hands",
+    "pose": "standing in the middle behind the tarp, hands on his hips, relaxed"
+   },
+   {
+    "nom": "the neighbor seller",
+    "desc": "neighbor seller woman in her 40s, turquoise-and-copper kaba, big hoop earrings, empty hands",
+    "pose": "sitting on the plastic chair on the right next to her pile of clothes, leaning forward"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon vieux, c'est ma robe de mariage-là ! Qui t'a vendu ça ?"
+   ],
+   [
+    1,
+    "Ton mari, ce matin. Il dit ça sert plus dêh."
+   ],
+   [
+    2,
+    "Il a pris taille 36 dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife shouts her line, pointing at the wedding dress, face turned three-quarters to the camera. The seller answers casually with a shrug. The neighbor seller, seated, leans in and says her line with a gossiping smile, her face clearly visible.",
+  "chute": "The wife freezes, mouth wide open, her pointing hand still raised. The camera slowly pushes in to a close-up of the wife's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "mariage",
+   "mari",
+   "taille 36"
+  ],
+  "gag_legende": "LA MAISON CE SOIR À VINGT HEURES :",
+  "mecanisme": "révélation par le vendeur puis relance assassine de la voisine (mari et taille visés)"
+ },
+ {
+  "id": "B068-04",
+  "titre": "Le miroir rapporté au marché",
+  "lieu": "household goods stall at the Adjamé market, Abidjan, plastic basins and buckets on a wooden table, ONE single framed mirror standing on the table with its back to the camera, evening light",
+  "persos": [
+   {
+    "nom": "the angry wife",
+    "desc": "woman in her 50s, plum-and-emerald kaba, short curly hair, gold bracelets",
+    "pose": "standing in the foreground on the left, one hand pointing at the mirror"
+   },
+   {
+    "nom": "the mirror seller",
+    "desc": "seller woman in her 40s, chocolate-and-amber boubou, a pencil behind her ear, empty hands",
+    "pose": "standing behind the table in the middle, arms crossed"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 50s, turquoise-and-copper kaftan, round belly, holding ONE single shopping bag",
+    "pose": "standing in the foreground on the right, slightly behind his wife, the bag in one hand"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ton miroir-là est gâté ! Il me montre vieille dêh !"
+   ],
+   [
+    1,
+    "Ma sœur, il est neuf. C'est le seul ici qui ment pas."
+   ],
+   [
+    2,
+    "Moi-même je mens depuis dix ans."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife complains loudly, pointing at the mirror, face turned three-quarters to the camera. The seller answers calmly, arms crossed, one eyebrow raised. The husband nods slowly and says his line in a tired voice, his face clearly visible.",
+  "chute": "The wife slowly turns her head toward her husband, eyes narrowed. The camera slowly pushes in to a close-up of the angry wife's furious face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "miroir",
+   "vieille",
+   "mens"
+  ],
+  "gag_legende": "LE MONSIEUR CE SOIR À LA MAISON :",
+  "mecanisme": "aveu involontaire du mari en relance assassine (épouse et mari visés)"
+ },
+ {
+  "id": "B068-05",
+  "titre": "L'ancien copain au marché",
+  "lieu": "shoe stall at the Koumassi market, Abidjan, rows of shoes on wooden shelves, a wooden counter, morning",
+  "persos": [
+   {
+    "nom": "the shoe seller",
+    "desc": "shoe seller woman in her 30s, silver-and-chocolate jumpsuit, long braids, holding ONE single men's shoe",
+    "pose": "standing behind the counter on the left, holding the shoe up"
+   },
+   {
+    "nom": "the ex-boyfriend",
+    "desc": "man in his 30s, teal-and-jade tracksuit, small goatee, empty hands",
+    "pose": "standing in the foreground in the middle, facing the counter"
+   },
+   {
+    "nom": "the new wife",
+    "desc": "his wife in her 30s, burgundy-and-charcoal wrap dress, short hair, a handbag on her arm",
+    "pose": "standing in the foreground on the right next to him, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ehh, mon ex-là ! Pour toi, c'est double prix dêh."
+   ],
+   [
+    1,
+    "Double ? Pourquoi, ma sœur ?"
+   ],
+   [
+    0,
+    "Tu m'as fait perdre trois ans. J'ajoute les intérêts."
+   ],
+   [
+    2,
+    "Ajoute mes cinq ans aussi."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The seller greets him with a wicked smile, holding up the shoe. The man protests, palms open. The seller answers, pointing the shoe at him. The wife, arms crossed, nods firmly and says her line, her face clearly visible.",
+  "chute": "The man freezes between the two women, his mouth open. The camera slowly pushes in to a close-up of the ex-boyfriend's trapped face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "double",
+   "intérêts",
+   "cinq ans"
+  ],
+  "gag_legende": "LE MONSIEUR EN CALCULANT SES DETTES :",
+  "mecanisme": "vengeance comptable de l'ex puis relance assassine de l'épouse (les deux femmes s'allient)"
+ },
+ {
+  "id": "B068-06",
+  "titre": "La cliente qui marchande dur",
+  "lieu": "cooking pots stall at the Marcory market, Abidjan, aluminum pots stacked on a wooden table, ONE single big aluminum pot in front, late afternoon",
+  "persos": [
+   {
+    "nom": "the old pot seller",
+    "desc": "pot seller woman in her 60s, turquoise-and-sky-blue boubou, grey hair in a bun, big earrings",
+    "pose": "sitting on a stool on the left behind the table, one hand on the big pot"
+   },
+   {
+    "nom": "the young customer",
+    "desc": "young woman in her 20s, silver-and-amber wrap dress, ponytail, a small purse",
+    "pose": "standing in the foreground in the middle, hands on her hips"
+   },
+   {
+    "nom": "the customer's father",
+    "desc": "father in his 60s, peach-and-burgundy kaftan, bald head, holding ONE single shopping basket",
+    "pose": "standing in the foreground on the right next to his daughter"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ehh, tu marchandes exactement comme ta maman dêh !"
+   ],
+   [
+    1,
+    "Tu connais ma maman, Tantie ?"
+   ],
+   [
+    0,
+    "Elle m'a arraché ton papa à moitié prix."
+   ],
+   [
+    2,
+    "J'étais en promotion, ma fille."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The old seller laughs and says her line, tapping the pot. The young customer, surprised, asks her question with a frown. The old seller answers with a bitter smile, pointing at the father. The father shrugs proudly and says his line, his face clearly visible.",
+  "chute": "The daughter slowly turns her head toward her father, disgusted. The camera slowly pushes in to a close-up of the young customer's disgusted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "maman",
+   "moitié prix",
+   "promotion"
+  ],
+  "gag_legende": "LA FILLE EN REGARDANT SON PAPA :",
+  "mecanisme": "révélation du passé puis relance assassine du père qui s'enfonce"
+ },
+ {
+  "id": "B068-07",
+  "titre": "Le stand des matelas",
+  "lieu": "mattress shop front at the Adjamé market, Abidjan, foam mattresses stacked against the wall, ONE single mattress lying flat on the ground in the foreground, midday",
+  "persos": [
+   {
+    "nom": "the customer",
+    "desc": "woman in her 40s, teal-and-jade kaba, hair in a head scarf, a handbag on her shoulder",
+    "pose": "standing on the left behind the mattress, one hand resting on the stacked mattresses"
+   },
+   {
+    "nom": "the mattress seller",
+    "desc": "seller woman in her 40s, plum-and-emerald boubou, gold necklace, holding ONE single notebook",
+    "pose": "standing on the right behind the mattress, the notebook against her chest"
+   },
+   {
+    "nom": "the lazy husband",
+    "desc": "seller's husband in his 50s, chocolate-and-amber tracksuit, round belly, empty hands",
+    "pose": "lying on his back on the mattress in the foreground, head propped on his hands, face turned to the camera, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, ton matelas-là est vraiment solide ?"
+   ],
+   [
+    1,
+    "Mon mari dort dessus depuis qu'il a perdu son travail."
+   ],
+   [
+    2,
+    "Six ans, aucun problème dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer asks her question, face turned three-quarters to the camera. The seller answers proudly, pointing down at her husband. The husband, still lying down, gives a lazy thumbs-up and says his line, his face clearly visible.",
+  "chute": "The husband closes his eyes with a satisfied smile, then opens one eye. The camera slowly pushes in to a close-up of the lazy husband's smug face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "matelas",
+   "travail",
+   "six ans"
+  ],
+  "gag_legende": "LE MONSIEUR QUAND ON DIT TRAVAIL :",
+  "mecanisme": "le mari chômeur comme produit-test puis relance assassine du mari fier"
+ },
+ {
+  "id": "B068-08",
+  "titre": "Le dernier prix de Tantie",
+  "lieu": "handbag stall at the Koumassi market, Abidjan, handbags hanging on hooks, a wooden counter, a plastic chair, morning",
+  "persos": [
+   {
+    "nom": "the customer",
+    "desc": "woman in her 30s, turquoise-and-copper jumpsuit, short twists, a phone in her hand",
+    "pose": "standing in the foreground on the left, arms crossed"
+   },
+   {
+    "nom": "the bag seller",
+    "desc": "seller woman in her 40s, silver-and-chocolate kaba, head scarf, holding ONE single leather handbag",
+    "pose": "standing behind the counter in the middle, holding up the handbag with both hands"
+   },
+   {
+    "nom": "the seller's husband",
+    "desc": "husband in his 50s, burgundy-and-charcoal boubou, small mustache, empty hands",
+    "pose": "sitting on the plastic chair in the foreground on the right, hands on his knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, quatre mille pour ça ? C'est trop dêh !"
+   ],
+   [
+    1,
+    "Ya fohi ! Prends, je te donne mon mari en cadeau."
+   ],
+   [
+    0,
+    "Non merci, Tantie. Je paie cinq mille."
+   ],
+   [
+    2,
+    "Ehh ! Même en cadeau ?!"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer protests, face turned three-quarters to the camera. The seller answers cheerfully, nodding toward her seated husband. The customer answers fast, raising one hand to refuse. The husband straightens on his chair, offended, and says his line, his face clearly visible.",
+  "chute": "The husband stays frozen on his chair, mouth open, deeply offended. The camera slowly pushes in to a close-up of the seller's husband's offended face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "cadeau",
+   "mari",
+   "cinq mille"
+  ],
+  "gag_legende": "LE MONSIEUR APRÈS CETTE HUMILIATION :",
+  "mecanisme": "marchandage inversé (payer plus pour refuser le mari) puis relance assassine du mari vexé"
+ },
+ {
+  "id": "B068-09",
+  "titre": "Le couple qui tient la boutique",
+  "lieu": "small clothing shop at the Marcory market, Abidjan, dresses on hangers along the wall, a wooden counter with a metal cash box, ONE single folded scarf on the counter, afternoon",
+  "persos": [
+   {
+    "nom": "the young customer",
+    "desc": "young woman in her 20s, peach-and-burgundy jumpsuit, long braids, a small purse",
+    "pose": "standing in the foreground on the left, one hand on the counter"
+   },
+   {
+    "nom": "the shopkeeper husband",
+    "desc": "shopkeeper husband in his 50s, turquoise-and-sky-blue kaftan, grey mustache, charming smile, empty hands",
+    "pose": "standing behind the counter in the middle, leaning on it"
+   },
+   {
+    "nom": "the shopkeeper wife",
+    "desc": "shopkeeper wife in her 50s, silver-and-amber boubou, glasses, both hands on the cash box",
+    "pose": "standing in the foreground on the right at the end of the counter, hands on the cash box, frowning"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, ton foulard-là c'est combien dêh ?"
+   ],
+   [
+    1,
+    "Pour toi, ma fille, c'est mille seulement."
+   ],
+   [
+    2,
+    "Trois mille ! Mille, c'est le prix de ses copines."
+   ],
+   [
+    0,
+    "Ya fohi. Tonton, donne-moi ton numéro."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer asks sweetly, face turned three-quarters to the camera. The husband answers with a charming smile. The wife slams one hand on the cash box and shouts her line. The customer smiles at the husband and says her line, her face clearly visible.",
+  "chute": "The wife freezes, her eyes going from the girl to her husband. The camera slowly pushes in to a close-up of the shopkeeper wife's furious face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "mille",
+   "copines",
+   "numéro"
+  ],
+  "gag_legende": "TANTIE EN FERMANT LA BOUTIQUE CE SOIR :",
+  "mecanisme": "révélation par l'épouse puis relance assassine de la cliente opportuniste"
+ },
+ {
+  "id": "B068-10",
+  "titre": "Urgence chez le réparateur",
+  "lieu": "tiny phone repair booth at the Adjamé market, Abidjan, a glass counter with phone parts, ONE single smartphone on the counter, a plastic stool, evening neon light",
+  "persos": [
+   {
+    "nom": "the panicked husband",
+    "desc": "man in his 40s, plum-and-emerald tracksuit, sweaty forehead, empty hands",
+    "pose": "standing in the foreground on the left, both hands flat on the counter, turned toward the repairer"
+   },
+   {
+    "nom": "the young repairer",
+    "desc": "repairer in his 20s, chocolate-and-amber t-shirt, one earring, holding ONE single small screwdriver",
+    "pose": "sitting behind the counter in the middle"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 40s, teal-and-jade wrap dress, short hair, a handbag on her lap",
+    "pose": "sitting on the plastic stool in the foreground on the right, arms crossed, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, efface tous mes messages vite dêh ! Ma femme va fouiller !"
+   ],
+   [
+    1,
+    "Trop tard, Tonton. Elle a déjà payé pour les récupérer."
+   ],
+   [
+    2,
+    "Imprime ça en couleur, mon petit."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband whispers urgently to the repairer, face turned three-quarters to the camera, without noticing his wife. The repairer answers calmly and points the screwdriver at the wife. The wife, seated, smiles coldly and says her line, her face clearly visible.",
+  "chute": "The husband slowly turns his head toward his wife and freezes. The camera slowly pushes in to a close-up of the panicked husband's terrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "messages",
+   "récupérer",
+   "couleur"
+  ],
+  "gag_legende": "LE MONSIEUR QUAND IL TOURNE LA TÊTE :",
+  "mecanisme": "piège retourné par le réparateur puis relance assassine de l'épouse"
+ },
+ {
+  "id": "B068-11",
+  "titre": "Le compliment à la vendeuse",
+  "lieu": "attiéké stall at the Koumassi market, Abidjan, basins of attiéké and fried fish on a table, a neighboring alloco stall on the right with a frying pan, noon",
+  "persos": [
+   {
+    "nom": "the attiéké seller",
+    "desc": "attiéké seller woman in her 40s, burgundy-and-charcoal kaftan, head scarf, holding ONE single wooden ladle",
+    "pose": "standing in the foreground on the left, beside her table"
+   },
+   {
+    "nom": "the smooth young man",
+    "desc": "young man in his 20s, turquoise-and-copper tracksuit, big smile, holding ONE single plate wrapped in plastic",
+    "pose": "standing in the middle, holding the wrapped plate with both hands"
+   },
+   {
+    "nom": "the alloco seller",
+    "desc": "alloco seller woman in her 40s, peach-and-burgundy boubou, big earrings, empty hands",
+    "pose": "sitting at her stall on the right, hands on her knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ton attiéké-là est doux comme toi dêh !"
+   ],
+   [
+    1,
+    "Ehh, mon fils ! Prends deux poissons gratuits !"
+   ],
+   [
+    2,
+    "Ce matin, moi aussi j'étais douce."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The young man says his compliment with a charming smile. The attiéké seller laughs, flattered, and answers, raising her ladle happily. The alloco seller, seated, says her line with a mocking smile, her face clearly visible.",
+  "chute": "The attiéké seller's happy smile freezes; she slowly lowers her ladle. The camera slowly pushes in to a close-up of the attiéké seller's betrayed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "doux",
+   "gratuits",
+   "douce"
+  ],
+  "gag_legende": "TANTIE EN COMPTANT SES POISSONS :",
+  "mecanisme": "dragueur en série démasqué par la rivale en relance assassine"
+ },
+ {
+  "id": "B068-12",
+  "titre": "Le poulet trop maigre",
+  "lieu": "live poultry stall at the Adjamé market, Abidjan, stacked wooden cages, ONE single skinny chicken in a small cage on the table, morning",
+  "persos": [
+   {
+    "nom": "the customer wife",
+    "desc": "wife in her 40s, silver-and-amber kaba, hair in a bun, a handbag on her arm",
+    "pose": "standing in the foreground on the left, pointing at the skinny chicken"
+   },
+   {
+    "nom": "the poultry seller",
+    "desc": "poultry seller man in his 50s, teal-and-jade kaftan, white beard, empty hands",
+    "pose": "standing behind the cage in the middle, hands on his hips"
+   },
+   {
+    "nom": "the thin husband",
+    "desc": "very thin husband in his 40s, chocolate-and-amber polo shirt, hollow cheeks, empty hands",
+    "pose": "standing in the foreground on the right, next to his wife"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, ton poulet-là est trop maigre dêh !"
+   ],
+   [
+    1,
+    "Comme ton mari-là. Vous mangez la même cuisine ?"
+   ],
+   [
+    2,
+    "Lui au moins mange du maïs."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife complains, pointing at the chicken, face turned three-quarters to the camera. The seller answers with a smirk, nodding toward the husband. The husband looks sadly at the chicken and says his line, his face clearly visible.",
+  "chute": "The wife slowly turns her head toward her husband, offended. The camera slowly pushes in to a close-up of the customer wife's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "maigre",
+   "cuisine",
+   "maïs"
+  ],
+  "gag_legende": "LE MONSIEUR CE SOIR DEVANT SON ASSIETTE :",
+  "mecanisme": "comparaison vexante du vendeur puis relance assassine du mari (épouse et mari visés)"
+ },
+ {
+  "id": "B068-13",
+  "titre": "Le vieux crédit de la cliente",
+  "lieu": "small grocery stall at the Marcory market, Abidjan, sacks of rice and bottles of oil, ONE single thick notebook open on the counter, late morning",
+  "persos": [
+   {
+    "nom": "the grocery seller",
+    "desc": "grocery seller woman in her 50s, turquoise-and-sky-blue kaba, reading glasses, empty hands",
+    "pose": "standing behind the counter on the left, one finger on the open notebook"
+   },
+   {
+    "nom": "the indebted customer",
+    "desc": "woman in her 30s, plum-and-emerald wrap dress, braids in a bun, a small purse",
+    "pose": "standing in the foreground in the middle, hands joined, pleading"
+   },
+   {
+    "nom": "the customer's friend",
+    "desc": "friend in her 30s, silver-and-chocolate kaftan, big hoop earrings, empty hands",
+    "pose": "standing in the foreground on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, ton crédit-là a trois ans dêh !"
+   ],
+   [
+    1,
+    "Je paie quand mon fils va réussir, Tantie."
+   ],
+   [
+    0,
+    "Il a quel âge, ton fils-là ?"
+   ],
+   [
+    2,
+    "Elle cherche encore le mari."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The seller taps the notebook and says her line, face turned three-quarters to the camera. The customer answers with a confident smile, hands joined. The seller asks her question, one eyebrow raised. The friend shakes her head and says her line, her face clearly visible.",
+  "chute": "The customer's confident smile freezes. The camera slowly pushes in to a close-up of the indebted customer's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "crédit",
+   "fils",
+   "mari"
+  ],
+  "gag_legende": "TANTIE EN RELISANT SON CAHIER :",
+  "mecanisme": "promesse impossible démontée par l'amie en relance assassine"
+ },
+ {
+  "id": "B068-14",
+  "titre": "La cliente qui menace de partir",
+  "lieu": "two neighboring vegetable stalls at the Koumassi market, Abidjan, baskets of onions and eggplants on both tables, afternoon",
+  "persos": [
+   {
+    "nom": "the bargaining customer",
+    "desc": "woman in her 40s, turquoise-and-copper boubou, head scarf, a handbag on her arm",
+    "pose": "standing in the foreground in the middle, one hand raised"
+   },
+   {
+    "nom": "the first seller",
+    "desc": "seller woman in her 30s, peach-and-burgundy kaba, short braids, empty hands",
+    "pose": "standing behind the left stall, arms crossed"
+   },
+   {
+    "nom": "the neighbor seller",
+    "desc": "seller woman in her 30s, teal-and-jade jumpsuit, round face, holding ONE single phone",
+    "pose": "sitting behind the right stall in the foreground, the phone in her hand"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ya fohi ! Je vais acheter chez ta voisine-là !"
+   ],
+   [
+    1,
+    "Vas-y, ma sœur. C'est ma petite sœur."
+   ],
+   [
+    2,
+    "Ta photo est déjà arrivée dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer threatens, raising her hand, face turned three-quarters to the camera. The first seller answers calmly, arms crossed. The neighbor seller holds up her phone screen toward the customer and says her line with a smile, her face clearly visible.",
+  "chute": "The customer freezes, her raised hand stuck in the air. The camera slowly pushes in to a close-up of the bargaining customer's trapped face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "voisine",
+   "petite sœur",
+   "photo"
+  ],
+  "gag_legende": "LA CLIENTE DANS TOUT LE MARCHÉ :",
+  "mecanisme": "piège familial du marché puis relance assassine de la voisine"
+ },
+ {
+  "id": "B068-15",
+  "titre": "Le remboursement des gâteaux",
+  "lieu": "cake stall at the Adjamé market, Abidjan, a glass display box with small cakes on a counter, afternoon",
+  "persos": [
+   {
+    "nom": "the customer mother",
+    "desc": "mother in her 40s, silver-and-amber jumpsuit, short hair, holding ONE single empty paper bag",
+    "pose": "standing in the foreground on the left, holding up the empty paper bag"
+   },
+   {
+    "nom": "the cake seller",
+    "desc": "cake seller woman in her 30s, chocolate-and-amber kaba, hair in a high bun, empty hands",
+    "pose": "standing behind the display box in the middle, hands on her hips"
+   },
+   {
+    "nom": "the little son",
+    "desc": "boy around 7, burgundy-and-charcoal tracksuit, cake crumbs on his cheeks, empty hands",
+    "pose": "standing in the foreground on the right next to his mother"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, rembourse-moi ! Tes gâteaux-là étaient pas bons dêh !"
+   ],
+   [
+    1,
+    "Mais tu as tout fini, ma sœur !"
+   ],
+   [
+    0,
+    "Je vérifiais seulement, Tantie."
+   ],
+   [
+    2,
+    "Maman a vérifié douze, Tantie."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother complains, holding up the empty bag, face turned three-quarters to the camera. The seller answers, pointing at the empty bag. The mother answers with fake dignity. The boy holds up both open hands and says his line innocently, his face clearly visible.",
+  "chute": "The mother freezes, her fake dignity collapsing. The camera slowly pushes in to a close-up of the customer mother's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "rembourse",
+   "vérifiais",
+   "douze"
+  ],
+  "gag_legende": "MAMAN EN REGARDANT SON FILS :",
+  "mecanisme": "mauvaise foi puis relance assassine de l'enfant qui balance"
+ },
+ {
+  "id": "B068-16",
+  "titre": "La cliente qui pleure misère",
+  "lieu": "fabric stall at the Marcory market, Abidjan, shelves of folded pagnes, ONE single folded pagne on the wooden counter, morning",
+  "persos": [
+   {
+    "nom": "the pleading customer",
+    "desc": "woman in her 40s, silver-and-chocolate wrap dress, heavy gold necklace and bracelets, a small handbag",
+    "pose": "standing in the foreground on the left, hands joined, sad face"
+   },
+   {
+    "nom": "the fabric seller",
+    "desc": "fabric seller woman in her 50s, plum-and-emerald kaftan, head scarf, empty hands",
+    "pose": "standing behind the counter in the middle, one hand on the folded pagne"
+   },
+   {
+    "nom": "the daughter",
+    "desc": "girl around 10, turquoise-and-sky-blue dress, two puffy pigtails, empty hands",
+    "pose": "standing in the foreground on the right next to her mother"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, diminue dêh ! Mon mari est chômeur depuis trois ans !"
+   ],
+   [
+    1,
+    "Ehh, pardon ma sœur. Prends à mille seulement."
+   ],
+   [
+    2,
+    "Maman, ton chauffeur dit la clim est allumée."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer pleads with a sad face, hands joined, face turned three-quarters to the camera. The seller, moved, answers kindly, one hand on the pagne. The girl looks up at her mother and says her line innocently, her face clearly visible.",
+  "chute": "The customer freezes, her sad face stuck. The camera slowly pushes in to a close-up of the pleading customer's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "chômeur",
+   "mille",
+   "chauffeur"
+  ],
+  "gag_legende": "LA VENDEUSE APRÈS CETTE RÉVÉLATION :",
+  "mecanisme": "fausse misère démasquée par l'enfant"
+ },
+ {
+  "id": "B068-17",
+  "titre": "Le cadeau pour madame",
+  "lieu": "jewelry stall at the Adjamé market, Abidjan, bracelets and necklaces on velvet boards, ONE single gold bracelet on the glass counter, afternoon",
+  "persos": [
+   {
+    "nom": "the jewelry seller",
+    "desc": "jewelry seller woman in her 40s, turquoise-and-copper wrap dress, glasses, empty hands",
+    "pose": "standing behind the counter on the left"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, silver-and-amber kaftan, neat beard, empty hands",
+    "pose": "standing in the foreground in the middle, pointing at the bracelet, smiling"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 40s, peach-and-burgundy long dress, elegant headwrap, a handbag on her arm",
+    "pose": "standing in the foreground on the right next to her husband, smiling proudly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, fais-moi bon prix dêh. C'est pour ma femme."
+   ],
+   [
+    1,
+    "Encore ? Ta femme d'hier-là a pris le même."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband says his line proudly, pointing at the bracelet, face turned three-quarters to the camera, his wife smiling beside him. The seller answers casually, tapping the bracelet, her face clearly visible.",
+  "chute": "The wife's proud smile dies and she slowly turns her head toward her husband. The camera slowly pushes in to a close-up of the husband's terrified face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "ma femme",
+   "d'hier",
+   "même"
+  ],
+  "gag_legende": "LE MONSIEUR QUAND MADAME SE RETOURNE :",
+  "mecanisme": "révélation par un tiers devant la victime"
+ },
+ {
+  "id": "B068-18",
+  "titre": "Le prix du riz pour madame",
+  "lieu": "rice shop at the Koumassi market, Abidjan, big rice sacks stacked to the ceiling, ONE single rice sack on the counter, late afternoon",
+  "persos": [
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, turquoise-and-sky-blue polo shirt, small mustache, empty hands",
+    "pose": "standing in the foreground on the left, leaning toward the seller, whispering"
+   },
+   {
+    "nom": "the rice seller",
+    "desc": "rice seller woman in her 50s, chocolate-and-amber wrap dress, head scarf, empty hands",
+    "pose": "standing behind the counter on the right, one hand on the rice sack"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, si ma femme demande, le sac-là c'est vingt mille dêh."
+   ],
+   [
+    1,
+    "Encore ? Elle m'a déjà payée pour te dire trente."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The husband whispers his line with a sly smile, face turned three-quarters to the camera. The seller answers calmly, patting the rice sack, her face clearly visible.",
+  "chute": "The husband's sly smile freezes. The camera slowly pushes in to a close-up of the husband's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "vingt mille",
+   "payée",
+   "trente"
+  ],
+  "gag_legende": "LE MONSIEUR EN FAISANT SES COMPTES :",
+  "mecanisme": "arroseur arrosé : la femme a déjà acheté la vendeuse"
+ },
+ {
+  "id": "B068-19",
+  "titre": "Un couple au rayon robes",
+  "lieu": "dress stall at the Marcory market, Abidjan, dresses hanging on a rack, ONE single folded dress on the wooden counter, morning",
+  "persos": [
+   {
+    "nom": "the dress seller",
+    "desc": "dress seller woman in her 50s, teal-and-jade long dress, head scarf, empty hands",
+    "pose": "standing behind the counter on the left"
+   },
+   {
+    "nom": "the old husband",
+    "desc": "old husband in his 70s, silver-and-chocolate safari suit, white hair, deep wrinkles, empty hands",
+    "pose": "standing in the foreground in the middle, chest out"
+   },
+   {
+    "nom": "the young wife",
+    "desc": "young wife in her 20s, plum-and-emerald jumpsuit, long braids, a small purse",
+    "pose": "standing in the foreground on the right, one hand on her husband's arm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, achète une jolie robe pour ta fille-là dêh !"
+   ],
+   [
+    1,
+    "C'est ma femme, Tantie."
+   ],
+   [
+    0,
+    "Ehh pardon ! Ma fille, pour toi c'est moitié prix."
+   ],
+   [
+    2,
+    "Merci Tantie, je souffre beaucoup."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The seller says her line cheerfully, face turned three-quarters to the camera. The old husband answers proudly, chest out. The seller, embarrassed, looks at the young wife with pity and answers softly. The young wife sighs and says her line, her face clearly visible.",
+  "chute": "The old husband's proud chest slowly deflates. The camera slowly pushes in to a close-up of the old husband's offended face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "ta fille",
+   "moitié prix",
+   "souffre"
+  ],
+  "gag_legende": "LE TONTON APRÈS CETTE RÉDUCTION :",
+  "mecanisme": "méprise sur l'âge, rabais de compassion puis relance assassine de la jeune épouse"
+ },
+ {
+  "id": "B068-20",
+  "titre": "Le téléphone retrouvé à Adjamé",
+  "lieu": "second-hand phone stall at the Adjamé market, Abidjan, a glass display with used phones, ONE single smartphone with a cracked corner on the counter, midday",
+  "persos": [
+   {
+    "nom": "the robbed customer",
+    "desc": "man in his 30s, peach-and-burgundy tracksuit, short dreadlocks, empty hands",
+    "pose": "standing in the foreground on the left, pointing at the phone, furious"
+   },
+   {
+    "nom": "the phone seller",
+    "desc": "phone seller man in his 30s, turquoise-and-copper t-shirt, thin beard, empty hands",
+    "pose": "standing behind the display on the right, arms crossed, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon vieux, ce téléphone-là, c'est mon téléphone qu'on a volé hier !"
+   ],
+   [
+    1,
+    "Ya fohi, mon frère. Pour toi, prix spécial ancien propriétaire."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer shouts his line, pointing at the phone, face turned three-quarters to the camera. The seller stays perfectly calm, uncrosses his arms, opens one hand like a generous merchant and says his line, his face clearly visible.",
+  "chute": "The customer freezes, his finger still pointing, mouth open. The camera slowly pushes in to a close-up of the robbed customer's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "volé",
+   "ancien propriétaire"
+  ],
+  "gag_legende": "LE MONSIEUR EN SORTANT SON PORTEFEUILLE :",
+  "mecanisme": "logique commerciale absurde (remise de fidélité pour la victime)"
+ }
+]

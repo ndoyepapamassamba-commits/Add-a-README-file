@@ -1,0 +1,824 @@
+[
+ {
+  "id": "B058-01",
+  "titre": "Le live de la femme abandonnée",
+  "lieu": "small kitchen of an apartment in Deux-Plateaux, Abidjan, a ring light on a stand, a pot of sauce on the gas stove, a wooden stool, evening",
+  "persos": [
+   {
+    "nom": "the crying wife",
+    "desc": "woman in her 30s, saffron-and-ruby boubou, long braids, fake tears on her cheeks, holding one smartphone",
+    "pose": "sitting on the stool in the foreground on the left, holding the phone at arm's length to the side, pretending to cry"
+   },
+   {
+    "nom": "the husband at the stove",
+    "desc": "man in his 30s, emerald-and-cream kaftan, short beard, holding one wooden ladle",
+    "pose": "standing at the stove in the background on the right, holding the ladle over the pot, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mes abonnés, mon mari m'a abandonnée sans rien dêh ! Aidez-moi !"
+   ],
+   [
+    1,
+    "Bébé, on est à combien ? Je mets la viande ou pas ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife sobs theatrically toward her phone, her free hand on her chest, her face clearly visible. The husband turns his head toward her and the camera, lifts the ladle slightly and asks very casually, his face clearly visible.",
+  "chute": "The wife freezes, her fake tears still on her cheeks, her mouth open. The camera slowly pushes in to a close-up of the crying wife's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "abandonnée",
+   "combien",
+   "viande"
+  ],
+  "gag_legende": "LES ABONNÉS QUI ONT DÉJÀ ENVOYÉ :",
+  "mecanisme": "témoin innocent (le mari « disparu ») qui révèle l'arnaque du live + double cible (le couple et les abonnés naïfs)"
+ },
+ {
+  "id": "B058-02",
+  "titre": "La demande en mariage en direct",
+  "lieu": "terrace of a lounge in Deux-Plateaux, Abidjan, fairy lights, a small round table with two glasses, city lights in the background, evening",
+  "persos": [
+   {
+    "nom": "the kneeling boyfriend",
+    "desc": "man in his 30s, emerald-and-indigo suit, short beard, holding one small open ring box",
+    "pose": "kneeling on one knee in the foreground on the right, holding up the ring box, hopeful"
+   },
+   {
+    "nom": "the girlfriend with the phone",
+    "desc": "woman in her late 20s, magenta-and-sunflower dress, long braids, holding one smartphone",
+    "pose": "standing on the left, slightly behind him, holding the phone in front of her chest"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Bébé, tu veux m'épouser ? Dis-moi oui dêh !"
+   ],
+   [
+    1,
+    "Attends, mes abonnés votent… Non à quatre-vingt-dix pour cent !"
+   ],
+   [
+    0,
+    "Tu as combien d'abonnés même ?"
+   ],
+   [
+    1,
+    "Dix. Ta maman-là et ses neuf téléphones."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boyfriend, on one knee, holds up the ring box and begs with a big smile, his face clearly visible. The girlfriend glances at her phone, then announces the result, her face turned three-quarters to the camera. The boyfriend frowns and asks, his face clearly visible. The girlfriend shrugs and answers flatly, her face clearly visible.",
+  "chute": "The boyfriend freezes on his knee, the ring box still raised, his mouth wide open. The camera slowly pushes in to a close-up of the kneeling boyfriend's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "épouser",
+   "abonnés",
+   "téléphones"
+  ],
+  "gag_legende": "SA MAMAN PENDANT LE VOTE :",
+  "mecanisme": "retournement chiffré : la belle-mère cachée a truqué le vote (double cible : la mère et la fiancée sans abonnés)"
+ },
+ {
+  "id": "B058-03",
+  "titre": "La caméra cachée du mari",
+  "lieu": "living room of a house in Williamsville, Abidjan, a sofa, a packed suitcase standing by the door, a coffee table, afternoon",
+  "persos": [
+   {
+    "nom": "the pranking husband",
+    "desc": "man in his 30s, ochre-and-sky-blue shirt, round face, one hand on the handle of a suitcase",
+    "pose": "standing in the foreground on the left, next to the suitcase, laughing"
+   },
+   {
+    "nom": "the calm wife",
+    "desc": "woman in her 30s, coral-and-ruby kaba, elegant headwrap, holding one thick envelope of banknotes",
+    "pose": "sitting on the sofa in the middle, the envelope on her lap"
+   },
+   {
+    "nom": "the friend filming",
+    "desc": "young man in his 20s, teal-and-sky-blue tracksuit, cap, holding one smartphone up to film",
+    "pose": "standing on the right, filming the couple"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chérie, c'est une caméra cachée ! Je pars pas vraiment dêh !"
+   ],
+   [
+    1,
+    "Ehh… Mais j'ai déjà vendu ta voiture-là !"
+   ],
+   [
+    2,
+    "Vieux père, souris. On est toujours en direct."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband bursts out laughing and points at the friend's phone, his face clearly visible. The wife's smile drops; she lifts the envelope a little and says it, her face clearly visible. The friend keeps filming and says it calmly, his face turned three-quarters to the camera.",
+  "chute": "The husband's laugh freezes, his hand still on the suitcase. The camera slowly pushes in to a close-up of the pranking husband's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "caméra",
+   "voiture",
+   "direct"
+  ],
+  "gag_legende": "LE MARI EN APPELANT L'ACHETEUR :",
+  "mecanisme": "arroseur arrosé (la blague se retourne contre le farceur) + relance du témoin qui filme"
+ },
+ {
+  "id": "B058-04",
+  "titre": "Le don du sac de riz",
+  "lieu": "dusty street corner in Songon, Abidjan, a wooden bench against a wall, a big sack of rice on the ground, late morning",
+  "persos": [
+   {
+    "nom": "the charity influencer",
+    "desc": "young woman in her 20s, ochre-and-sky-blue kaftan, big earrings, holding one smartphone",
+    "pose": "standing in the foreground on the left, filming herself with the old man behind her, fake emotional face"
+   },
+   {
+    "nom": "the old man with the sack",
+    "desc": "old man in his 70s, saffron-and-ruby tunic, white beard, one hand resting on the sack of rice",
+    "pose": "sitting on the bench on the right, one hand on the sack, smiling kindly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Abonnés, regardez ! J'offre ce sac de riz à ce pauvre vieux père dêh !"
+   ],
+   [
+    1,
+    "Merci ma fille. Après la vidéo, je te rends le sac comme hier ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The influencer speaks to her phone with a trembling, emotional voice, her face clearly visible. The old man pats the sack, smiles kindly and asks innocently, his face turned three-quarters to the camera.",
+  "chute": "The influencer freezes, her emotional smile stuck on her face. The camera slowly pushes in to a close-up of the charity influencer's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "sac de riz",
+   "vidéo",
+   "hier"
+  ],
+  "gag_legende": "LES ABONNÉS QUI ONT PLEURÉ HIER :",
+  "mecanisme": "témoin innocent (le bénéficiaire) qui révèle la fausse charité recyclée chaque jour"
+ },
+ {
+  "id": "B058-05",
+  "titre": "L'anniversaire en direct",
+  "lieu": "dining room of an apartment in Deux-Plateaux, Abidjan, a birthday cake with a few candles on the table, balloons, a ring light, evening",
+  "persos": [
+   {
+    "nom": "the birthday mother",
+    "desc": "woman in her 40s, coral-and-ruby dress, glossy wig, holding one smartphone",
+    "pose": "standing behind the cake in the foreground on the left, holding the phone at arm's length, posing"
+   },
+   {
+    "nom": "the little daughter",
+    "desc": "girl around 7, teal-and-sky-blue dress, two puffs of hair, holding one small bag full of birthday candles",
+    "pose": "standing on the right at the end of the table, holding the bag up"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mes abonnés, aujourd'hui j'ai vingt-cinq ans dêh ! Merci pour l'amour !"
+   ],
+   [
+    1,
+    "Maman, je cache les vingt autres bougies avant le live ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother waves at her phone and announces it proudly, her face clearly visible. The daughter lifts the bag of candles a little and asks innocently, her face turned three-quarters to the camera.",
+  "chute": "The mother's smile freezes, her eyes wide. The camera slowly pushes in to a close-up of the birthday mother's panicked face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "vingt-cinq ans",
+   "bougies"
+  ],
+  "gag_legende": "LES ABONNÉS EN FAISANT LE CALCUL :",
+  "mecanisme": "témoin innocent (enfant) qui trahit l'âge réel par un simple chiffre"
+ },
+ {
+  "id": "B058-06",
+  "titre": "Le boy renvoyé en direct",
+  "lieu": "veranda of a big house in Songon, Abidjan, potted plants, a ring light on a stand, a broom leaning against the wall, morning",
+  "persos": [
+   {
+    "nom": "the showoff boss",
+    "desc": "man in his 40s, magenta-and-sunflower boubou, big belly, holding one smartphone",
+    "pose": "standing in the foreground on the left, filming himself and pointing at the houseboy"
+   },
+   {
+    "nom": "the calm houseboy",
+    "desc": "young man in his 20s, coral-and-ruby polo shirt, neat haircut, holding one smartphone up to film",
+    "pose": "standing on the right, filming his boss, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Abonnés, je renvoie mon boy en direct dêh !"
+   ],
+   [
+    1,
+    "Ya fohi patron. Mes abonnés regardent vos colères depuis deux ans."
+   ],
+   [
+    0,
+    "Tu as combien d'abonnés ?"
+   ],
+   [
+    1,
+    "Un million. Votre femme est modératrice dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boss laughs at his phone and points at the houseboy, his face clearly visible. The houseboy keeps filming and answers calmly, his face turned three-quarters to the camera. The boss frowns and asks, his face clearly visible. The houseboy answers with a small polite smile, his face clearly visible.",
+  "chute": "The boss freezes, his pointing finger still raised. The camera slowly pushes in to a close-up of the showoff boss's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "boy",
+   "million",
+   "modératrice"
+  ],
+  "gag_legende": "LE PATRON CE SOIR À LA MAISON :",
+  "mecanisme": "arroseur arrosé + révélation finale sur l'épouse complice (double cible)"
+ },
+ {
+  "id": "B058-07",
+  "titre": "Le live de la célibataire",
+  "lieu": "bedroom of an apartment in Williamsville, Abidjan, a bed with a pile of clothes, a ring light, a door frame on the right, night",
+  "persos": [
+   {
+    "nom": "the influencer wife",
+    "desc": "woman in her 30s, emerald-and-indigo jumpsuit, long wig, wedding ring, holding one smartphone",
+    "pose": "sitting on the bed in the foreground on the left, posing for the phone"
+   },
+   {
+    "nom": "the jobless husband",
+    "desc": "man in his 30s, mustard-and-cream tracksuit, thin moustache, holding one folded newspaper of job ads",
+    "pose": "leaning in the door frame on the right, holding the newspaper"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mes abonnés, je suis célibataire dêh ! Je cherche un homme riche !"
+   ],
+   [
+    1,
+    "Bébé, si tu trouves, demande s'il cherche un chauffeur dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife tilts her head and announces it seductively to her phone, her face clearly visible. The husband lifts the newspaper a little and asks very seriously, his face turned three-quarters to the camera.",
+  "chute": "The wife freezes, her seductive smile stuck on her face. The camera slowly pushes in to a close-up of the influencer wife's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "célibataire",
+   "riche",
+   "chauffeur"
+  ],
+  "gag_legende": "LE FUTUR PATRON DU MARI :",
+  "mecanisme": "le mari témoin démasque la fausse célibataire et retourne l'arnaque à son profit (double cible)"
+ },
+ {
+  "id": "B058-08",
+  "titre": "L'accueil des fans",
+  "lieu": "outside the gate of a house in Williamsville, Abidjan, a small carpet laid on the ground, a ring light, a few balloons tied to the gate, afternoon",
+  "persos": [
+   {
+    "nom": "the star influencer",
+    "desc": "woman in her 20s, ruby-and-chocolate jumpsuit, big sunglasses, holding one smartphone",
+    "pose": "standing on the carpet in the foreground on the left, posing like a celebrity"
+   },
+   {
+    "nom": "the paid little fan",
+    "desc": "boy around 10, magenta-and-sunflower t-shirt, big ears, holding one cardboard sign with a big heart drawn on it",
+    "pose": "standing on the right by the gate, holding the sign up with one hand"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mes abonnés, regardez ! Mes fans m'attendent devant chez moi dêh !"
+   ],
+   [
+    1,
+    "Tantie, tu as payé deux mille pour crier. Ton nom-là, c'est comment ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The influencer waves at her phone like a superstar, her face clearly visible. The boy lowers the sign a little, scratches his head with his free hand and asks innocently, his face turned three-quarters to the camera.",
+  "chute": "The influencer's superstar smile freezes. The camera slowly pushes in to a close-up of the star influencer's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "fans",
+   "deux mille",
+   "nom"
+  ],
+  "gag_legende": "LES AUTRES FANS EN ATTENDANT LEUR PAIE :",
+  "mecanisme": "témoin innocent (le faux fan payé) qui révèle la mise en scène et ne connaît même pas la star"
+ },
+ {
+  "id": "B058-09",
+  "titre": "L'interview de la star",
+  "lieu": "small TV studio in Deux-Plateaux, Abidjan, two armchairs, a low table, studio lights, evening",
+  "persos": [
+   {
+    "nom": "the journalist",
+    "desc": "woman in her 30s, ruby-and-chocolate blazer, short hair, holding one microphone",
+    "pose": "sitting in the armchair on the left, holding the microphone toward the singer"
+   },
+   {
+    "nom": "the proud singer",
+    "desc": "man in his 30s, magenta-and-sunflower suit, sunglasses pushed up on his head, chain necklace",
+    "pose": "sitting in the armchair in the foreground on the right, legs crossed, very proud"
+   },
+   {
+    "nom": "the assistant",
+    "desc": "young man in his 20s, emerald-and-cream shirt, glasses, holding one clipboard",
+    "pose": "standing behind the armchairs in the middle, holding the clipboard"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "C'est quoi ton secret-là, la star ?"
+   ],
+   [
+    1,
+    "Le travail, ma sœur ! J'écris tout moi-même dêh !"
+   ],
+   [
+    2,
+    "Patron, votre petit frère qui écrit vos chansons demande s'il peut aller jouer."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The journalist holds the microphone toward the singer and asks with a big smile, her face clearly visible. The singer taps his chest proudly and answers, his face turned three-quarters to the camera. The assistant leans forward slightly, glances at his clipboard and says it innocently, his face clearly visible.",
+  "chute": "The singer freezes, his hand still on his chest. The camera slowly pushes in to a close-up of the proud singer's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "secret",
+   "chansons",
+   "petit frère"
+  ],
+  "gag_legende": "LE PETIT FRÈRE EN NÉGOCIANT SES DROITS :",
+  "mecanisme": "témoin innocent (l'assistant) qui révèle le vrai auteur des tubes : un enfant (double cible)"
+ },
+ {
+  "id": "B058-10",
+  "titre": "Les astuces maison propre",
+  "lieu": "spotless living room of a villa in Deux-Plateaux, Abidjan, a white sofa, a vase of flowers, a ring light on a stand, morning",
+  "persos": [
+   {
+    "nom": "the neat influencer",
+    "desc": "woman in her 30s, emerald-and-cream jumpsuit, perfect makeup, holding one smartphone",
+    "pose": "standing in the foreground on the left, smiling at the phone"
+   },
+   {
+    "nom": "the tired housemaid",
+    "desc": "young woman in her 20s, saffron-and-ruby dress, headscarf, holding one broom",
+    "pose": "standing on the right near the sofa, holding the broom, very serious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mes abonnés, ma maison est toujours propre. Voici mes astuces dêh !"
+   ],
+   [
+    1,
+    "Tantie, trois mois sans salaire-là… Je dis la vraie astuce ou bien ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The influencer gestures elegantly at her clean living room, her face clearly visible. The housemaid leans on her broom, raises an eyebrow and asks, her face turned three-quarters to the camera.",
+  "chute": "The influencer's smile freezes, her eyes wide with panic. The camera slowly pushes in to a close-up of the neat influencer's panicked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "propre",
+   "astuces",
+   "salaire"
+  ],
+  "gag_legende": "LA PATRONNE EN COUPANT LE LIVE :",
+  "mecanisme": "témoin innocent (l'employée) qui révèle que la vraie astuce, c'est elle, non payée + chantage en direct"
+ },
+ {
+  "id": "B058-11",
+  "titre": "L'autographe du petit fan",
+  "lieu": "in front of a small concert hall in Williamsville, Abidjan, a wall covered with blank concert posters, sunny afternoon",
+  "persos": [
+   {
+    "nom": "the little fan",
+    "desc": "boy around 9, mustard-and-cream t-shirt, big smile, holding one sheet of paper",
+    "pose": "standing on the left, holding the paper up toward the singer"
+   },
+   {
+    "nom": "the famous singer",
+    "desc": "man in his 30s, ruby-and-chocolate jacket, dark sunglasses, holding one marker pen",
+    "pose": "standing in the foreground on the right, leaning slightly toward the boy, smiling"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton chanteur-là, signe-moi un autographe dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, mon petit fan ! C'est pour ta chambre ?"
+   ],
+   [
+    0,
+    "Non, pour papa. Il veut comparer avec ton chèque sans provision."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy holds the paper up and begs with a big smile, his face clearly visible. The singer lifts his marker toward the paper and answers proudly, his face turned three-quarters to the camera. The boy answers innocently, still smiling, his face clearly visible.",
+  "chute": "The singer freezes, the marker stuck in the air above the paper. The camera slowly pushes in to a close-up of the famous singer's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "autographe",
+   "chèque",
+   "provision"
+  ],
+  "gag_legende": "LE CHANTEUR EN VOYANT LE PAPA ARRIVER :",
+  "mecanisme": "témoin innocent (enfant) qui révèle la dette de la star sous couvert d'admiration"
+ },
+ {
+  "id": "B058-12",
+  "titre": "Le live conseils de couple",
+  "lieu": "living room of a house in Songon, Abidjan, a sofa, a ring light on a stand, a flat TV on a low cabinet, evening",
+  "persos": [
+   {
+    "nom": "the couple coach",
+    "desc": "woman in her 40s, emerald-and-indigo kaba, elegant headwrap, holding one smartphone",
+    "pose": "sitting on the sofa in the foreground on the left, talking to the phone like an expert"
+   },
+   {
+    "nom": "the little son",
+    "desc": "boy around 7, coral-and-ruby t-shirt, round cheeks, holding one small teddy bear",
+    "pose": "standing on the right next to the TV cabinet, innocent"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mes sœurs, voici mes conseils pour garder votre mari dêh !"
+   ],
+   [
+    1,
+    "Maman, papa a fini sa valise. Il demande s'il prend la télé aussi."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The coach raises one finger like a teacher and speaks to her phone, her face clearly visible. The boy points at the TV with his free hand and asks innocently, his face turned three-quarters to the camera.",
+  "chute": "The coach freezes, her finger still raised, her mouth open. The camera slowly pushes in to a close-up of the couple coach's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "conseils",
+   "mari",
+   "valise"
+  ],
+  "gag_legende": "PAPA EN DÉBRANCHANT LA TÉLÉ :",
+  "mecanisme": "témoin innocent (enfant) qui contredit l'experte en plein live"
+ },
+ {
+  "id": "B058-13",
+  "titre": "La danse virale de papi",
+  "lieu": "courtyard of a family house in Songon, Abidjan, plastic chairs under a mango tree, a broom leaning against the wall, afternoon",
+  "persos": [
+   {
+    "nom": "the excited grandson",
+    "desc": "boy around 12, teal-and-sky-blue t-shirt, short hair, holding one smartphone showing a video",
+    "pose": "standing on the left, holding the phone toward his grandfather"
+   },
+   {
+    "nom": "the grandfather",
+    "desc": "grandfather in his 70s, emerald-and-cream boubou, grey hair, holding one walking cane",
+    "pose": "sitting on a plastic chair in the foreground in the middle, both hands on the cane"
+   },
+   {
+    "nom": "the grandmother",
+    "desc": "grandmother in her 60s, ruby-and-chocolate kaba, headwrap, arms crossed",
+    "pose": "standing on the right, arms crossed, eyebrows raised"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papi, ta danse au maquis a fait un million de vues !"
+   ],
+   [
+    1,
+    "Ehh ! Je suis devenu célèbre comme ça ?"
+   ],
+   [
+    2,
+    "Oui. Le jour où ton dos-là t'empêchait de balayer la cour."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The grandson shows the phone and shouts excitedly, his face clearly visible. The grandfather straightens up proudly on his chair, his face turned three-quarters to the camera. The grandmother answers coldly, arms still crossed, her face clearly visible.",
+  "chute": "The grandfather's proud smile freezes and he slowly puts one hand on his lower back. The camera slowly pushes in to a close-up of the grandfather's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "danse",
+   "célèbre",
+   "dos"
+  ],
+  "gag_legende": "PAPI EN RETROUVANT SON MAL DE DOS :",
+  "mecanisme": "arroseur arrosé : la célébrité trahit le faux mal de dos (témoin enfant + relance de la grand-mère)"
+ },
+ {
+  "id": "B058-14",
+  "titre": "Le footing de l'influenceuse",
+  "lieu": "roadside in Songon, Abidjan, an old parked taxi with the driver's window open, palm trees, early morning",
+  "persos": [
+   {
+    "nom": "the fitness influencer",
+    "desc": "woman in her 20s, magenta-and-sunflower tracksuit, ponytail, fake sweat on her forehead, holding one smartphone",
+    "pose": "standing in the foreground on the left, next to the taxi, panting for the camera"
+   },
+   {
+    "nom": "the taxi driver",
+    "desc": "man in his 50s, mustard-and-cream shirt, grey moustache, one arm resting on the open window",
+    "pose": "sitting at the wheel on the right, face visible through the open window"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mes abonnés, dix kilomètres de course ce matin dêh ! Discipline !"
+   ],
+   [
+    1,
+    "Tantie, paie d'abord les neuf kilomètres de woro-woro-là. C'est deux mille."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The influencer pants dramatically and flexes her free arm for the phone, her face clearly visible. The driver leans his head out of the window and holds out his open palm, his face turned three-quarters to the camera.",
+  "chute": "The influencer stops panting at once, frozen. The camera slowly pushes in to a close-up of the fitness influencer's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "kilomètres",
+   "woro-woro",
+   "deux mille"
+  ],
+  "gag_legende": "SES ABONNÉS QUI COURENT DEPUIS CE MATIN :",
+  "mecanisme": "témoin innocent (le chauffeur) qui révèle la tricherie par un chiffre"
+ },
+ {
+  "id": "B058-15",
+  "titre": "Le chef de la maison",
+  "lieu": "living room of a house in Williamsville, Abidjan, a big armchair, a ring light on a stand, a kitchen door in the background on the right, evening",
+  "persos": [
+   {
+    "nom": "the macho father",
+    "desc": "man in his 40s, ochre-and-sky-blue boubou, thick moustache, holding one smartphone",
+    "pose": "sitting in the armchair in the foreground on the left, chest out, filming himself"
+   },
+   {
+    "nom": "the little daughter",
+    "desc": "girl around 8, emerald-and-cream dress, two braids, hands on her hips",
+    "pose": "standing on the right next to the kitchen door, hands on her hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mes frères, chez moi, c'est moi le chef ! Ma femme obéit dêh !"
+   ],
+   [
+    1,
+    "Papa, maman dit : rends son téléphone et viens finir la vaisselle."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father thumps his chest with his free hand and boasts to the phone, his face clearly visible. The daughter, hands on her hips, says it loudly, her face turned three-quarters to the camera.",
+  "chute": "The father freezes, his chest deflating, his eyes sliding toward the phone in his hand. The camera slowly pushes in to a close-up of the macho father's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "chef",
+   "téléphone",
+   "vaisselle"
+  ],
+  "gag_legende": "LE CHEF EN FAISANT LA VAISSELLE :",
+  "mecanisme": "témoin innocent (enfant) : même le téléphone du live appartient à la femme (double coup)"
+ },
+ {
+  "id": "B058-16",
+  "titre": "La recette de grand-mère en live",
+  "lieu": "kitchen of an apartment in Williamsville, Abidjan, a big aluminium pot on the gas stove, a smartphone on a small tripod on the counter, a ring light, midday",
+  "persos": [
+   {
+    "nom": "the cooking influencer",
+    "desc": "woman in her 30s, mustard-and-cream kaba, big hoop earrings, holding one wooden ladle",
+    "pose": "standing at the stove in the foreground on the left, stirring the pot, smiling at the phone on the tripod"
+   },
+   {
+    "nom": "the vendor's little girl",
+    "desc": "girl around 9, ochre-and-sky-blue dress, hair in two puffs, hands on her hips",
+    "pose": "standing in the kitchen doorway on the right, hands on her hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mes abonnés, ma sauce graine, recette secrète de ma grand-mère dêh !"
+   ],
+   [
+    1,
+    "Tantie, maman du maquis dit : trois mille pour la sauce, et rends la marmite."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The influencer lifts the ladle proudly and speaks to the phone on the tripod, her face clearly visible. The little girl, hands on her hips, says it loudly, her face turned three-quarters to the camera.",
+  "chute": "The influencer freezes, the ladle stuck in the air. The camera slowly pushes in to a close-up of the cooking influencer's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "recette",
+   "sauce",
+   "marmite"
+  ],
+  "gag_legende": "LA GRAND-MÈRE EN REGARDANT LE LIVE :",
+  "mecanisme": "témoin innocent (la fille de la vendeuse) qui révèle la fausse recette avec la facture"
+ },
+ {
+  "id": "B058-17",
+  "titre": "Qui a le papa le plus connu ?",
+  "lieu": "schoolyard of a primary school in Songon, Abidjan, a wooden bench under a mango tree, recess, sunny morning",
+  "persos": [
+   {
+    "nom": "the proud boy",
+    "desc": "boy around 8, ochre-and-sky-blue school uniform, gap-toothed smile, holding one notebook",
+    "pose": "standing in the foreground on the left, chest out, proud"
+   },
+   {
+    "nom": "the honest girl",
+    "desc": "girl around 8, mustard-and-cream dress, two puffs of hair, holding one pencil case",
+    "pose": "sitting on the bench on the right, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon papa est célèbre, sa photo est partout dêh !"
+   ],
+   [
+    1,
+    "Oui. Chez le boutiquier, chez tantie garba…"
+   ],
+   [
+    0,
+    "Tu vois, il est partout !"
+   ],
+   [
+    1,
+    "Avec écrit dessous : pas de crédit dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy puffs out his chest and brags, his face clearly visible. The girl counts on the fingers of her free hand and lists them calmly, her face turned three-quarters to the camera. The boy spreads his arms, triumphant, his face clearly visible. The girl finishes calmly, her face clearly visible.",
+  "chute": "The boy's triumphant smile freezes, his arms still spread. The camera slowly pushes in to a close-up of the proud boy's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "célèbre",
+   "photo",
+   "crédit"
+  ],
+  "gag_legende": "PAPA EN PASSANT DEVANT LA BOUTIQUE :",
+  "mecanisme": "témoin innocent (enfant) : la célébrité du papa est en fait une liste noire"
+ },
+ {
+  "id": "B058-18",
+  "titre": "Mamie découvre le live",
+  "lieu": "veranda of a family house in Deux-Plateaux, Abidjan, a wooden bench, a ring light on a stand, potted plants, afternoon",
+  "persos": [
+   {
+    "nom": "the grandmother",
+    "desc": "grandmother in her 70s, teal-and-sky-blue boubou, headwrap, round glasses, holding one woven hand fan",
+    "pose": "sitting on the bench on the right, fanning herself slowly"
+   },
+   {
+    "nom": "the influencer granddaughter",
+    "desc": "woman in her 30s, saffron-and-ruby jumpsuit, long braids, holding one smartphone",
+    "pose": "standing in the foreground on the left, filming herself"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma fille, tu parles seule au téléphone-là ?"
+   ],
+   [
+    1,
+    "Mamie, je suis en direct ! Cinq mille personnes me regardent dêh !"
+   ],
+   [
+    0,
+    "Cinq mille, et aucun n'a pu te trouver un mari ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The grandmother lowers her fan and asks, frowning, her face clearly visible. The granddaughter answers proudly, waving her free hand at the phone, her face turned three-quarters to the camera. The grandmother points the fan at her and answers flatly, her face clearly visible.",
+  "chute": "The granddaughter freezes, her proud smile collapsing. The camera slowly pushes in to a close-up of the influencer granddaughter's vexed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "direct",
+   "cinq mille",
+   "mari"
+  ],
+  "gag_legende": "LES CINQ MILLE ABONNÉS APRÈS ÇA :",
+  "mecanisme": "pique de la grand-mère qui touche deux cibles d'un coup (la petite-fille et ses abonnés)"
+ },
+ {
+  "id": "B058-19",
+  "titre": "Le prêt chez mamie",
+  "lieu": "living room of a house in Williamsville, Abidjan, an old armchair, a ring light on a stand, framed family photos on the wall, afternoon",
+  "persos": [
+   {
+    "nom": "the broke son",
+    "desc": "man in his 40s, saffron-and-ruby shirt, receding hairline, hands joined in a begging gesture",
+    "pose": "standing in the foreground on the left, hands joined, begging"
+   },
+   {
+    "nom": "the influencer grandma",
+    "desc": "grandmother in her 70s, emerald-and-indigo boubou, big glasses, holding one smartphone",
+    "pose": "sitting in the armchair on the right, scrolling on her phone, unimpressed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, pardon, prête-moi cinquante mille dêh ! C'est urgent !"
+   ],
+   [
+    1,
+    "Mon fils, abonne-toi d'abord. Mamie prête seulement à ses fans."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son begs with his hands joined, his face clearly visible. The grandma keeps scrolling, then turns her face three-quarters to the camera and answers coldly.",
+  "chute": "The son freezes, his hands still joined, his mouth open. The camera slowly pushes in to a close-up of the broke son's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "cinquante mille",
+   "abonne-toi",
+   "fans"
+  ],
+  "gag_legende": "LE FILS EN CRÉANT SON COMPTE :",
+  "mecanisme": "renversement des rôles : la vieille mère devenue star fait payer son propre fils"
+ },
+ {
+  "id": "B058-20",
+  "titre": "Papi veut des abonnés",
+  "lieu": "small garden of a house in Deux-Plateaux, Abidjan, two plastic chairs, a low table, flowers, late afternoon",
+  "persos": [
+   {
+    "nom": "the curious grandpa",
+    "desc": "grandfather in his 70s, coral-and-ruby kaftan, white hair, holding one old smartphone",
+    "pose": "sitting on a plastic chair on the left, holding the phone far from his eyes"
+   },
+   {
+    "nom": "the teenage grandson",
+    "desc": "teenage boy around 15, emerald-and-indigo hoodie, headphones around his neck",
+    "pose": "sitting on a plastic chair in the foreground on the right, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, comment on fait pour avoir beaucoup d'abonnés-là ?"
+   ],
+   [
+    1,
+    "Papi, faut faire des bêtises en direct chaque jour."
+   ],
+   [
+    0,
+    "Ehh ! Donc ton papa-là devait être millionnaire depuis quarante ans !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The grandpa squints at his phone and asks, his face clearly visible. The grandson shrugs and explains casually, his face turned three-quarters to the camera. The grandpa raises his eyebrows and answers very seriously, his face clearly visible.",
+  "chute": "The grandson freezes, his mouth open, trying not to laugh. The camera slowly pushes in to a close-up of the teenage grandson's stunned face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "abonnés",
+   "bêtises",
+   "millionnaire"
+  ],
+  "gag_legende": "PAPA QUAND IL VA VOIR LA VIDÉO :",
+  "mecanisme": "question naïve du vieux qui se retourne en pique contre le père absent"
+ }
+]

@@ -1,0 +1,902 @@
+[
+ {
+  "id": "B067-01",
+  "titre": "Le parfum pas encore payé",
+  "lieu": "perfume and cosmetics stall in Treichville market, Abidjan, a wooden table covered with small glass perfume bottles and jars of shea butter, a busy aisle behind, late morning",
+  "persos": [
+   {
+    "nom": "the perfume seller",
+    "desc": "market seller woman in her 50s, mustard-and-aubergine kaba, plump cheeks, big earrings, hands free",
+    "pose": "standing behind the table on the right, hands on her hips, suspicious"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, mint-and-peach dress, long braids, holding ONE single small glass perfume bottle",
+    "pose": "standing in the middle in front of the table, holding the perfume bottle against her chest"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, olive-and-violet shirt, round belly, short beard, holding ONE single small plastic bag",
+    "pose": "standing in the foreground on the left, closest to the camera, next to his wife, smiling proudly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, tu pars sans payer ? Laisse quelque chose en garantie dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Garde mon mari-là."
+   ],
+   [
+    0,
+    "Et si tu reviens pas ?"
+   ],
+   [
+    1,
+    "C'est ça le plan, Tantie."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The seller, hands on her hips, frowns at the wife and demands a guarantee. The wife calmly points her free thumb at her husband without looking at him. The seller raises one eyebrow and points at the wife. The wife answers with a sweet frozen smile, her face clearly visible, while the husband keeps smiling, not understanding yet.",
+  "chute": "The husband's proud smile slowly melts, his eyes widen and his mouth falls open. The camera slowly pushes in to a close-up of the husband's betrayed face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "garantie",
+   "mari",
+   "plan"
+  ],
+  "gag_legende": "LE MARI QUAND IL A COMPRIS LE PLAN :",
+  "mecanisme": "caution absurde (le mari laissé en garantie) + aveu d'abandon prémédité"
+ },
+ {
+  "id": "B067-02",
+  "titre": "La cliente qui hésite",
+  "lieu": "small wax fabric boutique in Cocody, Abidjan, wooden shelves stacked with folded patterned fabrics, a glass counter, soft afternoon light",
+  "persos": [
+   {
+    "nom": "the boutique owner",
+    "desc": "boutique owner woman in her 40s, plum-and-navy boubou, short natural hair, big earrings, holding ONE single folded fabric",
+    "pose": "standing behind the glass counter on the right, holding the folded fabric, with a knowing smile"
+   },
+   {
+    "nom": "the hesitant wife",
+    "desc": "wife in her 30s, cream-and-aubergine wrap dress, short curly hair, holding ONE single phone",
+    "pose": "standing in the foreground on the left, closest to the camera, holding her phone, hesitating"
+   }
+  ],
+  "dialogue": [
+   [
+    1,
+    "Ma sœur, je vais d'abord demander à mon mari dêh."
+   ],
+   [
+    0,
+    "Ya fohi. Demande-lui pour qui il a pris le même hier."
+   ],
+   [
+    1,
+    "Le même pagne-là ?!"
+   ],
+   [
+    0,
+    "Oui. En deux couleurs dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife lifts her phone slightly and says she will ask her husband first. The owner answers calmly, tapping the folded fabric with one finger. The wife's eyes widen and she leans forward in shock. The owner nods slowly and finishes, her face clearly visible, with a tiny innocent smile.",
+  "chute": "The wife freezes, her mouth wide open, gripping her phone. The camera slowly pushes in to a close-up of the hesitant wife's stunned face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "mon mari",
+   "le même",
+   "deux couleurs"
+  ],
+  "gag_legende": "LE MARI CE SOIR EN OUVRANT LA PORTE :",
+  "mecanisme": "révélation par la vendeuse + relance qui double le scandale"
+ },
+ {
+  "id": "B067-03",
+  "titre": "Maman marchande les légumes",
+  "lieu": "vegetable stall in Yopougon market, Abidjan, a wooden table with neat piles of tomatoes, onions and peppers, big umbrellas above, morning",
+  "persos": [
+   {
+    "nom": "the vegetable seller",
+    "desc": "seller woman in her 50s, tangerine-and-silver kaba, strong arms, short braids, hands free",
+    "pose": "standing behind the table on the right, arms crossed, unimpressed"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 40s, olive-and-violet boubou, round face, holding ONE single small handbag",
+    "pose": "standing in the foreground on the left, closest to the camera, one hand on her chest"
+   },
+   {
+    "nom": "the boy",
+    "desc": "boy around 8, peach-and-apricot t-shirt, big round eyes, shaved head, empty hands",
+    "pose": "standing in the middle next to his mother, looking up at her innocently"
+   }
+  ],
+  "dialogue": [
+   [
+    1,
+    "Tantie, j'ai que mille francs sur moi dêh !"
+   ],
+   [
+    2,
+    "Maman, et les dix mille dans ta chaussure ?"
+   ],
+   [
+    1,
+    "Ça c'est pour l'école de ton petit frère-là."
+   ],
+   [
+    2,
+    "Mais je suis enfant unique dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother swears with one hand on her chest, looking at the seller. The boy looks up at his mother and points down at her shoe. The mother turns her head to the boy and answers quickly with a forced smile. The boy frowns, confused, and protests, his face clearly visible.",
+  "chute": "The seller raises both eyebrows and the mother's forced smile freezes. The camera slowly pushes in to a close-up of the mother's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "mille francs",
+   "chaussure",
+   "enfant unique"
+  ],
+  "gag_legende": "MAMAN SUR LE CHEMIN DE LA MAISON :",
+  "mecanisme": "l'enfant balance + mensonge de secours qui en révèle un pire"
+ },
+ {
+  "id": "B067-04",
+  "titre": "Le mari de la copine",
+  "lieu": "small men's fashion boutique in Cocody, Abidjan, folded shirts on glass shelves, a wooden counter with a cash register, bright afternoon",
+  "persos": [
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, plum-and-sky-blue polo shirt, thin mustache, receding hairline, holding ONE single open wallet",
+    "pose": "standing in the foreground on the left, closest to the camera, holding his open wallet, confident smile"
+   },
+   {
+    "nom": "the boutique owner",
+    "desc": "boutique owner woman in her 40s, mint-and-sand kaftan, long braids, bracelets, hands free",
+    "pose": "standing behind the counter on the right, both hands resting on the counter"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, fais-moi réduction. Ta copine Mariam-là, c'est ma femme dêh !"
+   ],
+   [
+    1,
+    "Ahh, c'est toi le mari ? Elle a dit : fais-lui double, on partage la différence demain."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The husband proudly asks for a discount, raising his open wallet a little. The owner's face lights up, she claps her hands once and answers happily, her face clearly visible, as if it were wonderful news.",
+  "chute": "The husband's proud smile freezes and the wallet droops in his hand. The camera slowly pushes in to a close-up of the husband's betrayed face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "réduction",
+   "ma femme",
+   "double"
+  ],
+  "gag_legende": "MADAME DEMAIN EN VENANT CHERCHER SA PART :",
+  "mecanisme": "complot révélé par la complice elle-même, qui croit faire plaisir"
+ },
+ {
+  "id": "B067-05",
+  "titre": "Les devoirs au marché",
+  "lieu": "rice and sugar stall in Treichville market, Abidjan, open sacks of rice, a big metal weighing scale on the wooden table, a small stool, late afternoon",
+  "persos": [
+   {
+    "nom": "the girl",
+    "desc": "girl around 9, mint-and-sand dress, two puff ponytails, holding ONE single school notebook",
+    "pose": "sitting on a small stool in the middle, the notebook on her knees, looking up at her mother"
+   },
+   {
+    "nom": "the seller mother",
+    "desc": "market seller mother in her 40s, cream-and-aubergine boubou, round glasses, one hand on the metal scale",
+    "pose": "standing behind the table on the left, one hand resting on the scale"
+   },
+   {
+    "nom": "the regular customer",
+    "desc": "customer woman in her 50s, plum-and-navy kaba, sharp eyebrows, holding ONE single empty basket",
+    "pose": "standing in the foreground on the right, closest to the camera, holding her basket, waiting to be served"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, pour mon devoir : un kilo, c'est combien de grammes ?"
+   ],
+   [
+    1,
+    "À l'école, mille. Au marché, huit cents dêh."
+   ],
+   [
+    2,
+    "Tantie, donc depuis dix ans-là ?!"
+   ],
+   [
+    1,
+    "Toi-même, c'est sept cents. Tu marchandes trop."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The girl asks her question, tapping her notebook with one finger. The mother answers casually without thinking, patting the scale. The customer turns her head sharply to the mother and points at her, outraged. The mother shrugs and answers calmly, her face clearly visible.",
+  "chute": "The customer's mouth falls open and she clutches her empty basket. The camera slowly pushes in to a close-up of the regular customer's outraged face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "kilo",
+   "huit cents",
+   "sept cents"
+  ],
+  "gag_legende": "LA CLIENTE EN RECOMPTANT SES DIX ANS :",
+  "mecanisme": "aveu naïf de la triche + relance qui aggrave pour la cliente"
+ },
+ {
+  "id": "B067-06",
+  "titre": "Les bananes pas encore mûres",
+  "lieu": "fruit stall in Cocody market, Abidjan, bunches of green bananas hanging from a wooden frame, papayas on the table, noon sun",
+  "persos": [
+   {
+    "nom": "the hungry young man",
+    "desc": "young man in his 20s, mustard-and-aubergine tracksuit, small afro, skinny, holding ONE single bunch of green bananas",
+    "pose": "standing in the foreground on the left, closest to the camera, holding the bananas"
+   },
+   {
+    "nom": "the fruit seller",
+    "desc": "fruit seller woman in her 30s, peach-and-apricot jumpsuit, calm face, hoop earrings, hands free",
+    "pose": "sitting on a stool behind the table on the right, hands on her knees, very relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, tes bananes-là sont mûres ?"
+   ],
+   [
+    1,
+    "Encore deux jours, mon fils."
+   ],
+   [
+    0,
+    "Mais je mange ça ce soir dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Mâche lentement jusqu'à jeudi."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The young man lifts the bunch of bananas a little and asks. The seller answers calmly, holding up two fingers. The young man protests, eyebrows raised. The seller gives her solution very seriously, with a small reassuring nod, her face clearly visible.",
+  "chute": "The young man slowly looks down at his bananas, his jaw hanging. The camera slowly pushes in to a close-up of the hungry young man's dumbfounded face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "mûres",
+   "deux jours",
+   "jeudi"
+  ],
+  "gag_legende": "SA MÂCHOIRE JEUDI MATIN :",
+  "mecanisme": "logique absurde prise au pied de la lettre : la banane mûrit pendant qu'on la mâche"
+ },
+ {
+  "id": "B067-07",
+  "titre": "Le pagne qui a déteint",
+  "lieu": "wax fabric stall in Yopougon market, Abidjan, a long wooden table piled with folded patterned fabrics, a plastic chair, morning",
+  "persos": [
+   {
+    "nom": "the angry customer",
+    "desc": "customer woman in her 30s, plum-and-sky-blue dress, high bun, holding ONE single folded fabric",
+    "pose": "standing in the foreground on the left, closest to the camera, holding the fabric up, furious"
+   },
+   {
+    "nom": "the fabric seller",
+    "desc": "fabric seller woman in her 50s, olive-and-violet kaftan, reading glasses, holding ONE single calculator",
+    "pose": "sitting on a plastic chair behind the table on the right, holding the calculator"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ton pagne-là a déteint sur toute ma lessive dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Ça fait combien d'habits ?"
+   ],
+   [
+    0,
+    "Douze habits, Tantie !"
+   ],
+   [
+    1,
+    "Donc tu me dois douze pagnes dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer shakes the folded fabric slightly and complains. The seller looks at her over her glasses and asks calmly. The customer answers, raising her free hand with spread fingers. The seller taps her calculator once and announces the result, her face clearly visible, very satisfied.",
+  "chute": "The customer freezes, the fabric hanging from her hand. The camera slowly pushes in to a close-up of the angry customer's flabbergasted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "déteint",
+   "douze",
+   "pagnes"
+  ],
+  "gag_legende": "ELLE EN RANGEANT SA LESSIVE CE SOIR :",
+  "mecanisme": "logique absurde au pied de la lettre : chaque habit taché devient un pagne vendu"
+ },
+ {
+  "id": "B067-08",
+  "titre": "La queue à la boutique",
+  "lieu": "small neighborhood shop in Yopougon, Abidjan, a wooden counter, shelves with rice bags, oil bottles and canned food, a short queue of customers, evening light",
+  "persos": [
+   {
+    "nom": "the impatient customer",
+    "desc": "man in his 30s, mint-and-sand shirt, neat beard, holding ONE single banknote",
+    "pose": "standing at the counter in the foreground on the left, closest to the camera, holding up the banknote"
+   },
+   {
+    "nom": "the shopkeeper",
+    "desc": "shopkeeper man in his 50s, tangerine-and-silver boubou, bald head, big smile, hands free",
+    "pose": "standing behind the counter in the middle, both hands on the counter"
+   },
+   {
+    "nom": "the woman in the queue",
+    "desc": "woman in her 40s, mustard-and-aubergine wrap dress, big hoop earrings, holding ONE single empty basket",
+    "pose": "standing on the right, slightly behind, holding her basket"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, le client est roi ! Sers-moi en premier dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, Majesté. Et le roi paie pour tout son peuple."
+   ],
+   [
+    2,
+    "Vive le roi ! Mets-moi trois kilos de riz dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer waves his banknote and demands to be served first. The shopkeeper bows his head slightly with a big smile and answers, pointing at the queue. The woman in the queue raises her basket happily and shouts her order, her face clearly visible.",
+  "chute": "The customer's banknote droops and his face falls. The camera slowly pushes in to a close-up of the impatient customer's panicked face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "roi",
+   "peuple",
+   "trois kilos"
+  ],
+  "gag_legende": "LE ROI EN VOYANT LA FACTURE :",
+  "mecanisme": "expression prise au pied de la lettre + un tiers qui en profite aussitôt"
+ },
+ {
+  "id": "B067-09",
+  "titre": "La pointure",
+  "lieu": "shoe stall in Treichville market, Abidjan, rows of men's leather shoes on a wooden rack, a plastic stool, hot afternoon",
+  "persos": [
+   {
+    "nom": "the customer",
+    "desc": "man in his 30s, plum-and-navy polo shirt, square jaw, big feet, holding ONE single leather shoe",
+    "pose": "sitting on a plastic stool in the foreground on the left, closest to the camera, holding the shoe up"
+   },
+   {
+    "nom": "the shoe seller",
+    "desc": "young shoe seller in his 20s, olive-and-violet tracksuit, small goatee, very confident, hands free",
+    "pose": "standing on the right next to the rack, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, je chausse quarante-quatre ! Ça c'est quarante-deux dêh !"
+   ],
+   [
+    1,
+    "Vieux père, deux quarante-deux, ça fait quatre-vingt-quatre. Tu es même large."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer shows the shoe, outraged. The seller uncrosses his arms, counts on his fingers like an expert and explains very seriously, his face clearly visible.",
+  "chute": "The customer slowly looks down at the shoe, completely lost. The camera slowly pushes in to a close-up of the customer's dumbfounded face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "quarante-quatre",
+   "quatre-vingt-quatre",
+   "large"
+  ],
+  "gag_legende": "SES ORTEILS DANS LA CHAUSSURE CE SOIR :",
+  "mecanisme": "calcul absurde pris au pied de la lettre"
+ },
+ {
+  "id": "B067-10",
+  "titre": "Le sac trop cher",
+  "lieu": "handbag stall in Cocody market, Abidjan, handbags hanging on metal hooks, a small folding table, late morning",
+  "persos": [
+   {
+    "nom": "the bargaining customer",
+    "desc": "young woman in her 20s, tangerine-and-silver jumpsuit, long braids tied up, hands free",
+    "pose": "standing in the foreground on the left, closest to the camera, hands on her hips"
+   },
+   {
+    "nom": "the bag seller",
+    "desc": "bag seller woman in her 40s, cream-and-aubergine kaftan, sly smile, holding ONE single handbag",
+    "pose": "standing on the right in front of the hooks, holding the handbag up"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ton prix-là est trop haut, baisse un peu dêh !"
+   ],
+   [
+    1,
+    "Ya fohi… dix mille francs."
+   ],
+   [
+    0,
+    "Mais c'est le même prix-là !"
+   ],
+   [
+    1,
+    "Oui. Mais ça fait moins mal aux oreilles."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer, hands on her hips, demands a lower price. The seller leans in slightly and whispers the price in a tiny soft voice, lips clearly moving. The customer throws her hands up, outraged. The seller answers, still whispering softly with a sweet smile, her face clearly visible.",
+  "chute": "The customer freezes, mouth open, hands still in the air. The camera slowly pushes in to a close-up of the bargaining customer's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "baisse",
+   "même prix",
+   "oreilles"
+  ],
+  "gag_legende": "SON PORTE-MONNAIE QUI ÉCOUTAIT AUSSI :",
+  "mecanisme": "« baisser » pris au pied de la lettre : on baisse la voix, pas le prix"
+ },
+ {
+  "id": "B067-11",
+  "titre": "La commission pour maman",
+  "lieu": "small neighborhood shop in Yopougon, Abidjan, a wooden counter with jars of candies, shelves with rice bags and oil bottles, a bare light bulb, evening",
+  "persos": [
+   {
+    "nom": "the little girl",
+    "desc": "little girl around 7, peach-and-apricot dress, two puff ponytails, big innocent eyes, both hands on the edge of the counter",
+    "pose": "standing on the left in front of the counter, hands on its edge, looking up"
+   },
+   {
+    "nom": "the shopkeeper",
+    "desc": "shopkeeper man in his 40s, cream-and-aubergine shirt, thick eyebrows, holding ONE single small metal cash box",
+    "pose": "standing behind the counter on the right, in the foreground close to the camera, holding the cash box"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, maman demande si tu as la monnaie de dix mille."
+   ],
+   [
+    1,
+    "Oui, ma fille. Le billet est où ?"
+   ],
+   [
+    0,
+    "Elle dit donne la monnaie d'abord. Le billet arrive demain dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The little girl asks politely, looking up. The shopkeeper nods, lifts the lid of the cash box slightly and asks with a smile. The little girl answers very seriously and innocently, her face clearly visible.",
+  "chute": "The shopkeeper slowly closes the cash box and hugs it against his chest. The camera slowly pushes in to a close-up of the shopkeeper's flabbergasted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "monnaie",
+   "dix mille",
+   "demain"
+  ],
+  "gag_legende": "LE BOUTIQUIER EN CACHANT SA CAISSE :",
+  "mecanisme": "logique absurde à l'envers : la monnaie avant le billet"
+ },
+ {
+  "id": "B067-12",
+  "titre": "Le paiement par téléphone",
+  "lieu": "small bread and grocery kiosk in Cocody, Abidjan, loaves of bread stacked on a wooden counter, canned food on shelves, early morning",
+  "persos": [
+   {
+    "nom": "the phone customer",
+    "desc": "man in his 30s, tangerine-and-silver tracksuit, short dreadlocks, holding ONE single phone",
+    "pose": "standing in the foreground on the left, closest to the camera, holding his phone screen toward the seller"
+   },
+   {
+    "nom": "the kiosk seller",
+    "desc": "kiosk seller woman in her 40s, plum-and-sky-blue kaba, skeptical eyes, hands free",
+    "pose": "standing behind the counter on the right, arms crossed, next to the bread"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, je t'ai envoyé l'argent par mobile money dêh !"
+   ],
+   [
+    1,
+    "J'ai rien reçu, mon fils."
+   ],
+   [
+    0,
+    "Le réseau-là est lent, Tantie. Ça arrive."
+   ],
+   [
+    1,
+    "Ya fohi. Ton pain aussi arrive par réseau."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer shows his phone screen with confidence. The seller shakes her head, arms crossed. The customer shrugs and smiles, wiggling the phone. The seller uncrosses her arms, puts one hand flat on the bread loaves and answers calmly, her face clearly visible.",
+  "chute": "The customer's smile freezes as he stares at the bread under her hand. The camera slowly pushes in to a close-up of the phone customer's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "mobile money",
+   "réseau",
+   "pain"
+  ],
+  "gag_legende": "LUI EN ATTENDANT SON PAIN PAR RÉSEAU :",
+  "mecanisme": "logique absurde retournée : la vendeuse applique la même excuse à sa marchandise"
+ },
+ {
+  "id": "B067-13",
+  "titre": "Les prix qui changent",
+  "lieu": "spice and vegetable stall in Treichville market, Abidjan, baskets of dried chili, small piles of tomatoes and garlic on a wooden table, midday",
+  "persos": [
+   {
+    "nom": "the wig customer",
+    "desc": "woman in her 30s, peach-and-apricot kaftan, very long shiny straight wig down to her waist, holding ONE single small purse",
+    "pose": "standing in the foreground on the left, closest to the camera, holding her purse, offended"
+   },
+   {
+    "nom": "the vegetable seller",
+    "desc": "seller woman in her 50s, mint-and-sand boubou, short gray hair, sharp eyes, hands free",
+    "pose": "standing behind the table on the right, one hand on her hip"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, tu fais tes prix à la tête du client ?!"
+   ],
+   [
+    1,
+    "Non, ma sœur. À la mèche du client dêh."
+   ],
+   [
+    0,
+    "Mais ma mèche-là est même pas payée !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer accuses the seller, pointing at her. The seller calmly points her finger at the long wig and answers. The customer touches her wig with her free hand and blurts out her answer, her face clearly visible.",
+  "chute": "The customer realizes what she just said and freezes, eyes wide, her hand still on her wig. The camera slowly pushes in to a close-up of the wig customer's embarrassed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "tête du client",
+   "mèche",
+   "payée"
+  ],
+  "gag_legende": "LA COIFFEUSE QUI ATTEND SON ARGENT :",
+  "mecanisme": "expression détournée au pied de la lettre + auto-dénonciation de la victime"
+ },
+ {
+  "id": "B067-14",
+  "titre": "La bouilloire rapportée",
+  "lieu": "small kitchenware shop in Yopougon, Abidjan, shelves with pots, kettles and plastic plates, a hand-painted sign on the wall behind the counter, afternoon",
+  "persos": [
+   {
+    "nom": "the unhappy customer",
+    "desc": "woman in her 40s, olive-and-violet wrap dress, short braids, holding ONE single electric kettle",
+    "pose": "standing in the foreground on the left, closest to the camera, holding the kettle out"
+   },
+   {
+    "nom": "the shop owner",
+    "desc": "shop owner man in his 40s, peach-and-apricot shirt, round belly, big satisfied smile, holding ONE single banknote",
+    "pose": "standing behind the counter on the right, holding the banknote against his chest"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "C'est écrit satisfait ou remboursé ! Moi je suis pas satisfaite dêh !"
+   ],
+   [
+    1,
+    "Ma sœur, la pancarte-là parle de moi. Ton argent m'a satisfait dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer holds the kettle out and complains loudly. The owner points at the sign on the wall with his free hand, pats the banknote against his chest and answers with a big satisfied smile, his face clearly visible.",
+  "chute": "The customer slowly lowers the kettle, her mouth open. The camera slowly pushes in to a close-up of the unhappy customer's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "satisfait",
+   "remboursé",
+   "pancarte"
+  ],
+  "gag_legende": "ELLE EN RELISANT LA PANCARTE :",
+  "mecanisme": "slogan pris au pied de la lettre, du point de vue du vendeur"
+ },
+ {
+  "id": "B067-15",
+  "titre": "La chemise de la vitrine",
+  "lieu": "clothing boutique in Cocody, Abidjan, clothes hanging on racks, a small display platform near the entrance, bright late morning",
+  "persos": [
+   {
+    "nom": "the customer",
+    "desc": "woman in her 30s, plum-and-sky-blue wrap dress, elegant updo, holding ONE single handbag",
+    "pose": "standing on the left, holding her handbag, looking at the display"
+   },
+   {
+    "nom": "the boutique mother",
+    "desc": "boutique owner mother in her 50s, mustard-and-aubergine boubou, tired eyes, hands free",
+    "pose": "standing in the middle, hands on her hips"
+   },
+   {
+    "nom": "the mannequin son",
+    "desc": "teenage boy around 16, mint-and-peach shirt, skinny, short hair, frozen like a store mannequin",
+    "pose": "standing perfectly still on the small display platform in the foreground on the right, closest to the camera, arms slightly apart like a mannequin"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, la chemise sur ton mannequin-là, c'est combien ?"
+   ],
+   [
+    1,
+    "Cinq mille. Et le mannequin est gratuit dêh."
+   ],
+   [
+    2,
+    "Maman, c'est moi ton fils dêh !"
+   ],
+   [
+    1,
+    "Tu vois ? Il parle même. Prends-le vite."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer points at the shirt on the display. The mother answers immediately, hands on her hips, very commercial. The son, who stayed perfectly still until now, turns his head to his mother and protests. The mother points at him and insists to the customer, her face clearly visible, like a great saleswoman.",
+  "chute": "The son keeps his mannequin pose, only his eyes widening in horror. The camera slowly pushes in to a close-up of the mannequin son's betrayed face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "mannequin",
+   "gratuit",
+   "ton fils"
+  ],
+  "gag_legende": "LE FILS CE SOIR À TABLE :",
+  "mecanisme": "logique absurde de vendeuse : le fils immobile devient un article offert"
+ },
+ {
+  "id": "B067-16",
+  "titre": "Les tomates d'hier",
+  "lieu": "tomato stall in Yopougon market, Abidjan, neat pyramids of tomatoes on a wooden table, a low stool, morning",
+  "persos": [
+   {
+    "nom": "the furious customer",
+    "desc": "woman in her 30s, mint-and-peach boubou, wide eyes, holding ONE single plastic bag of tomatoes",
+    "pose": "standing in the foreground on the left, closest to the camera, holding the bag up"
+   },
+   {
+    "nom": "the tomato seller",
+    "desc": "tomato seller woman in her 50s, plum-and-navy kaftan, calm face, small earrings, hands free",
+    "pose": "sitting on a low stool behind the tomatoes on the right, hands on her knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, tes tomates d'hier sont toutes pourries dêh !"
+   ],
+   [
+    1,
+    "Ici elles étaient fraîches. C'est ta maison-là qui gâte tout."
+   ],
+   [
+    0,
+    "Ma maison à moi ?!"
+   ],
+   [
+    1,
+    "Au lycée-là, tu étais la plus jolie dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer lifts the bag and complains. The seller answers calmly without moving from her stool, pointing at the bag. The customer puts her free hand on her chest, offended. The seller looks her up and down and answers softly, with pity, her face clearly visible.",
+  "chute": "The customer freezes, her free hand still on her chest, mouth open. The camera slowly pushes in to a close-up of the furious customer's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "pourries",
+   "maison",
+   "plus jolie"
+  ],
+  "gag_legende": "ELLE DEVANT SON MIROIR CE SOIR :",
+  "mecanisme": "logique absurde : la maison abîme tout, et la preuve vivante est la cliente elle-même"
+ },
+ {
+  "id": "B067-17",
+  "titre": "La boutique fermée",
+  "lieu": "small neighborhood shop in Treichville, Abidjan, at night, a closed waist-high metal gate at the front with a hand-painted sign hanging on it, shelves lit by a bulb inside",
+  "persos": [
+   {
+    "nom": "the customer",
+    "desc": "woman in her 40s, cream-and-aubergine kaba, short braids, holding ONE single empty plastic bottle",
+    "pose": "standing outside the gate in the foreground on the left, closest to the camera"
+   },
+   {
+    "nom": "the shopkeeper",
+    "desc": "shopkeeper man in his 50s, mint-and-sand tracksuit, gray beard, relaxed, hands free",
+    "pose": "sitting on a plastic chair behind the waist-high gate on the right, arms crossed, his face fully visible above the gate"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, je te vois derrière la grille ! Ouvre dêh !"
+   ],
+   [
+    1,
+    "C'est écrit fermé. Moi aussi je suis fermé."
+   ],
+   [
+    0,
+    "Mais tu es en train de parler !"
+   ],
+   [
+    1,
+    "Ça c'est mon message d'absence dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer points at the shopkeeper over the gate and demands that he opens. The shopkeeper, arms crossed, answers calmly with half-closed eyes. The customer throws her free hand up in disbelief. The shopkeeper answers in a flat robotic voice, staring straight ahead, his face clearly visible.",
+  "chute": "The customer stares at him, speechless, the empty bottle hanging from her hand. The camera slowly pushes in to a close-up of the customer's flabbergasted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "fermé",
+   "message d'absence"
+  ],
+  "gag_legende": "ELLE EN ATTENDANT LE BIP SONORE :",
+  "mecanisme": "logique absurde : le boutiquier est « fermé » comme sa boutique et joue son propre répondeur"
+ },
+ {
+  "id": "B067-18",
+  "titre": "Le marché à la fermeture",
+  "lieu": "stall of plastic basins, buckets and brooms in Treichville market, Abidjan, almost empty aisle, other stalls closing, orange sunset light",
+  "persos": [
+   {
+    "nom": "the late customer",
+    "desc": "woman in her 30s, plum-and-navy jumpsuit, short hair, holding ONE single plastic basin",
+    "pose": "standing in the foreground on the left, closest to the camera, holding the basin against her hip"
+   },
+   {
+    "nom": "the basin seller",
+    "desc": "basin seller woman in her 50s, tangerine-and-silver kaftan, strong shoulders, tired face, hands free",
+    "pose": "standing behind her stall on the right, hands on her hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, c'est quoi ton dernier prix dêh ?"
+   ],
+   [
+    1,
+    "Tu es ma dernière cliente. Donc c'est toi tu paies la journée."
+   ],
+   [
+    0,
+    "Toute la journée-là ?!"
+   ],
+   [
+    1,
+    "Oui. Même ceux qui ont marchandé ce matin."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer asks sweetly, holding the basin. The seller answers, pointing at her, very matter-of-fact. The customer's eyes widen and she leans back in shock. The seller nods firmly and finishes, waving one hand toward the empty market, her face clearly visible.",
+  "chute": "The customer clutches the basin, her mouth open. The camera slowly pushes in to a close-up of the late customer's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "dernier prix",
+   "journée",
+   "ce matin"
+  ],
+  "gag_legende": "ELLE EN PAYANT POUR TOUT LE MARCHÉ :",
+  "mecanisme": "« dernier prix » pris au pied de la lettre : la dernière cliente rembourse toute la journée"
+ },
+ {
+  "id": "B067-19",
+  "titre": "Une réduction chez Mamie",
+  "lieu": "spice stall in Yopougon market, Abidjan, baskets of dried chili peppers and small bags of spices on a low wooden table, shade from a big umbrella, midday",
+  "persos": [
+   {
+    "nom": "the young customer",
+    "desc": "young man in his 20s, mustard-and-aubergine t-shirt, thin mustache, charming smile, holding ONE single small bag of spices",
+    "pose": "standing in the foreground on the left, closest to the camera, holding the small bag"
+   },
+   {
+    "nom": "the grandmother seller",
+    "desc": "elderly grandmother seller in her 70s, plum-and-sky-blue boubou, small round glasses, gray hair, wrinkled kind face, hands free",
+    "pose": "sitting on a low stool behind the table on the right, hands on her knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mamie, fais-moi prix de famille dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, mon petit-fils. Ce mois-là, tu m'as rien envoyé."
+   ],
+   [
+    0,
+    "Mamie, on se connaît même pas !"
+   ],
+   [
+    1,
+    "Voilà. Tu viens jamais me voir dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The young man asks with his most charming smile. The grandmother looks at him over her glasses and answers like a disappointed grandmother. The young man laughs nervously and protests, pointing at himself. The grandmother shakes her head sadly and answers, her face clearly visible, full of reproach.",
+  "chute": "The young man's nervous smile freezes. The camera slowly pushes in to a close-up of the young customer's trapped face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "prix de famille",
+   "petit-fils",
+   "jamais"
+  ],
+  "gag_legende": "LE PETIT-FILS ADOPTÉ DE FORCE :",
+  "mecanisme": "logique absurde : la mamie prend le « prix de famille » au mot et réclame ses dus de grand-mère"
+ },
+ {
+  "id": "B067-20",
+  "titre": "Le prix de l'igname",
+  "lieu": "yam and plantain stall in Cocody market, Abidjan, big yams piled on a wooden table, bunches of plantains, morning",
+  "persos": [
+   {
+    "nom": "the outraged customer",
+    "desc": "woman in her 40s, olive-and-violet dress, big hoop earrings, holding ONE single yam",
+    "pose": "standing in the foreground on the left, closest to the camera, holding the yam"
+   },
+   {
+    "nom": "the yam seller",
+    "desc": "yam seller man in his 30s, mint-and-peach tunic, sly smile, muscular arms, hands free",
+    "pose": "standing behind the pile of yams on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi deux mille ? Ma voisine a payé mille ce matin dêh !"
+   ],
+   [
+    1,
+    "Oui, ma sœur. Elle a même laissé cinq cents pour que tu paies double."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer shakes the yam slightly and protests. The seller uncrosses his arms, nods slowly and answers in a calm confidential tone, his face clearly visible.",
+  "chute": "The customer freezes, then her eyes narrow with fury. The camera slowly pushes in to a close-up of the outraged customer's furious face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "voisine",
+   "cinq cents",
+   "double"
+  ],
+  "gag_legende": "LA VOISINE CE SOIR DANS LA COUR :",
+  "mecanisme": "révélation par le vendeur : la voisine a payé pour saboter"
+ }
+]

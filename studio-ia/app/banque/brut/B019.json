@@ -1,0 +1,890 @@
+[
+ {
+  "id": "B019-01",
+  "titre": "Maman parle au mur",
+  "lieu": "living room of a modest house in Abatta, Abidjan, a worn sofa, a plain painted wall with a framed wedding photo, a small coffee table, morning light",
+  "persos": [
+   {
+    "nom": "the curious son",
+    "desc": "boy around 15, saffron-and-cyan t-shirt, short hair, a school backpack on one shoulder",
+    "pose": "sitting on the sofa in the background on the left, frowning, puzzled"
+   },
+   {
+    "nom": "the suspicious mother",
+    "desc": "mother in her 40s, lavender-and-maroon kaba, headwrap tied high, gold earrings",
+    "pose": "standing in the foreground on the right, one palm flat against the wall, face turned three-quarters toward the camera"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, pourquoi tu parles au mur-là depuis ce matin ?"
+   ],
+   [
+    1,
+    "Ton papa dit que les murs ont des oreilles. Je demande où il cache son salaire dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son, seated on the sofa, frowns and points at the wall while he asks his question. The mother keeps her palm on the wall, turns her face three-quarters toward the camera and answers very seriously, eyebrows raised, her face clearly visible.",
+  "chute": "The mother narrows her eyes and taps the wall twice with her palm, waiting for an answer. The camera slowly pushes in to a close-up of the suspicious mother's determined face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "mur",
+   "oreilles",
+   "salaire"
+  ],
+  "gag_legende": "PAPA EN CHANGEANT DE CACHETTE CE SOIR :",
+  "mecanisme": "expression prise au pied de la lettre + révélation sur le père absent"
+ },
+ {
+  "id": "B019-02",
+  "titre": "Retour à cinq heures du matin",
+  "lieu": "front gate of a house in Biétry, Abidjan, just before dawn, a single lit bulb above the open metal gate, potted plants, the sky turning pale",
+  "persos": [
+   {
+    "nom": "the furious father",
+    "desc": "father in his 50s, navy-and-silver pajamas, thick mustache, arms crossed",
+    "pose": "standing in the foreground on the left, arms crossed, glaring"
+   },
+   {
+    "nom": "the late daughter",
+    "desc": "daughter around 19, navy-and-cherry dress, long braids, holding ONE small handbag",
+    "pose": "standing in the middle by the gate, holding the handbag, innocent smile"
+   },
+   {
+    "nom": "the mother at the door",
+    "desc": "mother in her 40s, ivory-and-sunflower nightgown, hair net, arms folded",
+    "pose": "standing in the background on the right in the house doorway, arms folded, side-eyeing the father"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tu rentres à cinq heures du matin-là ?!"
+   ],
+   [
+    1,
+    "Papa, tu as dit faut rentrer tôt. Cinq heures, c'est tôt dêh !"
+   ],
+   [
+    2,
+    "Laisse-la. Toi aussi tu rentres tôt comme ça chaque samedi dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father, arms crossed, barks his question, face three-quarters to the camera. The daughter shrugs with a calm innocent smile and answers, holding her handbag. The mother, in the doorway, points at the father and says her line with a smirk, her face clearly visible.",
+  "chute": "The father uncrosses his arms and freezes, mouth half open, eyes darting sideways. The camera slowly pushes in to a close-up of the furious father's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "tôt",
+   "cinq heures",
+   "samedi"
+  ],
+  "gag_legende": "PAPA QUAND SAMEDI VA ARRIVER :",
+  "mecanisme": "consigne prise au pied de la lettre + la mère qui retourne l'accusation contre le père"
+ },
+ {
+  "id": "B019-03",
+  "titre": "Le portefeuille de papa",
+  "lieu": "living room of an apartment in Zone 4, Abidjan, early morning, a sofa, a low table with a cup of tea, soft light through the window",
+  "persos": [
+   {
+    "nom": "the robbed father",
+    "desc": "father in his 40s, emerald-and-copper boubou, round glasses, holding ONE open empty leather wallet",
+    "pose": "standing in the foreground on the left, holding the open wallet upside down, outraged"
+   },
+   {
+    "nom": "the calm son",
+    "desc": "boy around 17, sky-blue-and-salmon hoodie, high-top haircut, hands in the hoodie pocket",
+    "pose": "standing in the middle, relaxed, hands in the hoodie pocket"
+   },
+   {
+    "nom": "the mother on the sofa",
+    "desc": "mother in her 40s, saffron-and-violet kaba, gold earrings, hands folded on her lap",
+    "pose": "sitting on the sofa on the right, legs crossed, hands folded on her lap"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Qui a pris dix mille dans mon portefeuille-là cette nuit ?!"
+   ],
+   [
+    1,
+    "Papa, tu dis la nuit porte conseil. Elle m'a conseillé dêh."
+   ],
+   [
+    2,
+    "Moi aussi dêh. Mais elle a dit vingt mille."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father shakes the open empty wallet and shouts his question, face three-quarters to the camera. The son shrugs calmly and explains with a wise little nod. The mother, seated, raises one finger and answers sweetly without leaving the sofa, her face clearly visible.",
+  "chute": "The father slowly lowers the empty wallet, his jaw dropping, eyes wide. The camera slowly pushes in to a close-up of the robbed father's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "nuit",
+   "conseil",
+   "vingt mille"
+  ],
+  "gag_legende": "PAPA CE SOIR AVANT DE DORMIR :",
+  "mecanisme": "proverbe pris au pied de la lettre + complice inattendue qui surenchérit"
+ },
+ {
+  "id": "B019-04",
+  "titre": "Le sermon sur l'avenir",
+  "lieu": "living room of a house in Abatta, Abidjan, evening, a wooden sofa with cushions, a wall socket with a charger cable hanging from it, a ceiling fan",
+  "persos": [
+   {
+    "nom": "the preaching father",
+    "desc": "father in his 50s, mint-and-chocolate polo shirt, receding hairline, index finger raised",
+    "pose": "standing in the foreground on the left, index finger raised, solemn"
+   },
+   {
+    "nom": "the son with the phone",
+    "desc": "young man around 18, navy-and-cherry basketball jersey, small earring, holding ONE smartphone in both hands",
+    "pose": "sitting on the sofa in the middle, holding the phone in both hands, looking at the screen"
+   },
+   {
+    "nom": "the mother by the socket",
+    "desc": "mother in her 40s, sky-blue-and-salmon kaba, headwrap, hands on her hips",
+    "pose": "standing on the right next to the wall socket, hands on her hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, ton avenir est entre tes mains dêh !"
+   ],
+   [
+    1,
+    "Papa, il dit batterie faible dêh. Tu as chargeur ?"
+   ],
+   [
+    2,
+    "Demande pas à lui. Son chargeur-là, c'est moi depuis vingt ans."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father raises his finger and declares his line solemnly, face three-quarters to the camera. The son glances at the phone in his hands, then lifts his head and asks innocently. The mother, hands on her hips, tilts her head toward the father and answers with a sarcastic smile, her face clearly visible.",
+  "chute": "The father's raised finger slowly droops and his solemn face collapses. The camera slowly pushes in to a close-up of the preaching father's deflated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "avenir",
+   "batterie",
+   "chargeur"
+  ],
+  "gag_legende": "PAPA EN MODE ÉCONOMIE D'ÉNERGIE :",
+  "mecanisme": "métaphore prise au pied de la lettre + la mère qui achève le père"
+ },
+ {
+  "id": "B019-05",
+  "titre": "L'horloge du salon",
+  "lieu": "kitchen of an apartment in Zone 4, Abidjan, afternoon, an open white chest freezer with frost inside, tiled walls, a small window",
+  "persos": [
+   {
+    "nom": "the stunned mother",
+    "desc": "mother in her 40s, saffron-and-cyan house dress, short natural hair, holding ONE frosted round wall clock",
+    "pose": "standing in the foreground on the left next to the open freezer, holding the frosted clock with both hands"
+   },
+   {
+    "nom": "the clever daughter",
+    "desc": "girl around 16, lavender-and-maroon t-shirt, puffy hair bun, arms crossed",
+    "pose": "standing on the right, arms crossed, very sure of herself"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Qui a mis l'horloge du salon dans le congélateur-là ?!"
+   ],
+   [
+    1,
+    "Maman, tu dis le temps c'est l'argent. Je le conserve pour la fin du mois dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother lifts the frosted clock slightly and shouts her question, face three-quarters to the camera. The daughter, arms crossed, explains calmly with a proud little nod, her face clearly visible.",
+  "chute": "The mother freezes, staring at the frosted clock in her hands, then slowly looks back up. The camera slowly pushes in to a close-up of the stunned mother's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "temps",
+   "argent",
+   "fin du mois"
+  ],
+  "gag_legende": "MAMAN EN OUVRANT LE CONGÉLATEUR DEMAIN :",
+  "mecanisme": "dicton pris au pied de la lettre + pique sur la fin du mois"
+ },
+ {
+  "id": "B019-06",
+  "titre": "Les frais d'inscription",
+  "lieu": "living room of a house in Abatta, Abidjan, late afternoon, an old armchair, a low table, a calendar on the wall",
+  "persos": [
+   {
+    "nom": "the student son",
+    "desc": "young man around 19, navy-and-silver t-shirt, neat short haircut, holding ONE registration form",
+    "pose": "standing on the left, holding the form toward his father, hopeful"
+   },
+   {
+    "nom": "the broke father",
+    "desc": "father in his 50s, saffron-and-violet boubou, grey beard, both wrists pressed together in front of his belly",
+    "pose": "sitting in the armchair in the foreground on the right, wrists pressed together, tragic face"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, l'inscription à l'université, c'est cinquante mille dêh !"
+   ],
+   [
+    1,
+    "Mon fils, en ce moment, j'ai les mains liées dêh."
+   ],
+   [
+    0,
+    "Ya fohi. Donne-moi ton code mobile money, je tape pour toi."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The son holds out the form and announces the amount, face three-quarters to the camera. The father, seated, shows his wrists pressed together and answers with a tragic sigh. The son nods kindly and answers with a helpful smile, his face clearly visible.",
+  "chute": "The father pulls his wrists apart at once and presses both hands flat over his chest pocket. The camera slowly pushes in to a close-up of the broke father's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "mains liées",
+   "code",
+   "mobile money"
+  ],
+  "gag_legende": "PAPA EN CHANGEANT SON CODE CE SOIR :",
+  "mecanisme": "expression prise au pied de la lettre + solution serviable qui piège le père"
+ },
+ {
+  "id": "B019-07",
+  "titre": "Les résultats du bac",
+  "lieu": "courtyard of a house in Biétry, Abidjan, morning, a small wooden chicken coop with three hens behind a low wire fence, a mango tree, a plastic chair",
+  "persos": [
+   {
+    "nom": "the proud son",
+    "desc": "young man around 18, ivory-and-sunflower polo shirt, big smile, holding ONE sheet of exam results above his head",
+    "pose": "standing in the foreground in the center, holding the results high, beaming"
+   },
+   {
+    "nom": "the shocked mother",
+    "desc": "mother in her 40s, emerald-and-copper kaba, headwrap, both hands on her cheeks",
+    "pose": "standing on the left, both hands on her cheeks, eyes wide"
+   },
+   {
+    "nom": "the father by the coop",
+    "desc": "father in his 50s, saffron-and-cyan boubou, bald head, one hand resting on the coop fence",
+    "pose": "standing on the right next to the chicken coop, one hand on the fence, leaning toward the hens"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman ! Ton fils-là a eu le bac dêh !"
+   ],
+   [
+    1,
+    "Chéri, regarde vite les poules-là. Elles doivent avoir des dents maintenant !"
+   ],
+   [
+    2,
+    "Ehh ! Il y en a une qui sourit dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The son waves the results above his head and shouts with joy, face three-quarters to the camera. The mother, hands on her cheeks, glances at the father and urges him, then faces the camera again. The father peers at the hens, then turns his face three-quarters to the camera and announces his line, amazed, his face clearly visible.",
+  "chute": "The son slowly lowers the results paper, his big smile melting. The camera slowly pushes in to a close-up of the proud son's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "bac",
+   "poules",
+   "dents"
+  ],
+  "gag_legende": "LES POULES DU QUARTIER CE SOIR :",
+  "mecanisme": "expression « quand les poules auront des dents » prise au pied de la lettre + relance absurde du père"
+ },
+ {
+  "id": "B019-08",
+  "titre": "La copine interdite",
+  "lieu": "living room of an apartment in Zone 4, Abidjan, evening, a big sofa, a ceiling lamp switched on, an electricity meter box on the wall",
+  "persos": [
+   {
+    "nom": "the strict mother",
+    "desc": "mother in her 40s, mint-and-chocolate kaba, tight bun, hands on her hips",
+    "pose": "standing in the foreground on the left, hands on her hips, furious"
+   },
+   {
+    "nom": "the cunning son",
+    "desc": "young man around 20, saffron-and-violet hoodie, thin mustache, both hands open",
+    "pose": "standing in the middle, both hands open, calm"
+   },
+   {
+    "nom": "the father in the armchair",
+    "desc": "father in his 50s, lavender-and-maroon boubou, reading glasses, holding ONE TV remote",
+    "pose": "sitting in an armchair on the right, holding the remote, half-turned toward them"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Je veux plus voir ta copine-là dans ma maison dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, maman. Elle va venir seulement pendant le délestage."
+   ],
+   [
+    2,
+    "Ehh… Donc elle va habiter ici, mon fils dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother, hands on her hips, shouts her line, face three-quarters to the camera. The son opens his hands and answers calmly, as if it were a fair deal. The father lowers the remote, turns his face three-quarters to the camera and says his line with a resigned look, his face clearly visible.",
+  "chute": "The mother's hands slide off her hips and her mouth falls open. The camera slowly pushes in to a close-up of the strict mother's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "copine",
+   "délestage",
+   "habiter"
+  ],
+  "gag_legende": "MAMAN QUAND LA LUMIÈRE VA COUPER :",
+  "mecanisme": "interdiction prise au pied de la lettre + le père qui rappelle la fréquence des délestages"
+ },
+ {
+  "id": "B019-09",
+  "titre": "Leçon de politesse à table",
+  "lieu": "dining table in a house in Abatta, Abidjan, lunchtime, a pot of sauce and a bowl of rice on the table, three plates, plastic chairs",
+  "persos": [
+   {
+    "nom": "the cook mother",
+    "desc": "mother in her 40s, navy-and-cherry kaba, gold earrings, holding ONE big serving spoon",
+    "pose": "standing in the foreground on the left behind the table, holding the serving spoon, stern"
+   },
+   {
+    "nom": "the honest daughter",
+    "desc": "girl around 15, sky-blue-and-salmon t-shirt, two hair puffs, hands resting on the table",
+    "pose": "sitting at the table in the middle, hands on the table, not eating"
+   },
+   {
+    "nom": "the silent father",
+    "desc": "father in his 50s, navy-and-silver shirt, grey temples, hands folded on the table",
+    "pose": "sitting at the table on the right, hands folded, carefully neutral face"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tourne ta langue sept fois avant de parler dêh !"
+   ],
+   [
+    1,
+    "J'ai tourné, maman. Elle dit encore : ta sauce-là est trop salée."
+   ],
+   [
+    2,
+    "Ma langue aussi, chérie. Elle tourne depuis le mariage dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother points the serving spoon at the daughter and gives her order, face three-quarters to the camera. The daughter answers politely with a straight face, hands on the table. The father, hands still folded, nods slowly and says his line softly, his face clearly visible.",
+  "chute": "The mother lowers the serving spoon, her lips trembling with outrage. The camera slowly pushes in to a close-up of the cook mother's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "langue",
+   "sauce",
+   "mariage"
+  ],
+  "gag_legende": "MAMAN EN GOÛTANT SA SAUCE EN CACHETTE :",
+  "mecanisme": "conseil pris au pied de la lettre + aveu du père qui se tait depuis le mariage"
+ },
+ {
+  "id": "B019-10",
+  "titre": "Papa rentre du travail",
+  "lieu": "entrance of a living room in a house in Biétry, Abidjan, evening, the front door open behind, a sofa, a small rug",
+  "persos": [
+   {
+    "nom": "the returning father",
+    "desc": "father in his 40s, ivory-and-sunflower short-sleeve shirt, tired eyes, holding ONE leather briefcase",
+    "pose": "standing in the foreground on the left just inside the doorway, holding the briefcase, confused"
+   },
+   {
+    "nom": "the shouting son",
+    "desc": "boy around 13, mint-and-chocolate t-shirt, big round eyes, pointing at his father",
+    "pose": "standing in the middle, pointing at the father"
+   },
+   {
+    "nom": "the bitter mother",
+    "desc": "mother in her 40s, saffron-and-cyan kaba, headwrap, arms crossed",
+    "pose": "sitting on the sofa on the right, arms crossed, chin up"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi tu cries au voleur quand je rentre dêh ?!"
+   ],
+   [
+    1,
+    "Papa, maman dit que c'est toi qui as volé sa jeunesse dêh."
+   ],
+   [
+    2,
+    "Et mes vingt ans aussi. Rends ça dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father, briefcase in hand, asks his question, face three-quarters to the camera. The son keeps pointing at him and explains very seriously. The mother uncrosses her arms, holds out one open palm toward the father and says her line, her face clearly visible.",
+  "chute": "The father clutches his briefcase against his chest, eyes wide. The camera slowly pushes in to a close-up of the returning father's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "voleur",
+   "jeunesse",
+   "vingt ans"
+  ],
+  "gag_legende": "PAPA DEVANT LA PORTE DEMAIN SOIR :",
+  "mecanisme": "reproche pris au pied de la lettre par l'enfant + la mère qui réclame son dû"
+ },
+ {
+  "id": "B019-11",
+  "titre": "Le discours de papa",
+  "lieu": "veranda of a house in Abatta, Abidjan, late afternoon, a straw mat lying right in front of the front door, a plastic chair, a potted plant",
+  "persos": [
+   {
+    "nom": "the proud father",
+    "desc": "father in his 50s, sky-blue-and-salmon boubou, big mustache, one fist on his chest",
+    "pose": "standing in the foreground on the left on the straw mat, fist on his chest, proud"
+   },
+   {
+    "nom": "the cheeky son",
+    "desc": "boy around 16, emerald-and-copper tank top, high-top haircut, hands in his pockets",
+    "pose": "leaning against the wall in the middle, hands in his pockets"
+   },
+   {
+    "nom": "the mother in the chair",
+    "desc": "mother in her 40s, navy-and-silver kaba, big hoop earrings, hands on her knees",
+    "pose": "sitting on the plastic chair on the right, hands on her knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Je travaille comme un chien pour cette famille dêh !"
+   ],
+   [
+    1,
+    "Oui papa. Tu dors toute la journée devant la porte-là."
+   ],
+   [
+    2,
+    "Et le soir, il aboie quand on parle d'argent dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father pounds his fist on his chest and declares his line, face three-quarters to the camera. The son nods with fake respect and points down at the straw mat. The mother, seated, nods slowly and says her line with a straight face, her face clearly visible.",
+  "chute": "The father looks down at the straw mat under his feet, then back up, speechless. The camera slowly pushes in to a close-up of the proud father's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "chien",
+   "porte",
+   "argent"
+  ],
+  "gag_legende": "PAPA EN CHERCHANT SA NICHE CE SOIR :",
+  "mecanisme": "comparaison prise au pied de la lettre par le fils puis par la mère"
+ },
+ {
+  "id": "B019-12",
+  "titre": "La grosse chaleur",
+  "lieu": "living room of a house in Biétry, Abidjan, hot afternoon, no air conditioner, a closed window with harsh sunlight, a sofa and an armchair",
+  "persos": [
+   {
+    "nom": "the sweaty daughter",
+    "desc": "girl around 17, saffron-and-violet t-shirt, braids tied up, sweat on her forehead, holding ONE paper hand fan",
+    "pose": "sitting on the left side of the sofa, fanning herself with the paper fan"
+   },
+   {
+    "nom": "the clever father",
+    "desc": "father in his 50s, navy-and-cherry kaftan, short beard, relaxed",
+    "pose": "sitting in an armchair in the foreground on the right, legs crossed, relaxed smile"
+   },
+   {
+    "nom": "the mother behind",
+    "desc": "mother in her 40s, ivory-and-sunflower kaba, headwrap, arms crossed",
+    "pose": "standing in the background in the middle, arms crossed, eyebrows raised"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, il fait trop chaud ! Achète clim dêh !"
+   ],
+   [
+    1,
+    "Regarde ta mère quand je rentre tard. Ça glace toute la maison-là."
+   ],
+   [
+    2,
+    "Ya fohi. Ce soir, toi tu dors au frais : dehors."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The daughter fans herself and complains, face three-quarters to the camera. The father, smiling, points his thumb back toward the mother and gives his advice proudly. The mother, arms crossed, says her line coldly, her face clearly visible.",
+  "chute": "The father's proud smile freezes on his face. The camera slowly pushes in to a close-up of the clever father's frozen face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "chaud",
+   "glace",
+   "dehors"
+  ],
+  "gag_legende": "PAPA CE SOIR SUR LA TERRASSE :",
+  "mecanisme": "logique absurde du père (la colère comme climatisation) + retour de flamme immédiat de la mère"
+ },
+ {
+  "id": "B019-13",
+  "titre": "Les chaussures de la rentrée",
+  "lieu": "doorstep of a house in Abatta, Abidjan, early morning before school, a metal door, a small concrete step, a bucket",
+  "persos": [
+   {
+    "nom": "the schoolboy",
+    "desc": "boy around 12, lavender-and-maroon polo shirt, short hair, plain flip-flops, holding ONE old sneaker with a big hole in the sole",
+    "pose": "standing in the foreground on the left, holding the sneaker up toward the camera, sad"
+   },
+   {
+    "nom": "the inventive father",
+    "desc": "father in his 50s, mint-and-chocolate boubou, goatee, hands behind his back",
+    "pose": "standing in the doorway on the right, hands behind his back, wise expression"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, ma chaussure-là est trouée dessous dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Quand il pleut, l'eau a sa sortie de secours."
+   ],
+   [
+    0,
+    "Et le trou devant-là, papa ?"
+   ],
+   [
+    1,
+    "Ça, c'est l'entrée. L'eau doit circuler dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy lifts the sneaker and shows the hole, face three-quarters to the camera. The father, hands behind his back, explains with a wise nod. The boy turns the sneaker to show the hole at the front and asks. The father answers calmly, as if it were obvious, his face clearly visible.",
+  "chute": "The boy slowly lowers the sneaker and stares at it, defeated. The camera slowly pushes in to a close-up of the schoolboy's defeated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "trouée",
+   "sortie de secours",
+   "entrée"
+  ],
+  "gag_legende": "LE FILS UN JOUR DE PLUIE :",
+  "mecanisme": "logique absurde du père qui transforme la misère en équipement"
+ },
+ {
+  "id": "B019-14",
+  "titre": "Plus de crédit",
+  "lieu": "balcony of an apartment in Zone 4, Abidjan, late afternoon, a metal railing, view over the rooftops toward Biétry, a plastic chair",
+  "persos": [
+   {
+    "nom": "the daughter with the phone",
+    "desc": "girl around 16, emerald-and-copper jumpsuit, long braids, holding ONE smartphone",
+    "pose": "standing in the middle by the railing, holding the phone, pouting"
+   },
+   {
+    "nom": "the stingy father",
+    "desc": "father in his 50s, saffron-and-cyan polo shirt, thin mustache, arms crossed",
+    "pose": "standing in the foreground on the left, arms crossed, confident"
+   },
+   {
+    "nom": "the mother at the balcony door",
+    "desc": "mother in her 40s, navy-and-cherry boubou, headwrap, one hand on the door frame",
+    "pose": "standing in the background on the right in the balcony doorway, one hand on the door frame"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, j'ai plus crédit pour appeler ma copine à Biétry dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Crie fort. Biétry-là, c'est juste à côté."
+   ],
+   [
+    2,
+    "C'est comme ça il m'appelle depuis le maquis dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The daughter waves her phone and complains, face three-quarters to the camera. The father uncrosses one arm, points toward the horizon and gives his advice proudly. The mother, in the doorway, says her line with a weary look, her face clearly visible.",
+  "chute": "The father slowly lowers his pointing arm, caught. The camera slowly pushes in to a close-up of the stingy father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "crédit",
+   "crie",
+   "maquis"
+  ],
+  "gag_legende": "LE MAQUIS DU QUARTIER À VINGT-DEUX HEURES :",
+  "mecanisme": "logique absurde du père + révélation de la mère sur ses propres habitudes"
+ },
+ {
+  "id": "B019-15",
+  "titre": "Mon anniversaire",
+  "lieu": "living room of a house in Abatta, Abidjan, evening, a small table with one empty plate, a ceiling bulb switched on, a wall clock showing almost eight o'clock",
+  "persos": [
+   {
+    "nom": "the birthday girl",
+    "desc": "girl around 13, navy-and-silver dress, two hair puffs with plain clips, hands clasped",
+    "pose": "standing in the foreground on the left next to the table, hands clasped, hopeful"
+   },
+   {
+    "nom": "the father with a plan",
+    "desc": "father in his 40s, sky-blue-and-salmon shirt, short beard, one finger pointing up",
+    "pose": "standing on the right, one finger pointing at the ceiling bulb"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, pourquoi y a jamais gâteau à mon anniversaire dêh ?"
+   ],
+   [
+    1,
+    "Ya fohi. À vingt heures, délestage. Souffle fort et fais ton vœu dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl asks her question with a sad pout, face three-quarters to the camera. The father points his finger at the ceiling bulb and explains his plan with an enthusiastic smile, his face clearly visible.",
+  "chute": "The girl stares up at the bulb, then slowly puffs her cheeks as if ready to blow. The camera slowly pushes in to a close-up of the birthday girl's disappointed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "gâteau",
+   "délestage",
+   "vœu"
+  ],
+  "gag_legende": "LA CIE À VINGT HEURES PILE :",
+  "mecanisme": "logique absurde du père : la coupure de courant comme bougie d'anniversaire"
+ },
+ {
+  "id": "B019-16",
+  "titre": "La liste des fournitures",
+  "lieu": "corner of a living room in a house in Biétry, Abidjan, evening, a small study desk with an open exercise book and a pencil, a wall lamp",
+  "persos": [
+   {
+    "nom": "the math student",
+    "desc": "boy around 14, saffron-and-violet polo shirt, round glasses, hands on the desk",
+    "pose": "sitting at the desk in the foreground on the left, hands on the desk, turned toward the camera"
+   },
+   {
+    "nom": "the thrifty father",
+    "desc": "father in his 50s, ivory-and-sunflower boubou, grey mustache, holding ONE folded list of school supplies",
+    "pose": "standing on the right, holding the folded list, unbothered"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, le prof dit qu'il me faut une calculatrice dêh !"
+   ],
+   [
+    1,
+    "Compte avec tes doigts, mon fils. Si ça dépasse dix, c'est pas notre argent dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy, seated, reports what the teacher said, face three-quarters to the camera. The father taps the folded list and answers calmly, wiggling the fingers of his free hand, his face clearly visible.",
+  "chute": "The boy slowly spreads his ten fingers in front of him and stares at them. The camera slowly pushes in to a close-up of the math student's dismayed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "calculatrice",
+   "doigts",
+   "dix"
+  ],
+  "gag_legende": "LE FILS DEVANT L'EXERCICE DE MATHS :",
+  "mecanisme": "logique absurde du père qui ramène tout à la pauvreté"
+ },
+ {
+  "id": "B019-17",
+  "titre": "Le cahier de la boutique",
+  "lieu": "front of a small neighborhood shop in Abatta, Abidjan, midday, a wooden counter with jars of sweets and canned food, a bench in front",
+  "persos": [
+   {
+    "nom": "the shopkeeper",
+    "desc": "shopkeeper woman in her 50s, lavender-and-maroon pagne wrap dress, headwrap, holding ONE thick open notebook",
+    "pose": "standing behind the counter on the right, holding the open notebook, firm"
+   },
+   {
+    "nom": "the angry father",
+    "desc": "father in his 40s, emerald-and-copper shirt, small mustache, hands on his hips",
+    "pose": "standing in the foreground on the left, hands on his hips, shocked"
+   },
+   {
+    "nom": "the son in debt",
+    "desc": "boy around 16, saffron-and-cyan tracksuit, short dreadlocks, both hands open",
+    "pose": "standing in the middle, both hands open, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, ton fils-là prend crédit chez moi en ton nom dêh !"
+   ],
+   [
+    1,
+    "Pourquoi tu fais ça, toi-là ?!"
+   ],
+   [
+    2,
+    "Papa, tu dis toujours : marche dans mes pas. Tes pas arrivent tous ici dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The shopkeeper taps the open notebook and announces it, face three-quarters to the camera. The father turns his head to the son and barks his question. The son opens his hands, points at the ground in front of the counter and answers with total logic, his face clearly visible.",
+  "chute": "The shopkeeper nods slowly while the father freezes, his hands sliding off his hips. The camera slowly pushes in to a close-up of the angry father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "crédit",
+   "pas",
+   "ici"
+  ],
+  "gag_legende": "PAPA EN CHANGEANT DE CHEMIN DEMAIN :",
+  "mecanisme": "conseil paternel pris au pied de la lettre + révélation des dettes du père"
+ },
+ {
+  "id": "B019-18",
+  "titre": "La dispute de trop",
+  "lieu": "living room of an apartment in Zone 4, Abidjan, evening, a solid wooden front door, a sofa, a framed picture on the wall",
+  "persos": [
+   {
+    "nom": "the threatening father",
+    "desc": "father in his 50s, saffron-and-violet kaftan, thick eyebrows, index finger pointing",
+    "pose": "standing in the foreground on the left, pointing at the son, furious"
+   },
+   {
+    "nom": "the business son",
+    "desc": "young man around 21, mint-and-chocolate tracksuit, small goatee, one hand resting on the wooden door",
+    "pose": "standing on the right next to the front door, one hand flat on the door, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Encore un mot et tu prends la porte dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Le voisin m'a déjà proposé quinze mille pour elle."
+   ],
+   [
+    0,
+    "Quinze mille ?! Hier, il m'a dit vingt mille dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The father points at the son and threatens him, face three-quarters to the camera. The son pats the wooden door and answers like a businessman. The father lowers his finger, outraged, and shouts his line, his face clearly visible.",
+  "chute": "The father freezes, eyes wide, realizing what he just admitted. The camera slowly pushes in to a close-up of the threatening father's guilty face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "porte",
+   "quinze mille",
+   "vingt mille"
+  ],
+  "gag_legende": "LA PORTE QUAND ELLE A ENTENDU ÇA :",
+  "mecanisme": "menace prise au pied de la lettre + le père qui se trahit lui-même"
+ },
+ {
+  "id": "B019-19",
+  "titre": "Le petit menteur",
+  "lieu": "living room of a house in Biétry, Abidjan, evening, a sofa, a low table, a wall calendar with the 25th circled",
+  "persos": [
+   {
+    "nom": "the lecturing father",
+    "desc": "father in his 40s, lavender-and-maroon shirt, glasses, hands on his hips",
+    "pose": "standing in the foreground on the left, hands on his hips, severe"
+   },
+   {
+    "nom": "the honest son",
+    "desc": "boy around 14, ivory-and-sunflower t-shirt, short hair, hands behind his back",
+    "pose": "standing in the middle, hands behind his back, innocent"
+   },
+   {
+    "nom": "the mother on the sofa",
+    "desc": "mother in her 40s, sky-blue-and-salmon dress, headwrap, hands on her knees",
+    "pose": "sitting on the sofa on the right, hands on her knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Qui t'a appris à mentir comme ça, toi-là ?!"
+   ],
+   [
+    1,
+    "Toi, papa. Chaque fin du mois, tu dis à maman : salaire pas tombé."
+   ],
+   [
+    2,
+    "Ehh ! Donc ton salaire-là tombe où depuis trois ans ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father, hands on his hips, scolds the son, face three-quarters to the camera. The son answers innocently, pointing at his father. The mother sits up straight on the sofa, glares at the father and says her line, her face clearly visible.",
+  "chute": "The father's hands drop from his hips and he freezes, sweating. The camera slowly pushes in to a close-up of the lecturing father's panicked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "mentir",
+   "salaire",
+   "trois ans"
+  ],
+  "gag_legende": "PAPA QUAND LE 25 DU MOIS ARRIVE :",
+  "mecanisme": "leçon de morale qui se retourne + révélation innocente de l'enfant"
+ },
+ {
+  "id": "B019-20",
+  "titre": "Le journal intime",
+  "lieu": "teenage girl's bedroom in an apartment in Zone 4, Abidjan, afternoon, a bed, a small desk, posters on the wall",
+  "persos": [
+   {
+    "nom": "the nosy mother",
+    "desc": "mother in her 40s, emerald-and-copper house dress, reading glasses on her nose, holding ONE small open diary",
+    "pose": "standing on the left near the desk, holding the open diary, very serious"
+   },
+   {
+    "nom": "the outraged daughter",
+    "desc": "girl around 16, navy-and-cherry hoodie, high ponytail, hands on her hips",
+    "pose": "standing in the foreground on the right next to the bed, hands on her hips, outraged"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma fille, j'ai lu ton journal intime-là dêh."
+   ],
+   [
+    1,
+    "Maman ! C'est mes secrets ça dêh !"
+   ],
+   [
+    0,
+    "Ya fohi. J'ai corrigé les fautes. Et ton copain-là, je l'ai barré."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The mother lifts the open diary slightly and announces it calmly, face three-quarters to the camera. The daughter, hands on her hips, protests loudly. The mother turns the diary toward the camera to show red marks on the page and says her line with a teacher's satisfied nod, her face clearly visible.",
+  "chute": "The daughter's hands drop from her hips and her mouth falls wide open. The camera slowly pushes in to a close-up of the outraged daughter's devastated face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "journal intime",
+   "fautes",
+   "barré"
+  ],
+  "gag_legende": "LE COPAIN QUAND IL VA APPRENDRE ÇA :",
+  "mecanisme": "décalage absurde : la mère corrige le journal comme une copie + double sanction"
+ }
+]

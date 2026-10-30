@@ -1,0 +1,932 @@
+[
+ {
+  "id": "B048-01",
+  "titre": "Le mari qui parle en dormant",
+  "lieu": "small night pharmacy in Marcory, Abidjan, a glass counter with medicine boxes, shelves of boxes behind, a ceiling fan, a small name badge on each staff member, evening",
+  "persos": [
+   {
+    "nom": "the worried wife",
+    "desc": "wife in her 40s, crimson-and-apricot kaba, gold hoop earrings, a small handbag on her arm",
+    "pose": "standing at the counter in the foreground on the left, one hand flat on the counter, worried"
+   },
+   {
+    "nom": "the pharmacist",
+    "desc": "pharmacist woman in her early 30s, jade-and-ivory pharmacist smock, neat braids in a bun, holding ONE single small syrup bottle",
+    "pose": "standing behind the counter in the middle, holding the syrup bottle, sweet professional smile"
+   },
+   {
+    "nom": "the young assistant",
+    "desc": "young pharmacy assistant man in his 20s, teal-and-cobalt shirt, short hair, holding ONE single empty cardboard box",
+    "pose": "standing behind the counter on the right, near the shelves, holding the empty box"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, chaque nuit, mon mari crie « Awa » en dormant dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, Tantie. Je vais te donner son sirop habituel."
+   ],
+   [
+    2,
+    "Awa, son sirop-là est fini dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife complains to the pharmacist, one hand flat on the counter, her face turned three-quarters to the camera. The pharmacist answers with a warm professional smile, raising the single syrup bottle. The assistant on the right lifts the empty box and calls to the pharmacist innocently, his face clearly visible.",
+  "chute": "The pharmacist's smile freezes; the wife slowly turns her head toward her, eyes wide. The camera slowly pushes in to a close-up of the worried wife's stunned furious face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "Awa",
+   "sirop habituel"
+  ],
+  "gag_legende": "LE MARI QUAND IL VA RENTRER CE SOIR :",
+  "mecanisme": "relance assassine : le collègue révèle le prénom de la pharmacienne"
+ },
+ {
+  "id": "B048-02",
+  "titre": "Rencontre au maquis",
+  "lieu": "open-air maquis in Koumassi, Abidjan, plastic tables and chairs, a charcoal grill smoking in the background, string lights, evening",
+  "persos": [
+   {
+    "nom": "the angry patient",
+    "desc": "man in his 50s with a big belly, silver-and-maroon shirt, a short gray beard",
+    "pose": "standing on the left behind the table, pointing at the doctor, outraged"
+   },
+   {
+    "nom": "the doctor",
+    "desc": "doctor man in his 40s, round glasses, a stethoscope around his neck, indigo-and-violet tunic, ONE single plate of braised chicken on the table in front of him, not eating",
+    "pose": "sitting at a plastic table in the foreground, in the middle, both hands resting on the table beside the plate, calm and proud"
+   },
+   {
+    "nom": "the waitress",
+    "desc": "waitress in her 20s, burgundy-and-salmon apron dress, hair in a high bun, holding ONE single plate with a whole braised chicken",
+    "pose": "standing on the right, holding the plate, cheerful"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Docteur ?! C'est toi qui m'as interdit le poulet braisé-là !"
+   ],
+   [
+    1,
+    "Oui. Toi, tu es malade. Moi, je suis docteur dêh."
+   ],
+   [
+    2,
+    "Docteur, ton troisième poulet arrive dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The patient points at the doctor and shouts, his face turned three-quarters to the camera. The doctor, seated in the foreground, answers calmly and proudly, raising one finger, without touching the food. The waitress on the right lifts her plate slightly and announces cheerfully, her face clearly visible.",
+  "chute": "The doctor's proud smile freezes; the patient's mouth drops open. The camera slowly pushes in to a close-up of the doctor's busted embarrassed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "interdit",
+   "poulet",
+   "troisième"
+  ],
+  "gag_legende": "LE PATIENT DEMAIN À LA CONSULTATION :",
+  "mecanisme": "hypocrisie du docteur + relance assassine de la serveuse"
+ },
+ {
+  "id": "B048-03",
+  "titre": "Les nouvelles lunettes de Mamie",
+  "lieu": "small optician shop in Adjamé, Abidjan, a wall of eyeglass frames, an eye chart on the wall, a wooden counter, a bench, late morning",
+  "persos": [
+   {
+    "nom": "the optician",
+    "desc": "optician woman in her 30s, teal-and-emerald optician smock, hair in a neat bun, holding ONE single small hand mirror",
+    "pose": "standing behind the counter on the left, holding the mirror toward Mamie, smiling"
+   },
+   {
+    "nom": "Mamie",
+    "desc": "grandmother in her 70s, mint-and-olive boubou, big new round glasses already on her face for the whole video, gray hair",
+    "pose": "sitting on a stool in the foreground in the middle, hands on her knees, staring at her husband"
+   },
+   {
+    "nom": "Papi",
+    "desc": "grandfather in his 70s, burgundy-and-ruby kaftan, bald head, gray mustache, no glasses, holding ONE single wooden cane",
+    "pose": "sitting on the bench on the right, both hands on his cane, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mamie, avec tes nouvelles lunettes-là, tu vois clair maintenant ?"
+   ],
+   [
+    1,
+    "Oui. Je vois enfin mon mari. Remets les anciennes dêh."
+   ],
+   [
+    2,
+    "Moi, j'ai perdu les miennes exprès."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The optician asks sweetly, holding the mirror. Mamie, seated in the foreground, turns her head toward Papi, frowns in disgust and answers, her face turned three-quarters to the camera. Papi shrugs calmly on his bench and replies with a satisfied smile, his face clearly visible.",
+  "chute": "Mamie's mouth falls open, offended; the optician's smile freezes. The camera slowly pushes in to a close-up of Mamie's outraged face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "lunettes",
+   "mon mari",
+   "exprès"
+  ],
+  "gag_legende": "LE VIEUX COUPLE EN RENTRANT À LA MAISON :",
+  "mecanisme": "double insulte du vieux couple : relance assassine du mari"
+ },
+ {
+  "id": "B048-04",
+  "titre": "Le petit qui ne voit pas le tableau",
+  "lieu": "eye clinic consulting room in Koumassi, Abidjan, an eye chart on the wall, a desk with an eye-testing lamp, an examination chair, afternoon",
+  "persos": [
+   {
+    "nom": "the eye doctor",
+    "desc": "eye doctor man in his 50s, gray beard, jade-and-ivory doctor's coat, holding ONE single small flashlight",
+    "pose": "standing on the left, leaning slightly toward the boy, holding the flashlight, curious"
+   },
+   {
+    "nom": "the boy",
+    "desc": "boy around 10, teal-and-cobalt school uniform, short hair, big innocent eyes",
+    "pose": "sitting on the examination chair in the foreground in the middle, hands on his lap, innocent"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 40s, indigo-and-violet kaba, gold earrings",
+    "pose": "standing on the right, arms crossed, exasperated"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, tu vois pas le tableau ? Tu es assis où ?"
+   ],
+   [
+    1,
+    "Dehors, docteur. Le maître m'a renvoyé dêh."
+   ],
+   [
+    2,
+    "Depuis la rentrée-là, docteur."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The eye doctor asks gently, pointing the flashlight at the eye chart. The boy, seated in the foreground, shrugs innocently and answers, his face turned three-quarters to the camera. The mother, arms crossed, rolls her eyes and adds flatly, her face clearly visible.",
+  "chute": "The doctor freezes, his flashlight in the air; the boy shows a big innocent grin. The camera slowly pushes in to a close-up of the boy's innocent grinning face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "tableau",
+   "dehors",
+   "rentrée"
+  ],
+  "gag_legende": "LE PAPA QUAND IL VA VOIR LA FACTURE :",
+  "mecanisme": "le vrai problème n'est pas les yeux + relance assassine de la mère"
+ },
+ {
+  "id": "B048-05",
+  "titre": "Le comprimé qui soigne tout",
+  "lieu": "busy street market in Adjamé, Abidjan, a small wooden table covered with boxes and pill strips, a big sun umbrella, stalls in the background, midday",
+  "persos": [
+   {
+    "nom": "the street seller",
+    "desc": "street remedy seller man in his 30s, crimson-and-apricot tracksuit, thin mustache, holding ONE single pill strip up high",
+    "pose": "standing behind his small table on the left, holding the pill strip up, enthusiastic"
+   },
+   {
+    "nom": "the wife",
+    "desc": "woman in her 40s, silver-and-maroon boubou, gold earrings",
+    "pose": "standing in the middle, hands on her hips, very interested"
+   },
+   {
+    "nom": "the lazy husband",
+    "desc": "husband in his 40s, mint-and-olive tracksuit, sleepy half-closed eyes, a small round belly",
+    "pose": "standing in the foreground on the right, arms dangling, sleepy"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon comprimé soigne tout : fatigue, mal de dos, paresse dêh !"
+   ],
+   [
+    1,
+    "Paresse aussi ? Donne-moi tout le carton-là !"
+   ],
+   [
+    2,
+    "Mais chérie, je suis pas malade dêh !"
+   ],
+   [
+    0,
+    "Ça, c'est premier symptôme dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The seller shouts his pitch, raising the pill strip high. The wife, hands on her hips, glances at her husband with a wicked smile and orders loudly. The husband, in the foreground, protests with open hands, offended, his face turned three-quarters to the camera. The seller points the pill strip at the husband and declares very seriously, his face clearly visible.",
+  "chute": "The husband freezes, mouth open; the wife nods slowly with satisfaction. The camera slowly pushes in to a close-up of the lazy husband's busted face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "paresse",
+   "carton",
+   "symptôme"
+  ],
+  "gag_legende": "LE MARI QUAND ELLE SORT LE PORTE-MONNAIE :",
+  "mecanisme": "relance assassine : le déni devient le symptôme"
+ },
+ {
+  "id": "B048-06",
+  "titre": "Le sirop de la gare",
+  "lieu": "pharmacy next to the gbaka station in Adjamé, Abidjan, a glass counter, shelves of syrups, a gbaka minibus visible through the window behind, morning",
+  "persos": [
+   {
+    "nom": "the pharmacist",
+    "desc": "pharmacist man in his 40s, burgundy-and-salmon pharmacist smock, thin glasses, holding ONE single syrup bottle",
+    "pose": "standing behind the counter in the middle, holding up the syrup bottle, warning"
+   },
+   {
+    "nom": "the passenger",
+    "desc": "man in his 30s, teal-and-emerald shirt, a small shoulder bag",
+    "pose": "standing at the counter in the foreground on the left, relaxed, smiling"
+   },
+   {
+    "nom": "the gbaka driver",
+    "desc": "gbaka minibus driver in his 40s, jade-and-ivory tracksuit, a cap, tired red eyes, holding ONE single car key",
+    "pose": "standing at the counter on the right, holding up the car key, sleepy"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, avec ce sirop-là, faut pas conduire dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, mon frère. Moi, je prends le gbaka."
+   ],
+   [
+    2,
+    "Moi, c'est chauffeur. Deux flacons dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The pharmacist warns seriously, raising the syrup bottle. The passenger, in the foreground, answers with a relaxed smile, his face turned three-quarters to the camera. The driver on the right lifts his car key and orders with a big sleepy smile, his face clearly visible.",
+  "chute": "The passenger slowly turns his head toward the driver, his smile disappearing; the pharmacist freezes. The camera slowly pushes in to a close-up of the passenger's horrified face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "conduire",
+   "gbaka",
+   "chauffeur"
+  ],
+  "gag_legende": "LES PASSAGERS DU GBAKA DE SEPT HEURES :",
+  "mecanisme": "relance assassine : le chauffeur se dénonce lui-même"
+ },
+ {
+  "id": "B048-07",
+  "titre": "La posologie du sirop",
+  "lieu": "bright modern pharmacy in Marcory, Abidjan, a clean glass counter, shelves of medicine boxes, a small scale in the corner, afternoon",
+  "persos": [
+   {
+    "nom": "the pharmacist",
+    "desc": "pharmacist woman in her 30s, indigo-and-violet pharmacist smock, short natural hair, holding ONE single measuring spoon",
+    "pose": "standing behind the counter on the left, holding up the measuring spoon"
+   },
+   {
+    "nom": "the tired father",
+    "desc": "father in his 60s, gray hair, burgundy-and-ruby boubou, tired face",
+    "pose": "standing at the counter in the middle, one hand on the counter, exasperated"
+   },
+   {
+    "nom": "the grown son",
+    "desc": "grown son around 35, big beard, mint-and-olive pajama set, plastic slippers, holding ONE single phone",
+    "pose": "standing in the foreground on the right, holding his phone, careless"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, une cuillère pour l'enfant, deux pour l'adulte dêh."
+   ],
+   [
+    1,
+    "Et mon fils-là, trente-cinq ans, qui dort encore chez moi ?"
+   ],
+   [
+    2,
+    "Papa, moi je prends l'enfant dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The pharmacist explains, raising the measuring spoon. The father asks with exasperation, pointing his thumb at his son without looking at him. The son, in the foreground, lifts his phone slightly and answers with total confidence, his face clearly visible.",
+  "chute": "The father closes his eyes in despair; the pharmacist bursts into silent laughter. The camera slowly pushes in to a close-up of the grown son's shameless proud face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "enfant",
+   "adulte",
+   "trente-cinq ans"
+  ],
+  "gag_legende": "PAPA QUAND IL RENTRE À LA MAISON :",
+  "mecanisme": "relance assassine : le fils assume d'être un enfant"
+ },
+ {
+  "id": "B048-08",
+  "titre": "Le diagnostic du stress",
+  "lieu": "small doctor's office in Koumassi, Abidjan, a wooden desk with a blood pressure monitor, chairs in front of the desk, a calendar on the wall, morning",
+  "persos": [
+   {
+    "nom": "the doctor",
+    "desc": "doctor woman in her 50s, teal-and-cobalt doctor's coat, reading glasses, a stethoscope around her neck, holding ONE single pen",
+    "pose": "sitting behind the desk on the left, holding the pen, very serious"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, crimson-and-apricot pagne dress, braided hair, a small handbag on her lap",
+    "pose": "sitting on a chair in the middle, hands on her handbag, surprised"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 30s, silver-and-maroon polo shirt, short beard",
+    "pose": "sitting on a chair in the foreground on the right, smiling confidently at first"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, c'est le stress. Faut quitter le travail ou le mari dêh."
+   ],
+   [
+    1,
+    "Docteur, mais je travaille pas dêh."
+   ],
+   [
+    2,
+    "Docteur, trouve-lui travail vite dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The doctor announces the diagnosis seriously, tapping her pen on the desk. The wife answers slowly, then turns her head toward her husband. The husband, in the foreground, loses his smile, leans forward with open palms and begs the doctor, his face clearly visible.",
+  "chute": "The wife stares at him with one eyebrow raised; the doctor puts down her pen. The camera slowly pushes in to a close-up of the husband's panicked face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "stress",
+   "travail",
+   "mari"
+  ],
+  "gag_legende": "LE MARI EN CHERCHANT DES OFFRES D'EMPLOI :",
+  "mecanisme": "relance assassine : le mari comprend qu'il est la seule option qui reste"
+ },
+ {
+  "id": "B048-09",
+  "titre": "La mémoire du mari",
+  "lieu": "neighborhood pharmacy in Adjamé, Abidjan, a glass counter, shelves of medicine boxes, a ceiling fan, late afternoon",
+  "persos": [
+   {
+    "nom": "the angry wife",
+    "desc": "wife in her 40s, burgundy-and-salmon kaba, hair in a bun, holding ONE single small purse",
+    "pose": "standing at the counter on the left, pointing at her husband, annoyed"
+   },
+   {
+    "nom": "the pharmacist",
+    "desc": "pharmacist man in his 50s, teal-and-emerald pharmacist smock, gray temples",
+    "pose": "standing behind the counter in the middle, leaning forward, curious"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, indigo-and-violet shirt, fake wide innocent eyes",
+    "pose": "standing in the foreground on the right, hands behind his back, fake polite smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pharmacien, mon mari a perdu la mémoire. Il me reconnaît plus dêh !"
+   ],
+   [
+    1,
+    "Depuis quand, Tantie ?"
+   ],
+   [
+    0,
+    "Depuis que j'ai demandé l'argent du marché-là."
+   ],
+   [
+    2,
+    "Bonjour madame. On se connaît ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife complains, pointing at her husband. The pharmacist asks, leaning on the counter. The wife answers, hands on her hips. The husband, in the foreground, turns his head to his wife and greets her with an exaggerated polite nod and a fake smile, his face clearly visible.",
+  "chute": "The wife freezes, eyes wide with fury; the pharmacist bites his lip. The camera slowly pushes in to a close-up of the husband's fake innocent face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "mémoire",
+   "argent du marché",
+   "on se connaît"
+  ],
+  "gag_legende": "LE MARI QUAND LE SALAIRE TOMBE :",
+  "mecanisme": "relance assassine : l'amnésie sélective jouée en direct"
+ },
+ {
+  "id": "B048-10",
+  "titre": "La crème anti-rides",
+  "lieu": "pharmacy in Adjamé, Abidjan, a glass shelf of skin creams and lotions, a counter with a small mirror, late morning",
+  "persos": [
+   {
+    "nom": "the pharmacist",
+    "desc": "pharmacist woman in her 20s, silver-and-maroon pharmacist smock, long braids, holding ONE single small cream jar",
+    "pose": "standing behind the counter on the left, holding up the cream jar"
+   },
+   {
+    "nom": "the son",
+    "desc": "young man around 25, crimson-and-apricot shirt, slim, short hair",
+    "pose": "standing at the counter in the middle, pointing his thumb at his mother, tired"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 50s, mint-and-olive kaba, heavy makeup, big earrings, a handbag",
+    "pose": "standing in the foreground on the right, chin up, proud and coquettish"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, la crème anti-rides-là, c'est pour qui ?"
+   ],
+   [
+    1,
+    "Pour maman. Elle dit partout qu'elle a vingt-cinq ans dêh."
+   ],
+   [
+    2,
+    "Lui-là, c'est mon petit frère."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The pharmacist asks politely, holding up the cream jar. The young man answers with a tired look, pointing his thumb at his mother. The mother, in the foreground, lifts her chin and corrects with a coquettish smile, her face clearly visible.",
+  "chute": "The son's jaw drops; the pharmacist freezes. The camera slowly pushes in to a close-up of the mother's proud coquettish face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "anti-rides",
+   "vingt-cinq ans",
+   "petit frère"
+  ],
+  "gag_legende": "LE FILS EN APPELANT SON PAPA :",
+  "mecanisme": "relance assassine : la mère renie son fils pour garder son âge"
+ },
+ {
+  "id": "B048-11",
+  "titre": "La patiente de tous les jours",
+  "lieu": "public dispensary waiting room in Koumassi, Abidjan, a row of metal chairs, an air conditioner on the wall, an old chest freezer plugged into a wall socket far in the background corridor, midday",
+  "persos": [
+   {
+    "nom": "the doctor",
+    "desc": "doctor man in his 40s, burgundy-and-ruby doctor's coat, a stethoscope around his neck, holding ONE single patient file",
+    "pose": "standing on the left, holding the file, suspicious"
+   },
+   {
+    "nom": "the comfortable woman",
+    "desc": "woman in her 40s, teal-and-cobalt boubou, hair in a puffy bun",
+    "pose": "sitting comfortably on a metal chair right under the air conditioner, in the foreground in the middle, legs crossed, relaxed"
+   },
+   {
+    "nom": "the nurse",
+    "desc": "nurse woman in her 30s, jade-and-ivory nurse scrubs, holding ONE single clipboard",
+    "pose": "standing on the right, holding the clipboard, deadpan"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, troisième visite cette semaine ! Tu es malade de quoi ?"
+   ],
+   [
+    1,
+    "Docteur, chez moi c'est délestage. Ici, il y a climatisation dêh."
+   ],
+   [
+    2,
+    "Son congélateur-là est branché au couloir."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The doctor asks suspiciously, raising the file. The woman, seated in the foreground under the air conditioner, answers with a blissful smile, her face turned three-quarters to the camera. The nurse points her thumb toward the corridor behind her and adds flatly, her face clearly visible.",
+  "chute": "The doctor turns his head toward the freezer in the background, stunned; the woman keeps smiling, totally relaxed. The camera slowly pushes in to a close-up of the comfortable woman's blissfully unbothered face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "délestage",
+   "climatisation",
+   "congélateur"
+  ],
+  "gag_legende": "LE DISPENSAIRE À LA FIN DU MOIS :",
+  "mecanisme": "relance assassine : l'escalade absurde révélée par l'infirmière"
+ },
+ {
+  "id": "B048-12",
+  "titre": "La crème contre les moustiques",
+  "lieu": "small family pharmacy in Marcory, Abidjan, a wooden counter, shelves of creams and sprays, a ceiling fan, early evening",
+  "persos": [
+   {
+    "nom": "the client",
+    "desc": "woman in her 30s, teal-and-emerald kaba, braided hair, holding ONE single small purse",
+    "pose": "standing at the counter on the left, curious"
+   },
+   {
+    "nom": "the pharmacist",
+    "desc": "pharmacist woman in her 40s, crimson-and-apricot pharmacist smock, big earrings, holding ONE single tube of cream",
+    "pose": "standing behind the counter in the middle, proudly holding up the tube"
+   },
+   {
+    "nom": "the pharmacist's husband",
+    "desc": "the pharmacist's husband in his 40s, indigo-and-violet polo shirt, round belly",
+    "pose": "standing at the end of the counter in the foreground on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, ta crème anti-moustiques-là marche vraiment ?"
+   ],
+   [
+    1,
+    "Ehh ! Depuis je mets ça, même mon mari m'approche plus dêh !"
+   ],
+   [
+    2,
+    "Chérie, c'est pas la crème dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The client asks, leaning on the counter. The pharmacist answers enthusiastically, shaking the single tube of cream. The husband, in the foreground, arms crossed, says calmly without looking at his wife, his face clearly visible.",
+  "chute": "The pharmacist slowly turns her head toward her husband, furious; the client bites her lip. The camera slowly pushes in to a close-up of the pharmacist's husband's calm deadpan face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "anti-moustiques",
+   "mon mari",
+   "crème"
+  ],
+  "gag_legende": "LE MARI CE SOIR SUR LE CANAPÉ :",
+  "mecanisme": "relance assassine : le mari retourne la pub contre sa femme"
+ },
+ {
+  "id": "B048-13",
+  "titre": "Les bonbons du petit",
+  "lieu": "dentist's office in Marcory, Abidjan, a dental chair under a bright lamp, a small tray on a stand, a poster of teeth on the wall, afternoon",
+  "persos": [
+   {
+    "nom": "the dentist",
+    "desc": "dentist man in his 40s, mint-and-olive dental scrubs, short hair, holding ONE single small dental mirror",
+    "pose": "standing on the left beside the dental chair, holding the dental mirror, curious"
+   },
+   {
+    "nom": "the boy",
+    "desc": "boy around 8, crimson-and-apricot t-shirt, chubby cheeks, gap-toothed smile",
+    "pose": "sitting in the dental chair in the foreground in the middle, innocent"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, silver-and-maroon kaba, gold bracelets",
+    "pose": "standing on the right, hands on her hips"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, qui te donne tous ces bonbons-là, dêh ?"
+   ],
+   [
+    1,
+    "Papa dêh. Pour que je dis pas où il était samedi."
+   ],
+   [
+    2,
+    "Maman paie le carton. Parle gbê !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The dentist asks, pointing the dental mirror at the boy's teeth. The boy, seated in the foreground, answers innocently with a gap-toothed grin, his face turned three-quarters to the camera. The mother leans her head toward the boy and orders with a dangerous smile, her face clearly visible.",
+  "chute": "The boy's eyes shine with greed and he rubs his hands together; the dentist freezes. The camera slowly pushes in to a close-up of the boy's greedy delighted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "bonbons",
+   "samedi",
+   "carton"
+  ],
+  "gag_legende": "PAPA QUAND LE PETIT RENTRE DU DENTISTE :",
+  "mecanisme": "relance assassine : la mère surenchérit sur le silence du petit"
+ },
+ {
+  "id": "B048-14",
+  "titre": "Le sirop pour papa",
+  "lieu": "neighborhood pharmacy in Koumassi, Abidjan, a glass counter, shelves of syrups, a short queue of customers, evening",
+  "persos": [
+   {
+    "nom": "the pharmacist",
+    "desc": "pharmacist man in his 30s, teal-and-cobalt pharmacist smock, short beard, holding ONE single syrup bottle",
+    "pose": "standing behind the counter on the left, leaning toward the girl, friendly"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 9, burgundy-and-ruby dress, two puff ponytails",
+    "pose": "standing at the counter in the foreground in the middle, on tiptoe, innocent"
+   },
+   {
+    "nom": "the landlord",
+    "desc": "landlord man in his 60s, jade-and-ivory boubou, a gold watch, holding ONE single small notebook",
+    "pose": "standing in the queue on the right, holding the notebook, listening"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma chérie, le sirop-là, c'est pour qui ?"
+   ],
+   [
+    1,
+    "Pour papa dêh. Il tousse fort quand le bailleur frappe."
+   ],
+   [
+    2,
+    "Prends deux. Je passe ce soir."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The pharmacist asks gently, holding the syrup bottle. The girl, in the foreground, answers innocently with one hand on her chest, her face turned three-quarters to the camera. The landlord taps his notebook and says with a cold smile, his face clearly visible.",
+  "chute": "The girl slowly turns her head toward the landlord, her eyes wide; the pharmacist freezes. The camera slowly pushes in to a close-up of the little girl's shocked face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "tousse",
+   "bailleur",
+   "ce soir"
+  ],
+  "gag_legende": "PAPA QUAND LE BAILLEUR VA FRAPPER CE SOIR :",
+  "mecanisme": "relance assassine : le bailleur est dans la file"
+ },
+ {
+  "id": "B048-15",
+  "titre": "Les comprimés de Mamie",
+  "lieu": "public dispensary consultation room in Koumassi, Abidjan, a small desk, a hand-washing poster on the wall, a wooden bench, morning",
+  "persos": [
+   {
+    "nom": "the nurse",
+    "desc": "nurse woman in her 30s, indigo-and-violet nurse scrubs, hair in a bun, holding ONE single pill box",
+    "pose": "standing on the left, holding the pill box, kind"
+   },
+   {
+    "nom": "Mamie",
+    "desc": "grandmother in her 70s, teal-and-emerald boubou, gray hair, wrinkled sly smile",
+    "pose": "sitting on the bench in the middle, hands on her knees, sly"
+   },
+   {
+    "nom": "Papi",
+    "desc": "grandfather in his 70s, crimson-and-apricot kaftan, gray beard, holding ONE single walking cane",
+    "pose": "sitting on the bench in the foreground on the right, both hands on the cane, sly grin"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mamie, tu prends bien tes comprimés chaque matin, hein ?"
+   ],
+   [
+    1,
+    "Non, ma fille. Je les donne à mon mari pour le calmer."
+   ],
+   [
+    2,
+    "Moi, je les revends à Adjamé."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The nurse asks kindly, shaking the pill box. Mamie answers with a sly smile, pointing her chin at Papi. Papi, in the foreground, lifts one hand from his cane and reveals proudly, his face clearly visible.",
+  "chute": "Mamie turns her head toward Papi, outraged; the nurse freezes, mouth open. The camera slowly pushes in to a close-up of Papi's proud sly businessman face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "comprimés",
+   "calmer",
+   "revends"
+  ],
+  "gag_legende": "L'INFIRMIÈRE EN REMPLISSANT LE CARNET :",
+  "mecanisme": "relance assassine en chaîne : chacun refile le traitement"
+ },
+ {
+  "id": "B048-16",
+  "titre": "Les antécédents familiaux",
+  "lieu": "nutrition consultation room in Marcory, Abidjan, a desk with a form, a weighing scale in the corner, a poster of fruits on the wall, late morning",
+  "persos": [
+   {
+    "nom": "the doctor",
+    "desc": "doctor man in his 50s, silver-and-maroon doctor's coat, glasses, holding ONE single pen",
+    "pose": "sitting behind the desk on the left, holding the pen above a form"
+   },
+   {
+    "nom": "the proud mother",
+    "desc": "big mother in her 40s, burgundy-and-salmon boubou, gold bracelets, confident smile",
+    "pose": "sitting on a chair in the middle, hands on her lap, proud"
+   },
+   {
+    "nom": "the boy",
+    "desc": "chubby boy around 12, teal-and-emerald t-shirt, round face",
+    "pose": "sitting on a chair in the foreground on the right, hands on his knees, honest"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, dans ta famille, il y a beaucoup de gros ?"
+   ],
+   [
+    1,
+    "Non docteur, nous on est juste bien nourris dêh !"
+   ],
+   [
+    2,
+    "Sauf papa. C'est lui qui paie."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The doctor asks, his pen ready above the form. The mother answers proudly, patting her own belly with one hand. The boy, in the foreground, raises one finger and adds honestly, his face clearly visible.",
+  "chute": "The mother's proud smile cracks; the doctor slowly writes something down. The camera slowly pushes in to a close-up of the boy's innocent honest face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "famille",
+   "bien nourris",
+   "paie"
+  ],
+  "gag_legende": "PAPA QUAND IL VOIT LES COURSES DU MOIS :",
+  "mecanisme": "relance assassine de l'enfant : le seul maigre est celui qui paie"
+ },
+ {
+  "id": "B048-17",
+  "titre": "Le sport de Tantie",
+  "lieu": "doctor's office in Adjamé, Abidjan, a desk, a weighing scale, a window with a view of the busy street, afternoon",
+  "persos": [
+   {
+    "nom": "the doctor",
+    "desc": "doctor woman in her 40s, mint-and-olive doctor's coat, short natural hair, a stethoscope around her neck, holding ONE single pen",
+    "pose": "sitting behind the desk on the left, holding the pen"
+   },
+   {
+    "nom": "Tantie",
+    "desc": "plump woman in her 50s, indigo-and-violet boubou, big earrings",
+    "pose": "sitting on a chair in the middle, chin up, very proud"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 50s, burgundy-and-ruby shirt, thin mustache",
+    "pose": "sitting on a chair in the foreground on the right, arms crossed, deadpan"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, pour maigrir, faut bouger. Tu fais quel sport ?"
+   ],
+   [
+    1,
+    "Docteur, chaque samedi je danse coupé-décalé jusqu'au matin dêh !"
+   ],
+   [
+    2,
+    "Assise, docteur. Elle danse assise dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The doctor asks, pen in hand. Tantie answers proudly, shaking her shoulders to the rhythm while staying seated. The husband, in the foreground, arms crossed, corrects flatly, his face clearly visible.",
+  "chute": "Tantie stops her shoulders and glares at her husband; the doctor slowly puts her pen down. The camera slowly pushes in to a close-up of the husband's deadpan face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "sport",
+   "coupé-décalé",
+   "assise"
+  ],
+  "gag_legende": "TANTIE SAMEDI SOIR AU MAQUIS :",
+  "mecanisme": "relance assassine du mari : le sport se fait assis"
+ },
+ {
+  "id": "B048-18",
+  "titre": "Les comprimés dans le sac",
+  "lieu": "in front of the counter of a pharmacy in Marcory, Abidjan, shelves of medicine boxes behind, a ceiling fan, morning",
+  "persos": [
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, teal-and-cobalt polo shirt, receding hairline",
+    "pose": "standing on the left, pointing at his wife's handbag, outraged"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 40s, burgundy-and-ruby kaba, short braids, holding ONE single closed handbag with both hands",
+    "pose": "standing in the foreground on the right, clutching her handbag, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chérie, pourquoi tu caches mes comprimés dans ton sac-là ?!"
+   ],
+   [
+    1,
+    "La boîte dit : hors de portée des enfants dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The husband protests, pointing at the handbag. The wife, in the foreground, clutches the handbag with both hands and answers calmly without even looking at him, her face clearly visible.",
+  "chute": "The husband freezes, his finger still pointing, mouth open. The camera slowly pushes in to a close-up of the wife's calm smug face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "comprimés",
+   "hors de portée",
+   "enfants"
+  ],
+  "gag_legende": "LE MARI QUAND IL A COMPRIS :",
+  "mecanisme": "lecture littérale de la notice : le mari traité d'enfant"
+ },
+ {
+  "id": "B048-19",
+  "titre": "Le mari qui ne dort plus",
+  "lieu": "doctor's office in Adjamé, Abidjan, a desk with a blood pressure monitor, a poster about sleep on the wall, evening",
+  "persos": [
+   {
+    "nom": "the doctor",
+    "desc": "doctor man in his 60s, crimson-and-apricot doctor's coat, gray beard, holding ONE single pen",
+    "pose": "sitting behind the desk on the left, holding the pen"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 30s, jade-and-ivory kaba, elegant braids, holding ONE single phone",
+    "pose": "sitting on a chair in the foreground in the middle, holding the phone, satisfied smile"
+   },
+   {
+    "nom": "the exhausted husband",
+    "desc": "husband in his 30s, silver-and-maroon tunic, huge dark circles under his eyes",
+    "pose": "sitting on a chair on the right, slumped, exhausted"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Madame, ton mari-là ne dort plus depuis quand ?"
+   ],
+   [
+    1,
+    "Depuis que j'ai trouvé son code Mobile Money dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The doctor asks, glancing at the exhausted husband, who stays slumped and stares at the phone in horror. The wife, in the foreground, raises the phone slightly and answers with a sweet satisfied smile, her face clearly visible.",
+  "chute": "The husband's eye twitches; the doctor slowly puts his pen down. The camera slowly pushes in to a close-up of the wife's sweet satisfied face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "dort plus",
+   "code",
+   "Mobile Money"
+  ],
+  "gag_legende": "LE MARI À TROIS HEURES DU MATIN :",
+  "mecanisme": "la vraie cause de l'insomnie révélée sans pitié"
+ },
+ {
+  "id": "B048-20",
+  "titre": "La toux du bébé",
+  "lieu": "public dispensary pediatric corner in Koumassi, Abidjan, a baby scale on a small table, a desk, a vaccination poster on the wall, morning",
+  "persos": [
+   {
+    "nom": "the doctor",
+    "desc": "doctor woman in her 40s, burgundy-and-salmon doctor's coat, a stethoscope around her neck, holding ONE single pen",
+    "pose": "sitting behind the desk on the left, holding the pen"
+   },
+   {
+    "nom": "the mother",
+    "desc": "young mother in her 20s, teal-and-cobalt kaba, braided hair",
+    "pose": "sitting on a chair in the middle, hands on her lap, calm"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 30s, teal-and-emerald polo shirt, short beard, holding ONE single baby wrapped in a plain blanket with both arms",
+    "pose": "sitting on a chair in the foreground on the right, holding the baby, nervous"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maman, le bébé-là tousse seulement la nuit ?"
+   ],
+   [
+    1,
+    "Oui docteur. Quand son papa rentre du maquis à trois heures dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The doctor asks gently, pen in hand. The father, in the foreground, holds the baby with both arms and does not move. The mother answers sweetly, then slowly turns her head toward her husband, her face clearly visible.",
+  "chute": "The father freezes with a guilty smile, sweat on his forehead; the doctor raises an eyebrow. The camera slowly pushes in to a close-up of the father's busted face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "tousse",
+   "maquis",
+   "trois heures"
+  ],
+  "gag_legende": "PAPA CE SOIR À TROIS HEURES :",
+  "mecanisme": "révélation par ricochet : la toux du bébé dénonce le papa"
+ }
+]

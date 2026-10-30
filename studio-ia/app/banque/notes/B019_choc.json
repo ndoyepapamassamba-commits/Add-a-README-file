@@ -1,0 +1,22 @@
+[
+  {"id": "B019-01", "note": 5, "drapeaux": [], "remarque": "Proverbe pris au pied de la lettre bien trouvé, mais une seule réplique et aucune relance : sourire plus qu'éclat de rire."},
+  {"id": "B019-02", "note": 6, "drapeaux": ["connu"], "remarque": "« Cinq heures c'est tôt » est une vanne connue, mais la relance de la mère qui grille le père le samedi donne une vraie double cible."},
+  {"id": "B019-03", "note": 7, "drapeaux": [], "remarque": "Bonne escalade : la nuit a conseillé le fils, puis la mère, deux fois plus, et le père se fait plumer par toute la maison."},
+  {"id": "B019-04", "note": 4, "drapeaux": ["confus"], "remarque": "Le passage avenir, batterie, chargeur est trop alambiqué et la réplique de la mère se décode au lieu de frapper."},
+  {"id": "B019-05", "note": 4, "drapeaux": ["connu"], "remarque": "L'horloge au congélateur pour garder le temps est une devinette connue ; l'ajout « fin du mois » ne suffit pas à surprendre."},
+  {"id": "B019-06", "note": 7, "drapeaux": [], "remarque": "Retournement net : le fils propose de taper le code et le père aux mains liées se libère d'un coup pour protéger sa poche, chute visuelle efficace."},
+  {"id": "B019-07", "note": 7, "drapeaux": [], "remarque": "Féroce envers le fils, et le père qui voit une poule sourire relance bien la vanne, même si l'expression demande un peu de culture."},
+  {"id": "B019-08", "note": 5, "drapeaux": [], "remarque": "L'idée du délestage pour cacher la copine est maligne et la pique du père sur la CIE tient, mais le délestage reste un ressort très usé."},
+  {"id": "B019-09", "note": 7, "drapeaux": [], "remarque": "Double cible réussie : la fille vise la sauce, puis le père révèle vingt ans de critiques ravalées, la relance enfonce le clou."},
+  {"id": "B019-10", "note": 5, "drapeaux": [], "remarque": "Le « voleur de jeunesse » est une bonne idée, mais la relance « mes vingt ans » répète la même chose au lieu d'aller plus loin."},
+  {"id": "B019-11", "note": 5, "drapeaux": ["connu"], "remarque": "« Travailler comme un chien » pris au pied de la lettre est déjà vu ; l'aboiement quand on parle d'argent sauve un peu la fin."},
+  {"id": "B019-12", "note": 6, "drapeaux": [], "remarque": "Le froid de la mère comme climatiseur fait sourire et sa relance (dormir au frais dehors) renverse bien le père, sans vraie surprise pour autant."},
+  {"id": "B019-13", "note": 5, "drapeaux": [], "remarque": "Logique d'ingénieur du père gentille et lisible, mais trop douce et sans victime, ça ne fait pas exploser."},
+  {"id": "B019-14", "note": 4, "drapeaux": ["connu"], "remarque": "Crier au lieu de téléphoner est une vieille blague, et la relance du maquis est molle et un peu floue."},
+  {"id": "B019-15", "note": 6, "drapeaux": [], "remarque": "Souffler l'ampoule comme une bougie avant le délestage est une image drôle et neuve, mais elle tombe sur une fille triste sans relance."},
+  {"id": "B019-16", "note": 5, "drapeaux": [], "remarque": "« Si ça dépasse dix, c'est pas notre argent » est correct mais attendu dans la série des papas radins."},
+  {"id": "B019-17", "note": 6, "drapeaux": [], "remarque": "« Tes pas arrivent tous ici » grille le père endetté avec logique, bon retournement mais le crédit à la boutique est un terrain connu."},
+  {"id": "B019-18", "note": 7, "drapeaux": [], "remarque": "Le père qui se trahit lui-même en révélant qu'on lui a proposé plus pour la porte est la vraie surprise du lot."},
+  {"id": "B019-19", "note": 5, "drapeaux": [], "remarque": "« Qui t'a appris à mentir ? Toi » est un ressort classique ; la question de la mère sur le salaire relance correctement sans achever."},
+  {"id": "B019-20", "note": 7, "drapeaux": [], "remarque": "La mère qui corrige les fautes puis barre le copain fait un double coup sec et inattendu, chute très jouable."}
+]

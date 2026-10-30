@@ -1,0 +1,929 @@
+[
+ {
+  "id": "B044-01",
+  "titre": "Le portefeuille oublié",
+  "lieu": "inside an old gbaka minibus parked at the Angré terminus, Abidjan, rows of worn benches, the sliding door wide open, morning light, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the apprentice with the wallet",
+    "desc": "gbaka apprentice, young man around 20, rust-and-lilac tracksuit, skinny with a big cheeky grin, holding ONE single worn leather wallet",
+    "pose": "standing inside at the open sliding door on the left, holding the wallet out"
+   },
+   {
+    "nom": "the old man passenger",
+    "desc": "old man in his 60s, saffron-and-ivory boubou, short beard, big round glasses, empty hands",
+    "pose": "sitting on the front bench in the foreground on the right, hands on his knees, delighted"
+   },
+   {
+    "nom": "the driver",
+    "desc": "gbaka driver, man in his 40s, navy-and-sunflower shirt, thick moustache, one hand on the steering wheel",
+    "pose": "sitting at the steering wheel in the background, head turned toward the passengers"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, tu as oublié ton portefeuille-là hier dêh !"
+   ],
+   [
+    1,
+    "Merci, mon fils ! Il manque rien dedans ?"
+   ],
+   [
+    0,
+    "Tonton, il manquait déjà tout dêh."
+   ],
+   [
+    2,
+    "On a même ajouté deux cents."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The apprentice holds out the wallet with a proud smile and announces it, face three-quarters to the camera. The old man opens both hands in relief and asks, his face clearly visible. The apprentice shrugs with a sorry pout and answers. The driver turns his head from the steering wheel and says it very kindly, his face clearly visible.",
+  "chute": "The old man freezes, his mouth half open, blinking fast. The camera slowly pushes in to a close-up of the old man passenger's humiliated face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "portefeuille",
+   "manquait",
+   "deux cents"
+  ],
+  "gag_legende": "TONTON EN RECEVANT LA CHARITÉ DU GBAKA :",
+  "mecanisme": "la relance assassine : portefeuille déjà vide, puis le chauffeur avoue qu'ils ont fait la charité"
+ },
+ {
+  "id": "B044-02",
+  "titre": "Le petit et l'apprenti",
+  "lieu": "inside a gbaka minibus stuck in traffic on the main road of Riviera, Abidjan, worn benches, the sliding door open on the busy street, noon, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the little boy",
+    "desc": "boy around 8, teal-and-pistachio t-shirt, round cheeks, ONE single school bag on his lap",
+    "pose": "sitting on the front bench in the foreground on the left, one hand on his school bag, the other pointing at the apprentice"
+   },
+   {
+    "nom": "the apprentice",
+    "desc": "gbaka apprentice, young man in his 20s, magenta-and-gold t-shirt, thin moustache, holding ONE single folded banknote",
+    "pose": "standing at the open sliding door on the right, facing the boy"
+   },
+   {
+    "nom": "the driver",
+    "desc": "gbaka driver, man in his 30s, sand-and-apricot shirt, neat glasses, both hands on the steering wheel",
+    "pose": "sitting at the steering wheel in the background, head turned toward the boy"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, maman dit si je travaille pas à l'école, je deviens comme toi !"
+   ],
+   [
+    1,
+    "Mon petit, moi j'ai la licence dêh."
+   ],
+   [
+    2,
+    "Et moi, j'ai le master dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boy points at the apprentice and says it very innocently, face three-quarters to the camera. The apprentice lifts his chin, offended, and answers, his face clearly visible. The driver turns his head from the steering wheel and says it with a tired sigh, his face clearly visible.",
+  "chute": "The boy slowly lowers his pointing hand and stares at his school bag. The camera slowly pushes in to a close-up of the little boy's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "l'école",
+   "licence",
+   "master"
+  ],
+  "gag_legende": "LE PETIT QUAND MAMAN PARLE D'ÉCOLE :",
+  "mecanisme": "la relance assassine : l'insulte d'enfant se retourne (licence), puis le chauffeur achève (master)"
+ },
+ {
+  "id": "B044-03",
+  "titre": "Le transport du mari",
+  "lieu": "inside a gbaka minibus parked at a stop in Deux-Plateaux, Abidjan, worn benches, the sliding door wide open, late afternoon, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the apprentice",
+    "desc": "gbaka apprentice, young man around 19, navy-and-cream tracksuit, shaved head, holding ONE single handful of coins",
+    "pose": "standing at the open sliding door on the left, palm held out"
+   },
+   {
+    "nom": "the stingy wife",
+    "desc": "woman in her 40s, tangerine-and-violet kaba, big hoop earrings, ONE single handbag on her lap",
+    "pose": "sitting on the front bench in the foreground on the right, chin up, both hands on her handbag"
+   },
+   {
+    "nom": "the husband",
+    "desc": "man in his 40s, maroon-and-ivory shirt, thick moustache, empty hands",
+    "pose": "sitting right beside his wife on the front bench, in the foreground in the middle, turned toward her"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ton mari-là a pas payé son transport dêh !"
+   ],
+   [
+    1,
+    "Mon mari ? Je connais pas ce monsieur-là !"
+   ],
+   [
+    2,
+    "Ya fohi. Alors rends ma dot."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The apprentice points at the husband and says it, face three-quarters to the camera. The wife turns her head away from her husband, nose up, and says it, her face clearly visible. The husband stares at her, raises one finger and says it calmly, his face clearly visible.",
+  "chute": "The wife freezes, eyes wide, clutching her handbag. The camera slowly pushes in to a close-up of the stingy wife's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "transport",
+   "monsieur",
+   "dot"
+  ],
+  "gag_legende": "TANTIE EN CALCULANT LA DOT :",
+  "mecanisme": "la relance assassine : la femme renie son mari pour deux cents francs, il réclame la dot"
+ },
+ {
+  "id": "B044-04",
+  "titre": "Le fonctionnaire dans le taxi",
+  "lieu": "inside a taxi stopped at a traffic light in Deux-Plateaux, Abidjan, worn seats, a small taxi meter on the dashboard, evening, front seats seen from the dashboard",
+  "persos": [
+   {
+    "nom": "the proud father",
+    "desc": "man in his 40s, navy-and-sunflower suit, tidy moustache, ONE single leather briefcase on his lap",
+    "pose": "sitting in the front passenger seat in the foreground on the right, chest puffed out"
+   },
+   {
+    "nom": "the taxi driver",
+    "desc": "taxi driver, man in his 50s, sand-and-apricot polo shirt, receding hairline, reading glasses, both hands on the steering wheel",
+    "pose": "sitting at the wheel in the foreground on the left, turned three-quarters toward the father"
+   },
+   {
+    "nom": "the son",
+    "desc": "boy around 10, rust-and-lilac t-shirt, big curious eyes, empty hands",
+    "pose": "sitting in the back seat between the two front seats, leaning forward, face clearly visible"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chauffeur, respecte-moi ! Moi, je suis fonctionnaire dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, Kouamé. Le matin, c'est moi ton chef de service."
+   ],
+   [
+    2,
+    "Papa, c'est lui le chef nul ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The father taps his briefcase with one hand and says it proudly, face three-quarters to the camera. The driver slowly turns his head to the father, raises one eyebrow and answers calmly, his face clearly visible. The son leans forward between the seats, points at the driver and asks innocently, his face clearly visible.",
+  "chute": "The father freezes, his smile melting, sweat on his forehead. The camera slowly pushes in to a close-up of the proud father's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "fonctionnaire",
+   "chef",
+   "nul"
+  ],
+  "gag_legende": "PAPA LUNDI MATIN AU BUREAU :",
+  "mecanisme": "la relance assassine : le chauffeur est son chef, puis l'enfant répète ce que papa dit à la maison"
+ },
+ {
+  "id": "B044-05",
+  "titre": "Les frais d'université",
+  "lieu": "inside a gbaka minibus parked at the Angré gbaka station, Abidjan, worn benches, the sliding door wide open on a dusty yard, morning, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the shocked mother",
+    "desc": "mother in her 50s, magenta-and-gold boubou, headscarf, big round eyes, ONE single market basket on her lap",
+    "pose": "sitting on the front bench in the foreground on the right, leaning toward the door"
+   },
+   {
+    "nom": "the apprentice son",
+    "desc": "young man around 22, teal-and-pistachio tracksuit, sheepish smile, holding ONE single handful of coins",
+    "pose": "standing at the open sliding door on the left, facing his mother"
+   },
+   {
+    "nom": "the driver",
+    "desc": "gbaka driver, man in his 40s, maroon-and-ivory polo shirt, big belly, shiny chain necklace, one hand on the steering wheel",
+    "pose": "sitting at the steering wheel in the background, turned toward the mother, smiling"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, apprenti gbaka ?! Et l'argent de l'université que j'envoie ?!"
+   ],
+   [
+    1,
+    "Maman, c'est avec ça on a acheté le gbaka dêh."
+   ],
+   [
+    2,
+    "Tantie, toi tu paies pas dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother puts one hand on her chest and shouts it, face three-quarters to the camera. The son scratches the back of his head, embarrassed, and answers, his face clearly visible. The driver turns from the wheel, opens one hand generously toward her and says it with a big grateful smile, his face clearly visible.",
+  "chute": "The mother freezes, her mouth wide open, staring at the driver. The camera slowly pushes in to a close-up of the shocked mother's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "université",
+   "gbaka",
+   "paies pas"
+  ],
+  "gag_legende": "MAMAN EN COMPTANT SES ENVOIS D'ARGENT :",
+  "mecanisme": "la relance assassine : l'argent des études a acheté le gbaka, et l'investisseuse gagne un trajet gratuit"
+ },
+ {
+  "id": "B044-06",
+  "titre": "La visite secrète",
+  "lieu": "inside a taxi parked at the roadside in Riviera, Abidjan, worn seats, a small air freshener hanging from the mirror, early evening under streetlights, front seats seen from the dashboard",
+  "persos": [
+   {
+    "nom": "the boyfriend",
+    "desc": "young man around 20, saffron-and-ivory shirt, fresh haircut, holding ONE single bouquet of flowers",
+    "pose": "sitting in the front passenger seat in the foreground on the right, grinning"
+   },
+   {
+    "nom": "the taxi driver dad",
+    "desc": "taxi driver, man in his 50s, navy-and-cream shirt, stern thick eyebrows, short beard, both hands on the steering wheel",
+    "pose": "sitting at the wheel in the foreground on the left, turned three-quarters toward the boyfriend"
+   },
+   {
+    "nom": "the friend",
+    "desc": "young man around 20, tangerine-and-violet t-shirt, thin moustache, empty hands",
+    "pose": "sitting in the back seat between the two front seats, face clearly visible"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chauffeur, chez ma copine à Riviera. Son papa est en voyage dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, mon petit. Je suis rentré ce matin."
+   ],
+   [
+    2,
+    "Tonton, moi je le connais pas."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boyfriend lifts the bouquet a little and says it with a big wink, face three-quarters to the camera. The driver slowly turns his head toward him, frowning hard, and answers in a deep calm voice, his face clearly visible. The friend raises both open hands and says it very fast, his face clearly visible.",
+  "chute": "The boyfriend freezes, the bouquet trembling in his hand. The camera slowly pushes in to a close-up of the boyfriend's terrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "copine",
+   "voyage",
+   "rentré"
+  ],
+  "gag_legende": "LE COPAIN AVANT LE DÎNER AVEC BEAU-PAPA :",
+  "mecanisme": "la relance assassine : le chauffeur est le papa de la copine, puis l'ami lâche le copain"
+ },
+ {
+  "id": "B044-07",
+  "titre": "La filature en taxi",
+  "lieu": "inside a taxi stuck in traffic on a boulevard in Deux-Plateaux, Abidjan, worn seats, cars all around, afternoon, front seats seen from the dashboard",
+  "persos": [
+   {
+    "nom": "the furious wife",
+    "desc": "woman in her 30s, rust-and-lilac dress, braids in a high bun, holding ONE single phone",
+    "pose": "sitting in the front passenger seat in the foreground on the right, pointing ahead"
+   },
+   {
+    "nom": "the taxi driver",
+    "desc": "taxi driver, man in his 40s, teal-and-pistachio shirt, short beard, both hands on the steering wheel",
+    "pose": "sitting at the wheel in the foreground on the left, staring ahead"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chauffeur, suis le taxi-là ! Mon mari est dedans avec une fille !"
+   ],
+   [
+    1,
+    "Ma sœur, la fille-là, c'est ma femme dêh !"
+   ],
+   [
+    0,
+    "Donc c'est toi tu paies."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife points ahead with her free hand and shouts it, face three-quarters to the camera. The driver squints ahead, then turns his head to her, shocked, and answers, his face clearly visible. The wife leans back calmly, points at the driver and says it, her face clearly visible.",
+  "chute": "The driver freezes, his mouth open, both hands stuck on the wheel. The camera slowly pushes in to a close-up of the taxi driver's devastated face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "taxi",
+   "ma femme",
+   "paies"
+  ],
+  "gag_legende": "LE CHAUFFEUR EN SORTANT SON PORTE-MONNAIE :",
+  "mecanisme": "la relance assassine : double trahison révélée, puis la cliente fait payer l'autre victime"
+ },
+ {
+  "id": "B044-08",
+  "titre": "Le patron en woro-woro",
+  "lieu": "inside a shared woro-woro taxi stopped at a crossroads in Riviera, Abidjan, worn seats, morning, front seats seen from the dashboard",
+  "persos": [
+   {
+    "nom": "the woro-woro driver",
+    "desc": "woro-woro driver, man in his 30s, sand-and-apricot t-shirt, cheeky grin, one hand on the steering wheel",
+    "pose": "sitting at the wheel in the foreground on the left, turned toward the passenger"
+   },
+   {
+    "nom": "the ruined boss",
+    "desc": "man in his 50s, magenta-and-gold suit, big shiny watch, sad droopy eyes, ONE single leather briefcase on his lap",
+    "pose": "sitting in the front passenger seat in the foreground on the right, slumped"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Patron, vous en woro-woro ?! Votre grosse voiture-là est où ?"
+   ],
+   [
+    1,
+    "Ma femme est partie avec. Et avec mon chauffeur aussi dêh."
+   ],
+   [
+    0,
+    "Patron, vous cherchez nouveau chauffeur ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The driver looks the boss up and down, amazed, and asks it, face three-quarters to the camera. The boss sighs, both hands on his briefcase, and answers sadly, his face clearly visible. The driver straightens up with a big hopeful smile, one hand on his chest, and asks it, his face clearly visible.",
+  "chute": "The boss slowly turns his head to the driver, his eyes narrowing. The camera slowly pushes in to a close-up of the ruined boss's suspicious face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "woro-woro",
+   "chauffeur",
+   "nouveau"
+  ],
+  "gag_legende": "LE PATRON EN RENTRANT DANS SA MAISON VIDE :",
+  "mecanisme": "la relance assassine : femme et chauffeur partis ensemble, puis le woro-woro postule au poste"
+ },
+ {
+  "id": "B044-09",
+  "titre": "La ceinture du gbaka",
+  "lieu": "inside a gbaka minibus parked at a stop in Deux-Plateaux, Abidjan, two rows of worn benches, the sliding door open, midday, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the elegant young woman",
+    "desc": "young woman around 25, navy-and-sunflower jumpsuit, long braids, holding ONE single small handbag",
+    "pose": "sitting on the front bench in the foreground on the left, looking around worried"
+   },
+   {
+    "nom": "the flirty uncle",
+    "desc": "man in his 50s, maroon-and-ivory kaftan, shiny bald head, flirty smile, empty hands",
+    "pose": "sitting right next to her on the front bench in the foreground on the right"
+   },
+   {
+    "nom": "the wife behind",
+    "desc": "woman in her 50s, saffron-and-ivory kaba, headscarf, arms crossed",
+    "pose": "sitting on the second bench right behind them, her face between their heads, glaring"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, la ceinture de sécurité est où dans le gbaka-là ?"
+   ],
+   [
+    1,
+    "Ma fille, c'est moi la ceinture. Attrape-moi bien dêh."
+   ],
+   [
+    2,
+    "Ceinture-là est déjà attachée dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The young woman looks around the bench and asks it, face three-quarters to the camera. The uncle pats his own chest with one hand and says it with a charming smile, his face clearly visible. Behind them, the wife leans forward, arms crossed, and says it coldly, her face clearly visible between their heads.",
+  "chute": "The uncle's smile freezes; he stares straight ahead without turning around. The camera slowly pushes in to a close-up of the flirty uncle's terrified face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "ceinture",
+   "attrape-moi",
+   "attachée"
+  ],
+  "gag_legende": "TONTON EN RENTRANT À LA MAISON CE SOIR :",
+  "mecanisme": "la relance assassine : Tonton drague en se proposant comme ceinture, sa femme assise derrière achève"
+ },
+ {
+  "id": "B044-10",
+  "titre": "La question du permis",
+  "lieu": "a moto-taxi parked at the roadside in Angré, Abidjan, a dusty sidewalk, a small kiosk behind, morning",
+  "persos": [
+   {
+    "nom": "the worried client",
+    "desc": "woman in her 40s, navy-and-cream kaba, headscarf, holding ONE single handbag",
+    "pose": "sitting sideways on the back of the parked motorbike in the foreground on the right"
+   },
+   {
+    "nom": "the moto-taxi driver",
+    "desc": "moto-taxi driver, young man around 25, tangerine-and-violet tracksuit, thin beard, both hands on the handlebars",
+    "pose": "sitting on the front of the parked motorbike in the foreground on the left, turned three-quarters toward her"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, tu as ton permis, au moins ?"
+   ],
+   [
+    1,
+    "Non, Tantie. Mais la moto-là aussi n'a pas de papiers dêh."
+   ],
+   [
+    0,
+    "Et moi, j'ai pas l'argent."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The motorbike never moves. The client frowns and asks it, face three-quarters to the camera. The driver shrugs with a relaxed smile and answers, his face clearly visible. The client gives a tiny satisfied nod and says it calmly, her face clearly visible.",
+  "chute": "The driver's smile drops; he stares at her, frozen. The camera slowly pushes in to a close-up of the moto-taxi driver's stunned face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "permis",
+   "papiers",
+   "l'argent"
+  ],
+  "gag_legende": "LE MOTO-TAXI EN CALCULANT SA JOURNÉE :",
+  "mecanisme": "la relance assassine : surenchère d'aveux, la cliente achève en avouant qu'elle n'a pas l'argent"
+ },
+ {
+  "id": "B044-11",
+  "titre": "Le cahier de l'apprenti",
+  "lieu": "inside a gbaka minibus parked at a stop in Angré, Abidjan, worn benches, the sliding door wide open, morning, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the shocked husband",
+    "desc": "man in his 40s, sand-and-apricot boubou, big moustache, empty hands",
+    "pose": "sitting on the front bench in the foreground on the left, leaning toward the apprentice"
+   },
+   {
+    "nom": "the apprentice with the notebook",
+    "desc": "gbaka apprentice, young man around 20, navy-and-sunflower t-shirt, narrow face, holding ONE single small open notebook",
+    "pose": "standing at the open sliding door on the right, showing the notebook"
+   },
+   {
+    "nom": "the wife",
+    "desc": "woman in her 40s, rust-and-lilac kaba, big earrings, ONE single handbag on her lap",
+    "pose": "sitting right beside her husband on the front bench, in the foreground on the right, avoiding his eyes"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Petit, pourquoi mon nom est dans ton cahier de crédit ?!"
+   ],
+   [
+    1,
+    "Tonton, ta femme dit chaque matin : mets sur son compte."
+   ],
+   [
+    2,
+    "Et ma maman aussi, chéri."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband points at the notebook and asks it, face three-quarters to the camera. The apprentice taps the open page with one finger and answers, his face clearly visible. The wife gives a small guilty smile, shrugs and says it softly, her face clearly visible.",
+  "chute": "The husband slowly turns his head toward his wife, eyes wide, frozen. The camera slowly pushes in to a close-up of the shocked husband's despairing face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "cahier",
+   "compte",
+   "maman"
+  ],
+  "gag_legende": "TONTON EN APPELANT SA BELLE-MÈRE :",
+  "mecanisme": "la relance assassine : sa femme voyage à crédit sur son nom, puis elle avoue que sa mère aussi"
+ },
+ {
+  "id": "B044-12",
+  "titre": "Le billet suspect",
+  "lieu": "inside a gbaka minibus parked at a stop in Riviera, Abidjan, worn benches, the sliding door open, afternoon, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the angry client",
+    "desc": "man in his 30s, teal-and-pistachio polo shirt, square glasses, holding ONE single banknote",
+    "pose": "sitting on the front bench in the foreground on the right, holding the banknote up"
+   },
+   {
+    "nom": "the apprentice",
+    "desc": "gbaka apprentice, young man around 18, navy-and-cream t-shirt, cheeky smile, one hand on the door frame",
+    "pose": "standing at the open sliding door on the left"
+   },
+   {
+    "nom": "the driver",
+    "desc": "gbaka driver, man in his 50s, saffron-and-ivory tunic, round belly, both hands on the steering wheel",
+    "pose": "sitting at the steering wheel in the background, head turned toward the client"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Petit, ta monnaie-là, c'est un faux billet dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, Tonton. C'est toi-même tu me l'as donné hier."
+   ],
+   [
+    2,
+    "Il est rentré chez son papa."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The client shakes the banknote and shouts it, face three-quarters to the camera. The apprentice leans on the door frame and answers calmly with a smirk, his face clearly visible. The driver turns his head and says it with a big grin, his face clearly visible.",
+  "chute": "The client freezes, slowly lowers the banknote and glances left and right. The camera slowly pushes in to a close-up of the angry client's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "faux billet",
+   "hier",
+   "papa"
+  ],
+  "gag_legende": "TONTON EN CACHANT SES AUTRES BILLETS :",
+  "mecanisme": "la relance assassine : le faux billet vient du client lui-même, le chauffeur achève (il est rentré chez son papa)"
+ },
+ {
+  "id": "B044-13",
+  "titre": "L'âge du petit",
+  "lieu": "inside a gbaka minibus parked at the Angré terminus, Abidjan, worn benches, the sliding door wide open, morning, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the apprentice",
+    "desc": "gbaka apprentice, young man around 20, maroon-and-ivory tracksuit, sharp eyes, holding ONE single handful of coins",
+    "pose": "standing at the open sliding door on the left"
+   },
+   {
+    "nom": "the lying mother",
+    "desc": "mother in her 40s, teal-and-pistachio kaba, heavy makeup, ONE single handbag on her lap",
+    "pose": "sitting on the front bench in the foreground in the middle, smiling too sweetly"
+   },
+   {
+    "nom": "the tall boy",
+    "desc": "boy around 10, very tall for his age, navy-and-sunflower tracksuit, empty hands",
+    "pose": "sitting next to his mother on the front bench in the foreground on the right, towering over her"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ton enfant-là paie sa place dêh !"
+   ],
+   [
+    1,
+    "Mon petit, il a trois ans seulement !"
+   ],
+   [
+    2,
+    "Maman, c'est dans le gbaka seulement je suis bébé ?"
+   ],
+   [
+    0,
+    "Et toi, Tantie, dix-huit ans ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The apprentice points at the boy and says it, face three-quarters to the camera. The mother waves one hand and answers with a fake sweet smile, her face clearly visible. The boy turns to his mother, confused, and asks it, his face clearly visible. The apprentice raises one eyebrow, points at the mother and says it, his face clearly visible.",
+  "chute": "The mother's fake smile freezes on her face. The camera slowly pushes in to a close-up of the lying mother's caught face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "trois ans",
+   "bébé",
+   "dix-huit"
+  ],
+  "gag_legende": "MAMAN QUAND ON PARLE DE SON ÂGE :",
+  "mecanisme": "la relance assassine : l'enfant trahit le mensonge sur son âge, l'apprenti achève sur l'âge de la mère"
+ },
+ {
+  "id": "B044-14",
+  "titre": "L'ancien maître",
+  "lieu": "inside a gbaka minibus parked at a stop in Riviera, Abidjan, worn benches, the sliding door open, morning, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the former pupil",
+    "desc": "man in his 30s, saffron-and-ivory suit, big shiny watch, neat haircut, ONE single leather briefcase on his lap",
+    "pose": "sitting on the front bench in the foreground on the right, staring at the apprentice"
+   },
+   {
+    "nom": "the old teacher apprentice",
+    "desc": "gbaka apprentice, thin man in his 60s, rust-and-lilac shirt, old-fashioned glasses, holding ONE single handful of coins",
+    "pose": "standing at the open sliding door on the left, very dignified"
+   },
+   {
+    "nom": "the driver",
+    "desc": "gbaka driver, man in his 40s, tangerine-and-violet polo shirt, round face, one hand on the steering wheel",
+    "pose": "sitting at the steering wheel in the background, turned toward the passenger"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Maître ?! C'est vous qui disiez que je finirai apprenti gbaka !"
+   ],
+   [
+    1,
+    "Ya fohi, mon petit. Je gardais ta place."
+   ],
+   [
+    2,
+    "Mon vieux, tu commences lundi dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The former pupil points at the apprentice, amazed, and says it, face three-quarters to the camera. The old teacher nods slowly, very dignified, and answers, his face clearly visible. The driver turns from the wheel, gives a thumbs-up and says it cheerfully, his face clearly visible.",
+  "chute": "The former pupil freezes, both hands gripping his briefcase. The camera slowly pushes in to a close-up of the former pupil's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "Maître",
+   "apprenti",
+   "lundi"
+  ],
+  "gag_legende": "LE GARS QUAND IL PENSE À LUNDI :",
+  "mecanisme": "la relance assassine : le maître qui prédisait l'échec est devenu apprenti, le chauffeur embauche l'élève"
+ },
+ {
+  "id": "B044-15",
+  "titre": "Caché dans le woro-woro",
+  "lieu": "inside a shared woro-woro taxi stuck in traffic in Angré, Abidjan, a gbaka minibus stopped right beside it and visible through the side window, noon, front seats seen from the dashboard",
+  "persos": [
+   {
+    "nom": "the woro-woro driver",
+    "desc": "woro-woro driver, man in his 30s, maroon-and-ivory t-shirt, short dreadlocks, one hand on the steering wheel",
+    "pose": "sitting at the wheel in the foreground on the left, turned toward the passenger"
+   },
+   {
+    "nom": "the hiding husband",
+    "desc": "man in his 40s, magenta-and-gold shirt, sweaty forehead, empty hands",
+    "pose": "sitting slouched very low in the front passenger seat in the foreground on the right, face still clearly visible"
+   },
+   {
+    "nom": "the hiding wife",
+    "desc": "woman in her 40s, tangerine-and-violet dress, big earrings, empty hands",
+    "pose": "sitting slouched very low inside the gbaka next door, visible through the side window in the background"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon vieux, pourquoi tu te caches comme ça dans ma voiture ?"
+   ],
+   [
+    1,
+    "Ma femme est dans le gbaka à côté dêh !"
+   ],
+   [
+    0,
+    "Et elle-là, pourquoi elle se cache aussi ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The driver frowns at the slouching man and asks it, face three-quarters to the camera. The husband whispers it, eyes wide, his face clearly visible. The driver glances at the side window, points at the woman slouching in the gbaka and asks it, his face clearly visible. In the background, the wife never speaks.",
+  "chute": "The husband slowly raises his head toward the window, his mouth falling open. The camera slowly pushes in to a close-up of the hiding husband's shocked face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "caches",
+   "ma femme",
+   "aussi"
+  ],
+  "gag_legende": "LES DEUX CE SOIR À LA MAISON :",
+  "mecanisme": "effet miroir : celui qui se cache découvre que sa femme se cache aussi (deux menteurs d'un coup)"
+ },
+ {
+  "id": "B044-16",
+  "titre": "Le métier de demain",
+  "lieu": "inside a gbaka minibus stuck in traffic in Deux-Plateaux, Abidjan, worn benches, the sliding door open on the noisy street, late afternoon, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the little boy",
+    "desc": "boy around 8, sand-and-apricot tracksuit, gap-toothed smile, empty hands",
+    "pose": "sitting on the front bench in the foreground on the left, pointing at the open door"
+   },
+   {
+    "nom": "the father",
+    "desc": "father in his 40s, navy-and-cream polo shirt, tired eyes, ONE single plastic bag on his lap",
+    "pose": "sitting next to his son on the front bench in the foreground on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, quand je serai grand, je serai apprenti gbaka dêh !"
+   ],
+   [
+    1,
+    "Apprenti ? Mais pourquoi ça, mon fils ?"
+   ],
+   [
+    0,
+    "Crier sur les gens toute la journée, comme maman. Mais payé !"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boy points at the open door, excited, and says it, face three-quarters to the camera. The father turns to him, puzzled, and asks it, his face clearly visible. The boy raises one finger and explains it very seriously, his face clearly visible.",
+  "chute": "The father presses his lips together to hold back a laugh, then glances around nervously. The camera slowly pushes in to a close-up of the father's guilty amused face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "apprenti",
+   "crier",
+   "maman"
+  ],
+  "gag_legende": "MAMAN QUAND ELLE VA VOIR LA VIDÉO :",
+  "mecanisme": "logique d'enfant : comparaison assassine qui touche l'absente (maman crie toute la journée, gratuitement)"
+ },
+ {
+  "id": "B044-17",
+  "titre": "La nouvelle voiture de papa",
+  "lieu": "courtyard of a modest house in Riviera, Abidjan, an old car parked with its hood wide open showing an empty engine space, afternoon",
+  "persos": [
+   {
+    "nom": "the wife",
+    "desc": "woman in her 40s, navy-and-sunflower kaba, sharp eyebrows, empty hands",
+    "pose": "standing on the left next to the open hood, hands on her hips"
+   },
+   {
+    "nom": "the proud husband",
+    "desc": "man in his 40s, rust-and-lilac polo shirt, big proud smile, holding ONE single car key",
+    "pose": "standing on the right in the foreground next to the car, holding up the key"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, tu as acheté une voiture sans moteur dêh ?!"
+   ],
+   [
+    1,
+    "Bébé, avec le prix de l'essence-là, moteur sert à rien."
+   ],
+   [
+    0,
+    "Et toi-même, tu sers à quoi ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The wife points at the empty engine space and shouts it, face three-quarters to the camera. The husband lifts the key proudly and explains it with total confidence, his face clearly visible. The wife looks him up and down and says it coldly, her face clearly visible.",
+  "chute": "The husband's proud smile freezes, the key still raised. The camera slowly pushes in to a close-up of the proud husband's speechless face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "moteur",
+   "essence",
+   "sers"
+  ],
+  "gag_legende": "PAPA EN CHERCHANT UNE RÉPONSE :",
+  "mecanisme": "la relance assassine : logique absurde de la crise (moteur inutile), la femme achève (et toi, tu sers à quoi)"
+ },
+ {
+  "id": "B044-18",
+  "titre": "Le gbaka loué",
+  "lieu": "inside an empty gbaka minibus parked at a stop in Angré, Abidjan, worn benches decorated with a few balloons, the sliding door open, evening, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the romantic boyfriend",
+    "desc": "young man around 25, magenta-and-gold polo shirt, fresh haircut, holding ONE single rose",
+    "pose": "sitting on the front bench in the foreground on the left, turned toward his girlfriend"
+   },
+   {
+    "nom": "the girlfriend",
+    "desc": "young woman around 23, sand-and-apricot dress, long braids, empty hands",
+    "pose": "sitting next to him on the front bench in the foreground on the right, hands clasped on her chest"
+   },
+   {
+    "nom": "the apprentice",
+    "desc": "gbaka apprentice, young man around 19, saffron-and-ivory t-shirt, sly smile, empty hands",
+    "pose": "standing at the open sliding door in the background on the right"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Bébé, j'ai loué tout le gbaka-là pour toi seule dêh !"
+   ],
+   [
+    1,
+    "Ehh chéri, tu es trop romantique !"
+   ],
+   [
+    2,
+    "Ma sœur, il a dit c'est toi qui paies."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boyfriend offers the rose with a big romantic smile and says it, face three-quarters to the camera. The girlfriend clasps her hands on her chest, melting, and says it, her face clearly visible. The apprentice leans in from the door, holds out his open palm toward her and says it, his face clearly visible.",
+  "chute": "The girlfriend's smile freezes; she slowly turns her head toward the boyfriend. The camera slowly pushes in to a close-up of the girlfriend's outraged face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "gbaka",
+   "romantique",
+   "paies"
+  ],
+  "gag_legende": "LA GO EN OUVRANT SON SAC :",
+  "mecanisme": "retournement par un tiers : la grande preuve d'amour, c'est elle qui la paie"
+ },
+ {
+  "id": "B044-19",
+  "titre": "Ce que maman a dit",
+  "lieu": "inside a gbaka minibus parked at a stop in Deux-Plateaux, Abidjan, worn benches, the sliding door open, morning, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the little girl",
+    "desc": "girl around 7, maroon-and-ivory dress, two puffy pigtails, empty hands",
+    "pose": "sitting on the front bench in the foreground on the left, pointing at the apprentice"
+   },
+   {
+    "nom": "the handsome apprentice",
+    "desc": "gbaka apprentice, young man in his 20s, magenta-and-gold tracksuit, sharp jawline, holding ONE single handful of coins",
+    "pose": "standing at the open sliding door in the foreground on the right"
+   },
+   {
+    "nom": "the mother",
+    "desc": "mother in her 30s, navy-and-cream boubou, headscarf, ONE single handbag on her lap",
+    "pose": "sitting next to her daughter on the front bench in the foreground in the middle"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton apprenti, maman dit que tu es beau, mais pauvre !"
+   ],
+   [
+    1,
+    "Ehh, ta maman-là me trouve beau ?"
+   ],
+   [
+    2,
+    "Non. J'ai dit pauvre seulement."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The girl points at the apprentice and says it very innocently, face three-quarters to the camera. The apprentice puffs out his chest with a charming smile and asks it, his face clearly visible. The mother does not even look at him and says it flatly, her face clearly visible.",
+  "chute": "The apprentice's charming smile collapses. The camera slowly pushes in to a close-up of the handsome apprentice's crushed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "beau",
+   "pauvre",
+   "seulement"
+  ],
+  "gag_legende": "L'APPRENTI EN COMPTANT SES PIÈCES :",
+  "mecanisme": "la relance assassine : révélation d'enfant, puis la mère corrige à la baisse (pauvre seulement)"
+ },
+ {
+  "id": "B044-20",
+  "titre": "Le propriétaire du gbaka",
+  "lieu": "inside a gbaka minibus parked at a stop in Riviera, Abidjan, worn benches, the sliding door wide open, morning, seen from the front of the cabin",
+  "persos": [
+   {
+    "nom": "the apprentice",
+    "desc": "gbaka apprentice, skinny young man around 20, navy-and-sunflower polo shirt, holding ONE single handful of coins",
+    "pose": "standing at the open sliding door on the left, palm held out"
+   },
+   {
+    "nom": "the stingy owner",
+    "desc": "man in his 50s, rust-and-lilac boubou, big belly, big shiny watch, empty hands",
+    "pose": "sitting on the front bench in the foreground on the right, arms crossed, chin up"
+   },
+   {
+    "nom": "the driver",
+    "desc": "gbaka driver, man in his 40s, teal-and-pistachio tunic, tired eyes, one hand on the steering wheel",
+    "pose": "sitting at the steering wheel in the background, turned toward the owner"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Vieux père, ton transport, deux cents dêh !"
+   ],
+   [
+    1,
+    "Mon petit, c'est moi le propriétaire de ce gbaka !"
+   ],
+   [
+    0,
+    "C'est toi ? Alors mes trois mois de salaire !"
+   ],
+   [
+    2,
+    "Et moi, six mois dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The apprentice holds out his palm and says it, face three-quarters to the camera. The owner taps his chest with one hand and says it proudly, his face clearly visible. The apprentice's eyes light up; he points at the owner and says it, his face clearly visible. The driver turns from the wheel, raises one hand and says it, his face clearly visible.",
+  "chute": "The owner freezes, his proud chin slowly dropping. The camera slowly pushes in to a close-up of the stingy owner's cornered face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "propriétaire",
+   "salaire",
+   "six mois"
+  ],
+  "gag_legende": "LE PATRON EN CHERCHANT LA SORTIE :",
+  "mecanisme": "la relance assassine : le patron qui refuse de payer deux cents doit trois mois à l'apprenti, et six au chauffeur"
+ }
+]

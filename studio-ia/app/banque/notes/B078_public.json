@@ -1,0 +1,22 @@
+[
+ {"id": "B078-01", "note": 7, "drapeaux": [], "remarque": "Retournement compris en une seconde (l'expulseur expulsé par sa propre femme), deux persos immobiles, on a envie de taguer son propriétaire."},
+ {"id": "B078-02", "note": 5, "drapeaux": [], "remarque": "Vol de courant très ivoirien et l'enfant parle clair, mais la coïncidence de la maison de l'inspecteur juste derrière fait un peu forcé."},
+ {"id": "B078-03", "note": 6, "drapeaux": [], "remarque": "Arroseur arrosé lisible tout de suite (il se coupe lui-même), mais la réplique clé vient d'un perso au fond à la fenêtre."},
+ {"id": "B078-04", "note": 7, "drapeaux": [], "remarque": "Le « deuxième numéro » parle à tout Abidjan, la femme relance fort, très partageable et tournage simple assis."},
+ {"id": "B078-05", "note": 6, "drapeaux": [], "remarque": "Payé avec son propre argent caché sous le matelas : clair et local, mais la mécanique « ta femme » répète B078-01."},
+ {"id": "B078-06", "note": 5, "drapeaux": [], "remarque": "Double fuite nocturne amusante et claire, mais la chute bancaire est moins tagable et l'image de nuit est moins lisible."},
+ {"id": "B078-07", "note": 7, "drapeaux": [], "remarque": "La pirogue de l'enfant fait comprendre l'inondation en deux secondes, arnaque au terrain très ivoirienne et fraîche."},
+ {"id": "B078-08", "note": 6, "drapeaux": [], "remarque": "Gag visuel efficace (assis sur le congélateur), mais le soupçon du propriétaire sur « un seul ventilateur » est un peu tiré par les cheveux."},
+ {"id": "B078-09", "note": 5, "drapeaux": [], "remarque": "L'enfant qui trahit l'arnaque à la caution est clair mais attendu, formule du témoin innocent sans surprise."},
+ {"id": "B078-10", "note": 5, "drapeaux": ["danger"], "remarque": "Piscine pleine contre seaux vides se comprend vite, mais le gardien parle depuis le fond d'un décor chargé et la Sodeci est citée nommément."},
+ {"id": "B078-11", "note": 5, "drapeaux": ["connu"], "remarque": "Le démarcheur qui arnaque le vrai propriétaire est un classique des sketchs en ligne, compris vite mais prévisible."},
+ {"id": "B078-12", "note": 6, "drapeaux": [], "remarque": "Payer le loyer avec le coq perdu du propriétaire est drôle et clair, un cran en dessous des meilleurs."},
+ {"id": "B078-13", "note": 5, "drapeaux": ["danger"], "remarque": "Sous-entendu Tantie Awa compris mais demande un temps de réflexion, scène dans le noir difficile à lire et CIE citée nommément."},
+ {"id": "B078-14", "note": 3, "drapeaux": ["confus"], "remarque": "Qui est le fils de qui n'est pas clair : un ado ne saisit pas en deux secondes que l'étudiant est le fils du propriétaire."},
+ {"id": "B078-15", "note": 7, "drapeaux": [], "remarque": "L'enfant fier qui balance les trois cent mille comptés toute la nuit fait mouche, situation que tout le monde reconnaît."},
+ {"id": "B078-16", "note": 7, "drapeaux": [], "remarque": "La relance « même le propriétaire » achève bien et se comprend immédiatement, deux persos dont un assis, tournage simple."},
+ {"id": "B078-17", "note": 4, "drapeaux": ["confus", "danger"], "remarque": "Le culot « chercher ton argent dans le noir » demande de réfléchir, chute molle et CIE citée nommément."},
+ {"id": "B078-18", "note": 6, "drapeaux": [], "remarque": "La voleuse de courant qui fait la leçon est culottée et très ivoirienne, mais le thème du câble se répète dans le lot."},
+ {"id": "B078-19", "note": 7, "drapeaux": ["danger"], "remarque": "Couper l'eau pour chasser la belle-mère : compris en deux secondes et très tagable, seul bémol la Sodeci nommée."},
+ {"id": "B078-20", "note": 4, "drapeaux": ["connu"], "remarque": "La mère qui pleure famine trahie par l'enfant au poulet braisé est un ressort déjà vu partout, sans surprise."}
+]

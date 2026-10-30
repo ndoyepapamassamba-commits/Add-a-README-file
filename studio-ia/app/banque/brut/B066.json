@@ -1,0 +1,887 @@
+[
+ {
+  "id": "B066-01",
+  "titre": "La balance du marché",
+  "lieu": "busy open-air vegetable market in Abobo, Abidjan, a low wooden stall piled with tomatoes, a big round-dial platform scale standing on the ground in front of the stall with a small basin of four tomatoes on it, morning light",
+  "persos": [
+   {
+    "nom": "the suspicious customer",
+    "desc": "man in his 30s, mustard-and-indigo shirt, short beard, holding ONE single empty plastic bag",
+    "pose": "standing on the left, facing the scale, frowning"
+   },
+   {
+    "nom": "the tomato vendor",
+    "desc": "market vendor woman in her 50s, coral-and-lilac kaba, round cheeks, a head scarf",
+    "pose": "standing in the middle, in the foreground, right next to the scale, hands on her hips, confident smile"
+   },
+   {
+    "nom": "the vendor's little boy",
+    "desc": "boy around 8, jade-and-lime tracksuit, bare feet, big innocent eyes",
+    "pose": "sitting on the ground on the right, one bare foot discreetly pressing down on the edge of the scale's plate"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ta balance-là dit deux kilos pour quatre tomates ?!"
+   ],
+   [
+    1,
+    "Mon fils, ces tomates-là ont bu la pluie dêh."
+   ],
+   [
+    2,
+    "Maman, je peux enlever mon pied maintenant ? Il est fatigué dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer points at the dial of the scale and protests, outraged. The vendor answers with a confident smile, hands on her hips, her face three-quarters to the camera. The boy, still sitting with his foot on the scale, looks up at his mother and asks innocently, his face clearly visible.",
+  "chute": "The vendor's smile freezes while the customer slowly lowers his eyes to the boy's foot. The camera slowly pushes in to a close-up of the tomato vendor's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "balance",
+   "tomates",
+   "pied"
+  ],
+  "gag_legende": "TANTIE QUAND LE CLIENT REGARDE EN BAS :",
+  "mecanisme": "témoin innocent : l'enfant révèle la triche de sa mère sur la balance"
+ },
+ {
+  "id": "B066-02",
+  "titre": "Le sucre à crédit",
+  "lieu": "small neighborhood shop in Biétry, Abidjan, a wooden counter with glass jars of candies, shelves full of sugar packets and cans of milk, one can of milk standing on the counter, late afternoon",
+  "persos": [
+   {
+    "nom": "the little girl",
+    "desc": "girl around 9, sky-blue-and-rose dress, two puffy braided buns, holding ONE single small coin purse in both hands",
+    "pose": "standing on the left in front of the counter, very polite"
+   },
+   {
+    "nom": "the shopkeeper",
+    "desc": "shopkeeper in his 50s, ochre-and-copper boubou, bald head, thick mustache",
+    "pose": "standing behind the counter on the right, in the foreground, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, maman dit sucre à crédit dêh."
+   ],
+   [
+    1,
+    "Ta maman-là me doit déjà quarante mille !"
+   ],
+   [
+    0,
+    "Elle dit sinon, elle va causer avec ta femme dêh."
+   ],
+   [
+    1,
+    "Prends aussi le lait, ma fille."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The girl asks very politely, smiling. The shopkeeper throws his hands up, outraged. The girl answers calmly and innocently, still smiling. The shopkeeper freezes, forces a huge nervous smile and points at the can of milk on the counter, saying his last line with his face clearly visible.",
+  "chute": "The girl nods sweetly. The camera slowly pushes in to a close-up of the shopkeeper's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "crédit",
+   "ta femme",
+   "lait"
+  ],
+  "gag_legende": "LE BOUTIQUIER EN VOYANT LA PETITE ARRIVER :",
+  "mecanisme": "l'enfant innocente transporte le chantage de sa mère : le créancier finit par payer"
+ },
+ {
+  "id": "B066-03",
+  "titre": "Le client fidèle",
+  "lieu": "fabric stall in the big market of Abobo, Abidjan, stacks of folded patterned fabrics on a wooden table, midday",
+  "persos": [
+   {
+    "nom": "the fabric vendor",
+    "desc": "fabric vendor woman in her 50s, turquoise-and-apricot boubou, big friendly smile, large earrings, holding ONE single folded fabric",
+    "pose": "standing behind the table on the left, holding the folded fabric out, cheerful"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 40s, ruby-and-maroon kaba, elegant braids, a handbag on her arm",
+    "pose": "standing on the right, next to her husband, smiling at first"
+   },
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, cyan-and-aubergine shirt, round belly, short gray hair",
+    "pose": "standing in the middle, in the foreground, between his wife and the vendor, smiling proudly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, comme d'habitude ? Un pagne pour Madame, un pour Biétry ?"
+   ],
+   [
+    1,
+    "Biétry ?! Mais on habite à Abobo dêh !"
+   ],
+   [
+    0,
+    "Ya fohi. La dame de Biétry-là aussi dit qu'elle est Madame."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The vendor offers the folded fabric to the husband with a big friendly smile. The wife turns her head sharply toward the vendor, frowning. The vendor shrugs and answers naively, her face clearly visible.",
+  "chute": "The wife slowly turns her head toward her husband, eyes wide. The camera slowly pushes in to a close-up of the husband's terrified face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "pagne",
+   "Biétry",
+   "Madame"
+  ],
+  "gag_legende": "TONTON EN CHERCHANT UNE EXCUSE :",
+  "mecanisme": "témoin innocent : la vendeuse révèle la double vie du client fidèle, relance sur la rivale"
+ },
+ {
+  "id": "B066-04",
+  "titre": "La réduction de Madame",
+  "lieu": "chic fabric boutique in Zone 4, Abidjan, a glass counter, shelves of folded luxury fabrics, a ceiling fan, afternoon",
+  "persos": [
+   {
+    "nom": "the proud customer",
+    "desc": "woman in her 30s, coral-and-lilac jumpsuit, long straight hair, big sunglasses resting on her head, holding ONE single small handbag",
+    "pose": "standing on the left, in the foreground, chin up, very proud"
+   },
+   {
+    "nom": "the boutique owner",
+    "desc": "boutique owner woman in her 50s, mustard-and-indigo kaftan, reading glasses, holding ONE single calculator",
+    "pose": "standing behind the glass counter on the right, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, réduction dêh ! Je suis la femme de Tonton Bamba !"
+   ],
+   [
+    1,
+    "Ah, c'est toi la deuxième-là ? Moi, c'est la première. Paie double."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer says her line proudly, one hand on her chest. The boutique owner looks at her over her glasses, then answers with a calm, icy smile, tapping the calculator once, her face clearly visible.",
+  "chute": "The customer's proud smile collapses. The camera slowly pushes in to a close-up of the proud customer's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "réduction",
+   "deuxième",
+   "première"
+  ],
+  "gag_legende": "TONTON BAMBA CE SOIR À LA MAISON :",
+  "mecanisme": "arroseur arrosé : le piston du mari se retourne contre elle"
+ },
+ {
+  "id": "B066-05",
+  "titre": "Le prix étudiant",
+  "lieu": "roadside alloco stall in Biétry, Abidjan, a big frying pan on a charcoal stove, a tray of fried plantain, a wooden bench, evening",
+  "persos": [
+   {
+    "nom": "the fake student",
+    "desc": "man in his 40s, jade-and-lime polo shirt, receding hairline, a schoolbag on his back",
+    "pose": "standing on the left, in the foreground, smiling, trying to look young"
+   },
+   {
+    "nom": "the vendor's son",
+    "desc": "boy around 9, tangerine-and-gold tracksuit, gap-toothed, holding ONE single school notebook",
+    "pose": "standing in the middle, staring at the man with big eyes"
+   },
+   {
+    "nom": "the alloco vendor",
+    "desc": "alloco vendor woman in her 40s, sky-blue-and-rose kaba, strong arms, holding ONE single wooden skimmer",
+    "pose": "standing behind the stove on the right, holding the skimmer"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, fais-moi prix étudiant dêh. Je suis à la fac !"
+   ],
+   [
+    1,
+    "Maman, c'est mon maître de CM2-là ! Il m'a donné zéro hier."
+   ],
+   [
+    2,
+    "Ya fohi, monsieur l'étudiant. Pour toi, c'est zéro réduction."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The man asks with a big charming smile, pointing at the alloco. The boy points at the man and tells his mother, outraged, holding up his notebook. The vendor looks the man up and down, then answers with a slow, satisfied smile, her face clearly visible.",
+  "chute": "The man's smile freezes. The camera slowly pushes in to a close-up of the fake student's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "prix étudiant",
+   "maître",
+   "zéro"
+  ],
+  "gag_legende": "LE MAÎTRE DEMAIN MATIN EN CLASSE :",
+  "mecanisme": "témoin innocent (l'élève) + arroseur arrosé : le zéro revient au maître"
+ },
+ {
+  "id": "B066-06",
+  "titre": "La robe de la petite",
+  "lieu": "children's clothing stall in Abobo market, Abidjan, small dresses hanging on a rope above a wooden table, crowded aisle in the background, morning",
+  "persos": [
+   {
+    "nom": "the bargaining mother",
+    "desc": "mother in her 30s, ochre-and-copper wrap dress, sharp eyebrows, a small handbag on her shoulder",
+    "pose": "standing on the left, in the foreground, dramatic face, one hand on her heart"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 6, cyan-and-aubergine dress, two small puff ponytails, chubby cheeks",
+    "pose": "standing in the middle, close to her mother, looking up at her"
+   },
+   {
+    "nom": "the clothing vendor",
+    "desc": "clothing vendor woman in her 40s, ruby-and-maroon boubou, a tape measure around her neck",
+    "pose": "standing behind the table on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, trois mille pour une robe d'enfant ?! Ma fille n'a même pas mangé dêh !"
+   ],
+   [
+    1,
+    "Maman, c'est maintenant je commence à pleurer, ou après ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The mother protests dramatically, one hand on her heart. The vendor stays with her arms crossed. The little girl looks up at her mother and asks innocently, her face three-quarters to the camera and clearly visible.",
+  "chute": "The vendor raises one eyebrow and smiles. The camera slowly pushes in to a close-up of the bargaining mother's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "trois mille",
+   "mangé",
+   "pleurer"
+  ],
+  "gag_legende": "LA VENDEUSE EN DOUBLANT LE PRIX :",
+  "mecanisme": "témoin innocent : l'enfant dévoile la technique de marchandage répétée à la maison"
+ },
+ {
+  "id": "B066-07",
+  "titre": "Le paiement par téléphone",
+  "lieu": "small grocery shop in Zone 4, Abidjan, a counter with a cash drawer, shelves of rice bags and bottled water, a plastic stool behind the counter, noon",
+  "persos": [
+   {
+    "nom": "the paying customer",
+    "desc": "man in his 30s, turquoise-and-apricot tracksuit, tall and thin, holding ONE single phone",
+    "pose": "standing on the left in front of the counter, showing his phone screen"
+   },
+   {
+    "nom": "the shopkeeper",
+    "desc": "shopkeeper in his 50s, jade-and-lime boubou, thick glasses, a pencil behind his ear",
+    "pose": "standing behind the counter in the middle, in the foreground, shaking his head"
+   },
+   {
+    "nom": "the shopkeeper's daughter",
+    "desc": "girl around 10, coral-and-lilac t-shirt dress, neat cornrows, holding ONE single phone that belongs to her father",
+    "pose": "sitting on the plastic stool on the right, looking at the phone screen"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Vieux père, j'ai envoyé mobile money depuis là !"
+   ],
+   [
+    1,
+    "Rien n'est arrivé, mon frère. Le réseau est lent dêh."
+   ],
+   [
+    2,
+    "Papa, ton téléphone-là dit : le monsieur a envoyé trois fois."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer shows his phone screen, annoyed. The shopkeeper shakes his head with a fake sad face and shrugs. The daughter looks up from the phone and says it innocently, her face clearly visible.",
+  "chute": "The customer slowly turns his head to the shopkeeper. The camera slowly pushes in to a close-up of the shopkeeper's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "mobile money",
+   "réseau",
+   "trois fois"
+  ],
+  "gag_legende": "LE CLIENT EN COMPTANT SES TROIS ENVOIS :",
+  "mecanisme": "témoin innocent : la fille révèle que le boutiquier encaisse en triple"
+ },
+ {
+  "id": "B066-08",
+  "titre": "Le sourire de la petite",
+  "lieu": "sidewalk fruit stall in Zone 4, Abidjan, pyramids of pineapples and papayas on a wooden cart, a big umbrella, sunny afternoon",
+  "persos": [
+   {
+    "nom": "the smiling customer",
+    "desc": "man in his 30s, sky-blue-and-rose shirt, neat haircut, holding ONE single pineapple",
+    "pose": "standing on the left, in the foreground, smiling nervously"
+   },
+   {
+    "nom": "the fruit vendor",
+    "desc": "fruit vendor woman in her 40s, tangerine-and-gold kaba, short braids, sweet smile",
+    "pose": "standing behind the cart in the middle, hands joined"
+   },
+   {
+    "nom": "the vendor's daughter",
+    "desc": "girl around 7, mustard-and-indigo dress, two braids, huge grin",
+    "pose": "standing on the right next to the cart, grinning at the customer"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, pourquoi ta fille-là me sourit comme ça depuis ?"
+   ],
+   [
+    1,
+    "Elle aime les clients gentils, mon fils."
+   ],
+   [
+    2,
+    "Maman a dit c'est toi le gaou de la journée dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer asks, slightly uneasy, nodding toward the girl. The vendor answers sweetly, hands joined. The girl, still grinning, says it proudly and innocently, her face clearly visible.",
+  "chute": "The vendor's sweet smile freezes. The camera slowly pushes in to a close-up of the smiling customer's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "sourit",
+   "gentils",
+   "gaou"
+  ],
+  "gag_legende": "LE GAOU EN REGARDANT SA MONNAIE :",
+  "mecanisme": "témoin innocent : la petite répète le surnom secret du client"
+ },
+ {
+  "id": "B066-09",
+  "titre": "Le prix du poisson",
+  "lieu": "fish section of Abobo market, Abidjan, big aluminum basins of fresh fish on a wooden table, wet ground, early morning",
+  "persos": [
+   {
+    "nom": "the scheming husband",
+    "desc": "husband in his 40s, ruby-and-maroon polo shirt, small mustache, holding ONE single banknote",
+    "pose": "standing on the left, in the foreground, leaning toward the vendor, conspiratorial"
+   },
+   {
+    "nom": "the fish vendor",
+    "desc": "fish vendor woman in her 50s, cyan-and-aubergine boubou, strong forearms",
+    "pose": "standing behind the table on the right, hands resting on the edge of a basin, calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, si ma femme demande, dis-lui le poisson-là est à dix mille !"
+   ],
+   [
+    1,
+    "Ya fohi. Ta femme-là aussi te dit dix mille. Elle, elle paie trois mille dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The husband says his request in a low voice with a sly smile, holding the banknote. The vendor shrugs and answers casually, her face clearly visible.",
+  "chute": "The husband's sly smile drops. The camera slowly pushes in to a close-up of the scheming husband's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "dix mille",
+   "ta femme",
+   "trois mille"
+  ],
+  "gag_legende": "MONSIEUR EN RENTRANT À LA MAISON :",
+  "mecanisme": "arroseur arrosé : le mari tricheur découvre que sa femme le triche déjà"
+ },
+ {
+  "id": "B066-10",
+  "titre": "Au marché de la friperie",
+  "lieu": "second-hand clothes stall in Biétry, Abidjan, a metal rack of used shirts on hangers, one fancy embroidered wedding shirt hanging at the front, afternoon",
+  "persos": [
+   {
+    "nom": "the husband",
+    "desc": "husband in his 40s, tangerine-and-gold kaftan, thick eyebrows, short beard",
+    "pose": "standing on the left, pointing at the embroidered wedding shirt on the rack"
+   },
+   {
+    "nom": "the clothes seller",
+    "desc": "second-hand clothes seller, young man in his 30s, turquoise-and-apricot shirt, cheerful face, holding ONE single empty hanger",
+    "pose": "standing behind the rack in the middle, smiling widely"
+   },
+   {
+    "nom": "the wife",
+    "desc": "wife in her 40s, jade-and-lime kaba, elegant short hair, a handbag on her arm",
+    "pose": "standing on the right, in the foreground, beside her husband, trying to look innocent"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Vieux père, ta chemise-là ressemble à ma chemise de mariage dêh !"
+   ],
+   [
+    1,
+    "Madame, merci encore dêh ! Les autres habits de ton mari sont partis vite vite."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband points at the wedding shirt, puzzled. The seller turns his head slightly toward the wife and thanks her warmly with a big smile, his face still three-quarters to the camera and clearly visible.",
+  "chute": "The husband slowly turns his head toward his wife. The camera slowly pushes in to a close-up of the wife's guilty face looking into the camera.",
+  "fin": 2,
+  "emoji": "choc",
+  "cles": [
+   "chemise de mariage",
+   "merci",
+   "habits"
+  ],
+  "gag_legende": "MADAME QUAND MONSIEUR OUVRE L'ARMOIRE :",
+  "mecanisme": "témoin innocent : le vendeur remercie la fournisseuse secrète devant le mari"
+ },
+ {
+  "id": "B066-11",
+  "titre": "Le plateau d'avocats",
+  "lieu": "avocado stall in Biétry market, Abidjan, a wide round tray piled with avocados on a wooden table, a small stool beside it, late afternoon",
+  "persos": [
+   {
+    "nom": "the flirting customer",
+    "desc": "young man in his 20s, ochre-and-copper tracksuit, high-top haircut, holding ONE single avocado",
+    "pose": "standing on the left, smiling charmingly at the vendor"
+   },
+   {
+    "nom": "the avocado vendor",
+    "desc": "avocado vendor woman in her 30s, mustard-and-indigo wrap dress, long eyelashes, big hoop earrings",
+    "pose": "standing behind the table in the middle, in the foreground, batting her eyelashes"
+   },
+   {
+    "nom": "the vendor's husband",
+    "desc": "husband in his 30s, coral-and-lilac boubou, calm sleepy face",
+    "pose": "sitting on the small stool on the right, right next to his wife, arms folded"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma belle, tu es mariée dêh ? Sinon j'achète tout ton plateau !"
+   ],
+   [
+    1,
+    "Célibataire, mon chéri ! Prends tout dêh !"
+   ],
+   [
+    2,
+    "Chérie, aujourd'hui je suis ton cousin ou ton grand frère ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The young man flirts with a charming smile. The vendor answers sweetly, batting her eyelashes. The husband, still sitting with his arms folded, raises his head and asks his wife in a calm, tired voice, his face clearly visible.",
+  "chute": "The young man slowly looks down at the husband. The camera slowly pushes in to a close-up of the avocado vendor's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "mariée",
+   "célibataire",
+   "cousin"
+  ],
+  "gag_legende": "LE CLIENT EN REPOSANT SON AVOCAT :",
+  "mecanisme": "témoin innocent : le mari révèle la routine commerciale de sa femme"
+ },
+ {
+  "id": "B066-12",
+  "titre": "La règle de la vendeuse",
+  "lieu": "vegetable stall at the Zone 4 market, Abidjan, neat piles of tomatoes and peppers on a wooden table, a small stool, morning",
+  "persos": [
+   {
+    "nom": "the strict vendor",
+    "desc": "vendor woman in her 40s, sky-blue-and-rose boubou, sharp eyebrows",
+    "pose": "standing behind the table on the left, in the foreground, hands on her hips"
+   },
+   {
+    "nom": "the clever customer",
+    "desc": "woman in her 30s, ruby-and-maroon jumpsuit, short natural hair, a small handbag on her shoulder",
+    "pose": "standing in the middle, in front of the tomatoes"
+   },
+   {
+    "nom": "the vendor's husband",
+    "desc": "husband in his 40s, cyan-and-aubergine tracksuit, round face",
+    "pose": "sitting on the small stool on the right, right next to the customer"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, si tu touches, tu achètes dêh ! C'est la règle !"
+   ],
+   [
+    1,
+    "Ya fohi. J'ai touché ton mari-là. C'est combien ?"
+   ],
+   [
+    2,
+    "Chérie, la règle, c'est la règle dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The vendor points at the tomatoes and says the rule firmly. The customer smiles calmly, places one hand on the husband's shoulder and asks the price. The husband looks at his wife, shrugs happily and says his line, his face clearly visible.",
+  "chute": "The vendor's mouth drops open. The camera slowly pushes in to a close-up of the strict vendor's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "touches",
+   "achètes",
+   "règle"
+  ],
+  "gag_legende": "LA VENDEUSE EN CHANGEANT SA RÈGLE :",
+  "mecanisme": "arroseur arrosé : la règle de la vendeuse prise au pied de la lettre, le mari complice"
+ },
+ {
+  "id": "B066-13",
+  "titre": "Le dernier prix de Tantie",
+  "lieu": "yam stall in Biétry market, Abidjan, big yams stacked on a wooden table, a pile of empty sacks, midday",
+  "persos": [
+   {
+    "nom": "the doubtful customer",
+    "desc": "man in his 40s, turquoise-and-apricot kaftan, gray goatee, holding ONE single yam",
+    "pose": "standing on the left, frowning, holding the yam"
+   },
+   {
+    "nom": "the yam vendor",
+    "desc": "yam vendor woman in her 50s, jade-and-lime wrap dress, broad gap-toothed smile",
+    "pose": "standing behind the table in the middle, in the foreground, one hand resting on her son's head"
+   },
+   {
+    "nom": "the vendor's son",
+    "desc": "boy around 10, ochre-and-copper overalls, tired eyes",
+    "pose": "standing on the right, right next to his mother, her hand on his head"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ton dernier prix-là, c'est mensonge dêh !"
+   ],
+   [
+    1,
+    "Je jure sur la tête de mon fils dêh !"
+   ],
+   [
+    2,
+    "Maman, jure sur mon petit frère aujourd'hui. Ma tête est fatiguée dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer frowns and accuses her, holding the yam. The vendor swears solemnly, her hand resting on her son's head. The boy rolls his eyes up toward her hand and complains in a tired voice, his face clearly visible.",
+  "chute": "The customer raises his eyebrows and the vendor freezes. The camera slowly pushes in to a close-up of the yam vendor's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "dernier prix",
+   "tête",
+   "petit frère"
+  ],
+  "gag_legende": "LE PETIT FRÈRE EN ENTENDANT ÇA :",
+  "mecanisme": "témoin innocent : l'enfant révèle que sa mère jure sur lui toute la journée"
+ },
+ {
+  "id": "B066-14",
+  "titre": "Le prix de pauvre",
+  "lieu": "spice and onion stall in Abobo market, Abidjan, sacks of onions and dried chili on a wooden table, crowded aisle in the background, morning",
+  "persos": [
+   {
+    "nom": "the bargaining lady",
+    "desc": "lady in her 40s, mustard-and-indigo kaba, big shiny jewelry, an expensive handbag on her arm",
+    "pose": "standing on the left, in the foreground, sad face, hands joined as if begging"
+   },
+   {
+    "nom": "the spice vendor",
+    "desc": "spice vendor woman in her 50s, coral-and-lilac kaftan, kind round face",
+    "pose": "standing behind the table in the middle, compassionate"
+   },
+   {
+    "nom": "the lady's son",
+    "desc": "boy around 8, sky-blue-and-rose polo shirt, neat side-part haircut, holding ONE single car key",
+    "pose": "standing on the right, holding up the car key"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, je suis pauvre dêh, fais-moi prix de pauvre !"
+   ],
+   [
+    1,
+    "Ya fohi, ma sœur. Deux mille seulement."
+   ],
+   [
+    2,
+    "Maman, le chauffeur dit la climatisation de la grosse voiture est prête."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The lady begs with a dramatic sad face, hands joined. The vendor answers kindly, nodding. The boy holds up the car key and announces it innocently, his face clearly visible.",
+  "chute": "The vendor's kind smile turns into a glare. The camera slowly pushes in to a close-up of the bargaining lady's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "pauvre",
+   "chauffeur",
+   "climatisation"
+  ],
+  "gag_legende": "LA VENDEUSE EN RECALCULANT LE PRIX :",
+  "mecanisme": "témoin innocent : l'enfant trahit la fausse pauvre"
+ },
+ {
+  "id": "B066-15",
+  "titre": "Le cadenas solide",
+  "lieu": "small hardware shop in Abobo, Abidjan, rows of padlocks hanging on a wall board, a wooden counter with chains and door hinges, afternoon",
+  "persos": [
+   {
+    "nom": "the worried customer",
+    "desc": "man in his 30s, cyan-and-aubergine kaftan, worried eyebrows, holding ONE single padlock",
+    "pose": "standing on the left in front of the counter, examining the padlock"
+   },
+   {
+    "nom": "the hardware seller",
+    "desc": "hardware seller in his 50s, ruby-and-maroon kaftan, gray beard, very confident",
+    "pose": "standing behind the counter in the middle, in the foreground, hands on the counter"
+   },
+   {
+    "nom": "the young apprentice",
+    "desc": "apprentice, teenage boy around 16, tangerine-and-gold jumpsuit, skinny, holding ONE single big old key",
+    "pose": "standing on the right behind the counter, holding up the big key"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Vieux père, ton cadenas-là est solide vraiment ?"
+   ],
+   [
+    1,
+    "Mon frère, même un voleur ne peut pas l'ouvrir dêh !"
+   ],
+   [
+    2,
+    "Patron, je range ta clé qui ouvre tous les cadenas-là ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer weighs the padlock in his hand, doubtful. The seller taps his chest proudly and answers. The apprentice holds up the big key and asks innocently, his face clearly visible.",
+  "chute": "The customer slowly lowers the padlock and stares at the seller. The camera slowly pushes in to a close-up of the hardware seller's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "cadenas",
+   "voleur",
+   "clé"
+  ],
+  "gag_legende": "LE CLIENT EN RENTRANT CHEZ LUI CE SOIR :",
+  "mecanisme": "témoin innocent : l'apprenti révèle le passe-partout du patron"
+ },
+ {
+  "id": "B066-16",
+  "titre": "Le grand client",
+  "lieu": "upscale second-hand electronics and watch shop in Zone 4, Abidjan, a glass display case with ONE big shiny watch in the middle, air-conditioned, afternoon",
+  "persos": [
+   {
+    "nom": "the show-off",
+    "desc": "man in his 50s, sky-blue-and-rose kaftan, big belly, chin up, holding ONE single phone",
+    "pose": "standing on the left, in the foreground, leaning on the display case, arrogant"
+   },
+   {
+    "nom": "the shop clerk",
+    "desc": "young shop clerk in his 20s, ochre-and-copper shirt, calm polite face",
+    "pose": "standing behind the display case on the right, hands joined"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, tu sais pas qui je suis ? Fais-moi ton meilleur prix !"
+   ],
+   [
+    1,
+    "Je sais, Tonton. C'est toi tu m'as vendu la montre-là ce matin, pour ton loyer."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The man speaks arrogantly, tapping the glass case with one finger. The clerk answers politely, pointing at the watch in the display case, his face clearly visible.",
+  "chute": "The man's arrogant smile melts. The camera slowly pushes in to a close-up of the show-off's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "qui je suis",
+   "montre",
+   "loyer"
+  ],
+  "gag_legende": "TONTON EN CHERCHANT LA SORTIE :",
+  "mecanisme": "arroseur arrosé : le vantard démasqué par le vendeur"
+ },
+ {
+  "id": "B066-17",
+  "titre": "La vendeuse d'en face",
+  "lieu": "two side-by-side mango stalls at the Zone 4 market, Abidjan, piles of mangoes on both wooden tables, midday",
+  "persos": [
+   {
+    "nom": "the hesitant customer",
+    "desc": "woman in her 30s, jade-and-lime jumpsuit, short twists, holding ONE single shopping basket",
+    "pose": "standing on the left, in front of the first stall"
+   },
+   {
+    "nom": "the mango vendor",
+    "desc": "mango vendor woman in her 50s, turquoise-and-apricot kaba, round glasses",
+    "pose": "standing behind the first stall in the middle, in the foreground, hands on a pile of mangoes"
+   },
+   {
+    "nom": "the vendor's daughter",
+    "desc": "teenage girl around 17, mustard-and-indigo t-shirt dress, long braids",
+    "pose": "standing behind the second stall on the right, looking toward her mother"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, la petite d'en face-là vend à mille seulement !"
+   ],
+   [
+    1,
+    "Elle ? C'est une voleuse, ma sœur ! Fuis-la dêh !"
+   ],
+   [
+    2,
+    "Maman, je reste à mille ou je monte à deux mille ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The customer points at the second stall. The vendor waves her hand dismissively and warns her with a dramatic face. The daughter calls out to her mother innocently from her stall, her face clearly visible.",
+  "chute": "The customer slowly turns her head from the daughter to the vendor. The camera slowly pushes in to a close-up of the mango vendor's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "en face",
+   "voleuse",
+   "maman"
+  ],
+  "gag_legende": "LA CLIENTE EN CHERCHANT UN AUTRE MARCHÉ :",
+  "mecanisme": "arroseur arrosé + témoin innocent : la concurrente insultée est sa propre fille"
+ },
+ {
+  "id": "B066-18",
+  "titre": "Le ventilateur d'Abobo",
+  "lieu": "electronics stall in Abobo market, Abidjan, shelves of small table fans and radios, a wooden counter, hot afternoon",
+  "persos": [
+   {
+    "nom": "the angry customer",
+    "desc": "man in his 30s, coral-and-lilac shirt, sweaty forehead, holding ONE single small table fan",
+    "pose": "standing on the left, in the foreground, holding the fan out toward the seller"
+   },
+   {
+    "nom": "the electronics seller",
+    "desc": "electronics seller in his 40s, mustard-and-indigo boubou, calm face, holding ONE single banknote",
+    "pose": "standing behind the counter on the right, holding the banknote"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Vieux père, ton ventilateur-là ne tourne pas dêh ! Rembourse !"
+   ],
+   [
+    1,
+    "Ya fohi. Ton billet de dix mille-là aussi, il marche pas à la banque."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer shakes the fan slightly, furious. The seller calmly holds up the banknote between two fingers and answers, his face clearly visible.",
+  "chute": "The customer's anger turns into a guilty grin. The camera slowly pushes in to a close-up of the angry customer's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "ventilateur",
+   "rembourse",
+   "billet"
+  ],
+  "gag_legende": "LE CLIENT EN RANGEANT SON VENTILATEUR :",
+  "mecanisme": "arroseur arrosé : le client qui réclame avait payé avec un faux billet"
+ },
+ {
+  "id": "B066-19",
+  "titre": "Le sac de Zone 4",
+  "lieu": "handbag stall on a sidewalk in Zone 4, Abidjan, handbags hanging on a metal rack, a folding table, sunny afternoon",
+  "persos": [
+   {
+    "nom": "the bargaining customer",
+    "desc": "woman in her 30s, cyan-and-aubergine kaba, long braids, holding ONE single handbag taken from the rack",
+    "pose": "standing on the left, in the foreground, holding the handbag, indignant"
+   },
+   {
+    "nom": "the bag seller",
+    "desc": "bag seller, man in his 30s, ruby-and-maroon shirt, thin mustache, very calm",
+    "pose": "standing behind the folding table on the right, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Vieux père, cinq mille pour ce sac-là ?!"
+   ],
+   [
+    1,
+    "Ma sœur, c'est six mille maintenant dêh."
+   ],
+   [
+    0,
+    "Mais tu as dit cinq mille dêh !"
+   ],
+   [
+    1,
+    "Sept mille. Chaque question-là coûte mille."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer protests, holding up the handbag. The seller answers calmly, arms crossed. The customer protests again, louder, eyes wide. The seller raises one finger and answers with a calm smile, his face clearly visible.",
+  "chute": "The customer presses her lips tightly together, eyes bulging. The camera slowly pushes in to a close-up of the bargaining customer's furious face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "six mille",
+   "question",
+   "coûte"
+  ],
+  "gag_legende": "MADAME EN GARDANT SA BOUCHE FERMÉE :",
+  "mecanisme": "escalade absurde : le prix monte à chaque question"
+ },
+ {
+  "id": "B066-20",
+  "titre": "Les deux attiékés de Tantie",
+  "lieu": "attiéké stall on a street corner in Biétry, Abidjan, two identical big basins of attiéké on a wooden table, a pot of fried fish, a wooden bench, lunchtime",
+  "persos": [
+   {
+    "nom": "the regular customer",
+    "desc": "young woman in her 20s, tangerine-and-gold wrap dress, office badge on a lanyard, holding ONE single takeaway plate",
+    "pose": "standing on the left, in the foreground, pointing at the two basins"
+   },
+   {
+    "nom": "the attiéké vendor",
+    "desc": "attiéké vendor woman in her 50s, ochre-and-copper kaba, big round face, holding ONE single wooden ladle",
+    "pose": "standing behind the table on the right, holding the ladle"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, ton attiéké à mille-là, c'est le même qu'à cinq cents !"
+   ],
+   [
+    1,
+    "Non, ma fille. Pour mille, je lave mes mains d'abord dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The customer points at the two basins, suspicious. The vendor answers calmly and proudly, raising the ladle a little, her face clearly visible.",
+  "chute": "The customer looks down at her plate in horror. The camera slowly pushes in to a close-up of the regular customer's disgusted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "mille",
+   "cinq cents",
+   "mains"
+  ],
+  "gag_legende": "MOI QUI MANGE À CINQ CENTS DEPUIS 2019 :",
+  "mecanisme": "révélation brutale : la différence de prix, c'est l'hygiène"
+ }
+]

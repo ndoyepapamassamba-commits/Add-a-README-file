@@ -1,0 +1,910 @@
+[
+ {
+  "id": "B027-01",
+  "titre": "Une petite visiteuse au bureau",
+  "lieu": "director's office of a small import company in Treichville, Abidjan, a big wooden desk with a nameplate and a pen holder, a leather armchair, a wall calendar, morning",
+  "persos": [
+   {
+    "nom": "the angry boss",
+    "desc": "boss in his 50s, copper-and-silver suit, round belly and thick mustache, holding ONE single pen",
+    "pose": "sitting in the foreground on the left behind the big desk, holding the pen, frowning"
+   },
+   {
+    "nom": "the smiling employee",
+    "desc": "employee in his 30s, sky-blue-and-navy shirt, thin with a shaved head, empty hands",
+    "pose": "standing in the middle background, hands open, smiling politely"
+   },
+   {
+    "nom": "the little girl",
+    "desc": "girl around 8, ochre-and-rose dress, two big hair puffs, a small school bag on her back",
+    "pose": "standing on the right in front of the desk, one open hand held out toward the boss"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon vieux, pourquoi ta fille est dans mon bureau-là ?!"
+   ],
+   [
+    1,
+    "Patron, vous avez dit qu'ici on est une famille dêh."
+   ],
+   [
+    2,
+    "Papi, papa dit c'est toi qui paies mon école maintenant."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boss points his pen at the girl and shouts, his face turned three-quarters to the camera. The employee shrugs with a proud, polite smile. The girl keeps her open hand held out toward the boss and says her line sweetly, her face clearly visible.",
+  "chute": "The boss freezes, the pen stuck in the air, his mouth wide open. The camera slowly pushes in to a close-up of the angry boss's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "famille",
+   "Papi",
+   "école"
+  ],
+  "gag_legende": "LE PATRON EN CHANGEANT DE SLOGAN :",
+  "mecanisme": "slogan « on est une famille » pris au pied de la lettre + l'enfant présente la facture"
+ },
+ {
+  "id": "B027-02",
+  "titre": "La femme assise à l'entrée",
+  "lieu": "open-space office of an insurance agency in Cocody, Abidjan, desks with computers, an open glass door with one plastic chair right beside it, late morning",
+  "persos": [
+   {
+    "nom": "the boss with the tablet",
+    "desc": "female boss in her 40s, magenta-and-amber blazer, short braids and big glasses, holding ONE single tablet",
+    "pose": "standing on the left, the tablet against her chest, her free hand on her hip"
+   },
+   {
+    "nom": "the calm husband",
+    "desc": "employee in his 30s, ochre-and-sunflower shirt, neat beard, both hands on his keyboard",
+    "pose": "sitting at his desk in the foreground in the middle, hands on the keyboard, very calm"
+   },
+   {
+    "nom": "the wife at the door",
+    "desc": "wife in her 30s, crimson-and-copper boubou, a big head wrap, arms crossed",
+    "pose": "sitting on the plastic chair beside the glass door on the right, arms crossed, glaring at her husband"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi ta femme-là est assise devant la porte ?!"
+   ],
+   [
+    1,
+    "Patronne, vous avez dit : laissez vos problèmes à la porte dêh."
+   ],
+   [
+    2,
+    "Ya fohi. Ce soir, tu restes à la porte."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boss points her free hand at the wife and asks, her face turned three-quarters to the camera. The husband answers calmly, his hands still on the keyboard, turning his head toward the boss. The wife, still seated, uncrosses her arms, points at her husband and says her line coldly, her face clearly visible.",
+  "chute": "The husband freezes, his fingers stuck on the keyboard, his calm smile melting. The camera slowly pushes in to a close-up of the calm husband's panicked face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "problèmes",
+   "porte"
+  ],
+  "gag_legende": "LE MARI EN RENTRANT À VINGT-DEUX HEURES :",
+  "mecanisme": "consigne de bureau prise au pied de la lettre + riposte immédiate de l'épouse"
+ },
+ {
+  "id": "B027-03",
+  "titre": "Trois mois sans salaire",
+  "lieu": "boss's office of a transport company in Yopougon, Abidjan, a desk with a big leather armchair, a window showing a shiny new car parked outside, afternoon",
+  "persos": [
+   {
+    "nom": "the unpaid employee",
+    "desc": "employee in his 40s, lilac-and-charcoal shirt, tired eyes and a thin mustache, empty hands",
+    "pose": "standing in the foreground on the right in front of the desk, facing the boss"
+   },
+   {
+    "nom": "the boss with the car key",
+    "desc": "boss in his 50s, saffron-and-silver suit, shiny bald head, holding ONE single car key",
+    "pose": "sitting relaxed in the big leather armchair on the left, holding the car key"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Patron, trois mois sans salaire dêh !"
+   ],
+   [
+    1,
+    "Mon vieux, l'entreprise traverse une crise."
+   ],
+   [
+    0,
+    "Et votre voiture neuve-là, patron ?!"
+   ],
+   [
+    1,
+    "C'est avec elle-même on traverse la crise dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The employee complains, hands open, his face turned three-quarters to the camera. The boss answers with a sad fake face, shaking his head slowly. The employee points at the car through the window. The boss jingles the car key with a big proud smile and says his line, his face clearly visible.",
+  "chute": "The employee freezes, his finger still pointing at the window, his jaw dropping. The camera slowly pushes in to a close-up of the unpaid employee's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "salaire",
+   "crise",
+   "voiture"
+  ],
+  "gag_legende": "LES EMPLOYÉS DEVANT LE PARKING DU PATRON :",
+  "mecanisme": "expression « traverser la crise » prise au pied de la lettre par le patron radin"
+ },
+ {
+  "id": "B027-04",
+  "titre": "L'employé qui parle au mur",
+  "lieu": "small accounting office in Treichville, Abidjan, a cracked painted wall with a wall clock, a desk with stacks of files, a ceiling fan, morning",
+  "persos": [
+   {
+    "nom": "the offended boss",
+    "desc": "boss in his 50s, apricot-and-aubergine boubou, salt-and-pepper goatee, holding ONE single folder",
+    "pose": "standing in the foreground on the left, holding the folder, frowning"
+   },
+   {
+    "nom": "the employee by the wall",
+    "desc": "employee in his 30s, copper-and-silver shirt, skinny with a small mustache, hands joined",
+    "pose": "standing on the right close to the cracked wall, hands joined as if pleading, head turned toward the boss"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi tu parles au mur-là, mon vieux ?!"
+   ],
+   [
+    1,
+    "Patron, on dit les murs ont des oreilles dêh."
+   ],
+   [
+    0,
+    "Et moi, j'ai pas d'oreilles ?"
+   ],
+   [
+    1,
+    "Quand on dit salaire, vos oreilles-là partent en congé."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boss raises his eyebrows and asks, his face turned three-quarters to the camera. The employee answers very seriously, pointing at the wall. The boss taps the folder against his own chest, offended. The employee shrugs and says his line calmly, his face clearly visible.",
+  "chute": "The boss freezes, his mouth open, blinking fast. The camera slowly pushes in to a close-up of the offended boss's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "mur",
+   "oreilles",
+   "salaire"
+  ],
+  "gag_legende": "LE PATRON QUAND ON PARLE DE SALAIRE :",
+  "mecanisme": "proverbe pris au pied de la lettre + coup de massue sur le patron qui n'entend jamais"
+ },
+ {
+  "id": "B027-05",
+  "titre": "Une question du fils du patron",
+  "lieu": "boss's office of a small construction company in Yopougon, Abidjan, a desk with a laptop and a small toy truck, a wall calendar, plastic chairs, afternoon after school",
+  "persos": [
+   {
+    "nom": "the curious boy",
+    "desc": "boy around 9, crimson-and-copper school uniform, big round eyes, a small school bag on his back",
+    "pose": "standing on the right next to his father's desk, very curious"
+   },
+   {
+    "nom": "the boss father",
+    "desc": "father and boss in his 40s, ochre-and-sunflower boubou, thick mustache, holding ONE single pen",
+    "pose": "sitting in the foreground on the left behind the desk, holding the pen, proud"
+   },
+   {
+    "nom": "the tired employee",
+    "desc": "employee in his 30s, lilac-and-charcoal overalls, hollow cheeks, arms crossed",
+    "pose": "standing in the middle background near the door, arms crossed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, un salaire, c'est l'argent du travail, hein ?"
+   ],
+   [
+    1,
+    "Oui, mon fils. Pourquoi ?"
+   ],
+   [
+    0,
+    "Donc tes employés-là viennent ici pour jouer ?"
+   ],
+   [
+    2,
+    "Oui, mon petit. On joue depuis six mois dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boy asks innocently, his face turned three-quarters to the camera. The father answers proudly, tapping the pen on the desk. The boy points at the employee, very curious. The employee, arms still crossed, nods slowly and says his line bitterly, his face clearly visible.",
+  "chute": "The father freezes, the pen stuck in the air, his proud smile melting. The camera slowly pushes in to a close-up of the boss father's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "salaire",
+   "jouer",
+   "six mois"
+  ],
+  "gag_legende": "LE PATRON EN CHANGEANT SON FILS D'ÉCOLE :",
+  "mecanisme": "définition prise au pied de la lettre par l'enfant + l'employé confirme"
+ },
+ {
+  "id": "B027-06",
+  "titre": "La bonne réclame son salaire",
+  "lieu": "living room of a villa in Cocody, Abidjan, a big sofa, a flat-screen TV, a low table, evening",
+  "persos": [
+   {
+    "nom": "the young housemaid",
+    "desc": "housemaid around 20, sky-blue-and-navy dress, short braids, holding ONE single broom",
+    "pose": "standing in the foreground on the right, holding the broom, her free hand on her hip"
+   },
+   {
+    "nom": "the madam on the sofa",
+    "desc": "madam in her 50s, saffron-and-silver kaba, big earrings and a round face, holding ONE single TV remote",
+    "pose": "sitting on the big sofa on the left, legs crossed, holding the remote"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, mon salaire-là, c'est pour quand ?"
+   ],
+   [
+    1,
+    "Ma fille, tu manges ici, tu dors ici, tu regardes ma télé."
+   ],
+   [
+    0,
+    "Et donc, Tantie ?"
+   ],
+   [
+    1,
+    "Donc c'est toi tu me dois trois mois dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The maid asks firmly, her face turned three-quarters to the camera. The madam counts on the fingers of her free hand, very calm. The maid frowns. The madam points the remote at the maid and says her line calmly, her face clearly visible.",
+  "chute": "The maid freezes, gripping the broom, her mouth wide open. The camera slowly pushes in to a close-up of the young housemaid's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "salaire",
+   "télé",
+   "trois mois"
+  ],
+  "gag_legende": "LA BONNE EN RECALCULANT SON CONTRAT :",
+  "mecanisme": "logique absurde de la patronne qui inverse la dette"
+ },
+ {
+  "id": "B027-07",
+  "titre": "Le diplôme du candidat",
+  "lieu": "recruitment office of a company in Cocody, Abidjan, a desk with a nameplate and a pile of CVs, a ceiling fan, morning",
+  "persos": [
+   {
+    "nom": "the recruiter",
+    "desc": "recruiter in his 50s, lilac-and-charcoal suit, reading glasses on his nose, holding ONE single diploma sheet",
+    "pose": "sitting behind the desk on the left, holding the diploma up"
+   },
+   {
+    "nom": "the young candidate",
+    "desc": "candidate around 22, magenta-and-amber suit a little too big, huge proud smile, hands on his knees",
+    "pose": "sitting on a chair in the foreground on the right, facing the recruiter, hands on his knees"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, ton diplôme-là est signé par ton papa ?!"
+   ],
+   [
+    1,
+    "Oui Tonton, c'est lui qui m'a tout appris."
+   ],
+   [
+    0,
+    "Et l'école, alors ?"
+   ],
+   [
+    1,
+    "L'école-là refusait de signer dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The recruiter taps the diploma and asks, his face turned three-quarters to the camera. The candidate nods proudly. The recruiter raises one eyebrow, suspicious. The candidate shrugs innocently and says his line, his face clearly visible.",
+  "chute": "The recruiter slowly lays the diploma flat on the desk. The camera slowly pushes in to a close-up of the young candidate's proud innocent face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "papa",
+   "diplôme",
+   "signer"
+  ],
+  "gag_legende": "LE RECRUTEUR EN APPELANT LE PAPA :",
+  "mecanisme": "logique absurde du candidat qui croit se justifier et avoue tout"
+ },
+ {
+  "id": "B027-08",
+  "titre": "Le jour de la paie",
+  "lieu": "small office of a carpentry workshop in Treichville, Abidjan, a wooden workbench, a metal cabinet, a wall calendar, late afternoon",
+  "persos": [
+   {
+    "nom": "the carpenter",
+    "desc": "carpenter in his 30s, crimson-and-copper overalls, a pencil behind his ear, holding ONE single open empty envelope",
+    "pose": "standing in the foreground on the right, holding the open envelope upside down"
+   },
+   {
+    "nom": "the old boss",
+    "desc": "boss in his 60s, ochre-and-rose boubou, grey beard and small round glasses, hands folded on his belly",
+    "pose": "sitting on a stool on the left next to the metal cabinet, hands folded on his belly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Patron, mon enveloppe de salaire-là est vide dêh !"
+   ],
+   [
+    1,
+    "Mon vieux, c'est pour te protéger."
+   ],
+   [
+    0,
+    "Me protéger de quoi, patron ?"
+   ],
+   [
+    1,
+    "Ce soir ta femme-là va fouiller. Elle va rien trouver."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The carpenter shakes the empty envelope and complains, his face turned three-quarters to the camera. The boss answers with a kind, fatherly smile. The carpenter frowns, confused. The boss winks and says his line softly, his face clearly visible.",
+  "chute": "The carpenter stares at the empty envelope, half outraged, half grateful. The camera slowly pushes in to a close-up of the carpenter's torn face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "enveloppe",
+   "protéger",
+   "femme"
+  ],
+  "gag_legende": "SA FEMME EN FOUILLANT L'ENVELOPPE CE SOIR :",
+  "mecanisme": "logique absurde : le patron présente le non-paiement comme une protection"
+ },
+ {
+  "id": "B027-09",
+  "titre": "Le discours du lundi matin",
+  "lieu": "meeting room of a small company in Yopougon, Abidjan, a long table with plastic chairs, a whiteboard with an arrow drawn going up, Monday morning",
+  "persos": [
+   {
+    "nom": "the motivating boss",
+    "desc": "boss in his 40s, sky-blue-and-navy suit, slick short hair, holding ONE single marker",
+    "pose": "standing in the foreground on the left in front of the whiteboard, one fist raised"
+   },
+   {
+    "nom": "the employee at the table",
+    "desc": "employee in her 30s, apricot-and-aubergine kaba, high bun, arms crossed",
+    "pose": "sitting at the long table on the right, arms crossed, one eyebrow raised"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Travaillez comme si l'entreprise était à vous dêh !"
+   ],
+   [
+    1,
+    "Ya fohi, patron. Donc je viens à onze heures et je paie personne."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boss raises his fist with the marker and speaks with great energy, his face turned three-quarters to the camera. The employee uncrosses her arms, nods slowly and says her line calmly, her face clearly visible.",
+  "chute": "The boss freezes with his fist still in the air, his smile slowly dying. The camera slowly pushes in to a close-up of the motivating boss's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "l'entreprise",
+   "onze heures",
+   "personne"
+  ],
+  "gag_legende": "LE PATRON EN EFFAÇANT SON TABLEAU :",
+  "mecanisme": "consigne du patron prise au pied de la lettre et retournée contre lui"
+ },
+ {
+  "id": "B027-10",
+  "titre": "Le grand ménage du bureau",
+  "lieu": "director's office in Cocody, Abidjan, a large spotless empty desk, a big plastic trash bin full of paper files beside it, morning",
+  "persos": [
+   {
+    "nom": "the shocked boss",
+    "desc": "boss in his 50s, copper-and-silver boubou, thick glasses on a cord, empty hands",
+    "pose": "standing in the foreground on the left beside the spotless desk, pointing at the trash bin"
+   },
+   {
+    "nom": "the cleaning lady",
+    "desc": "cleaning lady in her 40s, magenta-and-amber overalls, a headscarf and a proud smile, holding ONE single mop",
+    "pose": "standing on the right next to the trash bin, holding the mop upright"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, pourquoi mes dossiers-là sont dans la poubelle ?!"
+   ],
+   [
+    1,
+    "Patron, vous avez dit : enlève tout ce qui traîne."
+   ],
+   [
+    0,
+    "Mais c'était mon travail dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Ça traînait là depuis trois ans."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boss points at the trash bin and shouts, his face turned three-quarters to the camera. The cleaning lady answers proudly, leaning on her mop. The boss slaps his own chest in panic. The cleaning lady shrugs and says her line calmly, her face clearly visible.",
+  "chute": "The boss freezes, his finger still pointing at the bin, caught out. The camera slowly pushes in to a close-up of the shocked boss's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "dossiers",
+   "traîne",
+   "trois ans"
+  ],
+  "gag_legende": "LES DOSSIERS EN REVOYANT ENFIN LA LUMIÈRE :",
+  "mecanisme": "consigne prise au pied de la lettre + révélation de la paresse du patron"
+ },
+ {
+  "id": "B027-11",
+  "titre": "Le retour de l'employé absent",
+  "lieu": "office of a printing shop in Treichville, Abidjan, a big printing machine, piles of paper, a desk with an attendance register, a wall clock, morning",
+  "persos": [
+   {
+    "nom": "the strict boss",
+    "desc": "female boss in her 50s, crimson-and-copper kaba, short grey hair, holding ONE single attendance register with both hands",
+    "pose": "sitting in the foreground on the left behind the desk, the register open in her hands"
+   },
+   {
+    "nom": "the relaxed employee",
+    "desc": "employee in his 20s, saffron-and-silver shirt, big afro, hands in his pockets",
+    "pose": "standing on the right in front of the desk, hands in his pockets, relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, ça fait trois mois tu viens pas au travail !"
+   ],
+   [
+    1,
+    "Patronne, c'est mon salaire-là qui m'a montré l'exemple dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boss lifts the open register and scolds him, her face turned three-quarters to the camera. The employee shrugs calmly, his hands still in his pockets, and says his line, his face clearly visible.",
+  "chute": "The boss freezes, slowly lowering the register, caught out. The camera slowly pushes in to a close-up of the strict boss's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "trois mois",
+   "salaire",
+   "l'exemple"
+  ],
+  "gag_legende": "LA PATRONNE EN OUVRANT SA CAISSE :",
+  "mecanisme": "logique absurde : l'employé imite son salaire qui ne vient plus"
+ },
+ {
+  "id": "B027-12",
+  "titre": "Licencié pour faute grave",
+  "lieu": "back office of a hardware shop in Yopougon, Abidjan, shelves with buckets and rolls of wire, a desk with a calculator, afternoon",
+  "persos": [
+   {
+    "nom": "the fired employee",
+    "desc": "employee in his 30s, ochre-and-rose shirt, tall and skinny, holding ONE single letter",
+    "pose": "standing in the foreground on the right, holding the letter, confused"
+   },
+   {
+    "nom": "the boss at the desk",
+    "desc": "boss in his 50s, magenta-and-amber boubou, round face and a little mustache, one hand on the calculator",
+    "pose": "sitting behind the desk on the left, very serious"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Patron, pourquoi vous me licenciez dêh ?!"
+   ],
+   [
+    1,
+    "Faute très grave, mon vieux."
+   ],
+   [
+    0,
+    "Mais j'ai fait quoi, patron ?"
+   ],
+   [
+    1,
+    "Tu as dit à ma femme que la quincaillerie-là marche bien."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The employee waves the letter and asks, his face turned three-quarters to the camera. The boss answers gravely, tapping the calculator. The employee opens his free hand, lost. The boss leans forward and says his line in a furious whisper, his face clearly visible.",
+  "chute": "The employee freezes, the letter hanging from his hand, his eyes wide. The camera slowly pushes in to a close-up of the fired employee's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "faute",
+   "femme",
+   "marche bien"
+  ],
+  "gag_legende": "LA FEMME DU PATRON EN APPRENANT ÇA :",
+  "mecanisme": "révélation : le patron cache à sa femme que ses affaires marchent"
+ },
+ {
+  "id": "B027-13",
+  "titre": "Le stagiaire dans le fauteuil",
+  "lieu": "director's office in Cocody, Abidjan, a big leather armchair behind a large desk with a nameplate, an air conditioner on the wall, morning",
+  "persos": [
+   {
+    "nom": "the startled boss",
+    "desc": "boss in his 50s, apricot-and-aubergine suit, big belly, holding ONE single briefcase",
+    "pose": "standing in the foreground on the left, holding the briefcase, frozen in surprise"
+   },
+   {
+    "nom": "the secretary",
+    "desc": "secretary in her 40s, lilac-and-charcoal dress, glasses on a chain, holding ONE single notebook",
+    "pose": "standing in the middle, holding the notebook, very calm"
+   },
+   {
+    "nom": "the lazy intern",
+    "desc": "intern around 20, ochre-and-sunflower polo shirt, small goatee, hands behind his head",
+    "pose": "sitting deep in the big leather armchair behind the desk on the right, hands behind his head"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi le stagiaire-là est assis dans mon fauteuil ?!"
+   ],
+   [
+    1,
+    "Patron, vous avez dit qu'il doit apprendre votre travail dêh."
+   ],
+   [
+    0,
+    "Et il fait quoi, là ?"
+   ],
+   [
+    2,
+    "Rien du tout, patron. J'apprends vite dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boss points at the armchair with his free hand and shouts, his face turned three-quarters to the camera. The secretary answers calmly, pointing her notebook at the intern. The boss frowns. The intern, still leaning back with his hands behind his head, says his line proudly, his face clearly visible.",
+  "chute": "The boss freezes, the briefcase hanging from his hand, busted. The camera slowly pushes in to a close-up of the startled boss's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "stagiaire",
+   "fauteuil",
+   "apprends"
+  ],
+  "gag_legende": "LE PATRON EN CHERCHANT UNE AUTRE CHAISE :",
+  "mecanisme": "consigne prise au pied de la lettre : apprendre le travail du patron, c'est ne rien faire"
+ },
+ {
+  "id": "B027-14",
+  "titre": "Retrait du salaire au kiosque",
+  "lieu": "mobile money kiosk on a busy street corner in Yopougon, Abidjan, a small wooden kiosk under a big parasol, a counter with a notebook, end of the month, afternoon",
+  "persos": [
+   {
+    "nom": "the tired worker",
+    "desc": "worker in his 40s, saffron-and-silver overalls, receding hairline, holding ONE single phone",
+    "pose": "standing in the foreground on the right in front of the counter, holding his phone"
+   },
+   {
+    "nom": "the kiosk agent",
+    "desc": "kiosk agent in her 20s, apricot-and-aubergine t-shirt, long braids, one hand on the notebook",
+    "pose": "sitting behind the counter on the left, one hand on the notebook"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, je retire mon salaire dêh !"
+   ],
+   [
+    1,
+    "Mon vieux, les frais sont plus gros que ton salaire-là."
+   ],
+   [
+    0,
+    "Donc je fais comment ?"
+   ],
+   [
+    1,
+    "Ajoute cinq cents, je te donne ton salaire."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The worker shows his phone proudly and speaks, his face turned three-quarters to the camera. The agent checks the notebook and shakes her head with pity. The worker opens his free hand, lost. The agent holds out her open palm and says her line very seriously, her face clearly visible.",
+  "chute": "The worker freezes, staring at his phone, his eyes filling with despair. The camera slowly pushes in to a close-up of the tired worker's desperate face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "salaire",
+   "frais",
+   "cinq cents"
+  ],
+  "gag_legende": "MOI EN ENVOYANT CINQ CENTS À MON SALAIRE :",
+  "mecanisme": "logique absurde : payer pour toucher son propre salaire"
+ },
+ {
+  "id": "B027-15",
+  "titre": "Le compte de l'entreprise",
+  "lieu": "accounting office of a company in Treichville, Abidjan, a desk with a computer screen and a calculator, piles of receipts, late afternoon",
+  "persos": [
+   {
+    "nom": "the furious boss",
+    "desc": "female boss in her 50s, ochre-and-rose kaba, big glasses, holding ONE single bank statement",
+    "pose": "standing in the foreground on the left, holding the bank statement up"
+   },
+   {
+    "nom": "the smiling accountant",
+    "desc": "accountant in his 40s, crimson-and-copper shirt, neat side parting, both hands folded on the desk",
+    "pose": "sitting behind the desk on the right, hands folded, calm smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Comptable, pourquoi le compte de l'entreprise est à zéro ?!"
+   ],
+   [
+    1,
+    "Patronne, vous avez dit : je veux des comptes propres dêh."
+   ],
+   [
+    0,
+    "Mais l'argent-là est où ?!"
+   ],
+   [
+    1,
+    "Voilà, patronne. J'ai tout nettoyé dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boss shakes the bank statement and shouts, her face turned three-quarters to the camera. The accountant answers with a calm, proud smile. The boss leans forward, furious. The accountant opens both hands as if showing a clean table and says his line, his face clearly visible.",
+  "chute": "The boss freezes, the bank statement trembling in her hand, her mouth wide open. The camera slowly pushes in to a close-up of the furious boss's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "zéro",
+   "propres",
+   "nettoyé"
+  ],
+  "gag_legende": "LA PATRONNE EN VOYANT LA VOITURE DU COMPTABLE :",
+  "mecanisme": "consigne prise au pied de la lettre par le comptable"
+ },
+ {
+  "id": "B027-16",
+  "titre": "L'entretien avec maman",
+  "lieu": "recruitment office in Cocody, Abidjan, a desk with a laptop and a pile of CVs, two chairs in front of the desk, a plant in the corner, morning",
+  "persos": [
+   {
+    "nom": "the recruiter",
+    "desc": "recruiter in her 40s, sky-blue-and-navy blazer, short natural hair, holding ONE single pen",
+    "pose": "sitting behind the desk on the left, holding the pen, puzzled"
+   },
+   {
+    "nom": "the shy candidate",
+    "desc": "candidate around 25, ochre-and-sunflower suit, big glasses, hands on his knees",
+    "pose": "sitting on a chair in the foreground in the middle, hands on his knees, shy"
+   },
+   {
+    "nom": "the candidate's mother",
+    "desc": "mother in her 60s, magenta-and-amber kaba, a big head wrap, holding ONE single handbag on her knees",
+    "pose": "sitting on the chair on the right next to her son, chin up, very confident"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Pourquoi ta maman répond à toutes mes questions-là ?!"
+   ],
+   [
+    1,
+    "Tantie, l'annonce veut l'expérience. C'est maman qui l'a dêh."
+   ],
+   [
+    2,
+    "Et le salaire-là, ça vient sur mon numéro dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The recruiter points her pen at the mother and asks, her face turned three-quarters to the camera. The candidate answers shyly, nodding toward his mother. The mother pats her handbag and says her line firmly, her face clearly visible.",
+  "chute": "The candidate's shoulders drop, defeated. The camera slowly pushes in to a close-up of the shy candidate's defeated face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "maman",
+   "expérience",
+   "salaire"
+  ],
+  "gag_legende": "LE CANDIDAT LE JOUR DE SA PREMIÈRE PAIE :",
+  "mecanisme": "annonce prise au pied de la lettre + la mère rafle le salaire"
+ },
+ {
+  "id": "B027-17",
+  "titre": "Le CV du jeune candidat",
+  "lieu": "small office of a recruitment agency in Yopougon, Abidjan, a desk with a printed CV, a ceiling fan, a wall clock, afternoon",
+  "persos": [
+   {
+    "nom": "the old recruiter",
+    "desc": "recruiter in his 50s, lilac-and-charcoal kaftan, grey temples and reading glasses, holding ONE single CV sheet",
+    "pose": "sitting behind the desk on the left, holding the CV close to his eyes"
+   },
+   {
+    "nom": "the baby-faced candidate",
+    "desc": "candidate around 18, apricot-and-aubergine shirt, very short hair and a baby face, hands on his knees",
+    "pose": "sitting in the foreground on the right, hands on his knees, big confident smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon petit, tu as mis quoi dans tes prétentions-là ?"
+   ],
+   [
+    1,
+    "Que j'ai le bac et dix ans d'expérience, Tonton."
+   ],
+   [
+    0,
+    "Mais tu as quel âge ?!"
+   ],
+   [
+    1,
+    "Ça aussi, c'est une prétention dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The recruiter taps the CV and asks, his face turned three-quarters to the camera. The candidate answers proudly, chin up. The recruiter looks at him over his glasses, suspicious. The candidate gives a big confident smile and says his line, his face clearly visible.",
+  "chute": "The recruiter slowly lays the CV flat on the desk. The camera slowly pushes in to a close-up of the baby-faced candidate's proud smiling face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "prétentions",
+   "bac",
+   "âge"
+  ],
+  "gag_legende": "LE RECRUTEUR EN RELISANT TOUT LE CV :",
+  "mecanisme": "mot du CV pris au pied de la lettre : les prétentions, c'est ce qu'on prétend"
+ },
+ {
+  "id": "B027-18",
+  "titre": "Le message sur le tableau",
+  "lieu": "staff room of a small company in Treichville, Abidjan, a whiteboard covered with big handwritten scribbles, a coffee table, plastic chairs, morning",
+  "persos": [
+   {
+    "nom": "the vexed boss",
+    "desc": "boss in his 50s, sky-blue-and-navy kaftan, heavy cheeks, empty hands",
+    "pose": "standing in the foreground on the left in front of the whiteboard, pointing at it"
+   },
+   {
+    "nom": "the innocent employee",
+    "desc": "employee in her 20s, ochre-and-rose blouse, high ponytail, holding ONE single stapler",
+    "pose": "standing on the right, holding the stapler, her free hand on her chest"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Qui a écrit que je suis radin sur le tableau-là ?!"
+   ],
+   [
+    1,
+    "Patron, je jure c'est pas moi dêh."
+   ],
+   [
+    0,
+    "Prouve-le, ma fille !"
+   ],
+   [
+    1,
+    "Moi, j'écris jamais ce que tout Treichville sait déjà."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The boss points at the whiteboard and shouts, his face turned three-quarters to the camera. The employee keeps her hand on her chest, innocent. The boss crosses his arms, suspicious. The employee shrugs and says her line very sincerely, her face clearly visible.",
+  "chute": "The boss freezes, his arms still crossed, his eyes narrowing. The camera slowly pushes in to a close-up of the vexed boss's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "radin",
+   "tableau",
+   "Treichville"
+  ],
+  "gag_legende": "TOUT TREICHVILLE EN LISANT LE TABLEAU :",
+  "mecanisme": "dénégation imparable qui confirme l'accusation"
+ },
+ {
+  "id": "B027-19",
+  "titre": "Le chauffeur démissionne",
+  "lieu": "courtyard of a big villa in Cocody, Abidjan, a parked car, a garden table under a mango tree, morning",
+  "persos": [
+   {
+    "nom": "the resigning driver",
+    "desc": "driver in his 30s, copper-and-silver uniform, thin mustache, holding ONE single car key",
+    "pose": "standing on the right, holding out the car key toward the boss"
+   },
+   {
+    "nom": "the rich boss",
+    "desc": "boss in his 60s, ochre-and-sunflower kaftan, big belly and white hair, hands on his belly",
+    "pose": "sitting at the garden table in the foreground on the left, hands on his belly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Patron, je démissionne dêh. J'ai trouvé mieux payé."
+   ],
+   [
+    1,
+    "Ah bon ? Chez qui, mon vieux ?!"
+   ],
+   [
+    0,
+    "Chez votre fille. Elle me paie pour faire ses devoirs."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The driver holds out the car key and announces it calmly, his face turned three-quarters to the camera. The boss straightens up in his chair, offended and curious. The driver smiles and says his line politely, his face clearly visible.",
+  "chute": "The boss freezes, his hands still on his belly, his mouth falling open. The camera slowly pushes in to a close-up of the rich boss's humiliated face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "démissionne",
+   "fille",
+   "devoirs"
+  ],
+  "gag_legende": "LE PATRON DEVANT LE BULLETIN DE SA FILLE :",
+  "mecanisme": "révélation : la fille du patron paie mieux que le patron"
+ },
+ {
+  "id": "B027-20",
+  "titre": "La paie de l'assistante",
+  "lieu": "small content studio in an apartment in Cocody, Abidjan, a ring light on a stand, a sofa with cushions, a phone on a tripod, evening",
+  "persos": [
+   {
+    "nom": "the unpaid assistant",
+    "desc": "assistant around 22, saffron-and-silver t-shirt, big puffy afro, holding ONE single notebook",
+    "pose": "standing in the foreground on the right, the notebook against her chest"
+   },
+   {
+    "nom": "the influencer",
+    "desc": "influencer in her 20s, crimson-and-copper dress, long straight hair and long nails, holding ONE single phone",
+    "pose": "sitting on the sofa on the left, holding the phone at chest level, posing"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Grande sœur, ma paie-là, on dit quoi ?"
+   ],
+   [
+    1,
+    "Ma chérie, je te paie en visibilité dêh. C'est mieux."
+   ],
+   [
+    0,
+    "Ya fohi. Comme ça tout Cocody va me voir dormir dehors."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The assistant asks, her face turned three-quarters to the camera. The influencer waves her free hand elegantly and answers with a big fake smile. The assistant nods slowly with a sarcastic smile and says her line, her face clearly visible.",
+  "chute": "The influencer's fake smile freezes on her face. The camera slowly pushes in to a close-up of the unpaid assistant's sarcastic face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "paie",
+   "visibilité",
+   "dehors"
+  ],
+  "gag_legende": "MON PROPRIÉTAIRE QUAND JE PROPOSE LA VISIBILITÉ :",
+  "mecanisme": "promesse de « visibilité » prise au pied de la lettre"
+ }
+]

@@ -1,0 +1,22 @@
+[
+  {"id": "B079-01", "note": 5, "drapeaux": ["connu"], "remarque": "Le jeu de mots « payer en liquide » avec de l'eau est une blague déjà vue, et le « faux billet » du seau trouble relance gentiment sans vraiment surprendre."},
+  {"id": "B079-02", "note": 6, "drapeaux": [], "remarque": "« Rallume d'abord, y a rien à couper » retourne bien la situation contre l'agent, mais la chute reste douce et on peut la deviner."},
+  {"id": "B079-03", "note": 6, "drapeaux": [], "remarque": "Retournement bien symétrique (« j'ai estimé que j'ai payé »), qui fait plaisir mais sonne plus malin que vraiment hilarant."},
+  {"id": "B079-04", "note": 5.5, "drapeaux": ["confus"], "remarque": "La révélation de « l'équipe de nuit sous le lit » surprend, mais la logique du « une seule personne dort à la fois » demande un temps de réflexion qui casse l'éclat."},
+  {"id": "B079-05", "note": 7, "drapeaux": [], "remarque": "La caution qui a eu son bac et étudie au Canada est un vrai retournement féroce, et le « elle va plus te reconnaître » l'achève bien."},
+  {"id": "B079-06", "note": 7, "drapeaux": [], "remarque": "Double cible très efficace (délestage et maison pourrie) dans une chute courte et méchante qu'on a envie de rejouer."},
+  {"id": "B079-07", "note": 6, "drapeaux": [], "remarque": "La déduction « lumière plus eau, donc pas chez nous » fait sourire et la complicité de l'épouse relance, mais l'idée circule déjà en mème."},
+  {"id": "B079-08", "note": 5.5, "drapeaux": [], "remarque": "« Il se couche sur mon toit, faut quelqu'un paie sa chambre » est une trouvaille absurde jolie, mais elle provoque un sourire plutôt qu'un éclat."},
+  {"id": "B079-09", "note": 4.5, "drapeaux": [], "remarque": "Avarice de propriétaire attendue, et la chaîne « bébé, bras, maison » est trop mécanique pour surprendre."},
+  {"id": "B079-10", "note": 7, "drapeaux": [], "remarque": "« Tu es vendu avec les meubles » surprend, et « douze ans sans bouger ni payer, tu es meuble » frappe fort avec une vraie férocité."},
+  {"id": "B079-11", "note": 5, "drapeaux": [], "remarque": "Traiter la lumière comme un visiteur est une idée correcte, mais la chute arrive molle et sans vrai coup de poing."},
+  {"id": "B079-12", "note": 5, "drapeaux": [], "remarque": "« Entrer-coucher, on a dit manger ? » amuse, mais la relance « entrer-manger » ne fait que répéter la même idée."},
+  {"id": "B079-13", "note": 5.5, "drapeaux": [], "remarque": "La lagune qui « vient te voir au salon » est un bon retournement de promesse, mais le schéma « vue sur mer, donc inondé » est prévisible."},
+  {"id": "B079-14", "note": 4.5, "drapeaux": [], "remarque": "On voit venir dès la deuxième réplique l'enfant qui a tout mangé, et la chute « il consomme pas courant » reste faible."},
+  {"id": "B079-15", "note": 6, "drapeaux": ["connu"], "remarque": "La trahison de l'épouse qui donne l'heure achève bien le gag, mais la situation « loyer impayé, chez toi ou pas » est proche de la blague 010 du catalogue."},
+  {"id": "B079-16", "note": 6, "drapeaux": [], "remarque": "Le renversement du rapport de force par un gamin redoutable en affaires est malin, même si la chute demande une seconde de calcul."},
+  {"id": "B079-17", "note": 6.5, "drapeaux": ["danger"], "remarque": "La petite facture qui fait soupçonner la disparition du frigo, puis la révélation sur sa propre mère, forment une double chute surprenante ; la CIE est nommée."},
+  {"id": "B079-18", "note": 5.5, "drapeaux": [], "remarque": "L'humiliation du père monte bien en deux temps, mais la vérité d'enfant « le chef, c'est le propriétaire » reste assez attendue."},
+  {"id": "B079-19", "note": 6.5, "drapeaux": ["danger", "tournage"], "remarque": "Le gendre pris en flagrant délit de joie par la torche de la belle-mère est un bon retournement à double cible, mais la CIE est nommée et la scène de nuit avec un faisceau de torche est risquée à tourner."},
+  {"id": "B079-20", "note": 6.5, "drapeaux": [], "remarque": "La relance « ton ami-là habite où ? Lui aussi je vais l'augmenter » pousse l'avidité jusqu'au bout et termine bien le sketch."}
+]

@@ -1,0 +1,945 @@
+[
+ {
+  "id": "B036-01",
+  "titre": "La garantie du prêt",
+  "lieu": "veranda of a house in Port-Bouët, Abidjan, a wooden table with a metal cash box and a notebook, plastic chairs, palm trees in the background, morning",
+  "persos": [
+   {
+    "nom": "the wife asking for a loan",
+    "desc": "wife in her 40s, jade-and-maroon kaba, headscarf, big earrings, a small handbag on her arm",
+    "pose": "standing on the left, pointing at her husband with her free hand, big confident smile"
+   },
+   {
+    "nom": "the president with the cash box",
+    "desc": "tontine president in her 60s, indigo-and-gold boubou, glasses on her nose, both hands on ONE single metal cash box",
+    "pose": "sitting behind the table on the right, both hands on the cash box, unimpressed"
+   },
+   {
+    "nom": "the husband on the chair",
+    "desc": "husband in his 40s, saffron-and-pistachio shirt, small moustache, a big watch",
+    "pose": "sitting on a plastic chair in the middle of the foreground, arms crossed, proud and relaxed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Présidente, prête-moi cent mille. Je laisse mon mari en garantie dêh."
+   ],
+   [
+    1,
+    "Ma sœur, ici personne ne revient chercher sa garantie."
+   ],
+   [
+    0,
+    "Justement, c'est ça le plan dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife asks proudly, her face turned three-quarters to the camera, pointing at her seated husband. The husband nods proudly, arms crossed. The president answers flatly, both hands on the cash box, slowly shaking her head. The wife answers with a delighted smile, her face clearly visible.",
+  "chute": "The husband's arms drop and his proud smile collapses. The camera slowly pushes in to a close-up of the husband on the chair's betrayed face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "garantie",
+   "mon mari",
+   "le plan"
+  ],
+  "gag_legende": "LE MARI EN COMPRENANT LE PLAN :",
+  "mecanisme": "relance assassine : la femme révèle qu'abandonner la garantie, c'est justement son but"
+ },
+ {
+  "id": "B036-02",
+  "titre": "Le tour de Josiane",
+  "lieu": "courtyard of a house in Bingerville, Abidjan, plastic chairs in a circle, a small table with a metal cash box and a notebook, a mango tree, afternoon",
+  "persos": [
+   {
+    "nom": "the furious wife",
+    "desc": "wife in her 40s, plum-and-jade kaftan, braided bun, hands on her hips",
+    "pose": "standing on the left in the foreground, hands on her hips, furious"
+   },
+   {
+    "nom": "the husband with the envelope",
+    "desc": "husband in his 40s, sand-and-ruby polo shirt, bald head, holding ONE single thick envelope of money against his chest",
+    "pose": "standing in the middle, holding the envelope against his chest, embarrassed smile"
+   },
+   {
+    "nom": "the calm president",
+    "desc": "tontine president in her 50s, lime-and-gold boubou, big round glasses, holding ONE single open notebook",
+    "pose": "sitting at the small table on the right, holding the open notebook, very calm"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri ! Pourquoi c'est toi qui viens ramasser le tour de Josiane ?!"
+   ],
+   [
+    1,
+    "Ma chérie… Josiane-là, c'est moi dêh."
+   ],
+   [
+    2,
+    "Josiane cotise mieux que toi dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The wife shouts, hands on her hips, her face turned three-quarters to the camera. The husband shrugs with an embarrassed smile, still holding the envelope against his chest. The calm president looks up from her notebook and says her line calmly to the wife, her face clearly visible.",
+  "chute": "The wife freezes, her mouth wide open, while the husband gives a small proud nod. The camera slowly pushes in to a close-up of the furious wife's outraged face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "Josiane",
+   "ramasser",
+   "cotise"
+  ],
+  "gag_legende": "LA FEMME EN RENTRANT À LA MAISON :",
+  "mecanisme": "identité cachée révélée + relance assassine de la présidente qui humilie l'épouse"
+ },
+ {
+  "id": "B036-03",
+  "titre": "Elle quitte l'association",
+  "lieu": "meeting room of a women's association in Attécoubé, Abidjan, rows of plastic chairs, a table with a notebook and a metal cash box, a ceiling fan, evening",
+  "persos": [
+   {
+    "nom": "the offended member",
+    "desc": "woman in her 30s, salmon-and-cherry jumpsuit, short twists, a handbag on her shoulder",
+    "pose": "standing in the middle of the foreground, arms crossed, chin up, offended"
+   },
+   {
+    "nom": "the president behind the table",
+    "desc": "association president in her 50s, jade-and-maroon boubou, big round glasses, holding ONE single notebook",
+    "pose": "sitting behind the table on the left, holding the notebook, very calm"
+   },
+   {
+    "nom": "the smiling member",
+    "desc": "woman in her 40s, crimson-and-sunflower kaba, big earrings, hands folded on her lap",
+    "pose": "sitting on a plastic chair on the right, hands on her lap, mischievous smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Je quitte l'association dêh ! Vous parlez de moi à chaque réunion !"
+   ],
+   [
+    1,
+    "Pas à chaque réunion, ma sœur. On tourne."
+   ],
+   [
+    2,
+    "Ce mois-ci, c'est ton tour dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The offended member announces it, arms crossed, chin up, her face turned three-quarters to the camera. The president answers calmly, raising one finger. The smiling member says her line sweetly with a little shrug, her face clearly visible.",
+  "chute": "The offended member's arms drop and her mouth falls open. The camera slowly pushes in to a close-up of the offended member's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "réunion",
+   "on tourne",
+   "ton tour"
+  ],
+  "gag_legende": "LA TONTINE DES COMMÉRAGES CE MOIS-CI :",
+  "mecanisme": "logique de la tontine appliquée aux commérages + relance assassine"
+ },
+ {
+  "id": "B036-04",
+  "titre": "Le nouvel ordre de passage",
+  "lieu": "courtyard of a house in Port-Bouët, Abidjan, plastic chairs, a small table with a metal cash box and a notebook, palm trees, morning",
+  "persos": [
+   {
+    "nom": "the president with the notebook",
+    "desc": "tontine president in her 60s, sand-and-ruby kaba, glasses on a chain, hair in a bun, holding ONE single notebook",
+    "pose": "standing on the left, holding the notebook, solemn"
+   },
+   {
+    "nom": "the young-looking member",
+    "desc": "woman in her early 30s, crimson-and-sunflower dress, very smooth young face, long straight hair, a handbag on her arm",
+    "pose": "standing in the middle of the foreground, one hand raised, very sure of herself"
+   },
+   {
+    "nom": "the member with the phone",
+    "desc": "woman in her 30s, indigo-and-gold jumpsuit, short hair, holding ONE single phone",
+    "pose": "sitting on a plastic chair on the right, holding her phone, one eyebrow raised"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Cette année, la plus âgée ramasse la tontine en premier dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Moi, j'ai soixante-deux ans."
+   ],
+   [
+    2,
+    "Au maquis-là, tu avais dix-neuf ans."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The president announces the rule solemnly, tapping the notebook. The young-looking member raises her hand at once and declares her age proudly, her face turned three-quarters to the camera. The member with the phone turns her head toward her and says her line dryly, holding up her phone, her face clearly visible.",
+  "chute": "The young-looking member's raised hand freezes in the air and her smile stiffens. The camera slowly pushes in to a close-up of the young-looking member's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "la plus âgée",
+   "soixante-deux",
+   "dix-neuf"
+  ],
+  "gag_legende": "LES FEMMES QUAND ON PARLE D'ÂGE :",
+  "mecanisme": "mensonge retourné contre la menteuse + relance assassine d'un témoin"
+ },
+ {
+  "id": "B036-05",
+  "titre": "Encore la sortie du bébé",
+  "lieu": "courtyard of the president's house in Bingerville, Abidjan, plastic chairs, a table with a metal cash box and a notebook, a small decorated baby chair, afternoon",
+  "persos": [
+   {
+    "nom": "the fed-up member",
+    "desc": "woman in her 40s, saffron-and-pistachio boubou, headscarf, hands on her hips",
+    "pose": "standing on the left in the foreground, hands on her hips, fed up"
+   },
+   {
+    "nom": "the president",
+    "desc": "tontine president in her 50s, plum-and-jade kaba, big glasses, holding ONE single notebook",
+    "pose": "standing on the right, holding the notebook, innocent smile"
+   },
+   {
+    "nom": "the big baby",
+    "desc": "boy around 5, lavender-and-jade tracksuit, chubby cheeks, holding ONE single baby bottle that he never drinks from",
+    "pose": "standing in the middle next to the baby chair, holding the baby bottle, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Présidente, encore une cotisation pour la sortie du bébé de ta fille ?!"
+   ],
+   [
+    1,
+    "Oui ma sœur. Le bébé-là sort beaucoup dêh."
+   ],
+   [
+    2,
+    "Tantie, je sors encore samedi dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The fed-up member protests, hands on her hips, her face turned three-quarters to the camera. The president answers sweetly, holding the notebook. The boy raises the baby bottle and says his line cheerfully to the member, his face clearly visible.",
+  "chute": "The fed-up member slowly turns her head toward the boy, eyes wide. The camera slowly pushes in to a close-up of the fed-up member's flabbergasted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "sortie du bébé",
+   "samedi"
+  ],
+  "gag_legende": "LA TONTINE QUAND LE BÉBÉ PARLE :",
+  "mecanisme": "contradiction visuelle + relance assassine du « bébé » lui-même"
+ },
+ {
+  "id": "B036-06",
+  "titre": "Le sac fermé à clé",
+  "lieu": "meeting room of a women's association in Attécoubé, Abidjan, plastic chairs in a circle, a table with a notebook, afternoon",
+  "persos": [
+   {
+    "nom": "the curious young member",
+    "desc": "young woman in her 20s, lime-and-gold wrap dress, long braids",
+    "pose": "sitting on the left, pointing at the padlock, curious"
+   },
+   {
+    "nom": "the suspicious tantie",
+    "desc": "woman in her 50s, crimson-and-sunflower boubou, headscarf, holding ONE single handbag closed with a small padlock",
+    "pose": "sitting in the middle of the foreground, both hands on her locked handbag on her knees, suspicious look"
+   },
+   {
+    "nom": "the robbed member",
+    "desc": "woman in her 40s, jade-and-maroon dress, short hair, big earrings",
+    "pose": "standing on the right, staring at the padlock, eyes narrowed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, pourquoi tu mets un cadenas sur ton sac pendant la réunion ?"
+   ],
+   [
+    1,
+    "Ma fille, je connais les femmes de cette association-là dêh."
+   ],
+   [
+    2,
+    "Ehh ! Ce cadenas-là, c'est le mien !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The young member asks, pointing at the padlock, her face turned three-quarters to the camera. The tantie answers wisely, tightening both hands on her handbag and glancing around suspiciously. The robbed member points at the padlock and says her line sharply, her face clearly visible.",
+  "chute": "The suspicious tantie freezes, both hands still on the handbag, eyes darting left and right. The camera slowly pushes in to a close-up of the suspicious tantie's caught face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "cadenas",
+   "association",
+   "le mien"
+  ],
+  "gag_legende": "LA TANTIE QUAND ON RECONNAÎT LE CADENAS :",
+  "mecanisme": "l'arroseuse arrosée + relance assassine de la volée"
+ },
+ {
+  "id": "B036-07",
+  "titre": "La cotisation spéciale de samedi",
+  "lieu": "courtyard of a house in Attécoubé, Abidjan, plastic chairs, a table with a metal cash box and a notebook, a string of small party lights, evening",
+  "persos": [
+   {
+    "nom": "the excited member",
+    "desc": "woman in her 40s, indigo-and-gold kaba, big earrings, holding ONE single invitation card",
+    "pose": "standing on the left in the foreground, holding up the invitation card, very excited"
+   },
+   {
+    "nom": "the shocked member",
+    "desc": "woman in her 50s, sand-and-ruby boubou, headscarf, glasses",
+    "pose": "sitting in the middle, hands on her cheeks, shocked"
+   },
+   {
+    "nom": "the treasurer with the cash box",
+    "desc": "treasurer in her 40s, lime-and-gold kaftan, braided bun, both hands on ONE single metal cash box",
+    "pose": "sitting behind the table on the right, both hands on the cash box, matter-of-fact"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mesdames, cotisation spéciale pour la fête de mon divorce samedi dêh !"
+   ],
+   [
+    1,
+    "Mais tu es encore mariée, ma sœur !"
+   ],
+   [
+    2,
+    "Son mari-là a cotisé le premier."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The excited member announces it happily, waving the invitation card, her face turned three-quarters to the camera. The shocked member protests, hands on her cheeks. The treasurer pats the cash box and says her line flatly, her face clearly visible.",
+  "chute": "The excited member's smile freezes, then her face turns offended. The camera slowly pushes in to a close-up of the excited member's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "divorce",
+   "mariée",
+   "le premier"
+  ],
+  "gag_legende": "LE MARI EN DÉPOSANT SA COTISATION :",
+  "mecanisme": "relance assassine : le mari est encore plus pressé qu'elle"
+ },
+ {
+  "id": "B036-08",
+  "titre": "Le mari qui vient soutenir",
+  "lieu": "courtyard of a house in Port-Bouët, Abidjan, plastic chairs, a table with a metal cash box, morning",
+  "persos": [
+   {
+    "nom": "the suspicious president",
+    "desc": "tontine president in her 50s, lavender-and-jade kaftan, glasses, holding ONE single thick envelope of money",
+    "pose": "standing on the left, holding the envelope close to her, suspicious"
+   },
+   {
+    "nom": "the sweet husband",
+    "desc": "husband in his 40s, indigo-and-gold shirt, big smile, a big watch",
+    "pose": "standing in the middle of the foreground, hands joined, sweet smile"
+   },
+   {
+    "nom": "the cold wife",
+    "desc": "wife in her 40s, salmon-and-cherry kaba, braids, a handbag on her knees",
+    "pose": "sitting on a plastic chair on the right, arms crossed, cold stare"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tonton, pourquoi tu viens seulement le jour où ta femme ramasse ?"
+   ],
+   [
+    1,
+    "Je viens la soutenir, Tantie. C'est l'amour dêh."
+   ],
+   [
+    2,
+    "Il oublie mon anniversaire, jamais mon tour dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The president asks, holding the envelope close, her face turned three-quarters to the camera. The husband answers with a sweet smile, placing one hand on his heart. The wife says her line coldly, arms crossed, her face clearly visible.",
+  "chute": "The sweet husband's smile freezes, his hand still on his heart. The camera slowly pushes in to a close-up of the sweet husband's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "soutenir",
+   "anniversaire",
+   "mon tour"
+  ],
+  "gag_legende": "LE MARI LE JOUR DU RAMASSAGE :",
+  "mecanisme": "fausse tendresse démasquée par la victime : contraste anniversaire oublié / tour jamais oublié"
+ },
+ {
+  "id": "B036-09",
+  "titre": "La présidente de la tontine",
+  "lieu": "living room of a house in Bingerville, Abidjan, a sofa, a brand-new air conditioner on the wall above the sofa, a low table, evening",
+  "persos": [
+   {
+    "nom": "the cheated husband",
+    "desc": "husband in his 30s, sand-and-ruby shirt, short beard, a watch",
+    "pose": "standing in the middle of the foreground, pointing at his mother-in-law, outraged"
+   },
+   {
+    "nom": "the innocent wife",
+    "desc": "wife in her 30s, plum-and-jade dress, long braids, holding ONE single phone",
+    "pose": "standing on the left, holding her phone, innocent face"
+   },
+   {
+    "nom": "the mother-in-law under the air conditioner",
+    "desc": "mother-in-law in her 60s, saffron-and-pistachio kaba, headscarf, round glasses, hands resting on her belly",
+    "pose": "sitting on the sofa on the right, right under the new air conditioner, relaxed, satisfied smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chérie, ta présidente de tontine-là, c'est ta maman ?!"
+   ],
+   [
+    1,
+    "Ya fohi, elle garde l'argent mieux qu'une banque."
+   ],
+   [
+    2,
+    "Merci pour la clim, mon fils."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband points at his mother-in-law and asks, his face turned three-quarters to the camera. The wife shrugs innocently, holding her phone. The mother-in-law smiles with pleasure in the cool air and says her line sweetly, her face clearly visible.",
+  "chute": "The husband slowly looks up at the new air conditioner, his pointing finger frozen. The camera slowly pushes in to a close-up of the cheated husband's devastated face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "présidente",
+   "banque",
+   "clim"
+  ],
+  "gag_legende": "LE GENDRE EN REGARDANT LA CLIM :",
+  "mecanisme": "complicité familiale révélée + relance assassine de la belle-mère"
+ },
+ {
+  "id": "B036-10",
+  "titre": "Ma femme me dit tout",
+  "lieu": "courtyard of a house in Bingerville, Abidjan, plastic chairs, a table with a metal cash box and a notebook, a mango tree, afternoon",
+  "persos": [
+   {
+    "nom": "the proud husband",
+    "desc": "husband in his 50s, crimson-and-sunflower shirt, short goatee, a big watch",
+    "pose": "standing in the middle of the foreground, chest out, proud"
+   },
+   {
+    "nom": "the president with the notebook",
+    "desc": "tontine president in her 60s, salmon-and-cherry kaftan, glasses on a chain, holding ONE single open notebook",
+    "pose": "sitting at the table on the left, holding the open notebook"
+   },
+   {
+    "nom": "the discreet wife",
+    "desc": "wife in her 50s, lavender-and-jade kaba, headscarf, big earrings, a handbag on her knees",
+    "pose": "sitting on a plastic chair on the right, handbag on her knees, calm smile"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Présidente, ma femme me dit tout. Elle n'est dans aucune tontine dêh !"
+   ],
+   [
+    1,
+    "Tonton, elle a déjà ramassé huit fois ici."
+   ],
+   [
+    2,
+    "Et le terrain-là est à mon nom."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband declares it proudly, one hand on his chest, his face turned three-quarters to the camera. The president answers dryly, tapping the open notebook. The wife says her line calmly to the president with a little smile, her face clearly visible.",
+  "chute": "The proud husband's chest deflates and his jaw drops. The camera slowly pushes in to a close-up of the proud husband's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "aucune tontine",
+   "huit fois",
+   "terrain"
+  ],
+  "gag_legende": "LE MARI EN CHERCHANT LE TERRAIN :",
+  "mecanisme": "fierté naïve démolie + relance assassine de l'épouse"
+ },
+ {
+  "id": "B036-11",
+  "titre": "Le tontinier du marché",
+  "lieu": "small wooden kiosk of a daily savings collector at the market in Port-Bouët, Abidjan, a counter with a notebook and a pile of savings cards, morning",
+  "persos": [
+   {
+    "nom": "the market woman",
+    "desc": "market woman in her 50s, plum-and-jade boubou, headscarf, holding ONE single savings card",
+    "pose": "standing on the left in the foreground in front of the counter, holding her savings card, suspicious"
+   },
+   {
+    "nom": "the savings collector",
+    "desc": "daily savings collector in his 40s, jade-and-maroon shirt, thin moustache, one hand on his heart",
+    "pose": "sitting behind the counter in the middle, hand on his heart, sincere face"
+   },
+   {
+    "nom": "the collector's wife",
+    "desc": "his wife in her 30s, saffron-and-pistachio dress, sunglasses resting on her head, holding ONE single printed sheet of paper",
+    "pose": "standing on the right behind the counter, holding the printed sheet, very excited"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon vieux, cette fois tu ne vas pas disparaître avec notre argent, hein ?"
+   ],
+   [
+    1,
+    "Ma sœur, regarde mes yeux. Je suis sérieux dêh."
+   ],
+   [
+    2,
+    "Chéri, nos billets d'avion sont imprimés !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The market woman asks, waving her savings card, her face turned three-quarters to the camera. The collector answers with his hand on his heart, very sincere. His wife lifts the printed sheet happily and says her line to him, her face clearly visible.",
+  "chute": "The market woman freezes, her savings card still raised, eyes wide. The camera slowly pushes in to a close-up of the market woman's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "disparaître",
+   "sérieux",
+   "billets d'avion"
+  ],
+  "gag_legende": "LE MARCHÉ EN COURANT VERS LE KIOSQUE :",
+  "mecanisme": "promesse solennelle + relance assassine de l'épouse complice"
+ },
+ {
+  "id": "B036-12",
+  "titre": "Le transfert de la tontine",
+  "lieu": "veranda of a house in Port-Bouët, Abidjan, plastic chairs, a small table with a notebook and a metal cash box, afternoon",
+  "persos": [
+   {
+    "nom": "the angry member",
+    "desc": "woman in her 40s, crimson-and-sunflower jumpsuit, short twists, hands on her hips",
+    "pose": "standing on the left, hands on her hips, angry"
+   },
+   {
+    "nom": "the treasurer",
+    "desc": "treasurer in her 30s, indigo-and-gold kaftan, long braids, hands joined",
+    "pose": "sitting in the middle of the foreground, hands joined, fake innocent smile"
+   },
+   {
+    "nom": "the secretary with the phone",
+    "desc": "secretary in her 20s, lime-and-gold dress, round glasses, holding ONE single phone",
+    "pose": "standing on the right, holding the phone, reading the screen"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Trésorière, tu as envoyé toute la tontine-là à un mauvais numéro ?!"
+   ],
+   [
+    1,
+    "Ya fohi, c'est une erreur de doigt dêh."
+   ],
+   [
+    2,
+    "Le numéro-là a répondu : merci bébé."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The angry member accuses her, hands on her hips, her face turned three-quarters to the camera. The treasurer shrugs with a fake innocent smile, wiggling one finger. The secretary looks up from the phone and reads her line aloud, her face clearly visible.",
+  "chute": "The treasurer's fake smile freezes and her eyes slide sideways. The camera slowly pushes in to a close-up of the treasurer's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "mauvais numéro",
+   "erreur",
+   "merci bébé"
+  ],
+  "gag_legende": "LA TONTINE EN ATTENDANT LE REMBOURSEMENT :",
+  "mecanisme": "excuse technique + relance assassine qui révèle à qui est allé l'argent"
+ },
+ {
+  "id": "B036-13",
+  "titre": "La nouvelle maison de la présidente",
+  "lieu": "front yard of a brand-new two-storey house in Bingerville, Abidjan, plastic chairs, a ribbon tied on the gate, sunny afternoon",
+  "persos": [
+   {
+    "nom": "the admiring member",
+    "desc": "woman in her 30s, sand-and-ruby wrap dress, big hoop earrings, hands clasped",
+    "pose": "standing on the left, hands clasped, admiring the house"
+   },
+   {
+    "nom": "the proud president",
+    "desc": "association president in her 50s, saffron-and-pistachio kaftan, big glasses, holding ONE single key ring",
+    "pose": "standing in the middle of the foreground in front of the house, holding up the keys, proud"
+   },
+   {
+    "nom": "the sharp member",
+    "desc": "woman in her 50s, lavender-and-jade boubou, headscarf, holding ONE single contributions notebook",
+    "pose": "standing on the right, holding the notebook against her chest, one eyebrow raised"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Présidente, ta nouvelle maison-là est trop belle dêh !"
+   ],
+   [
+    1,
+    "Merci ma sœur. C'est le fruit de l'effort."
+   ],
+   [
+    2,
+    "Ma cotisation-là, c'est quelle chambre ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The admiring member compliments her, her face turned three-quarters to the camera. The president answers proudly, jingling the keys. The sharp member taps her notebook and asks her line flatly, her face clearly visible.",
+  "chute": "The proud president's smile freezes, the keys still raised. The camera slowly pushes in to a close-up of the proud president's caught face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "maison",
+   "effort",
+   "chambre"
+  ],
+  "gag_legende": "LA PRÉSIDENTE EN CACHANT LES CLÉS :",
+  "mecanisme": "fierté retournée + relance assassine de la cotisante"
+ },
+ {
+  "id": "B036-14",
+  "titre": "Le bilan de l'année",
+  "lieu": "meeting room of a women's association in Attécoubé, Abidjan, rows of plastic chairs, a table with a metal cash box and a notebook, afternoon",
+  "persos": [
+   {
+    "nom": "the president giving the report",
+    "desc": "association president in her 50s, salmon-and-cherry boubou, big round glasses, holding ONE single sheet of paper",
+    "pose": "standing on the left behind the table, holding the report sheet, very proud"
+   },
+   {
+    "nom": "the curious member",
+    "desc": "woman in her 30s, plum-and-jade jumpsuit, short twists, a handbag on her knees",
+    "pose": "sitting in the middle of the foreground, leaning forward, curious"
+   },
+   {
+    "nom": "the treasurer",
+    "desc": "treasurer in her 40s, lime-and-gold kaba, headscarf, both hands on ONE single metal cash box",
+    "pose": "sitting behind the table on the right, both hands on the cash box, offended"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Cette année, notre association a aidé trois familles dêh !"
+   ],
+   [
+    1,
+    "Lesquelles, présidente ? Dis les noms dêh."
+   ],
+   [
+    0,
+    "La mienne, celle de ma sœur, celle de ma fille."
+   ],
+   [
+    2,
+    "Quatre dêh. Tu oublies la mienne."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The president reads the report proudly, her face turned three-quarters to the camera. The curious member leans forward and asks. The president counts proudly on the fingers of her free hand. The treasurer slaps one hand on the cash box and says her line, vexed, her face clearly visible.",
+  "chute": "The curious member's mouth drops open as she looks from one to the other. The camera slowly pushes in to a close-up of the curious member's disgusted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "trois familles",
+   "la mienne",
+   "quatre"
+  ],
+  "gag_legende": "LES COTISANTES EN COMPTANT LEURS FAMILLES :",
+  "mecanisme": "liste révélatrice + relance assassine d'une complice vexée d'être oubliée"
+ },
+ {
+  "id": "B036-15",
+  "titre": "Le mari trop gentil ce matin",
+  "lieu": "living room of a modest house in Attécoubé, Abidjan, a sofa, a low table, a calendar on the wall, morning",
+  "persos": [
+   {
+    "nom": "the flattering husband",
+    "desc": "husband in his 40s, lavender-and-jade shirt, big smile, a watch",
+    "pose": "standing on the left in the foreground, hands joined, sweet smile"
+   },
+   {
+    "nom": "the suspicious wife",
+    "desc": "wife in her 40s, indigo-and-gold dress, headscarf, holding ONE single handbag against her chest",
+    "pose": "standing in the middle, clutching her handbag, suspicious"
+   },
+   {
+    "nom": "the excited son",
+    "desc": "boy around 9, saffron-and-pistachio t-shirt, big round eyes, holding ONE single motorbike magazine",
+    "pose": "sitting on the sofa on the right, holding the magazine open, excited"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chérie, tu es trop belle ce matin dêh !"
+   ],
+   [
+    1,
+    "Qui t'a dit que c'est mon tour de tontine ?"
+   ],
+   [
+    2,
+    "Papa a déjà choisi sa moto dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The husband compliments her sweetly, his face turned three-quarters to the camera. The wife narrows her eyes and clutches her handbag tighter as she asks. The son raises the open magazine and says his line happily, his face clearly visible.",
+  "chute": "The flattering husband's smile freezes and a drop of sweat rolls down his temple. The camera slowly pushes in to a close-up of the flattering husband's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "trop belle",
+   "tontine",
+   "moto"
+  ],
+  "gag_legende": "LE MARI QUAND L'ENFANT PARLE TROP :",
+  "mecanisme": "flatterie démasquée + relance assassine de l'enfant"
+ },
+ {
+  "id": "B036-16",
+  "titre": "Le cahier des cotisations",
+  "lieu": "veranda of a house in Attécoubé, Abidjan, plastic chairs, a small table, afternoon",
+  "persos": [
+   {
+    "nom": "the offended member",
+    "desc": "woman in her 30s, saffron-and-pistachio wrap dress, long braids, big earrings",
+    "pose": "standing on the left in the foreground, pointing at the notebook, offended"
+   },
+   {
+    "nom": "the president's son",
+    "desc": "boy around 10, crimson-and-sunflower t-shirt, serious face, holding ONE single open notebook",
+    "pose": "sitting at the small table in the middle, holding the open notebook, very serious"
+   },
+   {
+    "nom": "the resigned member",
+    "desc": "woman in her 50s, salmon-and-cherry dress, headscarf, glasses",
+    "pose": "standing on the right behind the boy, looking at the notebook, resigned"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Petit, pourquoi c'est écrit « menteuse » à côté de mon nom ?!"
+   ],
+   [
+    1,
+    "Maman a dit d'écrire ce qu'elle dit le soir dêh."
+   ],
+   [
+    2,
+    "Ma sœur, moi c'est « voleuse »."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The offended member points at the notebook and asks, her face turned three-quarters to the camera. The boy looks up and answers innocently, holding the notebook. The resigned member sighs and says her line with a shrug, her face clearly visible.",
+  "chute": "The offended member slowly lowers her finger, speechless. The camera slowly pushes in to a close-up of the offended member's insulted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "menteuse",
+   "le soir",
+   "voleuse"
+  ],
+  "gag_legende": "LA PRÉSIDENTE EN RENTRANT DU MARCHÉ :",
+  "mecanisme": "l'enfant trop honnête + relance assassine d'une autre victime"
+ },
+ {
+  "id": "B036-17",
+  "titre": "Le prénom du bébé",
+  "lieu": "small living room of a house in Port-Bouët, Abidjan, a sofa, a baby cot, a calendar on the wall, morning",
+  "persos": [
+   {
+    "nom": "the visiting neighbor",
+    "desc": "neighbor woman in her 40s, jade-and-maroon tunic, headscarf, holding ONE single gift bag",
+    "pose": "standing on the left in the foreground, holding the gift bag, puzzled"
+   },
+   {
+    "nom": "the young mother",
+    "desc": "young mother in her 20s, lavender-and-jade wrap dress, braids, holding ONE single baby wrapped in a blanket",
+    "pose": "sitting on the sofa in the middle, holding the baby, proud"
+   },
+   {
+    "nom": "the big brother",
+    "desc": "boy around 6, lime-and-gold t-shirt, big cheeky smile, a gap in his teeth, hands on his hips",
+    "pose": "standing on the right next to the sofa, hands on his hips, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, pourquoi tu as appelé ton bébé « Cotisation » ?!"
+   ],
+   [
+    1,
+    "C'est la tontine qui a payé la maternité dêh."
+   ],
+   [
+    2,
+    "Et moi, je m'appelle « Crédit » !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The neighbor asks, holding the gift bag, her face turned three-quarters to the camera. The young mother answers proudly, gently rocking the baby. The big brother puffs out his chest and says his line proudly, his face clearly visible.",
+  "chute": "The visiting neighbor freezes, her mouth open, and slowly turns her head toward the boy. The camera slowly pushes in to a close-up of the visiting neighbor's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "Cotisation",
+   "tontine",
+   "Crédit"
+  ],
+  "gag_legende": "QUAND LE TROISIÈME ENFANT VA ARRIVER :",
+  "mecanisme": "logique financière poussée à l'absurde + relance assassine de l'aîné"
+ },
+ {
+  "id": "B036-18",
+  "titre": "Le concours de cuisine",
+  "lieu": "courtyard of a house in Attécoubé, Abidjan, a long table with several covered dishes and one plate of garba, a small trophy, plastic chairs, afternoon",
+  "persos": [
+   {
+    "nom": "the winning president",
+    "desc": "association president in her 50s, crimson-and-sunflower kaftan, big glasses, holding ONE single small trophy",
+    "pose": "standing on the left in the foreground behind the table, holding up the trophy, proud"
+   },
+   {
+    "nom": "the outraged member",
+    "desc": "woman in her 40s, plum-and-jade tunic, headscarf",
+    "pose": "standing in the middle, pointing at the plate of garba, outraged"
+   },
+   {
+    "nom": "the garba seller",
+    "desc": "garba seller in his 30s, sand-and-ruby t-shirt, short hair, holding ONE single empty plate",
+    "pose": "standing on the right, holding the empty plate, annoyed"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "La gagnante du concours de cuisine est… moi-même, votre présidente !"
+   ],
+   [
+    1,
+    "Présidente, c'est le garba de Tonton Moussa, ça !"
+   ],
+   [
+    2,
+    "Elle a même pas payé dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The president announces herself the winner, raising the trophy, her face turned three-quarters to the camera. The outraged member points at the plate of garba and protests. The garba seller raises his empty plate and says his line angrily, his face clearly visible.",
+  "chute": "The winning president's proud smile freezes, the trophy still raised. The camera slowly pushes in to a close-up of the winning president's caught face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "concours",
+   "garba",
+   "payé"
+  ],
+  "gag_legende": "LA PRÉSIDENTE EN RENDANT LE TROPHÉE :",
+  "mecanisme": "triche démasquée + relance assassine du vendeur impayé"
+ },
+ {
+  "id": "B036-19",
+  "titre": "La nouvelle règle",
+  "lieu": "meeting room of a women's association in Port-Bouët, Abidjan, rows of plastic chairs, a table with a metal cash box, a ceiling fan, afternoon",
+  "persos": [
+   {
+    "nom": "the strict president",
+    "desc": "association president in her 50s, saffron-and-pistachio tunic, big glasses, holding ONE single notebook",
+    "pose": "standing on the left behind the table, holding the notebook, strict"
+   },
+   {
+    "nom": "the eager gossip",
+    "desc": "woman in her 40s, salmon-and-cherry wrap dress, braided bun, holding ONE single wad of banknotes",
+    "pose": "standing in the middle, holding out the wad of banknotes, eager"
+   },
+   {
+    "nom": "the worried member",
+    "desc": "woman in her 30s, lavender-and-jade jumpsuit, short hair, hands gripping her knees",
+    "pose": "sitting on a plastic chair on the right in the foreground, eyes wide, worried"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Nouvelle règle : mille francs d'amende pour chaque commérage dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Voilà vingt mille. Aujourd'hui, j'ai beaucoup."
+   ],
+   [
+    2,
+    "Attends, je sors d'abord dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The president announces the rule strictly, her face turned three-quarters to the camera. The gossip immediately holds out the wad of banknotes with a big greedy smile. The worried member raises one hand and says her line nervously, her face clearly visible.",
+  "chute": "The eager gossip slowly turns her head toward the worried member with a wicked smile. The camera slowly pushes in to a close-up of the worried member's terrified face looking into the camera.",
+  "fin": 2,
+  "emoji": "mdr",
+  "cles": [
+   "amende",
+   "vingt mille",
+   "je sors"
+  ],
+  "gag_legende": "LA CIBLE DU JOUR EN CHERCHANT LA PORTE :",
+  "mecanisme": "règle détournée + relance assassine de la future victime qui se dénonce"
+ },
+ {
+  "id": "B036-20",
+  "titre": "Le billet de dix mille",
+  "lieu": "courtyard of a house in Bingerville, Abidjan, plastic chairs, a table with a metal cash box and a notebook, late afternoon",
+  "persos": [
+   {
+    "nom": "the accusing treasurer",
+    "desc": "treasurer in her 40s, jade-and-maroon wrap dress, glasses, holding ONE single banknote up to the light",
+    "pose": "standing on the left in the foreground, holding the banknote up, accusing"
+   },
+   {
+    "nom": "the indignant member",
+    "desc": "woman in her 30s, lime-and-gold jumpsuit, short twists, hands on her hips",
+    "pose": "standing in the middle, hands on her hips, indignant"
+   },
+   {
+    "nom": "the unbothered president",
+    "desc": "tontine president in her 60s, indigo-and-gold tunic, headscarf, hands folded on her lap",
+    "pose": "sitting on a plastic chair on the right, hands folded, unbothered"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma sœur, ton billet de dix mille-là est faux dêh !"
+   ],
+   [
+    1,
+    "C'est toi-même qui me l'as donné quand j'ai ramassé !"
+   ],
+   [
+    2,
+    "Laisse dêh, c'est notre membre fondateur."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The treasurer holds the banknote up to the light and accuses her, her face turned three-quarters to the camera. The member leans forward, hands on her hips, and protests. The president says her line calmly without moving, her face clearly visible.",
+  "chute": "The accusing treasurer slowly lowers the banknote, caught. The camera slowly pushes in to a close-up of the accusing treasurer's caught face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "faux",
+   "ramassé",
+   "membre fondateur"
+  ],
+  "gag_legende": "LE BILLET EN COMMENÇANT SON TREIZIÈME TOUR :",
+  "mecanisme": "accusation retournée + relance absurde de la présidente"
+ }
+]

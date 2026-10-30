@@ -1,0 +1,4 @@
+lots lus : 100 ; sketchs valides : 1990 ; notés et sans drapeau bloquant : 1610
+après doublons : 1396 ; tenues recolorées : 94 ; GARDÉS (note ≥ 5.5) : 1062 → 2124 prompts
+notes : 7-8: 178  6-7: 598  5-6: 469  4-5: 110  3-4: 38  2-3: 3
+rejets : drapeau connu (déjà vu) 344 ; doublon dans la banque 163 ; doublon du catalogue 51 ; drapeau danger 36 ; trop long (37 mots) 9 ; trop long (39 mots) 1

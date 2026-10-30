@@ -1,0 +1,887 @@
+[
+ {
+  "id": "B006-01",
+  "titre": "Avant de rencontrer belle-maman",
+  "lieu": "small courtyard of the groom's family house in Abobo, Abidjan, plastic chairs, a mango tree, a closed kitchen door in the background, late afternoon",
+  "persos": [
+   {
+    "nom": "the anxious fiancée",
+    "desc": "young woman in her late 20s, cream-and-violet wrap dress, elegant long braids, a small gift bag on her lap",
+    "pose": "sitting on a plastic chair on the left, gift bag on her lap, turned toward the fiancé"
+   },
+   {
+    "nom": "the smiling fiancé",
+    "desc": "young man around 30, saffron-and-emerald shirt, thin moustache, hands clasped",
+    "pose": "sitting on a plastic chair in the foreground on the right, smiling too much"
+   },
+   {
+    "nom": "the little brother",
+    "desc": "boy around 8, gold-and-salmon t-shirt, big ears, hands behind his back",
+    "pose": "standing in the middle under the mango tree, hands behind his back, very proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Chéri, ta maman-là va m'accepter, hein ?"
+   ],
+   [
+    1,
+    "Bien sûr ! Petit, dis à Tantie comment maman est gentille."
+   ],
+   [
+    2,
+    "Maman est douce comme le miel. Grand frère, donne mes mille francs dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The anxious fiancée turns her head toward the fiancé and asks, a little worried. The smiling fiancé answers with a huge confident smile and points at the little brother. The little brother recites proudly like a school lesson, then holds out one open hand toward the fiancé, his face clearly visible.",
+  "chute": "The fiancée slowly turns her head toward the fiancé, eyebrows raised; the fiancé's smile freezes. The camera slowly pushes in to a close-up of the smiling fiancé's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "gentille",
+   "miel",
+   "mille francs"
+  ],
+  "gag_legende": "LE PETIT FRÈRE APRÈS LE TRAVAIL BIEN FAIT :",
+  "mecanisme": "témoin innocent (enfant payé pour mentir) qui récite sa leçon et réclame son salaire : il démasque le fiancé et la belle-mère d'un coup"
+ },
+ {
+  "id": "B006-02",
+  "titre": "Les recommandations du beau-père",
+  "lieu": "living room of a house in Biétry, Abidjan, a big armchair, a low table with the dot gifts (folded fabrics and a closed suitcase), evening",
+  "persos": [
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, mustard-and-rust boubou, grey beard, hands on his knees",
+    "pose": "sitting in the big armchair in the foreground on the left, solemn and emotional"
+   },
+   {
+    "nom": "the groom",
+    "desc": "young man around 30, cyan-and-maroon suit, neat haircut, hands joined",
+    "pose": "sitting on a chair on the right, nodding respectfully"
+   },
+   {
+    "nom": "the little sister",
+    "desc": "girl around 9, mint-and-ruby dress, two hair puffs, holding ONE single doll",
+    "pose": "standing in the middle behind the low table, holding the doll"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon gendre, tu sais que ma fille-là, c'est mon trésor dêh ?"
+   ],
+   [
+    1,
+    "Je sais, papa. Elle va manquer de rien."
+   ],
+   [
+    2,
+    "Papa, pourtant hier tu dansais en criant : enfin on est débarrassés dêh !"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The bride's father speaks slowly with a trembling, emotional voice, one hand on his chest. The groom nods respectfully and answers with a serious face. The little sister tilts her head, puzzled, and answers innocently, her face clearly visible.",
+  "chute": "The father's emotional face freezes; the groom slowly turns his head toward him. The camera slowly pushes in to a close-up of the bride's father's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "trésor",
+   "débarrassés"
+  ],
+  "gag_legende": "LE GENDRE QUI RELIT LE CONTRAT :",
+  "mecanisme": "témoin innocent qui révèle le soulagement caché du père (double cible : le père hypocrite et la mariée encombrante)"
+ },
+ {
+  "id": "B006-03",
+  "titre": "L'interrogatoire du prétendant",
+  "lieu": "terrace of a house in Abobo, Abidjan, two plastic chairs facing each other, a small table, evening light",
+  "persos": [
+   {
+    "nom": "the strict father",
+    "desc": "father in his 50s, ochre-and-amber kaftan, thick glasses, arms crossed",
+    "pose": "sitting on a plastic chair in the foreground on the left, arms crossed, stern"
+   },
+   {
+    "nom": "the polite suitor",
+    "desc": "young man in his late 20s, fuchsia-and-chocolate shirt, wide innocent eyes, hands on his knees",
+    "pose": "sitting on a plastic chair on the right, back very straight"
+   },
+   {
+    "nom": "the little brother",
+    "desc": "boy around 10, coral-and-sunflower tracksuit, round face, holding ONE single draughts piece",
+    "pose": "standing in the middle behind the table, holding the draughts piece"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon gars, tu sors la nuit, toi ?"
+   ],
+   [
+    1,
+    "Jamais, papa. À vingt heures, je dors déjà dêh."
+   ],
+   [
+    2,
+    "Papa, c'est pas lui qui te gagne au damier chaque nuit au maquis-là ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The strict father leans forward slightly and asks, frowning. The polite suitor shakes his head and answers very seriously. The little brother raises the draughts piece and asks innocently, his face clearly visible.",
+  "chute": "The father and the suitor slowly turn their heads toward each other, both frozen with guilty smiles. The camera slowly pushes in to a close-up of the strict father's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "la nuit",
+   "damier",
+   "maquis"
+  ],
+  "gag_legende": "MAMAN QUI A TOUT ENTENDU DE LA CUISINE :",
+  "mecanisme": "témoin innocent qui démasque d'une phrase le menteur ET l'interrogateur (arroseur arrosé)"
+ },
+ {
+  "id": "B006-04",
+  "titre": "Les parents des fiancés",
+  "lieu": "living room of the bride's family house in Zone 4, Abidjan, two armchairs, a coffee table with a plate of cakes, Saturday morning",
+  "persos": [
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 50s, cyan-and-maroon boubou, round belly, short grey hair, hands clasped on his belly",
+    "pose": "standing in the foreground on the left, hands clasped on his belly, smile already stiff"
+   },
+   {
+    "nom": "the groom's mother",
+    "desc": "mother in her 50s, gold-and-salmon kaba, big earrings, holding ONE single handbag",
+    "pose": "standing on the right, holding her handbag, polite smile"
+   },
+   {
+    "nom": "the little daughter",
+    "desc": "girl around 8, saffron-and-emerald dress, two braids, holding ONE single phone",
+    "pose": "standing in the middle between them, looking at the phone"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Madame, on se connaît pas du tout, hein ? Enchanté dêh !"
+   ],
+   [
+    1,
+    "Pas du tout, Monsieur. Première fois je vous vois."
+   ],
+   [
+    2,
+    "Papa, c'est pas elle « Mécanicien Moussa » dans ton téléphone-là ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The bride's father speaks too fast with a nervous smile. The groom's mother answers very quickly, avoiding his eyes. The little daughter looks up from the phone, points at the groom's mother and asks innocently, her face clearly visible.",
+  "chute": "The father and the groom's mother freeze with the same stiff smile. The camera slowly pushes in to a close-up of the bride's father's panicked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "connaît pas",
+   "Mécanicien Moussa",
+   "téléphone"
+  ],
+  "gag_legende": "LA MAMAN DE LA MARIÉE EN ARRIVANT :",
+  "mecanisme": "témoin innocent qui démasque deux menteurs à la fois : les deux parents qui jurent ne pas se connaître"
+ },
+ {
+  "id": "B006-05",
+  "titre": "Le prétendant devant le portail",
+  "lieu": "front gate of a villa in Biétry, Abidjan, a guard's plastic chair next to the gate, a lit window upstairs, night",
+  "persos": [
+   {
+    "nom": "the proud father",
+    "desc": "father in his 60s, mint-and-ruby kaftan, bald head, hands on his hips",
+    "pose": "standing on the left in front of the gate, hands on his hips, chest out"
+   },
+   {
+    "nom": "the flower suitor",
+    "desc": "young man around 28, ochre-and-amber shirt, neat goatee, holding ONE single bouquet of flowers",
+    "pose": "standing in the foreground on the right, holding the bouquet with both hands, angelic smile"
+   },
+   {
+    "nom": "the sleepy guard",
+    "desc": "security guard in his 40s, mustard-and-rust guard uniform, sleepy eyes, holding ONE single flashlight",
+    "pose": "sitting on the plastic chair in the middle, flashlight on his knee"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon gars, ma fille-là sort jamais la nuit, tu entends ?!"
+   ],
+   [
+    1,
+    "Je sais, papa. Elle est trop sérieuse dêh."
+   ],
+   [
+    2,
+    "C'est vrai, patron. Elle sort par la fenêtre. Lui, il tient l'échelle dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The proud father points his finger at the suitor and speaks firmly. The flower suitor nods with an angelic smile, hugging the bouquet. The sleepy guard nods calmly, points his flashlight at the suitor and answers, his face clearly visible.",
+  "chute": "The father slowly turns his head toward the suitor; the suitor's angelic smile freezes. The camera slowly pushes in to a close-up of the flower suitor's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "la nuit",
+   "fenêtre",
+   "échelle"
+  ],
+  "gag_legende": "PAPA EN REGARDANT LA FENÊTRE CE SOIR :",
+  "mecanisme": "témoin innocent (gardien trop honnête) qui confirme le père et démasque en même temps la fille et le prétendant complice"
+ },
+ {
+  "id": "B006-06",
+  "titre": "L'arrivée de la dot",
+  "lieu": "courtyard of a family house in Abobo, Abidjan, dot gifts on a mat (folded fabrics, crates of soft drinks), ONE single goat tied to a post, late morning",
+  "persos": [
+   {
+    "nom": "the little boy",
+    "desc": "boy around 9, cream-and-violet t-shirt, missing front tooth",
+    "pose": "standing in the middle next to the goat, pointing at it"
+   },
+   {
+    "nom": "the calm fiancé",
+    "desc": "young man around 30, mustard-and-rust kaftan, tiny moustache, hands behind his back",
+    "pose": "standing in the foreground on the right, hands behind his back, very calm"
+   },
+   {
+    "nom": "the bride's father",
+    "desc": "father in his 60s, fuchsia-and-chocolate kaftan, big glasses, hands on his hips",
+    "pose": "standing on the left, hands on his hips, inspecting the gifts"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa ! Le cabri de la dot-là, c'est notre cabri dêh !"
+   ],
+   [
+    2,
+    "Mon gendre, tu m'as amené mon propre cabri ?!"
+   ],
+   [
+    1,
+    "Pardon papa, le cabri-là voulait pas quitter sa famille dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The little boy points at the goat and shouts, shocked. The bride's father turns his head toward the fiancé, eyes wide, and asks, outraged. The calm fiancé answers gently with a tender smile, his face clearly visible.",
+  "chute": "The goat bleats; the father's mouth falls open. The camera slowly pushes in to a close-up of the calm fiancé's innocent face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "cabri",
+   "dot",
+   "famille"
+  ],
+  "gag_legende": "LE CABRI EN RETROUVANT SA FAMILLE :",
+  "mecanisme": "témoin innocent (enfant) qui révèle l'arnaque + logique absurde du coupable qui se fait passer pour sentimental"
+ },
+ {
+  "id": "B006-07",
+  "titre": "L'enveloppe de la dot",
+  "lieu": "living room of a house in Zone 4, Abidjan, a sofa, a low table with an open envelope, afternoon",
+  "persos": [
+   {
+    "nom": "the happy father",
+    "desc": "father in his 60s, cyan-and-maroon kaftan, grey moustache, holding ONE single stack of banknotes",
+    "pose": "sitting on the sofa in the foreground on the left, counting the banknotes with a huge smile"
+   },
+   {
+    "nom": "the bride",
+    "desc": "young woman in her late 20s, coral-and-sunflower dress, long braids, hands clasped",
+    "pose": "standing on the right, smiling nervously"
+   },
+   {
+    "nom": "the little sister",
+    "desc": "girl around 8, ochre-and-amber dress, big curious eyes",
+    "pose": "standing in the middle behind the sofa, leaning to look at the banknotes"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ehh ! Cinq cent mille ! Ton fiancé-là est sérieux dêh !"
+   ],
+   [
+    1,
+    "Il a travaillé dur pour ça dêh, papa !"
+   ],
+   [
+    2,
+    "Papa, c'est pas tes billets du matelas-là ? Y a ton nom dessus."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The happy father counts the banknotes and speaks with joy. The bride answers quickly with a nervous smile. The little sister leans forward, points at the banknotes and asks innocently, her face clearly visible.",
+  "chute": "The father stops counting and slowly turns his head toward the bride; the bride looks up at the ceiling. The camera slowly pushes in to a close-up of the happy father's shocked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "cinq cent mille",
+   "matelas",
+   "ton nom"
+  ],
+  "gag_legende": "PAPA EN SOULEVANT SON MATELAS CE SOIR :",
+  "mecanisme": "témoin innocent qui révèle que la mariée a payé sa propre dot avec les économies du père (le père se réjouit de son propre argent)"
+ },
+ {
+  "id": "B006-08",
+  "titre": "Le prétendant mal accueilli",
+  "lieu": "living room of a modest house in Abobo, Abidjan, old armchairs, a television on a wooden cabinet, morning",
+  "persos": [
+   {
+    "nom": "the angry father",
+    "desc": "father in his 50s, saffron-and-emerald boubou, thick eyebrows",
+    "pose": "standing in the foreground on the left, pointing toward the door, furious"
+   },
+   {
+    "nom": "the calm suitor",
+    "desc": "young man around 30, cream-and-violet suit, neat glasses, holding ONE single briefcase",
+    "pose": "standing on the right, holding the briefcase, calm"
+   },
+   {
+    "nom": "the daughter",
+    "desc": "young woman in her mid 20s, gold-and-salmon jumpsuit, short natural hair, hands joined",
+    "pose": "standing in the middle, hands joined, panicked"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Toi, petit pauvre-là, tu veux marier ma fille ? Dégage dêh !"
+   ],
+   [
+    2,
+    "Papa, c'est lui l'huissier qui vient saisir nos meubles demain dêh !"
+   ],
+   [
+    0,
+    "Mon gendre ! Assieds-toi, assieds-toi dêh ! Tu bois quoi ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The angry father points at the door and shouts. The daughter whispers urgently, eyes wide, hands joined. The angry father's face instantly switches to a huge welcoming smile and he opens both arms toward the suitor, his face clearly visible.",
+  "chute": "The suitor raises one eyebrow, unimpressed. The camera slowly pushes in to a close-up of the angry father's forced smiling face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "petit pauvre",
+   "huissier",
+   "mon gendre"
+  ],
+  "gag_legende": "LES MEUBLES EN ENTENDANT ÇA :",
+  "mecanisme": "retournement opportuniste instantané : le père qui chassait le pauvre lui offre sa fille pour sauver ses meubles"
+ },
+ {
+  "id": "B006-09",
+  "titre": "Le séjour de belle-maman",
+  "lieu": "terrace of a villa in Zone 4, Abidjan, rattan chairs, a small table with a teapot, afternoon",
+  "persos": [
+   {
+    "nom": "the daughter-in-law",
+    "desc": "young wife in her early 30s, fuchsia-and-chocolate kaba, elegant bun, hands joined",
+    "pose": "standing on the left, hands joined, polite smile"
+   },
+   {
+    "nom": "the mother-in-law",
+    "desc": "mother-in-law in her 60s, mint-and-ruby boubou, big round glasses, holding ONE single hand fan",
+    "pose": "sitting in a rattan chair in the foreground on the right, fanning herself like a queen"
+   },
+   {
+    "nom": "the little grandson",
+    "desc": "boy around 7, ochre-and-amber tracksuit, chubby cheeks, holding ONE single toy car",
+    "pose": "sitting on the floor in the middle, holding the toy car"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie, vous êtes bien chez nous, hein ?"
+   ],
+   [
+    1,
+    "Très bien, ma fille. Je me sens chez moi dêh."
+   ],
+   [
+    2,
+    "Mamie, c'est pour ça tu as dit au gardien que maman c'est ta bonne ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The daughter-in-law asks sweetly with a polite smile. The mother-in-law answers like a queen, fanning herself slowly. The little grandson looks up from his toy car and asks innocently, his face clearly visible.",
+  "chute": "The fan stops in mid-air; the daughter-in-law's smile turns to ice. The camera slowly pushes in to a close-up of the mother-in-law's busted face looking into the camera.",
+  "fin": 1,
+  "emoji": "choc",
+  "cles": [
+   "chez moi",
+   "gardien",
+   "bonne"
+  ],
+  "gag_legende": "LA BELLE-FILLE CE SOIR À LA CUISINE :",
+  "mecanisme": "témoin innocent (petit-fils) qui prend « je me sens chez moi » au pied de la lettre et révèle le mépris caché de la belle-mère"
+ },
+ {
+  "id": "B006-10",
+  "titre": "La question du salaire",
+  "lieu": "veranda of a house in Abobo, Abidjan, two plastic chairs, a small table, evening",
+  "persos": [
+   {
+    "nom": "the skeptical father",
+    "desc": "father in his 60s, coral-and-sunflower shirt, thick grey moustache, holding ONE single notebook",
+    "pose": "sitting on a plastic chair on the left, notebook on his knee, skeptical"
+   },
+   {
+    "nom": "the proud suitor",
+    "desc": "young man in his late 20s, cyan-and-maroon shirt, big confident smile, hands on his knees",
+    "pose": "sitting on a plastic chair in the foreground on the right, chest out, proud"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon gars, tu gagnes combien par mois, toi ?"
+   ],
+   [
+    1,
+    "Cent cinquante mille, papa. C'est stable dêh !"
+   ],
+   [
+    0,
+    "Hum… Ma fille-là dépense ça le lundi. Et mardi, tu fais comment ?"
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The skeptical father taps the notebook and asks, eyes narrowed. The proud suitor answers, chest out, very confident. The skeptical father closes the notebook calmly and answers without smiling, his face clearly visible.",
+  "chute": "The suitor's proud smile slowly melts. The camera slowly pushes in to a close-up of the proud suitor's crushed face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "combien",
+   "lundi",
+   "mardi"
+  ],
+  "gag_legende": "LE GARS EN CALCULANT SON SALAIRE :",
+  "mecanisme": "réponse cruelle à double cible : le prétendant fauché et la fille dépensière"
+ },
+ {
+  "id": "B006-11",
+  "titre": "Le prétendant et la petite sœur",
+  "lieu": "front yard of a house in Biétry, Abidjan, a low wall, ONE single bicycle leaning on it, late afternoon",
+  "persos": [
+   {
+    "nom": "the hopeful suitor",
+    "desc": "young man around 25, gold-and-salmon tracksuit, big hopeful smile, holding ONE single bag of sweets",
+    "pose": "standing in the foreground on the left, leaning slightly toward the girl"
+   },
+   {
+    "nom": "the little sister",
+    "desc": "girl around 9, mustard-and-rust dress, two hair puffs, hands behind her back",
+    "pose": "standing on the right in front of the low wall, very honest face"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma petite, ta grande sœur-là parle de moi, hein ? Dis-moi gbê !"
+   ],
+   [
+    1,
+    "Oui Tonton ! Elle dit que toi, tu es son garba en attendant le restaurant dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The hopeful suitor asks with shining eyes, holding out the bag of sweets. The little sister answers cheerfully, very honest, her face clearly visible.",
+  "chute": "The suitor's smile collapses; the bag of sweets slowly drops to his side. The camera slowly pushes in to a close-up of the hopeful suitor's crushed face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "grande sœur",
+   "garba",
+   "restaurant"
+  ],
+  "gag_legende": "LE GARS EN RENTRANT CHEZ LUI :",
+  "mecanisme": "témoin innocent (petite sœur) qui répète mot pour mot le mépris de la grande sœur"
+ },
+ {
+  "id": "B006-12",
+  "titre": "Leçon de mariage du beau-père",
+  "lieu": "veranda of a house in Biétry, Abidjan, two armchairs, a small table with a bowl of peanuts, evening",
+  "persos": [
+   {
+    "nom": "the boastful father",
+    "desc": "father in his 60s, fuchsia-and-chocolate boubou, thick moustache, one finger raised",
+    "pose": "sitting in an armchair in the foreground on the left, chest puffed out, very proud"
+   },
+   {
+    "nom": "the shy groom",
+    "desc": "young man around 30, saffron-and-emerald polo shirt, shy smile, hands on his knees",
+    "pose": "sitting in an armchair on the right, listening respectfully"
+   },
+   {
+    "nom": "the little daughter",
+    "desc": "girl around 8, mint-and-ruby t-shirt, round cheeks, holding ONE single phone",
+    "pose": "standing in the middle in the doorway, holding the phone up"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon gendre, retiens ça : chez moi-là, c'est moi seul je décide dêh !"
+   ],
+   [
+    1,
+    "Ehh, vous êtes un vrai chef, papa !"
+   ],
+   [
+    2,
+    "Papa, maman dit tu peux parler encore cinq minutes, après tu rentres."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The boastful father raises one finger and speaks with authority. The shy groom nods, impressed. The little daughter reads from the phone and speaks innocently, her face clearly visible.",
+  "chute": "The father's raised finger slowly comes down; the groom presses his lips together to hold his laugh. The camera slowly pushes in to a close-up of the boastful father's humiliated face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "seul je décide",
+   "cinq minutes"
+  ],
+  "gag_legende": "PAPA QUAND MAMAN APPELLE ENCORE :",
+  "mecanisme": "arroseur arrosé par un témoin innocent : le « chef de famille » démasqué devant son gendre"
+ },
+ {
+  "id": "B006-13",
+  "titre": "La belle-mère se plaint",
+  "lieu": "living room of a house in Zone 4, Abidjan, a sofa, an armchair, a framed family photo on the wall, morning",
+  "persos": [
+   {
+    "nom": "the complaining mother",
+    "desc": "mother in her 60s, cream-and-violet boubou, sharp eyebrows, arms crossed",
+    "pose": "sitting on the sofa in the foreground on the left, arms crossed, offended"
+   },
+   {
+    "nom": "the tired son",
+    "desc": "man in his mid 30s, ochre-and-amber polo shirt, tired eyes, holding ONE single remote control",
+    "pose": "sitting in the armchair on the right, holding the remote, exhausted"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, ta femme-là dort jusqu'à midi ! Dans notre famille, personne n'est paresseux dêh !"
+   ],
+   [
+    1,
+    "Maman, c'est toi-même qui l'as choisie pour moi. C'est ta nièce."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The complaining mother speaks with disgust, shaking her head. The tired son lowers the remote and answers flatly, his face clearly visible.",
+  "chute": "The mother's mouth opens but no sound comes out; she slowly looks at the family photo on the wall. The camera slowly pushes in to a close-up of the complaining mother's speechless face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "paresseux",
+   "toi-même",
+   "nièce"
+  ],
+  "gag_legende": "MAMIE EN REGARDANT L'ALBUM DE FAMILLE :",
+  "mecanisme": "arroseur arrosé : la belle-mère insulte à la fois son propre choix et sa propre famille"
+ },
+ {
+  "id": "B006-14",
+  "titre": "Les conseils de Mamie",
+  "lieu": "courtyard of a family house in Abobo, Abidjan, a mat on the ground, plastic chairs, Sunday afternoon",
+  "persos": [
+   {
+    "nom": "the solemn grandmother",
+    "desc": "grandmother in her 70s, saffron-and-emerald kaba, white hair bun, holding ONE single hand fan",
+    "pose": "sitting on a plastic chair in the foreground on the left, fanning herself, very solemn"
+   },
+   {
+    "nom": "the new fiancée",
+    "desc": "young woman around 26, gold-and-salmon dress, neat bob haircut, hands on her knees",
+    "pose": "sitting on a plastic chair on the right, nodding respectfully"
+   },
+   {
+    "nom": "the little grandson",
+    "desc": "boy around 8, cream-and-violet tracksuit, curious face",
+    "pose": "sitting cross-legged on the mat in the middle"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ma fille, tu sais que dans notre famille-là, on ne divorce jamais ?!"
+   ],
+   [
+    1,
+    "Ya fohi, Mamie. Je vais retenir ça."
+   ],
+   [
+    2,
+    "Mamie, c'est Papi numéro trois qui t'a appris ça ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The solemn grandmother points her fan at the fiancée and speaks gravely. The new fiancée nods respectfully and answers softly. The little grandson raises his hand like at school and asks innocently, his face clearly visible.",
+  "chute": "The fan stops; the fiancée slowly turns her head toward the grandmother. The camera slowly pushes in to a close-up of the solemn grandmother's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "divorce",
+   "Papi numéro trois"
+  ],
+  "gag_legende": "MAMIE EN COMPTANT SUR SES DOIGTS :",
+  "mecanisme": "témoin innocent qui révèle le passé de la donneuse de leçons (arroseur arrosé)"
+ },
+ {
+  "id": "B006-15",
+  "titre": "Le cadeau pour la belle-mère",
+  "lieu": "living room of the bride's family house in Biétry, Abidjan, a sofa, a coffee table with a tray of gifts, afternoon",
+  "persos": [
+   {
+    "nom": "the gift groom",
+    "desc": "young man around 30, coral-and-sunflower suit, big smile, holding ONE single gift box",
+    "pose": "standing in the foreground on the left, holding out the gift box"
+   },
+   {
+    "nom": "the future mother-in-law",
+    "desc": "mother in her 50s, mint-and-ruby kaba, big earrings, hands on her hips",
+    "pose": "standing on the right, hands on her hips"
+   },
+   {
+    "nom": "the groom's little brother",
+    "desc": "boy around 9, fuchsia-and-chocolate t-shirt, round glasses, hands behind his back",
+    "pose": "standing in the middle, hands behind his back, eager to help"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Tantie Rose, ce cadeau-là, c'est pour vous dêh !"
+   ],
+   [
+    1,
+    "Rose ?! Je m'appelle Odile ! C'est qui, Rose ?!"
+   ],
+   [
+    2,
+    "Tantie, Rose, c'est la maman de sa fiancée d'Abobo dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The gift groom holds out the gift with a huge smile and speaks warmly. The future mother-in-law frowns and asks, outraged. The groom's little brother answers helpfully, very proud to explain, his face clearly visible.",
+  "chute": "The groom's smile freezes, the gift box still held out. The camera slowly pushes in to a close-up of the gift groom's panicked face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "Rose",
+   "Odile",
+   "fiancée d'Abobo"
+  ],
+  "gag_legende": "LA FIANCÉE EN SORTANT DE LA CHAMBRE :",
+  "mecanisme": "lapsus + témoin innocent (petit frère) qui « aide » en révélant la double vie du fiancé"
+ },
+ {
+  "id": "B006-16",
+  "titre": "La dot d'autrefois",
+  "lieu": "terrace of a house in Zone 4, Abidjan, rattan armchairs, a small table with glasses of juice, late afternoon",
+  "persos": [
+   {
+    "nom": "the proud father",
+    "desc": "father in his 60s, gold-and-salmon kaftan, grey beard, chin up",
+    "pose": "sitting in an armchair in the foreground on the left, chest puffed out, proud"
+   },
+   {
+    "nom": "the young suitor",
+    "desc": "young man in his late 20s, saffron-and-emerald suit, thin glasses, hands joined",
+    "pose": "sitting in an armchair on the right, impressed"
+   },
+   {
+    "nom": "the little daughter",
+    "desc": "girl around 8, cyan-and-maroon dress, big curious eyes, holding ONE single doll",
+    "pose": "standing in the middle next to a pillar, holding the doll"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Toi, tu proposes cent mille ?! Moi, j'ai donné quinze bœufs pour ma femme dêh !"
+   ],
+   [
+    2,
+    "Ehh papa ! C'est pour ça maman dit qu'elle a reçu seize bœufs ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The proud father taps his chest and speaks loudly, looking down on the suitor. The young suitor lowers his eyes, embarrassed. The little daughter tilts her head and asks innocently, her face clearly visible.",
+  "chute": "The suitor presses his lips together to hold his laugh; the father's chest slowly deflates. The camera slowly pushes in to a close-up of the proud father's offended face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "quinze bœufs",
+   "seize bœufs"
+  ],
+  "gag_legende": "PAPA EN SE REGARDANT DANS LE MIROIR :",
+  "mecanisme": "témoin innocent qui répète la moquerie de la mère : le père vantard devient lui-même le seizième bœuf"
+ },
+ {
+  "id": "B006-17",
+  "titre": "La demande en mariage",
+  "lieu": "courtyard of a family house in Abobo, Abidjan, the dot gifts on a mat (crates of soft drinks, folded fabrics), plastic chairs, morning",
+  "persos": [
+   {
+    "nom": "the sweet mother",
+    "desc": "mother in her 50s, gold-and-salmon boubou, warm smile, hands on her chest",
+    "pose": "standing in the foreground on the left, hands on her chest, very sweet"
+   },
+   {
+    "nom": "the moved fiancé",
+    "desc": "young man around 30, cream-and-violet shirt, shiny eyes, hands joined",
+    "pose": "standing on the right, deeply moved"
+   },
+   {
+    "nom": "the little boy",
+    "desc": "boy around 10, ochre-and-amber t-shirt, serious face, holding ONE single empty crate with both hands",
+    "pose": "standing in the middle next to the crates, holding the crate"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Mon fils, tu sais que tu es le premier qui demande sa main ?"
+   ],
+   [
+    1,
+    "Tantie, c'est un grand honneur pour moi dêh."
+   ],
+   [
+    2,
+    "Maman, je range ses casiers avec ceux des trois autres-là ?"
+   ]
+  ],
+  "jeu": "Nobody walks; all three stay in their places for the whole video. The sweet mother speaks tenderly, hands on her chest. The moved fiancé answers with emotion, one hand on his heart. The little boy lifts the crate slightly and asks innocently, his face clearly visible.",
+  "chute": "The mother's sweet smile freezes; the fiancé slowly turns his head toward her. The camera slowly pushes in to a close-up of the sweet mother's busted face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "le premier",
+   "casiers",
+   "trois autres"
+  ],
+  "gag_legende": "LES TROIS AUTRES EN APPRENANT ÇA :",
+  "mecanisme": "témoin innocent qui révèle que la famille a déjà encaissé trois dots pour la même fille"
+ },
+ {
+  "id": "B006-18",
+  "titre": "La dot en plusieurs fois",
+  "lieu": "living room of a house in Biétry, Abidjan, armchairs, a coffee table with ONE single notebook, evening",
+  "persos": [
+   {
+    "nom": "the pleading daughter",
+    "desc": "young woman around 27, fuchsia-and-chocolate dress, long braids, hands joined",
+    "pose": "standing on the left, hands joined, pleading"
+   },
+   {
+    "nom": "the calculating father",
+    "desc": "father in his 60s, ochre-and-amber boubou, round glasses, holding ONE single pen",
+    "pose": "sitting in an armchair in the foreground on the right, pen in hand, thinking"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Papa, mon fiancé veut payer la dot en plusieurs fois dêh !"
+   ],
+   [
+    1,
+    "Ya fohi. Moi aussi je livre en plusieurs fois. Samedi, il prend la main seulement."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The pleading daughter announces it with a hopeful smile, hands joined. The calculating father taps the pen on his chin, thinks, then answers very calmly, his face clearly visible.",
+  "chute": "The daughter's smile drops; she slowly looks down at her own hand. The camera slowly pushes in to a close-up of the calculating father's satisfied face looking into the camera.",
+  "fin": 1,
+  "emoji": "mdr",
+  "cles": [
+   "plusieurs fois",
+   "la main"
+  ],
+  "gag_legende": "LE FIANCÉ SAMEDI À LA CÉRÉMONIE :",
+  "mecanisme": "logique miroir : le père applique le paiement à crédit à la livraison de sa fille"
+ },
+ {
+  "id": "B006-19",
+  "titre": "La rencontre des deux mamans",
+  "lieu": "living room of the bride's family house in Zone 4, Abidjan, two sofas facing each other, a coffee table with a plate of cakes, afternoon",
+  "persos": [
+   {
+    "nom": "the groom's mother",
+    "desc": "mother in her 50s, mustard-and-rust kaba, sharp eyes, one finger pointed",
+    "pose": "sitting on the sofa in the foreground on the left, pointing at the other mother, shocked"
+   },
+   {
+    "nom": "the bride's mother",
+    "desc": "mother in her 50s, coral-and-sunflower boubou, calm smile, holding ONE single hand fan",
+    "pose": "sitting on the sofa on the right, fanning herself calmly"
+   }
+  ],
+  "dialogue": [
+   [
+    0,
+    "Ehh ! C'est toi qui as fui avec l'argent de notre tontine-là !"
+   ],
+   [
+    1,
+    "Ya fohi, ma sœur. Je vais te rembourser avec la dot de ton fils dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The groom's mother points her finger and shouts, eyes wide. The bride's mother keeps fanning herself and answers with a sweet, calm smile, her face clearly visible.",
+  "chute": "The groom's mother's finger slowly drops and she starts counting on her fingers. The camera slowly pushes in to a close-up of the groom's mother's stunned face looking into the camera.",
+  "fin": 0,
+  "emoji": "mdr",
+  "cles": [
+   "tontine",
+   "rembourser",
+   "dot"
+  ],
+  "gag_legende": "LE FIANCÉ EN VÉRIFIANT SON COMPTE :",
+  "mecanisme": "arroseur arrosé : la créancière va être « remboursée » avec l'argent de son propre fils"
+ },
+ {
+  "id": "B006-20",
+  "titre": "Première visite chez la fiancée",
+  "lieu": "small metal gate of a family house in Abobo, Abidjan, a water bucket next to the gate, evening",
+  "persos": [
+   {
+    "nom": "the nervous suitor",
+    "desc": "young man around 28, fuchsia-and-chocolate polo shirt, neat haircut, holding ONE single bag of fruit",
+    "pose": "standing in the foreground on the left, holding the bag of fruit, nervous smile"
+   },
+   {
+    "nom": "the little brother",
+    "desc": "boy around 9, mint-and-ruby tracksuit, big bright eyes",
+    "pose": "standing on the right just behind the open gate, very excited"
+   }
+  ],
+  "dialogue": [
+   [
+    1,
+    "Ehh Tonton ! C'est toi le nouveau salaire de la famille dêh ?"
+   ],
+   [
+    0,
+    "Le nouveau quoi, mon petit ?"
+   ],
+   [
+    1,
+    "Papa a déjà donné ton numéro au propriétaire et à la Sodeci dêh."
+   ]
+  ],
+  "jeu": "Nobody walks; both stay in their places for the whole video. The little brother claps his hands once, happy, and asks loudly. The nervous suitor frowns and asks, confused. The little brother answers proudly, very happy, his face clearly visible.",
+  "chute": "The suitor's nervous smile freezes, the bag of fruit trembling in his hand. The camera slowly pushes in to a close-up of the nervous suitor's horrified face looking into the camera.",
+  "fin": 0,
+  "emoji": "choc",
+  "cles": [
+   "nouveau salaire",
+   "propriétaire",
+   "Sodeci"
+  ],
+  "gag_legende": "LE GARS EN CHANGEANT DE NUMÉRO :",
+  "mecanisme": "témoin innocent (petit frère) qui révèle que la belle-famille a déjà mis le prétendant à son budget"
+ }
+]
