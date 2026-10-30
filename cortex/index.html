@@ -1165,7 +1165,7 @@ function langFromName(name) {
   return ({ js: 'javascript', mjs: 'javascript', ts: 'typescript', py: 'python', md: 'markdown', yml: 'yaml', sh: 'bash', htm: 'html', rs: 'rust', kt: 'kotlin', cs: 'csharp', rb: 'ruby' })[ext] || ext;
 }
 
-const CORTEX_VERSION = { build: '2026-10-30 11:21 UTC', stamp: 202610301121, branch: 'claude/vibrant-dirac-3qrbfm' };
+const CORTEX_VERSION = { build: '2026-10-30 12:24 UTC', stamp: 202610301224, branch: 'claude/vibrant-dirac-3qrbfm' };
 
 /* ============================== 01 · ICÔNES ============================== */
 const ICONS = {
@@ -4640,14 +4640,15 @@ window.addEventListener('load',function(){setTimeout(function(){
 function visionModel() {
   const v = S.settings.visionModel;
   if (v && (!S.models.length || S.modelMap.has(v))) return v;
-  return pickAvailable(['nvidia/nemotron-3.5-super-vl:free', 'google/gemma-4-31b-it:free', 'google/gemma-4-26b-a4b-it:free', 'thinkingmachines/inkling-small:free', 'openrouter/free'])
+  return pickAvailable(['nvidia/nemotron-3.5-super-vl:free', 'google/gemma-4-31b-it:free', 'google/gemma-4-26b-a4b-it:free', 'openrouter/free'])
     || S.models.find((m) => isFreeModel(m) && modelSupports(m.id, 'vision'))?.id || 'openrouter/free'; // jamais un modèle payant à l'insu de l'utilisateur (catalogue non chargé) : routeur gratuit, qui accepte les images
 }
 function audioModel() {
   const a = S.settings.audioModel;
   if (a && (!S.models.length || S.modelMap.has(a))) return a;
-  return pickAvailable(['thinkingmachines/inkling-small:free', 'thinkingmachines/inkling:free', 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'])
-    || S.models.find((m) => isFreeModel(m) && modelSupports(m.id, 'audio'))?.id || 'openrouter/free'; // jamais un modèle payant à l'insu de l'utilisateur : routeur gratuit (erreur claire s'il ne lit pas l'audio)
+  // (inkling : refusé en 403 hors « harnesses agentiques » listés par OpenRouter)
+  return pickAvailable(['nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'])
+    || S.models.find((m) => isFreeModel(m) && modelSupports(m.id, 'audio') && !/^thinkingmachines\/inkling/.test(m.id))?.id || 'openrouter/free'; // jamais un modèle payant à l'insu de l'utilisateur : routeur gratuit (erreur claire s'il ne lit pas l'audio)
 }
 /* Transcription d'un fichier audio par un modèle qui accepte l'audio */
 async function transcribeAudio(dataURL, format, signal) {
@@ -9839,11 +9840,16 @@ const EXPERIENCE_TOOL = {
 /* ---------- Boosters de raisonnement (modèles gratuits) ---------- */
 /* Modèles gratuits par rôle (filtrés selon le catalogue réel ; complétés automatiquement par les autres modèles gratuits) */
 const FREE_TIERS = {
-  deep: ['nvidia/nemotron-3-ultra-550b-a55b:free', 'thinkingmachines/inkling:free', 'dots-studio/dots-3-note-preview:free', 'google/gemma-4-31b-it:free', 'poolside/laguna-s-2.1:free'],
-  experts: ['nvidia/nemotron-3-ultra-550b-a55b:free', 'thinkingmachines/inkling:free', 'google/gemma-4-31b-it:free', 'dots-studio/dots-3-note-preview:free', 'poolside/laguna-s-2.1:free', 'recursive/flint-v1.0:free', 'nvidia/nemotron-3.5-super-vl:free'],
-  fast: ['nvidia/nemotron-3.5-lightning:free', 'google/gemma-4-26b-a4b-it:free', 'thinkingmachines/inkling-small:free', 'poolside/laguna-xs-2.1:free', 'nvidia/nemotron-3.5-super-vl:free'],
+  // (thinkingmachines/inkling:free retiré : refusé en 403 hors « harnesses agentiques » listés par OpenRouter)
+  deep: ['nvidia/nemotron-3-ultra-550b-a55b:free', 'dots-studio/dots-3-note-preview:free', 'google/gemma-4-31b-it:free', 'poolside/laguna-s-2.1:free'],
+  experts: ['nvidia/nemotron-3-ultra-550b-a55b:free', 'google/gemma-4-31b-it:free', 'dots-studio/dots-3-note-preview:free', 'poolside/laguna-s-2.1:free', 'recursive/flint-v1.0:free', 'nvidia/nemotron-3.5-super-vl:free'],
+  // Repli d'une réponse en cours (models d'OpenRouter) : modèles gratuits rapides qui savent converser et appeler des outils
+  // (pas le modèle de raisonnement Ultra : réflexion silencieuse de plusieurs minutes → « Upstream idle timeout exceeded »)
+  fallback: ['google/gemma-4-31b-it:free', 'nvidia/nemotron-3.5-super-vl:free', 'poolside/laguna-s-2.1:free', 'dots-studio/dots-3-note-preview:free'],
+  fast: ['nvidia/nemotron-3.5-lightning:free', 'google/gemma-4-26b-a4b-it:free', 'poolside/laguna-xs-2.1:free', 'nvidia/nemotron-3.5-super-vl:free'],
 };
-const NOT_CHAT = /safety|guard|lyria|embed|whisper|tts|image|moderation|rerank/i;
+// (inkling : refusé en 403 hors « harnesses agentiques » listés par OpenRouter)
+const NOT_CHAT = /safety|guard|lyria|embed|whisper|tts|image|moderation|rerank|thinkingmachines\/inkling/i;
 function freeModels(tier = 'experts', n = 3, exclude = []) {
   const ex = new Set(exclude.filter(Boolean));
   // Sans clé OpenRouter : les modèles du serveur local jouent les rôles du Guru et des relecteurs (jamais le modèle du navigateur : sa carte graphique reste à la conversation)
@@ -9881,8 +9887,9 @@ function helperAllowed(chosen, helper) {
 const PRIVACY_RUNS = new WeakMap();
 const privacyChosen = (signal) => (signal && PRIVACY_RUNS.get(signal)) || null;
 const timed = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('délai dépassé')), ms))]);
-async function askModel(model, messages, { maxTokens = 2500, signal, effort, timeout = 120000, for: chosen } = {}) {
-  const extra = effort && modelSupports(model, 'reasoning') ? { reasoning: { effort } } : {};
+async function askModel(model, messages, { maxTokens = 2500, signal, effort, timeout = 120000, for: chosen, direct = false } = {}) {
+  // direct : sans phase de réflexion (sinon un modèle rapide qui raisonne par défaut épuise max_tokens et répond vide)
+  const extra = direct ? noReasoning(model) : effort && modelSupports(model, 'reasoning') ? { reasoning: { effort } } : {};
   chosen ||= privacyChosen(signal);
   // Délai dépassé : la requête est réellement annulée (plus de génération « fantôme » relancée en arrière-plan sur le quota gratuit)
   const ac = new AbortController(); const stop = () => ac.abort();
@@ -10210,6 +10217,9 @@ Guru.strategy = async function (task, { model, tools, context, rea, signal, atta
   const t0 = Date.now(), left = () => (budget ? budget - (Date.now() - t0) : Infinity);
   const deep = deepModel([model]);
   try {
+    // Budget court (le modèle choisi travaille déjà) : le modèle de raisonnement gratuit n'arrive pas à temps (plus d'une minute
+    // mesurée) et prendrait tout le budget du repli → directement le modèle rapide
+    if (left() < 70000) throw new Error('budget court');
     const t = await askModel(deep, prompt, { signal, maxTokens: 3000, effort: 'medium', timeout: Math.min(45000, left()), for: chosen });
     if (!GURU_OK(t)) throw new Error('stratégie incomplète');
     return { model: deep, text: Coherence.cleanStrategy(t, task) };
@@ -10218,7 +10228,7 @@ Guru.strategy = async function (task, { model, tools, context, rea, signal, atta
     if (signal?.aborted || e.privacy || left() < 8000) throw e;
     // 3) Repli : un modèle gratuit rapide
     const m = fastModel([model, deep]);
-    return { model: m, text: Coherence.cleanStrategy(await askModel(m, prompt, { signal, maxTokens: 2500, timeout: Math.min(25000, left()), for: chosen }), task) };
+    return { model: m, text: Coherence.cleanStrategy(await askModel(m, prompt, { signal, maxTokens: 2500, timeout: Math.min(budget ? 45000 : 25000, left()), for: chosen, direct: true }), task) };
   }
 };
 
@@ -14318,7 +14328,7 @@ Tu disposes d'outils (${tools.map((t) => t.name).join(', ')}). Travaille de faç
 # Format de la réponse finale
 - Ouvre par la conclusion en 1 à 3 phrases, chiffres clés en gras avec leur unité (ex. « Taux de NPL : **10,7 %** — 5,2 Md sur 48,6 Md FCFA »).
 - Puis seulement ce qui aide à décider : un tableau si plusieurs chiffres, les fichiers produits (liens), les 2 ou 3 points d'attention ou hypothèses qui changent la lecture.
-- Méthode et contrôles en une ligne (« Calculé par code ; somme des segments = encours total »), pas en rubrique.
+- Méthode et contrôles en une ligne, propres à CETTE tâche (« Calculé par code ; <contrôle réellement fait> »), pas en rubrique ; n'écris jamais un contrôle que tu n'as pas fait.
 - Termine par 1 ou 2 suites concrètes que tu peux exécuter tout de suite.
 - Aucune rubrique vide (« Fichiers : aucun »), aucune répétition de la demande, pas de mise en garde générique. Question simple : réponse directe.${isFreeModel(c.model) ? "\n- Procède étape par étape : un appel d'outil à la fois quand les étapes dépendent les unes des autres ; relis chaque résultat d'outil avant de continuer." : ''}`;
   }
@@ -14581,8 +14591,13 @@ function buildBody(o, messages, toolDefs) {
     if (o.forceFinal) body.tool_choice = 'none';
     if (!S.settings.harness.parallelTools && modelSupports(o.model, 'parallel_tool_calls')) body.parallel_tool_calls = false;
   }
-  if (o.cfg.fallbacks?.length) body.models = [o.model, ...o.cfg.fallbacks.filter((x) => x !== o.model)].slice(0, 4);
-  else if (S.settings.harness.freeFallback && /:free$/.test(o.model) && S.modelMap.has('openrouter/free')) body.models = [o.model, 'openrouter/free'];
+  if (o.cfg.fallbacks?.length) body.models = [o.model, ...o.cfg.fallbacks.filter((x) => x !== o.model)].slice(0, 3); // OpenRouter : « 'models' array must have 3 items or fewer »
+  else if (S.settings.harness.freeFallback && /:free$/.test(o.model)) {
+    // Repli sur des modèles gratuits CHOISIS (liste « experts », outils si nécessaires) : le routeur openrouter/free tire au hasard
+    // (modèles de code, petits modèles qui écrivent leur réflexion dans la réponse, réponse étiquetée du modèle choisi)
+    const fb = freeModels('fallback', 8, [o.model]).filter((m) => m !== 'openrouter/free' && !/^(local|webllm)\//.test(m) && (!toolDefs.length || modelSupports(m, 'tools'))).slice(0, 2);
+    if (fb.length) body.models = [o.model, ...fb]; else if (S.modelMap.has('openrouter/free')) body.models = [o.model, 'openrouter/free'];
+  }
   if (o.cfg.web && o.depth === 0) body.plugins = [{ id: 'web', max_results: S.settings.webMaxResults || 5 }];
   if (modelSupports(o.model, 'imageOut')) body.modalities = ['image', 'text'];
   // Préférences de fournisseur des Réglages (même source que les tâches de fond : providerPrefs), plus les fournisseurs fautifs écartés
@@ -14769,6 +14784,9 @@ async function agentLoop(o) {
       }
     }
     o.run.addUsage(usage, res.model || o.model, o.depth ? 'subagent' : 'chat');
+    // Repli du fournisseur (models[]) : le modèle qui a réellement répondu est signalé sous la réponse (une fois par modèle)
+    const base = (m) => String(m || '').replace(/:free$/, ''), served = base(res.model), alts = (body.models || []).slice(1);
+    if (!o.depth && served && alts.length && !served.startsWith(base(o.model)) && (alts.some((m) => served.startsWith(base(m))) || alts.includes('openrouter/free')) && !(o.servedNoted ||= new Set()).has(res.model)) { o.servedNoted.add(res.model); o.notes?.push(`Réponse servie par ${modelShort(res.model)} (repli automatique : ${modelShort(o.model)} indisponible ou saturé).`); }
     // Fournisseur qui a supprimé des paramètres (listes/objets) : appel reçu sans ses données → fournisseur écarté
     // pour ce modèle et étape relancée à l'identique (2 fois au plus par réponse)
     if (step.toolCalls.length && res.provider && !o.signal.aborted) {
@@ -14822,9 +14840,13 @@ async function agentLoop(o) {
             ? `[Harness] L'utilisateur a demandé un fichier ${want.label} et aucun n'a été produit pendant cette réponse. Produis-le maintenant avec ${want.tool} (données : sources: "exports/….csv", sheets ou table), vérifie qu'il est bien créé, puis réponds avec son lien. Si la demande ne portait pas sur un fichier à produire, ignore ce message et termine.`
             : "[Harness] Tu as annoncé une action sans l'exécuter. Exécute-la maintenant (appel d'outil), puis donne la réponse finale ; si elle n'est plus nécessaire, réponds directement.";
           o.run.note(want ? `Livrable ${want.label} demandé mais non produit : modèle relancé` : 'Action annoncée sans être exécutée : modèle relancé');
+          // Texte de cette étape (question, annonce) remplacé par la suite : replié, pas une seconde réponse finale
+          if (String(step.content || '').trim()) { step.superseded = 'deliver'; o.deliverStep = step; }
           continue;
         }
       }
+      // Relance sans nouvelle réponse rédigée : le texte replié redevient la réponse
+      if (o.deliverStep && !String(step.content || '').trim()) delete o.deliverStep.superseded;
       break;
     }
     // Garde-fou anti-boucle : appels identiques répétés
@@ -16784,7 +16806,7 @@ function stepsHTML(steps, running, keyBase) {
       html += `<details class="thinking" data-ok="${k}" ${open ? 'open' : ''}><summary>${icon('brain', 'sm')} ${live ? 'Réflexion en cours… <span class="spin"></span>' : `Réflexion${s.duration ? ` · ${fmtDur((s.ttft && s.content ? s.duration : s.duration))}` : ''}`}<span class="chev">${icon('down', 'sm')}</span></summary><div class="th-body">${esc(s.reasoning)}</div></details>`;
     }
     if (s.superseded === 'provider') html += `<div class="superseded provider-drop">${icon('undo', 'sm')} Réponse écartée — le fournisseur ${esc(s.lostParams?.provider || '')} a supprimé ${esc((s.lostParams?.calls || []).map((c) => `${c.missing.join(', ')} (${c.name})`).join(' ; '))} : Cortex l'écarte pour ce modèle et relance.</div>`;
-    else if (s.content && s.superseded) html += `<details class="superseded"><summary>${icon('undo', 'sm')} ${s.superseded === 'claim' ? 'Réponse retirée — fichier annoncé mais pas encore créé (Cortex a relancé le modèle)' : s.superseded === 'verification' ? 'Première version — corrigée après la vérification des chiffres et des fichiers' : 'Première version — corrigée après relecture critique'}<span class="chev">${icon('down', 'sm')}</span></summary>${mdSlot('st-' + s.id, s.content, false)}</details>`;
+    else if (s.content && s.superseded) html += `<details class="superseded"><summary>${icon('undo', 'sm')} ${s.superseded === 'claim' ? 'Réponse retirée — fichier annoncé mais pas encore créé (Cortex a relancé le modèle)' : s.superseded === 'deliver' ? 'Réponse retirée — fichier demandé mais pas encore produit (Cortex a relancé le modèle)' : s.superseded === 'verification' ? 'Première version — corrigée après la vérification des chiffres et des fichiers' : 'Première version — corrigée après relecture critique'}<span class="chev">${icon('down', 'sm')}</span></summary>${mdSlot('st-' + s.id, s.content, false)}</details>`;
     else if (s.content) html += mdSlot('st-' + s.id, s.content, streaming && !(s.toolCalls || []).length);
     for (const img of s.images || []) html += `<img class="gen-img" src="${esc(img)}" alt="Image générée" data-act="zoom">`;
     for (const tc of s.toolCalls || []) html += toolCardHTML(tc, streaming);
