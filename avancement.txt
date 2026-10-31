@@ -1,3 +1,4 @@
 [120 s] 0 images · === objet-orange [I] loading tensors completed, taking 1.01s (read: 0.94s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00 · mémoire libre 7268 Mo
 [241 s] 0 images · === objet-orange   |============>                                     | 1/4 - 107.92s/it[K · mémoire libre 7269 Mo
 [363 s] 0 images · === objet-orange   |=====================================>            | 3/4 - 106.92s/it[K · mémoire libre 7281 Mo
+[121 s] 1 images · === coumba-expr-choc   |=========================>                        | 2/4 - 34.83s/it[K · mémoire libre 7282 Mo
