@@ -1,0 +1,27 @@
+=== objet-auvent
+[I] loading tensors completed, taking 0.60s (read: 0.44s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 17116 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 17.12s --- image.cpp:529
+[I] loading tensors completed, taking 1.01s (read: 0.84s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 242.67s --- image.cpp:899
+[I] generating 1 latent images completed, taking 242.67s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.16s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 13.55s --- vae.hpp:384
+[I] decode_first_stage completed, taking 13.55s --- image.cpp:624
+[I] generate_image completed in 273.34s --- image.cpp:1050
+fait : objet-auvent en 274.5 s
+=== coumba-expr-surprise
+[I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.04s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 1.82s --- vae.hpp:310
+[I] encode_first_stage completed, taking 1.82s --- image.cpp:398
+[I] loading tensors completed, taking 0.81s (read: 0.66s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 30733 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 30.73s --- image.cpp:529
+[I] loading tensors completed, taking 1.00s (read: 0.91s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 278.30s --- image.cpp:899
+[I] generating 1 latent images completed, taking 278.30s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.02s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 8.56s --- vae.hpp:384
+[I] decode_first_stage completed, taking 8.56s --- image.cpp:624
+[I] generate_image completed in 319.44s --- image.cpp:1050
+fait : coumba-expr-surprise en 320.9 s
