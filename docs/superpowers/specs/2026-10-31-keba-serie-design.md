@@ -123,6 +123,21 @@ Demande de l'utilisateur : « les personnages doivent être de vrais PNG, pas de
   chaque pièce ait son propre contour dessiné.
 - Les marionnettes vectorielles (`keba/marionnette.py`) restent pour les essais rapides et les tests.
 
-## 11. Hors périmètre du pilote
+## 11. État au 31/10/2026 (fin de journée) et suite
+
+Fait et testé (140 tests) :
+- casting PNG complet (Kéba, Tonton Bara, Tata Coumba, Gaïndé), 20 expressions, décor « rue-boutique » (enseigne
+  retouchée), 6 objets — produits par l'atelier GitHub gratuit en ~25 min pour les planches, ~5 min par expression ;
+- pantins : modèles humain / robe / quadrupède, os « basque », coutures par articulation, pose de repos ;
+- épisode pilote d'environ 61 s, 1080×1920 à 60 i/s, son et musique, contrôles automatiques, fiche TikTok.
+
+Pas encore fait (prochaines itérations) :
+- **le scénariste automatique** : le pilote est chorégraphié à la main ; il faut en extraire les gags en maillons
+  réutilisables et les enchaîner par graine pour produire des milliers d'épisodes différents ;
+- d'autres lieux (marché, car rapide, cour commune) et Lamine & Mbaye ;
+- les expressions de Gaïndé ; quelques déchirures résiduelles aux épaules dans les très grands gestes ;
+- l'usine (production en série) et la publication TikTok automatique ; la version 16:9 pour la télévision.
+
+## 12. Hors périmètre du pilote
 
 Usine de production en série et publication TikTok automatique ; format 16:9 ; Lamine & Mbaye ; lieux supplémentaires.
