@@ -61,4 +61,12 @@
 [I] loading tensors completed, taking 1.00s (read: 0.98s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
 [V] model manager prepared params backend buffers (4101.40 MB, 149 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
 [V] flux compute buffer size: 836.00 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
-  |============>                                     | 1/4 - 148.84s/it[K  |=========================>                        | 2/4 - 146.61s/it[K  |=====================================>            | 3/4 - 144.88s/it[K
+  |============>                                     | 1/4 - 148.84s/it[K  |=========================>                        | 2/4 - 146.61s/it[K  |=====================================>            | 3/4 - 144.88s/it[K  |==================================================| 4/4 - 143.70s/it[K
+[I] sampling completed, taking 584.10s --- image.cpp:899
+[I] generating 1 latent images completed, taking 584.10s --- image.cpp:911
+[I] decoding 1 latents --- image.cpp:554
+[I] vae build cached graph cut plan done (taking 1 ms) --- ggml_graph_cut.cpp:1032
+[V] loading 140/251 tensors from /home/runner/work/_temp/m/vae.safetensors --- model_loader.cpp:1126
+  |#                                                 | 2/140 - 0.00MB/s[K  |##################################################| 140/140 - 530.40MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.17s, memcpy: 0.00s, convert: 0.01s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] model manager prepared params backend buffers ( 53.36 MB, 140 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
