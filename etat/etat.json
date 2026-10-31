@@ -1,0 +1,15 @@
+{
+ "nom": "etat",
+ "parts": [
+  {
+   "fichier": "etat.000.msb",
+   "octets": 90000000,
+   "sha256": "e9e69328fc8851c877c41a7c6bc562c938f60650870ad7c221f7d327764347da"
+  },
+  {
+   "fichier": "etat.001.msb",
+   "octets": 48352640,
+   "sha256": "f1111ce738c93f84f2aa431d5f26b35ee4841826d79311944a3cb38df40d3b97"
+  }
+ ]
+}
