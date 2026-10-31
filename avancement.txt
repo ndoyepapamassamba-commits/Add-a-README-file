@@ -7,3 +7,4 @@
 [848 s] 0 images · === keba-planche   |=====================================>            | 3/4 - 253.67s/it[K · mémoire libre 6705 Mo
 [970 s] 0 images · === keba-planche   |=====================================>            | 3/4 - 253.67s/it[K · mémoire libre 6709 Mo
 [1091 s] 0 images · === keba-planche [I] loading tensors completed, taking 0.60s (read: 0.40s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00 · mémoire libre 5629 Mo
+[120 s] 1 images · === bara-expr-peur   |============>                                     | 1/4 - 72.19s/it[K · mémoire libre 7212 Mo
