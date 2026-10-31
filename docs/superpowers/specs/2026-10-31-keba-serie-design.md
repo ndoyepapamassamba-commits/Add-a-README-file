@@ -105,6 +105,24 @@ Bloquent l'épisode s'ils échouent : durée 55-65 s, 1080×1920, 60 i/s, piste 
    `ep0001-tiktok.txt` (titre, légende, hashtags).
 3. Tests unitaires `pytest`.
 
-## 10. Hors périmètre du pilote
+## 10. Révision du 31/10/2026 : personnages en vraies illustrations PNG
+
+Demande de l'utilisateur : « les personnages doivent être de vrais PNG, pas des marionnettes simples ».
+- **Illustrations** : FLUX.2-klein-4B (Apache-2.0). Essai sur la démonstration Hugging Face (ZeroGPU) : 10,7 s par
+  image 768×1024, mais quota anonyme épuisé après une image ; l'utilisateur n'a pas de jeton Hugging Face.
+  Pollinations exige une clé (preuve REA `ev_2c96d23f…`, `@pollinations/sdk` 5.0.1 `dist/index.js` l. 151-154 ;
+  l'ancienne adresse répond 402). Voie retenue : **stable-diffusion.cpp (MIT) + FLUX.2-klein-4B GGUF + Qwen3-4B +
+  décodeur FLUX.2 (tous Apache-2.0, non verrouillés)** sur les machines gratuites de GitHub, recette déjà validée par
+  la Fabrique (`bible-v1.yml`, 445 images, 20 machines en parallèle ; 884 s par image à une référence).
+- **Détourage** (`keba/detourage.py`) : fond blanc → transparence, ombre au sol et blancs enfermés retirés.
+- **Articulations** : MediaPipe Pose Landmarker (Apache-2.0), fiable sur les dessins (visibilité 0,92 à 1,00).
+- **Pantin** (`keba/pantin.py`) : maillage triangulé de l'illustration, os, poids « géodésiques » qui ne traversent
+  ni les traits du dessin ni le vide ; pièces séparées (tête, torse, bras, jambes) cousues seulement autour de leur
+  articulation ; rendu skia `drawVertices` avec mipmaps.
+- **Consigne de génération** : personnages en **pose de pantin, bras et jambes nettement écartés du corps**, pour que
+  chaque pièce ait son propre contour dessiné.
+- Les marionnettes vectorielles (`keba/marionnette.py`) restent pour les essais rapides et les tests.
+
+## 11. Hors périmètre du pilote
 
 Usine de production en série et publication TikTok automatique ; format 16:9 ; Lamine & Mbaye ; lieux supplémentaires.

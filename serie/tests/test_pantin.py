@@ -1,0 +1,186 @@
+import math
+
+import numpy as np
+import pytest
+import skia
+
+from keba.pantin import Pantin
+
+W, H = 300, 420
+
+ARTICULATIONS = {
+    "nez": (150, 80),
+    "epaule_av": (114, 130), "coude_av": (96, 186), "poignet_av": (80, 240),
+    "epaule_ar": (186, 130), "coude_ar": (204, 186), "poignet_ar": (220, 240),
+    "hanche_av": (136, 252), "genou_av": (133, 305), "cheville_av": (130, 355), "orteil_av": (120, 372),
+    "hanche_ar": (164, 252), "genou_ar": (167, 305), "cheville_ar": (170, 355), "orteil_ar": (180, 372),
+}
+
+
+def _bonhomme():
+    s = skia.Surface(W, H)
+    c = s.getCanvas()
+    c.clear(skia.ColorTRANSPARENT)
+    trait = lambda couleur, ep: skia.Paint(AntiAlias=True, Color=couleur, Style=skia.Paint.kStroke_Style,
+                                           StrokeWidth=ep, StrokeCap=skia.Paint.kRound_Cap)
+    a = ARTICULATIONS
+    for cote, couleur in (("ar", skia.Color(90, 60, 200)), ("av", skia.Color(60, 160, 60))):
+        c.drawLine(*a[f"hanche_{cote}"], *a[f"cheville_{cote}"], trait(couleur, 20))
+        c.drawLine(*a[f"cheville_{cote}"], *a[f"orteil_{cote}"], trait(couleur, 14))
+    c.drawRect(skia.Rect(122, 120, 178, 258), skia.Paint(AntiAlias=True, Color=skia.Color(240, 140, 30)))
+    c.drawCircle(150, 72, 42, skia.Paint(AntiAlias=True, Color=skia.Color(140, 90, 60)))
+    for cote, couleur in (("ar", skia.Color(200, 40, 40)), ("av", skia.Color(40, 90, 220))):
+        c.drawLine(*a[f"epaule_{cote}"], *a[f"coude_{cote}"], trait(couleur, 16))
+        c.drawLine(*a[f"coude_{cote}"], *a[f"poignet_{cote}"], trait(couleur, 16))
+    img = s.makeImageSnapshot()
+    return img.toarray(colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType)
+
+
+@pytest.fixture(scope="module")
+def pantin():
+    return Pantin.depuis_image(_bonhomme(), ARTICULATIONS, pas=8)
+
+
+def _rendu(pantin, angles=None, **racine):
+    s = skia.Surface(W, H)
+    s.getCanvas().clear(skia.ColorTRANSPARENT)
+    pos = pantin.poser(angles or {}, **racine)
+    pantin.dessiner(s.getCanvas(), pos)
+    return s.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType)
+
+
+def test_le_maillage_ne_traverse_pas_le_vide_entre_bras_et_torse(pantin):
+    alpha = _bonhomme()[:, :, 3]
+    for tri in pantin.triangles:
+        cx, cy = pantin.sommets[tri].mean(axis=0)
+        assert alpha[int(cy), int(cx)] > 0 or _voisinage_opaque(alpha, cx, cy)
+
+
+def _voisinage_opaque(alpha, x, y, r=4):
+    return (alpha[max(0, int(y) - r):int(y) + r + 1, max(0, int(x) - r):int(x) + r + 1] > 0).any()
+
+
+def test_les_poids_de_chaque_sommet_font_un(pantin):
+    assert np.allclose(pantin.poids.sum(axis=1), 1.0)
+
+
+def test_le_bras_appartient_au_bras_et_pas_au_torse(pantin):
+    i = int(np.argmin(np.linalg.norm(pantin.sommets - np.array([88.0, 213.0]), axis=1)))
+    dominant = pantin.os[int(np.argmax(pantin.poids[i]))].nom
+    assert dominant == "avbras_av"
+
+
+def test_au_repos_le_pantin_redonne_l_image(pantin):
+    original = _bonhomme().astype(int)
+    rendu = _rendu(pantin).astype(int)
+    opaque = original[:, :, 3] > 250
+    ecart = np.abs(rendu[:, :, :3] - original[:, :, :3])[opaque].mean()
+    assert ecart < 6
+
+
+def test_lever_le_bras_bouge_le_bras_sans_toucher_au_torse(pantin):
+    repos = _rendu(pantin)
+    leve = _rendu(pantin, {"bras_av": math.radians(70)})
+    torse = (slice(150, 240), slice(130, 170))
+    assert np.abs(repos[torse].astype(int) - leve[torse].astype(int)).max() < 8
+    main_repos = repos[230:250, 70:92, 3].mean()
+    main_leve = leve[230:250, 70:92, 3].mean()
+    assert main_leve < main_repos * 0.3
+
+
+def test_l_avant_bras_suit_le_bras(pantin):
+    etat = pantin.cinematique({"bras_av": math.radians(90)})
+    coude_repos = np.array(ARTICULATIONS["coude_av"], float)
+    assert np.linalg.norm(etat["avbras_av"]["debut"] - coude_repos) > 30
+
+
+def test_placement_dans_le_monde_avec_sens_et_echelle(pantin):
+    pos = pantin.poser({}, x=500.0, y=900.0, echelle=2.0)
+    assert pos[:, 1].max() == pytest.approx(900.0, abs=3)
+    miroir = pantin.poser({}, x=500.0, y=900.0, echelle=2.0, sens=-1.0)
+    assert np.allclose(pos[:, 0] - 500.0, -(miroir[:, 0] - 500.0), atol=1e-6)
+    assert pos[:, 1].max() - pos[:, 1].min() == pytest.approx(2.0 * pantin.hauteur, rel=0.03)
+
+
+def _bonhomme_manches_collees():
+    """Un torse et un bras qui se touchent sur toute la longueur, séparés seulement par un trait sombre."""
+    s = skia.Surface(W, H)
+    c = s.getCanvas()
+    c.clear(skia.ColorTRANSPARENT)
+    trait = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=5, Color=skia.Color(40, 22, 12))
+    torse = skia.Rect(122, 120, 178, 258)
+    bras = skia.Rect(98, 124, 122, 240)
+    c.drawCircle(150, 72, 42, skia.Paint(AntiAlias=True, Color=skia.Color(140, 90, 60)))
+    for r in (torse, bras):
+        c.drawRect(r, skia.Paint(AntiAlias=True, Color=skia.Color(240, 140, 30)))
+    for r in (torse, bras):
+        c.drawRect(r, trait)
+    c.drawRect(skia.Rect(178, 124, 202, 240), skia.Paint(AntiAlias=True, Color=skia.Color(240, 140, 30)))
+    c.drawRect(skia.Rect(178, 124, 202, 240), trait)
+    for x in (136, 164):
+        c.drawRect(skia.Rect(x - 10, 258, x + 10, 370), skia.Paint(AntiAlias=True, Color=skia.Color(60, 160, 60)))
+    return s.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType)
+
+
+def test_un_bras_colle_au_torse_est_separe_par_le_trait_du_dessin():
+    art = dict(ARTICULATIONS, epaule_av=(110, 128), coude_av=(110, 184), poignet_av=(110, 236),
+               epaule_ar=(190, 128), coude_ar=(190, 184), poignet_ar=(190, 236))
+    p = Pantin.depuis_image(_bonhomme_manches_collees(), art, pas=8)
+
+    def os_des_copies(x, y):
+        """Les sommets de couture existent en une copie par pièce : on regarde toutes les copies du plus proche."""
+        d = np.linalg.norm(p.sommets - np.array([x, y], float), axis=1)
+        proches = np.nonzero(d <= d.min() + 1e-6)[0]
+        return {p.os[int(np.argmax(p.poids[i]))].nom for i in proches}
+
+    assert "torse" in os_des_copies(134, 200)          # bord du torse, collé au bras
+    assert os_des_copies(115, 200) <= {"bras_av", "avbras_av"}
+
+
+def test_le_maillage_ne_depend_pas_du_hasard_de_python(tmp_path):
+    import subprocess
+    import sys
+    code = ("import sys; sys.path.insert(0, 'tests'); import numpy as np; "
+            "from test_pantin import _bonhomme_manches_collees, ART_COLLE; from keba.pantin import Pantin; "
+            "p = Pantin.depuis_image(_bonhomme_manches_collees(), ART_COLLE, pas=8); "
+            "import hashlib; print(hashlib.sha256(p.sommets.tobytes() + p.triangles.tobytes()).hexdigest())")
+    sorties = set()
+    for graine in ("1", "2"):
+        r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                           env={"PYTHONHASHSEED": graine, "PYTHONPATH": ".", "PATH": "/usr/bin:/bin"})
+        assert r.returncode == 0, r.stderr
+        sorties.add(r.stdout.strip())
+    assert len(sorties) == 1
+
+
+ART_COLLE = dict(ARTICULATIONS, epaule_av=(110, 128), coude_av=(110, 184), poignet_av=(110, 236),
+                 epaule_ar=(190, 128), coude_ar=(190, 184), poignet_ar=(190, 236))
+
+
+def test_lever_un_bras_colle_ne_dechire_pas_le_dessin():
+    p = Pantin.depuis_image(_bonhomme_manches_collees(), ART_COLLE, pas=8)
+    s = skia.Surface(W, H)
+    s.getCanvas().clear(skia.ColorTRANSPARENT)
+    p.dessiner(s.getCanvas(), p.poser({"bras_av": math.radians(80)}))
+    a = s.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType)
+    assert (a[160:230, 126:134, 3] > 200).mean() > 0.95       # le flanc du torse reste entier
+    assert (a[175:230, 98:116, 3] > 60).mean() < 0.15         # là où était le bras : vide, pas de traînée
+
+
+def test_la_bordure_transparente_ne_sert_pas_de_raccourci(pantin):
+    # un sommet du bord de la tête, loin des bras, appartient à la tête
+    i = int(np.argmin(np.linalg.norm(pantin.sommets - np.array([109.0, 72.0]), axis=1)))
+    assert pantin.os[int(np.argmax(pantin.poids[i]))].nom == "tete"
+
+
+def test_le_contour_n_est_pas_troue(pantin):
+    original = _bonhomme()
+    rendu = _rendu(pantin)
+    contour = (original[:, :, 3] > 200)
+    perdu = contour & (rendu[:, :, 3] < 100)
+    assert perdu.sum() < 0.002 * contour.sum()
+
+
+def test_le_rendu_est_reproductible(pantin):
+    angles = {"cuisse_av": 0.4, "tibia_av": -0.3, "tete": 0.2}
+    assert np.array_equal(_rendu(pantin, angles), _rendu(pantin, angles))

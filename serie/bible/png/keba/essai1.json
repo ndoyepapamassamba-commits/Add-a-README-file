@@ -1,0 +1,15 @@
+{
+ "modele": "FLUX.2-klein-4B",
+ "licence": "Apache-2.0",
+ "poids": "black-forest-labs/FLUX.2-klein-4B",
+ "service": "huggingface.co/spaces/black-forest-labs/FLUX.2-klein-4B (ZeroGPU, anonyme)",
+ "prompt": "Character design for an original 2D cartoon TV series set in a Dakar neighbourhood, Senegal. Keba, a joyful 9-year-old Senegalese boy: small body, big round head, dark brown skin, short black hair with one tall curly tuft sticking up, big expressive eyes, wide smile showing a small gap between his front teeth, oversized orange football jersey with white side stripes and white collar, blue shorts, red flip-flops. Full body from head to feet, standing in a relaxed A-pose with arms slightly away from the body, three-quarter front view, centered. Clean bold dark-brown outlines, vibrant colors, soft cel shading, polished professional 2D animation style, plain pure white background, no text, no logo.",
+ "graine": 7,
+ "largeur": 768,
+ "hauteur": 1024,
+ "etapes": 4,
+ "secondes": 10.7,
+ "date": "2026-10-31",
+ "articulations": "MediaPipe Pose Landmarker heavy (Apache-2.0) ; côté droit de la personne = « av »",
+ "usage": "image de travail pour mettre au point le pantin ; la planche définitive sera refaite bras écartés"
+}
