@@ -4,3 +4,4 @@
 [484 s] 0 images · === keba-planche   |============>                                     | 1/4 - 254.66s/it[K · mémoire libre 6725 Mo
 [606 s] 0 images · === keba-planche   |=========================>                        | 2/4 - 253.51s/it[K · mémoire libre 6726 Mo
 [727 s] 0 images · === keba-planche   |=========================>                        | 2/4 - 253.51s/it[K · mémoire libre 6714 Mo
+[848 s] 0 images · === keba-planche   |=====================================>            | 3/4 - 253.67s/it[K · mémoire libre 6705 Mo
