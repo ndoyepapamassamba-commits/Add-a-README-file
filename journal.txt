@@ -1,0 +1,62 @@
+=== decor-rue-boutique
+[V] version: stable-diffusion.cpp version unknown, commit 0518b34 --- main.cpp:698
+[V] System Info: 
+   SSE3 = 1 |    SSSE3 = 1 |    AVX = 1 |    AVX2 = 1 |    F16C = 1 |    FMA = 1 |    BMI2 = 1 |    OPENMP = 1 |    REPACK = 1 |  --- main.cpp:699
+[V] using 4 threads for model loading --- model_loader.cpp:190
+[I] loading diffusion model from '/home/runner/work/_temp/m/klein.gguf' --- diffusion_engine.cpp:738
+[I] load /home/runner/work/_temp/m/klein.gguf using gguf format --- model_loader.cpp:216
+[V] init from '/home/runner/work/_temp/m/klein.gguf' --- model_loader.cpp:262
+[V] GGUF v3, tensor_count=149, metadata_kv_count=0 --- gguf_reader_ext.h:219
+[I] loading llm from '/home/runner/work/_temp/m/llm.gguf' --- diffusion_engine.cpp:795
+[I] load /home/runner/work/_temp/m/llm.gguf using gguf format --- model_loader.cpp:216
+[V] init from '/home/runner/work/_temp/m/llm.gguf' --- model_loader.cpp:262
+[V] GGUF v3, tensor_count=398, metadata_kv_count=32 --- gguf_reader_ext.h:219
+[I] loading vae from '/home/runner/work/_temp/m/vae.safetensors' --- diffusion_engine.cpp:809
+[I] load /home/runner/work/_temp/m/vae.safetensors using safetensors format --- model_loader.cpp:222
+[V] init from '/home/runner/work/_temp/m/vae.safetensors', prefix = 'vae.' --- model_loader.cpp:290
+[I] Version: Flux.2 klein  --- diffusion_engine.cpp:1016
+[W] auto-fit: no GPU devices; using the default backend --- backend_fit.cpp:444
+[V] Found 1 backend devices: --- ggml_extend_backend.cpp:703
+[V] #0: CPU --- ggml_extend_backend.cpp:706
+[V] Initializing backend: CPU --- ggml_extend_backend.cpp:409
+[V] Using CPU backend --- ggml_extend_backend.cpp:748
+[V] using 4 threads for model loading --- model_loader.cpp:190
+[I] Weight type stat:                      f32: 395  |    q8_0: 333  |     i32: 1    |    bf16: 69    --- diffusion_engine.cpp:1648
+[I] Conditioner weight type stat:          f32: 145  |    q8_0: 253   --- diffusion_engine.cpp:1649
+[I] Diffusion model weight type stat:     q8_0: 80   |    bf16: 69    --- diffusion_engine.cpp:1650
+[I] VAE weight type stat:                  f32: 250  |     i32: 1     --- diffusion_engine.cpp:1651
+[V] llm: num_layers = 36, vocab_size = 151936, hidden_size = 2560, intermediate_size = 9728 --- llm.hpp:442
+[V] flux: depth = 5, depth_single_blocks = 20, guidance_embed = false, context_in_dim = 7680, hidden_size = 3072, num_heads = 24 --- flux.hpp:185
+[I] using VAE for encoding / decoding --- model_builders.cpp:657
+[I] vae decoder: ch = 96 --- auto_encoder_kl.hpp:529
+[I] flash attention auto: CPU -> on (CPU) --- flash_attn.cpp:66
+[I] conv2d direct auto: CPU -> off (no implicit GEMM path) --- conv_direct.cpp:90
+[I] conv3d direct auto: CPU -> off (no implicit GEMM path) --- conv_direct.cpp:90
+[V] validating model metadata --- diffusion_engine.cpp:1327
+[V] model metadata validated; weights will be prepared lazily --- diffusion_engine.cpp:1397
+[I] total params memory size = 8296.91MB (VRAM 0.00MB, RAM 8296.91MB): text_encoders 4076.43MB(RAM), diffusion_model 4101.40MB(RAM), vae 119.08MB(RAM), controlnet 0.00MB(N/A), extensions 0.00MB(N/A) --- diffusion_engine.cpp:1443
+[I] running in Flux FLOW mode --- diffusion_engine.cpp:1594
+[I] generate_image 768x1344 --- image.cpp:814
+[V] using 4 threads for model loading --- model_loader.cpp:190
+[I] Using 'flux2' preset for reference images --- diffusion_engine.cpp:3257
+[I] get_sigmas with Flux2 scheduler --- denoiser.hpp:1186
+[V] Flux2 scheduler: image_seq_len=4032, steps=4, mu=2.286 --- denoiser.hpp:882
+[I] sampling using Euler method --- request.cpp:422
+[V] parse '<|im_start|>user\nBackground painting for an original 2D cartoon TV series, vertical 9:16 composition, eye-level camera. Same polished 2D animation style as the characters: clean bold dark-brown outlines, vibrant warm colors, soft cel shading. No people, no animals, no text, no letters, no logo. A sunny morning street in a Dakar neighbourhood, Senegal. On the left, a small colourful corner shop with a turquoise painted facade, an open wooden counter window and shelves full of colourful goods, a hand-painted sign with only drawings. On the right, a two-storey ochre house with a small balcony and laundry drying on a line, an unfinished rooftop with rebar sticking out. In the distance, a baobab tree, electric poles with tangled wires and a bright blue sky with a few clouds. A wide, flat, empty sandy street in the lower third of the image, completely clear for the characters.<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n' to [['<|im_start|>user\n', 1], ['Background painting for an original 2D cartoon TV series, vertical 9:16 composition, eye-level camera. Same polished 2D animation style as the characters: clean bold dark-brown outlines, vibrant warm colors, soft cel shading. No people, no animals, no text, no letters, no logo. A sunny morning street in a Dakar neighbourhood, Senegal. On the left, a small colourful corner shop with a turquoise painted facade, an open wooden counter window and shelves full of colourful goods, a hand-painted sign with only drawings. On the right, a two-storey ochre house with a small balcony and laundry drying on a line, an unfinished rooftop with rebar sticking out. In the distance, a baobab tree, electric poles with tangled wires and a bright blue sky with a few clouds. A wide, flat, empty sandy street in the lower third of the image, completely clear for the characters.', 1], ['<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n', 1], ] --- conditioner.hpp:2182
+[V] split prompt "<|im_start|>user\n" to 3 tokens ["<|im_start|>", "user", "Ċ", ] --- bpe_tokenizer.cpp:245
+[V] split prompt "Background painting for an original 2D cartoon TV series, vertical 9:16 composition, eye-level camera. Same polished 2D animation style as the characters: clean bold dark-brown outlines, vibrant warm colors, soft cel shading. No people, no animals, no text, no letters, no logo. A sunny morning street in a Dakar neighbourhood, Senegal. On the left, a small colourful corner shop with a turquoise painted facade, an open wooden counter window and shelves full of colourful goods, a hand-painted sign with only drawings. On the right, a two-storey ochre house with a small balcony and laundry drying on a line, an unfinished rooftop with rebar sticking out. In the distance, a baobab tree, electric poles with tangled wires and a bright blue sky with a few clouds. A wide, flat, empty sandy street in the lower third of the image, completely clear for the characters." to 192 tokens ["Background", "Ġpainting", "Ġfor", "Ġan", "Ġoriginal", "Ġ", "2", "D", "Ġcartoon", "ĠTV", "Ġseries", ",", "Ġvertical", "Ġ", "9", ":", "1", "6", "Ġcomposition", ",", "Ġeye", "-level", "Ġcamera", ".", "ĠSame", "Ġpolished", "Ġ", "2", "D", "Ġanimation", "Ġstyle", "Ġas", "Ġthe", "Ġcharacters", ":", "Ġclean", "Ġbold", "Ġdark", "-b", "rown", "Ġoutlines", ",", "Ġvibrant", "Ġwarm", "Ġcolors", ",", "Ġsoft", "Ġcel", "Ġshading", ".", "ĠNo", "Ġpeople", ",", "Ġno", "Ġanimals", ",", "Ġno", "Ġtext", ",", "Ġno", "Ġletters", ",", "Ġno", "Ġlogo", ".", "ĠA", "Ġsunny", "Ġmorning", "Ġstreet", "Ġin", "Ġa", "ĠDak", "ar", "Ġneighbourhood", ",", "ĠSen", "egal", ".", "ĠOn", "Ġthe", "Ġleft", ",", "Ġa", "Ġsmall", "Ġcolourful", "Ġcorner", "Ġshop", "Ġwith", "Ġa", "Ġturquoise", "Ġpainted", "Ġfacade", ",", "Ġan", "Ġopen", "Ġwooden", "Ġcounter", "Ġwindow", "Ġand", "Ġshelves", "Ġfull", "Ġof", "Ġcolourful", "Ġgoods", ",", "Ġa", "Ġhand", "-p", "ainted", "Ġsign", "Ġwith", "Ġonly", "Ġdrawings", ".", "ĠOn", "Ġthe", "Ġright", ",", "Ġa", "Ġtwo", "-store", "y", "Ġoch", "re", "Ġhouse", "Ġwith", "Ġa", "Ġsmall", "Ġbalcony", "Ġand", "Ġlaundry", "Ġdrying", "Ġon", "Ġa", "Ġline", ",", "Ġan", "Ġunfinished", "Ġrooftop", "Ġwith", "Ġre", "bar", "Ġsticking", "Ġout", ".", "ĠIn", "Ġthe", "Ġdistance", ",", "Ġa", "Ġba", "ob", "ab", "Ġtree", ",", "Ġelectric", "Ġpoles", "Ġwith", "Ġtangled", "Ġwires", "Ġand", "Ġa", "Ġbright", "Ġblue", "Ġsky", "Ġwith", "Ġa", "Ġfew", "Ġclouds", ".", "ĠA", "Ġwide", ",", "Ġflat", ",", "Ġempty", "Ġsandy", "Ġstreet", "Ġin", "Ġthe", "Ġlower", "Ġthird", "Ġof", "Ġthe", "Ġimage", ",", "Ġcompletely", "Ġclear", "Ġfor", "Ġthe", "Ġcharacters", ".", ] --- bpe_tokenizer.cpp:245
+[V] split prompt "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n" to 9 tokens ["<|im_end|>", "Ċ", "<|im_start|>", "assistant", "Ċ", "<think>", "ĊĊ", "</think>", "ĊĊ", ] --- bpe_tokenizer.cpp:245
+[I] qwen3 build cached graph cut plan done (taking 1 ms) --- ggml_graph_cut.cpp:1032
+[V] loading 298/398 tensors from /home/runner/work/_temp/m/llm.gguf --- model_loader.cpp:1126
+  |#                                                 | 2/298 - 0.00MB/s[K  |##############                                    | 82/298 - 3.21GB/s[K  |###############################                   | 182/298 - 4.76GB/s[K  |##################################################| 298/298 - 5.10GB/s[K
+[I] loading tensors completed, taking 0.60s (read: 0.59s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] model manager prepared params backend buffers (3155.85 MB, 298 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
+[V] qwen3 compute buffer size: 59.00 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
+[V] computing condition graph completed, taking 31178 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 31.18s --- image.cpp:529
+[I] generating image: 1/1 - seed 101 --- image.cpp:866
+[I] flux build cached graph cut plan done (taking 1 ms) --- ggml_graph_cut.cpp:1032
+[V] loading 149/149 tensors from /home/runner/work/_temp/m/klein.gguf --- model_loader.cpp:1126
+  |#                                                 | 2/149 - 0.00MB/s[K  |#########                                         | 24/149 - 1.58GB/s[K  |#######################                           | 66/149 - 3.02GB/s[K  |###############################                   | 90/149 - 3.29GB/s[K  |######################################            | 111/149 - 3.27GB/s[K  |###############################################   | 138/149 - 3.42GB/s[K  |##################################################| 149/149 - 3.32GB/s[K
+[I] loading tensors completed, taking 1.21s (read: 1.11s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] model manager prepared params backend buffers (4101.40 MB, 149 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
