@@ -28,9 +28,10 @@ def _amplitude_hanche(course):
 
 
 class Acteur:
-    def __init__(self, nom: str, jambe: float, graine: int = 0):
+    def __init__(self, nom: str, jambe: float, graine: int = 0, amplitude_jambes: float = 1.0):
         self.nom = nom
         self.jambe = jambe
+        self.amplitude_jambes = amplitude_jambes      # < 1 sous une robe longue : démarche glissée
         self.graine = graine
         self.pistes = Pistes(DEFAUTS)
         self.expressions: list[tuple[float, str]] = []
@@ -101,6 +102,8 @@ class Acteur:
             "avbras_av": -1.25 * c, "avbras_ar": -1.25 * c,
             "torse": 0.16 * c, "tete": -0.08 * c,
         }
+        for os_jambe in ("cuisse_av", "cuisse_ar", "tibia_av", "tibia_ar"):
+            angles[os_jambe] *= self.amplitude_jambes
         angles["pied_av"] = -0.7 * (angles["cuisse_av"] + angles["tibia_av"])
         angles["pied_ar"] = -0.7 * (angles["cuisse_ar"] + angles["tibia_ar"])
         souffle = 2 * math.pi * t / 3.2 + self.graine

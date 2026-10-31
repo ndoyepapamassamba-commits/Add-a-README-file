@@ -2,9 +2,9 @@
 import json, math, sys, time, skia
 from keba.pantin import Pantin
 E = sys.argv[1]
-im = skia.Image.open(f"{E}/keba_detoure.png").convert(alphaType=skia.kUnpremul_AlphaType, colorType=skia.kRGBA_8888_ColorType)
-art = json.load(open(f"{E}/keba_articulations.json"))
-t = time.time(); p = Pantin.depuis_image(im.toarray(), art, pas=9); print("pantin", round(time.time() - t, 2), "s")
+im = skia.Image.open(sys.argv[2] if len(sys.argv) > 2 else f"{E}/keba_detoure.png").convert(alphaType=skia.kUnpremul_AlphaType, colorType=skia.kRGBA_8888_ColorType)
+art = json.load(open(sys.argv[3] if len(sys.argv) > 3 else f"{E}/keba_articulations.json"))
+t = time.time(); p = Pantin.depuis_image(im.toarray(), art, pas=9, modele=sys.argv[5] if len(sys.argv) > 5 else "humain"); print("pantin", round(time.time() - t, 2), "s")
 r = math.radians
 poses = [
  ("repos", {}, 0),
@@ -16,4 +16,4 @@ poses = [
 s = skia.Surface(560 * len(poses), 1040); c = s.getCanvas(); c.clear(skia.Color(250, 236, 214))
 for i, (nom, ang, saut) in enumerate(poses):
     p.dessiner(c, p.poser(ang, x=280 + 560 * i, y=1000, echelle=0.95, saut=saut))
-s.makeImageSnapshot().save(f"{E}/keba_poses.png", skia.kPNG)
+s.makeImageSnapshot().save(sys.argv[4] if len(sys.argv) > 4 else f"{E}/keba_poses.png", skia.kPNG)

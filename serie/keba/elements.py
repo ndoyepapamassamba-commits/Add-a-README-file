@@ -109,3 +109,22 @@ class Particules:
                 canvas.drawPath(p, skia.Paint(AntiAlias=True, Color=teinte(c, alpha)))
             else:
                 canvas.drawCircle(px, py, r * (0.6 + 0.8 * k), skia.Paint(AntiAlias=True, Color=teinte(c, alpha * 0.85)))
+
+
+class ElementPorte:
+    """Un objet tenu ou porté : `position(t) -> (x, y, angle)` ou None quand il n'est plus porté (lâché, lancé)."""
+
+    def __init__(self, image: skia.Image, taille, position, ordre: int = 15):
+        self.image, self.position, self.ordre = image, position, ordre
+        self.w, self.h = (taille, taille) if np.isscalar(taille) else taille
+
+    def dessiner(self, canvas, t):
+        p = self.position(t)
+        if p is None:
+            return
+        x, y, a = p
+        canvas.save()
+        canvas.translate(x, y)
+        canvas.rotate(math.degrees(a))
+        canvas.drawImageRect(self.image, skia.Rect(-self.w / 2, -self.h / 2, self.w / 2, self.h / 2), ECHANTILLONNAGE)
+        canvas.restore()

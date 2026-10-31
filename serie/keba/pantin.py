@@ -47,6 +47,7 @@ class Os:
 def _points_derives(a: dict) -> dict:
     p = {k: np.asarray(v, dtype=float) for k, v in a.items()}
     p["bassin"] = (p["hanche_av"] + p["hanche_ar"]) / 2
+    p["chevilles"] = (p["cheville_av"] + p["cheville_ar"]) / 2
     epaules = (p["epaule_av"] + p["epaule_ar"]) / 2
     p["cou"] = epaules + (p["nez"] - epaules) * 0.25
     p["tete_haut"] = p["nez"] + (p["nez"] - p["cou"]) * 1.4
@@ -66,6 +67,20 @@ PIECES_HUMAIN = {"torse": "torse", "tete": "tete",
 JOINTURES_HUMAIN = {frozenset(("torse", "tete")): "cou",
                     frozenset(("torse", "bras_av")): "epaule_av", frozenset(("torse", "bras_ar")): "epaule_ar",
                     frozenset(("torse", "jambe_av")): "hanche_av", frozenset(("torse", "jambe_ar")): "hanche_ar"}
+
+
+# Robe longue (boubou) : la robe appartient au torse ; sous elle, l'os de chaque jambe ne tient aucune chair (plage
+# None) et ne sert qu'à porter le pied, dont la chair est prise vers les orteils, hors de la robe : démarche glissée.
+OS_ROBE = [o for o in OS_HUMAIN if not o[0].startswith(("cuisse", "tibia", "pied"))] + [
+    ("cuisse_ar", "hanche_ar", "cheville_ar", None, 1, None),          # porte le pied, ne tient aucune chair
+    ("pied_ar", "cheville_ar", "orteil_ar", "cuisse_ar", 1, (0.45, 1.00)),  # la chair vers les orteils, hors robe
+    ("cuisse_av", "hanche_av", "cheville_av", None, 2, None),
+    ("pied_av", "cheville_av", "orteil_av", "cuisse_av", 2, (0.45, 1.00)),
+    ("robe", "bassin", "chevilles", "torse", 3, (0.00, 0.97)),        # toute la robe, jusqu'à l'ourlet, suit le torse
+]
+PIECES_ROBE = {**{k: v for k, v in PIECES_HUMAIN.items() if not k.startswith("tibia")}, "robe": "torse"}
+JOINTURES_ROBE = {k: v for k, v in JOINTURES_HUMAIN.items() if "jambe_av" not in k and "jambe_ar" not in k}
+MODELES = {"humain": (OS_HUMAIN, PIECES_HUMAIN, JOINTURES_HUMAIN), "robe": (OS_ROBE, PIECES_ROBE, JOINTURES_ROBE)}
 
 
 def _carte_traits(rgba: np.ndarray) -> np.ndarray:
@@ -170,7 +185,9 @@ class Pantin:
     # --- construction ------------------------------------------------------------------------------------------
 
     @classmethod
-    def depuis_image(cls, rgba: np.ndarray, articulations: dict, pas: int = 10, os_def=OS_HUMAIN):
+    def depuis_image(cls, rgba: np.ndarray, articulations: dict, pas: int = 10, modele: str = "humain"):
+        """modele : « humain » (jambes articulées) ou « robe » (la robe suit le torse, seuls les pieds bougent)."""
+        os_def, pieces, jointures = MODELES[modele]
         alpha = rgba[:, :, 3]
         masque = ndimage.binary_dilation(alpha > 10, iterations=2)
         # test d'appartenance plus large : dans les creux de la silhouette, les triangles du bord restent
@@ -208,7 +225,7 @@ class Pantin:
         poids = cls._poids(sommets, triangles, os_liste, pas, _carte_traits(rgba))
         hauteur = float(sommets[:, 1].max() - sommets[:, 1].min())
         rayon = max(2.0 * pas, 0.035 * hauteur)
-        sommets, triangles, poids, couches = _decouper(sommets, triangles, os_liste, poids, p, rayon)
+        sommets, triangles, poids, couches = _decouper(sommets, triangles, os_liste, poids, p, rayon, pieces, jointures)
         return cls(rgba, sommets, triangles, os_liste, poids, couches)
 
     @staticmethod
@@ -234,6 +251,10 @@ class Pantin:
         euclide = np.empty((n, len(os_liste)))
         for j, o in enumerate(os_liste):
             d, t = _distance_segment(sommets, o.debut, o.fin)
+            if o.plage is None:                  # os porteur sans chair (jambe sous une robe)
+                euclide[:, j] = np.inf
+                distances[:, j] = np.inf
+                continue
             euclide[:, j] = d
             graines = np.nonzero((d < 1.5 * pas) & (t >= o.plage[0]) & (t <= o.plage[1]))[0]
             if len(graines) == 0:

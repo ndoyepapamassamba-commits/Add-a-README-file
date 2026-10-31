@@ -29,6 +29,18 @@ def test_un_objet_est_dessine_la_ou_la_physique_l_a_mis():
     assert a[100, 100] == 0           # plus en l'air
 
 
+def test_un_objet_porte_suit_son_porteur_et_disparait_quand_il_est_lache():
+    from keba.elements import ElementPorte
+    e = ElementPorte(_carre_rouge(), (40, 40), lambda t: (100 + 100 * t, 200, 0.0) if t < 1.0 else None)
+    s = _surface()
+    e.dessiner(s.getCanvas(), 0.5)
+    a = s.makeImageSnapshot().toarray()[:, :, 3]
+    assert a[200, 150] > 200 and a[200, 100] == 0
+    s = _surface()
+    e.dessiner(s.getCanvas(), 1.5)
+    assert s.makeImageSnapshot().toarray()[:, :, 3].max() == 0
+
+
 def test_les_particules_naissent_s_envolent_et_disparaissent():
     p = Particules(graine=4)
     p.bouffee(1.0, (200, 300), nombre=12, couleur="#D9B98A", vitesse=250, duree=0.8, gravite=-80)

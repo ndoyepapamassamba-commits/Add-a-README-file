@@ -1,0 +1,15 @@
+{
+ "id": "coumba-planche",
+ "modele": "FLUX.2-klein-4B (GGUF Q8_0)",
+ "licence": "Apache-2.0",
+ "encodeur": "Qwen3-4B Q8_0 (Apache-2.0)",
+ "decodeur": "FLUX.2-small-decoder (Apache-2.0)",
+ "moteur": "stable-diffusion.cpp 0518b34374761cb82aeda5ad3c2f0686fdad2cec (MIT)",
+ "prompt": "Original character design for a 2D cartoon TV series set in a Dakar neighbourhood, Senegal. Full body from head to feet, standing in a puppet pose made for cut-out animation: both arms stretched out diagonally downwards about 45 degrees away from the body with a wide empty gap between the arms and the torso, hands open, legs apart with an empty gap between them, three-quarter front view facing slightly to the right, centered, the whole body visible with a margin around it. Clean bold dark-brown outlines, vibrant warm colors, soft cel shading, appealing exaggerated cartoon proportions, polished professional 2D animation style, plain pure white background, no ground shadow, no text, no logo. Tata Coumba, a very tall, very thin and elegant Senegalese woman in her forties with a long neck, an enormous tall purple-and-gold wax-print headwrap towering above her head, a matching long flowing purple wax-print boubou dress with gold embroidery at the neckline and wide sleeves, gold hoop earrings, red lipstick, long eyelashes, red high-heeled sandals, a haughty and dignified expression.",
+ "graine": 37,
+ "largeur": 768,
+ "hauteur": 1024,
+ "refs": [],
+ "secondes": 641.4,
+ "date": "2026-10-31T10:41:36+00:00"
+}

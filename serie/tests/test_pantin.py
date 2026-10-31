@@ -193,6 +193,42 @@ def test_une_texture_d_expression_remplace_l_image_sans_changer_la_forme(pantin)
     assert (rendu[:, :, 3] > 200).sum() == pytest.approx((_rendu(pantin)[:, :, 3] > 200).sum(), rel=0.01)
 
 
+def _dame_en_robe():
+    s = skia.Surface(W, H)
+    c = s.getCanvas()
+    c.clear(skia.ColorTRANSPARENT)
+    a = ARTICULATIONS
+    trait = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=5, Color=skia.Color(40, 22, 12))
+    for cote in ("av", "ar"):                                   # pieds qui dépassent sous la robe
+        c.drawLine(*a[f"cheville_{cote}"], *a[f"orteil_{cote}"],
+                   skia.Paint(AntiAlias=True, Color=skia.Color(200, 30, 40), StrokeWidth=14,
+                              StrokeCap=skia.Paint.kRound_Cap))
+    robe = skia.Path()
+    robe.moveTo(122, 120)
+    robe.lineTo(178, 120)
+    robe.lineTo(205, 350)
+    robe.lineTo(95, 350)
+    robe.close()
+    c.drawPath(robe, skia.Paint(AntiAlias=True, Color=skia.Color(120, 40, 160)))
+    c.drawPath(robe, trait)
+    c.drawCircle(150, 72, 42, skia.Paint(AntiAlias=True, Color=skia.Color(140, 90, 60)))
+    return s.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType)
+
+
+def test_une_robe_reste_d_un_seul_tenant_quand_les_jambes_bougent():
+    p = Pantin.depuis_image(_dame_en_robe(), ARTICULATIONS, pas=8, modele="robe")
+    s = skia.Surface(W, H)
+    s.getCanvas().clear(skia.ColorTRANSPARENT)
+    p.dessiner(s.getCanvas(), p.poser({"cuisse_av": -0.4, "cuisse_ar": 0.4}))
+    a = s.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType)
+    robe_avant = _dame_en_robe()[200:340, 110:190]
+    robe_apres = a[200:340, 110:190]
+    assert np.abs(robe_avant.astype(int) - robe_apres.astype(int)).max() < 10    # la robe ne bouge pas
+    pieds_avant = _dame_en_robe()[355:380, 100:200, 3] > 100
+    pieds_apres = a[355:380, 100:200, 3] > 100
+    assert (pieds_avant != pieds_apres).sum() > 40                              # les pieds, si
+
+
 def test_le_rendu_est_reproductible(pantin):
     angles = {"cuisse_av": 0.4, "tibia_av": -0.3, "tete": 0.2}
     assert np.array_equal(_rendu(pantin, angles), _rendu(pantin, angles))

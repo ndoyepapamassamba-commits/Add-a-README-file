@@ -71,3 +71,12 @@ def test_les_expressions_changent_aux_bons_moments():
     assert a.pose(0.5)["expression"] == "neutre"
     assert a.pose(2.0)["expression"] == "colere"
     assert a.pose(3.5)["expression"] == "gene"
+
+
+def test_une_robe_raccourcit_le_pas_mais_pas_les_bras():
+    normal, robe = _acteur(), Acteur("coumba", jambe=100.0, amplitude_jambes=0.3)
+    robe.pistes = normal.pistes
+    robe.preparer(8.0)
+    pn, pr = normal.pose(3.0)["angles"], robe.pose(3.0)["angles"]
+    assert pr["cuisse_av"] == pytest.approx(0.3 * pn["cuisse_av"], rel=1e-6)
+    assert pr["bras_av"] == pytest.approx(pn["bras_av"], rel=1e-6)
