@@ -154,4 +154,21 @@ fait : coumba-planche en 641.4 s
 [I] loading tensors completed, taking 1.00s (read: 0.96s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
 [V] model manager prepared params backend buffers (4101.40 MB, 149 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
 [V] flux compute buffer size: 267.99 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
-  |============>                                     | 1/4 - 73.98s/it[K  |=========================>                        | 2/4 - 72.78s/it[K
+  |============>                                     | 1/4 - 73.98s/it[K  |=========================>                        | 2/4 - 72.78s/it[K  |=====================================>            | 3/4 - 72.61s/it[K  |==================================================| 4/4 - 72.50s/it[K
+[I] sampling completed, taking 291.89s --- image.cpp:899
+[I] generating 1 latent images completed, taking 291.89s --- image.cpp:911
+[I] decoding 1 latents --- image.cpp:554
+[I] vae build cached graph cut plan done (taking 0 ms) --- ggml_graph_cut.cpp:1032
+[V] loading 140/251 tensors from /home/runner/work/_temp/m/vae.safetensors --- model_loader.cpp:1126
+  |##                                                | 3/140 - 1.46MB/s[K  |##################################################| 140/140 - 530.40MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.16s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] model manager prepared params backend buffers ( 53.36 MB, 140 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
+[V] vae compute buffer size: 702.28 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
+[V] computing vae decode graph completed, taking 14.50s --- vae.hpp:384
+[I] latent 1 decoded, taking 14.50s --- image.cpp:620
+[I] decode_first_stage completed, taking 14.50s --- image.cpp:624
+[I] generate_image completed in 334.67s --- image.cpp:1050
+[V] model manager released params backend buffers (7376.33 MB, 695 tensors, 4 blocks, RAM) from CPU --- model_manager.cpp:1295
+[I] save result image 0 to '/home/runner/work/_temp/sortie/bara-expr-douleur-brut.png' (success) --- main.cpp:498
+[I] 1/1 images saved --- main.cpp:574
+fait : bara-expr-douleur en 336.0 s

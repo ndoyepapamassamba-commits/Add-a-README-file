@@ -1,0 +1,27 @@
+=== coumba-planche
+[I] loading tensors completed, taking 0.60s (read: 0.45s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 16355 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 16.35s --- image.cpp:529
+[I] loading tensors completed, taking 1.00s (read: 0.98s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 584.10s --- image.cpp:899
+[I] generating 1 latent images completed, taking 584.10s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.17s, memcpy: 0.00s, convert: 0.01s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 39.84s --- vae.hpp:384
+[I] decode_first_stage completed, taking 39.84s --- image.cpp:624
+[I] generate_image completed in 640.30s --- image.cpp:1050
+fait : coumba-planche en 641.4 s
+=== bara-expr-douleur
+[I] loading tensors completed, taking 0.20s (read: 0.08s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 2.83s --- vae.hpp:310
+[I] encode_first_stage completed, taking 2.85s --- image.cpp:398
+[I] loading tensors completed, taking 0.60s (read: 0.49s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 25401 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 25.40s --- image.cpp:529
+[I] loading tensors completed, taking 1.00s (read: 0.96s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 291.89s --- image.cpp:899
+[I] generating 1 latent images completed, taking 291.89s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.16s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 14.50s --- vae.hpp:384
+[I] decode_first_stage completed, taking 14.50s --- image.cpp:624
+[I] generate_image completed in 334.67s --- image.cpp:1050
+fait : bara-expr-douleur en 336.0 s
