@@ -16,6 +16,7 @@ from PIL import Image
 
 SERIE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SERIE))
+from atelier.expressions import recoller  # noqa: E402
 from keba.detourage import detourer  # noqa: E402
 
 BIBLE_PNG = SERIE / "bible" / "png"
@@ -56,6 +57,13 @@ def main(depot: Path):
                 git("show", f"origin/{b}:{f}", depot=depot), encoding="utf-8")
             if ident.startswith("decor-"):
                 Image.open(dest.with_name(dest.name + "-brut.png")).convert("RGB").save(dest.with_suffix(".png"))
+            elif "-expr-" in ident:
+                # tête retouchée : recollée dans la planche brute (même cadrage), puis détourée en entier
+                perso = ident.split("-expr-")[0]
+                cadre = json.loads((SERIE / "atelier" / "expressions.json").read_text())["cadres"][perso]
+                planche = np.asarray(Image.open(BIBLE_PNG / perso / "planche-brut.png").convert("RGB"))
+                tete = np.asarray(Image.open(dest.with_name(dest.name + "-brut.png")).convert("RGB"))
+                Image.fromarray(detourer(recoller(planche, tete, cadre))).save(dest.with_suffix(".png"))
             else:
                 rgb = np.asarray(Image.open(dest.with_name(dest.name + "-brut.png")).convert("RGB"))
                 Image.fromarray(detourer(rgb)).save(dest.with_suffix(".png"))

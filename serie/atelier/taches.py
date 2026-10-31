@@ -10,6 +10,7 @@ from pathlib import Path
 ICI = Path(__file__).resolve().parent
 BIBLE = ICI.parent / "bible" / "illustrations.json"
 CHEMIN = ICI / "taches.json"
+EXPRESSIONS = ICI / "expressions.json"          # écrit par outils/preparer_expressions.py
 
 
 def lot_planches() -> list[dict]:
@@ -38,8 +39,16 @@ def lot_objets() -> list[dict]:
             for ident, o in ill["objets"].items()]
 
 
+def lot_expressions() -> list[dict]:
+    if not EXPRESSIONS.exists():
+        return []
+    from . import expressions
+    d = json.loads(EXPRESSIONS.read_text(encoding="utf-8"))
+    return expressions.lot(d["choix"], {k: tuple(v) for k, v in d["cadres"].items()})
+
+
 def ecrire():
-    taches = lot_planches() + lot_decors() + lot_objets()
+    taches = lot_planches() + lot_decors() + lot_objets() + lot_expressions()
     CHEMIN.write_text(json.dumps({"lot": "pilote", "taches": taches}, ensure_ascii=False, indent=1) + "\n",
                       encoding="utf-8")
 

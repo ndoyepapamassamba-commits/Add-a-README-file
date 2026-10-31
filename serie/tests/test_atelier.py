@@ -58,6 +58,17 @@ def test_les_objets_du_pilote_sont_des_vignettes_sur_fond_blanc():
 
 def test_le_fichier_de_taches_publie_est_a_jour():
     publie = json.loads(taches.CHEMIN.read_text(encoding="utf-8"))
-    attendu = taches.lot_planches() + taches.lot_decors() + taches.lot_objets()
+    attendu = taches.lot_planches() + taches.lot_decors() + taches.lot_objets() + taches.lot_expressions()
     assert publie == {"lot": "pilote", "taches": attendu}
     assert len({t["id"] for t in attendu}) == len(attendu)
+
+
+def test_le_lot_des_expressions_vient_du_fichier_prepare(tmp_path, monkeypatch):
+    import json as _json
+    f = tmp_path / "expressions.json"
+    f.write_text(_json.dumps({"choix": {"keba": ["joie"]}, "cadres": {"keba": [190, 60, 384]}}))
+    monkeypatch.setattr(taches, "EXPRESSIONS", f)
+    (t,) = taches.lot_expressions()
+    assert t["id"] == "keba-expr-joie" and t["refs"] == ["keba-tete.png"]
+    monkeypatch.setattr(taches, "EXPRESSIONS", tmp_path / "absent.json")
+    assert taches.lot_expressions() == []
