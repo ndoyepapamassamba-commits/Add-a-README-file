@@ -1,0 +1,15 @@
+{
+ "id": "objet-auvent",
+ "modele": "FLUX.2-klein-4B (GGUF Q8_0)",
+ "licence": "Apache-2.0",
+ "encodeur": "Qwen3-4B Q8_0 (Apache-2.0)",
+ "decodeur": "FLUX.2-small-decoder (Apache-2.0)",
+ "moteur": "stable-diffusion.cpp 0518b34374761cb82aeda5ad3c2f0686fdad2cec (MIT)",
+ "prompt": "Single object sticker for an original 2D cartoon TV series, centered, the whole object visible with a margin, clean bold dark-brown outlines, vibrant warm colors, soft cel shading, plain pure white background, no shadow, no text. a flat rectangular corrugated metal sheet, slightly rusty, seen from the front",
+ "graine": 205,
+ "largeur": 512,
+ "hauteur": 512,
+ "refs": [],
+ "secondes": 274.5,
+ "date": "2026-10-31T10:35:35+00:00"
+}
