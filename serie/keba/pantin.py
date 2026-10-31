@@ -29,6 +29,7 @@ OS_HUMAIN = [
     ("cuisse_av", "hanche_av", "genou_av", None, 2, (0.40, 0.85)),
     ("tibia_av", "genou_av", "cheville_av", "cuisse_av", 2, (0.15, 0.85)),
     ("pied_av", "cheville_av", "orteil_av", "tibia_av", 2, (0.00, 1.00)),
+    ("basque", "bassin", "genoux", "torse", 3, None),   # bas du vêtement du haut (tablier, maillot long) : réglé par `jupe`
     ("bras_av", "epaule_av", "coude_av", "torse", 5, (0.15, 0.85)),
     ("avbras_av", "coude_av", "poignet_av", "bras_av", 5, (0.15, 0.90)),
     ("main_av", "poignet_av", "main_av_bout", "avbras_av", 5, (0.10, 1.00)),
@@ -51,6 +52,7 @@ def _points_derives(a: dict) -> dict:
         return p
     p["bassin"] = (p["hanche_av"] + p["hanche_ar"]) / 2
     p["chevilles"] = (p["cheville_av"] + p["cheville_ar"]) / 2
+    p["genoux"] = (p["genou_av"] + p["genou_ar"]) / 2
     epaules = (p["epaule_av"] + p["epaule_ar"]) / 2
     p["cou"] = epaules + (p["nez"] - epaules) * 0.25
     p["tete_haut"] = p["nez"] + (p["nez"] - p["cou"]) * 1.4
@@ -62,7 +64,7 @@ def _points_derives(a: dict) -> dict:
 PENALITE_TRAIT = 14.0
 
 # pièces du pantin (os qui bougent ensemble sans couture) et articulations où deux pièces restent reliées
-PIECES_HUMAIN = {"torse": "torse", "tete": "tete",
+PIECES_HUMAIN = {"torse": "torse", "tete": "tete", "basque": "torse",
                  "bras_av": "bras_av", "avbras_av": "bras_av", "main_av": "bras_av",
                  "bras_ar": "bras_ar", "avbras_ar": "bras_ar", "main_ar": "bras_ar",
                  "cuisse_av": "jambe_av", "tibia_av": "jambe_av", "pied_av": "jambe_av",
@@ -263,9 +265,17 @@ class Pantin:
     # --- construction ------------------------------------------------------------------------------------------
 
     @classmethod
-    def depuis_image(cls, rgba: np.ndarray, articulations: dict, pas: int = 10, modele: str = "humain"):
-        """modele : « humain » (jambes articulées) ou « robe » (la robe suit le torse, seuls les pieds bougent)."""
+    def depuis_image(cls, rgba: np.ndarray, articulations: dict, pas: int = 10, modele: str = "humain",
+                     jupe: float = 0.0):
+        """modele : « humain » (jambes articulées), « robe » (la robe suit le torse, seuls les pieds bougent) ou
+        « quadrupede ». jupe : fraction de la cuisse couverte par le vêtement du haut (tablier, maillot long), qui
+        suit alors le torse au lieu des cuisses."""
         os_def, pieces, jointures = MODELES[modele]
+        if jupe > 0 and any(o[0] == "basque" for o in os_def):
+            debut_cuisse = min(0.8, jupe + 0.1)
+            os_def = [(n, d, f, par, c, (0.0, jupe) if n == "basque"
+                       else ((debut_cuisse, max(debut_cuisse + 0.05, pl[1])) if n.startswith("cuisse") and pl else pl))
+                      for n, d, f, par, c, pl in os_def]
         alpha = rgba[:, :, 3]
         masque = ndimage.binary_dilation(alpha > 10, iterations=2)
         # test d'appartenance plus large : dans les creux de la silhouette, les triangles du bord restent

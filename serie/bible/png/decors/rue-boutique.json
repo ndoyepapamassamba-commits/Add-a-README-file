@@ -1,0 +1,15 @@
+{
+ "id": "decor-rue-boutique",
+ "modele": "FLUX.2-klein-4B (GGUF Q8_0)",
+ "licence": "Apache-2.0",
+ "encodeur": "Qwen3-4B Q8_0 (Apache-2.0)",
+ "decodeur": "FLUX.2-small-decoder (Apache-2.0)",
+ "moteur": "stable-diffusion.cpp 0518b34374761cb82aeda5ad3c2f0686fdad2cec (MIT)",
+ "prompt": "Background painting for an original 2D cartoon TV series, vertical 9:16 composition, eye-level camera. Same polished 2D animation style as the characters: clean bold dark-brown outlines, vibrant warm colors, soft cel shading. No people, no animals, no text, no letters, no logo. A sunny morning street in a Dakar neighbourhood, Senegal. On the left, a small colourful corner shop with a turquoise painted facade, an open wooden counter window and shelves full of colourful goods, a hand-painted sign with only drawings. On the right, a two-storey ochre house with a small balcony and laundry drying on a line, an unfinished rooftop with rebar sticking out. In the distance, a baobab tree, electric poles with tangled wires and a bright blue sky with a few clouds. A wide, flat, empty sandy street in the lower third of the image, completely clear for the characters.",
+ "graine": 101,
+ "largeur": 768,
+ "hauteur": 1344,
+ "refs": [],
+ "secondes": 1536.6,
+ "date": "2026-10-31T10:58:00+00:00"
+}

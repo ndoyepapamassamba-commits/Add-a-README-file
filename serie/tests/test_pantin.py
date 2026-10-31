@@ -272,3 +272,34 @@ def test_l_ourlet_du_maillot_reste_en_place_quand_la_cuisse_tourne():
     a = s.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType)
     ourlet = (slice(236, 266), slice(122, 178))           # le bas du maillot, au-dessus du short
     assert np.abs(a[ourlet].astype(int) - image[ourlet].astype(int)).max() < 12
+
+
+def _tunique_longue():
+    """Une tunique (tablier) qui descend jusqu'à mi-cuisse, par-dessus le pantalon."""
+    s = skia.Surface(W, H)
+    c = s.getCanvas()
+    c.clear(skia.ColorTRANSPARENT)
+    trait = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=4, Color=skia.Color(40, 22, 12))
+    for x in (136, 164):
+        jambe = skia.Rect(x - 13, 240, x + 13, 340)
+        c.drawRect(jambe, skia.Paint(AntiAlias=True, Color=skia.Color(100, 70, 40)))
+        c.drawRect(jambe, trait)
+    tunique = skia.Rect(116, 120, 184, 290)
+    c.drawRect(tunique, skia.Paint(AntiAlias=True, Color=skia.Color(245, 238, 215)))
+    c.drawRect(tunique, trait)
+    c.drawCircle(150, 72, 42, skia.Paint(AntiAlias=True, Color=skia.Color(140, 90, 60)))
+    return s.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType)
+
+
+def test_une_tunique_longue_reste_d_un_tenant_quand_les_cuisses_tournent():
+    art = dict(ARTICULATIONS, hanche_av=(136, 250), genou_av=(136, 300), cheville_av=(136, 335),
+               orteil_av=(126, 338), hanche_ar=(164, 250), genou_ar=(164, 300), cheville_ar=(164, 335),
+               orteil_ar=(174, 338))
+    image = _tunique_longue()
+    p = Pantin.depuis_image(image, art, pas=8, jupe=0.85)
+    s = skia.Surface(W, H)
+    s.getCanvas().clear(skia.ColorTRANSPARENT)
+    p.dessiner(s.getCanvas(), p.poser({"cuisse_av": -0.6, "cuisse_ar": 0.6}))
+    a = s.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType)
+    bas_tunique = (slice(262, 286), slice(122, 178))
+    assert np.abs(a[bas_tunique].astype(int) - image[bas_tunique].astype(int)).max() < 12
