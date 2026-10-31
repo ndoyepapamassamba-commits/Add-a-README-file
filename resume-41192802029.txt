@@ -1,0 +1,12 @@
+=== decor-rue-boutique
+[I] loading tensors completed, taking 0.60s (read: 0.59s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 31178 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 31.18s --- image.cpp:529
+[I] loading tensors completed, taking 1.21s (read: 1.11s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 1415.20s --- image.cpp:899
+[I] generating 1 latent images completed, taking 1415.20s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.02s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 88.62s --- vae.hpp:384
+[I] decode_first_stage completed, taking 88.62s --- image.cpp:624
+[I] generate_image completed in 1535.02s --- image.cpp:1050
+fait : decor-rue-boutique en 1536.6 s
