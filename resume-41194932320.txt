@@ -1,0 +1,27 @@
+=== gainde-planche
+[I] loading tensors completed, taking 0.80s (read: 0.69s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 31314 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 31.31s --- image.cpp:529
+[I] loading tensors completed, taking 1.21s (read: 1.05s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 1096.03s --- image.cpp:899
+[I] generating 1 latent images completed, taking 1096.03s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.03s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 71.18s --- vae.hpp:384
+[I] decode_first_stage completed, taking 71.18s --- image.cpp:624
+[I] generate_image completed in 1198.54s --- image.cpp:1050
+fait : gainde-planche en 1200.0 s
+=== bara-expr-soulagement
+[I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.04s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 2.83s --- vae.hpp:310
+[I] encode_first_stage completed, taking 2.84s --- image.cpp:398
+[I] loading tensors completed, taking 0.60s (read: 0.48s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 24893 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 24.89s --- image.cpp:529
+[I] loading tensors completed, taking 0.80s (read: 0.79s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 289.46s --- image.cpp:899
+[I] generating 1 latent images completed, taking 289.46s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.17s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 14.48s --- vae.hpp:384
+[I] decode_first_stage completed, taking 14.48s --- image.cpp:624
+[I] generate_image completed in 331.69s --- image.cpp:1050
+fait : bara-expr-soulagement en 333.0 s
