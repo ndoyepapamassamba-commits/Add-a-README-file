@@ -1,3 +1,4 @@
 [120 s] 0 images · === objet-auvent   |============>                                     | 1/4 - 61.45s/it[K · mémoire libre 7314 Mo
 [242 s] 0 images · === objet-auvent   |=====================================>            | 3/4 - 60.95s/it[K · mémoire libre 7304 Mo
 [120 s] 1 images · === coumba-expr-surprise   |============>                                     | 1/4 - 70.28s/it[K · mémoire libre 7273 Mo
+[242 s] 1 images · === coumba-expr-surprise   |=========================>                        | 2/4 - 69.22s/it[K · mémoire libre 7268 Mo
