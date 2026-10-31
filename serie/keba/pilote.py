@@ -64,7 +64,7 @@ def ecrire(plateau: Plateau, lieu: dict):
     # --- objets : comptoir, pyramide (4-3-2 ; la dernière boîte est dans la main de Bara), oranges, tôle ----------
     m = p.monde
     m.ajouter("comptoir", forme="boite", taille=(wc, 24), masse=50, position=(xc, yc + 12), fige=True)
-    bw, bh = 90.0, 110.0
+    bw, bh = 80.0, 90.0
     boites = []
     for rang, n in enumerate((3, 2)):
         for k in range(n):
@@ -77,7 +77,7 @@ def ecrire(plateau: Plateau, lieu: dict):
         m.ajouter(f"orange{k}", forme="rond", taille=17, masse=0.25,
                   position=(xc + wc / 2 + 30 + (k % 3) * 34, sol - 17 - (k // 3) * 33), elasticite=0.45)
     ax, ay, aw = lieu["auvent"]
-    m.ajouter("tole", forme="boite", taille=(aw, 22), masse=7.0, position=(ax + aw / 2, ay), fige=True)
+    m.ajouter("tole", forme="boite", taille=(aw, 22), masse=7.0, position=(ax + aw / 2, ay), fige=True, fantome=True)
 
     # --- distribution --------------------------------------------------------------------------------------------
     p.acteur("bara", jambe=150.0, x=xc + wc * 0.62)
@@ -137,25 +137,30 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.geste("keba", "bras_av", t + 1.8, 0.0, 0.3)
     p.son(t, "kling", 0.5)
 
-    # 8,2 s : Kéba repart… sa claquette s'envole vers la pyramide
+    # Kéba repart vers la droite en passant devant Bara… sa claquette s'envole derrière lui, en cloche, vers la pyramide
     t_depart = t + 2.1
-    p.aller("keba", t_depart, -150.0, vitesse=340)
-    t_claque = t_depart + 0.35
+    p.aller("keba", t_depart, lieu["largeur_monde"] + 300.0, vitesse=340, courbe="lin")
+    t_claque = t_depart + 1.0
     m.avancer_jusqua(t_claque)
     pied_x = p.acteurs["keba"].pistes.valeur("x", t_claque)
-    m.ajouter("claquette", forme="boite", taille=(50, 18), masse=0.15, position=(pied_x + 15, sol - 14))
-    cible = (xc, sommet_y)
-    duree_vol = 0.55
-    vx = (cible[0] - (pied_x + 15)) / duree_vol
-    vy = (cible[1] - (sol - 14) - 0.5 * 2600 * duree_vol ** 2) / duree_vol
+    depart = (pied_x - 20, sol - 30)
+    m.ajouter("claquette", forme="boite", taille=(50, 18), masse=0.15, position=depart)
+    haut = min(m.etat(n, t_claque)[1] for n in boites) - bh / 2      # dessus de la boîte du haut
+    cible = (xc, haut - 6)
+    duree_vol = 0.85
+    vx = (cible[0] - depart[0]) / duree_vol
+    vy = (cible[1] - depart[1] - 0.5 * 2600 * duree_vol ** 2) / duree_vol
     m.impulsion("claquette", (0.15 * vx, 0.15 * vy))
     p.son(t_claque, "clac", 0.9)
     p.son(t_claque + 0.05, "whoosh", 0.7)
-    p.expression("keba", t_claque + 0.2, "surprise")
-    p.cadrer(t_claque + 0.2, xc + 20, yc - 160, 1.6)
+    # il s'arrête, se retourne et regarde sa claquette partir
+    p.acteurs["keba"].pistes.cle("x", t_claque + 0.35, pied_x + 70, "sortie")
+    p.geste("keba", "sens_force", t_claque + 0.35, -1.0, 0.01, "maintien")
+    p.expression("keba", t_claque + 0.3, "surprise")
+    p.cadrer(t_claque + 0.2, xc + 60, yc - 160, 1.5)
 
     # la claquette touche la pyramide : SILENCE… elle tient… puis tout s'écroule
-    m.avancer_jusqua(t_claque + 1.0)
+    m.avancer_jusqua(t_claque + 1.3)
     impact = next((c.t for c in m.chocs if "claquette" in (c.a, c.b) and any(n.startswith("boite") for n in (c.a, c.b))),
                   t_claque + duree_vol)
     p.humeur(impact, "silence")
@@ -170,17 +175,12 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.expression("bara", t_soulage, "soulagement")
     p.geste("bara", "bras_av", t_soulage, 0.0, 0.4)
     p.geste("bara", "bras_ar", t_soulage, 0.0, 0.4)
+    p.aller("bara", t_soulage + 0.2, x_bara0 + 40, vitesse=120)    # il recule fièrement d'un pas
     p.son(t_soulage, "glissade", 0.0)
     t_chute = t_soulage + 1.2
     m.avancer_jusqua(t_chute)
     for nom in boites:
         m.liberer(nom)
-    m.impulsion("boite00", (-160.0, -60.0))
-    m.impulsion("boite02", (160.0, -60.0))
-    m.impulsion("boite01", (40.0, -40.0))
-    for i, nom in enumerate(boites):
-        if nom.startswith("boite1") or nom == "boite_haut":
-            m.impulsion(nom, ((-1) ** i * 90.0, -50.0))
     p.coup(t_chute)
     p.humeur(t_chute, "chaos")
     p.expression("bara", t_chute + 0.15, "choc")
@@ -190,15 +190,20 @@ def ecrire(plateau: Plateau, lieu: dict):
                      trajectoire=lambda tt: (p.acteurs["bara"].pistes.valeur("x", tt),
                                              sol - TAILLES["bara"] * 0.84 * p.acteurs["bara"].pistes.valeur("ecrase", tt)
                                              - p.acteurs["bara"].pistes.valeur("saut", tt), 0.0))
-    for nom in boites[:]:
-        x, y, _ = m.etat(nom, t_chute)
-        m.impulsion(nom, (0.6 * (x_bara - x) + 120.0, -80.0))
+    # l'écroulement, en cascade (le haut d'abord, puis le milieu, puis le bas, 80 ms d'écart) : lancées ensemble, les
+    # boîtes se cognent en l'air et retombent sur le comptoir. Impulsion = masse (0,9) × vitesse voulue.
+    cascade = [("boite_haut", (720.0, -900.0)),
+               ("boite10", (-560.0, -620.0)), ("boite11", (620.0, -1150.0)),     # par-dessus (ou sur) la tête de Bara
+               ("boite00", (-620.0, -480.0)), ("boite01", (480.0, -1250.0)), ("boite02", (700.0, -1050.0))]
+    for k, (nom, (vx, vy)) in enumerate(cascade):
+        if k in (1, 3):
+            m.avancer_jusqua(t_chute + 0.08 * (1 if k == 1 else 2))
+        m.impulsion(nom, (0.9 * vx, 0.9 * vy))
     m.avancer_jusqua(t_chute + 2.5)
     p.expression("bara", t_chute + 1.2, "douleur")
     p.expression("bara", t_chute + 2.3, "fureur")
     p.expression("keba", t_chute + 0.4, "choc")
     p.expression("keba", t_chute + 1.6, "gene")
-    p.geste("keba", "sens_force", t_chute + 0.3, 1.0, 0.01, "maintien")
 
     # Tata Coumba sort, la bassine sur la tête, et glisse sur une boîte
     t_c = t_chute + 2.8
@@ -406,5 +411,5 @@ def objets_portes(info: dict, acteurs: dict) -> list[dict]:
         x, y = acteurs["coumba"].point(t, "tete")
         return (x, y - 30.0, 0.0)
 
-    return [{"image": "boite", "taille": (98, 120), "position": boite, "ordre": 13},
+    return [{"image": "boite", "taille": (88, 100), "position": boite, "ordre": 13},
             {"image": "bassine", "taille": (150, 100), "position": bassine, "ordre": 12}]

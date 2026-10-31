@@ -52,12 +52,16 @@ class Monde:
         w, h = taille
         return pymunk.Poly.create_box(corps, (float(w), float(h)), radius=1.0)
 
-    def ajouter(self, nom, forme, taille, masse, position, angle=0.0, elasticite=0.4, friction=0.7, fige=False):
+    def ajouter(self, nom, forme, taille, masse, position, angle=0.0, elasticite=0.4, friction=0.7, fige=False,
+                fantome=False):
+        """fantome : ne touche rien tant qu'il n'est pas libéré (un auvent décoratif qui ne bloque pas les objets)."""
         corps = pymunk.Body(body_type=pymunk.Body.KINEMATIC if fige else pymunk.Body.DYNAMIC)
         corps.position = (float(position[0]), float(position[1]))
         corps.angle = float(angle)
         f = self._forme(corps, forme, taille)
         f.mass, f.elasticity, f.friction = float(masse), elasticite, friction
+        if fantome:
+            f.filter = pymunk.ShapeFilter(mask=0)
         self.espace.add(corps, f)
         self.noms[id(f)] = nom
         self.corps[nom] = corps
@@ -82,6 +86,8 @@ class Monde:
     def liberer(self, nom):
         corps = self.corps[nom]
         corps.body_type = pymunk.Body.DYNAMIC
+        for f in corps.shapes:
+            f.filter = pymunk.ShapeFilter()          # redevient solide
         corps.activate()
 
     def impulsion(self, nom, impulsion, point=None):

@@ -73,3 +73,14 @@ def test_le_monde_note_l_heure_d_apparition_de_chaque_objet():
     m.avancer_jusqua(1.0)
     m.ajouter("b", forme="rond", taille=10, masse=1.0, position=(100, 0))
     assert m.apparitions == {"a": 0.0, "b": pytest.approx(1.0)}
+
+
+def test_un_objet_fantome_ne_bloque_rien_jusqu_a_ce_qu_on_le_libere():
+    m = Monde(sol_y=SOL)
+    m.ajouter("tole", forme="boite", taille=(400, 20), masse=3.0, position=(500, 1200), fige=True, fantome=True)
+    m.ajouter("orange", forme="rond", taille=15, masse=0.3, position=(500, 1000))
+    m.avancer_jusqua(1.5)
+    assert m.etat("orange", 1.5)[1] > 1400                 # elle a traversé la tôle fantôme
+    m.liberer("tole")
+    m.avancer_jusqua(3.0)
+    assert m.etat("tole", 3.0)[1] > 1400                   # libérée, la tôle tombe et redevient solide

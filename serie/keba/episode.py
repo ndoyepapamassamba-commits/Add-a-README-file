@@ -114,7 +114,7 @@ def construire(graine: int = 1):
         elements.append(e)
     images = {k: charger_image(BIBLE_PNG / "objets" / f"{v}.png") for k, v in IMAGES_OBJETS.items()}
     m = plateau.monde
-    tailles = {"boite": (98, 120), "orange": 40, "claquette": (66, 34), "bassine": (150, 100), "tole": None}
+    tailles = {"boite": (88, 100), "orange": 40, "claquette": (66, 34), "bassine": (150, 100), "tole": None}
     for nom in m.corps:
         famille = next((f for f in IMAGES_OBJETS if nom.startswith(f)), None)
         if famille is None:
