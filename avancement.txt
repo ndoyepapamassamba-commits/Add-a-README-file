@@ -1,0 +1,1 @@
+[120 s] 0 images · === keba-planche [I] loading tensors completed, taking 1.21s (read: 1.07s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00 · mémoire libre 6745 Mo

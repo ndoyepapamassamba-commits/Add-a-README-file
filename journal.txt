@@ -1,0 +1,64 @@
+=== keba-planche
+[V] version: stable-diffusion.cpp version unknown, commit 0518b34 --- main.cpp:698
+[V] System Info: 
+   SSE3 = 1 |    SSSE3 = 1 |    AVX = 1 |    AVX2 = 1 |    F16C = 1 |    FMA = 1 |    BMI2 = 1 |    AVX512 = 1 |    AVX512_VBMI = 1 |    AVX512_VNNI = 1 |    OPENMP = 1 |    REPACK = 1 |  --- main.cpp:699
+[V] using 4 threads for model loading --- model_loader.cpp:190
+[I] loading diffusion model from '/home/runner/work/_temp/m/klein.gguf' --- diffusion_engine.cpp:738
+[I] load /home/runner/work/_temp/m/klein.gguf using gguf format --- model_loader.cpp:216
+[V] init from '/home/runner/work/_temp/m/klein.gguf' --- model_loader.cpp:262
+[V] GGUF v3, tensor_count=149, metadata_kv_count=0 --- gguf_reader_ext.h:219
+[I] loading llm from '/home/runner/work/_temp/m/llm.gguf' --- diffusion_engine.cpp:795
+[I] load /home/runner/work/_temp/m/llm.gguf using gguf format --- model_loader.cpp:216
+[V] init from '/home/runner/work/_temp/m/llm.gguf' --- model_loader.cpp:262
+[V] GGUF v3, tensor_count=398, metadata_kv_count=32 --- gguf_reader_ext.h:219
+[I] loading vae from '/home/runner/work/_temp/m/vae.safetensors' --- diffusion_engine.cpp:809
+[I] load /home/runner/work/_temp/m/vae.safetensors using safetensors format --- model_loader.cpp:222
+[V] init from '/home/runner/work/_temp/m/vae.safetensors', prefix = 'vae.' --- model_loader.cpp:290
+[I] Version: Flux.2 klein  --- diffusion_engine.cpp:1016
+[W] auto-fit: no GPU devices; using the default backend --- backend_fit.cpp:444
+[V] Found 1 backend devices: --- ggml_extend_backend.cpp:703
+[V] #0: CPU --- ggml_extend_backend.cpp:706
+[V] Initializing backend: CPU --- ggml_extend_backend.cpp:409
+[V] Using CPU backend --- ggml_extend_backend.cpp:748
+[V] using 4 threads for model loading --- model_loader.cpp:190
+[I] Weight type stat:                      f32: 395  |    q8_0: 333  |     i32: 1    |    bf16: 69    --- diffusion_engine.cpp:1648
+[I] Conditioner weight type stat:          f32: 145  |    q8_0: 253   --- diffusion_engine.cpp:1649
+[I] Diffusion model weight type stat:     q8_0: 80   |    bf16: 69    --- diffusion_engine.cpp:1650
+[I] VAE weight type stat:                  f32: 250  |     i32: 1     --- diffusion_engine.cpp:1651
+[V] llm: num_layers = 36, vocab_size = 151936, hidden_size = 2560, intermediate_size = 9728 --- llm.hpp:442
+[V] flux: depth = 5, depth_single_blocks = 20, guidance_embed = false, context_in_dim = 7680, hidden_size = 3072, num_heads = 24 --- flux.hpp:185
+[I] using VAE for encoding / decoding --- model_builders.cpp:657
+[I] vae decoder: ch = 96 --- auto_encoder_kl.hpp:529
+[I] flash attention auto: CPU -> on (CPU) --- flash_attn.cpp:66
+[I] conv2d direct auto: CPU -> off (no implicit GEMM path) --- conv_direct.cpp:90
+[I] conv3d direct auto: CPU -> off (no implicit GEMM path) --- conv_direct.cpp:90
+[V] validating model metadata --- diffusion_engine.cpp:1327
+[V] model metadata validated; weights will be prepared lazily --- diffusion_engine.cpp:1397
+[I] total params memory size = 8296.91MB (VRAM 0.00MB, RAM 8296.91MB): text_encoders 4076.43MB(RAM), diffusion_model 4101.40MB(RAM), vae 119.08MB(RAM), controlnet 0.00MB(N/A), extensions 0.00MB(N/A) --- diffusion_engine.cpp:1443
+[I] running in Flux FLOW mode --- diffusion_engine.cpp:1594
+[I] generate_image 768x1024 --- image.cpp:814
+[V] using 4 threads for model loading --- model_loader.cpp:190
+[I] Using 'flux2' preset for reference images --- diffusion_engine.cpp:3257
+[I] get_sigmas with Flux2 scheduler --- denoiser.hpp:1186
+[V] Flux2 scheduler: image_seq_len=3072, steps=4, mu=2.204 --- denoiser.hpp:882
+[I] sampling using Euler method --- request.cpp:422
+[V] parse '<|im_start|>user\nOriginal character design for a 2D cartoon TV series set in a Dakar neighbourhood, Senegal. Full body from head to feet, standing in a puppet pose made for cut-out animation: both arms stretched out diagonally downwards about 45 degrees away from the body with a wide empty gap between the arms and the torso, hands open, legs apart with an empty gap between them, three-quarter front view facing slightly to the right, centered, the whole body visible with a margin around it. Clean bold dark-brown outlines, vibrant warm colors, soft cel shading, appealing exaggerated cartoon proportions, polished professional 2D animation style, plain pure white background, no ground shadow, no text, no logo. Keba, a joyful 9-year-old Senegalese boy with a very big round head (almost half of his height) on a small body, dark brown skin, very short black hair with one single tall curly lock of hair standing straight up on top of his head like a little flame, big shiny expressive eyes, a wide grin showing his front teeth with a clearly visible gap between the two front teeth, an oversized orange football jersey that is too big for him with white side stripes and a white V collar, blue shorts, red flip-flops.<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n' to [['<|im_start|>user\n', 1], ['Original character design for a 2D cartoon TV series set in a Dakar neighbourhood, Senegal. Full body from head to feet, standing in a puppet pose made for cut-out animation: both arms stretched out diagonally downwards about 45 degrees away from the body with a wide empty gap between the arms and the torso, hands open, legs apart with an empty gap between them, three-quarter front view facing slightly to the right, centered, the whole body visible with a margin around it. Clean bold dark-brown outlines, vibrant warm colors, soft cel shading, appealing exaggerated cartoon proportions, polished professional 2D animation style, plain pure white background, no ground shadow, no text, no logo. Keba, a joyful 9-year-old Senegalese boy with a very big round head ', 1], ['almost half of his height', 1.1], [' on a small body, dark brown skin, very short black hair with one single tall curly lock of hair standing straight up on top of his head like a little flame, big shiny expressive eyes, a wide grin showing his front teeth with a clearly visible gap between the two front teeth, an oversized orange football jersey that is too big for him with white side stripes and a white V collar, blue shorts, red flip-flops.', 1], ['<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n', 1], ] --- conditioner.hpp:2182
+[V] split prompt "<|im_start|>user\n" to 3 tokens ["<|im_start|>", "user", "Ċ", ] --- bpe_tokenizer.cpp:245
+[V] split prompt "Original character design for a 2D cartoon TV series set in a Dakar neighbourhood, Senegal. Full body from head to feet, standing in a puppet pose made for cut-out animation: both arms stretched out diagonally downwards about 45 degrees away from the body with a wide empty gap between the arms and the torso, hands open, legs apart with an empty gap between them, three-quarter front view facing slightly to the right, centered, the whole body visible with a margin around it. Clean bold dark-brown outlines, vibrant warm colors, soft cel shading, appealing exaggerated cartoon proportions, polished professional 2D animation style, plain pure white background, no ground shadow, no text, no logo. Keba, a joyful 9-year-old Senegalese boy with a very big round head " to 165 tokens ["Original", "Ġcharacter", "Ġdesign", "Ġfor", "Ġa", "Ġ", "2", "D", "Ġcartoon", "ĠTV", "Ġseries", "Ġset", "Ġin", "Ġa", "ĠDak", "ar", "Ġneighbourhood", ",", "ĠSen", "egal", ".", "ĠFull", "Ġbody", "Ġfrom", "Ġhead", "Ġto", "Ġfeet", ",", "Ġstanding", "Ġin", "Ġa", "Ġpuppet", "Ġpose", "Ġmade", "Ġfor", "Ġcut", "-out", "Ġanimation", ":", "Ġboth", "Ġarms", "Ġstretched", "Ġout", "Ġdiagon", "ally", "Ġdownwards", "Ġabout", "Ġ", "4", "5", "Ġdegrees", "Ġaway", "Ġfrom", "Ġthe", "Ġbody", "Ġwith", "Ġa", "Ġwide", "Ġempty", "Ġgap", "Ġbetween", "Ġthe", "Ġarms", "Ġand", "Ġthe", "Ġtorso", ",", "Ġhands", "Ġopen", ",", "Ġlegs", "Ġapart", "Ġwith", "Ġan", "Ġempty", "Ġgap", "Ġbetween", "Ġthem", ",", "Ġthree", "-quarter", "Ġfront", "Ġview", "Ġfacing", "Ġslightly", "Ġto", "Ġthe", "Ġright", ",", "Ġcentered", ",", "Ġthe", "Ġwhole", "Ġbody", "Ġvisible", "Ġwith", "Ġa", "Ġmargin", "Ġaround", "Ġit", ".", "ĠClean", "Ġbold", "Ġdark", "-b", "rown", "Ġoutlines", ",", "Ġvibrant", "Ġwarm", "Ġcolors", ",", "Ġsoft", "Ġcel", "Ġshading", ",", "Ġappealing", "Ġexaggerated", "Ġcartoon", "Ġproportions", ",", "Ġpolished", "Ġprofessional", "Ġ", "2", "D", "Ġanimation", "Ġstyle", ",", "Ġplain", "Ġpure", "Ġwhite", "Ġbackground", ",", "Ġno", "Ġground", "Ġshadow", ",", "Ġno", "Ġtext", ",", "Ġno", "Ġlogo", ".", "ĠK", "eba", ",", "Ġa", "Ġjoyful", "Ġ", "9", "-year", "-old", "ĠSen", "eg", "ale", "se", "Ġboy", "Ġwith", "Ġa", "Ġvery", "Ġbig", "Ġround", "Ġhead", "Ġ", ] --- bpe_tokenizer.cpp:245
+[V] split prompt "almost half of his height" to 5 tokens ["almost", "Ġhalf", "Ġof", "Ġhis", "Ġheight", ] --- bpe_tokenizer.cpp:245
+[V] split prompt " on a small body, dark brown skin, very short black hair with one single tall curly lock of hair standing straight up on top of his head like a little flame, big shiny expressive eyes, a wide grin showing his front teeth with a clearly visible gap between the two front teeth, an oversized orange football jersey that is too big for him with white side stripes and a white V collar, blue shorts, red flip-flops." to 86 tokens ["Ġon", "Ġa", "Ġsmall", "Ġbody", ",", "Ġdark", "Ġbrown", "Ġskin", ",", "Ġvery", "Ġshort", "Ġblack", "Ġhair", "Ġwith", "Ġone", "Ġsingle", "Ġtall", "Ġcurly", "Ġlock", "Ġof", "Ġhair", "Ġstanding", "Ġstraight", "Ġup", "Ġon", "Ġtop", "Ġof", "Ġhis", "Ġhead", "Ġlike", "Ġa", "Ġlittle", "Ġflame", ",", "Ġbig", "Ġshiny", "Ġexpressive", "Ġeyes", ",", "Ġa", "Ġwide", "Ġgrin", "Ġshowing", "Ġhis", "Ġfront", "Ġteeth", "Ġwith", "Ġa", "Ġclearly", "Ġvisible", "Ġgap", "Ġbetween", "Ġthe", "Ġtwo", "Ġfront", "Ġteeth", ",", "Ġan", "Ġoversized", "Ġorange", "Ġfootball", "Ġjersey", "Ġthat", "Ġis", "Ġtoo", "Ġbig", "Ġfor", "Ġhim", "Ġwith", "Ġwhite", "Ġside", "Ġstripes", "Ġand", "Ġa", "Ġwhite", "ĠV", "Ġcollar", ",", "Ġblue", "Ġshorts", ",", "Ġred", "Ġflip", "-f", "lops", ".", ] --- bpe_tokenizer.cpp:245
+[V] split prompt "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n" to 9 tokens ["<|im_end|>", "Ċ", "<|im_start|>", "assistant", "Ċ", "<think>", "ĊĊ", "</think>", "ĊĊ", ] --- bpe_tokenizer.cpp:245
+[I] qwen3 build cached graph cut plan done (taking 1 ms) --- ggml_graph_cut.cpp:1032
+[V] loading 298/398 tensors from /home/runner/work/_temp/m/llm.gguf --- model_loader.cpp:1126
+  |#                                                 | 2/298 - 0.00MB/s[K  |###############                                   | 89/298 - 3.59GB/s[K  |##############################                    | 177/298 - 3.78GB/s[K  |#############################################     | 266/298 - 4.48GB/s[K  |##################################################| 298/298 - 3.83GB/s[K
+[I] loading tensors completed, taking 0.80s (read: 0.66s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] model manager prepared params backend buffers (3155.85 MB, 298 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
+[V] qwen3 compute buffer size: 59.00 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
+[V] computing condition graph completed, taking 29586 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 29.59s --- image.cpp:529
+[I] generating image: 1/1 - seed 11 --- image.cpp:866
+[I] flux build cached graph cut plan done (taking 1 ms) --- ggml_graph_cut.cpp:1032
+[V] loading 149/149 tensors from /home/runner/work/_temp/m/klein.gguf --- model_loader.cpp:1126
+  |#                                                 | 2/149 - 0.00MB/s[K  |#########                                         | 24/149 - 1.58GB/s[K  |####################                              | 59/149 - 2.47GB/s[K  |#############################                     | 86/149 - 3.08GB/s[K  |######################################            | 111/149 - 3.27GB/s[K  |################################################  | 142/149 - 3.54GB/s[K  |##################################################| 149/149 - 3.32GB/s[K
+[I] loading tensors completed, taking 1.21s (read: 1.07s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] model manager prepared params backend buffers (4101.40 MB, 149 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
