@@ -154,4 +154,21 @@ fait : decor-rue-boutique en 1536.6 s
 [I] loading tensors completed, taking 1.21s (read: 1.14s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
 [V] model manager prepared params backend buffers (4101.40 MB, 149 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
 [V] flux compute buffer size: 267.99 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
-  |============>                                     | 1/4 - 74.62s/it[K  |=========================>                        | 2/4 - 73.52s/it[K
+  |============>                                     | 1/4 - 74.62s/it[K  |=========================>                        | 2/4 - 73.52s/it[K  |=====================================>            | 3/4 - 72.92s/it[K  |==================================================| 4/4 - 72.90s/it[K
+[I] sampling completed, taking 293.99s --- image.cpp:899
+[I] generating 1 latent images completed, taking 293.99s --- image.cpp:911
+[I] decoding 1 latents --- image.cpp:554
+[I] vae build cached graph cut plan done (taking 0 ms) --- ggml_graph_cut.cpp:1032
+[V] loading 140/251 tensors from /home/runner/work/_temp/m/vae.safetensors --- model_loader.cpp:1126
+  |##                                                | 3/140 - 1.46MB/s[K  |##################################                | 94/140 - 177.52MB/s[K  |################################################  | 133/140 - 202.72MB/s[K  |##################################################| 140/140 - 177.39MB/s[K
+[I] loading tensors completed, taking 0.60s (read: 0.42s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] model manager prepared params backend buffers ( 53.36 MB, 140 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
+[V] vae compute buffer size: 702.28 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
+[V] computing vae decode graph completed, taking 14.93s --- vae.hpp:384
+[I] latent 1 decoded, taking 14.93s --- image.cpp:620
+[I] decode_first_stage completed, taking 14.93s --- image.cpp:624
+[I] generate_image completed in 337.69s --- image.cpp:1050
+[V] model manager released params backend buffers (7376.33 MB, 695 tensors, 4 blocks, RAM) from CPU --- model_manager.cpp:1295
+[I] save result image 0 to '/home/runner/work/_temp/sortie/bara-expr-joie-brut.png' (success) --- main.cpp:498
+[I] 1/1 images saved --- main.cpp:574
+fait : bara-expr-joie en 339.2 s
