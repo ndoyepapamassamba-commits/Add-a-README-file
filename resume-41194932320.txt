@@ -1,0 +1,15 @@
+=== keba-expr-joie
+[I] loading tensors completed, taking 0.20s (read: 0.01s, memcpy: 0.00s, convert: 0.04s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 2.33s --- vae.hpp:310
+[I] encode_first_stage completed, taking 2.33s --- image.cpp:398
+[I] loading tensors completed, taking 0.60s (read: 0.58s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 24882 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 24.88s --- image.cpp:529
+[I] loading tensors completed, taking 1.00s (read: 0.94s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 235.76s --- image.cpp:899
+[I] generating 1 latent images completed, taking 235.76s --- image.cpp:911
+[I] loading tensors completed, taking 0.40s (read: 0.20s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 10.39s --- vae.hpp:384
+[I] decode_first_stage completed, taking 10.39s --- image.cpp:624
+[I] generate_image completed in 273.39s --- image.cpp:1050
+fait : keba-expr-joie en 274.7 s
