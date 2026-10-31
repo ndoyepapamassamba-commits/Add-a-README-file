@@ -72,3 +72,12 @@
   |##                                                | 3/140 - 1.46MB/s[K  |####################################              | 100/140 - 177.57MB/s[K  |################################################# | 136/140 - 227.97MB/s[K  |##################################################| 140/140 - 177.39MB/s[K
 [I] loading tensors completed, taking 0.60s (read: 0.40s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
 [V] model manager prepared params backend buffers ( 53.36 MB, 140 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
+[V] vae compute buffer size: 3745.50 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
+[V] computing vae decode graph completed, taking 88.87s --- vae.hpp:384
+[I] latent 1 decoded, taking 88.88s --- image.cpp:620
+[I] decode_first_stage completed, taking 88.88s --- image.cpp:624
+[I] generate_image completed in 1134.62s --- image.cpp:1050
+[V] model manager released params backend buffers (7310.61 MB, 587 tensors, 3 blocks, RAM) from CPU --- model_manager.cpp:1295
+[I] save result image 0 to '/home/runner/work/_temp/sortie/keba-planche-brut.png' (success) --- main.cpp:498
+[I] 1/1 images saved --- main.cpp:574
+fait : keba-planche en 1135.7 s

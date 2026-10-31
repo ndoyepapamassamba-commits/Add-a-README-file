@@ -1,0 +1,15 @@
+{
+ "id": "keba-planche",
+ "modele": "FLUX.2-klein-4B (GGUF Q8_0)",
+ "licence": "Apache-2.0",
+ "encodeur": "Qwen3-4B Q8_0 (Apache-2.0)",
+ "decodeur": "FLUX.2-small-decoder (Apache-2.0)",
+ "moteur": "stable-diffusion.cpp 0518b34374761cb82aeda5ad3c2f0686fdad2cec (MIT)",
+ "prompt": "Original character design for a 2D cartoon TV series set in a Dakar neighbourhood, Senegal. Full body from head to feet, standing in a puppet pose made for cut-out animation: both arms stretched out diagonally downwards about 45 degrees away from the body with a wide empty gap between the arms and the torso, hands open, legs apart with an empty gap between them, three-quarter front view facing slightly to the right, centered, the whole body visible with a margin around it. Clean bold dark-brown outlines, vibrant warm colors, soft cel shading, appealing exaggerated cartoon proportions, polished professional 2D animation style, plain pure white background, no ground shadow, no text, no logo. Keba, a joyful 9-year-old Senegalese boy with a very big round head (almost half of his height) on a small body, dark brown skin, very short black hair with one single tall curly lock of hair standing straight up on top of his head like a little flame, big shiny expressive eyes, a wide grin showing his front teeth with a clearly visible gap between the two front teeth, an oversized orange football jersey that is too big for him with white side stripes and a white V collar, blue shorts, red flip-flops.",
+ "graine": 11,
+ "largeur": 768,
+ "hauteur": 1024,
+ "refs": [],
+ "secondes": 1135.7,
+ "date": "2026-10-31T10:51:28+00:00"
+}

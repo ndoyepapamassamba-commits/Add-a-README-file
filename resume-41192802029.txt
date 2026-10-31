@@ -1,0 +1,12 @@
+=== keba-planche
+[I] loading tensors completed, taking 0.80s (read: 0.66s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 29586 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 29.59s --- image.cpp:529
+[I] loading tensors completed, taking 1.21s (read: 1.07s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 1016.15s --- image.cpp:899
+[I] generating 1 latent images completed, taking 1016.15s --- image.cpp:911
+[I] loading tensors completed, taking 0.60s (read: 0.40s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 88.87s --- vae.hpp:384
+[I] decode_first_stage completed, taking 88.88s --- image.cpp:624
+[I] generate_image completed in 1134.62s --- image.cpp:1050
+fait : keba-planche en 1135.7 s
