@@ -4,3 +4,4 @@
 [485 s] 0 images · === coumba-planche   |=====================================>            | 3/4 - 144.88s/it[K · mémoire libre 6754 Mo
 [606 s] 0 images · === coumba-planche [I] loading tensors completed, taking 0.20s (read: 0.17s, memcpy: 0.00s, convert: 0.01s, copy_to_backend: 0.00 · mémoire libre 7122 Mo
 [120 s] 1 images · === bara-expr-douleur   |============>                                     | 1/4 - 73.98s/it[K · mémoire libre 7169 Mo
+[241 s] 1 images · === bara-expr-douleur   |=========================>                        | 2/4 - 72.78s/it[K · mémoire libre 7166 Mo
