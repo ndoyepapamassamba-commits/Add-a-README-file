@@ -1,0 +1,15 @@
+{
+ "id": "gainde-planche",
+ "modele": "FLUX.2-klein-4B (GGUF Q8_0)",
+ "licence": "Apache-2.0",
+ "encodeur": "Qwen3-4B Q8_0 (Apache-2.0)",
+ "decodeur": "FLUX.2-small-decoder (Apache-2.0)",
+ "moteur": "stable-diffusion.cpp 0518b34374761cb82aeda5ad3c2f0686fdad2cec (MIT)",
+ "prompt": "Original character design for a 2D cartoon TV series set in a Dakar neighbourhood, Senegal. Full body, side view facing right, standing on four legs, centered, the whole body visible with a margin around it. Clean bold dark-brown outlines, vibrant warm colors, soft cel shading, appealing exaggerated cartoon proportions, polished professional 2D animation style, plain pure white background, no ground shadow, no text, no logo. Gainde, a proud Senegalese Ladoum ram (a sheep) who believes he is a lion: fluffy cream-white wool body, long slender legs with dark hooves, a dark brown face with a noble roman nose, huge spiral curled horns, half-closed proud eyes, chin held high.",
+ "graine": 53,
+ "largeur": 1024,
+ "hauteur": 768,
+ "refs": [],
+ "secondes": 1200.0,
+ "date": "2026-10-31T10:52:22+00:00"
+}
