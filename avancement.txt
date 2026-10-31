@@ -1,1 +1,2 @@
 [120 s] 0 images · === objet-auvent   |============>                                     | 1/4 - 61.45s/it[K · mémoire libre 7314 Mo
+[242 s] 0 images · === objet-auvent   |=====================================>            | 3/4 - 60.95s/it[K · mémoire libre 7304 Mo
