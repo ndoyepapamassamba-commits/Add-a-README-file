@@ -7,3 +7,4 @@
 [848 s] 0 images · === gainde-planche   |=========================>                        | 2/4 - 271.11s/it[K · mémoire libre 6728 Mo
 [969 s] 0 images · === gainde-planche   |=====================================>            | 3/4 - 273.69s/it[K · mémoire libre 6728 Mo
 [1090 s] 0 images · === gainde-planche   |=====================================>            | 3/4 - 273.69s/it[K · mémoire libre 6728 Mo
+[121 s] 1 images · === bara-expr-soulagement   |============>                                     | 1/4 - 72.96s/it[K · mémoire libre 7209 Mo
