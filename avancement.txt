@@ -4,3 +4,4 @@
 [484 s] 0 images · === decor-rue-boutique   |============>                                     | 1/4 - 355.66s/it[K · mémoire libre 6495 Mo
 [606 s] 0 images · === decor-rue-boutique   |============>                                     | 1/4 - 355.66s/it[K · mémoire libre 6495 Mo
 [727 s] 0 images · === decor-rue-boutique   |============>                                     | 1/4 - 355.66s/it[K · mémoire libre 6492 Mo
+[848 s] 0 images · === decor-rue-boutique   |=========================>                        | 2/4 - 353.64s/it[K · mémoire libre 6492 Mo
