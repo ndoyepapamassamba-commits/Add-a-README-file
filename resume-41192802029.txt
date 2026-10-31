@@ -1,0 +1,12 @@
+=== bara-planche
+[I] loading tensors completed, taking 0.60s (read: 0.57s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 35534 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 35.53s --- image.cpp:529
+[I] loading tensors completed, taking 1.00s (read: 0.85s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 1217.06s --- image.cpp:899
+[I] generating 1 latent images completed, taking 1217.06s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.02s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 99.10s --- vae.hpp:384
+[I] decode_first_stage completed, taking 99.10s --- image.cpp:624
+[I] generate_image completed in 1351.71s --- image.cpp:1050
+fait : bara-planche en 1352.7 s

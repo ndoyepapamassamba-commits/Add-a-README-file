@@ -1,0 +1,15 @@
+{
+ "id": "bara-planche",
+ "modele": "FLUX.2-klein-4B (GGUF Q8_0)",
+ "licence": "Apache-2.0",
+ "encodeur": "Qwen3-4B Q8_0 (Apache-2.0)",
+ "decodeur": "FLUX.2-small-decoder (Apache-2.0)",
+ "moteur": "stable-diffusion.cpp 0518b34374761cb82aeda5ad3c2f0686fdad2cec (MIT)",
+ "prompt": "Original character design for a 2D cartoon TV series set in a Dakar neighbourhood, Senegal. Full body from head to feet, standing in a puppet pose made for cut-out animation: both arms stretched out diagonally downwards about 45 degrees away from the body with a wide empty gap between the arms and the torso, hands open, legs apart with an empty gap between them, three-quarter front view facing slightly to the right, centered, the whole body visible with a margin around it. Clean bold dark-brown outlines, vibrant warm colors, soft cel shading, appealing exaggerated cartoon proportions, polished professional 2D animation style, plain pure white background, no ground shadow, no text, no logo. Tonton Bara, a huge, very round, middle-aged Senegalese shopkeeper with an enormous round belly and short legs, bald shiny head, a big bushy black mustache, small eyes and thick eyebrows, a yellow pencil tucked behind his ear, a sky-blue short-sleeved tunic with a cream apron with a front pocket, brown trousers, brown leather sandals, a proud, grumpy but funny look.",
+ "graine": 23,
+ "largeur": 768,
+ "hauteur": 1024,
+ "refs": [],
+ "secondes": 1352.7,
+ "date": "2026-10-31T10:54:36+00:00"
+}
