@@ -40,6 +40,24 @@ def test_commande_du_moteur_avec_reference_plafonnee():
     assert "--vae-tiling" in cmd
 
 
+def test_le_decor_est_vertical_et_vide_de_personnages():
+    (decor,) = taches.lot_decors()
+    assert decor["id"] == "decor-rue-boutique"
+    assert decor["h"] > decor["w"] and decor["w"] % 64 == 0 and decor["h"] % 64 == 0
+    assert "no people" in decor["prompt"].lower()
+
+
+def test_les_objets_du_pilote_sont_des_vignettes_sur_fond_blanc():
+    objets = taches.lot_objets()
+    ids = {o["id"] for o in objets}
+    assert {"objet-boite-tomate", "objet-orange", "objet-bassine", "objet-claquette", "objet-auvent",
+            "objet-seau"} <= ids
+    for o in objets:
+        assert (o["w"], o["h"]) == (512, 512) and "white background" in o["prompt"]
+
+
 def test_le_fichier_de_taches_publie_est_a_jour():
     publie = json.loads(taches.CHEMIN.read_text(encoding="utf-8"))
-    assert publie == {"lot": "planches", "taches": taches.lot_planches()}
+    attendu = taches.lot_planches() + taches.lot_decors() + taches.lot_objets()
+    assert publie == {"lot": "pilote", "taches": attendu}
+    assert len({t["id"] for t in attendu}) == len(attendu)

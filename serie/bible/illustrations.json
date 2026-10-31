@@ -51,5 +51,43 @@
     "soulagement": "relieved: eyes closed, gentle smile, eyebrows relaxed",
     "douleur": "in pain: eyes squeezed shut, grimacing mouth",
     "yeux_fermes": "same neutral expression but with both eyes closed"
+  },
+  "style_decor": "Background painting for an original 2D cartoon TV series, vertical 9:16 composition, eye-level camera. Same polished 2D animation style as the characters: clean bold dark-brown outlines, vibrant warm colors, soft cel shading. No people, no animals, no text, no letters, no logo.",
+  "decors": {
+    "rue-boutique": {
+      "format": [
+        768,
+        1344
+      ],
+      "graine": 101,
+      "description": "A sunny morning street in a Dakar neighbourhood, Senegal. On the left, a small colourful corner shop with a turquoise painted facade, an open wooden counter window and shelves full of colourful goods, a hand-painted sign with only drawings. On the right, a two-storey ochre house with a small balcony and laundry drying on a line, an unfinished rooftop with rebar sticking out. In the distance, a baobab tree, electric poles with tangled wires and a bright blue sky with a few clouds. A wide, flat, empty sandy street in the lower third of the image, completely clear for the characters."
+    }
+  },
+  "style_objet": "Single object sticker for an original 2D cartoon TV series, centered, the whole object visible with a margin, clean bold dark-brown outlines, vibrant warm colors, soft cel shading, plain pure white background, no shadow, no text.",
+  "objets": {
+    "boite-tomate": {
+      "graine": 201,
+      "description": "a small tin can of tomato paste with a red label showing a drawn tomato, standing upright, front view"
+    },
+    "orange": {
+      "graine": 202,
+      "description": "a single round ripe orange fruit with a small green leaf"
+    },
+    "bassine": {
+      "graine": 203,
+      "description": "a round blue enamel washing basin full of soapy water with white bubbles, three-quarter view"
+    },
+    "claquette": {
+      "graine": 204,
+      "description": "a single red flip-flop sandal seen from the side"
+    },
+    "auvent": {
+      "graine": 205,
+      "description": "a flat rectangular corrugated metal sheet, slightly rusty, seen from the front"
+    },
+    "seau": {
+      "graine": 206,
+      "description": "a blue plastic bucket with a handle, empty, side view"
+    }
   }
 }

@@ -24,8 +24,23 @@ def lot_planches() -> list[dict]:
     return taches
 
 
+def lot_decors() -> list[dict]:
+    ill = json.loads(BIBLE.read_text(encoding="utf-8"))
+    return [{"id": f"decor-{ident}", "prompt": ill["style_decor"] + " " + d["description"],
+             "w": d["format"][0], "h": d["format"][1], "graine": d["graine"], "refs": []}
+            for ident, d in ill["decors"].items()]
+
+
+def lot_objets() -> list[dict]:
+    ill = json.loads(BIBLE.read_text(encoding="utf-8"))
+    return [{"id": f"objet-{ident}", "prompt": ill["style_objet"] + " " + o["description"],
+             "w": 512, "h": 512, "graine": o["graine"], "refs": []}
+            for ident, o in ill["objets"].items()]
+
+
 def ecrire():
-    CHEMIN.write_text(json.dumps({"lot": "planches", "taches": lot_planches()}, ensure_ascii=False, indent=1) + "\n",
+    taches = lot_planches() + lot_decors() + lot_objets()
+    CHEMIN.write_text(json.dumps({"lot": "pilote", "taches": taches}, ensure_ascii=False, indent=1) + "\n",
                       encoding="utf-8")
 
 
