@@ -1,0 +1,1 @@
+[120 s] 0 images · === objet-boite-tomate [I] loading tensors completed, taking 1.01s (read: 0.89s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00 · mémoire libre 7292 Mo
