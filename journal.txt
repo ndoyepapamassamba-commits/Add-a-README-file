@@ -60,3 +60,5 @@
   |#                                                 | 2/149 - 0.00MB/s[K  |#########                                         | 24/149 - 1.58GB/s[K  |#######################                           | 66/149 - 3.02GB/s[K  |###############################                   | 90/149 - 3.29GB/s[K  |######################################            | 111/149 - 3.27GB/s[K  |###############################################   | 138/149 - 3.42GB/s[K  |##################################################| 149/149 - 3.32GB/s[K
 [I] loading tensors completed, taking 1.21s (read: 1.11s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
 [V] model manager prepared params backend buffers (4101.40 MB, 149 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
+[V] flux compute buffer size: 1051.16 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
+  |============>                                     | 1/4 - 355.66s/it[K
