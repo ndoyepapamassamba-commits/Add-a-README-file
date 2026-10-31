@@ -1,1 +1,2 @@
 [121 s] 0 images · === keba-expr-choc   |============>                                     | 1/4 - 70.05s/it[K · mémoire libre 7275 Mo
+[243 s] 0 images · === keba-expr-choc   |=====================================>            | 3/4 - 68.91s/it[K · mémoire libre 7268 Mo
