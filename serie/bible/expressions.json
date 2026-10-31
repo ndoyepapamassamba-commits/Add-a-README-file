@@ -1,0 +1,16 @@
+{
+  "_doc": "Paramètres du visage. yeux: ouverture (1 normal, 0 fermé, >1 écarquillé) ; pupille: taille relative ; sourcils: hauteur (-1 bas, +1 haut) ; froncer: angle des sourcils (+1 colère, -1 inquiet) ; bouche: ouverture 0-1 ; sourire: -1 à 1 ; dents: 0/1 ; rouge: teinte de colère ; sueur: goutte d'inquiétude.",
+  "neutre":      {"yeux": 1.0,  "pupille": 1.0,  "sourcils": 0.0,  "froncer": 0.0,  "bouche": 0.0,  "sourire": 0.25, "dents": 0, "rouge": 0.0, "sueur": 0.0},
+  "joie":        {"yeux": 0.82, "pupille": 1.05, "sourcils": 0.35, "froncer": -0.1, "bouche": 0.55, "sourire": 1.0,  "dents": 1, "rouge": 0.0, "sueur": 0.0},
+  "fierte":      {"yeux": 0.62, "pupille": 1.0,  "sourcils": 0.45, "froncer": 0.1,  "bouche": 0.0,  "sourire": 0.75, "dents": 0, "rouge": 0.0, "sueur": 0.0},
+  "surprise":    {"yeux": 1.35, "pupille": 0.75, "sourcils": 1.0,  "froncer": -0.2, "bouche": 0.65, "sourire": 0.0,  "dents": 0, "rouge": 0.0, "sueur": 0.0},
+  "peur":        {"yeux": 1.4,  "pupille": 0.45, "sourcils": 0.9,  "froncer": -0.8, "bouche": 0.45, "sourire": -0.7, "dents": 1, "rouge": 0.0, "sueur": 1.0},
+  "colere":      {"yeux": 0.92, "pupille": 0.8,  "sourcils": -0.6, "froncer": 1.0,  "bouche": 0.35, "sourire": -0.8, "dents": 1, "rouge": 0.45, "sueur": 0.0},
+  "fureur":      {"yeux": 1.1,  "pupille": 0.6,  "sourcils": -0.8, "froncer": 1.0,  "bouche": 0.85, "sourire": -0.9, "dents": 1, "rouge": 1.0, "sueur": 0.0},
+  "choc":        {"yeux": 1.55, "pupille": 0.35, "sourcils": 1.2,  "froncer": -0.3, "bouche": 1.0,  "sourire": -0.3, "dents": 0, "rouge": 0.0, "sueur": 0.0},
+  "soulagement": {"yeux": 0.05, "pupille": 1.0,  "sourcils": 0.25, "froncer": -0.5, "bouche": 0.25, "sourire": 0.55, "dents": 0, "rouge": 0.0, "sueur": 0.0},
+  "gene":        {"yeux": 1.08, "pupille": 0.9,  "sourcils": 0.55, "froncer": -0.75,"bouche": 0.3,  "sourire": 0.95, "dents": 1, "rouge": 0.0, "sueur": 1.0},
+  "determine":   {"yeux": 0.85, "pupille": 1.05, "sourcils": -0.25,"froncer": 0.45, "bouche": 0.0,  "sourire": 0.45, "dents": 0, "rouge": 0.0, "sueur": 0.0},
+  "douleur":     {"yeux": 0.0,  "pupille": 1.0,  "sourcils": -0.35,"froncer": -0.6, "bouche": 0.6,  "sourire": -0.7, "dents": 1, "rouge": 0.0, "sueur": 0.0},
+  "admiration":  {"yeux": 1.2,  "pupille": 1.35, "sourcils": 0.7,  "froncer": -0.3, "bouche": 0.25, "sourire": 0.8,  "dents": 0, "rouge": 0.0, "sueur": 0.0}
+}
