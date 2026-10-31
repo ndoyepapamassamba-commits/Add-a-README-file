@@ -154,4 +154,4 @@ fait : bara-planche en 1352.7 s
 [I] loading tensors completed, taking 1.00s (read: 0.92s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
 [V] model manager prepared params backend buffers (4101.40 MB, 149 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
 [V] flux compute buffer size: 267.99 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
-  |============>                                     | 1/4 - 86.34s/it[K  |=========================>                        | 2/4 - 85.20s/it[K
+  |============>                                     | 1/4 - 86.34s/it[K  |=========================>                        | 2/4 - 85.20s/it[K  |=====================================>            | 3/4 - 85.30s/it[K

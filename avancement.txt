@@ -11,3 +11,4 @@
 [1335 s] 0 images · === bara-planche [I] loading tensors completed, taking 0.20s (read: 0.02s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00 · mémoire libre 3769 Mo
 [120 s] 1 images · === bara-expr-choc [I] loading tensors completed, taking 1.00s (read: 0.92s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00 · mémoire libre 7236 Mo
 [242 s] 1 images · === bara-expr-choc   |=========================>                        | 2/4 - 85.20s/it[K · mémoire libre 7240 Mo
+[363 s] 1 images · === bara-expr-choc   |=====================================>            | 3/4 - 85.30s/it[K · mémoire libre 7228 Mo
