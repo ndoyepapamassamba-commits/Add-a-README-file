@@ -19,8 +19,15 @@ def detourer(image: np.ndarray) -> np.ndarray:
     blanc = (mn >= SEUIL_BLANC) & ((mx - mn) <= 24)
     etiquettes, n = ndimage.label(blanc)
     bord = np.unique(np.concatenate([etiquettes[0], etiquettes[-1], etiquettes[:, 0], etiquettes[:, -1]]))
-    tailles = ndimage.sum(np.ones_like(etiquettes), etiquettes, index=np.arange(n + 1))
-    fond_ids = set(int(b) for b in bord if b) | {i for i in range(1, n + 1) if tailles[i] > TROU_MAX * blanc.size}
+    index = np.arange(n + 1)
+    tailles = ndimage.sum(np.ones_like(etiquettes), etiquettes, index=index)
+    # une grande zone blanche enfermée n'est du fond que si elle a l'aspect du fond : parfaitement uniforme
+    # (mesuré sur la bassine : fond écart-type 0,6 et 100 % à ≥ 250 ; mousse écart-type 3,9 et 68 %)
+    purete = ndimage.mean((mn >= 250).astype(float), etiquettes, index=index)
+    ecart = ndimage.standard_deviation(rgb.mean(axis=2), etiquettes, index=index)
+    trous = {i for i in range(1, n + 1)
+             if tailles[i] > TROU_MAX * blanc.size and purete[i] >= 0.97 and ecart[i] <= 2.0}
+    fond_ids = set(int(b) for b in bord if b) | trous
     fond = np.isin(etiquettes, list(fond_ids)) if fond_ids else np.zeros_like(blanc)
     # l'ombre au sol (gris clair neutre) collée au fond est du fond, et ce qu'elle enfermait aussi
     clair_neutre = (mn >= 150) & ((mx - mn) <= 20)

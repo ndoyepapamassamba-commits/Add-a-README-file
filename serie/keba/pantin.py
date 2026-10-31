@@ -291,9 +291,16 @@ class Pantin:
 
     # --- dessin --------------------------------------------------------------------------------------------------
 
-    def dessiner(self, canvas, positions: np.ndarray, alpha: float = 1.0):
+    def texture(self, image_rgba: np.ndarray):
+        """Une variante de l'illustration (même cadrage : autre expression, yeux fermés…) à poser sur le même maillage."""
+        img = skia.Image.fromarray(np.ascontiguousarray(image_rgba), colorType=skia.kRGBA_8888_ColorType,
+                                   alphaType=skia.kUnpremul_AlphaType).withDefaultMipmaps()
+        return img.makeShader(skia.TileMode.kClamp, skia.TileMode.kClamp,
+                              skia.SamplingOptions(skia.FilterMode.kLinear, skia.MipmapMode.kLinear))
+
+    def dessiner(self, canvas, positions: np.ndarray, alpha: float = 1.0, texture=None):
         pts = [skia.Point(float(px), float(py)) for px, py in positions]
-        peinture = skia.Paint(Shader=self._shader, AntiAlias=True)
+        peinture = skia.Paint(Shader=texture if texture is not None else self._shader, AntiAlias=True)
         if alpha < 1.0:
             peinture.setAlphaf(alpha)
         for couche, indices in self.couches.items():

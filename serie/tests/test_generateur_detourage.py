@@ -106,6 +106,22 @@ def test_detourage_enleve_l_ombre_au_sol_et_le_blanc_entre_les_jambes():
     assert rgba[140, 70, 3] == 255         # la jambe
 
 
+def test_detourage_garde_une_grande_zone_blanche_nuancee_comme_de_la_mousse():
+    s = skia.Surface(200, 200)
+    c = s.getCanvas()
+    c.clear(skia.ColorWHITE)
+    c.drawCircle(100, 100, 70, skia.Paint(AntiAlias=True, Color=skia.Color(40, 110, 220)))
+    c.drawCircle(100, 100, 52, skia.Paint(AntiAlias=True, Color=skia.Color(250, 252, 255)))
+    for i in range(40):                                    # bulles bleutées dans la mousse
+        c.drawCircle(60 + (i * 37) % 80, 60 + (i * 53) % 80, 3, skia.Paint(AntiAlias=True, Color=skia.Color(225, 240, 252)))
+    contour = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=5, Color=skia.Color(40, 20, 10))
+    c.drawCircle(100, 100, 52, contour)
+    c.drawCircle(100, 100, 70, contour)
+    rgba = detourage.detourer(s.makeImageSnapshot().toarray())
+    assert rgba[100, 100, 3] == 255          # la mousse (≈ 21 % de l'image) reste
+    assert rgba[3, 3, 3] == 0
+
+
 def test_detourage_donne_des_bords_doux():
     rgba = detourage.detourer(_image_test())
     bord = rgba[100, 160:170, 3]

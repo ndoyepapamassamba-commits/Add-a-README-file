@@ -181,6 +181,18 @@ def test_le_contour_n_est_pas_troue(pantin):
     assert perdu.sum() < 0.002 * contour.sum()
 
 
+def test_une_texture_d_expression_remplace_l_image_sans_changer_la_forme(pantin):
+    variante = _bonhomme()
+    variante[:, :, :3] = 255 - variante[:, :, :3]                 # même silhouette, couleurs inversées
+    texture = pantin.texture(variante)
+    s = skia.Surface(W, H)
+    s.getCanvas().clear(skia.ColorTRANSPARENT)
+    pantin.dessiner(s.getCanvas(), pantin.poser({}), texture=texture)
+    rendu = s.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType)
+    assert abs(int(rendu[200, 150, 0]) - (255 - 240)) < 8          # le torse orange devenu bleu
+    assert (rendu[:, :, 3] > 200).sum() == pytest.approx((_rendu(pantin)[:, :, 3] > 200).sum(), rel=0.01)
+
+
 def test_le_rendu_est_reproductible(pantin):
     angles = {"cuisse_av": 0.4, "tibia_av": -0.3, "tete": 0.2}
     assert np.array_equal(_rendu(pantin, angles), _rendu(pantin, angles))
