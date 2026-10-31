@@ -8,3 +8,4 @@
 [970 s] 0 images · === bara-planche   |=====================================>            | 3/4 - 304.38s/it[K · mémoire libre 6729 Mo
 [1092 s] 0 images · === bara-planche   |=====================================>            | 3/4 - 304.38s/it[K · mémoire libre 6722 Mo
 [1213 s] 0 images · === bara-planche   |=====================================>            | 3/4 - 304.38s/it[K · mémoire libre 6728 Mo
+[1335 s] 0 images · === bara-planche [I] loading tensors completed, taking 0.20s (read: 0.02s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00 · mémoire libre 3769 Mo
