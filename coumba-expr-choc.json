@@ -1,0 +1,17 @@
+{
+ "id": "coumba-expr-choc",
+ "modele": "FLUX.2-klein-4B (GGUF Q8_0)",
+ "licence": "Apache-2.0",
+ "encodeur": "Qwen3-4B Q8_0 (Apache-2.0)",
+ "decodeur": "FLUX.2-small-decoder (Apache-2.0)",
+ "moteur": "stable-diffusion.cpp 0518b34374761cb82aeda5ad3c2f0686fdad2cec (MIT)",
+ "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: completely shocked: eyes popping out wide, jaw dropped very low.",
+ "graine": 300,
+ "largeur": 320,
+ "hauteur": 320,
+ "refs": [
+  "coumba-tete.png"
+ ],
+ "secondes": 162.0,
+ "date": "2026-10-31T11:02:32+00:00"
+}

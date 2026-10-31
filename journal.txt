@@ -154,4 +154,21 @@ fait : objet-orange en 483.1 s
 [I] loading tensors completed, taking 0.81s (read: 0.66s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
 [V] model manager prepared params backend buffers (4101.40 MB, 149 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
 [V] flux compute buffer size: 223.84 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
-  |============>                                     | 1/4 - 35.79s/it[K  |=========================>                        | 2/4 - 34.83s/it[K
+  |============>                                     | 1/4 - 35.79s/it[K  |=========================>                        | 2/4 - 34.83s/it[K  |=====================================>            | 3/4 - 34.90s/it[K  |==================================================| 4/4 - 34.93s/it[K
+[I] sampling completed, taking 140.47s --- image.cpp:899
+[I] generating 1 latent images completed, taking 140.47s --- image.cpp:911
+[I] decoding 1 latents --- image.cpp:554
+[I] vae build cached graph cut plan done (taking 1 ms) --- ggml_graph_cut.cpp:1032
+[V] loading 140/251 tensors from /home/runner/work/_temp/m/vae.safetensors --- model_loader.cpp:1126
+  |#                                                 | 2/140 - 0.00MB/s[K  |##################################################| 140/140 - 533.05MB/s[K
+[I] loading tensors completed, taking 0.20s (read: 0.17s, memcpy: 0.00s, convert: 0.01s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] model manager prepared params backend buffers ( 53.36 MB, 140 tensors, 1 blocks, RAM) on CPU --- model_manager.cpp:490
+[V] vae compute buffer size: 487.70 MB(RAM) on CPU (peak across 1 segment) --- ggml_runner.cpp:1019
+[V] computing vae decode graph completed, taking 4.83s --- vae.hpp:384
+[I] latent 1 decoded, taking 4.83s --- image.cpp:620
+[I] decode_first_stage completed, taking 4.83s --- image.cpp:624
+[I] generate_image completed in 160.98s --- image.cpp:1050
+[V] model manager released params backend buffers (7376.33 MB, 695 tensors, 4 blocks, RAM) from CPU --- model_manager.cpp:1295
+[I] save result image 0 to '/home/runner/work/_temp/sortie/coumba-expr-choc-brut.png' (success) --- main.cpp:498
+[I] 1/1 images saved --- main.cpp:574
+fait : coumba-expr-choc en 162.0 s
