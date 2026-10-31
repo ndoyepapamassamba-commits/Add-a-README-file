@@ -1,0 +1,87 @@
+# ATELIER D'IMAGES DE LA SÉRIE KÉBA SUR LES MACHINES GRATUITES DE GITHUB (31/10/2026, accord de l'utilisateur : « ACCORD »)
+# Illustrations PNG des personnages, sans aucun compte en dehors de GitHub : stable-diffusion.cpp (MIT, commit épinglé,
+# celui de la Fabrique) + FLUX.2-klein-4B GGUF Q8_0 + Qwen3-4B Q8_0 + décodeur FLUX.2, tous Apache-2.0 et non verrouillés.
+# Recette reprise de bible-v1.yml (Fabrique, 445 images sur 20 machines). Une tâche « plan » compte les images de
+# serie/atelier/taches.json ; chaque machine fait sa part (serie/atelier/tourne.py), détoure, note la provenance et pousse
+# ses PNG sur atelier-sortie-<part> au fur et à mesure. Relancer reprend là où chaque part s'est arrêtée.
+name: Atelier d'images KÉBA (FLUX.2 klein)
+on:
+  push:
+    branches: [claude/festive-planck-d4rihh]
+    paths: ['serie/atelier/taches.json', 'serie/atelier/tourne.py', '.github/workflows/atelier-images.yml']
+  workflow_dispatch:
+permissions: { contents: write }
+concurrency: { group: atelier-images, cancel-in-progress: true }
+defaults:
+  run: { shell: bash }
+env:
+  SD_CPP: 0518b34374761cb82aeda5ad3c2f0686fdad2cec
+  HF: https://huggingface.co
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      parts: ${{ steps.p.outputs.parts }}
+      nb: ${{ steps.p.outputs.nb }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        run: |
+          python3 - <<'EOF' >> $GITHUB_OUTPUT
+          import json
+          n = len(json.load(open('serie/atelier/taches.json'))['taches'])
+          nb = max(1, min(20, n))
+          print('nb=%d' % nb)
+          print('parts=%s' % json.dumps(list(range(nb))))
+          EOF
+          cat $GITHUB_OUTPUT
+
+  part:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        part: ${{ fromJSON(needs.plan.outputs.parts) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Processeur de la machine
+        id: cpu
+        run: |
+          echo "cle=sdcpp-${SD_CPP:0:12}-$(lscpu | sed -n 's/^Model name: *//p' | tr -c 'A-Za-z0-9' '-')-$(grep -m1 '^flags' /proc/cpuinfo | md5sum | cut -c1-8)" >> $GITHUB_OUTPUT
+          lscpu | sed -n 's/^Model name: *//p'; nproc; free -g | head -2
+      - uses: actions/cache@v4
+        with: { path: ~/sdbin, key: '${{ steps.cpu.outputs.cle }}' }
+      - name: Moteur et poids (en même temps)
+        run: |
+          M=$RUNNER_TEMP/m; mkdir -p $M; echo "M=$M" >> $GITHUB_ENV; t0=$(date +%s)
+          dl() { curl -sfL --retry 5 --retry-delay 5 -o "$M/$1" "$HF/$2" && echo "poids : $1 $(du -h $M/$1 | cut -f1)"; }
+          dl klein.gguf leejet/FLUX.2-klein-4B-GGUF/resolve/main/flux-2-klein-4b-Q8_0.gguf &
+          dl llm.gguf unsloth/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q8_0.gguf &
+          dl vae.safetensors black-forest-labs/FLUX.2-small-decoder/resolve/main/full_encoder_small_decoder.safetensors &
+          pip install -q numpy scipy pillow
+          if [ ! -x ~/sdbin/sd-cli ]; then
+            git init -q $RUNNER_TEMP/sd && cd $RUNNER_TEMP/sd && git remote add origin https://github.com/leejet/stable-diffusion.cpp
+            git fetch -q --depth 1 origin $SD_CPP && git checkout -q FETCH_HEAD && git submodule update -q --init --recursive --depth 1
+            cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON > $RUNNER_TEMP/build.log 2>&1 && cmake --build build -j 4 --config Release >> $RUNNER_TEMP/build.log 2>&1 || { tail -60 $RUNNER_TEMP/build.log; exit 1; }
+            mkdir -p ~/sdbin && cp build/bin/* ~/sdbin/ && echo "compilé en $(( $(date +%s) - t0 )) s"
+          else echo "moteur repris du cache"; fi
+          wait; ls -la $M
+          for f in $M/klein.gguf $M/llm.gguf $M/vae.safetensors; do [ -s $f ] || { echo "poids manquant : $f"; exit 1; }; done
+          echo "préparation : $(( $(date +%s) - t0 )) s"
+      - name: Images de la part ${{ matrix.part }}
+        run: |
+          O=$RUNNER_TEMP/sortie; B=atelier-sortie-${{ matrix.part }}; t1=$(date +%s)
+          if git fetch -q origin $B 2>/dev/null; then git worktree add -q --detach $O FETCH_HEAD; echo "reprise : $(ls $O/*.json 2>/dev/null | wc -l) images déjà faites"
+          else git worktree add -q --detach $O HEAD && (cd $O && git checkout -q --orphan p && git rm -rqf . && git clean -fdq); fi
+          pousse() { (cd $O && git add -A && git -c user.name=atelier -c user.email=atelier@users.noreply.github.com commit -qm "Atelier : part ${{ matrix.part }} (run ${{ github.run_id }})" && git push -q origin HEAD:refs/heads/$B) > /dev/null 2>&1 || true; }
+          ( while sleep 120; do
+              L=$O/journal.txt; [ -f $L ] || continue
+              echo "[$(( $(date +%s) - t1 )) s] $(ls $O/*.json 2>/dev/null | wc -l) images · $(grep '^===' $L | tail -1) $(tr '\r' '\n' < $L | grep -E 's/it|taking' | tail -1 | cut -c1-110) · mémoire libre $(free -m | awk '/Mem:/{print $7}') Mo" >> $O/avancement.txt
+              pousse
+            done ) & P=$!
+          python3 serie/atelier/tourne.py serie/atelier/taches.json ${{ matrix.part }} ${{ needs.plan.outputs.nb }} $M $O ~/sdbin/sd-cli $GITHUB_WORKSPACE/serie/atelier/refs || true
+          kill $P 2>/dev/null || true; sleep 2
+          tr '\r' '\n' < $O/journal.txt 2>/dev/null | grep -i -E "^===|fait|ÉCHEC|error|completed" | awk '!seen[$0]++' | tail -40 > $O/resume-${{ github.run_id }}.txt || true
+          pousse; ls -la $O
