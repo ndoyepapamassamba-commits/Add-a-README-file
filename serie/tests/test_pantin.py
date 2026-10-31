@@ -232,3 +232,43 @@ def test_une_robe_reste_d_un_seul_tenant_quand_les_jambes_bougent():
 def test_le_rendu_est_reproductible(pantin):
     angles = {"cuisse_av": 0.4, "tibia_av": -0.3, "tete": 0.2}
     assert np.array_equal(_rendu(pantin, angles), _rendu(pantin, angles))
+
+
+def test_la_pose_de_repos_ramene_les_bras_le_long_du_corps():
+    from keba.pantin import pose_de_repos
+    art = {"epaule_av": (100.0, 100.0), "poignet_av": (100.0 - 70.7, 170.7),     # bras écarté à 45°
+           "epaule_ar": (200.0, 100.0), "poignet_ar": (200.0 + 70.7, 170.7)}
+    r = pose_de_repos(art, ecart=math.radians(12))
+    assert r["bras_av"] == pytest.approx(math.radians(-33), abs=1e-3)       # vers le corps : sens antihoraire
+    assert r["bras_ar"] == pytest.approx(math.radians(33), abs=1e-3)
+
+
+def _maillot_et_short():
+    """Un maillot orange qui recouvre le haut d'un short bleu (le cas du bas du maillot de Kéba)."""
+    s = skia.Surface(W, H)
+    c = s.getCanvas()
+    c.clear(skia.ColorTRANSPARENT)
+    trait = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=4, Color=skia.Color(40, 22, 12))
+    for x in (136, 164):
+        jambe = skia.Rect(x - 13, 240, x + 13, 340)
+        c.drawRect(jambe, skia.Paint(AntiAlias=True, Color=skia.Color(40, 90, 220)))
+        c.drawRect(jambe, trait)
+    maillot = skia.Rect(118, 120, 182, 268)
+    c.drawRect(maillot, skia.Paint(AntiAlias=True, Color=skia.Color(245, 140, 30)))
+    c.drawRect(maillot, trait)
+    c.drawCircle(150, 72, 42, skia.Paint(AntiAlias=True, Color=skia.Color(140, 90, 60)))
+    return s.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType)
+
+
+def test_l_ourlet_du_maillot_reste_en_place_quand_la_cuisse_tourne():
+    art = dict(ARTICULATIONS, hanche_av=(136, 250), genou_av=(136, 295), cheville_av=(136, 335),
+               orteil_av=(126, 338), hanche_ar=(164, 250), genou_ar=(164, 295), cheville_ar=(164, 335),
+               orteil_ar=(174, 338))
+    image = _maillot_et_short()
+    p = Pantin.depuis_image(image, art, pas=8)
+    s = skia.Surface(W, H)
+    s.getCanvas().clear(skia.ColorTRANSPARENT)
+    p.dessiner(s.getCanvas(), p.poser({"cuisse_av": -0.7, "cuisse_ar": 0.7}))
+    a = s.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType)
+    ourlet = (slice(236, 266), slice(122, 178))           # le bas du maillot, au-dessus du short
+    assert np.abs(a[ourlet].astype(int) - image[ourlet].astype(int)).max() < 12

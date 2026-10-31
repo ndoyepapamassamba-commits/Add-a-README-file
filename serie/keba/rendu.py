@@ -26,9 +26,19 @@ class Scene:
     fond: str = "#000000"
     elements: list = field(default_factory=list)       # objets ayant .ordre et .dessiner(canvas, t)
     ecran: list = field(default_factory=list)          # éléments dessinés après la caméra (titres, vignettage)
+    echelle_sortie: float = 1.0                        # 0,5 : aperçu 540×960 d'une scène pensée en 1080×1920
 
     def dessiner(self, canvas, t: float):
         canvas.clear(teinte(self.fond))
+        if self.echelle_sortie != 1.0:
+            canvas.save()
+            canvas.scale(self.echelle_sortie, self.echelle_sortie)
+            self._dessiner(canvas, t)
+            canvas.restore()
+        else:
+            self._dessiner(canvas, t)
+
+    def _dessiner(self, canvas, t: float):
         for e in sorted(self.elements, key=lambda e: e.ordre):
             canvas.save()
             canvas.concat(self.camera.matrice(t, getattr(e, "parallaxe", 1.0)))

@@ -40,6 +40,7 @@ class Monde:
         self.temps: list[float] = [0.0]
         self.traces: dict[str, list] = {}
         self.chocs: list[Choc] = []
+        self.apparitions: dict[str, float] = {}
         self.t = 0.0
         self.espace.on_collision(post_solve=self._choc)
 
@@ -60,6 +61,7 @@ class Monde:
         self.espace.add(corps, f)
         self.noms[id(f)] = nom
         self.corps[nom] = corps
+        self.apparitions[nom] = self.t
         self.traces[nom] = [(corps.position.x, corps.position.y, corps.angle)] * len(self.temps)
         return corps
 

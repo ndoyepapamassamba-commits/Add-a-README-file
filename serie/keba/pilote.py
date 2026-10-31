@@ -99,6 +99,7 @@ def ecrire(plateau: Plateau, lieu: dict):
 
     # 4-6 s : Kéba prend la boîte, saute, la pose en haut
     t = t_arrivee + 0.3
+    t_prend = t + 0.2
     p.geste("bara", "bras_av", t, -1.2, 0.3)
     p.geste("keba", "bras_av", t, -2.4, 0.25)
     t_saut = t + 0.45
@@ -319,4 +320,33 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.duree = min(DUREE, t_g2 + 2.4)
     m.avancer_jusqua(p.duree + 0.5)
     p.sons_des_chocs()
-    return {"t_mange": t_mange, "boites": boites}
+    return {"t_mange": t_mange, "t_prend": t_prend, "t_pose": t_pose, "t_lance": t_glisse + 0.1,
+            "apparitions": dict(m.apparitions), "boites": boites}
+
+
+def visible(info: dict, nom: str):
+    debut = info["apparitions"].get(nom, 0.0)
+    if nom == "claquette":
+        return lambda t: debut <= t < info["t_mange"]
+    return lambda t: t >= debut
+
+
+def objets_portes(info: dict, acteurs: dict) -> list[dict]:
+    """La boîte passe de la main de Bara à celle de Kéba ; la bassine reste sur la tête de Coumba jusqu'à la glissade."""
+    def boite(t):
+        if t < info["t_prend"]:
+            x, y = acteurs["bara"].point(t, "main_av")
+        elif t < info["t_pose"]:
+            x, y = acteurs["keba"].point(t, "main_av")
+        else:
+            return None
+        return (x, y - 22.0, 0.0)
+
+    def bassine(t):
+        if t >= info["t_lance"]:
+            return None
+        x, y = acteurs["coumba"].point(t, "tete")
+        return (x, y - 30.0, 0.0)
+
+    return [{"image": "boite", "taille": (52, 62), "position": boite, "ordre": 13},
+            {"image": "bassine", "taille": (150, 100), "position": bassine, "ordre": 12}]

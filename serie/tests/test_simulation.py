@@ -65,3 +65,11 @@ def test_un_objet_fige_ne_bouge_pas_tant_qu_on_ne_le_libere_pas():
     m.liberer("tole")
     m.avancer_jusqua(2.0)
     assert m.etat("tole", 2.0)[1] > 1300
+
+
+def test_le_monde_note_l_heure_d_apparition_de_chaque_objet():
+    m = Monde(sol_y=SOL)
+    m.ajouter("a", forme="rond", taille=10, masse=1.0, position=(0, 0))
+    m.avancer_jusqua(1.0)
+    m.ajouter("b", forme="rond", taille=10, masse=1.0, position=(100, 0))
+    assert m.apparitions == {"a": 0.0, "b": pytest.approx(1.0)}

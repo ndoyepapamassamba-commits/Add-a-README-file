@@ -6,6 +6,7 @@ en restant à l'intérieur du dessin : un bras collé au torse ne lui appartient
 couches (bras du fond, jambes, torse, tête, bras de devant). Aucune couture : les coudes et les genoux plient en douceur.
 Greffes : scipy (BSD) — Delaunay, Dijkstra ; skia-python (BSD) — Vertices + Image.makeShader avec mipmaps.
 """
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -22,10 +23,10 @@ OS_HUMAIN = [
     ("bras_ar", "epaule_ar", "coude_ar", "torse", 0, (0.15, 0.85)),
     ("avbras_ar", "coude_ar", "poignet_ar", "bras_ar", 0, (0.15, 0.90)),
     ("main_ar", "poignet_ar", "main_ar_bout", "avbras_ar", 0, (0.10, 1.00)),
-    ("cuisse_ar", "hanche_ar", "genou_ar", None, 1, (0.15, 0.85)),
+    ("cuisse_ar", "hanche_ar", "genou_ar", None, 1, (0.40, 0.85)),
     ("tibia_ar", "genou_ar", "cheville_ar", "cuisse_ar", 1, (0.15, 0.85)),
     ("pied_ar", "cheville_ar", "orteil_ar", "tibia_ar", 1, (0.00, 1.00)),
-    ("cuisse_av", "hanche_av", "genou_av", None, 2, (0.15, 0.85)),
+    ("cuisse_av", "hanche_av", "genou_av", None, 2, (0.40, 0.85)),
     ("tibia_av", "genou_av", "cheville_av", "cuisse_av", 2, (0.15, 0.85)),
     ("pied_av", "cheville_av", "orteil_av", "tibia_av", 2, (0.00, 1.00)),
     ("bras_av", "epaule_av", "coude_av", "torse", 5, (0.15, 0.85)),
@@ -66,9 +67,13 @@ PIECES_HUMAIN = {"torse": "torse", "tete": "tete",
                  "bras_ar": "bras_ar", "avbras_ar": "bras_ar", "main_ar": "bras_ar",
                  "cuisse_av": "jambe_av", "tibia_av": "jambe_av", "pied_av": "jambe_av",
                  "cuisse_ar": "jambe_ar", "tibia_ar": "jambe_ar", "pied_ar": "jambe_ar"}
-JOINTURES_HUMAIN = {frozenset(("torse", "tete")): "cou",
-                    frozenset(("torse", "bras_av")): "epaule_av", frozenset(("torse", "bras_ar")): "epaule_ar",
-                    frozenset(("torse", "jambe_av")): "hanche_av", frozenset(("torse", "jambe_ar")): "hanche_ar"}
+# articulation → (point, rayon de la zone cousue en fraction de la hauteur du personnage). Les épaules s'étirent
+# comme du caoutchouc ; les hanches ne sont pas cousues : le maillot (devant) cache la jonction avec le short.
+JOINTURES_HUMAIN = {frozenset(("torse", "tete")): ("cou", 0.04),
+                    frozenset(("torse", "bras_av")): ("epaule_av", 0.06),
+                    frozenset(("torse", "bras_ar")): ("epaule_ar", 0.06),
+                    frozenset(("torse", "jambe_av")): ("hanche_av", 0.0),
+                    frozenset(("torse", "jambe_ar")): ("hanche_ar", 0.0)}
 
 
 # Robe longue (boubou) : la robe appartient au torse ; sous elle, l'os de chaque jambe ne tient aucune chair (plage
@@ -88,11 +93,23 @@ OS_QUADRUPEDE = [("corps", "croupe", "garrot", None, 3, (0.00, 1.00)),
                  ("tete", "garrot", "museau", "corps", 4, (0.45, 1.00))] + [
     (f"patte_{n}", f"hanche_{n}", f"sabot_{n}", "corps", 1 if n.endswith("loin") else 2, (0.25, 1.00)) for n in PATTES]
 PIECES_QUADRUPEDE = {"corps": "corps", "tete": "tete", **{f"patte_{n}": f"patte_{n}" for n in PATTES}}
-JOINTURES_QUADRUPEDE = {frozenset(("corps", "tete")): "garrot",
-                        **{frozenset(("corps", f"patte_{n}")): f"hanche_{n}" for n in PATTES}}
+JOINTURES_QUADRUPEDE = {frozenset(("corps", "tete")): ("garrot", 0.05),
+                        **{frozenset(("corps", f"patte_{n}")): (f"hanche_{n}", 0.04) for n in PATTES}}
 
 MODELES = {"humain": (OS_HUMAIN, PIECES_HUMAIN, JOINTURES_HUMAIN), "robe": (OS_ROBE, PIECES_ROBE, JOINTURES_ROBE),
            "quadrupede": (OS_QUADRUPEDE, PIECES_QUADRUPEDE, JOINTURES_QUADRUPEDE)}
+
+
+def pose_de_repos(art: dict, ecart: float = math.radians(12)) -> dict:
+    """Angles à ajouter aux bras pour qu'ils pendent le long du corps (légèrement écartés), quelle que soit la pose
+    de la planche (les planches sont dessinées bras écartés pour le pantin)."""
+    repos = {}
+    for cote, signe in (("av", -1.0), ("ar", 1.0)):
+        e, p = np.asarray(art[f"epaule_{cote}"], float), np.asarray(art[f"poignet_{cote}"], float)
+        v = p - e
+        d = np.array([signe * math.sin(ecart), math.cos(ecart)])
+        repos[f"bras_{cote}"] = float(math.atan2(v[0] * d[1] - v[1] * d[0], v @ d))
+    return repos
 
 
 def articulations_quadrupede(rgba: np.ndarray) -> dict:
@@ -153,7 +170,7 @@ def _carte_traits(rgba: np.ndarray) -> np.ndarray:
     return (((lum < voisinage - 28.0) & (alpha > 0.4)) | (alpha < 0.4)).astype(float)
 
 
-def _decouper(sommets, triangles, os_liste, poids, points, rayon, pieces=PIECES_HUMAIN, jointures=JOINTURES_HUMAIN):
+def _decouper(sommets, triangles, os_liste, poids, points, rayons, pieces=PIECES_HUMAIN, jointures=JOINTURES_HUMAIN):
     """Sépare le maillage en pièces (comme un pantin en carton) ; deux pièces ne restent cousues que près de leur
     articulation (dans `rayon`), où le dessin s'étire en douceur. Ailleurs, la couture est ouverte : quand le bras
     s'écarte du torse, aucun triangle ne s'étire en traînée."""
@@ -161,7 +178,7 @@ def _decouper(sommets, triangles, os_liste, poids, points, rayon, pieces=PIECES_
     piece_os = np.array([pieces[n] for n in noms])
     couche_piece = {pieces[o.nom]: o.couche for o in os_liste}
     dominant = piece_os[np.argmax(poids, axis=1)]
-    centres = {cle: np.asarray(points[nom], float) for cle, nom in jointures.items()}
+    centres = {cle: np.asarray(points[nom], float) for cle, (nom, _) in jointures.items()}
 
     # 1. triangles cousus : à cheval sur deux pièces articulées, tout près de leur articulation
     cousu = {}                                   # index du triangle → jointure
@@ -169,7 +186,7 @@ def _decouper(sommets, triangles, os_liste, poids, points, rayon, pieces=PIECES_
     for i, tri in enumerate(triangles):
         presentes = frozenset(dominant[tri].tolist())
         if len(presentes) == 2 and presentes in jointures:
-            if (np.linalg.norm(sommets[tri] - centres[presentes], axis=1) < rayon).all():
+            if (np.linalg.norm(sommets[tri] - centres[presentes], axis=1) < rayons[presentes]).all():
                 cousu[i] = presentes
                 for v in tri:
                     partage[int(v)] = presentes
@@ -285,8 +302,8 @@ class Pantin:
         os_liste = [Os(n, p[d], p[f], par, couche, plage) for n, d, f, par, couche, plage in os_def]
         poids = cls._poids(sommets, triangles, os_liste, pas, _carte_traits(rgba))
         hauteur = float(sommets[:, 1].max() - sommets[:, 1].min())
-        rayon = max(2.0 * pas, 0.035 * hauteur)
-        sommets, triangles, poids, couches = _decouper(sommets, triangles, os_liste, poids, p, rayon, pieces, jointures)
+        rayons = {cle: (max(2.0 * pas, f * hauteur) if f > 0 else 0.0) for cle, (_, f) in jointures.items()}
+        sommets, triangles, poids, couches = _decouper(sommets, triangles, os_liste, poids, p, rayons, pieces, jointures)
         return cls(rgba, sommets, triangles, os_liste, poids, couches)
 
     @staticmethod

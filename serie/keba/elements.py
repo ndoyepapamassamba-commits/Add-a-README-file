@@ -40,20 +40,47 @@ class ElementActeur:
     """Un pantin PNG qui joue la pose calculée par l'acteur, avec son ombre au sol."""
 
     def __init__(self, acteur, pantin, echelle: float, ordre: int = 10, largeur_ombre: float | None = None,
-                 textures: dict | None = None):
+                 textures: dict | None = None, traduction=None, clignements: bool = True, repos: dict | None = None):
         self.acteur, self.pantin, self.echelle, self.ordre = acteur, pantin, echelle, ordre
         self.largeur_ombre = largeur_ombre or 0.55 * pantin.hauteur * echelle
         self.textures = textures or {}
+        self.traduction = traduction or (lambda angles: angles)
+        self.clignements = clignements
+        self.repos = repos or {}           # bras le long du corps (planches dessinées bras écartés)
+        self._indices = {}
+
+    def positions(self, t):
+        p = self.acteur.pose(t)
+        pl = p["placement"]
+        angles = self.traduction(p["angles"])
+        angles = {k: v + self.repos.get(k, 0.0) for k, v in angles.items()}
+        pos = self.pantin.poser(angles, x=pl["x"], y=pl["y"], echelle=self.echelle,
+                                sens=pl["sens"], penche=pl["penche"], ecrase=pl["ecrase"], saut=pl["saut"],
+                                bassin=(0.0, p["rebond"] / self.echelle))
+        return p, pos
+
+    def point(self, t, os: str, bout: str = "fin"):
+        """Position à l'instant t d'un point du dessin : le bout (ou le début) d'un os, ex. ("main_av") ou ("tete")."""
+        cle = (os, bout)
+        if cle not in self._indices:
+            o = next(o for o in self.pantin.os if o.nom == os)
+            cible = o.fin if bout == "fin" else o.debut
+            self._indices[cle] = int(np.argmin(np.linalg.norm(self.pantin.sommets - cible, axis=1)))
+        return self.positions(t)[1][self._indices[cle]]
+
+    def _texture(self, t, expression):
+        if self.clignements and expression in ("neutre", "joie", "fierte", "determine") and "yeux_fermes" in self.textures:
+            periode = 3.1 + (self.acteur.graine % 7) * 0.23
+            if (t + self.acteur.graine * 0.37) % periode < 0.12:
+                return self.textures["yeux_fermes"]
+        return self.textures.get(expression)
 
     def dessiner(self, canvas, t):
-        p = self.acteur.pose(t)
+        p, pos = self.positions(t)
         pl = p["placement"]
         vol = min(1.0, pl["saut"] / 250.0)
         ombre_sol(canvas, pl["x"], pl["y"], self.largeur_ombre * (1 - 0.5 * vol), 0.32 * (1 - 0.6 * vol))
-        pos = self.pantin.poser(p["angles"], x=pl["x"], y=pl["y"], echelle=self.echelle, sens=pl["sens"],
-                                penche=pl["penche"], ecrase=pl["ecrase"], saut=pl["saut"],
-                                bassin=(0.0, p["rebond"] / self.echelle))
-        self.pantin.dessiner(canvas, pos, texture=self.textures.get(p["expression"]))
+        self.pantin.dessiner(canvas, pos, texture=self._texture(t, p["expression"]))
 
 
 class ElementObjet:
