@@ -88,3 +88,6 @@
 [I] decode_first_stage completed, taking 11.74s --- image.cpp:624
 [I] generate_image completed in 362.10s --- image.cpp:1050
 [V] model manager released params backend buffers (7376.33 MB, 695 tensors, 4 blocks, RAM) from CPU --- model_manager.cpp:1295
+[I] save result image 0 to '/home/runner/work/_temp/sortie/keba-expr-yeux_fermes-brut.png' (success) --- main.cpp:498
+[I] 1/1 images saved --- main.cpp:574
+fait : keba-expr-yeux_fermes en 363.0 s
