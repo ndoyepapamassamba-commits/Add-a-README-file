@@ -3,3 +3,4 @@
 [363 s] 0 images · === bara-planche   |============>                                     | 1/4 - 305.30s/it[K · mémoire libre 6720 Mo
 [485 s] 0 images · === bara-planche   |============>                                     | 1/4 - 305.30s/it[K · mémoire libre 6721 Mo
 [606 s] 0 images · === bara-planche   |============>                                     | 1/4 - 305.30s/it[K · mémoire libre 6727 Mo
+[728 s] 0 images · === bara-planche   |=========================>                        | 2/4 - 304.36s/it[K · mémoire libre 6732 Mo
