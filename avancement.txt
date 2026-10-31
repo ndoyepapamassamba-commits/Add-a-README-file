@@ -1,1 +1,2 @@
 [121 s] 0 images · === keba-expr-douleur   |============>                                     | 1/4 - 52.83s/it[K · mémoire libre 6991 Mo
+[242 s] 0 images · === keba-expr-douleur [I] loading tensors completed, taking 0.20s (read: 0.02s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00 · mémoire libre 6665 Mo
