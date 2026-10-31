@@ -16,7 +16,8 @@ from pathlib import Path
 import numpy as np
 
 from . import pilote, son
-from .elements import (ElementActeur, ElementDecor, ElementObjet, ElementPorte, charger_image, image_rgba)
+from .elements import (ElementActeur, ElementDecor, ElementObjet, ElementPorte, charger_decor, charger_image,
+                       image_rgba)
 from .pantin import Pantin, articulations_quadrupede, pose_de_repos
 from .controle import controler
 from .rendu import Scene, rendre_video
@@ -53,7 +54,9 @@ def charger_personnage(ident: str):
         rgba, modele = _rgba(planche), MODELES[ident]
         f_art = d / "planche-articulations.json"
         art = articulations_quadrupede(rgba) if modele == "quadrupede" else json.loads(f_art.read_text())
-    pantin = Pantin.depuis_image(rgba, art, pas=9, modele=modele)
+    from .bible import charger
+    jupe = charger().personnages.get(ident, {}).get("jupe", 0.0)
+    pantin = Pantin.depuis_image(rgba, art, pas=9, modele=modele, jupe=jupe)
     pantin.repos = pose_de_repos(art) if modele != "quadrupede" else {}
     textures = {f.stem[len("expr-"):]: pantin.texture(_rgba(f)) for f in sorted(d.glob("expr-*.png"))
                 if not f.stem.endswith("-brut")}
@@ -79,7 +82,9 @@ def pas_sonores(plateau, nom, son_nom, volume):
 
 
 def construire(graine: int = 1):
-    decor = charger_image(BIBLE_PNG / "decors" / "rue-boutique.png") if (BIBLE_PNG / "decors" / "rue-boutique.png").exists() else None
+    chemins = [BIBLE_PNG / "decors" / n for n in ("rue-boutique-retouche.png", "rue-boutique.png")]
+    chemin = next((c for c in chemins if c.exists()), None)
+    decor = charger_decor(chemin) if chemin else None
     lw = pilote.LIEU["largeur_monde"]
     dw, dh = (decor.width(), decor.height()) if decor else (768, 1344)
     E = lw / dw
@@ -89,6 +94,7 @@ def construire(graine: int = 1):
             "porte_coumba": L["porte_coumba"] * lw, "mouton": L["mouton"] * lw}
     plateau = pilote.Plateau(pilote.DUREE, sol_y=L["sol"] * dh * E, graine=graine)
     info = pilote.ecrire(plateau, lieu)
+    plateau.camera.limites = (30.0, 30.0, lw - 30.0, dh * E - 30.0)    # marge : les secousses ne sortent pas du décor
     plateau.preparer()
     for nom, (s, v) in PAS_SONORES.items():
         pas_sonores(plateau, nom, s, v)
@@ -108,13 +114,14 @@ def construire(graine: int = 1):
         elements.append(e)
     images = {k: charger_image(BIBLE_PNG / "objets" / f"{v}.png") for k, v in IMAGES_OBJETS.items()}
     m = plateau.monde
-    tailles = {"boite": (52, 62), "orange": 40, "claquette": (66, 34), "bassine": (150, 100), "tole": None}
+    tailles = {"boite": (98, 120), "orange": 40, "claquette": (66, 34), "bassine": (150, 100), "tole": None}
     for nom in m.corps:
         famille = next((f for f in IMAGES_OBJETS if nom.startswith(f)), None)
         if famille is None:
             continue
         taille = tailles[famille] or (lieu["auvent"][2] * 1.04, 70)
-        elements.append(ElementObjet(m, nom, images[famille], taille, ordre=20 if famille != "tole" else 9,
+        ordre = {"boite": 9, "tole": 9}.get(famille, 20)       # boîtes et tôle derrière les acteurs
+        elements.append(ElementObjet(m, nom, images[famille], taille, ordre=ordre,
                                      visible=pilote.visible(info, nom)))
     for porte in pilote.objets_portes(info, acteurs):
         elements.append(ElementPorte(images[porte["image"]], porte["taille"], porte["position"], ordre=porte["ordre"]))

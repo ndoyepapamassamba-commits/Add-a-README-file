@@ -25,8 +25,9 @@ DUREE = 56.0
 TAILLES = {"keba": 400.0, "bara": 560.0, "coumba": 700.0, "gainde": 330.0}
 
 # Géométrie du décor « rue-boutique », en fractions de l'image (réglée en regardant le décor)
-LIEU = {"largeur_monde": 1460.0, "sol": 0.89, "comptoir": (0.21, 0.705, 0.25), "poteau": 0.40,
-        "auvent": (0.03, 0.47, 0.40), "porte_coumba": 0.80, "mouton": 0.93}
+# (mesurée le 31/10/2026 sur rue-boutique 768×1344 : comptoir en y = 805, poteau en x = 258, porte en x = 578)
+LIEU = {"largeur_monde": 1460.0, "sol": 0.714, "comptoir": (0.182, 0.599, 0.26), "poteau": 0.336,
+        "auvent": (0.03, 0.487, 0.33), "porte_coumba": 0.753, "mouton": 0.885}
 
 
 def _rgba(chemin):
@@ -63,14 +64,14 @@ def ecrire(plateau: Plateau, lieu: dict):
     # --- objets : comptoir, pyramide (4-3-2 ; la dernière boîte est dans la main de Bara), oranges, tôle ----------
     m = p.monde
     m.ajouter("comptoir", forme="boite", taille=(wc, 24), masse=50, position=(xc, yc + 12), fige=True)
-    bw, bh = 46.0, 58.0
+    bw, bh = 90.0, 110.0
     boites = []
-    for rang, n in enumerate((4, 3, 2)):
+    for rang, n in enumerate((3, 2)):
         for k in range(n):
             nom = f"boite{rang}{k}"
             x = xc + (k - (n - 1) / 2) * (bw + 3)
-            m.ajouter(nom, forme="boite", taille=(bw, bh), masse=0.6, position=(x, yc - bh / 2 - rang * (bh + 1)),
-                      friction=0.85, elasticite=0.2)
+            m.ajouter(nom, forme="boite", taille=(bw, bh), masse=0.9, position=(x, yc - bh / 2 - rang * (bh + 1)),
+                      friction=0.85, elasticite=0.2, fige=True)   # figée jusqu'à la chute décidée par le scénario
             boites.append(nom)
     for k in range(5):
         m.ajouter(f"orange{k}", forme="rond", taille=17, masse=0.25,
@@ -86,14 +87,14 @@ def ecrire(plateau: Plateau, lieu: dict):
 
     # 0-4 s : Bara sur la pointe des pieds, la boîte au bout du bras ; Kéba accourt
     p.humeur(0.0, "malice")
-    p.cadrer(0.0, xc + 120, sol - 620, 1.25)
+    p.cadrer(0.0, xc + 140, sol - 560, 1.45)
     p.expression("bara", 0.0, "determine")
     for k, t in enumerate((0.3, 1.1, 1.9)):
         p.geste("bara", "bras_av", t, -2.6, 0.35, "anticipe_depasse")
         p.sauter("bara", t + 0.05, hauteur=28, duree=0.4)
         p.geste("bara", "bras_av", t + 0.6, -2.2, 0.2)
-    t_arrivee = p.courir("keba", 1.8, xc - wc * 0.75)
-    p.cadrer(2.2, xc, sol - 640, 1.0)
+    t_arrivee = p.courir("keba", 1.4, xc - 40)
+    p.cadrer(1.8, xc + 100, sol - 600, 1.25)
     p.expression("keba", 1.8, "joie")
     p.humeur(2.0, "calme")
 
@@ -107,13 +108,17 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.aller("keba", t_saut, xc - bw * 0.2, vitesse=420)
     p.son(t_saut + 0.1, "montee", 0.5)
     t_pose = t_saut + 0.12 + 0.42
-    sommet_y = yc - 3 * (bh + 1) - bh / 2
+    sommet_y = yc - 2 * (bh + 1) - bh / 2
     m.avancer_jusqua(t_pose)
-    m.ajouter("boite_haut", forme="boite", taille=(bw, bh), masse=0.6, position=(xc, sommet_y), friction=0.85,
-              elasticite=0.2)
+    # posée sur la rangée du dessous TELLE QU'ELLE EST (les boîtes se sont tassées de quelques pixels), avec 3 px de
+    # marge : sinon la physique écarte violemment deux boîtes qui s'interpénètrent et la pyramide s'écroule trop tôt
+    haut_rangee = min(m.etat(n, t_pose)[1] for n in boites if n.startswith("boite1")) - bh / 2
+    sommet_y = haut_rangee - bh / 2 - 1.0
+    m.ajouter("boite_haut", forme="boite", taille=(bw, bh), masse=0.9, position=(xc, sommet_y), friction=0.85,
+              elasticite=0.2, fige=True)
     boites.append("boite_haut")
     p.son(t_pose, "tink", 0.4)
-    p.aller("keba", fin_saut, xc - wc * 0.8, vitesse=300)
+    p.aller("keba", fin_saut, xc + 40, vitesse=300)
     p.son(fin_saut, "pouf", 0.6)
     p.particules.bouffee(fin_saut, (xc - bw * 0.2, sol), nombre=10, vitesse=180, gravite=-60)
 
@@ -146,7 +151,7 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.son(t_claque, "clac", 0.9)
     p.son(t_claque + 0.05, "whoosh", 0.7)
     p.expression("keba", t_claque + 0.2, "surprise")
-    p.cadrer(t_claque + 0.2, xc, yc - 120, 1.45)
+    p.cadrer(t_claque + 0.2, xc + 20, yc - 160, 1.6)
 
     # la claquette touche la pyramide : SILENCE… elle tient… puis tout s'écroule
     m.avancer_jusqua(t_claque + 1.0)
@@ -160,15 +165,18 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.son(t_soulage, "glissade", 0.0)
     t_chute = t_soulage + 0.9
     m.avancer_jusqua(t_chute)
-    m.impulsion("boite01", (60.0, -20.0))
-    m.impulsion("boite02", (-60.0, -20.0))
+    for nom in boites:
+        m.liberer(nom)
+    m.impulsion("boite00", (-160.0, -60.0))
+    m.impulsion("boite02", (160.0, -60.0))
+    m.impulsion("boite01", (40.0, -40.0))
     for i, nom in enumerate(boites):
-        if nom.startswith("boite2") or nom == "boite_haut":
-            m.impulsion(nom, ((-1) ** i * 45.0, -30.0))
+        if nom.startswith("boite1") or nom == "boite_haut":
+            m.impulsion(nom, ((-1) ** i * 90.0, -50.0))
     p.coup(t_chute)
     p.humeur(t_chute, "chaos")
     p.expression("bara", t_chute + 0.15, "choc")
-    p.cadrer(t_chute + 0.3, xc + 80, sol - 600, 1.05)
+    p.cadrer(t_chute + 0.3, xc + 120, sol - 580, 1.2)
     x_bara = p.acteurs["bara"].pistes.valeur("x", t_chute)
     m.ajouter_pilote("tete_bara", forme="rond", taille=70.0,
                      trajectoire=lambda tt: (p.acteurs["bara"].pistes.valeur("x", tt),
@@ -190,7 +198,7 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.expression("coumba", t_c, "fierte")
     x_glisse = xc + wc * 0.9 + 190
     t_glisse = p.aller("coumba", t_c, x_glisse, vitesse=230)
-    p.cadrer(t_c, (xc + x_porte) / 2 + 60, sol - 680, 0.92)
+    p.cadrer(t_c, (xc + x_porte) / 2 + 80, sol - 620, 1.05)
     p.son(t_glisse - 0.05, "glissade", 0.9)
     p.son(t_glisse, "boing", 0.6)
     p.regle("coumba", "penche", t_glisse, -1.25, 0.28, "sortie")
@@ -221,13 +229,13 @@ def ecrire(plateau: Plateau, lieu: dict):
                          duree=0.9, gravite=1800, rayon=(5, 11))
     p.expression("bara", t_eclabousse + 0.1, "choc")
     p.expression("bara", t_eclabousse + 1.0, "fureur")
-    p.cadrer(t_eclabousse - 0.3, xb + 150, sol - 640, 1.0)
+    p.cadrer(t_eclabousse - 0.3, xb + 150, sol - 600, 1.15)
 
     # Gaïndé se réveille, gratte le sol, charge ; Kéba saute par-dessus ; le mouton percute le poteau
     t_g = t_eclabousse + 1.4
     p.humeur(t_g, "suspense")
     p.son(t_g, "bee", 0.9)
-    p.cadrer(t_g, x_mouton - 260, sol - 560, 1.15)
+    p.cadrer(t_g, x_mouton - 240, sol - 520, 1.3)
     for k in range(3):
         p.son(t_g + 0.9 + 0.3 * k, "toc", 0.6)
         p.particules.bouffee(t_g + 0.9 + 0.3 * k, (x_mouton - 40, sol), nombre=6, vitesse=160, gravite=-40)
@@ -235,7 +243,7 @@ def ecrire(plateau: Plateau, lieu: dict):
     t_charge = t_g + 2.0
     p.humeur(t_charge, "poursuite")
     p.coup(t_charge)
-    p.cadrer(t_charge, (x_poteau + x_mouton) / 2, sol - 620, 0.95)
+    p.cadrer(t_charge, (x_poteau + x_mouton) / 2, sol - 600, 1.05)
     p.aller("keba", t_charge - 0.8, x_poteau + 220, vitesse=420)
     t_impact = p.aller("gainde", t_charge, x_poteau + 60, vitesse=900, courbe="entree")
     p.son(t_charge, "whoosh", 0.9)
@@ -259,7 +267,7 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.particules.bouffee(t_tole + 0.2, (xb, sol - TAILLES["bara"] * 0.9), nombre=5, couleur="#FFD54A",
                          vitesse=90, duree=1.6, gravite=0, rayon=(12, 18), forme="etoile")
     p.expression("gainde", t_impact, "douleur")
-    p.cadrer(t_tole, xb + 200, sol - 640, 0.9)
+    p.cadrer(t_tole, xb + 200, sol - 600, 1.1)
 
     # Silence : tous se tournent vers Kéba, qui sourit, gêné
     t_s = t_tole + 2.2
@@ -270,7 +278,7 @@ def ecrire(plateau: Plateau, lieu: dict):
         sens = 1.0 if x_keba > p.acteurs[nom].pistes.valeur("x", tt) else -1.0
         p.geste(nom, "sens_force", tt, sens, 0.01, "maintien")
         p.expression(nom, tt, "fureur")
-    p.cadrer(t_s, x_keba, sol - 560, 1.6)
+    p.cadrer(t_s, x_keba, sol - 520, 1.7)
     p.expression("keba", t_s + 1.0, "gene")
     p.geste("keba", "bras_av", t_s + 1.4, -2.0, 0.3, "depasse")
     p.son(t_s + 1.4, "kling", 0.4)
@@ -292,7 +300,7 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.expression("keba", t_p, "peur")
     for k, nom in enumerate(("gainde", "bara", "coumba")):
         p.courir(nom, t_p + 0.5 + 0.35 * k, loin, vitesse=640)
-    p.cadrer(t_p, lieu["largeur_monde"] * 0.6, sol - 640, 0.9)
+    p.cadrer(t_p, lieu["largeur_monde"] * 0.6, sol - 600, 1.0)
     # ils repassent de gauche à droite (ils ont fait le tour du pâté de maisons)
     t_r = t_p + 4.2
     for nom in ("keba", "gainde", "bara", "coumba"):
@@ -301,7 +309,7 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.courir("keba", t_r + 0.1, loin, vitesse=700)
     for k, nom in enumerate(("gainde", "bara", "coumba")):
         p.courir(nom, t_r + 0.5 + 0.35 * k, loin, vitesse=640)
-    p.cadrer(t_r, lieu["largeur_monde"] * 0.5, sol - 640, 0.9)
+    p.cadrer(t_r, lieu["largeur_monde"] * 0.5, sol - 600, 1.0)
 
     # Gag final : rue vide, Gaïndé revient, mange la claquette, regarde la caméra
     t_f = t_r + 3.6
@@ -348,5 +356,5 @@ def objets_portes(info: dict, acteurs: dict) -> list[dict]:
         x, y = acteurs["coumba"].point(t, "tete")
         return (x, y - 30.0, 0.0)
 
-    return [{"image": "boite", "taille": (52, 62), "position": boite, "ordre": 13},
+    return [{"image": "boite", "taille": (98, 120), "position": boite, "ordre": 13},
             {"image": "bassine", "taille": (150, 100), "position": bassine, "ordre": 12}]

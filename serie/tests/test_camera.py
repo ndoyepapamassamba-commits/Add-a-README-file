@@ -42,3 +42,15 @@ def test_la_matrice_envoie_le_point_vise_au_centre_de_l_ecran():
     assert (p.x(), p.y()) == pytest.approx((540.0, 960.0), abs=0.5)
     q = m.mapXY(2100.0, 1300.0)
     assert q.x() - p.x() == pytest.approx(150.0, abs=0.5)
+
+
+def test_la_camera_ne_sort_jamais_du_decor():
+    c = Camera(1080, 1920)
+    c.limites = (0.0, 0.0, 1460.0, 2555.0)
+    c.pistes.cle("cx", 0.0, 100.0)          # trop à gauche : on verrait hors du décor
+    c.pistes.cle("zoom", 0.0, 1.25)
+    c.preparer(2.0)
+    cx, cy, zoom, _, _, _ = c.etat(1.5)
+    assert cx - 540 / zoom >= -0.5
+    m = c.matrice(1.5)
+    assert m.mapXY(0.0, 1300.0).x() <= 0.5    # le bord gauche du décor est au bord de l'écran ou au-delà

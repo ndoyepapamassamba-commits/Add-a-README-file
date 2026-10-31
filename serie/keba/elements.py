@@ -26,6 +26,15 @@ def charger_image(chemin) -> skia.Image:
     return image_rgba(im.toarray())
 
 
+def charger_decor(chemin, flou: float = 1.0, saturation: float = 0.86, contraste: float = 0.93) -> skia.Image:
+    """Décor légèrement adouci et désaturé (profondeur de champ des dessins animés) : les personnages et les objets
+    du premier plan ressortent, comme les boîtes rouges devant les étagères colorées de la boutique."""
+    from PIL import Image, ImageEnhance, ImageFilter
+    im = Image.open(chemin).convert("RGB").filter(ImageFilter.GaussianBlur(flou))
+    im = ImageEnhance.Contrast(ImageEnhance.Color(im).enhance(saturation)).enhance(contraste)
+    return image_rgba(np.asarray(im.convert("RGBA")))
+
+
 class ElementDecor:
     def __init__(self, image: skia.Image, x: float = 0.0, y: float = 0.0, echelle: float = 1.0,
                  parallaxe: float = 1.0, ordre: int = 0):

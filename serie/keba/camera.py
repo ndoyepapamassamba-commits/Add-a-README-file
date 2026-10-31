@@ -19,6 +19,7 @@ class Camera:
         self.largeur, self.hauteur = largeur, hauteur
         self.pistes = Pistes({"cx": largeur / 2.0, "cy": hauteur / 2.0, "zoom": 1.0, "roulis": 0.0})
         self.secousses: list[tuple[float, float]] = []
+        self.limites = None              # (x0, y0, x1, y1) du décor : la caméra n'en sort jamais
         self._t = None
 
     def secouer(self, t: float, amplitude: float):
@@ -39,6 +40,13 @@ class Camera:
                 x += v * dt
                 sortie[i] = x
             lisses[k] = sortie
+        if self.limites is not None:
+            x0, y0, x1, y1 = self.limites
+            z = np.maximum(lisses["zoom"], max(self.largeur / (x1 - x0), self.hauteur / (y1 - y0)))
+            lisses["zoom"] = z
+            demi_l, demi_h = self.largeur / 2.0 / z, self.hauteur / 2.0 / z
+            lisses["cx"] = np.clip(lisses["cx"], x0 + demi_l, x1 - demi_l)
+            lisses["cy"] = np.clip(lisses["cy"], y0 + demi_h, y1 - demi_h)
         dx, dy, rot = np.zeros(n), np.zeros(n), np.zeros(n)
         for t0, amp in self.secousses:
             i0 = int(t0 * HZ)
