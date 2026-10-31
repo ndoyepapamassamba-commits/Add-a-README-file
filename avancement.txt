@@ -9,3 +9,4 @@
 [1091 s] 0 images · === decor-rue-boutique   |=========================>                        | 2/4 - 353.64s/it[K · mémoire libre 6482 Mo
 [1213 s] 0 images · === decor-rue-boutique   |=====================================>            | 3/4 - 353.05s/it[K · mémoire libre 6476 Mo
 [1334 s] 0 images · === decor-rue-boutique   |=====================================>            | 3/4 - 353.05s/it[K · mémoire libre 6483 Mo
+[1455 s] 0 images · === decor-rue-boutique [I] loading tensors completed, taking 0.20s (read: 0.02s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00 · mémoire libre 7319 Mo
