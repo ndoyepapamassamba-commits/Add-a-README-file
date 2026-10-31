@@ -45,7 +45,9 @@ class Os:
 
 
 def _points_derives(a: dict) -> dict:
-    p = {k: np.asarray(v, dtype=float) for k, v in a.items()}
+    p = {k: np.asarray(v, dtype=float) for k, v in a.items() if not k.startswith("_")}
+    if "garrot" in p:                            # quadrupède : pas de points humains à dériver
+        return p
     p["bassin"] = (p["hanche_av"] + p["hanche_ar"]) / 2
     p["chevilles"] = (p["cheville_av"] + p["cheville_ar"]) / 2
     epaules = (p["epaule_av"] + p["epaule_ar"]) / 2
@@ -80,7 +82,66 @@ OS_ROBE = [o for o in OS_HUMAIN if not o[0].startswith(("cuisse", "tibia", "pied
 ]
 PIECES_ROBE = {**{k: v for k, v in PIECES_HUMAIN.items() if not k.startswith("tibia")}, "robe": "torse"}
 JOINTURES_ROBE = {k: v for k, v in JOINTURES_HUMAIN.items() if "jambe_av" not in k and "jambe_ar" not in k}
-MODELES = {"humain": (OS_HUMAIN, PIECES_HUMAIN, JOINTURES_HUMAIN), "robe": (OS_ROBE, PIECES_ROBE, JOINTURES_ROBE)}
+# Quadrupède (Gaïndé) vu de profil, tourné vers la droite : corps, tête, quatre pattes ; « loin » derrière, « pres » devant
+PATTES = ("ar_loin", "ar_pres", "av_loin", "av_pres")
+OS_QUADRUPEDE = [("corps", "croupe", "garrot", None, 3, (0.00, 1.00)),
+                 ("tete", "garrot", "museau", "corps", 4, (0.45, 1.00))] + [
+    (f"patte_{n}", f"hanche_{n}", f"sabot_{n}", "corps", 1 if n.endswith("loin") else 2, (0.25, 1.00)) for n in PATTES]
+PIECES_QUADRUPEDE = {"corps": "corps", "tete": "tete", **{f"patte_{n}": f"patte_{n}" for n in PATTES}}
+JOINTURES_QUADRUPEDE = {frozenset(("corps", "tete")): "garrot",
+                        **{frozenset(("corps", f"patte_{n}")): f"hanche_{n}" for n in PATTES}}
+
+MODELES = {"humain": (OS_HUMAIN, PIECES_HUMAIN, JOINTURES_HUMAIN), "robe": (OS_ROBE, PIECES_ROBE, JOINTURES_ROBE),
+           "quadrupede": (OS_QUADRUPEDE, PIECES_QUADRUPEDE, JOINTURES_QUADRUPEDE)}
+
+
+def articulations_quadrupede(rgba: np.ndarray) -> dict:
+    """Articulations d'un quadrupède de profil (tourné vers la droite), lues sur sa silhouette : les pattes sont les
+    taches séparées du bas de l'image, le museau le point le plus à droite de la moitié haute."""
+    masque = rgba[:, :, 3] > 100
+    ys, xs = np.nonzero(masque)
+    x0, x1, y0, y1 = xs.min(), xs.max(), ys.min(), ys.max()
+    larg, haut = x1 - x0, y1 - y0
+    bande = masque.copy()
+    bande[: int(y1 - 0.30 * haut)] = False
+    etiq, n = ndimage.label(bande)
+    taches = []
+    for i in range(1, n + 1):
+        yy, xx = np.nonzero(etiq == i)
+        if len(xx) > 0.002 * masque.sum():
+            taches.append((float(xx.mean()), float(yy.max())))
+    taches.sort()
+    while len(taches) < 4:                       # pattes confondues : on dédouble la plus large zone
+        taches.append(taches[-1])
+        taches.sort()
+    if len(taches) > 4:
+        taches = [taches[0], taches[1], taches[-2], taches[-1]]
+    ecarts = [taches[i + 1][0] - taches[i][0] for i in range(3)]
+    coupe = int(np.argmax(ecarts)) + 1          # le plus grand écart sépare les pattes arrière des pattes avant
+    arriere, avant = taches[:coupe], taches[coupe:]
+    if len(arriere) == 1:
+        arriere = arriere * 2
+    if len(avant) == 1:
+        avant = avant * 2
+    arriere, avant = arriere[:2], avant[-2:]
+    art = {}
+    haut_patte = y1 - 0.42 * haut
+    for (x, yb), nom in zip(arriere + avant, PATTES):
+        art[f"sabot_{nom}"] = (x, yb - 4.0)
+        art[f"hanche_{nom}"] = (x, haut_patte)
+
+    def milieu_colonne(x):
+        col = np.nonzero(masque[: int(y1 - 0.30 * haut), int(round(x))])[0]
+        return float((col.min() + col.max()) / 2) if len(col) else float(y0 + 0.4 * haut)
+
+    xa, xv = float(np.mean([t[0] for t in arriere])), float(np.mean([t[0] for t in avant]))
+    art["croupe"] = (xa, milieu_colonne(xa))
+    art["garrot"] = (xv, milieu_colonne(xv))
+    haut_ys = ys < y0 + 0.6 * haut
+    xm = xs[haut_ys].max()
+    proche = haut_ys & (xs > xm - 0.06 * larg)
+    art["museau"] = (float(xs[proche].mean()), float(ys[proche].mean()))
+    return {k: (round(v[0], 1), round(v[1], 1)) for k, v in art.items()}
 
 
 def _carte_traits(rgba: np.ndarray) -> np.ndarray:
