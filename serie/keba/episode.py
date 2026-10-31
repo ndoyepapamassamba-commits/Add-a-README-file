@@ -120,7 +120,7 @@ def construire(graine: int = 1):
         if famille is None:
             continue
         taille = tailles[famille] or (lieu["auvent"][2] * 1.04, 70)
-        ordre = {"boite": 9, "tole": 9}.get(famille, 20)       # boîtes et tôle derrière les acteurs
+        ordre = {"boite": 9, "tole": 21}.get(famille, 20)      # boîtes derrière les acteurs, la tôle tombe devant
         elements.append(ElementObjet(m, nom, images[famille], taille, ordre=ordre,
                                      visible=pilote.visible(info, nom)))
     for porte in pilote.objets_portes(info, acteurs):

@@ -19,7 +19,7 @@ from .mise_en_scene import Plateau
 from .pantin import Pantin
 
 BIBLE_PNG = Path(__file__).resolve().parents[1] / "bible" / "png"
-DUREE = 56.0
+DUREE = 58.0
 
 # Hauteur à l'écran (px, image 1080×1920 à zoom 1) de chaque personnage
 TAILLES = {"keba": 400.0, "bara": 560.0, "coumba": 700.0, "gainde": 330.0}
@@ -82,21 +82,22 @@ def ecrire(plateau: Plateau, lieu: dict):
     # --- distribution --------------------------------------------------------------------------------------------
     p.acteur("bara", jambe=150.0, x=xc + wc * 0.62)
     p.acteur("keba", jambe=105.0, x=-260.0)
-    p.acteur("coumba", jambe=230.0, x=x_porte + 400.0)
+    p.acteur("coumba", jambe=230.0, x=x_porte + 520.0)
     p.acteur("gainde", jambe=110.0, x=x_mouton)
 
     # 0-4 s : Bara sur la pointe des pieds, la boîte au bout du bras ; Kéba accourt
     p.humeur(0.0, "malice")
     p.cadrer(0.0, xc + 140, sol - 560, 1.45)
     p.expression("bara", 0.0, "determine")
-    for k, t in enumerate((0.3, 1.1, 1.9)):
+    for k, t in enumerate((0.3, 1.1, 1.9, 2.7, 3.5, 4.3)):
         p.geste("bara", "bras_av", t, -2.6, 0.35, "anticipe_depasse")
         p.sauter("bara", t + 0.05, hauteur=28, duree=0.4)
         p.geste("bara", "bras_av", t + 0.6, -2.2, 0.2)
-    t_arrivee = p.courir("keba", 1.4, xc - 40)
-    p.cadrer(1.8, xc + 100, sol - 600, 1.25)
-    p.expression("keba", 1.8, "joie")
-    p.humeur(2.0, "calme")
+    p.expression("bara", 2.6, "colere")
+    t_arrivee = p.courir("keba", 3.8, xc - 40)
+    p.cadrer(4.2, xc + 100, sol - 600, 1.25)
+    p.expression("keba", 4.2, "joie")
+    p.humeur(4.4, "calme")
 
     # 4-6 s : Kéba prend la boîte, saute, la pose en haut
     t = t_arrivee + 0.3
@@ -160,10 +161,17 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.humeur(impact, "silence")
     p.expression("bara", impact + 0.1, "peur")
     p.geste("bara", "tete", impact + 0.1, -0.15, 0.4)
-    t_soulage = impact + 1.3
+    # Bara s'approche sur la pointe des pieds, bras écartés pour « retenir » la pyramide
+    x_bara0 = p.acteurs["bara"].pistes.valeur("x", impact)
+    p.aller("bara", impact + 0.5, x_bara0 - 70, vitesse=60)
+    p.geste("bara", "bras_av", impact + 0.5, -1.4, 0.5)
+    p.geste("bara", "bras_ar", impact + 0.5, 1.4, 0.5)
+    t_soulage = impact + 3.0
     p.expression("bara", t_soulage, "soulagement")
+    p.geste("bara", "bras_av", t_soulage, 0.0, 0.4)
+    p.geste("bara", "bras_ar", t_soulage, 0.0, 0.4)
     p.son(t_soulage, "glissade", 0.0)
-    t_chute = t_soulage + 0.9
+    t_chute = t_soulage + 1.2
     m.avancer_jusqua(t_chute)
     for nom in boites:
         m.liberer(nom)
@@ -196,8 +204,11 @@ def ecrire(plateau: Plateau, lieu: dict):
     t_c = t_chute + 2.8
     p.humeur(t_c, "malice")
     p.expression("coumba", t_c, "fierte")
+    t_sortie = p.aller("coumba", t_c, x_porte, vitesse=260)
+    p.geste("coumba", "bras_av", t_sortie, -2.5, 0.35)          # elle ajuste son foulard, très digne
+    p.geste("coumba", "bras_av", t_sortie + 1.4, 0.0, 0.35)
     x_glisse = xc + wc * 0.9 + 190
-    t_glisse = p.aller("coumba", t_c, x_glisse, vitesse=230)
+    t_glisse = p.aller("coumba", t_sortie + 1.8, x_glisse, vitesse=190)
     p.cadrer(t_c, (xc + x_porte) / 2 + 80, sol - 620, 1.05)
     p.son(t_glisse - 0.05, "glissade", 0.9)
     p.son(t_glisse, "boing", 0.6)
@@ -213,6 +224,11 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.son(t_assise, "pouf", 0.8)
     p.particules.bouffee(t_assise, (x_glisse, sol), nombre=12, vitesse=220, gravite=-50)
     p.expression("coumba", t_assise + 0.6, "fureur")
+    t_debout = t_assise + 1.4                                   # elle se relève, furieuse
+    p.regle("coumba", "penche", t_debout, 0.0, 0.45, "anticipe_depasse")
+    for os_ in ("cuisse_av", "cuisse_ar", "bras_av", "bras_ar"):
+        p.geste("coumba", os_, t_debout, 0.0, 0.4)
+    p.son(t_debout, "pouf", 0.4)
     # la bassine part en vol vers Bara
     m.avancer_jusqua(t_glisse + 0.1)
     xb = p.acteurs["bara"].pistes.valeur("x", t_glisse)
@@ -259,6 +275,8 @@ def ecrire(plateau: Plateau, lieu: dict):
     m.impulsion("tole", (0.0, 200.0))
     m.avancer_jusqua(t_impact + 2.0)
     t_tole = next((c.t for c in m.chocs if "tole" in (c.a, c.b) and c.t > t_impact), t_impact + 0.6)
+    m.avancer_jusqua(t_tole + 0.45)
+    m.impulsion("tole", (2600.0, -400.0))                      # elle glisse de la tête de Bara jusqu'au sol
     p.coup(t_tole)
     p.regle("bara", "ecrase", t_tole, 0.55, 0.08, "sortie")
     p.regle("bara", "ecrase", t_tole + 0.9, 1.0, 0.6, "elastique")
@@ -284,7 +302,7 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.son(t_s + 1.4, "kling", 0.4)
 
     # Poursuite
-    t_p = t_s + 2.6
+    t_p = t_s + 4.0
     p.humeur(t_p, "poursuite")
     p.geste("keba", "bras_av", t_p, 0.0, 0.2)
     p.geste("keba", "sens_force", t_p, 0.0, 0.01, "maintien")
@@ -302,22 +320,52 @@ def ecrire(plateau: Plateau, lieu: dict):
         p.courir(nom, t_p + 0.5 + 0.35 * k, loin, vitesse=640)
     p.cadrer(t_p, lieu["largeur_monde"] * 0.6, sol - 600, 1.0)
     # ils repassent de gauche à droite (ils ont fait le tour du pâté de maisons)
-    t_r = t_p + 4.2
+    t_r = t_p + 5.2
     for nom in ("keba", "gainde", "bara", "coumba"):
         a = p.acteurs[nom].pistes
         a.cle("x", t_r, -500.0, "maintien")
-    p.courir("keba", t_r + 0.1, loin, vitesse=700)
-    for k, nom in enumerate(("gainde", "bara", "coumba")):
-        p.courir(nom, t_r + 0.5 + 0.35 * k, loin, vitesse=640)
-    p.cadrer(t_r, lieu["largeur_monde"] * 0.5, sol - 600, 1.0)
+    # Kéba s'arrête au milieu de la rue ; Bara et Coumba passent sans le voir ; il s'essuie le front…
+    x_milieu = lieu["largeur_monde"] * 0.55
+    t_stop = p.courir("keba", t_r + 0.1, x_milieu, vitesse=700)
+    for k, nom in enumerate(("bara", "coumba")):
+        p.courir(nom, t_r + 0.9 + 0.35 * k, loin, vitesse=640)
+    p.cadrer(t_r, x_milieu, sol - 560, 1.15)
+    p.expression("keba", t_stop + 0.3, "soulagement")
+    p.geste("keba", "bras_av", t_stop + 0.5, -2.7, 0.3)            # il s'essuie le front
+    p.geste("keba", "avbras_av", t_stop + 0.5, -0.9, 0.3)
+    p.geste("keba", "bras_av", t_stop + 1.4, 0.0, 0.3)
+    p.geste("keba", "avbras_av", t_stop + 1.4, 0.0, 0.3)
+    p.humeur(t_stop, "silence")
+    # … et se retourne : Gaïndé est juste derrière lui et le fixe
+    p.aller("gainde", t_r + 0.6, x_milieu + 170, vitesse=520)
+    p.geste("gainde", "sens_force", t_stop, -1.0, 0.01, "maintien")
+    t_tourne = t_stop + 2.0
+    p.geste("keba", "sens_force", t_tourne, 1.0, 0.01, "maintien")
+    p.expression("keba", t_tourne + 0.15, "choc")
+    p.cadrer(t_tourne, x_milieu + 80, sol - 480, 1.6, "depasse")
+    p.son(t_tourne + 0.15, "bee", 1.0)
+    p.coup(t_tourne + 0.15)
+    p.expression("gainde", t_tourne, "colere")
+    t_fuite = t_tourne + 1.1
+    p.humeur(t_fuite, "poursuite")
+    p.geste("keba", "sens_force", t_fuite, 0.0, 0.01, "maintien")
+    p.geste("gainde", "sens_force", t_fuite + 0.2, 0.0, 0.01, "maintien")
+    p.expression("keba", t_fuite, "peur")
+    p.courir("keba", t_fuite, -500.0, vitesse=760)
+    p.courir("gainde", t_fuite + 0.35, -500.0, vitesse=700)
+    p.cadrer(t_fuite, x_milieu - 150, sol - 600, 1.05)
 
     # Gag final : rue vide, Gaïndé revient, mange la claquette, regarde la caméra
-    t_f = t_r + 3.6
+    t_f = t_fuite + 2.2
     p.humeur(t_f, "malice")
     x_cl, _, _ = m.etat("claquette", t_f)
-    p.acteurs["gainde"].pistes.cle("x", t_f, loin, "maintien")
-    t_g2 = p.aller("gainde", t_f + 0.4, x_cl + 90, vitesse=330)
+    p.acteurs["gainde"].pistes.cle("x", t_f, -500.0, "maintien")
+    t_g2 = p.aller("gainde", t_f + 0.4, x_cl + 90, vitesse=210)
     p.cadrer(t_f + 0.4, x_cl, sol - 520, 1.3)
+    for k in range(2):                                          # il renifle la claquette
+        p.geste("gainde", "tete", t_g2 - 0.2 + 0.7 * k, 0.45, 0.25)
+        p.geste("gainde", "tete", t_g2 + 0.15 + 0.7 * k, 0.15, 0.25)
+    t_g2 += 1.4
     p.geste("gainde", "tete", t_g2, 0.55, 0.3)
     p.son(t_g2 + 0.35, "bonk", 0.4)
     p.son(t_g2 + 0.7, "bonk", 0.35)
@@ -325,7 +373,9 @@ def ecrire(plateau: Plateau, lieu: dict):
     p.geste("gainde", "tete", t_g2 + 1.1, 0.0, 0.3)
     p.son(t_g2 + 1.4, "bee", 0.8)
     p.cadrer(t_g2 + 1.3, x_cl + 60, sol - 420, 1.9, "depasse")
-    p.duree = min(DUREE, t_g2 + 2.4)
+    p.son(t_g2 + 2.6, "bee", 0.6)
+    p.geste("gainde", "sens_force", t_g2 + 2.0, -1.0, 0.01, "maintien")      # il se tourne vers la caméra
+    p.duree = min(DUREE + 6.0, t_g2 + 7.0)
     m.avancer_jusqua(p.duree + 0.5)
     p.sons_des_chocs()
     return {"t_mange": t_mange, "t_prend": t_prend, "t_pose": t_pose, "t_lance": t_glisse + 0.1,

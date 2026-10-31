@@ -29,3 +29,15 @@ def test_recoller_la_tete_ne_change_que_le_cadre_avec_un_fondu():
     assert out[40 + 32, 50 + 32].tolist() == [255, 255, 255]   # centre du cadre : la nouvelle tête
     assert out[10, 10].tolist() == [0, 0, 0]                   # hors du cadre : inchangé
     assert 0 < out[40 + 1, 50 + 32, 0] < 255                   # bord du cadre : fondu
+
+
+def test_egaliser_les_couleurs_ramene_la_teinte_de_la_planche():
+    rng = np.random.default_rng(1)
+    reference = np.clip(rng.normal((140, 90, 60), 12, (64, 64, 3)), 0, 255).astype(np.uint8)
+    reference[:8] = 255                                   # un bout de fond blanc, ignoré
+    plus_sombre = (reference.astype(float) * 0.75).astype(np.uint8)
+    plus_sombre[:8] = 255
+    sortie = expressions.egaliser_couleurs(plus_sombre, reference)
+    peau = slice(8, 64)
+    assert np.abs(sortie[peau].mean(axis=(0, 1)) - reference[peau].mean(axis=(0, 1))).max() < 3
+    assert (sortie[:8] == 255).all()                      # le fond blanc reste blanc

@@ -58,3 +58,18 @@ def recoller(planche: np.ndarray, tete: np.ndarray, cadre, fondu: int = 24) -> n
     zone = sortie[y:y + cote, x:x + cote].astype(float)
     sortie[y:y + cote, x:x + cote] = np.round(zone * (1 - masque) + tete[:cote, :cote, :zone.shape[2]] * masque)
     return sortie
+
+
+def egaliser_couleurs(tete: np.ndarray, reference: np.ndarray, seuil_blanc: int = 235) -> np.ndarray:
+    """Ramène la teinte d'une tête retouchée sur celle de la planche (moyenne et écart-type par canal, sans le fond
+    blanc) : le visage ne change pas de couleur quand l'expression change (mesuré : Kéba plus foncé après retouche)."""
+    t = tete[:, :, :3].astype(float)
+    r = reference[:, :, :3].astype(float)
+    mt = t.min(axis=2) < seuil_blanc
+    mr = r.min(axis=2) < seuil_blanc
+    sortie = t.copy()
+    for c in range(3):
+        mu_t, sd_t = t[:, :, c][mt].mean(), t[:, :, c][mt].std() + 1e-6
+        mu_r, sd_r = r[:, :, c][mr].mean(), r[:, :, c][mr].std() + 1e-6
+        sortie[:, :, c] = np.where(mt, (t[:, :, c] - mu_t) * (sd_r / sd_t) + mu_r, t[:, :, c])
+    return np.clip(np.round(sortie), 0, 255).astype(np.uint8)

@@ -16,7 +16,7 @@ from PIL import Image
 
 SERIE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SERIE))
-from atelier.expressions import recoller  # noqa: E402
+from atelier.expressions import egaliser_couleurs, recoller  # noqa: E402
 from keba.detourage import detourer  # noqa: E402
 
 BIBLE_PNG = SERIE / "bible" / "png"
@@ -63,6 +63,8 @@ def main(depot: Path):
                 cadre = json.loads((SERIE / "atelier" / "expressions.json").read_text())["cadres"][perso]
                 planche = np.asarray(Image.open(BIBLE_PNG / perso / "planche-brut.png").convert("RGB"))
                 tete = np.asarray(Image.open(dest.with_name(dest.name + "-brut.png")).convert("RGB"))
+                x, y, cote = cadre
+                tete = egaliser_couleurs(tete, planche[y:y + cote, x:x + cote])
                 Image.fromarray(detourer(recoller(planche, tete, cadre))).save(dest.with_suffix(".png"))
             else:
                 rgb = np.asarray(Image.open(dest.with_name(dest.name + "-brut.png")).convert("RGB"))
