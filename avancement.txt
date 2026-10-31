@@ -1,0 +1,1 @@
+[121 s] 0 images · === coumba-planche [I] loading tensors completed, taking 1.00s (read: 0.98s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00 · mémoire libre 6755 Mo
