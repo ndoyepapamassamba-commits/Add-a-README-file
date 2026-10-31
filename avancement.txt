@@ -1,1 +1,2 @@
 [120 s] 0 images · === objet-claquette   |============>                                     | 1/4 - 58.31s/it[K · mémoire libre 7302 Mo
+[241 s] 0 images · === objet-claquette   |=====================================>            | 3/4 - 58.46s/it[K · mémoire libre 7281 Mo
