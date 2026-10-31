@@ -2,3 +2,4 @@
 [241 s] 0 images · === objet-boite-tomate   |============>                                     | 1/4 - 107.70s/it[K · mémoire libre 7294 Mo
 [363 s] 0 images · === objet-boite-tomate   |=====================================>            | 3/4 - 106.50s/it[K · mémoire libre 7287 Mo
 [121 s] 1 images · === bara-expr-yeux_fermes   |============>                                     | 1/4 - 86.00s/it[K · mémoire libre 7195 Mo
+[243 s] 1 images · === bara-expr-yeux_fermes   |=========================>                        | 2/4 - 84.88s/it[K · mémoire libre 7205 Mo
