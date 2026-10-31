@@ -1,0 +1,47 @@
+{
+ "choix": {
+  "keba": [
+   "joie",
+   "surprise",
+   "peur",
+   "choc",
+   "gene",
+   "douleur",
+   "yeux_fermes"
+  ],
+  "bara": [
+   "colere",
+   "fureur",
+   "peur",
+   "choc",
+   "douleur",
+   "soulagement",
+   "joie",
+   "yeux_fermes"
+  ],
+  "coumba": [
+   "choc",
+   "fureur",
+   "colere",
+   "surprise",
+   "yeux_fermes"
+  ]
+ },
+ "cadres": {
+  "keba": [
+   263,
+   131,
+   320
+  ],
+  "bara": [
+   256,
+   0,
+   384
+  ],
+  "coumba": [
+   275,
+   44,
+   320
+  ]
+ }
+}

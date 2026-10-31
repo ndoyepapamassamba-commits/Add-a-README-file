@@ -18,7 +18,15 @@ import numpy as np
 from . import pilote, son
 from .elements import (ElementActeur, ElementDecor, ElementObjet, ElementPorte, charger_image, image_rgba)
 from .pantin import Pantin, articulations_quadrupede, pose_de_repos
+from .controle import controler
 from .rendu import Scene, rendre_video
+
+FICHE_TIKTOK = """KÉBA — La pyramide de Tonton Bara 🥫🐏
+
+Kéba voulait juste aider… 😅 Qui a déjà vécu ça dans son quartier ? 👇
+
+#keba #dessinanime #drole #comedy #humourafricain #dakar #senegal #pourtoi #fyp
+"""
 
 BIBLE_PNG = Path(__file__).resolve().parents[1] / "bible" / "png"
 MODELES = {"keba": "humain", "bara": "humain", "coumba": "robe", "gainde": "quadrupede"}
@@ -133,9 +141,11 @@ def fabriquer(sortie: Path, apercu: bool = False, graine: int = 1, parts: int | 
         subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(tmp / "image.mp4"), "-i", str(tmp / "son.wav"),
                         "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart",
                         str(nom)], check=True)
+    controle = controler(nom, largeur=scene.largeur, hauteur=scene.hauteur, fps=fps, duree=(30.0, 65.0))
+    (sortie / "fiche-tiktok.txt").write_text(FICHE_TIKTOK, encoding="utf-8")
     rapport = {"fichier": nom.name, "duree": round(duree, 2), "fps": fps, "taille": [scene.largeur, scene.hauteur],
                "secondes_fabrication": round(time.time() - debut, 1), "sons": len(plateau.sons),
-               "chocs": len(plateau.monde.chocs), "sections": plateau.sections()}
+               "chocs": len(plateau.monde.chocs), "sections": plateau.sections(), "controle": controle}
     (sortie / "rapport.json").write_text(json.dumps(rapport, ensure_ascii=False, indent=1), encoding="utf-8")
     return nom, rapport
 

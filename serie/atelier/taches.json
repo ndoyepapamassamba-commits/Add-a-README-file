@@ -88,6 +88,206 @@
    "h": 512,
    "graine": 206,
    "refs": []
+  },
+  {
+   "id": "keba-expr-joie",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: a big happy open-mouth laugh, eyes squinting with joy.",
+   "w": 320,
+   "h": 320,
+   "graine": 300,
+   "refs": [
+    "keba-tete.png"
+   ]
+  },
+  {
+   "id": "keba-expr-surprise",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: very surprised: eyebrows raised high, eyes wide open, mouth open in a round O.",
+   "w": 320,
+   "h": 320,
+   "graine": 301,
+   "refs": [
+    "keba-tete.png"
+   ]
+  },
+  {
+   "id": "keba-expr-peur",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: scared: worried raised eyebrows, wide eyes with tiny pupils, trembling open mouth, a drop of sweat.",
+   "w": 320,
+   "h": 320,
+   "graine": 302,
+   "refs": [
+    "keba-tete.png"
+   ]
+  },
+  {
+   "id": "keba-expr-choc",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: completely shocked: eyes popping out wide, jaw dropped very low.",
+   "w": 320,
+   "h": 320,
+   "graine": 303,
+   "refs": [
+    "keba-tete.png"
+   ]
+  },
+  {
+   "id": "keba-expr-gene",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: a guilty embarrassed grin: worried eyebrows, a big forced smile showing the teeth, a drop of sweat, eyes looking sideways.",
+   "w": 320,
+   "h": 320,
+   "graine": 304,
+   "refs": [
+    "keba-tete.png"
+   ]
+  },
+  {
+   "id": "keba-expr-douleur",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: in pain: eyes squeezed shut, grimacing mouth.",
+   "w": 320,
+   "h": 320,
+   "graine": 305,
+   "refs": [
+    "keba-tete.png"
+   ]
+  },
+  {
+   "id": "keba-expr-yeux_fermes",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: the same calm expression but with both eyes closed.",
+   "w": 320,
+   "h": 320,
+   "graine": 306,
+   "refs": [
+    "keba-tete.png"
+   ]
+  },
+  {
+   "id": "bara-expr-colere",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: angry: eyebrows pulled down hard, gritted teeth, furious eyes.",
+   "w": 384,
+   "h": 384,
+   "graine": 300,
+   "refs": [
+    "bara-tete.png"
+   ]
+  },
+  {
+   "id": "bara-expr-fureur",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: furious and shouting with the mouth wide open, eyebrows pulled down hard, face flushed with rage.",
+   "w": 384,
+   "h": 384,
+   "graine": 301,
+   "refs": [
+    "bara-tete.png"
+   ]
+  },
+  {
+   "id": "bara-expr-peur",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: scared: worried raised eyebrows, wide eyes with tiny pupils, trembling open mouth, a drop of sweat.",
+   "w": 384,
+   "h": 384,
+   "graine": 302,
+   "refs": [
+    "bara-tete.png"
+   ]
+  },
+  {
+   "id": "bara-expr-choc",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: completely shocked: eyes popping out wide, jaw dropped very low.",
+   "w": 384,
+   "h": 384,
+   "graine": 303,
+   "refs": [
+    "bara-tete.png"
+   ]
+  },
+  {
+   "id": "bara-expr-douleur",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: in pain: eyes squeezed shut, grimacing mouth.",
+   "w": 384,
+   "h": 384,
+   "graine": 304,
+   "refs": [
+    "bara-tete.png"
+   ]
+  },
+  {
+   "id": "bara-expr-soulagement",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: relieved: eyes gently closed, a calm smile, relaxed eyebrows.",
+   "w": 384,
+   "h": 384,
+   "graine": 305,
+   "refs": [
+    "bara-tete.png"
+   ]
+  },
+  {
+   "id": "bara-expr-joie",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: a big happy open-mouth laugh, eyes squinting with joy.",
+   "w": 384,
+   "h": 384,
+   "graine": 306,
+   "refs": [
+    "bara-tete.png"
+   ]
+  },
+  {
+   "id": "bara-expr-yeux_fermes",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: the same calm expression but with both eyes closed.",
+   "w": 384,
+   "h": 384,
+   "graine": 307,
+   "refs": [
+    "bara-tete.png"
+   ]
+  },
+  {
+   "id": "coumba-expr-choc",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: completely shocked: eyes popping out wide, jaw dropped very low.",
+   "w": 320,
+   "h": 320,
+   "graine": 300,
+   "refs": [
+    "coumba-tete.png"
+   ]
+  },
+  {
+   "id": "coumba-expr-fureur",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: furious and shouting with the mouth wide open, eyebrows pulled down hard, face flushed with rage.",
+   "w": 320,
+   "h": 320,
+   "graine": 301,
+   "refs": [
+    "coumba-tete.png"
+   ]
+  },
+  {
+   "id": "coumba-expr-colere",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: angry: eyebrows pulled down hard, gritted teeth, furious eyes.",
+   "w": 320,
+   "h": 320,
+   "graine": 302,
+   "refs": [
+    "coumba-tete.png"
+   ]
+  },
+  {
+   "id": "coumba-expr-surprise",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: very surprised: eyebrows raised high, eyes wide open, mouth open in a round O.",
+   "w": 320,
+   "h": 320,
+   "graine": 303,
+   "refs": [
+    "coumba-tete.png"
+   ]
+  },
+  {
+   "id": "coumba-expr-yeux_fermes",
+   "prompt": "Edit image 1: show exactly the same cartoon character's head in exactly the same drawing style, same framing, same size and position, same colours, same hair and accessories, same plain white background; only change the facial expression to: the same calm expression but with both eyes closed.",
+   "w": 320,
+   "h": 320,
+   "graine": 304,
+   "refs": [
+    "coumba-tete.png"
+   ]
   }
  ]
 }
