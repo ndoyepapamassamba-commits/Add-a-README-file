@@ -1,1 +1,2 @@
 [120 s] 0 images · === bara-planche [I] loading tensors completed, taking 1.00s (read: 0.85s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00 · mémoire libre 6748 Mo
+[242 s] 0 images · === bara-planche [I] loading tensors completed, taking 1.00s (read: 0.85s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00 · mémoire libre 6728 Mo
