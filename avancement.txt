@@ -6,3 +6,4 @@
 [727 s] 0 images · === gainde-planche   |=========================>                        | 2/4 - 271.11s/it[K · mémoire libre 6722 Mo
 [848 s] 0 images · === gainde-planche   |=========================>                        | 2/4 - 271.11s/it[K · mémoire libre 6728 Mo
 [969 s] 0 images · === gainde-planche   |=====================================>            | 3/4 - 273.69s/it[K · mémoire libre 6728 Mo
+[1090 s] 0 images · === gainde-planche   |=====================================>            | 3/4 - 273.69s/it[K · mémoire libre 6728 Mo
