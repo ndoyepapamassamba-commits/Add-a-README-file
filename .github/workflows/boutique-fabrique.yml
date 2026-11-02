@@ -1,5 +1,6 @@
 # Teranga Outils — fabrique quotidienne. À placer sur la branche par défaut (claude/innovative-revenue-website-1dqvgq).
-# 1. Fiches en attente (tcv.boutique_fiches), 2. nouveaux outils écrits par GitHub Models (gratuit, jeton de la tâche).
+# 1. Fiches en attente (tcv.boutique_fiches), 2. nouveaux outils et documents sur mesure écrits par des modèles GRATUITS
+# d'OpenRouter, appelés par le serveur de la boutique (GitHub Models a fermé le 30 juillet 2026).
 # Chaque classeur est construit, recalculé par LibreOffice et contrôlé avant dépôt (jeton OIDC : aucun secret).
 # Publication automatique 24 h après le dépôt (tâche boutique-publication de la base), sauf refus du propriétaire.
 name: Boutique fabrique
@@ -8,8 +9,9 @@ on:
     - cron: '23 3 * * *'
   workflow_dispatch:
     inputs:
-      nombre: { description: 'Nouveaux outils à fabriquer (0 à 10)', default: '5' }
-permissions: { contents: read, id-token: write, models: read }
+      nombre: { description: 'Nouveaux outils Excel à fabriquer (0 à 10)', default: '5' }
+      generateurs: { description: 'Nouveaux documents sur mesure (0 à 5)', default: '1' }
+permissions: { contents: read, id-token: write }
 concurrency: { group: boutique-fabrique, cancel-in-progress: false }
 jobs:
   fabriquer:
@@ -25,7 +27,4 @@ jobs:
           pip install --quiet openpyxl==3.1.5
           sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends libreoffice-calc-nogui > /dev/null
       - name: Fabriquer, vérifier, déposer
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          MODELE: openai/gpt-4.1-mini
-        run: python3 scripts/boutique/fabriquer.py --nombre "${{ inputs.nombre || '5' }}"
+        run: python3 scripts/boutique/fabriquer.py --nombre "${{ inputs.nombre || '5' }}" --generateurs "${{ inputs.generateurs || '1' }}"
