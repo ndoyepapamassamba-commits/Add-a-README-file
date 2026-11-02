@@ -1,0 +1,45 @@
+# Teranga Outils — pages du site régénérées depuis le catalogue public, puis signalées à IndexNow (Bing, Yandex…).
+# À placer sur la branche par défaut. Écrit dans la branche gh-pages (dossier boutique/).
+name: Boutique pages
+on:
+  schedule:
+    - cron: '41 */3 * * *'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['Boutique fabrique']
+    types: [completed]
+permissions: { contents: write }
+concurrency: { group: boutique-pages, cancel-in-progress: false }
+jobs:
+  pages:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: gh-pages }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Pages depuis le catalogue
+        env: { CHANGEES: '${{ runner.temp }}/changees.txt' }
+        run: node scripts/boutique/pages.mjs
+      - name: Publier
+        run: |
+          git add boutique
+          if git diff --cached --quiet; then echo "Rien de nouveau."; exit 0; fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Boutique : pages mises à jour depuis le catalogue"
+          git push -q origin HEAD:gh-pages
+      - name: Signaler aux moteurs (IndexNow)
+        env: { CHANGEES: '${{ runner.temp }}/changees.txt' }
+        run: |
+          [ -s "$CHANGEES" ] || exit 0
+          sleep 120
+          python3 - <<'PY'
+          import json, os, urllib.request
+          urls = [u for u in open(os.environ["CHANGEES"]).read().split("\n") if u]
+          cle = "ebb4ea75c352a571bd0b205056c2b276"
+          corps = {"host": "ndoyepapamassamba-commits.github.io", "key": cle,
+                   "keyLocation": "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/boutique/" + cle + ".txt", "urlList": urls}
+          req = urllib.request.Request("https://api.indexnow.org/indexnow", data=json.dumps(corps).encode(),
+                                       headers={"Content-Type": "application/json; charset=utf-8"})
+          print(urllib.request.urlopen(req, timeout=30).status, len(urls), "URL signalées")
+          PY
