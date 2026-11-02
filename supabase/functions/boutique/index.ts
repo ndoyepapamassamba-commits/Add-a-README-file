@@ -108,7 +108,7 @@ export async function verifierGithub(env: Env, jeton: string): Promise<{ ok: boo
 }
 
 // ------------------------------------------------------------------ Contrôle d'un produit déposé
-const INTERDITS = /\b(attestation|certificat|diplome|fiche de paie|bulletin de salaire|ordonnance|medicament|diagnostic medical|posologie|casino|paris sportifs?|pari|crypto|bitcoin|forex|arme|adulte|sexe|ecobank|bceao|faux|contrefa)/;
+const INTERDITS = /\b(attestation|certificat|diplome|fiche de paie|bulletin de salaire|ordonnance|medicament|diagnostic medical|posologie|casino|paris sportifs?|pari|crypto|bitcoin|forex|arme|adulte|sexe|faux|contrefa)/;
 const sansAcc = (s: string) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 export function controlerDepot(b: any): string | null {
   const p = b?.produit, f = b?.fichiers;

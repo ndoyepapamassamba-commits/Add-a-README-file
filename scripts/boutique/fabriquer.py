@@ -36,7 +36,7 @@ DOMAINES = [
     "Garage et mécanique", "Vente en ligne et réseaux sociaux", "Import et revente de marchandises", "Sport et forme (sans conseil médical)",
     "Voyage et organisation de séjours", "Cantine et traiteur", "Quincaillerie", "Cosmétiques artisanaux", "Agents immobiliers", "Petites entreprises de nettoyage",
 ]
-INTERDITS = re.compile(r"\b(attestation|certificat|diplome|fiche de paie|bulletin de salaire|ordonnance|medicament|diagnostic medical|posologie|casino|paris sportifs?|pari|crypto|bitcoin|forex|arme|adulte|sexe|ecobank|bceao|faux|contrefa)")
+INTERDITS = re.compile(r"\b(attestation|certificat|diplome|fiche de paie|bulletin de salaire|ordonnance|medicament|diagnostic medical|posologie|casino|paris sportifs?|pari|crypto|bitcoin|forex|arme|adulte|sexe|faux|contrefa)")
 ERREURS = re.compile(r"^(#DIV/0!|#REF!|#NAME\?|#VALUE!|#N/A|#NUM!|#NULL!|Err:\d+|#ERR)")
 FORMATS = {"montant": '#,##0 "F"', "nombre": "#,##0", "decimal": "#,##0.00", "pourcentage": "0%", "date": "dd/mm/yyyy", "texte": "@", "liste": "@"}
 
