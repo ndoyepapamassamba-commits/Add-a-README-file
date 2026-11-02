@@ -55,6 +55,19 @@ const pied = `<footer>
 </html>
 `;
 
+function rendreDocument(d) {
+  if (!d || !Array.isArray(d.sections)) return "";
+  return `<div class="document"><h3>${esc(d.titre)}</h3>${d.sections.map((s) => `${s.titre ? `<h4>${esc(s.titre)}</h4>` : ""}${(s.paragraphes || []).map((x) => `<p>${esc(x)}</p>`).join("")}${(s.puces || []).length ? `<ul>${s.puces.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}`).join("")}</div>`;
+}
+function champ(c) {
+  const id = "r_" + c.id, req = c.obligatoire ? " required" : "", lib = `<label for="${id}">${esc(c.label)}${c.obligatoire ? " *" : ""}</label>`;
+  const aide = c.aide ? `<small>${esc(c.aide)}</small>` : "";
+  if (c.type === "paragraphe") return lib + `<textarea id="${id}" name="${id}" rows="4" maxlength="${Number(c.max) || 1500}"${req}></textarea>` + aide;
+  if (c.type === "choix") return lib + `<select id="${id}" name="${id}"${req}><option value="">Choisir…</option>${c.choix.map((x) => `<option>${esc(x)}</option>`).join("")}</select>` + aide;
+  const type = c.type === "nombre" ? ' type="text" inputmode="decimal"' : c.type === "date" ? ' type="date"' : ' type="text"';
+  return lib + `<input${type} id="${id}" name="${id}" maxlength="${Number(c.max) || 150}"${req}>` + aide;
+}
+
 function pageProduit(p) {
   const url = BASE + p.slug + ".html";
   const jsonld = [{
@@ -76,8 +89,9 @@ function pageProduit(p) {
 <h1>${esc(p.titre)}</h1>
 <p class="lead">${esc(p.accroche)}</p>
 <p class="prix">${fcfa(p.prix)}</p>
-<form class="achat" id="achat" data-produit="${esc(p.id)}" novalidate>
-  <strong>Recevez le fichier tout de suite après votre paiement Wave</strong>
+<form class="achat" id="achat" data-produit="${esc(p.id)}" data-type="${esc(p.type || "fichier")}" novalidate>
+  <strong>${p.type === "generateur" ? "Répondez aux questions : votre document est rédigé dès votre paiement Wave" : "Recevez le fichier tout de suite après votre paiement Wave"}</strong>
+  ${p.type === "generateur" ? `<div class="formulaire">${(p.formulaire || []).map(champ).join("\n")}</div>` : ""}
   <label for="nom">Votre nom</label>
   <input type="text" id="nom" name="nom" autocomplete="name" required maxlength="80" placeholder="Ex. : Awa Ndiaye">
   <div class="hp" aria-hidden="true"><label>Laissez vide <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
@@ -89,12 +103,10 @@ function pageProduit(p) {
 <h2>Ce que fait cet outil</h2>
 <p>${esc(p.description)}</p>
 <ul class="points">${(p.points || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
-<h2>Aperçu du classeur</h2>
-${tableaux}
-${kpi}
+${p.type === "generateur" ? `<h2>Exemple de document rédigé</h2>\n<p style="color:var(--muted);font-size:15px">Exemple obtenu avec des réponses fictives. Votre document est rédigé à partir de vos propres réponses.</p>\n${rendreDocument(p.exemple)}` : `<h2>Aperçu du classeur</h2>\n${tableaux}\n${kpi}`}
 <h2>Questions fréquentes</h2>
 ${(p.faq || []).map((f) => `<details><summary>${esc(f.q)}</summary><p>${esc(f.r)}</p></details>`).join("\n")}
-<p style="margin-top:1.5em">Fichier Excel (.xlsx) : ${(p.fichiers || []).map((f) => `${esc(f.nom)} (${Math.max(1, Math.round(f.taille / 1024))} Ko)`).join(", ")}. Fonctionne avec Excel, LibreOffice et Google Sheets, sur ordinateur ou téléphone.</p>
+<p style="margin-top:1.5em">${p.type === "generateur" ? "Vous recevez le texte à l'écran et un fichier Word (.docx) modifiable, qui s'ouvre aussi sur téléphone. Relisez-le et adaptez-le avant de l'utiliser." : `Fichier Excel (.xlsx) : ${(p.fichiers || []).map((f) => `${esc(f.nom)} (${Math.max(1, Math.round(f.taille / 1024))} Ko)`).join(", ")}. Fonctionne avec Excel, LibreOffice et Google Sheets, sur ordinateur ou téléphone.`}</p>
 </main>
 ` + pied;
 }
@@ -102,12 +114,12 @@ ${(p.faq || []).map((f) => `<details><summary>${esc(f.q)}</summary><p>${esc(f.r)
 function pageIndex(produits) {
   const domaines = [...new Set(produits.map((p) => p.domaine))].sort((a, b) => a.localeCompare(b, "fr"));
   const cartes = (liste) => liste.map((p) => `<a class="carte" href="${esc(p.slug)}.html" data-cherche="${esc(sansAcc(p.titre + " " + p.domaine + " " + p.accroche))}">
-<span class="etiquette">${esc(p.domaine)}</span><h3>${esc(p.titre)}</h3><p>${esc(p.accroche)}</p><span class="prix">${fcfa(p.prix)}</span></a>`).join("\n");
-  const desc = `${produits.length} outils Excel prêts à l'emploi pour le commerce, la tontine, les loyers, l'école, la restauration et plus : payés par Wave, livrés tout de suite.`;
+<span class="etiquette">${esc(p.domaine)}${p.type === "generateur" ? " · sur mesure" : ""}</span><h3>${esc(p.titre)}</h3><p>${esc(p.accroche)}</p><span class="prix">${fcfa(p.prix)}</span></a>`).join("\n");
+  const desc = `${produits.length} outils Excel et documents sur mesure pour le commerce, la tontine, les loyers, l'école, l'immobilier, les événements et plus : payés par Wave, livrés tout de suite.`;
   const jsonld = { "@context": "https://schema.org", "@type": "ItemList", itemListElement: produits.map((p, i) => ({ "@type": "ListItem", position: i + 1, url: BASE + p.slug + ".html", name: p.titre })) };
-  return tete("Outils Excel prêts à l'emploi pour le Sénégal | Teranga Outils", desc, BASE, `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, "\\u003c")}</script>\n`) + `<main>
-<h1>Outils Excel prêts à l'emploi</h1>
-<p class="lead">Des classeurs simples et complets pour gérer votre commerce, votre tontine, vos loyers, votre classe ou votre budget. Payez par Wave, téléchargez tout de suite.</p>
+  return tete("Outils Excel et documents sur mesure pour le Sénégal | Teranga Outils", desc, BASE, `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, "\\u003c")}</script>\n`) + `<main>
+<h1>Outils Excel et documents sur mesure</h1>
+<p class="lead">Des classeurs Excel prêts à l'emploi et des documents rédigés sur mesure (annonces, fiches de poste, discours, livrets d'accueil…) pour votre commerce, votre famille ou votre activité. Payez par Wave, recevez tout de suite.</p>
 <p><input class="recherche" id="recherche" type="search" placeholder="Rechercher un outil (stock, tontine, loyers…)" aria-label="Rechercher un outil"></p>
 ${produits.length ? domaines.map((d) => `<h2>${esc(d)}</h2>\n<div class="grille">${cartes(produits.filter((p) => p.domaine === d))}</div>`).join("\n") : "<p>Les premiers outils arrivent très bientôt.</p>"}
 <h2>Comment ça marche</h2>
@@ -130,7 +142,9 @@ const commande = tete("Votre commande | Teranga Outils", "Paiement Wave et tél�
   <p style="font-size:14px;color:var(--muted)">Montant réservé pour vous pendant 72 heures. Le numéro Wave est celui du vendeur : vérifiez-le avant d'envoyer.</p>
 </div>
 <div id="payee" hidden>
-  <p class="paiement"><strong>Paiement reçu, merci !</strong> Téléchargez vos fichiers ci-dessous.</p>
+  <p class="paiement"><strong>Paiement reçu, merci !</strong> <span id="payee-texte">Téléchargez vos fichiers ci-dessous.</span></p>
+  <p id="redaction" hidden>Votre document est en cours de rédaction : il s'affiche ici dans une minute environ, sans recharger la page.</p>
+  <div id="document-zone" hidden><div id="document"></div><p><button class="btn secondaire" type="button" id="copier-document">Copier le texte</button></p></div>
   <div class="fichiers" id="fichiers"></div>
   <p>Vos téléchargements restent ouverts jusqu'au <strong id="jusqu">…</strong>. Gardez le lien de cette page.</p>
 </div>
@@ -144,6 +158,7 @@ const cgv = tete("Conditions de vente | Teranga Outils", "Conditions de vente de
 <h2>Produits</h2><p>Des fichiers numériques (classeurs Excel .xlsx) décrits sur chaque page, avec un aperçu calculé sur des données d'exemple. Ce sont des outils de calcul et de suivi : ils ne remplacent ni un comptable, ni un juriste, ni un document officiel, et aucun résultat financier n'est garanti.</p>
 <h2>Prix et paiement</h2><p>Prix en francs CFA, toutes taxes comprises le cas échéant. Paiement par Wave au montant exact indiqué après la commande (quelques francs de moins que le prix, pour reconnaître le paiement). Ce montant est réservé 72 heures.</p>
 <h2>Livraison</h2><p>Le fichier est téléchargeable dès que le paiement est reconnu, depuis la page de la commande, pendant 30 jours (30 téléchargements par jour au plus).</p>
+<h2>Documents sur mesure</h2><p>Pour un document sur mesure, vos réponses au formulaire sont transmises à un service d'intelligence artificielle (OpenRouter) qui rédige le document après votre paiement, en général en moins de deux minutes. Le texte s'appuie uniquement sur vos réponses : relisez-le et adaptez-le avant de l'utiliser. N'indiquez pas d'informations sensibles (santé, numéros de pièce d'identité, coordonnées bancaires). Vos réponses et le document sont effacés au plus tard 30 jours après le paiement.</p>
 <h2>Droit d'usage</h2><p>Usage personnel ou au sein de votre entreprise. La revente ou la diffusion publique du fichier est interdite.</p>
 <h2>Rétractation et réclamations</h2><p>En commandant, vous demandez la livraison immédiate du contenu numérique et renoncez au délai de rétractation une fois le fichier téléchargé. Si un fichier ne s'ouvre pas ou ne correspond pas à sa description, il est corrigé ou remboursé.</p>
 <h2>Données personnelles</h2><p>Seuls votre nom et les informations de paiement nécessaires sont conservés, puis effacés au plus tard 30 jours après le paiement (ou 72 heures après une commande non payée). Aucune revente, aucune publicité ciblée.</p>

@@ -28,7 +28,7 @@ h2{font-size:1.28rem;line-height:1.3;margin:1.8em 0 .5em}
 .points{padding-left:1.2em}.points li{margin:.3em 0}
 .achat{background:var(--surface);border:2px solid var(--brand);border-radius:var(--radius);padding:16px;margin:1.4em 0}
 .achat label{display:block;font-weight:600;margin:.6em 0 .2em}
-.achat input[type=text]{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text)}
+.achat input[type=text],.achat input[type=date]{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text)}
 .achat .cgv{display:flex;gap:8px;align-items:flex-start;font-weight:400;font-size:15px}
 .achat .cgv input{margin-top:5px;width:18px;height:18px}
 .btn{display:inline-block;font:inherit;font-weight:700;border:0;border-radius:999px;padding:12px 22px;background:var(--brand);color:var(--brand-ink);cursor:pointer;text-decoration:none;min-height:44px}
@@ -54,3 +54,10 @@ summary{font-weight:600;cursor:pointer}
 footer{max-width:860px;margin:0 auto;padding:20px 16px 40px;font-size:14px;color:var(--muted);border-top:1px solid var(--line)}
 footer a{color:var(--muted)}
 @media (max-width:520px){h1{font-size:1.4rem}.montant{font-size:1.6rem}}
+.formulaire{display:flex;flex-direction:column}
+.achat textarea,.achat select{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text)}
+.achat small{color:var(--muted);font-size:13px}
+.document{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;margin:.6em 0 1em}
+.document h3{margin:.1em 0 .6em;color:var(--brand)}
+.document h4{margin:1.1em 0 .3em}
+.document p{margin:.4em 0}

@@ -276,25 +276,56 @@ RÈGLES DES FORMULES (sinon l'outil est rejeté) :
 - Colonne calculée : formule de la ligne avec {r} pour le numéro de ligne, colonnes de LA MÊME feuille par leur lettre (A, B, C… dans l'ordre des colonnes). Ex. "=C{r}*D{r}".
 - Indicateurs du tableau de bord : références explicites à une plage de lignes 2 à 100, ex. "=SUM(Ventes!E2:E100)", "=COUNTIF(Ventes!D2:D100,\\"Payé\\")". Noms de feuilles avec espace entre apostrophes.
 - Protège les divisions par IFERROR(…;0) écrit IFERROR(…,0). Pas de INDIRECT, pas de liens, pas de macros, pas de références à d'autres fichiers.
-- Les exemples sont fictifs mais réalistes (prénoms et lieux sénégalais, montants en F CFA), sans numéro de téléphone ni e-mail.
+- Les exemples sont fictifs mais réalistes (prénoms et lieux sénégalais, montants en F CFA, dates de l'année en cours au format AAAA-MM-JJ), sans numéro de téléphone ni e-mail.
+- Titres de colonnes en français courant, avec espaces (jamais de tiret bas).
 INTERDITS : documents officiels (attestation, certificat, diplôme, fiche de paie), santé et médicaments, jeux d'argent, crypto, finance réglementée, politique, religion, données personnelles réelles.
 Écris en français simple, sans faute, sans promesse de gain garanti."""
 
 
+MODELES = [m for m in os.environ.get("MODELES", MODELE + ",openai/gpt-4.1,openai/gpt-4o-mini").split(",") if m]
+
+
+def extraire_json(texte):
+    """La fiche JSON contenue dans la réponse (blocs ```json, texte autour, ou JSON pur)."""
+    t = str(texte or "").strip()
+    t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t)
+    try:
+        return json.loads(t)
+    except Exception:
+        pass
+    debut, fin = t.find("{"), t.rfind("}")
+    if debut < 0 or fin <= debut:
+        raise ValueError("réponse sans JSON : " + t[:160].replace("\n", " "))
+    return json.loads(t[debut:fin + 1])
+
+
 def appeler_modele(domaine, deja):
-    corps = {
-        "model": MODELE, "temperature": 0.8,
-        "response_format": {"type": "json_object"},
-        "messages": [
-            {"role": "system", "content": CONSIGNE},
-            {"role": "user", "content": f"Domaine : {domaine}.\nOutils déjà en vente (ne pas refaire) : {', '.join(deja[-60:]) or 'aucun'}.\nPropose UN outil nouveau, très utile et précis pour ce domaine."},
-        ],
-    }
-    req = urllib.request.Request(MODELES_URL, data=json.dumps(corps).encode(), method="POST",
-                                 headers={"Content-Type": "application/json", "Authorization": "Bearer " + os.environ["GITHUB_TOKEN"]})
-    with urllib.request.urlopen(req, timeout=180) as r:
-        rep = json.load(r)
-    return json.loads(rep["choices"][0]["message"]["content"])
+    messages = [
+        {"role": "system", "content": CONSIGNE},
+        {"role": "user", "content": f"Domaine : {domaine}.\nOutils déjà en vente (ne pas refaire) : {', '.join(deja[-60:]) or 'aucun'}.\nPropose UN outil nouveau, très utile et précis pour ce domaine. Réponds par le seul objet JSON, sans texte autour."},
+    ]
+    erreurs = []
+    for modele in MODELES:
+        for format_json in (True, False):
+            corps = {"model": modele, "temperature": 0.8, "max_tokens": 6000, "messages": messages}
+            if format_json:
+                corps["response_format"] = {"type": "json_object"}
+            req = urllib.request.Request(MODELES_URL, data=json.dumps(corps).encode(), method="POST",
+                                         headers={"Content-Type": "application/json", "Authorization": "Bearer " + os.environ.get("GITHUB_TOKEN", "")})
+            try:
+                with urllib.request.urlopen(req, timeout=180) as r:
+                    rep = json.load(r)
+                contenu = ((rep.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
+                if not contenu.strip():
+                    erreurs.append(f"{modele} : réponse vide"); continue
+                return extraire_json(contenu)
+            except urllib.error.HTTPError as e:
+                erreurs.append(f"{modele} : HTTP {e.code} {e.read().decode(errors='ignore')[:120]}")
+                if e.code in (401, 403, 404, 429):
+                    break  # modèle indisponible ou quota : modèle suivant
+            except Exception as e:
+                erreurs.append(f"{modele} : {e}"[:220])
+    raise RuntimeError(" | ".join(erreurs)[:600])
 
 
 def jeton_github():
@@ -343,8 +374,28 @@ def catalogue():
         return []
 
 
+def normaliser_fiche(f):
+    """Finitions sans risque : titres de colonnes lisibles (« Quantité_kg » → « Quantité kg »), espaces superflus."""
+    renomme = {}
+    for fe in (f.get("classeur") or {}).get("feuilles") or []:
+        for col in fe.get("colonnes") or []:
+            t = re.sub(r"\s+", " ", str(col.get("titre", "")).replace("_", " ")).strip()
+            renomme[col.get("titre")] = t
+            col["titre"] = t
+    g = (f.get("classeur") or {}).get("graphique")
+    if isinstance(g, dict):
+        for k in ("categories", "valeurs"):
+            if g.get(k) in renomme:
+                g[k] = renomme[g[k]]
+    for k in ("titre", "accroche", "description"):
+        if isinstance(f.get(k), str):
+            f[k] = re.sub(r"\s+", " ", f[k]).strip()
+    return f
+
+
 def fabriquer_une(fiche, dossier):
     """Construit et vérifie ; renvoie (chemin, aperçu, problèmes)."""
+    normaliser_fiche(fiche)
     pb = controler_fiche(fiche)
     if pb:
         return None, None, pb
@@ -364,6 +415,7 @@ def main():
     ap.add_argument("--essais", type=int, default=3)
     ap.add_argument("--fiches")
     ap.add_argument("--sortie")
+    ap.add_argument("--sans-depot", action="store_true", help="essai : fiches du modèle construites et vérifiées, rien n'est déposé")
     a = ap.parse_args()
     dossier = a.sortie or tempfile.mkdtemp(prefix="boutique-")
     os.makedirs(dossier, exist_ok=True)
@@ -380,7 +432,7 @@ def main():
     deja = [p["titre"] for p in existants]
     # 1. Fiches écrites à l'avance (en plus du quota du jour)
     fiches_ok = 0
-    for item in fiches_en_attente():
+    for item in ([] if a.sans_depot else fiches_en_attente()):
         fiche = item.get("fiche") or {}
         chemin, apercu, pb = fabriquer_une(fiche, dossier)
         if not chemin:
@@ -403,8 +455,9 @@ def main():
             try:
                 fiche = appeler_modele(domaine, deja)
             except Exception as e:
-                rapport.append({"domaine": domaine, "essai": essai, "erreur": f"modèle : {e}"[:200]})
-                time.sleep(20)
+                rapport.append({"domaine": domaine, "essai": essai, "erreur": f"modèle : {e}"[:400]})
+                print(f"[fabrique] {domaine} essai {essai} : {e}"[:400], flush=True)
+                time.sleep(5)
                 continue
             fiche["slug"] = slugifier(fiche.get("titre", ""))
             if any(slugifier(t) == fiche["slug"] for t in deja):
@@ -412,7 +465,7 @@ def main():
             chemin, apercu, pb = fabriquer_une(fiche, dossier)
             if not chemin:
                 rapport.append({"domaine": domaine, "essai": essai, "titre": fiche.get("titre"), "problemes": pb[:6]}); continue
-            res = deposer(fiche, chemin, apercu)
+            res = {"statut": "brouillon", "essai": chemin} if a.sans_depot else deposer(fiche, chemin, apercu)
             rapport.append({"domaine": domaine, "essai": essai, "titre": fiche["titre"], "depot": res})
             if isinstance(res, dict) and res.get("statut") == "brouillon":
                 deposes += 1; deja.append(fiche["titre"])

@@ -1,6 +1,6 @@
 // Tests de la fonction « boutique » sous Node 22 : node --experimental-strip-types supabase/functions/boutique/test.ts
 // (base PostgREST et clés publiques de GitHub simulées ; aucun appel réseau)
-import { traiter, verifierGithub, formatWave, controlerDepot, sha256Hex, egal, _oublierCaches, REPO, BRANCHE_DEFAUT, WORKFLOW, GH_ISS, AUDIENCE } from "./index.ts";
+import { traiter, verifierGithub, formatWave, controlerDepot, sha256Hex, egal, _oublierCaches, validerReponses, validerFormulaire, validerDocument, rediger, docx, REPO, BRANCHE_DEFAUT, WORKFLOW, GH_ISS, AUDIENCE } from "./index.ts";
 import type { Env } from "./index.ts";
 
 let echecs = 0, total = 0;
@@ -20,12 +20,14 @@ async function jeton(charge: Record<string, unknown>, cle = paire.privateKey, ki
 }
 const bonne = { iss: GH_ISS, aud: AUDIENCE, repository: REPO, ref: BRANCHE_DEFAUT, workflow_ref: WORKFLOW + BRANCHE_DEFAUT, event_name: "schedule", iat: S - 10, nbf: S - 10, exp: S + 300 };
 
+const FORM = [{ id: "bien", label: "Type de bien", type: "choix", choix: ["Appartement", "Maison"], obligatoire: true }, { id: "quartier", label: "Quartier", type: "texte", obligatoire: true, max: 60 }, { id: "loyer", label: "Loyer", type: "nombre" }, { id: "atouts", label: "Atouts", type: "paragraphe", max: 300 }];
+const DOC = { titre: "Appartement F3 à louer à Ouakam", sections: [{ titre: "Le bien", paragraphes: ["Bel appartement lumineux de trois pièces, proche de la mer et des commerces."], puces: ["Deux chambres", "Cuisine équipée"] }] };
 // Fausse base : enregistre les appels RPC
 const appels: { fn: string; args: any }[] = [];
 const reponses: Record<string, any> = {
   boutique_reglages: { admin_key: "cle-admin-de-test-0123456789abcdef0123456789", wave: "+221771234567" },
   boutique_catalogue: [{ id: "bt_budget", titre: "Budget" }],
-  boutique_produit: null,
+  boutique_produit: (a: any) => a.p_id === "bt_budget" ? { id: "bt_budget", type: "fichier" } : a.p_id === "bt_annonce" ? { id: "bt_annonce", type: "generateur", formulaire: FORM } : null,
   boutique_creer_commande: { id: "TCV-X", montant: 1499, unique: true, prix: 1500, titre: "Budget" },
   boutique_commande: { id: "TCV-X", payee: true, fichiers: [{ nom: "budget.xlsx", taille: 4 }] },
   boutique_fichier: { nom: "budget.xlsx", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", b64: Buffer.from("PK\x03\x04").toString("base64") },
@@ -38,7 +40,8 @@ const fauxFetch = (async (url: string, init?: any) => {
   const fn = url.split("/rpc/")[1];
   appels.push({ fn, args: JSON.parse(init.body) });
   if (!init.headers.apikey) return new Response("{}", { status: 401 });
-  const r = reponses[fn];
+  const r0 = reponses[fn];
+  const r = typeof r0 === "function" ? r0(JSON.parse(init.body)) : r0;
   return new Response(r === null || r === undefined ? "null" : JSON.stringify(r), { status: 200 });
 }) as unknown as typeof fetch;
 const env: Env = { url: "https://exemple.supabase.co", cle: "sb_secret_test", fetch: fauxFetch, now: () => NOW };
@@ -147,6 +150,85 @@ r = await traiter(req("GET", "/catalogue"), envKo);
 ok(r.status === 503, "base indisponible : 503 sans détail");
 r = await traiter(new Request("https://x/functions/v1/boutique/catalogue", { method: "OPTIONS" }), env);
 ok(r.status === 204, "pré-vol CORS");
+
+// 7. Documents sur mesure (clé de rédaction enregistrée par le propriétaire)
+reponses.boutique_reglages = { ...reponses.boutique_reglages, openrouter: "sk-or-v1-" + "c".repeat(40) };
+_oublierCaches();
+ok(validerFormulaire(FORM) === null && validerFormulaire([{ id: "x", label: "Nom", type: "texte" }]) !== null && validerFormulaire([{ id: "ab", label: "Choix", type: "choix", choix: ["un"] }]) !== null, "formulaire d'un générateur validé (identifiants, types, choix)");
+const v1 = validerReponses(FORM, { bien: "Appartement", quartier: "  Ouakam ", loyer: "150 000", atouts: "Vue mer" }) as any;
+ok(v1.ok && v1.reponses.quartier === "Ouakam" && v1.reponses.loyer === 150000, "réponses nettoyées (espaces, nombre « 150 000 »)", v1);
+ok(!(validerReponses(FORM, { bien: "Appartement" }) as any).ok && !(validerReponses(FORM, { bien: "Château", quartier: "X" }) as any).ok && !(validerReponses(FORM, { bien: "Maison", quartier: "x".repeat(61) }) as any).ok && !(validerReponses(FORM, { bien: "Maison", quartier: "Y", loyer: "beaucoup" }) as any).ok, "réponses refusées : champ obligatoire vide, choix inconnu, trop long, nombre invalide");
+ok(validerDocument(DOC) === null && validerDocument({ titre: "x", sections: [] }) !== null && validerDocument({ titre: "Titre", sections: [{ titre: "Vide" }] }) !== null, "document rédigé : structure contrôlée");
+r = await traiter(req("POST", "/commandes", { produit: "bt_annonce", nom: "Awa Ndiaye", cgv: true, reponses: { bien: "Appartement" } }), env);
+ok(r.status === 400 && /Quartier/.test((await r.json()).message), "commande d'un document sans réponse obligatoire : refusée avec le champ manquant");
+reponses.boutique_creer_commande = { id: "TCV-Y", montant: 1949, unique: true, prix: 2000, titre: "Annonce", type: "generateur" };
+appels.length = 0;
+r = await traiter(req("POST", "/commandes", { produit: "bt_annonce", nom: "Awa Ndiaye", cgv: true, reponses: { bien: "Maison", quartier: "Mermoz", loyer: "300000", pirate: "x" } }), env);
+const cg = appels.find((a) => a.fn === "boutique_creer_commande")!;
+ok(r.status === 201 && cg.args.p_input.quartier === "Mermoz" && cg.args.p_input.loyer === 300000 && !("pirate" in cg.args.p_input), "commande d'un document : réponses validées enregistrées (champ inconnu ignoré)", cg.args.p_input);
+// Rédaction à la réception du paiement : premier modèle en panne, second répond (JSON dans un bloc de code)
+let ia = 0;
+const envIa: Env = { ...env, openrouter: "sk-test", modeles: ["modele/a", "modele/b"], fetch: (async (url: string, init?: any) => {
+  if (url.includes("openrouter.ai")) { ia++; const m = JSON.parse(init.body).model; if (m === "modele/a") return new Response("{}", { status: 500 }); return new Response(JSON.stringify({ choices: [{ message: { content: "```json\n" + JSON.stringify(DOC) + "\n```" } }] }), { status: 200 }); }
+  return fauxFetch(url, init);
+}) as unknown as typeof fetch };
+reponses.boutique_commande = { id: "TCV-ABCDEFGH", payee: true, a_generer: true, produit: { slug: "annonce", type: "generateur" } };
+reponses.boutique_generation_reserver = { consigne: "Rédige une annonce immobilière claire.", formulaire: FORM, reponses: { bien: "Maison", quartier: "Mermoz" }, titre: "Annonce", essais: 0 };
+reponses.boutique_generation_enregistrer = true;
+appels.length = 0;
+r = await traiter(req("GET", "/commandes/TCV-ABCDEFGH?t=" + cm.commande.jeton), envIa);
+const jg = await r.json(); const en = appels.find((a) => a.fn === "boutique_generation_enregistrer");
+ok(r.status === 200 && jg.commande.document.titre === DOC.titre && en && en.args.p_document.modele === "modele/b" && ia === 2, "paiement reçu : document rédigé (modèle de secours), enregistré et renvoyé", jg);
+reponses.boutique_generation_reserver = { occupe: true };
+r = await traiter(req("GET", "/commandes/TCV-ABCDEFGH?t=" + cm.commande.jeton), envIa);
+ok((await r.json()).commande.en_redaction === true && ia === 2, "rédaction déjà en cours ailleurs : pas de second appel au modèle");
+reponses.boutique_generation_reserver = { consigne: "Rédige une annonce immobilière claire.", formulaire: FORM, reponses: {}, titre: "Annonce", essais: 1 };
+appels.length = 0;
+r = await traiter(req("GET", "/commandes/TCV-ABCDEFGH?t=" + cm.commande.jeton), { ...envIa, fetch: (async (url: string, init?: any) => url.includes("openrouter.ai") ? new Response("{}", { status: 503 }) : fauxFetch(url, init)) as unknown as typeof fetch });
+const ec = appels.find((a) => a.fn === "boutique_generation_enregistrer");
+ok((await r.json()).commande.en_redaction === true && ec && ec.args.p_document.essais === 2, "modèles indisponibles : nouvel essai au prochain passage (compteur d'essais)");
+reponses.boutique_commande = { id: "TCV-ABCDEFGH", payee: true, document: DOC, produit: { slug: "annonce-immobiliere", type: "generateur" } };
+r = await traiter(req("GET", "/commandes/TCV-ABCDEFGH/fichiers/document.docx?t=" + cm.commande.jeton), env);
+const word = new Uint8Array(await r.arrayBuffer());
+ok(r.status === 200 && word[0] === 0x50 && word[1] === 0x4b && /annonce-immobiliere\.docx/.test(r.headers.get("content-disposition") || ""), "document Word téléchargeable une fois rédigé");
+const fs = await import("node:fs"); fs.writeFileSync(process.env.DOCX_ESSAI || "/tmp/essai-boutique.docx", docx({ titre: "Essai <&> accentué", sections: [{ titre: "Section", paragraphes: ["Paragraphe é à ç « guillemets »"], puces: ["Puce 1", "Puce 2"] }] }));
+// Dépôt d'un générateur par la fabrique
+const gen = { ...produit, slug: "annonce-immobiliere", formulaire: FORM, consigne: "Rédige une annonce immobilière claire et attractive à partir des réponses, sans rien inventer.", exemple: DOC };
+reponses.boutique_deposer_generateur = { id: "bt_annonce_immobiliere", statut: "brouillon" };
+r = await traiter(req("POST", "/depot-generateur", { produit: gen }), env);
+ok(r.status === 401, "dépôt de générateur sans jeton GitHub : refusé");
+r = await traiter(req("POST", "/depot-generateur", { produit: { ...gen, exemple: { titre: "x", sections: [] } } }, { authorization: tj }), env);
+ok(r.status === 400, "générateur sans exemple valable : refusé");
+r = await traiter(req("POST", "/depot-generateur", { produit: gen }, { authorization: tj }), env);
+ok(r.status === 201, "générateur valable : déposé en brouillon");
+r = await traiter(req("GET", "/etat"), envIa);
+ok((await r.json()).redaction === true, "état : rédaction disponible (sans jamais exposer la clé)");
+// Sans clé : documents sur mesure masqués et non commandables ; activation par le propriétaire
+reponses.boutique_reglages = { admin_key: reponses.boutique_reglages.admin_key, wave: reponses.boutique_reglages.wave };
+_oublierCaches();
+reponses.boutique_catalogue = [{ id: "bt_budget", type: "fichier" }, { id: "bt_annonce", type: "generateur" }];
+r = await traiter(req("GET", "/catalogue"), env);
+ok((await r.json()).produits.map((p: any) => p.id).join() === "bt_budget", "sans clé de rédaction : documents sur mesure masqués du catalogue");
+r = await traiter(req("POST", "/commandes", { produit: "bt_annonce", nom: "Awa Ndiaye", cgv: true, reponses: { bien: "Maison", quartier: "Mermoz" } }), env);
+ok(r.status === 503, "sans clé de rédaction : commande d'un document sur mesure refusée (rien n'est encaissé)");
+const ADM = { "x-admin-key": reponses.boutique_reglages.admin_key };
+r = await traiter(req("POST", "/admin/ia", { cle: "sk-or-v1-" + "a".repeat(40) }), env);
+ok(r.status === 404, "activation sans clé d'administration : refusée");
+r = await traiter(req("POST", "/admin/ia", { cle: "pas-une-cle" }, ADM), env);
+ok(r.status === 400, "activation avec une clé mal formée : refusée");
+let verifCle = 0;
+const envCle: Env = { ...env, fetch: (async (url: string, init?: any) => { if (url.endsWith("/api/v1/key")) { verifCle++; return new Response("{}", { status: init.headers.authorization.endsWith("a".repeat(40)) ? 200 : 401 }); } return fauxFetch(url, init); }) as unknown as typeof fetch };
+reponses.boutique_definir_cle_ia = true;
+appels.length = 0;
+r = await traiter(req("POST", "/admin/ia", { cle: "sk-or-v1-" + "b".repeat(40) }, ADM), envCle);
+ok(r.status === 400 && !appels.some((a) => a.fn === "boutique_definir_cle_ia"), "clé refusée par OpenRouter : rien n'est enregistré");
+r = await traiter(req("POST", "/admin/ia", { cle: "sk-or-v1-" + "a".repeat(40) }, ADM), envCle);
+const rj = await r.json();
+ok(r.status === 200 && rj.ok && !JSON.stringify(rj).includes("aaaa") && appels.some((a) => a.fn === "boutique_definir_cle_ia") && verifCle === 2, "clé valide : vérifiée auprès d'OpenRouter, enregistrée, jamais renvoyée", rj);
+reponses.boutique_reglages = { ...reponses.boutique_reglages, openrouter: "sk-or-v1-" + "a".repeat(40) };
+_oublierCaches();
+r = await traiter(req("GET", "/catalogue"), env);
+ok((await r.json()).produits.length === 2, "clé enregistrée : documents sur mesure visibles");
 
 console.log(`BILAN ${total - echecs}/${total}`);
 if (echecs) process.exit(1);

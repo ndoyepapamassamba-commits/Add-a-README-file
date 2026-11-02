@@ -15,7 +15,7 @@ const MAX_JSON = 16 * 1024;
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const enc = new TextEncoder();
 
-export interface Env { url: string; cle: string; fetch: typeof fetch; now: () => Date }
+export interface Env { url: string; cle: string; fetch: typeof fetch; now: () => Date; openrouter?: string; modeles?: string[] }
 
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -57,13 +57,16 @@ async function rpc(env: Env, fn: string, args: Record<string, unknown>): Promise
   return t ? JSON.parse(t) : null;
 }
 let _reglages: { v: any; t: number } | null = null;
-async function reglages(env: Env): Promise<{ admin_key: string | null; wave: string | null }> {
+async function reglages(env: Env): Promise<{ admin_key: string | null; wave: string | null; openrouter?: string | null }> {
   if (_reglages && env.now().getTime() - _reglages.t < 60_000) return _reglages.v;
   const v = await rpc(env, "boutique_reglages", {});
   _reglages = { v: v || {}, t: env.now().getTime() };
   return _reglages.v;
 }
 export function _oublierCaches() { _reglages = null; _jwks = null; }
+// Clé OpenRouter de rédaction : secret de la fonction, sinon celle enregistrée par le propriétaire (route /admin/ia)
+async function cleIa(env: Env): Promise<string> { return env.openrouter || (await reglages(env)).openrouter || ""; }
+const MODELES_DEFAUT = ["google/gemini-2.5-flash", "openai/gpt-4o-mini", "nvidia/nemotron-3-ultra-550b-a55b:free"];
 
 async function lireJson(req: Request, max: number): Promise<any> {
   const t = await req.text();
@@ -122,6 +125,163 @@ export function controlerDepot(b: any): string | null {
   return null;
 }
 
+// ------------------------------------------------------------------ Documents sur mesure (générateurs)
+// Formulaire : [{ id, label, type: texte|paragraphe|nombre|choix|date, obligatoire?, max?, choix?, aide? }]
+export function validerFormulaire(f: any): string | null {
+  if (!Array.isArray(f) || f.length < 1 || f.length > 15) return "formulaire : 1 à 15 champs";
+  const ids = new Set<string>();
+  for (const c of f) {
+    if (!c || typeof c !== "object" || !/^[a-z0-9_]{2,30}$/.test(String(c.id)) || ids.has(c.id)) return "formulaire : identifiant de champ invalide";
+    ids.add(c.id);
+    if (typeof c.label !== "string" || c.label.length < 2 || c.label.length > 120) return "formulaire : libellé invalide";
+    if (!["texte", "paragraphe", "nombre", "choix", "date"].includes(c.type)) return "formulaire : type de champ invalide";
+    if (c.type === "choix" && !(Array.isArray(c.choix) && c.choix.length >= 2 && c.choix.length <= 15 && c.choix.every((x: any) => typeof x === "string" && x.length <= 80))) return "formulaire : choix invalides";
+  }
+  return null;
+}
+export function validerReponses(formulaire: any[], r: any): { ok: true; reponses: Record<string, string | number> } | { ok: false; message: string } {
+  const src = r && typeof r === "object" && !Array.isArray(r) ? r : {};
+  const out: Record<string, string | number> = {};
+  for (const c of formulaire) {
+    let v = src[c.id];
+    const vide = v === undefined || v === null || String(v).trim() === "";
+    if (vide) { if (c.obligatoire) return { ok: false, message: `Champ à remplir : « ${c.label} ».` }; continue; }
+    if (c.type === "nombre") {
+      const n = Number(String(v).replace(/\s/g, "").replace(",", "."));
+      if (!Number.isFinite(n) || Math.abs(n) > 1e12) return { ok: false, message: `« ${c.label} » doit être un nombre.` };
+      out[c.id] = n; continue;
+    }
+    v = String(v).replace(/\r/g, "").trim();
+    const max = Math.min(Number(c.max) || (c.type === "paragraphe" ? 1500 : 150), 3000);
+    if (v.length > max) return { ok: false, message: `« ${c.label} » : ${max} caractères au plus.` };
+    if (c.type === "choix" && !c.choix.includes(v)) return { ok: false, message: `« ${c.label} » : choix invalide.` };
+    if (c.type === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(v)) return { ok: false, message: `« ${c.label} » : date invalide.` };
+    out[c.id] = v;
+  }
+  if (!Object.keys(out).length) return { ok: false, message: "Remplissez le formulaire." };
+  return { ok: true, reponses: out };
+}
+// Document rédigé : { titre, sections: [{ titre?, paragraphes?: string[], puces?: string[] }] }
+export function validerDocument(d: any): string | null {
+  if (!d || typeof d !== "object" || typeof d.titre !== "string" || !d.titre.trim() || d.titre.length > 200) return "titre";
+  if (!Array.isArray(d.sections) || d.sections.length < 1 || d.sections.length > 25) return "sections";
+  let total = d.titre.length;
+  for (const s of d.sections) {
+    if (!s || typeof s !== "object") return "section";
+    for (const k of ["paragraphes", "puces"]) if (s[k] !== undefined && !(Array.isArray(s[k]) && s[k].every((x: any) => typeof x === "string"))) return k;
+    if (s.titre !== undefined && typeof s.titre !== "string") return "titre de section";
+    total += String(s.titre || "").length + [...(s.paragraphes || []), ...(s.puces || [])].join("").length;
+    if (!(s.paragraphes || []).length && !(s.puces || []).length) return "section vide";
+  }
+  return total > 30000 ? "trop long" : total < 80 ? "trop court" : null;
+}
+function extraireJson(t: string): any {
+  const x = String(t || "").trim().replace(/^```(?:json)?\s*|\s*```$/g, "");
+  try { return JSON.parse(x); } catch { /* plus bas */ }
+  const a = x.indexOf("{"), b = x.lastIndexOf("}");
+  if (a < 0 || b <= a) throw new Error("réponse sans JSON");
+  return JSON.parse(x.slice(a, b + 1));
+}
+const REGLES_REDACTION = "Tu rédiges en français clair et professionnel, adapté au Sénégal et à l'Afrique francophone, le document demandé par un client, à partir de SES réponses seulement. " +
+  "N'invente aucun fait vérifiable (chiffres, diplômes, adresses, dates, prix) qui ne figure pas dans les réponses ; si une information manque, rédige sans elle. " +
+  "Pas de conseil médical, juridique ou financier engageant, pas de promesse de résultat. " +
+  "Réponds UNIQUEMENT par un objet JSON : {\"titre\": \"…\", \"sections\": [{\"titre\": \"…\", \"paragraphes\": [\"…\"], \"puces\": [\"…\"]}]}. Pas de Markdown dans les textes.";
+export async function rediger(env: Env, g: { consigne: string; formulaire: any[]; reponses: Record<string, unknown>; titre: string }, cle?: string): Promise<any> {
+  const k = cle || env.openrouter;
+  if (!k) throw new Error("ia indisponible");
+  const lignes = (g.formulaire || []).filter((c: any) => g.reponses && g.reponses[c.id] !== undefined).map((c: any) => `- ${c.label} : ${String(g.reponses[c.id])}`);
+  const messages = [
+    { role: "system", content: REGLES_REDACTION },
+    { role: "user", content: `Document à rédiger : ${g.titre}.\nConsigne :\n${g.consigne}\n\nRéponses du client :\n${lignes.join("\n")}` },
+  ];
+  let derniere = "";
+  for (const modele of env.modeles || MODELES_DEFAUT) {
+    try {
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 60000);
+      const r = await env.fetch("https://openrouter.ai/api/v1/chat/completions", { method: "POST", signal: ctl.signal,
+        headers: { authorization: `Bearer ${k}`, "content-type": "application/json", "x-title": "Teranga Outils" },
+        body: JSON.stringify({ model: modele, messages, temperature: 0.5, max_tokens: 6000, response_format: { type: "json_object" } }) });
+      clearTimeout(tm);
+      if (!r.ok) { derniere = `${modele} : ${r.status}`; continue; }
+      const j = await r.json();
+      const d = extraireJson(j?.choices?.[0]?.message?.content || "");
+      const pb = validerDocument(d);
+      if (pb) { derniere = `${modele} : ${pb}`; continue; }
+      return { titre: d.titre.trim(), sections: d.sections.map((s: any) => ({ titre: s.titre ? String(s.titre).trim() : undefined, paragraphes: (s.paragraphes || []).map((x: string) => x.trim()).filter(Boolean), puces: (s.puces || []).map((x: string) => x.trim()).filter(Boolean) })), modele, le: env.now().toISOString() };
+    } catch (e: any) { derniere = `${modele} : ${e && e.message}`; }
+  }
+  throw new Error("rédaction impossible (" + derniere + ")");
+}
+
+// Fichier Word (.docx) sans bibliothèque : zip « stocké » + XML WordprocessingML minimal
+const TABLE_CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b: Uint8Array): number { let c = 0xffffffff; for (const x of b) c = TABLE_CRC[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+export function zip(fichiers: { nom: string; donnees: Uint8Array }[]): Uint8Array {
+  const parts: Uint8Array[] = [], central: Uint8Array[] = [];
+  let decalage = 0;
+  for (const f of fichiers) {
+    const nom = enc.encode(f.nom), crc = crc32(f.donnees), n = f.donnees.length;
+    const loc = new DataView(new ArrayBuffer(30));
+    loc.setUint32(0, 0x04034b50, true); loc.setUint16(4, 20, true); loc.setUint16(6, 0x0800, true); loc.setUint16(8, 0, true);
+    loc.setUint16(10, 0, true); loc.setUint16(12, 0x21, true); loc.setUint32(14, crc, true); loc.setUint32(18, n, true); loc.setUint32(22, n, true);
+    loc.setUint16(26, nom.length, true); loc.setUint16(28, 0, true);
+    parts.push(new Uint8Array(loc.buffer), nom, f.donnees);
+    const cen = new DataView(new ArrayBuffer(46));
+    cen.setUint32(0, 0x02014b50, true); cen.setUint16(4, 20, true); cen.setUint16(6, 20, true); cen.setUint16(8, 0x0800, true); cen.setUint16(10, 0, true);
+    cen.setUint16(12, 0, true); cen.setUint16(14, 0x21, true); cen.setUint32(16, crc, true); cen.setUint32(20, n, true); cen.setUint32(24, n, true);
+    cen.setUint16(28, nom.length, true); cen.setUint32(42, decalage, true);
+    central.push(new Uint8Array(cen.buffer), nom);
+    decalage += 30 + nom.length + n;
+  }
+  const tailleCentral = central.reduce((s, x) => s + x.length, 0);
+  const fin = new DataView(new ArrayBuffer(22));
+  fin.setUint32(0, 0x06054b50, true); fin.setUint16(8, fichiers.length, true); fin.setUint16(10, fichiers.length, true);
+  fin.setUint32(12, tailleCentral, true); fin.setUint32(16, decalage, true);
+  const tout = [...parts, ...central, new Uint8Array(fin.buffer)];
+  const out = new Uint8Array(tout.reduce((s, x) => s + x.length, 0));
+  let i = 0; for (const x of tout) { out.set(x, i); i += x.length; }
+  return out;
+}
+const xmlEsc = (s: string) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" } as Record<string, string>)[c]).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "");
+export function docx(d: any): Uint8Array {
+  const par = (texte: string, style?: string, ind = false) => `<w:p>${style || ind ? `<w:pPr>${style ? `<w:pStyle w:val="${style}"/>` : ""}${ind ? '<w:ind w:left="360" w:hanging="240"/>' : ""}</w:pPr>` : ""}<w:r><w:t xml:space="preserve">${xmlEsc(texte)}</w:t></w:r></w:p>`;
+  let corps = par(d.titre, "Titre");
+  for (const s of d.sections) {
+    if (s.titre) corps += par(s.titre, "Titre1");
+    for (const p of s.paragraphes || []) corps += par(p);
+    for (const p of s.puces || []) corps += par("• " + p, undefined, true);
+  }
+  corps += par("Document rédigé par Teranga Outils à partir de vos réponses. Relisez-le et adaptez-le avant usage.", "Note");
+  const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+  const document = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${W}><w:body>${corps}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${W}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:lang w:val="fr-FR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>` +
+    `<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>` +
+    `<w:style w:type="paragraph" w:styleId="Titre"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="240"/></w:pPr><w:rPr><w:b/><w:color w:val="0B6E4F"/><w:sz w:val="36"/></w:rPr></w:style>` +
+    `<w:style w:type="paragraph" w:styleId="Titre1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="80"/></w:pPr><w:rPr><w:b/><w:color w:val="0B6E4F"/><w:sz w:val="26"/></w:rPr></w:style>` +
+    `<w:style w:type="paragraph" w:styleId="Note"><w:name w:val="Note"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="360"/></w:pPr><w:rPr><w:i/><w:color w:val="59635E"/><w:sz w:val="18"/></w:rPr></w:style></w:styles>`;
+  const types = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
+  const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+  const docRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  return zip([{ nom: "[Content_Types].xml", donnees: enc.encode(types) }, { nom: "_rels/.rels", donnees: enc.encode(rels) },
+    { nom: "word/document.xml", donnees: enc.encode(document) }, { nom: "word/_rels/document.xml.rels", donnees: enc.encode(docRels) },
+    { nom: "word/styles.xml", donnees: enc.encode(styles) }]);
+}
+// Commande payée d'un générateur sans document : rédaction (une seule à la fois)
+async function genererSiBesoin(env: Env, c: any, id: string, h: string): Promise<any> {
+  if (!c || !c.a_generer) return c;
+  const g = await rpc(env, "boutique_generation_reserver", { p_order_id: id, p_token_hash: h, p_now: env.now().toISOString() });
+  if (!g || g.occupe) return { ...c, en_redaction: true };
+  try {
+    const d = await rediger(env, g, await cleIa(env));
+    await rpc(env, "boutique_generation_enregistrer", { p_order_id: id, p_document: d });
+    return { ...c, document: d, a_generer: false };
+  } catch (e: any) {
+    console.error("[boutique] rédaction :", e && e.message);
+    await rpc(env, "boutique_generation_enregistrer", { p_order_id: id, p_document: { essais: (g.essais || 0) + 1, erreur: String(e && e.message).slice(0, 200) } });
+    return { ...c, en_redaction: true };
+  }
+}
+
 // ------------------------------------------------------------------ Routes
 export async function traiter(req: Request, env: Env): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
@@ -130,7 +290,10 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
   const now = env.now();
   try {
     if (req.method === "GET" && chemin === "/catalogue") {
-      return json(200, { produits: (await rpc(env, "boutique_catalogue", {})) || [] }, { "cache-control": "public, max-age=60" });
+      // Documents sur mesure visibles seulement quand la rédaction est possible
+      const ia = !!(await cleIa(env));
+      const liste = ((await rpc(env, "boutique_catalogue", {})) || []).filter((p: any) => ia || p.type !== "generateur");
+      return json(200, { produits: liste }, { "cache-control": "public, max-age=60" });
     }
     if (req.method === "GET" && chemin === "/config") {
       const r = await reglages(env);
@@ -139,7 +302,8 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
     let m = chemin.match(/^\/produits\/(bt_[a-z0-9_]{2,60})$/);
     if (req.method === "GET" && m) {
       const p = await rpc(env, "boutique_produit", { p_id: m[1] });
-      return p ? json(200, { produit: p }, { "cache-control": "public, max-age=60" }) : erreur(404, "introuvable", "Ce produit n'est pas en vente.");
+      const visible = p && (p.type !== "generateur" || !!(await cleIa(env)));
+      return visible ? json(200, { produit: p }, { "cache-control": "public, max-age=60" }) : erreur(404, "introuvable", "Ce produit n'est pas en vente.");
     }
     if (req.method === "POST" && chemin === "/commandes") {
       const b = await lireJson(req, MAX_JSON);
@@ -150,8 +314,18 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
       if (!/^[\p{L}][\p{L} '’.-]{1,79}$/u.test(nom)) return erreur(400, "nom", "Indiquez votre nom (lettres seulement).");
       if (b.cgv !== true) return erreur(400, "cgv", "Acceptez les conditions de vente pour continuer.");
       const r = await reglages(env);
+      const fiche = await rpc(env, "boutique_produit", { p_id: produit });
+      if (!fiche) return erreur(404, "indisponible", "Ce produit n'est plus en vente.");
+      let input: Record<string, string | number> | null = null;
+      if (fiche.type === "generateur") {
+        if (!(await cleIa(env))) return erreur(503, "indisponible", "Ce document sur mesure sera disponible très bientôt.");
+        const v = validerReponses(fiche.formulaire || [], b.reponses);
+        if (!v.ok) return erreur(400, "reponses", v.message);
+        input = v.reponses;
+      }
       const id = nouvelId(), jeton = nouveauJeton();
       const res = await rpc(env, "boutique_creer_commande", {
+        p_input: input,
         p_produit: produit, p_order_id: id, p_token_hash: await sha256Hex(jeton),
         p_buyer: { fullName: nom, acceptedAt: now.toISOString(), cgvVersion: "boutique-2026-11-02" },
         p_ip_hash: (await sha256Hex(`bt-ip:${r.admin_key || ""}:${ip(req)}`)).slice(0, 32), p_now: now.toISOString(),
@@ -166,10 +340,17 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
       if (t.length < 20 || t.length > 64) return erreur(404, "introuvable", "Commande introuvable.");
       const h = await sha256Hex(t);
       if (!m[3]) {
-        const c = await rpc(env, "boutique_commande", { p_order_id: m[1], p_token_hash: h, p_now: now.toISOString() });
+        let c = await rpc(env, "boutique_commande", { p_order_id: m[1], p_token_hash: h, p_now: now.toISOString() });
         if (!c) return erreur(404, "introuvable", "Commande introuvable.");
+        c = await genererSiBesoin(env, c, m[1], h);
         const r = await reglages(env);
         return json(200, { commande: c, wave: formatWave(r.wave) });
+      }
+      if (m[3] === "document.docx") {
+        const c = await rpc(env, "boutique_commande", { p_order_id: m[1], p_token_hash: h, p_now: now.toISOString() });
+        if (!c || !c.document) return erreur(404, "introuvable", "Document pas encore prêt ou commande non payée.");
+        const nom = (String(c.produit.slug || "document").slice(0, 60)) + ".docx";
+        return new Response(docx(c.document), { status: 200, headers: { ...CORS, "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "content-disposition": `attachment; filename="${nom}"`, "cache-control": "no-store, private", "x-content-type-options": "nosniff" } });
       }
       const f = await rpc(env, "boutique_fichier", { p_order_id: m[1], p_token_hash: h, p_nom: m[3], p_now: now.toISOString() });
       if (!f) return erreur(404, "introuvable", "Fichier introuvable ou commande non payée.");
@@ -181,6 +362,22 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
       const v = await verifierGithub(env, (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""));
       if (!v.ok) { console.warn(`[boutique] fiches refusées : ${v.raison}`); return erreur(401, "refuse", "Accès refusé."); }
       return json(200, { fiches: (await rpc(env, "boutique_fiches_attente", {})) || [] });
+    }
+    if (req.method === "GET" && chemin === "/etat") {
+      return json(200, { redaction: !!(await cleIa(env)) });
+    }
+    if (req.method === "POST" && chemin === "/depot-generateur") {
+      const v = await verifierGithub(env, (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""));
+      if (!v.ok) { console.warn(`[boutique] dépôt de générateur refusé : ${v.raison}`); return erreur(401, "refuse", "Accès refusé."); }
+      const b = await lireJson(req, 200_000);
+      const p = b.produit || {};
+      const pb = controlerDepot({ produit: p, fichiers: [{}] }) || validerFormulaire(p.formulaire) || (typeof p.consigne !== "string" || p.consigne.length < 50 || p.consigne.length > 6000 ? "consigne" : null) || (validerDocument(p.exemple) ? "exemple : " + validerDocument(p.exemple) : null);
+      if (pb) return erreur(400, "controle", pb);
+      const res = await rpc(env, "boutique_deposer_generateur", { p_produit: { ...p, source: "fabrique" }, p_now: now.toISOString() });
+      if (!res || res.erreur) return erreur(409, "depot", (res && res.erreur) || "dépôt impossible");
+      const ficheId = Number(b.fiche_id);
+      if (Number.isInteger(ficheId) && ficheId > 0) res.fiche = await rpc(env, "boutique_fiche_deposee", { p_fiche_id: ficheId, p_produit: res.id, p_now: now.toISOString() });
+      return json(201, res);
     }
     if (req.method === "POST" && chemin === "/depot") {
       const auth = req.headers.get("authorization") || "";
@@ -195,11 +392,21 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
       if (Number.isInteger(ficheId) && ficheId > 0) res.fiche = await rpc(env, "boutique_fiche_deposee", { p_fiche_id: ficheId, p_produit: res.id, p_now: now.toISOString() });
       return json(201, res);
     }
-    if (chemin === "/admin" || chemin === "/admin/decider") {
+    if (chemin === "/admin" || chemin === "/admin/decider" || chemin === "/admin/ia") {
       const r = await reglages(env);
       const k = req.headers.get("x-admin-key") || "";
       if (!r.admin_key || !egal(k.trim(), r.admin_key)) return erreur(404, "introuvable", "Ressource introuvable.");
       if (req.method === "GET" && chemin === "/admin") return json(200, await rpc(env, "boutique_admin", { p_now: now.toISOString() }));
+      if (req.method === "POST" && chemin === "/admin/ia") {
+        const b = await lireJson(req, MAX_JSON);
+        const cle = String(b.cle || "").trim();
+        if (!/^sk-or-[A-Za-z0-9_-]{20,200}$/.test(cle)) return erreur(400, "cle", "Clé OpenRouter invalide.");
+        const t = await env.fetch("https://openrouter.ai/api/v1/key", { headers: { authorization: `Bearer ${cle}` } }).catch(() => null);
+        if (!t || !t.ok) return erreur(400, "cle", "OpenRouter refuse cette clé.");
+        const ok = await rpc(env, "boutique_definir_cle_ia", { p_cle: cle });
+        _reglages = null;
+        return ok ? json(200, { ok: true, redaction: true }) : erreur(400, "cle", "Clé OpenRouter invalide.");
+      }
       if (req.method === "POST" && chemin === "/admin/decider") {
         const b = await lireJson(req, MAX_JSON);
         if (!/^bt_[a-z0-9_]{2,60}$/.test(String(b.id || "")) || !["publier", "refuser", "retirer"].includes(b.action)) return erreur(400, "validation", "Demande invalide.");
@@ -222,6 +429,7 @@ if (typeof Deno !== "undefined" && Deno.serve) {
     if (l) return l;
     try { const j = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}"); return typeof j.default === "string" ? j.default : ""; } catch { return ""; }
   })();
-  const env: Env = { url: Deno.env.get("SUPABASE_URL") || "", cle: cleService, fetch: fetch.bind(globalThis), now: () => new Date() };
+  const modeles = (Deno.env.get("BOUTIQUE_LLM_MODELES") || MODELES_DEFAUT.join(",")).split(",").map((x: string) => x.trim()).filter(Boolean);
+  const env: Env = { url: Deno.env.get("SUPABASE_URL") || "", cle: cleService, fetch: fetch.bind(globalThis), now: () => new Date(), openrouter: Deno.env.get("OPENROUTER_API_KEY") || "", modeles };
   Deno.serve((req: Request) => traiter(req, env));
 }
