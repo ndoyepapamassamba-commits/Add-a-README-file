@@ -15,7 +15,7 @@ const MAX_JSON = 16 * 1024;
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const enc = new TextEncoder();
 
-export interface Env { url: string; cle: string; fetch: typeof fetch; now: () => Date; openrouter?: string; modeles?: string[] }
+export interface Env { url: string; cle: string; fetch: typeof fetch; now: () => Date; openrouter?: string; modeles?: string[]; modelesFabrique?: string[] }
 
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -66,7 +66,10 @@ async function reglages(env: Env): Promise<{ admin_key: string | null; wave: str
 export function _oublierCaches() { _reglages = null; _jwks = null; }
 // Clé OpenRouter de rédaction : secret de la fonction, sinon celle enregistrée par le propriétaire (route /admin/ia)
 async function cleIa(env: Env): Promise<string> { return env.openrouter || (await reglages(env)).openrouter || ""; }
-const MODELES_DEFAUT = ["google/gemini-2.5-flash", "openai/gpt-4o-mini", "nvidia/nemotron-3-ultra-550b-a55b:free"];
+// Documents des clients : modèles payants seulement (les modèles gratuits peuvent conserver les textes reçus)
+const MODELES_DEFAUT = ["google/gemini-2.5-flash", "openai/gpt-4o-mini"];
+// Fabrique (fiches de produits, sans donnée personnelle) : modèles GRATUITS seulement, aucun coût pour le propriétaire
+export const MODELES_FABRIQUE = ["nvidia/nemotron-3-ultra-550b-a55b:free", "nvidia/nemotron-3.5-super-vl:free", "google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free"];
 
 async function lireJson(req: Request, max: number): Promise<any> {
   const t = await req.text();
@@ -361,7 +364,40 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
     if (req.method === "GET" && chemin === "/fabrique/fiches") {
       const v = await verifierGithub(env, (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""));
       if (!v.ok) { console.warn(`[boutique] fiches refusées : ${v.raison}`); return erreur(401, "refuse", "Accès refusé."); }
-      return json(200, { fiches: (await rpc(env, "boutique_fiches_attente", {})) || [] });
+      const adm = await rpc(env, "boutique_admin", { p_now: now.toISOString() }).catch(() => null);
+      return json(200, { fiches: (await rpc(env, "boutique_fiches_attente", {})) || [], titres: ((adm && adm.produits) || []).map((p: any) => p.titre).filter(Boolean) });
+    }
+    if (req.method === "POST" && chemin === "/fabrique/modele") {
+      // Modèle de langue pour la fabrique (GitHub Models a fermé le 30 juillet 2026) : modèles gratuits d'OpenRouter
+      // avec la clé du propriétaire, jamais un modèle payant. Durée bornée (limite des fonctions Edge).
+      const v = await verifierGithub(env, (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""));
+      if (!v.ok) { console.warn(`[boutique] modèle refusé : ${v.raison}`); return erreur(401, "refuse", "Accès refusé."); }
+      const b = await lireJson(req, 120_000);
+      const msgs = b.messages;
+      if (!Array.isArray(msgs) || msgs.length < 1 || msgs.length > 6 || !msgs.every((m: any) => m && (m.role === "system" || m.role === "user") && typeof m.content === "string" && m.content.length > 0 && m.content.length <= 40000)) return erreur(400, "messages", "Messages invalides.");
+      const k = await cleIa(env);
+      if (!k) return erreur(503, "ia", "Rédaction non activée : aucune clé OpenRouter.");
+      const liste = (env.modelesFabrique || MODELES_FABRIQUE).filter((m) => m.endsWith(":free"));
+      const depart = Number.isInteger(b.depart) ? Math.abs(b.depart) % Math.max(1, liste.length) : 0;
+      const ordre = [...liste.slice(depart), ...liste.slice(0, depart)];
+      const t0 = Date.now(), essais: string[] = [];
+      for (const modele of ordre) {
+        const reste = 120_000 - (Date.now() - t0);
+        if (reste < 15_000) { essais.push("temps écoulé"); break; }
+        try {
+          const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), Math.min(90_000, reste));
+          const r = await env.fetch("https://openrouter.ai/api/v1/chat/completions", { method: "POST", signal: ctl.signal,
+            headers: { authorization: `Bearer ${k}`, "content-type": "application/json", "x-title": "Teranga Outils (fabrique)" },
+            body: JSON.stringify({ model: modele, messages: msgs, temperature: typeof b.temperature === "number" ? Math.min(1.2, Math.max(0, b.temperature)) : 0.7, max_tokens: 8000, ...(b.json ? { response_format: { type: "json_object" } } : {}) }) });
+          clearTimeout(tm);
+          if (!r.ok) { essais.push(`${modele} : ${r.status}`); continue; }
+          const j = await r.json().catch(() => null);
+          const c = String(j?.choices?.[0]?.message?.content || "");
+          if (!c.trim()) { essais.push(`${modele} : vide`); continue; }
+          return json(200, { contenu: c, modele });
+        } catch (e: any) { essais.push(`${modele} : ${e && e.name === "AbortError" ? "délai" : e && e.message}`); }
+      }
+      return erreur(502, "modeles", ("Aucun modèle gratuit n'a répondu : " + essais.join(" | ")).slice(0, 400));
     }
     if (req.method === "GET" && chemin === "/etat") {
       return json(200, { redaction: !!(await cleIa(env)) });

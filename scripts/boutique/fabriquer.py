@@ -2,12 +2,14 @@
 """Fabrique de Teranga Outils : conçoit, construit, VÉRIFIE et dépose chaque jour des outils Excel prêts à vendre.
 
 Chaque produit part d'une fiche JSON (domaine, titre, textes de vente, classeur décrit par feuilles et colonnes). La fiche
-est écrite par un modèle de GitHub Models (gratuit, jeton de la tâche GitHub Actions) ou fournie à la main (--fiches).
+est écrite à l'avance (table des fiches en attente) ou par un modèle de langue GRATUIT, appelé par le serveur de la boutique
+(GitHub Models a fermé le 30 juillet 2026), ou fournie à la main (--fiches). La fabrique crée aussi des documents sur mesure
+(formulaire, consigne de rédaction, exemple) déposés de la même façon.
 Le classeur est construit avec openpyxl, recalculé par LibreOffice, puis contrôlé : aucune erreur de formule, exemples
 remplis, tableau de bord chiffré, sujets interdits absents, textes complets. Seuls les produits contrôlés sont déposés
 (fonction Edge « boutique », jeton OIDC de GitHub : aucun secret). Ils sont publiés 24 h plus tard, sauf refus.
 
-  python3 fabriquer.py --nombre 5                      # GitHub Actions : fiches par le modèle, dépôt
+  python3 fabriquer.py --nombre 5 --generateurs 1     # GitHub Actions : fiches par le modèle, dépôt
   python3 fabriquer.py --fiches fiches.json --sortie d # fiches fournies, classeurs écrits dans d, sans dépôt
 """
 import argparse, base64, hashlib, json, os, random, re, shutil, subprocess, sys, tempfile, time, unicodedata, urllib.request
@@ -20,8 +22,6 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 API = os.environ.get("BOUTIQUE_API", "https://seegnylaubuularegmku.supabase.co/functions/v1/boutique")
-MODELES_URL = os.environ.get("MODELES_URL", "https://models.github.ai/inference/chat/completions")
-MODELE = os.environ.get("MODELE", "openai/gpt-4.1-mini")
 AUDIENCE = "teranga-boutique"
 MIME_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 VERT, VERT_CLAIR, GRIS = "0B6E4F", "E7F3EE", "59635E"
@@ -261,7 +261,7 @@ def verifier(f, chemin):
         shutil.rmtree(d, ignore_errors=True)
 
 
-# ------------------------------------------------------------------ Fiches écrites par le modèle (GitHub Models)
+# ------------------------------------------------------------------ Fiches écrites par le modèle (gratuit, via le serveur)
 CONSIGNE = """Tu conçois des OUTILS EXCEL vendus 500 à 5000 F CFA à des particuliers et petites entreprises du Sénégal et d'Afrique francophone.
 Un outil = un classeur concret qui fait gagner du temps ou de l'argent dans UN métier ou UNE situation de la vie réelle.
 Réponds UNIQUEMENT par un objet JSON avec exactement ces clés :
@@ -282,11 +282,8 @@ INTERDITS : documents officiels (attestation, certificat, diplôme, fiche de pai
 Écris en français simple, sans faute, sans promesse de gain garanti."""
 
 
-MODELES = [m for m in os.environ.get("MODELES", MODELE + ",openai/gpt-4.1,openai/gpt-4o-mini").split(",") if m]
-
-
 def extraire_json(texte):
-    """La fiche JSON contenue dans la réponse (blocs ```json, texte autour, ou JSON pur)."""
+    """L'objet JSON contenu dans la réponse (blocs ```json, texte autour, ou JSON pur)."""
     t = str(texte or "").strip()
     t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t)
     try:
@@ -299,41 +296,135 @@ def extraire_json(texte):
     return json.loads(t[debut:fin + 1])
 
 
-def appeler_modele(domaine, deja):
-    messages = [
+class SansCle(Exception):
+    """Le serveur n'a pas de clé OpenRouter : la rédaction automatique n'est pas encore activée par le propriétaire."""
+
+
+def modele(messages, essai=0):
+    """Un objet JSON écrit par un modèle GRATUIT d'OpenRouter, appelé par la fonction « boutique » (jeton OIDC de la tâche)."""
+    corps = {"messages": messages, "json": True, "depart": essai, "temperature": 0.8}
+    req = urllib.request.Request(API + "/fabrique/modele", data=json.dumps(corps).encode(), method="POST",
+                                 headers={"Content-Type": "application/json", "Authorization": "Bearer " + jeton_github()})
+    try:
+        with urllib.request.urlopen(req, timeout=170) as r:
+            rep = json.loads(r.read().decode("utf-8", errors="replace"))
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode(errors="ignore")[:300]
+        if e.code == 503:
+            raise SansCle(detail)
+        raise RuntimeError(f"HTTP {e.code} {detail}")
+    return extraire_json(rep.get("contenu") or "")
+
+
+def appeler_modele(domaine, deja, essai=0):
+    return modele([
         {"role": "system", "content": CONSIGNE},
         {"role": "user", "content": f"Domaine : {domaine}.\nOutils déjà en vente (ne pas refaire) : {', '.join(deja[-60:]) or 'aucun'}.\nPropose UN outil nouveau, très utile et précis pour ce domaine. Réponds par le seul objet JSON, sans texte autour."},
-    ]
-    erreurs = []
-    for modele in MODELES:
-        for format_json in (True, False):
-            # GitHub Models (offre gratuite) : 4 000 jetons de sortie au plus par requête
-            corps = {"model": modele, "temperature": 0.8, "max_tokens": 4000, "messages": messages}
-            if format_json:
-                corps["response_format"] = {"type": "json_object"}
-            req = urllib.request.Request(MODELES_URL, data=json.dumps(corps).encode(), method="POST",
-                                         headers={"Content-Type": "application/json", "Accept": "application/vnd.github+json",
-                                                  "X-GitHub-Api-Version": "2022-11-28", "Accept-Encoding": "identity",
-                                                  "Authorization": "Bearer " + os.environ.get("GITHUB_TOKEN", "")})
-            try:
-                with urllib.request.urlopen(req, timeout=180) as r:
-                    brut, statut, genre = r.read(), r.status, r.headers.get("Content-Type", "")
-                try:
-                    rep = json.loads(brut.decode("utf-8", errors="replace"))
-                except ValueError:
-                    erreurs.append(f"{modele} : HTTP {statut} {genre} réponse illisible ({len(brut)} octets) : {brut[:160]!r}")
-                    continue
-                contenu = ((rep.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
-                if not contenu.strip():
-                    erreurs.append(f"{modele} : réponse vide"); continue
-                return extraire_json(contenu)
-            except urllib.error.HTTPError as e:
-                erreurs.append(f"{modele} : HTTP {e.code} {e.read().decode(errors='ignore')[:120]}")
-                if e.code in (401, 403, 404, 429):
-                    break  # modèle indisponible ou quota : modèle suivant
-            except Exception as e:
-                erreurs.append(f"{modele} : {e}"[:220])
-    raise RuntimeError(" | ".join(erreurs)[:600])
+    ], essai)
+
+
+# ------------------------------------------------------------------ Documents sur mesure écrits par le modèle
+DOMAINES_DOCS = [
+    "Commerce et vente en boutique", "Événements familiaux", "Recherche d'emploi", "Associations et groupements", "Écoles et enseignants",
+    "Immobilier et location", "Restauration et traiteur", "Tourisme et hébergement", "Artisanat", "Agriculture et élevage",
+    "Transport et livraison", "Beauté et coiffure", "Services aux petites entreprises", "Communication et réseaux sociaux",
+    "Formation et ateliers", "Vie de quartier", "Sport amateur", "Mode et couture",
+]
+CONSIGNE_GEN = """Tu conçois des DOCUMENTS RÉDIGÉS SUR MESURE vendus 500 à 3000 F CFA à des particuliers et petites entreprises du Sénégal.
+Le client remplit un court formulaire, paie, puis une IA rédige SON document à partir de SES réponses et de TA consigne.
+Réponds UNIQUEMENT par un objet JSON avec exactement ces clés :
+{"titre": "…(10-90 car., dit clairement le document, se termine par « sur mesure »)", "domaine": "…(3-40 car.)", "accroche": "…(20-220 car.)",
+ "description": "…(150-1500 car., texte de vente honnête : à qui il sert, ce qu'on reçoit)", "points": ["3 à 6 bénéfices concrets"],
+ "faq": [{"q": "…", "r": "…"}] (3 questions), "prix": entier entre 500 et 3000,
+ "formulaire": [{"id": "minuscules_sans_accent", "label": "question claire", "type": "texte|paragraphe|nombre|choix|date", "obligatoire": true, "max": 150, "choix": ["seulement pour le type choix"]}] (4 à 9 champs),
+ "consigne": "instructions de rédaction précises (300-1500 car.) : sections attendues dans l'ordre, ton, longueur, et rappel de n'inventer aucun fait absent des réponses",
+ "exemple": {"titre": "…", "sections": [{"titre": "…", "paragraphes": ["…"], "puces": ["…"]}]} (le document COMPLET qu'on obtiendrait avec des réponses fictives réalistes)}
+INTERDITS : documents officiels ou administratifs (attestation, certificat, diplôme, fiche de paie, contrat, statuts, procuration), santé et médicaments,
+conseil juridique ou financier engageant, jeux d'argent, crypto, politique, religion, données personnelles réelles, numéros de téléphone, liens, e-mails.
+Bons exemples d'idées : message de remerciement après un événement, programme de cérémonie, plan de communication d'un commerce, présentation d'une
+entreprise, lettre de demande de partenariat, règlement d'une tontine, fiche de présentation d'un artisan, publications pour un mois sur les réseaux.
+Écris en français simple, sans faute, sans promesse de résultat."""
+
+
+def validation_document(d):
+    if not isinstance(d, dict) or not isinstance(d.get("titre"), str) or not d["titre"].strip() or len(d["titre"]) > 200:
+        return "exemple : titre"
+    secs = d.get("sections")
+    if not isinstance(secs, list) or not 1 <= len(secs) <= 25:
+        return "exemple : sections"
+    total = len(d["titre"])
+    for x in secs:
+        if not isinstance(x, dict):
+            return "exemple : section"
+        for k in ("paragraphes", "puces"):
+            if k in x and not (isinstance(x[k], list) and all(isinstance(y, str) for y in x[k])):
+                return "exemple : " + k
+        if not (x.get("paragraphes") or x.get("puces")):
+            return "exemple : section vide"
+        total += len(str(x.get("titre") or "")) + len("".join((x.get("paragraphes") or []) + (x.get("puces") or [])))
+    return None if 300 <= total <= 30000 else "exemple : longueur"
+
+
+def controler_generateur(g):
+    pb = []
+    for k, mn, mx in (("titre", 10, 100), ("domaine", 3, 40), ("accroche", 20, 220), ("description", 150, 2500), ("consigne", 200, 6000)):
+        v = g.get(k)
+        if not isinstance(v, str) or not (mn <= len(v.strip()) <= mx):
+            pb.append(f"{k} : longueur hors de {mn}-{mx}")
+    if not isinstance(g.get("prix"), int) or not 500 <= g["prix"] <= 3000:
+        pb.append("prix entre 500 et 3000 F")
+    if not isinstance(g.get("points"), list) or not 3 <= len(g["points"]) <= 8:
+        pb.append("3 à 8 points forts")
+    if not isinstance(g.get("faq"), list) or not 2 <= len(g["faq"]) <= 6 or not all(isinstance(x, dict) and x.get("q") and x.get("r") for x in g["faq"]):
+        pb.append("2 à 6 questions-réponses {q, r}")
+    f = g.get("formulaire")
+    if not isinstance(f, list) or not 2 <= len(f) <= 12:
+        pb.append("formulaire : 2 à 12 champs")
+    else:
+        ids = set()
+        for c in f:
+            if not isinstance(c, dict) or not re.fullmatch(r"[a-z0-9_]{2,30}", str(c.get("id"))) or c.get("id") in ids:
+                pb.append("formulaire : identifiant invalide"); break
+            ids.add(c["id"])
+            if not isinstance(c.get("label"), str) or not 2 <= len(c["label"]) <= 120:
+                pb.append("formulaire : libellé invalide"); break
+            if c.get("type") not in ("texte", "paragraphe", "nombre", "choix", "date"):
+                pb.append("formulaire : type invalide"); break
+            if c["type"] == "choix" and not (isinstance(c.get("choix"), list) and 2 <= len(c["choix"]) <= 15 and all(isinstance(x, str) and len(x) <= 80 for x in c["choix"])):
+                pb.append("formulaire : choix invalides"); break
+        if not any(c.get("obligatoire") for c in f if isinstance(c, dict)):
+            pb.append("formulaire : au moins un champ obligatoire")
+    e = validation_document(g.get("exemple"))
+    if e:
+        pb.append(e)
+    texte = sans_acc(json.dumps(g, ensure_ascii=False))
+    if INTERDITS.search(texte):
+        pb.append("sujet interdit : " + INTERDITS.search(texte).group(0))
+    if re.search(r"\b(contrat|statuts?|procuration|religion|politique)\b", sans_acc(" ".join(str(g.get(k, "")) for k in ("titre", "accroche", "description")))):
+        pb.append("document officiel, juridique, religieux ou politique")
+    if re.search(r"https?://|www\.|@[a-z0-9-]+\.[a-z]{2,}|\b(?:\+?221)?\s?7[05678]\s?\d{3}\s?\d{2}\s?\d{2}\b", texte):
+        pb.append("lien, e-mail ou numéro de téléphone dans les textes")
+    return pb
+
+
+def appeler_modele_generateur(domaine, deja, essai=0):
+    return modele([
+        {"role": "system", "content": CONSIGNE_GEN},
+        {"role": "user", "content": f"Domaine : {domaine}.\nDocuments et outils déjà en vente (ne pas refaire) : {', '.join(deja[-80:]) or 'aucun'}.\nPropose UN document sur mesure nouveau, très utile, pour ce domaine. Réponds par le seul objet JSON."},
+    ], essai)
+
+
+def deposer_generateur(g):
+    produit = {k: g[k] for k in ("titre", "domaine", "accroche", "description", "points", "faq", "prix", "formulaire", "consigne", "exemple")}
+    produit["slug"] = g["slug"]
+    produit["controle"] = {"ok": True, "outil": "fabriquer.py", "le": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+    req = urllib.request.Request(API + "/depot-generateur", data=json.dumps({"produit": produit}).encode(), method="POST",
+                                 headers={"Content-Type": "application/json", "Authorization": "Bearer " + jeton_github()})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        return {"erreur": e.code, "detail": e.read().decode()[:300]}
 
 
 def jeton_github():
@@ -346,14 +437,15 @@ def jeton_github():
 
 
 def fiches_en_attente():
-    """Fiches écrites à l'avance (table tcv.boutique_fiches), lues avec le jeton OIDC de la tâche."""
+    """Fiches écrites à l'avance (table tcv.boutique_fiches) et titres de TOUS les produits (même masqués), jeton OIDC."""
     req = urllib.request.Request(API + "/fabrique/fiches", headers={"Authorization": "Bearer " + jeton_github()})
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
-            return json.load(r).get("fiches", [])
+            j = json.load(r)
+            return j.get("fiches", []), j.get("titres", [])
     except Exception as e:
         print(f"Fiches en attente illisibles : {e}")
-        return []
+        return [], []
 
 
 def deposer(fiche, chemin, apercu, fiche_id=None):
@@ -421,6 +513,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--nombre", type=int, default=5)
     ap.add_argument("--essais", type=int, default=3)
+    ap.add_argument("--generateurs", type=int, default=1, help="documents sur mesure à créer (modèle gratuit)")
     ap.add_argument("--fiches")
     ap.add_argument("--sortie")
     ap.add_argument("--sans-depot", action="store_true", help="essai : fiches du modèle construites et vérifiées, rien n'est déposé")
@@ -437,10 +530,11 @@ def main():
         print(json.dumps(rapport, ensure_ascii=False, indent=1))
         sys.exit(0 if all(x["ok"] for x in rapport) else 1)
     existants = catalogue()
-    deja = [p["titre"] for p in existants]
+    attente, titres = ([], []) if a.sans_depot else fiches_en_attente()
+    deja = list(dict.fromkeys([p["titre"] for p in existants] + titres))
     # 1. Fiches écrites à l'avance (en plus du quota du jour)
     fiches_ok = 0
-    for item in ([] if a.sans_depot else fiches_en_attente()):
+    for item in attente:
         fiche = item.get("fiche") or {}
         chemin, apercu, pb = fabriquer_une(fiche, dossier)
         if not chemin:
@@ -456,15 +550,24 @@ def main():
     random.seed(time.strftime("%Y-%m-%d"))
     random.shuffle(domaines)
     deposes = 0
+    echecs_modele = 0  # le service de modèles ne répond pas : inutile de parcourir tous les domaines
+    sans_cle = False
     for domaine in domaines:
-        if deposes >= a.nombre:
+        if deposes >= a.nombre or echecs_modele >= 4 or sans_cle:
             break
         for essai in range(1, a.essais + 1):
+            if echecs_modele >= 4:
+                rapport.append({"arret": "4 échecs de suite du service de modèles : arrêt pour aujourd'hui"}); break
             try:
-                fiche = appeler_modele(domaine, deja)
+                fiche = appeler_modele(domaine, deja, essai - 1)
+                echecs_modele = 0
+            except SansCle as e:
+                sans_cle = True
+                rapport.append({"arret": f"rédaction automatique pas encore activée par le propriétaire : {e}"[:300]}); break
             except Exception as e:
-                rapport.append({"domaine": domaine, "essai": essai, "erreur": f"modèle : {e}"[:400]})
-                print(f"[fabrique] {domaine} essai {essai} : {e}"[:400], flush=True)
+                echecs_modele += 1
+                rapport.append({"domaine": domaine, "essai": essai, "erreur": f"modèle : {e}"[:700]})
+                print(f"[fabrique] {domaine} essai {essai} : {e}"[:700], flush=True)
                 time.sleep(5)
                 continue
             fiche["slug"] = slugifier(fiche.get("titre", ""))
@@ -478,9 +581,47 @@ def main():
             if isinstance(res, dict) and res.get("statut") == "brouillon":
                 deposes += 1; deja.append(fiche["titre"])
             break
+    # 3. Documents sur mesure écrits par le modèle (masqués aux clients tant que la rédaction n'est pas activée)
+    gen_ok = 0
+    doms = DOMAINES_DOCS[:]
+    random.shuffle(doms)
+    for domaine in doms:
+        if gen_ok >= a.generateurs or sans_cle or echecs_modele >= 4:
+            break
+        for essai in range(1, a.essais + 1):
+            try:
+                g = appeler_modele_generateur(domaine, deja, essai - 1)
+                echecs_modele = 0
+            except SansCle as e:
+                sans_cle = True
+                rapport.append({"arret": f"rédaction automatique pas encore activée : {e}"[:300]}); break
+            except Exception as e:
+                echecs_modele += 1
+                rapport.append({"document": domaine, "essai": essai, "erreur": f"modèle : {e}"[:500]})
+                if echecs_modele >= 4:
+                    break
+                time.sleep(5); continue
+            if not isinstance(g, dict):
+                rapport.append({"document": domaine, "essai": essai, "erreur": "réponse sans objet"}); continue
+            for k in ("titre", "accroche", "description", "consigne"):
+                if isinstance(g.get(k), str):
+                    g[k] = re.sub(r"[ \t]+", " ", g[k]).strip()
+            pb = controler_generateur(g)
+            g["slug"] = slugifier(g.get("titre", ""))
+            if not pb and any(slugifier(t) == g["slug"] for t in deja):
+                pb = ["déjà en vente"]
+            if pb:
+                rapport.append({"document": domaine, "essai": essai, "titre": g.get("titre"), "problemes": pb[:6]}); continue
+            res = {"statut": "brouillon", "essai": True} if a.sans_depot else deposer_generateur(g)
+            rapport.append({"document": domaine, "essai": essai, "titre": g["titre"], "depot": res})
+            if isinstance(res, dict) and res.get("statut") == "brouillon":
+                gen_ok += 1; deja.append(g["titre"])
+            break
     print(json.dumps(rapport, ensure_ascii=False, indent=1))
-    print(f"Fiches déposées : {fiches_ok} · nouveaux outils déposés : {deposes}/{a.nombre}")
-    sys.exit(0 if (deposes or fiches_ok or a.nombre == 0) else 1)
+    print(f"Fiches déposées : {fiches_ok} · nouveaux outils déposés : {deposes}/{a.nombre} · documents sur mesure : {gen_ok}/{a.generateurs}")
+    if sans_cle:
+        print("Rédaction automatique pas encore activée : seules les fiches en attente ont été traitées (aucune erreur).")
+    sys.exit(0 if (deposes or fiches_ok or gen_ok or sans_cle or (a.nombre == 0 and a.generateurs == 0)) else 1)
 
 
 if __name__ == "__main__":

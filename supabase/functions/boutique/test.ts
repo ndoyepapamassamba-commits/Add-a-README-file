@@ -230,5 +230,31 @@ _oublierCaches();
 r = await traiter(req("GET", "/catalogue"), env);
 ok((await r.json()).produits.length === 2, "clé enregistrée : documents sur mesure visibles");
 
+// Fabrique : modèle de langue par le serveur (GitHub Models a fermé), modèles gratuits seulement
+reponses.boutique_admin = { produits: [{ titre: "Budget" }, { titre: "Annonce" }], totaux: {} };
+r = await traiter(req("GET", "/fabrique/fiches", undefined, { authorization: tj }), env);
+ok((await r.json()).titres.join() === "Budget,Annonce", "fiches : titres de tous les produits (même masqués) pour éviter les doublons");
+const MSG = { messages: [{ role: "system", content: "Tu écris des fiches." }, { role: "user", content: "Une fiche." }], json: true };
+r = await traiter(req("POST", "/fabrique/modele", MSG), env);
+ok(r.status === 401, "modèle pour la fabrique sans jeton GitHub : refusé");
+r = await traiter(req("POST", "/fabrique/modele", { messages: [{ role: "assistant", content: "x" }] }, { authorization: tj }), env);
+ok(r.status === 400, "modèle : messages invalides refusés");
+const vus: { m: string; a: string; f: any }[] = [];
+let echouerPremier = true;
+const envFab: Env = { ...env, modelesFabrique: ["payant/modele", "gratuit/a:free", "gratuit/b:free"], fetch: (async (url: string, init?: any) => {
+  if (url.includes("openrouter.ai/api/v1/chat")) { const c = JSON.parse(init.body); vus.push({ m: c.model, a: init.headers.authorization, f: c.response_format }); if (echouerPremier && vus.length === 1) return new Response("{}", { status: 429 }); return new Response(JSON.stringify({ choices: [{ message: { content: '{"titre":"ok"}' } }] }), { status: 200 }); }
+  return fauxFetch(url, init); }) as unknown as typeof fetch };
+r = await traiter(req("POST", "/fabrique/modele", MSG, { authorization: tj }), envFab);
+const mj = await r.json();
+ok(r.status === 200 && mj.contenu === '{"titre":"ok"}' && mj.modele === "gratuit/b:free" && vus.map((v) => v.m).join() === "gratuit/a:free,gratuit/b:free", "modèle : seuls les modèles gratuits sont appelés (jamais un payant), repli sur le suivant", { mj, vus });
+ok(vus.every((v) => v.a === "Bearer sk-or-v1-" + "a".repeat(40) && v.f && v.f.type === "json_object"), "modèle : clé du propriétaire côté serveur, format JSON demandé");
+vus.length = 0; echouerPremier = false;
+r = await traiter(req("POST", "/fabrique/modele", { ...MSG, depart: 1 }, { authorization: tj }), envFab);
+ok(r.status === 200 && vus[0].m === "gratuit/b:free", "modèle : « depart » fait tourner le premier modèle essayé", vus);
+reponses.boutique_reglages = { admin_key: reponses.boutique_reglages.admin_key, wave: reponses.boutique_reglages.wave };
+_oublierCaches();
+r = await traiter(req("POST", "/fabrique/modele", MSG, { authorization: tj }), envFab);
+ok(r.status === 503, "modèle : sans clé OpenRouter, refus clair (503)");
+
 console.log(`BILAN ${total - echecs}/${total}`);
 if (echecs) process.exit(1);
