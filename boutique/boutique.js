@@ -20,9 +20,13 @@
     var msg = $('#achat-msg'), btn = form.querySelector('button');
     msg.className = 'msg';
     if (!form.cgv.checked) { msg.className = 'msg erreur'; texte(msg, 'Cochez la case pour accepter les conditions de vente.'); return; }
+    var reponses = {};
+    form.querySelectorAll('[name^="r_"]').forEach(function (c) { if (String(c.value).trim()) reponses[c.name.slice(2)] = c.value; });
+    var manque = [].slice.call(form.querySelectorAll('[name^="r_"][required]')).filter(function (c) { return !String(c.value).trim(); })[0];
+    if (manque) { msg.className = 'msg erreur'; texte(msg, 'Champ à remplir : ' + (form.querySelector('label[for="' + manque.id + '"]') || {}).textContent); manque.focus(); return; }
     btn.disabled = true; texte(msg, 'Préparation de votre commande…');
     fetch(API + '/commandes', { method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ produit: form.dataset.produit, nom: form.nom.value, cgv: true, website: form.website.value }) })
+      body: JSON.stringify({ produit: form.dataset.produit, nom: form.nom.value, cgv: true, website: form.website.value, reponses: form.dataset.type === 'generateur' ? reponses : undefined }) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (x) {
         if (!x.ok) throw new Error(x.j && x.j.message || 'Commande impossible pour le moment.');
@@ -42,6 +46,33 @@
       var c = j.commande;
       texte($('#titre-produit'), c.produit.titre);
       if (c.purgee) { zone.innerHTML = '<p class="paiement">Cette commande est expirée : les téléchargements restent ouverts 30 jours après le paiement.</p>'; return; }
+      if (c.payee && c.produit.type === 'generateur') {
+        $('#attente').hidden = true; $('#payee').hidden = false;
+        if (!c.document) { texte($('#payee-texte'), ''); $('#redaction').hidden = false; return; }
+        clearInterval(minuteur);
+        $('#redaction').hidden = true; $('#document-zone').hidden = false;
+        texte($('#payee-texte'), 'Votre document est prêt : lisez-le ci-dessous, copiez-le ou téléchargez-le en Word.');
+        var d = c.document, z = $('#document'); z.textContent = '';
+        var bloc = document.createElement('div'); bloc.className = 'document';
+        var h = document.createElement('h3'); h.textContent = d.titre; bloc.appendChild(h);
+        var plain = [d.titre, ''];
+        d.sections.forEach(function (s) {
+          if (s.titre) { var t = document.createElement('h4'); t.textContent = s.titre; bloc.appendChild(t); plain.push(s.titre); }
+          (s.paragraphes || []).forEach(function (x) { var pe = document.createElement('p'); pe.textContent = x; bloc.appendChild(pe); plain.push(x); });
+          if ((s.puces || []).length) { var ul = document.createElement('ul'); s.puces.forEach(function (x) { var li = document.createElement('li'); li.textContent = x; ul.appendChild(li); plain.push('• ' + x); }); bloc.appendChild(ul); }
+          plain.push('');
+        });
+        z.appendChild(bloc);
+        $('#copier-document').onclick = function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(plain.join('\n')) : Promise.reject()).then(function () { b.textContent = 'Copié'; setTimeout(function () { b.textContent = 'Copier le texte'; }, 1500); }).catch(function () {}); };
+        var l = $('#fichiers'); l.textContent = '';
+        var a = document.createElement('a');
+        a.href = API + '/commandes/' + encodeURIComponent(c.id) + '/fichiers/document.docx?t=' + encodeURIComponent(t);
+        var n = document.createElement('span'); n.textContent = (c.produit.slug || 'document') + '.docx';
+        var sp = document.createElement('span'); sp.textContent = 'Télécharger (Word)';
+        a.append(n, sp); l.appendChild(a);
+        if (c.telechargeable_jusqu_au) texte($('#jusqu'), new Date(c.telechargeable_jusqu_au).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }));
+        return;
+      }
       if (c.payee) {
         clearInterval(minuteur);
         $('#attente').hidden = true; $('#payee').hidden = false;

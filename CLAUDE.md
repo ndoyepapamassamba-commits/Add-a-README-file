@@ -42,7 +42,7 @@ livrés automatiquement. Spécification complète : `supabase/SPEC.md`. Guide du
 - Référencement : après chaque publication, `node scripts/indexnow.mjs` signale toutes les URL de `cv/sitemap.xml` à IndexNow (Bing, Yandex…) ; la clé publique est dans `cv/ebb4ea75c352a571bd0b205056c2b276.txt`.
 - Tests : `deno test -A supabase/functions/api/tests/` et `cd e2e && node flow.mjs`.
 
-## Teranga Outils (boutique d'outils Excel, gérée de bout en bout)
+## Teranga Outils (boutique d'outils Excel et de documents sur mesure, gérée de bout en bout)
 
 - Pages : dossier `boutique/`, régénérées par `scripts/boutique/pages.mjs` depuis le catalogue public (workflow
   « Boutique pages » de la branche par défaut, toutes les 3 h et après chaque fabrique ; IndexNow pour les pages changées).
@@ -56,3 +56,10 @@ livrés automatiquement. Spécification complète : `supabase/SPEC.md`. Guide du
   `bt_<id>`) : montant unique et détection du paiement par le téléphone via la fonction `api`, inchangée. Fichiers dans
   `tcv.course_assets` sous `bt/<id>/`. Migrations `20261102000008_boutique.sql` et `20261102000009_boutique_fiches.sql`.
 - Les fiches des produits (le contenu payant) ne sont jamais committées : elles vivent dans la base.
+- Documents sur mesure (produits `type = 'generateur'`) : le client remplit un formulaire (réponses dans
+  `orders.input`), paie par Wave, puis la fonction rédige le document par OpenRouter à la lecture de la commande
+  (`boutique_generation_reserver` / `_enregistrer`, verrou de 3 min) et le livre à l'écran et en Word (.docx construit
+  sans bibliothèque). La consigne de rédaction reste privée (jamais dans `boutique_json`). Clé : secret
+  `OPENROUTER_API_KEY` de la fonction, sinon clé du propriétaire enregistrée depuis son application (`POST /admin/ia`,
+  `tcv.settings` `BOUTIQUE_OPENROUTER_KEY`, jamais renvoyée). Sans clé, les générateurs sont masqués du catalogue et
+  refusés (503). Migrations `20261102000010_boutique_generateurs.sql` et `20261102000011_boutique_cle_ia.sql`.
