@@ -307,14 +307,22 @@ def appeler_modele(domaine, deja):
     erreurs = []
     for modele in MODELES:
         for format_json in (True, False):
-            corps = {"model": modele, "temperature": 0.8, "max_tokens": 6000, "messages": messages}
+            # GitHub Models (offre gratuite) : 4 000 jetons de sortie au plus par requête
+            corps = {"model": modele, "temperature": 0.8, "max_tokens": 4000, "messages": messages}
             if format_json:
                 corps["response_format"] = {"type": "json_object"}
             req = urllib.request.Request(MODELES_URL, data=json.dumps(corps).encode(), method="POST",
-                                         headers={"Content-Type": "application/json", "Authorization": "Bearer " + os.environ.get("GITHUB_TOKEN", "")})
+                                         headers={"Content-Type": "application/json", "Accept": "application/vnd.github+json",
+                                                  "X-GitHub-Api-Version": "2022-11-28", "Accept-Encoding": "identity",
+                                                  "Authorization": "Bearer " + os.environ.get("GITHUB_TOKEN", "")})
             try:
                 with urllib.request.urlopen(req, timeout=180) as r:
-                    rep = json.load(r)
+                    brut, statut, genre = r.read(), r.status, r.headers.get("Content-Type", "")
+                try:
+                    rep = json.loads(brut.decode("utf-8", errors="replace"))
+                except ValueError:
+                    erreurs.append(f"{modele} : HTTP {statut} {genre} réponse illisible ({len(brut)} octets) : {brut[:160]!r}")
+                    continue
                 contenu = ((rep.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
                 if not contenu.strip():
                     erreurs.append(f"{modele} : réponse vide"); continue
