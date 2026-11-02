@@ -34,7 +34,9 @@
   <p style="font-size:14px;color:var(--muted)">Montant réservé pour vous pendant 72 heures. Le numéro Wave est celui du vendeur : vérifiez-le avant d'envoyer.</p>
 </div>
 <div id="payee" hidden>
-  <p class="paiement"><strong>Paiement reçu, merci !</strong> Téléchargez vos fichiers ci-dessous.</p>
+  <p class="paiement"><strong>Paiement reçu, merci !</strong> <span id="payee-texte">Téléchargez vos fichiers ci-dessous.</span></p>
+  <p id="redaction" hidden>Votre document est en cours de rédaction : il s'affiche ici dans une minute environ, sans recharger la page.</p>
+  <div id="document-zone" hidden><div id="document"></div><p><button class="btn secondaire" type="button" id="copier-document">Copier le texte</button></p></div>
   <div class="fichiers" id="fichiers"></div>
   <p>Vos téléchargements restent ouverts jusqu'au <strong id="jusqu">…</strong>. Gardez le lien de cette page.</p>
 </div>
