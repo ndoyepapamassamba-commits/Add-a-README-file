@@ -41,3 +41,18 @@ livrés automatiquement. Spécification complète : `supabase/SPEC.md`. Guide du
   Le propriétaire a confirmé (22/10/2026) que son contrat lui permet cette activité.
 - Référencement : après chaque publication, `node scripts/indexnow.mjs` signale toutes les URL de `cv/sitemap.xml` à IndexNow (Bing, Yandex…) ; la clé publique est dans `cv/ebb4ea75c352a571bd0b205056c2b276.txt`.
 - Tests : `deno test -A supabase/functions/api/tests/` et `cd e2e && node flow.mjs`.
+
+## Teranga Outils (boutique d'outils Excel, gérée de bout en bout)
+
+- Pages : dossier `boutique/`, régénérées par `scripts/boutique/pages.mjs` depuis le catalogue public (workflow
+  « Boutique pages » de la branche par défaut, toutes les 3 h et après chaque fabrique ; IndexNow pour les pages changées).
+- Fabrique : `scripts/boutique/fabriquer.py` (workflow « Boutique fabrique », chaque nuit) lit d'abord les fiches en
+  attente (`tcv.boutique_fiches`), puis fait écrire de nouvelles fiches par GitHub Models (gratuit, jeton de la tâche) ;
+  chaque classeur est construit (openpyxl), recalculé par LibreOffice et contrôlé avant dépôt. Dépôt authentifié par le
+  jeton OIDC de GitHub Actions (aucun secret). Publication tacite 24 h après le dépôt (tâche pg_cron
+  `boutique-publication`, 5 par jour au plus), sauf refus du propriétaire (`/admin/decider`).
+- Fonction Edge `boutique` (`supabase/functions/boutique/index.ts`, fichier unique, tests :
+  `node --experimental-strip-types supabase/functions/boutique/test.ts`). Commandes dans `tcv.orders` (produit
+  `bt_<id>`) : montant unique et détection du paiement par le téléphone via la fonction `api`, inchangée. Fichiers dans
+  `tcv.course_assets` sous `bt/<id>/`. Migrations `20261102000008_boutique.sql` et `20261102000009_boutique_fiches.sql`.
+- Les fiches des produits (le contenu payant) ne sont jamais committées : elles vivent dans la base.

@@ -1,0 +1,80 @@
+// Teranga Outils — achat (page produit), paiement Wave au montant exact, téléchargement (commande.html), recherche (index)
+(function () {
+  'use strict';
+  var API = 'https://seegnylaubuularegmku.supabase.co/functions/v1/boutique';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var fcfa = function (n) { return Number(n || 0).toLocaleString('fr-FR').replace(/ | /g, ' ') + ' F'; };
+  function texte(el, t) { if (el) el.textContent = t; }
+
+  // Recherche dans le catalogue
+  var rech = $('#recherche');
+  if (rech) rech.addEventListener('input', function () {
+    var q = rech.value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    document.querySelectorAll('.carte').forEach(function (c) { c.hidden = q && c.dataset.cherche.indexOf(q) < 0; });
+  });
+
+  // Page produit : commande
+  var form = $('#achat');
+  if (form) form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var msg = $('#achat-msg'), btn = form.querySelector('button');
+    msg.className = 'msg';
+    if (!form.cgv.checked) { msg.className = 'msg erreur'; texte(msg, 'Cochez la case pour accepter les conditions de vente.'); return; }
+    btn.disabled = true; texte(msg, 'Préparation de votre commande…');
+    fetch(API + '/commandes', { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ produit: form.dataset.produit, nom: form.nom.value, cgv: true, website: form.website.value }) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (x) {
+        if (!x.ok) throw new Error(x.j && x.j.message || 'Commande impossible pour le moment.');
+        var c = x.j.commande;
+        try { localStorage.setItem('teranga-outils-' + c.id, c.jeton); } catch (err) { /* navigation privée */ }
+        location.href = 'commande.html?o=' + encodeURIComponent(c.id) + '&t=' + encodeURIComponent(c.jeton);
+      })
+      .catch(function (err) { msg.className = 'msg erreur'; texte(msg, err.message); btn.disabled = false; });
+  });
+
+  // Page commande : montant à envoyer, attente du paiement, téléchargements
+  var zone = $('#commande');
+  if (zone) {
+    var p = new URLSearchParams(location.search), id = p.get('o') || '', t = p.get('t') || '';
+    var minuteur = 0, essais = 0;
+    var afficher = function (j) {
+      var c = j.commande;
+      texte($('#titre-produit'), c.produit.titre);
+      if (c.purgee) { zone.innerHTML = '<p class="paiement">Cette commande est expirée : les téléchargements restent ouverts 30 jours après le paiement.</p>'; return; }
+      if (c.payee) {
+        clearInterval(minuteur);
+        $('#attente').hidden = true; $('#payee').hidden = false;
+        var l = $('#fichiers'); l.textContent = '';
+        c.fichiers.forEach(function (f) {
+          var a = document.createElement('a');
+          a.href = API + '/commandes/' + encodeURIComponent(c.id) + '/fichiers/' + encodeURIComponent(f.nom) + '?t=' + encodeURIComponent(t);
+          a.setAttribute('download', f.nom);
+          var n = document.createElement('span'); n.textContent = f.nom;
+          var s = document.createElement('span'); s.textContent = 'Télécharger (' + Math.max(1, Math.round(f.taille / 1024)) + ' Ko)';
+          a.append(n, s); l.appendChild(a);
+        });
+        if (c.telechargeable_jusqu_au) texte($('#jusqu'), new Date(c.telechargeable_jusqu_au).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }));
+        return;
+      }
+      $('#attente').hidden = false;
+      texte($('#montant'), fcfa(c.montant));
+      texte($('#numero'), j.wave || 'le numéro Wave du vendeur');
+      $('#exact').hidden = c.montant === c.prix;
+    };
+    var lire = function () {
+      fetch(API + '/commandes/' + encodeURIComponent(id) + '?t=' + encodeURIComponent(t))
+        .then(function (r) { if (!r.ok) throw new Error('introuvable'); return r.json(); })
+        .then(afficher)
+        .catch(function () { if (++essais > 2) { clearInterval(minuteur); zone.innerHTML = '<p class="paiement">Commande introuvable. Vérifiez le lien reçu après votre commande.</p>'; } });
+    };
+    if (!/^TCV-[0-9A-Z]{8}$/.test(id) || t.length < 20) zone.innerHTML = '<p class="paiement">Lien de commande incomplet.</p>';
+    else { lire(); minuteur = setInterval(lire, 10000); }
+    document.querySelectorAll('[data-copier]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var v = b.dataset.copier === 'lien' ? location.href : ($('#' + b.dataset.copier).textContent || '').replace(/[^\d]/g, '');
+        (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(function () { var o = b.textContent; b.textContent = 'Copié'; setTimeout(function () { b.textContent = o; }, 1500); }).catch(function () {});
+      });
+    });
+  }
+})();
