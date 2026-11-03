@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analyse des journaux de plantage de votre application : groupes, causes et pistes | Teranga Outils</title>
+<meta name="description" content="Collez vos journaux de plantage : recevez les plantages regroupés, un extrait pour chacun, les versions et appareils touchés, des causes probables appuyées sur les lignes du journal et les prochaines étapes.">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/boutique/analyse-journaux-plantage-application.html">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0b6e4f">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Teranga Outils">
+<meta property="og:title" content="Analyse des journaux de plantage de votre application : groupes, causes et pistes | Teranga Outils">
+<meta property="og:description" content="Collez vos journaux de plantage : recevez les plantages regroupés, un extrait pour chacun, les versions et appareils touchés, des causes probables appuyées sur les lignes du journal et les prochaines étapes.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/boutique/analyse-journaux-plantage-application.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b6e4f'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='15' font-weight='700' fill='white' text-anchor='middle'%3EXL%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="boutique.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icone-apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TERANGA">
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Product","name":"Analyse des journaux de plantage de votre application : groupes, causes et pistes","description":"Collez vos journaux de plantage : recevez les plantages regroupés, un extrait pour chacun, les versions et appareils touchés, des causes probables appuyées sur les lignes du journal et les prochaines étapes.","category":"Développement d'applications","brand":{"@type":"Brand","name":"Teranga Outils"},"url":"https://ndoyepapamassamba-commits.github.io/Add-a-README-file/boutique/analyse-journaux-plantage-application.html","offers":{"@type":"Offer","price":"3000","priceCurrency":"XOF","availability":"https://schema.org/InStock","url":"https://ndoyepapamassamba-commits.github.io/Add-a-README-file/boutique/analyse-journaux-plantage-application.html"}},{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quels journaux sont acceptés ?","acceptedAnswer":{"@type":"Answer","text":"Tout journal texte : logcat Android, rapports de plantage iOS symbolisés, traces de pile Java, Kotlin, Swift, Dart, JavaScript ou Python, journaux de serveur. Jusqu'à environ 15 000 caractères par commande."}},{"@type":"Question","name":"Mon code source est-il nécessaire ?","acceptedAnswer":{"@type":"Answer","text":"Non. L'analyse se fonde sur les journaux. Vous pouvez coller dans le contexte un court extrait de la fonction en cause pour affiner les hypothèses."}},{"@type":"Question","name":"Que dois-je retirer des journaux ?","acceptedAnswer":{"@type":"Answer","text":"Les jetons d'accès, clés d'API, mots de passe, adresses électroniques, numéros de téléphone et identifiants d'utilisateurs. Remplacez-les par [masqué]."}}]}]</script>
+</head>
+<body>
+<header class="top"><a class="brand" href="./">Teranga <b>Outils</b></a><span><a class="lien" href="./">Tous les outils</a> · <a class="lien" href="mes-commandes.html">Mes commandes</a> · <a class="lien" href="guides.html">Guides</a></span></header>
+<div class="installer" id="installer" hidden><span>Installez l'application TERANGA sur votre téléphone.</span> <button class="btn" type="button" id="installer-btn">Installer</button></div>
+<main>
+<p class="crumbs"><a href="./">Teranga Outils</a> › Développement d&#39;applications</p>
+<span class="etiquette">Développement d&#39;applications · sur mesure</span>
+<h1>Analyse des journaux de plantage de votre application : groupes, causes et pistes</h1>
+<p class="lead">Collez vos journaux de plantage : recevez les plantages regroupés, un extrait pour chacun, les versions et appareils touchés, des causes probables appuyées sur les lignes du journal et les prochaines étapes.</p>
+<p class="prix">3 000 F</p>
+<form class="achat" id="achat" data-produit="bt_analyse_journaux_plantage_application" data-type="generateur" novalidate>
+  <strong>Répondez aux questions : votre document est rédigé dès votre paiement Wave</strong>
+  <div class="formulaire"><label for="r_journaux">Journaux de plantage (retirez jetons, clés, mots de passe et données personnelles) *</label><textarea id="r_journaux" name="r_journaux" rows="4" maxlength="15000" required></textarea>
+<label for="r_plateforme">Plateforme *</label><select id="r_plateforme" name="r_plateforme" required><option value="">Choisir…</option><option>Android</option><option>iOS</option><option>Web (navigateur)</option><option>Application de bureau</option><option>Serveur ou API</option><option>Plusieurs plateformes</option></select>
+<label for="r_technologie">Langage ou cadre de développement (ex. : Kotlin, Flutter, React Native) (facultatif)</label><input type="text" id="r_technologie" name="r_technologie" maxlength="100">
+<label for="r_contexte">Contexte : changements récents, version publiée, comportement observé (facultatif)</label><textarea id="r_contexte" name="r_contexte" rows="4" maxlength="3000"></textarea></div>
+  <label for="nom">Votre nom</label>
+  <input type="text" id="nom" name="nom" autocomplete="name" required maxlength="80" placeholder="Ex. : Awa Ndiaye">
+  <div class="hp" aria-hidden="true"><label>Laissez vide <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+  <label class="cgv"><input type="checkbox" name="cgv"> <span>J'accepte les <a href="cgv.html" target="_blank" rel="noopener">conditions de vente</a> : fichier numérique livré dès le paiement.</span></label>
+  <p><button class="btn" type="submit">Commander — 3 000 F</button></p>
+  <p class="msg" id="achat-msg" role="status" aria-live="polite"></p>
+  <p style="font-size:14px;color:var(--muted);margin:0">Paiement par Wave au montant exact affiché à l'étape suivante. Aucun compte à créer.</p>
+</form>
+<h2>Ce que vous recevez</h2>
+<p>Développeurs mobiles et web, petites équipes, agences : des centaines de lignes de journaux après un plantage, c&#39;est difficile à trier. Collez vos journaux (logcat Android, rapports de plantage iOS, traces de pile, journaux de serveur), indiquez la plateforme, le langage ou le cadre de développement, et ce qui a changé récemment. Vous recevez les plantages regroupés par signature (type d&#39;erreur et première ligne de votre code), avec le nombre d&#39;occurrences compté exactement, un extrait représentatif recopié tel quel, les versions de l&#39;application, les systèmes et les appareils concernés tels qu&#39;ils figurent dans les journaux, les causes probables présentées comme des hypothèses appuyées sur des lignes précises, et les prochaines étapes de débogage (reproduction, journalisation à ajouter, correctifs à tester). Rien n&#39;est inventé : ni fichier, ni ligne de code, ni version. Retirez des journaux les jetons, clés, mots de passe et données personnelles des utilisateurs avant de les coller.</p>
+<ul class="points"><li>Plantages regroupés par signature, occurrences comptées</li><li>Extrait représentatif recopié tel quel pour chaque groupe</li><li>Versions, systèmes et appareils tirés des journaux</li><li>Causes probables appuyées sur des lignes précises</li><li>Prochaines étapes de débogage concrètes</li></ul>
+<h2>Exemple de document rédigé</h2>
+<p style="color:var(--muted);font-size:15px">Exemple obtenu avec des réponses fictives. Votre document est rédigé à partir de vos propres réponses.</p>
+<div class="document"><h3>Analyse des plantages – Android</h3><h4>Synthèse</h4><ul><li>4 plantages dans les journaux collés, répartis en 2 groupes.</li><li>Période : du 10-14 08:12:33 au 10-14 19:40:02 (année non indiquée dans les journaux).</li><li>Groupe prioritaire : groupe 1 (3 plantages, version 2.4.1).</li></ul><h4>Groupe 1 – NullPointerException dans PaiementActivity.onResume</h4><ul><li>Occurrences : 3.</li><li>Versions et appareils : version 2.4.1 ; Android 13 ; Tecno Spark 10 (2 fois), Samsung SM-A145F (1 fois).</li><li>Horodatages : premier 10-14 08:12:33.512, dernier 10-14 19:40:02.087.</li><li>&gt; FATAL EXCEPTION: main</li><li>&gt; java.lang.NullPointerException: Attempt to invoke virtual method &#39;int com.exemple.boutique.Panier.getTotal()&#39; on a null object reference</li><li>&gt; at com.exemple.boutique.PaiementActivity.onResume(PaiementActivity.kt:88)</li><li>Hypothèse : le panier n&#39;est pas encore chargé quand l&#39;écran de paiement revient au premier plan, par exemple au retour depuis une autre application. Ligne d&#39;appui : PaiementActivity.kt:88.</li><li>Pour confirmer : quitter puis rouvrir l&#39;écran de paiement sur la version 2.4.1, en journalisant l&#39;état du panier dans onResume.</li></ul><h4>Groupe 2 – SocketTimeoutException dans Catalogue.charger</h4><ul><li>Occurrences : 1.</li><li>Versions et appareils : version 2.4.0 ; Android 12 ; appareil non indiqué dans les journaux.</li><li>Horodatages : 10-14 11:05:47.230.</li><li>&gt; java.net.SocketTimeoutException: timeout</li><li>&gt; at com.exemple.boutique.api.Catalogue.charger(Catalogue.kt:41)</li><li>Hypothèse : l&#39;expiration du délai réseau n&#39;est pas interceptée. Ligne d&#39;appui : Catalogue.kt:41.</li><li>Pour confirmer : charger le catalogue avec une connexion lente ou coupée.</li></ul><h4>Lignes non rattachées</h4><ul><li>W/Glide: Load failed (5 lignes) : images non chargées, sans plantage.</li></ul><h4>Prochaines étapes</h4><ul><li>Haute : vérifier que le panier est chargé avant de l&#39;utiliser dans onResume, puis tester sur la version 2.4.1.</li><li>Moyenne : intercepter les erreurs réseau dans Catalogue.charger et proposer de réessayer.</li><li>Faible : vérifier si la version 2.4.0 est encore utilisée.</li></ul><h4>Limites</h4><p>Les journaux ne disent ni combien d&#39;utilisateurs sont touchés, ni ce qu&#39;ils faisaient juste avant le plantage.</p></div>
+<h2>Questions fréquentes</h2>
+<details><summary>Quels journaux sont acceptés ?</summary><p>Tout journal texte : logcat Android, rapports de plantage iOS symbolisés, traces de pile Java, Kotlin, Swift, Dart, JavaScript ou Python, journaux de serveur. Jusqu&#39;à environ 15 000 caractères par commande.</p></details>
+<details><summary>Mon code source est-il nécessaire ?</summary><p>Non. L&#39;analyse se fonde sur les journaux. Vous pouvez coller dans le contexte un court extrait de la fonction en cause pour affiner les hypothèses.</p></details>
+<details><summary>Que dois-je retirer des journaux ?</summary><p>Les jetons d&#39;accès, clés d&#39;API, mots de passe, adresses électroniques, numéros de téléphone et identifiants d&#39;utilisateurs. Remplacez-les par [masqué].</p></details>
+
+<p style="margin-top:1.5em">Vous recevez le texte à l'écran et un fichier Word (.docx) modifiable, qui s'ouvre aussi sur téléphone. Relisez-le et adaptez-le avant de l'utiliser.</p>
+</main>
+<footer>
+<p>Teranga Outils · outils Excel prêts à l'emploi, payés par Wave et livrés tout de suite. Vendeur : particulier au Sénégal.</p>
+<p><a href="cgv.html">Conditions de vente</a> · <a href="../cv/">Teranga CV</a> · <a href="../formation/">Teranga Pro</a></p>
+</footer>
+<script src="boutique.js" defer></script>
+</body>
+</html>
