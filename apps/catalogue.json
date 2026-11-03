@@ -597,11 +597,22 @@
     },
     {
       "dossier": "chantier",
-      "nom": "Chantier",
-      "accroche": "",
+      "nom": "Chantier Clair",
+      "accroche": "Suivez la construction de votre maison à distance : avancement en photos, dépenses avec les reçus, argent envoyé, écarts signalés et rapport PDF. Liens pour le chef de chantier et un témoin.",
       "icone": "chantier/icons/icon-192.png",
-      "passes": [],
-      "pret": false
+      "passes": [
+        {
+          "slug": "pass-chantier-clair-12-mois",
+          "prix": 5000,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "lien_direct": false,
+      "serveur": true,
+      "hors_ligne": false,
+      "ecran_pass_url": "#/pass"
     },
     {
       "dossier": "trace",

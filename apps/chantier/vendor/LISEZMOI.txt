@@ -1,0 +1,6 @@
+Bibliothèque incluse dans Chantier Clair (copie locale, rien n'est chargé depuis Internet)
+
+jspdf.umd.min.js   jsPDF 4.2.1 (npm « jspdf », dist/jspdf.umd.min.js)   Licence MIT   jspdf.LICENSE.txt
+
+Fichier repris tel quel (même copie que les autres applications Teranga) ; seule la ligne finale « sourceMappingURL » a été retirée.
+Il n'est chargé qu'au moment de créer un rapport PDF.
