@@ -13,6 +13,29 @@
     document.querySelectorAll('.carte').forEach(function (c) { c.hidden = q && c.dataset.cherche.indexOf(q) < 0; });
   });
 
+  // Photo du client (services de retouche) : réduite à 1600 px dans son navigateur avant l'envoi
+  function photoReduite(fichier) {
+    return new Promise(function (ok, ko) {
+      if (!/^image\/(jpeg|png|webp|heic|heif)?/.test(fichier.type || 'image/')) return ko(new Error('Choisissez une photo (JPEG ou PNG).'));
+      var url = URL.createObjectURL(fichier), img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        ok(c.toDataURL('image/jpeg', 0.86));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); ko(new Error('Photo illisible : essayez une autre photo (JPEG ou PNG).')); };
+      img.src = url;
+    });
+  }
+  document.querySelectorAll('input[type="file"][data-photo]').forEach(function (inp) {
+    inp.addEventListener('change', function () {
+      var ap = document.getElementById(inp.id + '-apercu'); if (!ap) return;
+      ap.textContent = '';
+      if (inp.files && inp.files[0]) { var im = document.createElement('img'); im.alt = 'Votre photo'; im.src = URL.createObjectURL(inp.files[0]); ap.appendChild(im); }
+    });
+  });
+
   // Page produit : commande
   var form = $('#achat');
   if (form) form.addEventListener('submit', function (e) {
@@ -20,13 +43,20 @@
     var msg = $('#achat-msg'), btn = form.querySelector('button');
     msg.className = 'msg';
     if (!form.cgv.checked) { msg.className = 'msg erreur'; texte(msg, 'Cochez la case pour accepter les conditions de vente.'); return; }
-    var reponses = {};
-    form.querySelectorAll('[name^="r_"]').forEach(function (c) { if (String(c.value).trim()) reponses[c.name.slice(2)] = c.value; });
+    var reponses = {}, photos = [];
+    form.querySelectorAll('[name^="r_"]').forEach(function (c) {
+      if (c.type === 'file') { if (c.files && c.files[0]) photos.push({ id: c.name.slice(2), fichier: c.files[0] }); return; }
+      if (String(c.value).trim()) reponses[c.name.slice(2)] = c.value;
+    });
     var manque = [].slice.call(form.querySelectorAll('[name^="r_"][required]')).filter(function (c) { return !String(c.value).trim(); })[0];
     if (manque) { msg.className = 'msg erreur'; texte(msg, 'Champ à remplir : ' + (form.querySelector('label[for="' + manque.id + '"]') || {}).textContent); manque.focus(); return; }
-    btn.disabled = true; texte(msg, 'Préparation de votre commande…');
-    fetch(API + '/commandes', { method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ produit: form.dataset.produit, nom: form.nom.value, cgv: true, website: form.website.value, reponses: form.dataset.type === 'generateur' ? reponses : undefined }) })
+    btn.disabled = true; texte(msg, photos.length ? 'Préparation de votre photo…' : 'Préparation de votre commande…');
+    Promise.all(photos.map(function (p) { return photoReduite(p.fichier).then(function (u) { reponses[p.id] = u; }); }))
+      .then(function () {
+        texte(msg, 'Préparation de votre commande…');
+        return fetch(API + '/commandes', { method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ produit: form.dataset.produit, nom: form.nom.value, cgv: true, website: form.website.value, reponses: form.dataset.type === 'generateur' ? reponses : undefined }) });
+      })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (x) {
         if (!x.ok) throw new Error(x.j && x.j.message || 'Commande impossible pour le moment.');
@@ -62,6 +92,20 @@
           if ((s.puces || []).length) { var ul = document.createElement('ul'); s.puces.forEach(function (x) { var li = document.createElement('li'); li.textContent = x; ul.appendChild(li); plain.push('• ' + x); }); bloc.appendChild(ul); }
           plain.push('');
         });
+        if ((d.images || []).length) {
+          var gal = document.createElement('div'); gal.className = 'galerie';
+          d.images.forEach(function (im) {
+            var u = API + '/commandes/' + encodeURIComponent(c.id) + '/fichiers/' + encodeURIComponent(im.nom) + '?t=' + encodeURIComponent(t);
+            var fig = document.createElement('figure');
+            var img = document.createElement('img'); img.src = u; img.alt = 'Votre affiche (' + im.format + ')'; img.loading = 'lazy';
+            var cap = document.createElement('figcaption');
+            var dl = document.createElement('a'); dl.href = u; dl.className = 'btn secondaire'; dl.setAttribute('download', im.nom);
+            dl.textContent = 'Télécharger (' + (im.format === '9:16' ? 'format statut' : im.format === '1:1' ? 'format carré' : im.format) + ')';
+            cap.appendChild(dl); fig.append(img, cap); gal.appendChild(fig);
+          });
+          z.appendChild(gal);
+          texte($('#payee-texte'), 'Vos affiches sont prêtes : téléchargez-les ci-dessous, avec les textes à publier.');
+        }
         z.appendChild(bloc);
         $('#copier-document').onclick = function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(plain.join('\n')) : Promise.reject()).then(function () { b.textContent = 'Copié'; setTimeout(function () { b.textContent = 'Copier le texte'; }, 1500); }).catch(function () {}); };
         var l = $('#fichiers'); l.textContent = '';

@@ -428,7 +428,7 @@ def controler_generateur(g):
     texte = sans_acc(json.dumps(g, ensure_ascii=False))
     if INTERDITS.search(texte):
         pb.append("sujet interdit : " + INTERDITS.search(texte).group(0))
-    if re.search(r"\b(contrat|statuts?|procuration|religion|politique)\b", sans_acc(" ".join(str(g.get(k, "")) for k in ("titre", "accroche", "description")))):
+    if re.search(r"\b(contrat|procuration|religion|politique)\b|\bstatuts\b(?!\s+whatsapp)", sans_acc(" ".join(str(g.get(k, "")) for k in ("titre", "accroche", "description")))):
         pb.append("document officiel, juridique, religieux ou politique")
     if re.search(r"https?://|www\.|@[a-z0-9-]+\.[a-z]{2,}|\b(?:\+?221)?\s?7[05678]\s?\d{3}\s?\d{2}\s?\d{2}\b", texte):
         pb.append("lien, e-mail ou numéro de téléphone dans les textes")

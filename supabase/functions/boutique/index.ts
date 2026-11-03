@@ -15,7 +15,7 @@ const MAX_JSON = 16 * 1024;
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const enc = new TextEncoder();
 
-export interface Env { url: string; cle: string; fetch: typeof fetch; now: () => Date; openrouter?: string; modeles?: string[]; modelesFabrique?: string[]; modelesPayantsFabrique?: string[] }
+export interface Env { url: string; cle: string; fetch: typeof fetch; now: () => Date; openrouter?: string; modeles?: string[]; modelesFabrique?: string[]; modelesPayantsFabrique?: string[]; modelesImage?: string[] }
 
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -137,18 +137,29 @@ export function validerFormulaire(f: any): string | null {
     if (!c || typeof c !== "object" || !/^[a-z0-9_]{2,30}$/.test(String(c.id)) || ids.has(c.id)) return "formulaire : identifiant de champ invalide";
     ids.add(c.id);
     if (typeof c.label !== "string" || c.label.length < 2 || c.label.length > 120) return "formulaire : libellé invalide";
-    if (!["texte", "paragraphe", "nombre", "choix", "date"].includes(c.type)) return "formulaire : type de champ invalide";
+    if (!["texte", "paragraphe", "nombre", "choix", "date", "image"].includes(c.type)) return "formulaire : type de champ invalide";
     if (c.type === "choix" && !(Array.isArray(c.choix) && c.choix.length >= 2 && c.choix.length <= 15 && c.choix.every((x: any) => typeof x === "string" && x.length <= 80))) return "formulaire : choix invalides";
   }
+  if (f.filter((c: any) => c.type === "image").length > 3) return "formulaire : 3 photos au plus";
   return null;
 }
-export function validerReponses(formulaire: any[], r: any): { ok: true; reponses: Record<string, string | number> } | { ok: false; message: string } {
+export type PhotoClient = { id: string; nom: string; mime: string; b64: string };
+export function validerReponses(formulaire: any[], r: any): { ok: true; reponses: Record<string, string | number>; photos: PhotoClient[] } | { ok: false; message: string } {
   const src = r && typeof r === "object" && !Array.isArray(r) ? r : {};
   const out: Record<string, string | number> = {};
+  const photos: PhotoClient[] = [];
   for (const c of formulaire) {
     let v = src[c.id];
     const vide = v === undefined || v === null || String(v).trim() === "";
     if (vide) { if (c.obligatoire) return { ok: false, message: `Champ à remplir : « ${c.label} ».` }; continue; }
+    if (c.type === "image") {
+      // Photo du client, déjà réduite par son navigateur : JPEG, PNG ou WebP, 3,4 Mo au plus
+      const m = String(v).match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+      if (!m || m[2].length < 1400 || m[2].length > 4_600_000) return { ok: false, message: `« ${c.label} » : photo invalide ou trop lourde.` };
+      const nom = `source-${photos.length + 1}.${m[1] === "image/jpeg" ? "jpg" : m[1].split("/")[1]}`;
+      photos.push({ id: c.id, nom, mime: m[1], b64: m[2] });
+      out[c.id] = nom; continue;
+    }
     if (c.type === "nombre") {
       const n = Number(String(v).replace(/\s/g, "").replace(",", "."));
       if (!Number.isFinite(n) || Math.abs(n) > 1e12) return { ok: false, message: `« ${c.label} » doit être un nombre.` };
@@ -163,7 +174,7 @@ export function validerReponses(formulaire: any[], r: any): { ok: true; reponses
     out[c.id] = v;
   }
   if (!Object.keys(out).length) return { ok: false, message: "Remplissez le formulaire." };
-  return { ok: true, reponses: out };
+  return { ok: true, reponses: out, photos };
 }
 // Document rédigé : { titre, sections: [{ titre?, paragraphes?: string[], puces?: string[] }] }
 export function validerDocument(d: any): string | null {
@@ -193,7 +204,7 @@ const REGLES_REDACTION = "Tu rédiges en français clair et professionnel, adapt
 export async function rediger(env: Env, g: { consigne: string; formulaire: any[]; reponses: Record<string, unknown>; titre: string }, cle?: string): Promise<any> {
   const k = cle || env.openrouter;
   if (!k) throw new Error("ia indisponible");
-  const lignes = (g.formulaire || []).filter((c: any) => g.reponses && g.reponses[c.id] !== undefined).map((c: any) => `- ${c.label} : ${String(g.reponses[c.id])}`);
+  const lignes = (g.formulaire || []).filter((c: any) => g.reponses && g.reponses[c.id] !== undefined).map((c: any) => `- ${c.label} : ${c.type === "image" ? "(photo jointe par le client)" : String(g.reponses[c.id])}`);
   const messages = [
     { role: "system", content: REGLES_REDACTION },
     { role: "user", content: `Document à rédiger : ${g.titre}.\nConsigne :\n${g.consigne}\n\nRéponses du client :\n${lignes.join("\n")}` },
@@ -213,7 +224,7 @@ export async function rediger(env: Env, g: { consigne: string; formulaire: any[]
       const d = extraireJson(j?.choices?.[0]?.message?.content || "");
       const pb = validerDocument(d);
       if (pb) { derniere = `${modele} : ${pb}`; continue; }
-      return { titre: d.titre.trim(), sections: d.sections.map((s: any) => ({ titre: s.titre ? String(s.titre).trim() : undefined, paragraphes: (s.paragraphes || []).map((x: string) => x.trim()).filter(Boolean), puces: (s.puces || []).map((x: string) => x.trim()).filter(Boolean) })), modele, le: env.now().toISOString() };
+      return { titre: d.titre.trim(), sections: d.sections.map((s: any) => ({ titre: s.titre ? String(s.titre).trim() : undefined, paragraphes: (s.paragraphes || []).map((x: string) => x.trim()).filter(Boolean), puces: (s.puces || []).map((x: string) => x.trim()).filter(Boolean) })), modele, le: env.now().toISOString(), ...(Array.isArray(d.prompts_image) ? { prompts_image: d.prompts_image.filter((x: any) => typeof x === "string" && x.trim()).slice(0, 2).map((x: string) => x.slice(0, 2000)) } : {}) };
     } catch (e: any) { derniere = `${modele} : ${e && e.message}`; }
   }
   throw new Error("rédaction impossible (" + derniere + ")");
@@ -273,12 +284,57 @@ export function docx(d: any): Uint8Array {
     { nom: "word/styles.xml", donnees: enc.encode(styles) }]);
 }
 // Commande payée d'un générateur sans document : rédaction (une seule à la fois)
+// Services qui livrent des images (affiches) : modèle d'images d'OpenRouter, quelques francs par image
+export const MODELES_IMAGE = ["google/gemini-2.5-flash-image", "google/gemini-3.1-flash-image"];
+export async function imager(env: Env, cle: string, prompt: string, format: string | null, sources: string[] = []): Promise<{ mime: string; b64: string }> {
+  let derniere = "";
+  for (const modele of env.modelesImage || MODELES_IMAGE) {
+    try {
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 55000);
+      const r = await env.fetch("https://openrouter.ai/api/v1/chat/completions", { method: "POST", signal: ctl.signal,
+        headers: { authorization: `Bearer ${cle}`, "content-type": "application/json", "x-title": "Teranga Outils" },
+        body: JSON.stringify({ model: modele, messages: [{ role: "user", content: sources.length ? [{ type: "text", text: prompt }, ...sources.map((u) => ({ type: "image_url", image_url: { url: u } }))] : prompt }], modalities: ["image", "text"], ...(format ? { image_config: { aspect_ratio: format } } : {}) }) });
+      clearTimeout(tm);
+      if (!r.ok) { derniere = `${modele} : ${r.status}`; continue; }
+      const j = await r.json();
+      const url = String(j?.choices?.[0]?.message?.images?.[0]?.image_url?.url || "");
+      const m = url.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
+      if (!m || m[2].length < 2000) { derniere = `${modele} : pas d'image`; continue; }
+      return { mime: m[1], b64: m[2] };
+    } catch (e: any) { derniere = `${modele} : ${e && e.name === "AbortError" ? "délai" : e && e.message}`; }
+  }
+  throw new Error("image impossible (" + derniere + ")");
+}
 async function genererSiBesoin(env: Env, c: any, id: string, h: string): Promise<any> {
   if (!c || !c.a_generer) return c;
   const g = await rpc(env, "boutique_generation_reserver", { p_order_id: id, p_token_hash: h, p_now: env.now().toISOString() });
   if (!g || g.occupe) return { ...c, en_redaction: true };
   try {
-    const d = await rediger(env, g, await cleIa(env));
+    const cle = await cleIa(env);
+    const d = await rediger(env, g, cle);
+    if (g.sortie === "image") {
+      // Affiches : format statut (9:16) puis format carré (1:1) ; au moins une image, sinon nouvel essai plus tard
+      // Photos envoyées par le client (retouche) : deux propositions au format d'origine ; sinon affiches 9:16 et 1:1
+      const sources: string[] = [];
+      for (const c of (g.formulaire || []).filter((x: any) => x.type === "image")) {
+        const nom = g.reponses && g.reponses[c.id];
+        if (!nom) continue;
+        const ph = await rpc(env, "boutique_commande_image", { p_order_id: id, p_token_hash: h, p_nom: String(nom), p_now: env.now().toISOString() }).catch(() => null);
+        if (ph && ph.b64) sources.push(`data:${ph.mime};base64,${ph.b64}`);
+      }
+      const prompts = (d.prompts_image || []).length ? d.prompts_image : [`${sources.length ? "Edit the attached photo professionally" : "Professional advertising poster"}. ${g.titre}. ${JSON.stringify(g.reponses).slice(0, 1500)}`];
+      const formats: (string | null)[] = sources.length ? [null, null] : ["9:16", "1:1"], images: { nom: string; format: string }[] = [], t0 = Date.now();
+      for (let i = 0; i < Math.min(2, Math.max(prompts.length, 2)); i++) {
+        if (Date.now() - t0 > 60_000) break;
+        const im = await imager(env, cle, prompts[Math.min(i, prompts.length - 1)], formats[i], sources).catch(() => null);
+        if (!im) continue;
+        const nom = `${sources.length ? "retouche" : "affiche"}-${i + 1}.${im.mime === "image/jpeg" ? "jpg" : im.mime.split("/")[1]}`;
+        if (await rpc(env, "boutique_commande_image_ajouter", { p_order_id: id, p_nom: nom, p_mime: im.mime, p_b64: im.b64 })) images.push({ nom, format: formats[i] || "original" });
+      }
+      if (!images.length) throw new Error("aucune image créée");
+      d.images = images;
+    }
+    delete d.prompts_image;
     await rpc(env, "boutique_generation_enregistrer", { p_order_id: id, p_document: d });
     return { ...c, document: d, a_generer: false };
   } catch (e: any) {
@@ -312,7 +368,7 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
       return visible ? json(200, { produit: p }, { "cache-control": "public, max-age=60" }) : erreur(404, "introuvable", "Ce produit n'est pas en vente.");
     }
     if (req.method === "POST" && chemin === "/commandes") {
-      const b = await lireJson(req, 64 * 1024); // textes longs des services
+      const b = await lireJson(req, 5 * 1024 * 1024); // textes longs et photos des services de retouche
       if (b.website) return erreur(400, "validation", "Votre demande n'a pas pu être traitée.");
       const produit = String(b.produit || "");
       const nom = String(b.nom || "").trim().replace(/\s+/g, " ");
@@ -323,11 +379,13 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
       const fiche = await rpc(env, "boutique_produit", { p_id: produit });
       if (!fiche) return erreur(404, "indisponible", "Ce produit n'est plus en vente.");
       let input: Record<string, string | number> | null = null;
+      let photos: PhotoClient[] = [];
       if (fiche.type === "generateur") {
         if (!(await cleIa(env))) return erreur(503, "indisponible", "Ce document sur mesure sera disponible très bientôt.");
         const v = validerReponses(fiche.formulaire || [], b.reponses);
         if (!v.ok) return erreur(400, "reponses", v.message);
         input = v.reponses;
+        photos = v.photos;
       }
       const id = nouvelId(), jeton = nouveauJeton();
       const res = await rpc(env, "boutique_creer_commande", {
@@ -338,6 +396,10 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
       });
       if (!res || res.erreur === "indisponible") return erreur(404, "indisponible", "Ce produit n'est plus en vente.");
       if (res.erreur === "trop") return erreur(429, "trop", "Trop de commandes en peu de temps. Réessayez dans une heure.");
+      for (const ph of photos) {
+        const okPh = await rpc(env, "boutique_commande_source_ajouter", { p_order_id: id, p_nom: ph.nom, p_mime: ph.mime, p_b64: ph.b64 });
+        if (!okPh) return erreur(400, "photo", "Votre photo n'a pas pu être enregistrée. Réessayez avec une autre photo.");
+      }
       return json(201, { commande: { ...res, jeton }, wave: formatWave(r.wave) });
     }
     m = chemin.match(/^\/commandes\/(TCV-[0-9A-HJKMNP-TV-Z]{8})(\/fichiers\/([A-Za-z0-9][A-Za-z0-9._-]{0,79}))?$/);
@@ -351,6 +413,13 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
         c = await genererSiBesoin(env, c, m[1], h);
         const r = await reglages(env);
         return json(200, { commande: c, wave: formatWave(r.wave) });
+      }
+      if (/^(affiche|retouche|source)-\d\.(png|jpg|webp)$/.test(m[3])) {
+        const im = await rpc(env, "boutique_commande_image", { p_order_id: m[1], p_token_hash: h, p_nom: m[3], p_now: now.toISOString() });
+        if (!im) return erreur(404, "introuvable", "Image introuvable ou commande non payée.");
+        if (im.erreur === "trop") return erreur(429, "trop", "Trop de téléchargements aujourd'hui. Réessayez demain.");
+        const bin = atob(String(im.b64).replace(/\s+/g, "")); const o = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) o[i] = bin.charCodeAt(i);
+        return new Response(o, { status: 200, headers: { ...CORS, "content-type": im.mime, "content-disposition": `inline; filename="${im.nom}"`, "cache-control": "no-store, private", "x-content-type-options": "nosniff" } });
       }
       if (m[3] === "document.docx") {
         const c = await rpc(env, "boutique_commande", { p_order_id: m[1], p_token_hash: h, p_now: now.toISOString() });

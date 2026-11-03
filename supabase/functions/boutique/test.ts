@@ -272,5 +272,82 @@ _oublierCaches();
 r = await traiter(req("POST", "/fabrique/modele", MSG, { authorization: tj }), envFab);
 ok(r.status === 503, "modèle : sans clé OpenRouter, refus clair (503)");
 
+// Services qui livrent des images (affiches)
+{
+  const corpsImg: any[] = [];
+  const IMG = "data:image/png;base64," + "iVBORw0KGgo" + "A".repeat(4000);
+  const envImg: Env = { ...env, openrouter: "sk-test", modeles: ["texte/a"], modelesImage: ["image/a"], fetch: (async (url: string, init?: any) => {
+    if (url.includes("openrouter.ai")) {
+      const c = JSON.parse(init.body);
+      if (c.modalities) { corpsImg.push(c); return new Response(JSON.stringify({ choices: [{ message: { content: "", images: [{ type: "image_url", image_url: { url: IMG } }] } }] }), { status: 200 }); }
+      return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ ...DOC, prompts_image: ["Poster A, text 'Promo -20%'", "Poster B square"] }) } }] }), { status: 200 });
+    }
+    return fauxFetch(url, init);
+  }) as unknown as typeof fetch };
+  reponses.boutique_commande = { id: "TCV-ABCDEFGH", payee: true, a_generer: true, produit: { slug: "affiche", type: "generateur", sortie: "image" } };
+  reponses.boutique_generation_reserver = { consigne: "Crée une affiche.", formulaire: FORM, reponses: { bien: "Maison", quartier: "Mermoz" }, titre: "Affiche", essais: 0, sortie: "image" };
+  reponses.boutique_commande_image_ajouter = true;
+  appels.length = 0;
+  r = await traiter(req("GET", "/commandes/TCV-ABCDEFGH?t=" + cm.commande.jeton), envImg);
+  const cj = await r.json();
+  const ajouts = appels.filter((x) => x.fn === "boutique_commande_image_ajouter");
+  const enr = appels.find((x) => x.fn === "boutique_generation_enregistrer")!;
+  ok(r.status === 200 && cj.commande.document.images.map((x: any) => x.nom + ":" + x.format).join() === "affiche-1.png:9:16,affiche-2.png:1:1", "affiche : deux images (statut 9:16 et carré 1:1) créées et rangées", cj.commande.document);
+  ok(corpsImg.length === 2 && corpsImg[0].messages[0].content.includes("Promo") && corpsImg.every((c) => c.modalities.includes("image")) && corpsImg[0].image_config.aspect_ratio === "9:16", "affiche : consignes d'image écrites par le modèle de texte, format demandé", corpsImg.map((c) => c.image_config));
+  ok(ajouts.length === 2 && ajouts[0].args.p_mime === "image/png" && ajouts[0].args.p_b64.length > 2000 && !("prompts_image" in enr.args.p_document) && enr.args.p_document.images.length === 2, "affiche : images en base, consignes d'image jamais livrées", enr.args.p_document);
+  reponses.boutique_commande_image = { nom: "affiche-1.png", mime: "image/png", b64: Buffer.from("PNGDATA").toString("base64") };
+  r = await traiter(req("GET", "/commandes/TCV-ABCDEFGH/fichiers/affiche-1.png?t=" + cm.commande.jeton), envImg);
+  ok(r.status === 200 && r.headers.get("content-type") === "image/png" && new TextDecoder().decode(new Uint8Array(await r.arrayBuffer())) === "PNGDATA", "affiche : image servie au détenteur du jeton");
+  reponses.boutique_commande_image = null;
+  r = await traiter(req("GET", "/commandes/TCV-ABCDEFGH/fichiers/affiche-2.png?t=" + cm.commande.jeton), envImg);
+  ok(r.status === 404, "affiche : image absente ou commande non payée → 404");
+  // Aucune image possible : nouvel essai plus tard (rien n'est livré à moitié)
+  const envSansImg: Env = { ...envImg, fetch: (async (url: string, init?: any) => { if (url.includes("openrouter.ai") && JSON.parse(init.body).modalities) return new Response("{}", { status: 503 }); return envImg.fetch(url, init); }) as unknown as typeof fetch };
+  appels.length = 0;
+  r = await traiter(req("GET", "/commandes/TCV-ABCDEFGH?t=" + cm.commande.jeton), envSansImg);
+  const e2 = appels.find((x) => x.fn === "boutique_generation_enregistrer")!;
+  ok((await r.json()).commande.en_redaction === true && e2.args.p_document.essais === 1 && /aucune image/.test(e2.args.p_document.erreur), "affiche : modèle d'images indisponible → nouvel essai plus tard", e2.args.p_document);
+}
+
+// Retouche : photo envoyée par le client avec sa commande, puis retouchée par le modèle d'images
+{
+  const FORM_PH = [{ id: "photo", label: "Votre photo", type: "image", obligatoire: true }, { id: "fond", label: "Fond souhaité", type: "choix", choix: ["Blanc", "Couleur"], obligatoire: true }];
+  const PHOTO = "data:image/jpeg;base64," + "/9j/4AAQ" + "B".repeat(3000);
+  ok(validerFormulaire(FORM_PH) === null && validerFormulaire([...FORM_PH, { id: "a", label: "A", type: "image" }, { id: "b", label: "B", type: "image" }, { id: "c2", label: "C", type: "image" }]) !== null, "formulaire : champ photo accepté (3 au plus)");
+  const vp = validerReponses(FORM_PH, { photo: PHOTO, fond: "Blanc" }) as any;
+  ok(vp.ok && vp.reponses.photo === "source-1.jpg" && vp.photos.length === 1 && vp.photos[0].mime === "image/jpeg" && !JSON.stringify(vp.reponses).includes("base64"), "photo du client : mise à part (jamais dans les réponses texte)", vp.reponses);
+  ok(!(validerReponses(FORM_PH, { photo: "data:text/html;base64,PGh0bWw+", fond: "Blanc" }) as any).ok && !(validerReponses(FORM_PH, { photo: "data:image/png;base64,AAAA", fond: "Blanc" }) as any).ok, "photo invalide (type ou taille) : refusée");
+  reponses.boutique_produit = (x: any) => x.p_id === "bt_retouche" ? { id: "bt_retouche", type: "generateur", sortie: "image", formulaire: FORM_PH } : null;
+  reponses.boutique_creer_commande = { id: "TCV-X", montant: 1999, unique: true, prix: 2000, titre: "Retouche" };
+  reponses.boutique_commande_source_ajouter = true;
+  reponses.boutique_reglages = { ...reponses.boutique_reglages, openrouter: "sk-or-v1-" + "a".repeat(40) }; _oublierCaches();
+  appels.length = 0;
+  r = await traiter(req("POST", "/commandes", { produit: "bt_retouche", nom: "Awa Ndiaye", cgv: true, reponses: { photo: PHOTO, fond: "Blanc" } }), env);
+  const sa = appels.find((x) => x.fn === "boutique_commande_source_ajouter"), cc = appels.find((x) => x.fn === "boutique_creer_commande")!;
+  ok(r.status === 201 && sa && sa.args.p_nom === "source-1.jpg" && sa.args.p_b64.startsWith("/9j/") && !JSON.stringify(cc.args.p_input).includes("base64"), "commande avec photo : photo rangée à part, réponses texte sans la photo", cc.args.p_input);
+  reponses.boutique_commande_source_ajouter = false;
+  r = await traiter(req("POST", "/commandes", { produit: "bt_retouche", nom: "Awa Ndiaye", cgv: true, reponses: { photo: PHOTO, fond: "Blanc" } }), env);
+  ok(r.status === 400 && (await r.json()).erreur === "photo", "photo non enregistrée : erreur claire");
+  // Génération : la photo du client est jointe à chaque demande d'image
+  const vusImg: any[] = [];
+  const envRet: Env = { ...env, openrouter: "sk-test", modeles: ["texte/a"], modelesImage: ["image/a"], fetch: (async (url: string, init?: any) => {
+    if (url.includes("openrouter.ai")) {
+      const c = JSON.parse(init.body);
+      if (c.modalities) { vusImg.push(c); return new Response(JSON.stringify({ choices: [{ message: { images: [{ image_url: { url: "data:image/png;base64," + "iVBOR" + "C".repeat(4000) } }] } }] }), { status: 200 }); }
+      return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ ...DOC, prompts_image: ["Remove background, white", "Soft studio light"] }) } }] }), { status: 200 });
+    }
+    return fauxFetch(url, init);
+  }) as unknown as typeof fetch };
+  reponses.boutique_commande = { id: "TCV-ABCDEFGH", payee: true, a_generer: true, produit: { slug: "retouche", type: "generateur", sortie: "image" } };
+  reponses.boutique_generation_reserver = { consigne: "Retouche la photo.", formulaire: FORM_PH, reponses: { photo: "source-1.jpg", fond: "Blanc" }, titre: "Retouche", essais: 0, sortie: "image" };
+  reponses.boutique_commande_image = (x: any) => x.p_nom === "source-1.jpg" ? { nom: "source-1.jpg", mime: "image/jpeg", b64: "/9j/SOURCE" } : null;
+  reponses.boutique_commande_image_ajouter = true;
+  appels.length = 0;
+  r = await traiter(req("GET", "/commandes/TCV-ABCDEFGH?t=" + cm.commande.jeton), envRet);
+  const dj = (await r.json()).commande.document;
+  ok(dj.images && dj.images.map((x: any) => x.nom + ":" + x.format).join() === "retouche-1.png:original,retouche-2.png:original", "retouche : deux propositions au format d'origine", dj.images);
+  ok(vusImg.length === 2 && vusImg.every((c) => Array.isArray(c.messages[0].content) && c.messages[0].content[1].image_url.url === "data:image/jpeg;base64,/9j/SOURCE" && !c.image_config), "retouche : la photo du client est jointe à la demande d'image", vusImg.map((c) => c.messages[0].content.length));
+}
+
 console.log(`BILAN ${total - echecs}/${total}`);
 if (echecs) process.exit(1);

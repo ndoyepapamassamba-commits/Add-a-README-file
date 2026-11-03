@@ -83,7 +83,7 @@ def controler_kit(k):
     tout = sans_acc(json.dumps(k, ensure_ascii=False))
     if INTERDITS.search(tout):
         pb.append("sujet interdit : " + INTERDITS.search(tout).group(0))
-    if re.search(r"\b(contrat|statuts?|procuration|religion|politique)\b", sans_acc(" ".join(str(k.get(c, "")) for c in ("titre", "accroche", "description")))):
+    if re.search(r"\b(contrat|procuration|religion|politique)\b|\bstatuts\b(?!\s+whatsapp)", sans_acc(" ".join(str(k.get(c, "")) for c in ("titre", "accroche", "description")))):
         pb.append("document officiel, juridique, religieux ou politique")
     if CONTACTS.search(tout):
         pb.append("lien, e-mail ou numéro de téléphone dans les textes")

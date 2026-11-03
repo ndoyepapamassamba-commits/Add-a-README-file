@@ -61,3 +61,8 @@ footer a{color:var(--muted)}
 .document h3{margin:.1em 0 .6em;color:var(--brand)}
 .document h4{margin:1.1em 0 .3em}
 .document p{margin:.4em 0}
+.galerie{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:.6em 0 1em}
+.galerie figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px;text-align:center}
+.galerie img{max-width:100%;height:auto;border-radius:8px;display:block;margin:0 auto 8px}
+.achat input[type=file]{width:100%;font:inherit;padding:8px;border:1px dashed var(--brand);border-radius:10px;background:var(--bg);color:var(--text)}
+.photo-apercu img{max-width:180px;max-height:180px;border-radius:8px;margin:.4em 0;display:block}
