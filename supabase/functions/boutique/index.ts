@@ -155,7 +155,8 @@ export function validerReponses(formulaire: any[], r: any): { ok: true; reponses
       out[c.id] = n; continue;
     }
     v = String(v).replace(/\r/g, "").trim();
-    const max = Math.min(Number(c.max) || (c.type === "paragraphe" ? 1500 : 150), 3000);
+    // Textes longs possibles pour les services (correction, traduction, fiche de révision) : 15 000 caractères au plus
+    const max = Math.min(Number(c.max) || (c.type === "paragraphe" ? 1500 : 150), c.type === "paragraphe" ? 15000 : 300);
     if (v.length > max) return { ok: false, message: `« ${c.label} » : ${max} caractères au plus.` };
     if (c.type === "choix" && !c.choix.includes(v)) return { ok: false, message: `« ${c.label} » : choix invalide.` };
     if (c.type === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(v)) return { ok: false, message: `« ${c.label} » : date invalide.` };
@@ -176,7 +177,7 @@ export function validerDocument(d: any): string | null {
     total += String(s.titre || "").length + [...(s.paragraphes || []), ...(s.puces || [])].join("").length;
     if (!(s.paragraphes || []).length && !(s.puces || []).length) return "section vide";
   }
-  return total > 30000 ? "trop long" : total < 80 ? "trop court" : null;
+  return total > 60000 ? "trop long" : total < 80 ? "trop court" : null;
 }
 function extraireJson(t: string): any {
   const x = String(t || "").trim().replace(/^```(?:json)?\s*|\s*```$/g, "");
@@ -198,12 +199,14 @@ export async function rediger(env: Env, g: { consigne: string; formulaire: any[]
     { role: "user", content: `Document à rédiger : ${g.titre}.\nConsigne :\n${g.consigne}\n\nRéponses du client :\n${lignes.join("\n")}` },
   ];
   let derniere = "";
+  const t0 = Date.now();
   for (const modele of env.modeles || MODELES_DEFAUT) {
+    if (Date.now() - t0 > 75_000) { derniere += " | temps écoulé"; break; } // limite des fonctions Edge (150 s)
     try {
-      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 60000);
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 70000);
       const r = await env.fetch("https://openrouter.ai/api/v1/chat/completions", { method: "POST", signal: ctl.signal,
         headers: { authorization: `Bearer ${k}`, "content-type": "application/json", "x-title": "Teranga Outils" },
-        body: JSON.stringify({ model: modele, messages, temperature: 0.5, max_tokens: 6000, response_format: { type: "json_object" } }) });
+        body: JSON.stringify({ model: modele, messages, temperature: 0.4, max_tokens: 12000, response_format: { type: "json_object" } }) });
       clearTimeout(tm);
       if (!r.ok) { derniere = `${modele} : ${r.status}`; continue; }
       const j = await r.json();
@@ -309,7 +312,7 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
       return visible ? json(200, { produit: p }, { "cache-control": "public, max-age=60" }) : erreur(404, "introuvable", "Ce produit n'est pas en vente.");
     }
     if (req.method === "POST" && chemin === "/commandes") {
-      const b = await lireJson(req, MAX_JSON);
+      const b = await lireJson(req, 64 * 1024); // textes longs des services
       if (b.website) return erreur(400, "validation", "Votre demande n'a pas pu être traitée.");
       const produit = String(b.produit || "");
       const nom = String(b.nom || "").trim().replace(/\s+/g, " ");
