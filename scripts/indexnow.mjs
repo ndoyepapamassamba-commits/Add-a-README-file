@@ -1,7 +1,8 @@
 // Signale à IndexNow (Bing, Yandex, Seznam, Naver…) toutes les pages listées dans cv/sitemap.xml, puis celles de
-// formation/sitemap.xml (deuxième envoi : IndexNow n'accepte que les URL placées sous le dossier du fichier-clé).
+// formation/sitemap.xml et apps/sitemap.xml (un envoi par dossier : IndexNow n'accepte que les URL placées sous le dossier
+// du fichier-clé).
 // À lancer seulement après la publication sur gh-pages :  node scripts/indexnow.mjs
-// La clé est publique par conception (protocole IndexNow) : elle est servie dans cv/<clé>.txt et formation/<clé>.txt.
+// La clé est publique par conception (protocole IndexNow) : elle est servie dans cv/, formation/ et apps/<clé>.txt.
 import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -9,11 +10,13 @@ export const HOST = "ndoyepapamassamba-commits.github.io";
 export const KEY = "ebb4ea75c352a571bd0b205056c2b276";
 export const KEY_LOCATION = `https://${HOST}/Add-a-README-file/cv/${KEY}.txt`;
 export const FORMATION_KEY_LOCATION = `https://${HOST}/Add-a-README-file/formation/${KEY}.txt`;
+export const APPS_KEY_LOCATION = `https://${HOST}/Add-a-README-file/apps/${KEY}.txt`;
 export const ENDPOINT = "https://api.indexnow.org/indexnow";
 
 const SITEMAPS = [
   { file: fileURLToPath(new URL("../cv/sitemap.xml", import.meta.url)), keyLocation: KEY_LOCATION },
   { file: fileURLToPath(new URL("../formation/sitemap.xml", import.meta.url)), keyLocation: FORMATION_KEY_LOCATION },
+  { file: fileURLToPath(new URL("../apps/sitemap.xml", import.meta.url)), keyLocation: APPS_KEY_LOCATION },
 ];
 
 export function sitemapUrls(xml) {

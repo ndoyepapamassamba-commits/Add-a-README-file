@@ -6,6 +6,65 @@
   var fcfa = function (n) { return Number(n || 0).toLocaleString('fr-FR').replace(/ | /g, ' ') + ' F'; };
   function texte(el, t) { if (el) el.textContent = t; }
 
+  // Pass des applications TERANGA (../apps/catalogue.json) : slug du produit → application à activer
+  var applis = null;
+  function chargerApplis() {
+    if (!applis) applis = Promise.race([
+      fetch('../apps/catalogue.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }),
+      new Promise(function (ok) { setTimeout(ok, 5000, null); })
+    ]).then(function (j) {
+      var m = {};
+      ((j && j.applis) || []).forEach(function (a) {
+        if (!a || !/^[a-z0-9-]+$/.test(a.dossier || '')) return;
+        (a.passes || []).forEach(function (p) { if (p && p.slug) m[p.slug] = { appli: a, pass: p }; });
+      });
+      return m;
+    }).catch(function () { return {}; });
+    return applis;
+  }
+  function el(tag, attrs, contenu) {
+    var e = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    if (contenu != null) e.textContent = contenu;
+    return e;
+  }
+  function copier(v) { return navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(v) : Promise.reject(new Error('presse-papiers')); }
+  // Bloc « Ouvrir l'application et activer » d'une commande payée de pass (aussi après les 30 jours de téléchargement)
+  function blocActivation(c, pa, j, t) {
+    var a = pa.appli, nom = a.nom || 'l\'application', direct = a.lien_direct !== false;
+    var base = '../apps/' + a.dossier + '/';
+    var lien = direct ? base + '?o=' + encodeURIComponent(c.id) + '&t=' + encodeURIComponent(t) : base + (/^#\/[a-z-]+$/.test(a.ecran_pass_url || '') ? a.ecran_pass_url : '');
+    var ecran = a.ecran_pass || 'l\'écran du pass';
+    var s = el('section', { class: 'activation', id: 'activation', 'aria-labelledby': 'activation-titre' });
+    s.appendChild(el('h2', { id: 'activation-titre' }, 'Activez ' + nom));
+    var b = el('a', { class: 'btn', id: 'activer-appli', href: lien }, 'Ouvrir l\'application et activer');
+    s.appendChild(b);
+    var info = el('p', { id: 'activation-info' }, direct
+      ? nom + ' s\'ouvre et vérifie votre commande : la version complète est activée sur ce téléphone. Internet est nécessaire une seule fois.'
+      : 'Le lien de cette page est copié, puis ' + nom + ' s\'ouvre : collez le lien dans la case « Lien de votre commande » et touchez « Activer ».');
+    s.appendChild(info);
+    if (!direct) b.addEventListener('click', function (e) {
+      e.preventDefault();
+      var aller = function () { location.href = lien; };
+      Promise.race([copier(location.href), new Promise(function (ok) { setTimeout(ok, 1500); })]).then(aller, aller);
+    });
+    var ip = el('p', { class: 'petit' });
+    ip.appendChild(el('strong', null, 'Sur iPhone'));
+    ip.appendChild(document.createTextNode(', si ' + nom + ' est déjà sur l\'écran d\'accueil : touchez « Copier le lien de cette page », ouvrez ' + nom +
+      ' depuis l\'écran d\'accueil, allez dans ' + ecran + ', collez le lien et touchez « Activer ».'));
+    s.appendChild(ip);
+    var cp = el('button', { class: 'btn secondaire', type: 'button', id: 'copier-lien-commande' }, 'Copier le lien de cette page');
+    cp.addEventListener('click', function () { copier(location.href).then(function () { cp.textContent = 'Lien copié'; setTimeout(function () { cp.textContent = 'Copier le lien de cette page'; }, 2000); }).catch(function () {}); });
+    s.appendChild(cp);
+    var n = String(j.wave || '').replace(/\D/g, '');
+    if (/^\d{9}$/.test(n)) {
+      var msg = 'Bonjour, j\'ai besoin d\'aide pour activer ' + nom + ' (commande ' + c.id + ').';
+      s.appendChild(el('a', { class: 'btn secondaire', id: 'aide-whatsapp', href: 'https://wa.me/221' + n + '?text=' + encodeURIComponent(msg), target: '_blank', rel: 'noopener' }, 'Aide sur WhatsApp'));
+    }
+    s.appendChild(el('p', { class: 'petit' }, 'Gardez le lien de cette page : il active aussi ' + nom + ' sur un nouveau téléphone' + (pa.pass && pa.pass.duree_jours ? ', pendant la durée de votre pass.' : '.')));
+    return s;
+  }
+
   // Recherche dans le catalogue
   var rech = $('#recherche');
   if (rech) rech.addEventListener('input', function () {
@@ -94,7 +153,10 @@
           .then(function (j) {
             var c = j && j.commande;
             if (c && c.produit && !o.info.titre) h.textContent = c.produit.titre;
-            st.textContent = st.textContent.replace('Statut en cours de vérification…', !c ? 'Commande expirée' : c.purgee ? 'Expirée' : c.payee ? 'Payée · ouvrir pour télécharger' : 'En attente de paiement');
+            return chargerApplis().then(function (ap) {
+              var pass = c && c.payee && c.produit && ap[c.produit.slug];
+              st.textContent = st.textContent.replace('Statut en cours de vérification…', !c ? 'Commande expirée' : pass ? 'Payée · ouvrir pour activer l\'application' : c.purgee ? 'Expirée' : c.payee ? 'Payée · ouvrir pour télécharger' : 'En attente de paiement');
+            });
           }).catch(function () { st.textContent = st.textContent.replace('Statut en cours de vérification…', 'Hors connexion'); });
       });
   }
@@ -104,9 +166,18 @@
   if (zone) {
     var p = new URLSearchParams(location.search), id = p.get('o') || '', t = p.get('t') || '';
     var minuteur = 0, essais = 0;
-    var afficher = function (j) {
+    var afficher = function (j, ap) {
       var c = j.commande;
       texte($('#titre-produit'), c.produit.titre);
+      var pa = c.payee && c.produit && ap && ap[c.produit.slug];
+      if (pa && c.purgee) {
+        // Pass d'application : le mode d'emploi n'est plus téléchargeable, mais le lien active toujours l'application
+        clearInterval(minuteur);
+        $('#attente').hidden = true; $('#payee').hidden = true;
+        if (!$('#activation')) zone.appendChild(blocActivation(c, pa, j, t));
+        zone.appendChild(el('p', { class: 'petit' }, 'Le mode d\'emploi en PDF se téléchargeait pendant 30 jours après le paiement ; ce lien reste valable pour activer l\'application.'));
+        return;
+      }
       if (c.purgee) { zone.innerHTML = '<p class="paiement">Cette commande est expirée : les téléchargements restent ouverts 30 jours après le paiement.</p>'; return; }
       if (c.payee && c.produit.type === 'generateur') {
         $('#attente').hidden = true; $('#payee').hidden = false;
@@ -153,6 +224,10 @@
       if (c.payee) {
         clearInterval(minuteur);
         $('#attente').hidden = true; $('#payee').hidden = false;
+        if (pa && !$('#activation')) {
+          texte($('#payee-texte'), 'Ouvrez l\'application pour activer votre ' + (pa.pass && pa.pass.titre ? pa.pass.titre.toLowerCase() : 'pass') + ' ; le mode d\'emploi (PDF) est à télécharger plus bas.');
+          var pp = $('#payee .paiement'); pp.parentNode.insertBefore(blocActivation(c, pa, j, t), pp.nextSibling);
+        }
         var l = $('#fichiers'); l.textContent = '';
         c.fichiers.forEach(function (f) {
           var a = document.createElement('a');
@@ -171,9 +246,9 @@
       $('#exact').hidden = c.montant === c.prix;
     };
     var lire = function () {
-      fetch(API + '/commandes/' + encodeURIComponent(id) + '?t=' + encodeURIComponent(t))
-        .then(function (r) { if (!r.ok) throw new Error('introuvable'); return r.json(); })
-        .then(afficher)
+      Promise.all([fetch(API + '/commandes/' + encodeURIComponent(id) + '?t=' + encodeURIComponent(t))
+        .then(function (r) { if (!r.ok) throw new Error('introuvable'); return r.json(); }), chargerApplis()])
+        .then(function (x) { afficher(x[0], x[1]); })
         .catch(function () { if (++essais > 2) { clearInterval(minuteur); zone.innerHTML = '<p class="paiement">Commande introuvable. Vérifiez le lien reçu après votre commande.</p>'; } });
     };
     if (!/^TCV-[0-9A-Z]{8}$/.test(id) || t.length < 20) zone.innerHTML = '<p class="paiement">Lien de commande incomplet.</p>';

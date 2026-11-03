@@ -21,7 +21,21 @@ const guidesBase = process.env.SANS_GUIDES_BASE ? [] : await fetch(API + "/guide
 const guides = [...guidesFichier, ...guidesBase.filter((g) => !guidesFichier.some((x) => x.slug === g.slug))]
   .filter((g) => g && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(g.slug) && g.titre && Array.isArray(g.sections));
 const carte = (p) => `<a class="carte" href="${esc(p.slug)}.html" data-cherche="${esc(sansAcc(p.titre + " " + p.domaine + " " + p.accroche))}">
-<span class="etiquette">${esc(p.domaine)}${p.type === "generateur" ? " · sur mesure" : p.apercu && p.apercu.type === "document" ? " · kit à imprimer" : ""}</span><h3>${esc(p.titre)}</h3><p>${esc(p.accroche)}</p><span class="prix">${fcfa(p.prix)}</span></a>`;
+<span class="etiquette">${esc(p.domaine)}${p.type === "generateur" ? " · sur mesure" : p.apercu && p.apercu.type === "document" ? " · kit à imprimer" : appli(p) ? " · " + esc(p.apercu.pass || "pass") : ""}</span><h3>${esc(p.titre)}</h3><p>${esc(p.accroche)}</p><span class="prix">${fcfa(p.prix)}</span></a>`;
+
+// Pass d'une application TERANGA (apps/, scripts/apps/passes.py) : apercu.type = "application"
+const appli = (p) => p.type !== "generateur" && p.apercu && p.apercu.type === "application" && /^[a-z0-9-]+$/.test(p.apercu.dossier || "");
+function apercuAppli(p) {
+  const a = p.apercu, url = "../apps/" + a.dossier + "/";
+  const duree = a.duree_jours ? `valable ${a.duree_jours} jours à partir du paiement` : "licence à vie, payée une seule fois";
+  const icone = /^https:\/\/ndoyepapamassamba-commits\.github\.io\/Add-a-README-file\/apps\/[\w./-]+\.png$/.test(a.icone || "") ? a.icone : url + "icons/icon-192.png";
+  return `<div class="appli"><img src="${esc(icone)}" alt="" width="72" height="72" loading="lazy"><div><strong>${esc(a.nom)}</strong><span>${esc(a.pass || "Pass")} · ${esc(duree)}</span>${a.gratuit ? `<span>${esc(a.gratuit)}</span>` : ""}</div></div>
+<p><a class="btn secondaire" href="${esc(url)}">Essayer ${esc(a.nom)} gratuitement</a></p>
+<h3>Activer après le paiement</h3>
+<ol class="points">${(a.etapes || []).map((t) => `<li>${esc(t)}</li>`).join("")}</ol>
+<p>Le même lien de commande active aussi l'application sur un nouveau téléphone. Vous recevez en plus un mode d'emploi en PDF : installation sur Android et iPhone, activation, changement de téléphone, aide par WhatsApp.</p>
+<p><a href="../apps/">Toutes les applications TERANGA</a></p>`;
+}
 
 function valeur(v, type) {
   if (v === null || v === undefined || v === "") return "";
@@ -58,7 +72,7 @@ const tete = (titre, description, canonique, extra = "") => `<!DOCTYPE html>
 <meta name="apple-mobile-web-app-title" content="TERANGA">
 ${extra}</head>
 <body>
-<header class="top"><a class="brand" href="./">Teranga <b>Outils</b></a><span><a class="lien" href="./">Tous les outils</a> · <a class="lien" href="mes-commandes.html">Mes commandes</a>${guides.length ? ' · <a class="lien" href="guides.html">Guides</a>' : ""}</span></header>
+<header class="top"><a class="brand" href="./">Teranga <b>Outils</b></a><span><a class="lien" href="./">Tous les outils</a> · <a class="lien" href="../apps/">Applications</a> · <a class="lien" href="mes-commandes.html">Mes commandes</a>${guides.length ? ' · <a class="lien" href="guides.html">Guides</a>' : ""}</span></header>
 <div class="installer" id="installer" hidden><span>Installez l'application TERANGA sur votre téléphone.</span> <button class="btn" type="button" id="installer-btn">Installer</button></div>
 `;
 const pied = `<footer>
@@ -96,6 +110,7 @@ function pageProduit(p) {
   }];
   const ap = p.apercu || { feuilles: [], synthese: [] };
   const kit = p.type !== "generateur" && ap.type === "document";
+  const app = appli(p);
   const apercuKit = kit ? `<p style="color:var(--muted);font-size:15px">${esc(ap.titre)}${ap.sous_titre ? " — " + esc(ap.sous_titre) : ""} · ${Number(ap.pages) || ""} pages</p>
 <h3>Sommaire</h3>\n<ol class="points">${(ap.sections_titres || []).map((t) => `<li>${esc(t)}</li>`).join("")}</ol>
 <h3>Extrait</h3>\n${rendreDocument({ titre: ap.titre, sections: ap.extrait || [] })}` : "";
@@ -105,29 +120,29 @@ function pageProduit(p) {
   const kpi = (ap.synthese || []).length ? `<h3>Tableau de bord (calculé sur l'exemple)</h3><div class="kpi">${ap.synthese.map((s) => `<div><span>${esc(s.libelle)}</span><strong>${esc(valeur(s.valeur, s.type))}</strong></div>`).join("")}</div>` : "";
   return tete(`${p.titre} | Teranga Outils`, p.accroche, url, `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, "\\u003c")}</script>\n`) + `<main>
 <p class="crumbs"><a href="./">Teranga Outils</a> › ${esc(p.domaine)}</p>
-<span class="etiquette">${esc(p.domaine)}${kit ? " · kit à imprimer" : p.type === "generateur" ? " · sur mesure" : ""}</span>
+<span class="etiquette">${esc(p.domaine)}${kit ? " · kit à imprimer" : p.type === "generateur" ? " · sur mesure" : app ? " · " + esc(ap.pass || "pass") : ""}</span>
 <h1>${esc(p.titre)}</h1>
 <p class="lead">${esc(p.accroche)}</p>
 <p class="prix">${fcfa(p.prix)}</p>
 <form class="achat" id="achat" data-produit="${esc(p.id)}" data-type="${esc(p.type || "fichier")}" novalidate>
-  <strong>${p.type === "generateur" ? "Répondez aux questions : votre document est rédigé dès votre paiement Wave" : "Recevez le fichier tout de suite après votre paiement Wave"}</strong>
+  <strong>${p.type === "generateur" ? "Répondez aux questions : votre document est rédigé dès votre paiement Wave" : app ? `Activez ${esc(ap.nom)} dès votre paiement Wave, en un geste` : "Recevez le fichier tout de suite après votre paiement Wave"}</strong>
   ${p.type === "generateur" ? `<div class="formulaire">${(p.formulaire || []).map(champ).join("\n")}</div>` : ""}
   <label for="nom">Votre nom</label>
   <input type="text" id="nom" name="nom" autocomplete="name" required maxlength="80" placeholder="Ex. : Awa Ndiaye">
   <div class="hp" aria-hidden="true"><label>Laissez vide <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
-  <label class="cgv"><input type="checkbox" name="cgv"> <span>J'accepte les <a href="cgv.html" target="_blank" rel="noopener">conditions de vente</a> : fichier numérique livré dès le paiement.</span></label>
+  <label class="cgv"><input type="checkbox" name="cgv"> <span>J'accepte les <a href="cgv.html" target="_blank" rel="noopener">conditions de vente</a> : ${app ? "pass d'application activé dès le paiement" : "fichier numérique livré dès le paiement"}.</span></label>
   <p><button class="btn" type="submit">Commander — ${fcfa(p.prix)}</button></p>
   <p class="msg" id="achat-msg" role="status" aria-live="polite"></p>
   <p style="font-size:14px;color:var(--muted);margin:0">Paiement par Wave au montant exact affiché à l'étape suivante. Aucun compte à créer.</p>
 </form>
-<h2>${kit ? "Ce que contient ce kit" : p.type === "generateur" ? "Ce que vous recevez" : "Ce que fait cet outil"}</h2>
+<h2>${kit ? "Ce que contient ce kit" : p.type === "generateur" ? "Ce que vous recevez" : app ? "Ce que débloque ce pass" : "Ce que fait cet outil"}</h2>
 <p>${esc(p.description)}</p>
 <ul class="points">${(p.points || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
-${p.type === "generateur" ? `<h2>Exemple de document rédigé</h2>\n<p style="color:var(--muted);font-size:15px">Exemple obtenu avec des réponses fictives. Votre document est rédigé à partir de vos propres réponses.</p>\n${rendreDocument(p.exemple)}` : kit ? `<h2>Aperçu du kit</h2>\n${apercuKit}` : `<h2>Aperçu du classeur</h2>\n${tableaux}\n${kpi}`}
+${p.type === "generateur" ? `<h2>Exemple de document rédigé</h2>\n<p style="color:var(--muted);font-size:15px">Exemple obtenu avec des réponses fictives. Votre document est rédigé à partir de vos propres réponses.</p>\n${rendreDocument(p.exemple)}` : kit ? `<h2>Aperçu du kit</h2>\n${apercuKit}` : app ? `<h2>L'application</h2>\n${apercuAppli(p)}` : `<h2>Aperçu du classeur</h2>\n${tableaux}\n${kpi}`}
 <h2>Questions fréquentes</h2>
 ${(p.faq || []).map((f) => `<details><summary>${esc(f.q)}</summary><p>${esc(f.r)}</p></details>`).join("\n")}
 ${guidesDe(p.slug)}
-<p style="margin-top:1.5em">${p.type === "generateur" ? (p.sortie === "image" && (p.formulaire || []).some((c) => c.type === "image") ? "Vous recevez deux versions retouchées de votre photo, à télécharger, et les textes qui les accompagnent à l'écran et en Word. Vérifiez le résultat avant de l'utiliser." : p.sortie === "image" ? "Vous recevez deux affiches en image (format statut WhatsApp 9:16 et format carré pour Facebook et Instagram), les textes à publier à l'écran et en Word. Vérifiez les textes et les prix sur l'affiche avant de la diffuser." : "Vous recevez le texte à l'écran et un fichier Word (.docx) modifiable, qui s'ouvre aussi sur téléphone. Relisez-le et adaptez-le avant de l'utiliser.") : kit ? `Vous recevez le kit en PDF (prêt à imprimer ou à lire sur téléphone) et en Word (modifiable) : ${(p.fichiers || []).map((f) => `${esc(f.nom)} (${Math.max(1, Math.round(f.taille / 1024))} Ko)`).join(", ")}.` : `Fichier Excel (.xlsx) : ${(p.fichiers || []).map((f) => `${esc(f.nom)} (${Math.max(1, Math.round(f.taille / 1024))} Ko)`).join(", ")}. Fonctionne avec Excel, LibreOffice et Google Sheets, sur ordinateur ou téléphone.`}</p>
+<p style="margin-top:1.5em">${p.type === "generateur" ? (p.sortie === "image" && (p.formulaire || []).some((c) => c.type === "image") ? "Vous recevez deux versions retouchées de votre photo, à télécharger, et les textes qui les accompagnent à l'écran et en Word. Vérifiez le résultat avant de l'utiliser." : p.sortie === "image" ? "Vous recevez deux affiches en image (format statut WhatsApp 9:16 et format carré pour Facebook et Instagram), les textes à publier à l'écran et en Word. Vérifiez les textes et les prix sur l'affiche avant de la diffuser." : "Vous recevez le texte à l'écran et un fichier Word (.docx) modifiable, qui s'ouvre aussi sur téléphone. Relisez-le et adaptez-le avant de l'utiliser.") : app ? `Vous recevez l'activation de ${esc(ap.nom)} depuis la page de votre commande (sur ce téléphone ou un nouveau) et le mode d'emploi : ${(p.fichiers || []).map((f) => `${esc(f.nom)} (${Math.max(1, Math.round(f.taille / 1024))} Ko)`).join(", ")}.` : kit ? `Vous recevez le kit en PDF (prêt à imprimer ou à lire sur téléphone) et en Word (modifiable) : ${(p.fichiers || []).map((f) => `${esc(f.nom)} (${Math.max(1, Math.round(f.taille / 1024))} Ko)`).join(", ")}.` : `Fichier Excel (.xlsx) : ${(p.fichiers || []).map((f) => `${esc(f.nom)} (${Math.max(1, Math.round(f.taille / 1024))} Ko)`).join(", ")}. Fonctionne avec Excel, LibreOffice et Google Sheets, sur ordinateur ou téléphone.`}</p>
 </main>
 ` + pied;
 }
@@ -213,6 +228,7 @@ const cgv = tete("Conditions de vente | Teranga Outils", "Conditions de vente de
 <h2>Produits</h2><p>Des fichiers numériques (classeurs Excel .xlsx) décrits sur chaque page, avec un aperçu calculé sur des données d'exemple. Ce sont des outils de calcul et de suivi : ils ne remplacent ni un comptable, ni un juriste, ni un document officiel, et aucun résultat financier n'est garanti.</p>
 <h2>Prix et paiement</h2><p>Prix en francs CFA, toutes taxes comprises le cas échéant. Paiement par Wave au montant exact indiqué après la commande (quelques francs de moins que le prix, pour reconnaître le paiement). Ce montant est réservé 72 heures.</p>
 <h2>Livraison</h2><p>Le fichier est téléchargeable dès que le paiement est reconnu, depuis la page de la commande, pendant 30 jours (30 téléchargements par jour au plus).</p>
+<h2>Pass des applications TERANGA</h2><p>Un pass (ou une licence) débloque la version complète d'une application TERANGA pour la durée indiquée sur sa page, à partir du paiement (à vie pour une licence). Il s'active en ouvrant l'application depuis la page de la commande, ou en y collant le lien de cette page ; le même lien sert pour un nouveau téléphone. Rien n'est prélevé automatiquement : à la fin d'un pass, vos données restent sur votre téléphone. Le mode d'emploi en PDF se télécharge pendant 30 jours ; le lien de la commande reste valable pour activer l'application.</p>
 <h2>Photos envoyées pour une retouche</h2><p>Envoyez uniquement des photos dont vous avez les droits, et pas de photo d'une autre personne sans son accord. La photo sert seulement à votre commande : elle est effacée 3 jours après une commande non payée et 30 jours après le paiement. Les retouches sont faites par une intelligence artificielle : vérifiez le résultat avant de l'utiliser.</p>
 <h2>Documents sur mesure</h2><p>Pour un document sur mesure, vos réponses au formulaire sont transmises à un service d'intelligence artificielle (OpenRouter) qui rédige le document après votre paiement, en général en moins de deux minutes. Le texte s'appuie uniquement sur vos réponses : relisez-le et adaptez-le avant de l'utiliser. N'indiquez pas d'informations sensibles (santé, numéros de pièce d'identité, coordonnées bancaires). Vos réponses et le document sont effacés au plus tard 30 jours après le paiement.</p>
 <h2>Droit d'usage</h2><p>Usage personnel ou au sein de votre entreprise. La revente ou la diffusion publique du fichier est interdite.</p>

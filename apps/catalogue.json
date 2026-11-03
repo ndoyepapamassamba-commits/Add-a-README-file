@@ -1,0 +1,615 @@
+{
+  "version": 1,
+  "domaine": "Applications pour téléphone",
+  "applis": [
+    {
+      "dossier": "factures",
+      "nom": "Teranga Factures",
+      "accroche": "Créez vos factures, devis (factures proforma) et reçus en F CFA, en PDF A4, puis envoyez-les à vos clients sur WhatsApp. Même sans Internet.",
+      "icone": "factures/icons/icon-192.png",
+      "etiquettes": [
+        "Factures",
+        "Devis et proforma",
+        "Reçus",
+        "Hors ligne"
+      ],
+      "points": [
+        "Totaux, remises et TVA calculés pour vous",
+        "Montant écrit en lettres sur chaque facture",
+        "Suivi des paiements et des impayés",
+        "QR code « Payer par Wave » si vous avez un lien Wave"
+      ],
+      "gratuit": "Gratuit jusqu'à 10 documents par mois.",
+      "categorie": "BusinessApplication",
+      "ecran_pass": "Réglages, puis « Version complète »",
+      "passes": [
+        {
+          "slug": "licence-teranga-factures",
+          "prix": 2000,
+          "duree_jours": null,
+          "titre": "Licence à vie"
+        }
+      ],
+      "pret": true,
+      "lien_direct": true,
+      "hors_ligne": true,
+      "serveur": false
+    },
+    {
+      "dossier": "poulets",
+      "nom": "PouletPilot",
+      "accroche": "Notez chaque jour les morts, l'aliment, les pesées, les dépenses et les ventes : PouletPilot calcule l'indice de consommation, le coût par poulet, le prix minimum et la marge.",
+      "icone": "poulets/icons/icon-192.png",
+      "etiquettes": [
+        "Poulets de chair",
+        "Coût et marge",
+        "Hors ligne"
+      ],
+      "points": [
+        "Indice de consommation, mortalité et coût par poulet",
+        "Prix minimum de vente et marge du lot",
+        "Estimation de fin de lot : aliment à acheter et poids attendu",
+        "Rapport PDF du lot à partager sur WhatsApp"
+      ],
+      "voir_aussi": [
+        {
+          "dossier": "elevage",
+          "texte": "Vous élevez aussi des moutons, des chèvres ou des bovins ?"
+        }
+      ],
+      "gratuit": "Gratuit pour suivre un lot à la fois.",
+      "categorie": "BusinessApplication",
+      "ecran_pass": "« Mon pass »",
+      "passes": [
+        {
+          "slug": "pass-pouletpilot-1-mois",
+          "prix": 2000,
+          "duree_jours": 30,
+          "titre": "Pass 1 mois"
+        },
+        {
+          "slug": "pass-pouletpilot-12-mois",
+          "prix": 15000,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "lien_direct": true,
+      "hors_ligne": true,
+      "serveur": false
+    },
+    {
+      "dossier": "elevage",
+      "nom": "Carnet Élevage",
+      "accroche": "Le cahier de votre troupeau de moutons, chèvres et bovins : pesées, aliment, dépenses, ventes, marge par animal, mises-bas et compte à rebours de la Tabaski.",
+      "icone": "elevage/icons/icon-192.png",
+      "etiquettes": [
+        "Moutons, chèvres, bovins",
+        "Embouche Tabaski",
+        "Hors ligne"
+      ],
+      "voir_aussi": [
+        {
+          "dossier": "poulets",
+          "texte": "Vous élevez aussi des poulets de chair ?"
+        },
+        {
+          "dossier": "champ",
+          "texte": "Vous cultivez aussi des parcelles ?"
+        }
+      ],
+      "categorie": "BusinessApplication",
+      "passes": [
+        {
+          "slug": "pass-carnet-elevage-12-mois",
+          "prix": 3000,
+          "duree_jours": 366,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "points": [
+        "Pesées à la balance ou au ruban, gain par jour",
+        "Coût du kilo gagné et marge par animal",
+        "Mises-bas et compte à rebours de la Tabaski",
+        "Stock d'aliment et dépenses du troupeau"
+      ],
+      "gratuit": "Gratuit jusqu'à 10 animaux présents à la fois.",
+      "ecran_pass": "« Mon pass »",
+      "hors_ligne": true,
+      "lien_direct": true,
+      "serveur": false
+    },
+    {
+      "dossier": "accord",
+      "nom": "AccordAI",
+      "accroche": "Le carnet des accords commerciaux : notez ce qui a été convenu (produit, prix, acompte, délai), faites-le confirmer par un lien, et gardez chaque étape datée jusqu'à la livraison.",
+      "icone": "accord/icons/icon-192.png",
+      "categorie": "BusinessApplication",
+      "passes": [
+        {
+          "slug": "pass-accordai-1-mois",
+          "prix": 3000,
+          "duree_jours": 31,
+          "titre": "Pass 1 mois"
+        },
+        {
+          "slug": "pass-accordai-12-mois",
+          "prix": 30000,
+          "duree_jours": 366,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "etiquettes": [
+        "Commandes et accords",
+        "Confirmation par lien",
+        "PDF daté"
+      ],
+      "points": [
+        "L'autre partie confirme ou corrige par un simple lien",
+        "Chaque étape datée et reliée à la précédente",
+        "Calculs vérifiés : quantité × prix, acompte, reste à payer",
+        "Avec le pass : la fiche remplie par l'IA depuis WhatsApp ou une photo"
+      ],
+      "gratuit": "Gratuit jusqu'à 5 accords par mois, saisis à la main.",
+      "ecran_pass": "l'onglet « Pass »",
+      "lien_direct": false,
+      "ecran_pass_url": "#/pass",
+      "hors_ligne": false,
+      "serveur": true
+    },
+    {
+      "dossier": "colis",
+      "nom": "ColisPreuve",
+      "accroche": "La preuve de livraison des petits commerçants : suivi du colis par lien, photos, code de remise du client et preuve PDF datée.",
+      "icone": "colis/icons/icon-192.png",
+      "categorie": "BusinessApplication",
+      "passes": [
+        {
+          "slug": "pass-colispreuve-1-mois",
+          "prix": 3000,
+          "duree_jours": 30,
+          "titre": "Pass 1 mois"
+        },
+        {
+          "slug": "pass-colispreuve-12-mois",
+          "prix": 30000,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "lien_direct": false,
+      "serveur": true,
+      "hors_ligne": false,
+      "ecran_pass_url": "#/pass",
+      "etiquettes": [
+        "Livraison",
+        "Code de remise",
+        "Preuve PDF"
+      ],
+      "points": [
+        "Le livreur et le client suivent le colis par un simple lien",
+        "Photos et étapes datées, reliées les unes aux autres",
+        "Code de remise vérifié à la livraison",
+        "Tableau de bord : montants à encaisser et encaissés"
+      ],
+      "gratuit": "Gratuit jusqu'à 5 colis par mois.",
+      "ecran_pass": "l'onglet « Pass »"
+    },
+    {
+      "dossier": "carnet",
+      "nom": "Carnet Boutique",
+      "accroche": "Votre cahier de crédit sur le téléphone : qui doit combien, paiements, rappels WhatsApp, calculette de marge et ardoise des commandes.",
+      "icone": "carnet/icons/icon-192.png",
+      "categorie": "BusinessApplication",
+      "passes": [
+        {
+          "slug": "pass-carnet-boutique-12-mois",
+          "prix": 3000,
+          "duree_jours": 366,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "etiquettes": [
+        "Crédit clients",
+        "Ardoise",
+        "Hors ligne"
+      ],
+      "points": [
+        "Qui doit combien, d'un coup d'œil",
+        "Relevé de compte PDF à envoyer sur WhatsApp",
+        "Ardoise des commandes pour dibiteries et petits restaurants",
+        "Calculette de marge"
+      ],
+      "gratuit": "Gratuit jusqu'à 30 clients.",
+      "ecran_pass": "Plus, puis « Pass Carnet Boutique »",
+      "hors_ligne": true,
+      "serveur": false,
+      "lien_direct": true
+    },
+    {
+      "dossier": "tontine",
+      "nom": "Tontine Claire",
+      "accroche": "Le carnet partagé de votre tontine (natt) : ordre des tours, cotisations confirmées, retards et rappels WhatsApp, avec un historique que tout le groupe peut vérifier.",
+      "icone": "tontine/icons/icon-192.png",
+      "categorie": "FinanceApplication",
+      "passes": [
+        {
+          "slug": "pass-tontine-12-mois",
+          "prix": 2000,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "lien_direct": true,
+      "hors_ligne": true,
+      "etiquettes": [
+        "Tontine (natt)",
+        "Lien pour le groupe",
+        "Rappels WhatsApp"
+      ],
+      "points": [
+        "Ordre des tours tiré au sort et vérifiable",
+        "Cotisations confirmées et retards visibles par tous",
+        "Rappels WhatsApp préparés : c'est vous qui les envoyez",
+        "L'application n'encaisse jamais d'argent"
+      ],
+      "gratuit": "Gratuit pour une tontine de 12 membres.",
+      "ecran_pass": "le menu « Pass »",
+      "serveur": true
+    },
+    {
+      "dossier": "tailleur",
+      "nom": "Carnet du Tailleur",
+      "accroche": "Votre atelier de couture dans le téléphone : clients et mesures guidées, commandes, acomptes, planning des livraisons avant les fêtes et reçus PDF.",
+      "icone": "tailleur/icons/icon-192.png",
+      "categorie": "BusinessApplication",
+      "passes": [
+        {
+          "slug": "pass-carnet-tailleur-12-mois",
+          "prix": 3000,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "lien_direct": true,
+      "serveur": false,
+      "hors_ligne": true,
+      "etiquettes": [
+        "Couture",
+        "Mesures guidées",
+        "Hors ligne"
+      ],
+      "points": [
+        "Un dessin montre où placer le mètre ruban",
+        "Commandes avec photo du modèle, acompte et reste à payer",
+        "Alerte de surcharge avant Tabaski et Korité",
+        "Message « votre habit est prêt » ouvert dans WhatsApp"
+      ],
+      "gratuit": "Gratuit jusqu'à 15 clients.",
+      "ecran_pass": "Réglages, puis « Pass 12 mois »"
+    },
+    {
+      "dossier": "vitrine",
+      "nom": "Teranga Vitrine",
+      "accroche": "Votre vitrine pour vendre sur WhatsApp : produits en photo, prix en F CFA, images pour le statut, catalogue PDF et commandes.",
+      "icone": "vitrine/icons/icon-192.png",
+      "categorie": "BusinessApplication",
+      "passes": [
+        {
+          "slug": "pass-vitrine-12-mois",
+          "prix": 2000,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "lien_direct": true,
+      "serveur": false,
+      "hors_ligne": true,
+      "etiquettes": [
+        "Vente en ligne",
+        "Catalogue PDF",
+        "Hors ligne"
+      ],
+      "points": [
+        "Produits en photo avec prix en F CFA",
+        "Images prêtes pour le statut",
+        "Catalogue PDF à partager",
+        "Commandes, stock et ventes suivis"
+      ],
+      "gratuit": "Gratuit jusqu'à 12 produits.",
+      "ecran_pass": "Réglages, puis « Pass Vitrine »"
+    },
+    {
+      "dossier": "budget",
+      "nom": "Budget Famille",
+      "accroche": "Le budget du foyer par enveloppes : dépense quotidienne, loyer, Senelec, Woyofal, école, tontine, épargne, et les budgets Tabaski, rentrée ou Korité.",
+      "icone": "budget/icons/icon-192.png",
+      "categorie": "FinanceApplication",
+      "passes": [
+        {
+          "slug": "pass-budget-famille-12-mois",
+          "prix": 1500,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "lien_direct": true,
+      "serveur": false,
+      "hors_ligne": true,
+      "etiquettes": [
+        "Budget du foyer",
+        "Enveloppes",
+        "Hors ligne"
+      ],
+      "points": [
+        "Une dépense notée en deux gestes",
+        "Alerte quand une enveloppe est presque vide",
+        "Budgets spéciaux avec compte à rebours (Tabaski, rentrée…)",
+        "Sans compte bancaire, sans Internet"
+      ],
+      "gratuit": "Gratuit pour le mois en cours.",
+      "ecran_pass": "Réglages, puis « Pass Budget Famille »"
+    },
+    {
+      "dossier": "champ",
+      "nom": "Champ Pilot",
+      "accroche": "Le carnet de votre campagne agricole : parcelles, travaux, achats, main-d'œuvre, récolte et ventes, avec le rendement à l'hectare et la marge.",
+      "icone": "champ/icons/icon-192.png",
+      "categorie": "BusinessApplication",
+      "passes": [
+        {
+          "slug": "pass-champ-pilot-12-mois",
+          "prix": 2000,
+          "duree_jours": 366,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "etiquettes": [
+        "Cultures",
+        "Rendement et marge",
+        "Hors ligne"
+      ],
+      "points": [
+        "Dépenses et travaux notés par parcelle, avec rappels",
+        "Récolte, ventes et rendement à l'hectare",
+        "Marge par parcelle et comparaison des campagnes",
+        "Arachide, mil, maïs, oignon, riz, niébé, maraîchage"
+      ],
+      "ecran_pass": "« Mon pass »",
+      "hors_ligne": true,
+      "voir_aussi": [
+        {
+          "dossier": "elevage",
+          "texte": "Vous élevez aussi des moutons, des chèvres ou des bovins ?"
+        }
+      ],
+      "gratuit": "Gratuit pour 2 parcelles par campagne.",
+      "lien_direct": true,
+      "serveur": false
+    },
+    {
+      "dossier": "chantier-calcul",
+      "nom": "Calcul Chantier",
+      "accroche": "Ciment, sable, gravier, fer, parpaings, carrelage, peinture : les quantités et le budget de votre maison étape par étape, avec un plan d'épargne et un devis PDF.",
+      "icone": "chantier-calcul/icons/icon-192.png",
+      "categorie": "BusinessApplication",
+      "passes": [
+        {
+          "slug": "pass-calcul-chantier-12-mois",
+          "prix": 2000,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "lien_direct": true,
+      "serveur": false,
+      "hors_ligne": true,
+      "etiquettes": [
+        "Construction",
+        "Quantités et budget",
+        "Hors ligne"
+      ],
+      "points": [
+        "Quantités de ciment, sable, gravier, fer et parpaings",
+        "Budget de la maison, étape par étape",
+        "Plan d'épargne pour construire sans dette",
+        "Devis PDF à montrer au maçon ou à la quincaillerie"
+      ],
+      "gratuit": "Gratuit pour 1 projet et 3 éléments.",
+      "ecran_pass": "Réglages, puis « Pass 12 mois »"
+    },
+    {
+      "dossier": "entretien",
+      "nom": "Carnet Entretien",
+      "accroche": "Le carnet d'entretien de votre voiture, moto ou Jakarta, groupe électrogène, climatiseur, pompe ou réfrigérateur : vidanges, échéances, carburant et dépenses.",
+      "icone": "entretien/icons/icon-192.png",
+      "categorie": "BusinessApplication",
+      "passes": [
+        {
+          "slug": "pass-carnet-entretien-12-mois",
+          "prix": 1500,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "etiquettes": [
+        "Véhicules et machines",
+        "Échéances",
+        "Hors ligne"
+      ],
+      "points": [
+        "Vidanges et échéances rappelées à temps",
+        "Carburant et dépenses suivis machine par machine",
+        "Historique d'entretien en PDF, utile à la revente",
+        "Voiture, moto, Jakarta, groupe électrogène, climatiseur…"
+      ],
+      "ecran_pass": "Réglages, puis « Pass Carnet Entretien »",
+      "hors_ligne": true,
+      "gratuit": "Gratuit pour un engin ou un appareil.",
+      "lien_direct": true,
+      "serveur": false
+    },
+    {
+      "dossier": "partage",
+      "nom": "Teranga Partage Frais",
+      "accroche": "Partagez les dépenses en F CFA entre amis, en colocation, en voyage, pour un baptême ou une cotisation : soldes, remboursements au plus simple, résumé et PDF.",
+      "icone": "partage/icons/icon-192.png",
+      "categorie": "FinanceApplication",
+      "passes": [
+        {
+          "slug": "pass-partage-frais-12-mois",
+          "prix": 1000,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "lien_direct": true,
+      "serveur": false,
+      "hors_ligne": true,
+      "etiquettes": [
+        "Dépenses partagées",
+        "Colocation, voyage",
+        "Hors ligne"
+      ],
+      "points": [
+        "Qui a payé, combien et pour qui",
+        "Parts égales ou au choix",
+        "Le moins de remboursements possible",
+        "Résumé à envoyer au groupe et PDF"
+      ],
+      "gratuit": "Gratuit pour 1 groupe et 20 dépenses.",
+      "ecran_pass": "Réglages, puis « Pass Partage Frais »"
+    },
+    {
+      "dossier": "anglais",
+      "nom": "Anglais du Métier",
+      "accroche": "L'anglais utile pour votre travail, expliqué en français simple : 10 métiers, mots et phrases avec prononciation, cartes mémoire, écoute, quiz et oral.",
+      "icone": "anglais/icons/icon-192.png",
+      "categorie": "EducationalApplication",
+      "passes": [
+        {
+          "slug": "pass-anglais-metier-12-mois",
+          "prix": 2000,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "etiquettes": [
+        "Anglais",
+        "10 métiers",
+        "Hors ligne"
+      ],
+      "points": [
+        "Hôtellerie, chauffeur et guide, commerce, mécanique, bâtiment…",
+        "Mots et phrases avec aide de prononciation",
+        "Cartes mémoire qui reviennent au bon moment",
+        "Quiz, écoute mains libres et oral"
+      ],
+      "gratuit": "Gratuit pour un métier au choix.",
+      "ecran_pass": "la roue des réglages, puis « Pass 10 métiers »",
+      "hors_ligne": true,
+      "lien_direct": true,
+      "serveur": false
+    },
+    {
+      "dossier": "lecture",
+      "nom": "Lecture Facile",
+      "accroche": "Lire plus facilement : polices pour la dyslexie, syllabes en couleur, lettres b et d colorées, règle de lecture et lecture à voix haute.",
+      "icone": "lecture/icons/icon-192.png",
+      "categorie": "EducationalApplication",
+      "passes": [
+        {
+          "slug": "pass-lecture-facile-12-mois",
+          "prix": 1500,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "etiquettes": [
+        "Lecture",
+        "Dyslexie",
+        "Hors ligne"
+      ],
+      "points": [
+        "Syllabes en couleur et lettres b/d colorées",
+        "Polices adaptées à la dyslexie",
+        "Règle de lecture et lecture à voix haute",
+        "Pour les enfants comme pour les adultes"
+      ],
+      "gratuit": "Gratuit jusqu'à 3 textes enregistrés.",
+      "ecran_pass": "Réglages, puis « Pass Lecture Facile »",
+      "hors_ligne": true,
+      "lien_direct": true,
+      "serveur": false
+    },
+    {
+      "dossier": "rdv",
+      "nom": "Rendez-vous Pro",
+      "accroche": "Votre page de rendez-vous en ligne : vos clients demandent un créneau, vous confirmez en un geste. Agenda, rappels et PDF de la semaine.",
+      "icone": "rdv/icons/icon-192.png",
+      "categorie": "BusinessApplication",
+      "passes": [
+        {
+          "slug": "pass-rendez-vous-pro-1-mois",
+          "prix": 1000,
+          "duree_jours": 30,
+          "titre": "Pass 1 mois"
+        },
+        {
+          "slug": "pass-rendez-vous-pro-12-mois",
+          "prix": 9000,
+          "duree_jours": 365,
+          "titre": "Pass 12 mois"
+        }
+      ],
+      "pret": true,
+      "lien_direct": true,
+      "serveur": true,
+      "hors_ligne": false,
+      "etiquettes": [
+        "Rendez-vous",
+        "Page en ligne",
+        "Agenda"
+      ],
+      "points": [
+        "Une page où vos clients demandent un créneau",
+        "Confirmation en un geste, message prêt à envoyer",
+        "Agenda et rappels",
+        "PDF de la semaine"
+      ],
+      "gratuit": "Gratuit jusqu'à 15 rendez-vous acceptés par mois.",
+      "ecran_pass": "« Plus », puis « Pass »"
+    },
+    {
+      "dossier": "chantier",
+      "nom": "Chantier",
+      "accroche": "",
+      "icone": "chantier/icons/icon-192.png",
+      "passes": [],
+      "pret": false
+    },
+    {
+      "dossier": "trace",
+      "nom": "Trace",
+      "accroche": "",
+      "icone": "trace/icons/icon-192.png",
+      "passes": [],
+      "pret": false
+    }
+  ]
+}

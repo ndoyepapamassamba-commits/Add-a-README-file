@@ -68,3 +68,13 @@ footer a{color:var(--muted)}
 .photo-apercu img{max-width:180px;max-height:180px;border-radius:8px;margin:.4em 0;display:block}
 .installer{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--brand-soft);padding:8px 16px;font-size:15px}
 .installer[hidden]{display:none}
+.appli{display:flex;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin:.6em 0}
+.appli img{width:72px;height:72px;border-radius:16px;flex:none}
+.appli strong{display:block;font-size:1.1rem}
+.appli span{display:block;font-size:15px;color:var(--muted)}
+.activation{background:var(--brand-soft);border:2px solid var(--brand);border-radius:var(--radius);padding:16px;margin:1em 0}
+.activation h2{margin:0 0 .4em;font-size:1.2rem}
+.activation .btn{display:flex;align-items:center;justify-content:center;text-align:center;width:100%;font-size:1.1rem;min-height:56px;margin:.4em 0}
+.activation .btn.secondaire{font-size:1rem;min-height:48px}
+.activation p{margin:.5em 0}
+.activation .petit{font-size:15px;color:var(--muted)}
