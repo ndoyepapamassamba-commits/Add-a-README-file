@@ -94,17 +94,18 @@
         });
         if ((d.images || []).length) {
           var gal = document.createElement('div'); gal.className = 'galerie';
-          d.images.forEach(function (im) {
+          var retouche = /^retouche-/.test(d.images[0].nom);
+          d.images.forEach(function (im, i) {
             var u = API + '/commandes/' + encodeURIComponent(c.id) + '/fichiers/' + encodeURIComponent(im.nom) + '?t=' + encodeURIComponent(t);
             var fig = document.createElement('figure');
-            var img = document.createElement('img'); img.src = u; img.alt = 'Votre affiche (' + im.format + ')'; img.loading = 'lazy';
+            var img = document.createElement('img'); img.src = u; img.alt = retouche ? 'Votre photo retouchée (version ' + (i + 1) + ')' : 'Votre affiche (' + im.format + ')'; img.loading = 'lazy';
             var cap = document.createElement('figcaption');
             var dl = document.createElement('a'); dl.href = u; dl.className = 'btn secondaire'; dl.setAttribute('download', im.nom);
-            dl.textContent = 'Télécharger (' + (im.format === '9:16' ? 'format statut' : im.format === '1:1' ? 'format carré' : im.format) + ')';
+            dl.textContent = 'Télécharger (' + (im.format === '9:16' ? 'format statut' : im.format === '1:1' ? 'format carré' : 'version ' + (i + 1)) + ')';
             cap.appendChild(dl); fig.append(img, cap); gal.appendChild(fig);
           });
           z.appendChild(gal);
-          texte($('#payee-texte'), 'Vos affiches sont prêtes : téléchargez-les ci-dessous, avec les textes à publier.');
+          texte($('#payee-texte'), retouche ? 'Vos photos retouchées sont prêtes : téléchargez-les ci-dessous.' : 'Vos affiches sont prêtes : téléchargez-les ci-dessous, avec les textes à publier.');
         }
         z.appendChild(bloc);
         $('#copier-document').onclick = function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(plain.join('\n')) : Promise.reject()).then(function () { b.textContent = 'Copié'; setTimeout(function () { b.textContent = 'Copier le texte'; }, 1500); }).catch(function () {}); };

@@ -347,8 +347,8 @@ ok(r.status === 503, "modèle : sans clé OpenRouter, refus clair (503)");
   appels.length = 0;
   r = await traiter(req("GET", "/commandes/TCV-ABCDEFGH?t=" + cm.commande.jeton), envRet);
   const dj = (await r.json()).commande.document;
-  ok(dj.images && dj.images.map((x: any) => x.nom + ":" + x.format).join() === "retouche-1.png:original,retouche-2.png:original", "retouche : deux propositions au format d'origine", dj.images);
-  ok(vusImg.length === 2 && vusImg.every((c) => Array.isArray(c.messages[0].content) && c.messages[0].content[1].image_url.url === "data:image/jpeg;base64,/9j/SOURCE" && !c.image_config), "retouche : la photo du client est jointe à la demande d'image", vusImg.map((c) => c.messages[0].content.length));
+  ok(dj.images && dj.images.map((x: any) => x.nom + ":" + x.format).join() === "retouche-1.png:original,retouche-2.png:1:1", "retouche : version au format d'origine puis version carrée", dj.images);
+  ok(vusImg.length === 2 && vusImg.every((c) => Array.isArray(c.messages[0].content) && c.messages[0].content[1].image_url.url === "data:image/jpeg;base64,/9j/SOURCE") && !vusImg[0].image_config && vusImg[1].image_config.aspect_ratio === "1:1", "retouche : la photo du client est jointe à la demande d'image", vusImg.map((c) => c.messages[0].content.length));
 }
 
 // Guides gratuits écrits par la fabrique

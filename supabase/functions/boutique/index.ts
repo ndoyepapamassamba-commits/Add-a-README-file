@@ -347,7 +347,7 @@ async function genererSiBesoin(env: Env, c: any, id: string, h: string): Promise
     if (g.sortie === "image") {
       // Retouche : deux propositions au format d'origine ; affiches : statut (9:16) puis carré (1:1) ; au moins une image
       const prompts = (d.prompts_image || []).length ? d.prompts_image : [`${sources.length ? "Edit the attached photo professionally" : "Professional advertising poster"}. ${g.titre}. ${JSON.stringify(g.reponses).slice(0, 1500)}`];
-      const formats: (string | null)[] = sources.length ? [null, null] : ["9:16", "1:1"], images: { nom: string; format: string }[] = [], t0 = Date.now();
+      const formats: (string | null)[] = sources.length ? [null, "1:1"] : ["9:16", "1:1"], images: { nom: string; format: string }[] = [], t0 = Date.now();
       for (let i = 0; i < Math.min(2, Math.max(prompts.length, 2)); i++) {
         if (Date.now() - t0 > 60_000) break;
         const im = await imager(env, cle, prompts[Math.min(i, prompts.length - 1)], formats[i], sources).catch(() => null);
