@@ -404,8 +404,8 @@ def controler_generateur(g):
         v = g.get(k)
         if not isinstance(v, str) or not (mn <= len(v.strip()) <= mx):
             pb.append(f"{k} : longueur hors de {mn}-{mx}")
-    if not isinstance(g.get("prix"), int) or not 500 <= g["prix"] <= 3000:
-        pb.append("prix entre 500 et 3000 F")
+    if not isinstance(g.get("prix"), int) or not 500 <= g["prix"] <= 9500:
+        pb.append("prix entre 500 et 9500 F")
     if not isinstance(g.get("points"), list) or not 3 <= len(g["points"]) <= 8:
         pb.append("3 à 8 points forts")
     if not isinstance(g.get("faq"), list) or not 2 <= len(g["faq"]) <= 6 or not all(isinstance(x, dict) and x.get("q") and x.get("r") for x in g["faq"]):
