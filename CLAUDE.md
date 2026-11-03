@@ -47,7 +47,10 @@ livrés automatiquement. Spécification complète : `supabase/SPEC.md`. Guide du
 - Pages : dossier `boutique/`, régénérées par `scripts/boutique/pages.mjs` depuis le catalogue public (workflow
   « Boutique pages » de la branche par défaut, toutes les 3 h et après chaque fabrique ; IndexNow pour les pages changées).
 - Fabrique : `scripts/boutique/fabriquer.py` (workflow « Boutique fabrique », chaque nuit) lit d'abord les fiches en
-  attente (`tcv.boutique_fiches`), puis fait écrire de nouvelles fiches par GitHub Models (gratuit, jeton de la tâche) ;
+  attente (`tcv.boutique_fiches`, ajoutées par `boutique_ajouter_fiches` ; une fiche avec `formulaire` est un document sur
+  mesure), puis fait écrire de nouvelles fiches et documents par des modèles GRATUITS d'OpenRouter via la route
+  `POST /fabrique/modele` de la fonction (GitHub Models a fermé le 30 juillet 2026 ; sans clé enregistrée, seule la file
+  est traitée, sans erreur). Plafond de sécurité : 30 nouveaux produits par 24 h (au-delà, les fiches restent en file) ;
   chaque classeur est construit (openpyxl), recalculé par LibreOffice et contrôlé avant dépôt. Dépôt authentifié par le
   jeton OIDC de GitHub Actions (aucun secret). Publication tacite 24 h après le dépôt (tâche pg_cron
   `boutique-publication`, 5 par jour au plus), sauf refus du propriétaire (`/admin/decider`).
