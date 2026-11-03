@@ -15,7 +15,11 @@ const fcfa = (n) => Number(n || 0).toLocaleString("fr-FR").replace(/\u202f|\u00a
 const sansAcc = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 // Guides gratuits : contenu utile trouvé sur les moteurs de recherche, relié aux produits (marketing sans aucun envoi de message)
 const FICHIER_GUIDES = fileURLToPath(new URL("./guides.json", import.meta.url));
-const guides = (existsSync(FICHIER_GUIDES) ? JSON.parse(readFileSync(FICHIER_GUIDES, "utf8")) : []).filter((g) => g && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(g.slug) && g.titre && Array.isArray(g.sections));
+const guidesFichier = existsSync(FICHIER_GUIDES) ? JSON.parse(readFileSync(FICHIER_GUIDES, "utf8")) : [];
+// Guides écrits chaque nuit par la fabrique (base de la boutique), ajoutés à ceux du fichier
+const guidesBase = process.env.SANS_GUIDES_BASE ? [] : await fetch(API + "/guides", { headers: { accept: "application/json" } }).then((r) => (r.ok ? r.json() : { guides: [] })).then((j) => j.guides || []).catch(() => []);
+const guides = [...guidesFichier, ...guidesBase.filter((g) => !guidesFichier.some((x) => x.slug === g.slug))]
+  .filter((g) => g && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(g.slug) && g.titre && Array.isArray(g.sections));
 const carte = (p) => `<a class="carte" href="${esc(p.slug)}.html" data-cherche="${esc(sansAcc(p.titre + " " + p.domaine + " " + p.accroche))}">
 <span class="etiquette">${esc(p.domaine)}${p.type === "generateur" ? " · sur mesure" : p.apercu && p.apercu.type === "document" ? " · kit à imprimer" : ""}</span><h3>${esc(p.titre)}</h3><p>${esc(p.accroche)}</p><span class="prix">${fcfa(p.prix)}</span></a>`;
 

@@ -1,5 +1,7 @@
 // Tests de la fonction « boutique » sous Node 22 : node --experimental-strip-types supabase/functions/boutique/test.ts
 // (base PostgREST et clés publiques de GitHub simulées ; aucun appel réseau)
+import { validerGuide } from "./index.ts";
+import { readFileSync } from "node:fs";
 import { traiter, verifierGithub, formatWave, controlerDepot, sha256Hex, egal, _oublierCaches, validerReponses, validerFormulaire, validerDocument, rediger, docx, REPO, BRANCHE_DEFAUT, WORKFLOW, GH_ISS, AUDIENCE } from "./index.ts";
 import type { Env } from "./index.ts";
 
@@ -347,6 +349,35 @@ ok(r.status === 503, "modèle : sans clé OpenRouter, refus clair (503)");
   const dj = (await r.json()).commande.document;
   ok(dj.images && dj.images.map((x: any) => x.nom + ":" + x.format).join() === "retouche-1.png:original,retouche-2.png:original", "retouche : deux propositions au format d'origine", dj.images);
   ok(vusImg.length === 2 && vusImg.every((c) => Array.isArray(c.messages[0].content) && c.messages[0].content[1].image_url.url === "data:image/jpeg;base64,/9j/SOURCE" && !c.image_config), "retouche : la photo du client est jointe à la demande d'image", vusImg.map((c) => c.messages[0].content.length));
+}
+
+// Guides gratuits écrits par la fabrique
+{
+  const G = JSON.parse(readFileSync(new URL("../../../scripts/boutique/guides.json", import.meta.url), "utf8"))[0];
+  ok(validerGuide(G) === null, "guide valide (forme des guides publiés)", validerGuide(G));
+  ok(validerGuide({ ...G, chapeau: "court" }) !== null && validerGuide({ ...G, sections: G.sections.slice(0, 2) }) !== null && validerGuide({ ...G, chapeau: G.chapeau + " Écrivez au 77 123 45 67." }) === "lien ou numéro", "guide incomplet ou avec un numéro : refusé");
+  r = await traiter(req("POST", "/depot-guide", { guide: G }), env);
+  ok(r.status === 401, "dépôt de guide sans jeton GitHub : refusé");
+  reponses.boutique_deposer_guide = { slug: G.slug, statut: "publie" };
+  appels.length = 0;
+  r = await traiter(req("POST", "/depot-guide", { guide: { ...G, sujet: "Tontine" } }, { authorization: tj }), env);
+  ok(r.status === 201 && appels.some((x) => x.fn === "boutique_deposer_guide" && x.args.p_guide.slug === G.slug), "dépôt de guide par la fabrique");
+  reponses.boutique_guides_publics = [{ ...G, sujet: "Tontine" }];
+  r = await traiter(req("GET", "/guides"), env);
+  const gj = await r.json();
+  ok(r.status === 200 && gj.guides.length === 1 && !("sujet" in gj.guides[0]), "GET /guides : guides publiés, sans les notes internes");
+  reponses.boutique_admin = { produits: [{ titre: "Budget", controle: { ok: true, sujet: "Budget du foyer" } }], totaux: {} };
+  r = await traiter(req("GET", "/fabrique/fiches", undefined, { authorization: tj }), env);
+  const fj = await r.json();
+  ok(fj.sujets.join() === "Budget du foyer,Tontine" && fj.guides.join() === G.slug && fj.titres.includes(G.titre), "fiches : sujets déjà traités (produits et guides) pour ne jamais les refaire", fj.sujets);
+}
+// L'IA lit les photos du client (document à convertir, menu…)
+{
+  let corps: any = null;
+  const envVue: Env = { ...env, modeles: ["texte/a"], fetch: (async (url: string, init?: any) => { if (url.includes("openrouter.ai")) { corps = JSON.parse(init.body); return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(DOC) } }] }), { status: 200 }); } return fauxFetch(url, init); }) as unknown as typeof fetch };
+  await rediger(envVue, { consigne: "Convertis le document photographié en texte structuré, fidèlement.", formulaire: [{ id: "photo", label: "Photo", type: "image" }], reponses: { photo: "source-1.jpg" }, titre: "Conversion" }, "sk-test", ["data:image/jpeg;base64,/9j/AAA"]);
+  const cu = corps.messages[1].content;
+  ok(Array.isArray(cu) && cu[0].type === "text" && /photo\(s\) jointe/.test(cu[0].text) && cu[1].image_url.url === "data:image/jpeg;base64,/9j/AAA" && !cu[0].text.includes("source-1.jpg"), "rédaction : les photos du client sont jointes et lues par le modèle", cu[0].text.slice(-120));
 }
 
 console.log(`BILAN ${total - echecs}/${total}`);

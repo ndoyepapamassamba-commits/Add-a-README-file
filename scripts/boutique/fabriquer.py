@@ -322,6 +322,10 @@ def modele(messages, essai=0):
 FICHIER_DEMANDES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "demandes.json")
 
 
+SUJETS_FAITS = set()  # sujets de demandes.json déjà traités (produits ou guides), lus sur le serveur
+GUIDES_FAITS = set()  # adresses des guides déjà publiés
+
+
 def pistes(famille, deja, defaut):
     """Sujets à traiter : d'abord la demande réelle étudiée (demandes.json, priorité 1 d'abord, sujets pas encore en vente),
     puis les domaines par défaut. Renvoie une liste de (domaine, idée ou None)."""
@@ -332,15 +336,16 @@ def pistes(famille, deja, defaut):
         dem = []
     pris = {slugifier(t) for t in deja}
     random.seed(time.strftime("%Y-%m-%d") + famille)
-    lot = [d for d in dem if isinstance(d, dict) and d.get("famille") == famille and slugifier(d.get("titre_produit", "")) not in pris]
+    lot = [d for d in dem if isinstance(d, dict) and d.get("famille") == famille and slugifier(d.get("titre_produit", "")) not in pris
+           and d.get("sujet") not in SUJETS_FAITS]
     random.shuffle(lot)
     lot.sort(key=lambda d: d.get("priorite", 3))
     for d in lot:
         idee = f"{d.get('titre_produit')} — les gens cherchent : {', '.join((d.get('recherches') or [])[:4])}"
-        out.append((d.get("domaine") or d.get("sujet") or "Divers", idee))
+        out.append((d.get("domaine") or d.get("sujet") or "Divers", idee, d.get("sujet")))
     autres = defaut[:]
     random.shuffle(autres)
-    return out + [(x, None) for x in autres]
+    return out + [(x, None, None) for x in autres]
 
 
 def appeler_modele(domaine, deja, essai=0, idee=None):
@@ -448,7 +453,7 @@ def deposer_generateur(g, fiche_id=None):
     produit["slug"] = g["slug"]
     if g.get("sortie") in ("document", "image"):
         produit["sortie"] = g["sortie"]
-    produit["controle"] = {"ok": True, "outil": "fabriquer.py", "le": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+    produit["controle"] = {"ok": True, "outil": "fabriquer.py", "le": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), **({"sujet": g["_sujet"]} if g.get("_sujet") else {})}
     corps = {"produit": produit}
     if fiche_id:
         corps["fiche_id"] = fiche_id
@@ -476,6 +481,8 @@ def fiches_en_attente():
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
             j = json.load(r)
+            SUJETS_FAITS.update(j.get("sujets", []))
+            GUIDES_FAITS.update(j.get("guides", []))
             return j.get("fiches", []), j.get("titres", [])
     except Exception as e:
         print(f"Fiches en attente illisibles : {e}")
@@ -487,7 +494,7 @@ def deposer(fiche, chemin, apercu, fiche_id=None):
     produit = {k: fiche[k] for k in ("titre", "domaine", "accroche", "description", "points", "faq", "prix")}
     produit["slug"] = fiche["slug"]
     produit["apercu"] = apercu
-    produit["controle"] = {"ok": True, "outil": "fabriquer.py", "le": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+    produit["controle"] = {"ok": True, "outil": "fabriquer.py", "le": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), **({"sujet": fiche["_sujet"]} if fiche.get("_sujet") else {})}
     corps = {"produit": produit, "fichiers": [{"nom": fiche["slug"] + ".xlsx", "mime": MIME_XLSX, "b64": b64}]}
     if fiche_id:
         corps["fiche_id"] = fiche_id
@@ -567,7 +574,7 @@ def deposer_kit(k, chemins, apercu, fiche_id=None):
     produit = {c: k[c] for c in ("titre", "domaine", "accroche", "description", "points", "faq", "prix")}
     produit["slug"] = k["slug"]
     produit["apercu"] = apercu
-    produit["controle"] = {"ok": True, "outil": "fabriquer.py/kits", "le": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+    produit["controle"] = {"ok": True, "outil": "fabriquer.py/kits", "le": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), **({"sujet": k["_sujet"]} if k.get("_sujet") else {})}
     fichiers = [{"nom": k["slug"][:70] + ".pdf", "mime": "application/pdf", "b64": base64.b64encode(open(pdf, "rb").read()).decode()},
                 {"nom": k["slug"][:70] + ".docx", "mime": kits.MIME_DOCX, "b64": base64.b64encode(open(docx, "rb").read()).decode()}]
     corps = {"produit": produit, "fichiers": fichiers}
@@ -590,12 +597,59 @@ def appeler_modele_kit(domaine, deja, essai=0, idee=None):
     ], essai)
 
 
+CONSIGNE_GUIDE = """Tu écris des GUIDES PRATIQUES GRATUITS en français pour le site Teranga Outils (Sénégal et Afrique francophone).
+Un guide répond vraiment à une recherche que les gens tapent sur Google : méthode concrète, exemples chiffrés en F CFA aux calculs JUSTES,
+prénoms et lieux sénégalais fictifs. Il doit être utile même sans rien acheter. Réponds UNIQUEMENT par un objet JSON :
+{"titre": "…(30-80 car., la question ou le besoin, mots que les gens tapent)", "description": "…(120-160 car.)", "chapeau": "…(200-450 car.)",
+ "sections": [{"titre": "…", "paragraphes": ["…"], "puces": ["…"]}] (5 à 8 sections, 800 à 1600 mots au total),
+ "produits": ["adresse d'un produit de la liste fournie, le plus utile"] (0 à 2), "mots_cles": ["4 à 8 recherches réelles"]}
+INTERDITS : liens, numéros de téléphone, e-mails, conseil juridique, fiscal, médical ou financier engageant, politique, religion, promesse de gain."""
+
+
+def controler_guide(g):
+    pb = []
+    for cle, mn, mx in (("titre", 20, 110), ("description", 80, 200), ("chapeau", 100, 800)):
+        v = g.get(cle)
+        if not isinstance(v, str) or not (mn <= len(v.strip()) <= mx):
+            pb.append(f"{cle} : longueur hors de {mn}-{mx}")
+    secs = g.get("sections")
+    if not isinstance(secs, list) or not 3 <= len(secs) <= 12:
+        return pb + ["3 à 12 sections"]
+    mots = len(str(g.get("chapeau", "")).split())
+    for s_ in secs:
+        if not isinstance(s_, dict) or not str(s_.get("titre", "")).strip() or not (s_.get("paragraphes") or s_.get("puces")):
+            pb.append("section incomplète"); break
+        mots += len(" ".join(str(x) for x in (s_.get("paragraphes") or []) + (s_.get("puces") or [])).split())
+    if not 450 <= mots <= 3500:
+        pb.append(f"{mots} mots (450 à 3 500)")
+    texte = sans_acc(json.dumps(g, ensure_ascii=False))
+    if INTERDITS.search(texte):
+        pb.append("sujet interdit : " + INTERDITS.search(texte).group(0))
+    if re.search(r"https?://|www\.|@[a-z0-9-]+\.[a-z]{2,}|\b(?:\+?221)?\s?7[05678]\s?\d{3}\s?\d{2}\s?\d{2}\b", texte):
+        pb.append("lien, e-mail ou numéro de téléphone")
+    return pb
+
+
+def deposer_guide(g):
+    corps = {"guide": {k: g[k] for k in ("slug", "titre", "description", "chapeau", "sections", "produits", "mots_cles") if k in g}}
+    if g.get("_sujet"):
+        corps["guide"]["sujet"] = g["_sujet"]
+    req = urllib.request.Request(API + "/depot-guide", data=json.dumps(corps).encode(), method="POST",
+                                 headers={"Content-Type": "application/json", "Authorization": "Bearer " + jeton_github()})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        return {"erreur": e.code, "detail": e.read().decode()[:300]}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--nombre", type=int, default=5)
     ap.add_argument("--essais", type=int, default=3)
     ap.add_argument("--generateurs", type=int, default=1, help="documents sur mesure à créer (modèle gratuit)")
     ap.add_argument("--kits", type=int, default=1, help="kits à imprimer (PDF + Word) à créer (modèle gratuit)")
+    ap.add_argument("--guides", type=int, default=1, help="guides gratuits à écrire (attirent les visiteurs des moteurs de recherche)")
     ap.add_argument("--fiches")
     ap.add_argument("--sortie")
     ap.add_argument("--sans-depot", action="store_true", help="essai : fiches du modèle construites et vérifiées, rien n'est déposé")
@@ -657,7 +711,7 @@ def main():
     deposes = 0
     echecs_modele = 0  # le service de modèles ne répond pas : inutile de parcourir tous les domaines
     sans_cle = False
-    for domaine, idee in domaines:
+    for domaine, idee, sujet in domaines:
         if deposes >= a.nombre or echecs_modele >= 4 or sans_cle:
             break
         for essai in range(1, a.essais + 1):
@@ -665,6 +719,8 @@ def main():
                 rapport.append({"arret": "4 échecs de suite du service de modèles : arrêt pour aujourd'hui"}); break
             try:
                 fiche = appeler_modele(domaine, deja, essai - 1, idee)
+                if isinstance(fiche, dict) and sujet:
+                    fiche["_sujet"] = sujet
                 echecs_modele = 0
             except SansCle as e:
                 sans_cle = True
@@ -688,12 +744,14 @@ def main():
             break
     # 3. Documents sur mesure écrits par le modèle (masqués aux clients tant que la rédaction n'est pas activée)
     gen_ok = 0
-    for domaine, idee in pistes("generateur", deja, DOMAINES_DOCS):
+    for domaine, idee, sujet in pistes("generateur", deja, DOMAINES_DOCS):
         if gen_ok >= a.generateurs or sans_cle or echecs_modele >= 4:
             break
         for essai in range(1, a.essais + 1):
             try:
                 g = appeler_modele_generateur(domaine, deja, essai - 1, idee)
+                if isinstance(g, dict) and sujet:
+                    g["_sujet"] = sujet
                 echecs_modele = 0
             except SansCle as e:
                 sans_cle = True
@@ -722,12 +780,14 @@ def main():
             break
     # 4. Kits à imprimer (PDF + Word) écrits par le modèle
     kits_ok = 0
-    for domaine, idee in pistes("kit", deja, DOMAINES + DOMAINES_DOCS):
+    for domaine, idee, sujet in pistes("kit", deja, DOMAINES + DOMAINES_DOCS):
         if kits_ok >= a.kits or sans_cle or echecs_modele >= 4:
             break
         for essai in range(1, a.essais + 1):
             try:
                 k = appeler_modele_kit(domaine, deja, essai - 1, idee)
+                if isinstance(k, dict) and sujet:
+                    k["_sujet"] = sujet
                 echecs_modele = 0
             except SansCle as e:
                 sans_cle = True
@@ -751,11 +811,47 @@ def main():
             if isinstance(res, dict) and res.get("statut") == "brouillon":
                 kits_ok += 1; deja.append(k["titre"])
             break
+    # 5. Guides gratuits (marketing : réponses utiles aux recherches réelles, reliées aux produits)
+    guides_ok = 0
+    produits_txt = "; ".join(f"{p.get('slug')} = {p.get('titre')}" for p in existants[:80])
+    for domaine, idee, sujet in pistes("guide", deja, [d for d in DOMAINES]):
+        if guides_ok >= a.guides or sans_cle or echecs_modele >= 4:
+            break
+        for essai in range(1, a.essais + 1):
+            try:
+                g = modele([{"role": "system", "content": CONSIGNE_GUIDE},
+                            {"role": "user", "content": f"Domaine : {domaine}." + (f"\nRecherche à satisfaire : {idee}." if idee else "") +
+                             f"\nProduits du site (adresse = titre) : {produits_txt}\nGuides déjà publiés (ne pas refaire) : {', '.join(sorted(GUIDES_FAITS))[:2000]}\nÉcris UN guide. Réponds par le seul objet JSON."}], essai - 1)
+                echecs_modele = 0
+            except SansCle as e:
+                sans_cle = True; break
+            except Exception as e:
+                echecs_modele += 1
+                rapport.append({"guide": domaine, "essai": essai, "erreur": f"modèle : {e}"[:400]})
+                if echecs_modele >= 4:
+                    break
+                time.sleep(5); continue
+            if not isinstance(g, dict):
+                continue
+            g["slug"] = slugifier(g.get("titre", ""))[:70]
+            g["produits"] = [x for x in (g.get("produits") or []) if any(p.get("slug") == x for p in existants)][:2]
+            if sujet:
+                g["_sujet"] = sujet
+            pb = controler_guide(g)
+            if not pb and g["slug"] in GUIDES_FAITS:
+                pb = ["déjà publié"]
+            if pb:
+                rapport.append({"guide": domaine, "essai": essai, "titre": g.get("titre"), "problemes": pb[:6]}); continue
+            res = {"statut": "publie", "essai": True} if a.sans_depot else deposer_guide(g)
+            rapport.append({"guide": domaine, "essai": essai, "titre": g["titre"], "depot": res})
+            if isinstance(res, dict) and res.get("statut") == "publie":
+                guides_ok += 1; GUIDES_FAITS.add(g["slug"])
+            break
     print(json.dumps(rapport, ensure_ascii=False, indent=1))
-    print(f"Fiches déposées : {fiches_ok} · nouveaux outils déposés : {deposes}/{a.nombre} · documents sur mesure : {gen_ok}/{a.generateurs} · kits : {kits_ok}/{a.kits}")
+    print(f"Fiches déposées : {fiches_ok} · nouveaux outils déposés : {deposes}/{a.nombre} · documents sur mesure : {gen_ok}/{a.generateurs} · kits : {kits_ok}/{a.kits} · guides : {guides_ok}/{a.guides}")
     if sans_cle:
         print("Rédaction automatique pas encore activée : seules les fiches en attente ont été traitées (aucune erreur).")
-    sys.exit(0 if (deposes or fiches_ok or gen_ok or kits_ok or sans_cle or (a.nombre == 0 and a.generateurs == 0 and a.kits == 0)) else 1)
+    sys.exit(0 if (deposes or fiches_ok or gen_ok or kits_ok or guides_ok or sans_cle or (a.nombre == 0 and a.generateurs == 0 and a.kits == 0 and a.guides == 0)) else 1)
 
 
 if __name__ == "__main__":

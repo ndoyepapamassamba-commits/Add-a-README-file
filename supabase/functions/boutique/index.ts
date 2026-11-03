@@ -128,6 +128,28 @@ export function controlerDepot(b: any): string | null {
   return null;
 }
 
+// ------------------------------------------------------------------ Guides gratuits écrits par la fabrique
+export function validerGuide(g: any): string | null {
+  if (!g || typeof g !== "object") return "guide manquant";
+  if (typeof g.slug !== "string" || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(g.slug) || g.slug.length > 80) return "slug";
+  for (const [k, mn, mx] of [["titre", 20, 110], ["description", 80, 200], ["chapeau", 100, 800]] as [string, number, number][])
+    if (typeof g[k] !== "string" || g[k].trim().length < mn || g[k].length > mx) return `${k} : ${mn} à ${mx} caractères`;
+  if (!Array.isArray(g.sections) || g.sections.length < 3 || g.sections.length > 12) return "3 à 12 sections";
+  let mots = g.chapeau.split(/\s+/).length;
+  for (const s of g.sections) {
+    if (!s || typeof s.titre !== "string" || !s.titre.trim()) return "section sans titre";
+    for (const k of ["paragraphes", "puces"]) if (s[k] !== undefined && !(Array.isArray(s[k]) && s[k].every((x: any) => typeof x === "string"))) return "section : " + k;
+    if (!(s.paragraphes || []).length && !(s.puces || []).length) return "section vide";
+    mots += [...(s.paragraphes || []), ...(s.puces || [])].join(" ").split(/\s+/).length;
+  }
+  if (mots < 450 || mots > 3500) return `longueur : ${mots} mots (450 à 3 500)`;
+  if (g.produits !== undefined && !(Array.isArray(g.produits) && g.produits.length <= 3 && g.produits.every((x: any) => typeof x === "string" && /^[a-z0-9-]{3,80}$/.test(x)))) return "produits";
+  const texte = sansAcc(JSON.stringify(g));
+  if (INTERDITS.test(texte)) return "sujet interdit";
+  if (/https?:\/\/|www\.|@[a-z0-9-]+\.[a-z]{2,}|\b(?:\+?221)?\s?7[05678]\s?\d{3}\s?\d{2}\s?\d{2}\b/.test(texte)) return "lien ou numéro";
+  return null;
+}
+
 // ------------------------------------------------------------------ Documents sur mesure (générateurs)
 // Formulaire : [{ id, label, type: texte|paragraphe|nombre|choix|date, obligatoire?, max?, choix?, aide? }]
 export function validerFormulaire(f: any): string | null {
@@ -201,14 +223,16 @@ const REGLES_REDACTION = "Tu rédiges en français clair et professionnel, adapt
   "N'invente aucun fait vérifiable (chiffres, diplômes, adresses, dates, prix) qui ne figure pas dans les réponses ; si une information manque, rédige sans elle. " +
   "Pas de conseil médical, juridique ou financier engageant, pas de promesse de résultat. " +
   "Réponds UNIQUEMENT par un objet JSON : {\"titre\": \"…\", \"sections\": [{\"titre\": \"…\", \"paragraphes\": [\"…\"], \"puces\": [\"…\"]}]}. Pas de Markdown dans les textes.";
-export async function rediger(env: Env, g: { consigne: string; formulaire: any[]; reponses: Record<string, unknown>; titre: string }, cle?: string): Promise<any> {
+export async function rediger(env: Env, g: { consigne: string; formulaire: any[]; reponses: Record<string, unknown>; titre: string }, cle?: string, photos: string[] = []): Promise<any> {
   const k = cle || env.openrouter;
   if (!k) throw new Error("ia indisponible");
   const lignes = (g.formulaire || []).filter((c: any) => g.reponses && g.reponses[c.id] !== undefined).map((c: any) => `- ${c.label} : ${c.type === "image" ? "(photo jointe par le client)" : String(g.reponses[c.id])}`);
   const messages = [
     { role: "system", content: REGLES_REDACTION },
-    { role: "user", content: `Document à rédiger : ${g.titre}.\nConsigne :\n${g.consigne}\n\nRéponses du client :\n${lignes.join("\n")}` },
+    { role: "user", content: `Document à rédiger : ${g.titre}.\nConsigne :\n${g.consigne}\n\nRéponses du client :\n${lignes.join("\n")}${photos.length ? `\n\n${photos.length} photo(s) jointe(s) par le client ci-dessous : lis-les attentivement (texte, tableaux, objets) et appuie-toi dessus.` : ""}` },
   ];
+  // Photos du client (document à convertir, menu, bien à louer…) : jointes au message, lues par le modèle
+  if (photos.length) (messages[1] as any).content = [{ type: "text", text: messages[1].content }, ...photos.map((u) => ({ type: "image_url", image_url: { url: u } }))];
   let derniere = "";
   const t0 = Date.now();
   for (const modele of env.modeles || MODELES_DEFAUT) {
@@ -311,17 +335,17 @@ async function genererSiBesoin(env: Env, c: any, id: string, h: string): Promise
   if (!g || g.occupe) return { ...c, en_redaction: true };
   try {
     const cle = await cleIa(env);
-    const d = await rediger(env, g, cle);
+    // Photos envoyées par le client : lues par le modèle de texte, puis retouchées par le modèle d'images
+    const sources: string[] = [];
+    for (const c of (g.formulaire || []).filter((x: any) => x.type === "image")) {
+      const nom = g.reponses && g.reponses[c.id];
+      if (!nom) continue;
+      const ph = await rpc(env, "boutique_commande_image", { p_order_id: id, p_token_hash: h, p_nom: String(nom), p_now: env.now().toISOString() }).catch(() => null);
+      if (ph && ph.b64) sources.push(`data:${ph.mime};base64,${ph.b64}`);
+    }
+    const d = await rediger(env, g, cle, sources);
     if (g.sortie === "image") {
-      // Affiches : format statut (9:16) puis format carré (1:1) ; au moins une image, sinon nouvel essai plus tard
-      // Photos envoyées par le client (retouche) : deux propositions au format d'origine ; sinon affiches 9:16 et 1:1
-      const sources: string[] = [];
-      for (const c of (g.formulaire || []).filter((x: any) => x.type === "image")) {
-        const nom = g.reponses && g.reponses[c.id];
-        if (!nom) continue;
-        const ph = await rpc(env, "boutique_commande_image", { p_order_id: id, p_token_hash: h, p_nom: String(nom), p_now: env.now().toISOString() }).catch(() => null);
-        if (ph && ph.b64) sources.push(`data:${ph.mime};base64,${ph.b64}`);
-      }
+      // Retouche : deux propositions au format d'origine ; affiches : statut (9:16) puis carré (1:1) ; au moins une image
       const prompts = (d.prompts_image || []).length ? d.prompts_image : [`${sources.length ? "Edit the attached photo professionally" : "Professional advertising poster"}. ${g.titre}. ${JSON.stringify(g.reponses).slice(0, 1500)}`];
       const formats: (string | null)[] = sources.length ? [null, null] : ["9:16", "1:1"], images: { nom: string; format: string }[] = [], t0 = Date.now();
       for (let i = 0; i < Math.min(2, Math.max(prompts.length, 2)); i++) {
@@ -437,7 +461,12 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
       const v = await verifierGithub(env, (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""));
       if (!v.ok) { console.warn(`[boutique] fiches refusées : ${v.raison}`); return erreur(401, "refuse", "Accès refusé."); }
       const adm = await rpc(env, "boutique_admin", { p_now: now.toISOString() }).catch(() => null);
-      return json(200, { fiches: (await rpc(env, "boutique_fiches_attente", {})) || [], titres: ((adm && adm.produits) || []).map((p: any) => p.titre).filter(Boolean) });
+      const guides = (await rpc(env, "boutique_guides_publics", {}).catch(() => null)) || [];
+      const prods = (adm && adm.produits) || [];
+      return json(200, { fiches: (await rpc(env, "boutique_fiches_attente", {})) || [],
+        titres: [...prods.map((p: any) => p.titre), ...guides.map((x: any) => x.titre)].filter(Boolean),
+        sujets: [...prods.map((p: any) => p.controle && p.controle.sujet), ...guides.map((x: any) => x.sujet)].filter(Boolean),
+        guides: guides.map((x: any) => x.slug) });
     }
     if (req.method === "POST" && chemin === "/fabrique/modele") {
       // Modèle de langue pour la fabrique (GitHub Models a fermé le 30 juillet 2026) : modèles gratuits d'OpenRouter avec la clé
@@ -486,6 +515,20 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
         }
       }
       return erreur(502, "modeles", ("Aucun modèle n'a répondu : " + essais.join(" | ")).slice(0, 400));
+    }
+    if (req.method === "GET" && chemin === "/guides") {
+      const guides = ((await rpc(env, "boutique_guides_publics", {})) || []).map(({ sujet, ...g }: any) => g);
+      return json(200, { guides }, { "cache-control": "public, max-age=300" });
+    }
+    if (req.method === "POST" && chemin === "/depot-guide") {
+      const v = await verifierGithub(env, (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""));
+      if (!v.ok) { console.warn(`[boutique] dépôt de guide refusé : ${v.raison}`); return erreur(401, "refuse", "Accès refusé."); }
+      const b = await lireJson(req, 120_000);
+      const pb = validerGuide(b.guide);
+      if (pb) return erreur(400, "controle", pb);
+      const res = await rpc(env, "boutique_deposer_guide", { p_guide: b.guide, p_now: now.toISOString() });
+      if (!res || res.erreur) return erreur(409, "depot", (res && res.erreur) || "dépôt impossible");
+      return json(201, res);
     }
     if (req.method === "GET" && chemin === "/etat") {
       return json(200, { redaction: !!(await cleIa(env)) });
