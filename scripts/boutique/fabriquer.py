@@ -414,11 +414,14 @@ def appeler_modele_generateur(domaine, deja, essai=0):
     ], essai)
 
 
-def deposer_generateur(g):
+def deposer_generateur(g, fiche_id=None):
     produit = {k: g[k] for k in ("titre", "domaine", "accroche", "description", "points", "faq", "prix", "formulaire", "consigne", "exemple")}
     produit["slug"] = g["slug"]
     produit["controle"] = {"ok": True, "outil": "fabriquer.py", "le": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
-    req = urllib.request.Request(API + "/depot-generateur", data=json.dumps({"produit": produit}).encode(), method="POST",
+    corps = {"produit": produit}
+    if fiche_id:
+        corps["fiche_id"] = fiche_id
+    req = urllib.request.Request(API + "/depot-generateur", data=json.dumps(corps).encode(), method="POST",
                                  headers={"Content-Type": "application/json", "Authorization": "Bearer " + jeton_github()})
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
@@ -536,6 +539,17 @@ def main():
     fiches_ok = 0
     for item in attente:
         fiche = item.get("fiche") or {}
+        if fiche.get("formulaire"):  # document sur mesure écrit à l'avance : contrôlé puis déposé tel quel
+            pb = controler_generateur(fiche)
+            fiche["slug"] = fiche.get("slug") or slugifier(fiche.get("titre", ""))
+            if pb:
+                rapport.append({"fiche": item.get("id"), "titre": fiche.get("titre"), "problemes": pb[:6]}); continue
+            res = deposer_generateur(fiche, fiche_id=item.get("id"))
+            rapport.append({"fiche": item.get("id"), "titre": fiche.get("titre"), "depot": res})
+            if isinstance(res, dict) and res.get("statut") == "brouillon":
+                fiches_ok += 1
+            deja.append(fiche.get("titre", ""))
+            continue
         chemin, apercu, pb = fabriquer_une(fiche, dossier)
         if not chemin:
             rapport.append({"fiche": item.get("id"), "titre": fiche.get("titre"), "problemes": pb[:6]}); continue
