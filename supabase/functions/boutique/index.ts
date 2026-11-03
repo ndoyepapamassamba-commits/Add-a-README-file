@@ -238,13 +238,13 @@ export async function rediger(env: Env, g: { consigne: string; formulaire: any[]
   for (const modele of env.modeles || MODELES_DEFAUT) {
     if (Date.now() - t0 > 75_000) { derniere += " | temps écoulé"; break; } // limite des fonctions Edge (150 s)
     try {
-      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 70000);
+      // Le délai couvre aussi la lecture de la réponse (un modèle lent peut envoyer les en-têtes tout de suite)
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), Math.min(70_000, 140_000 - (Date.now() - t0)));
       const r = await env.fetch("https://openrouter.ai/api/v1/chat/completions", { method: "POST", signal: ctl.signal,
         headers: { authorization: `Bearer ${k}`, "content-type": "application/json", "x-title": "Teranga Outils" },
         body: JSON.stringify({ model: modele, messages, temperature: 0.4, max_tokens: 12000, response_format: { type: "json_object" } }) });
-      clearTimeout(tm);
-      if (!r.ok) { derniere = `${modele} : ${r.status}`; continue; }
-      const j = await r.json();
+      if (!r.ok) { clearTimeout(tm); derniere = `${modele} : ${r.status}`; continue; }
+      const j = await r.json().finally(() => clearTimeout(tm));
       const d = extraireJson(j?.choices?.[0]?.message?.content || "");
       const pb = validerDocument(d);
       if (pb) { derniere = `${modele} : ${pb}`; continue; }
@@ -318,9 +318,8 @@ export async function imager(env: Env, cle: string, prompt: string, format: stri
       const r = await env.fetch("https://openrouter.ai/api/v1/chat/completions", { method: "POST", signal: ctl.signal,
         headers: { authorization: `Bearer ${cle}`, "content-type": "application/json", "x-title": "Teranga Outils" },
         body: JSON.stringify({ model: modele, messages: [{ role: "user", content: sources.length ? [{ type: "text", text: prompt }, ...sources.map((u) => ({ type: "image_url", image_url: { url: u } }))] : prompt }], modalities: ["image", "text"], ...(format ? { image_config: { aspect_ratio: format } } : {}) }) });
-      clearTimeout(tm);
-      if (!r.ok) { derniere = `${modele} : ${r.status}`; continue; }
-      const j = await r.json();
+      if (!r.ok) { clearTimeout(tm); derniere = `${modele} : ${r.status}`; continue; }
+      const j = await r.json().finally(() => clearTimeout(tm));
       const url = String(j?.choices?.[0]?.message?.images?.[0]?.image_url?.url || "");
       const m = url.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
       if (!m || m[2].length < 2000) { derniere = `${modele} : pas d'image`; continue; }
@@ -488,25 +487,24 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
           const r = await env.fetch("https://openrouter.ai/api/v1/chat/completions", { method: "POST", signal: ctl.signal,
             headers: { authorization: `Bearer ${k}`, "content-type": "application/json", "x-title": "Teranga Outils (fabrique)" },
             body: JSON.stringify({ model: modele, messages: msgs, temperature: typeof b.temperature === "number" ? Math.min(1.2, Math.max(0, b.temperature)) : 0.7, max_tokens: 8000, ...(b.json ? { response_format: { type: "json_object" } } : {}) }) });
-          clearTimeout(tm);
-          if (!r.ok) { essais.push(`${modele} : ${r.status}`); return null; }
-          const j = await r.json().catch(() => null);
+          if (!r.ok) { clearTimeout(tm); essais.push(`${modele} : ${r.status}`); return null; }
+          const j = await r.json().catch(() => null).finally(() => clearTimeout(tm));
           const c = String(j?.choices?.[0]?.message?.content || "");
           if (!c.trim()) { essais.push(`${modele} : vide`); return null; }
           return c;
         } catch (e: any) { essais.push(`${modele} : ${e && e.name === "AbortError" ? "délai" : e && e.message}`); return null; }
       };
-      // 1. Modèles gratuits (70 s au plus en tout), 2. repli sur un modèle payant bon marché (fiches sans donnée personnelle),
+      // 1. Modèles gratuits (60 s au plus en tout, 40 s par modèle), 2. repli sur un modèle payant bon marché (fiches sans donnée personnelle),
       // plafonné à 30 appels par jour pour que la dépense reste négligeable (quelques francs par produit).
       for (const modele of ordre) {
-        const reste = 70_000 - (Date.now() - t0);
+        const reste = 60_000 - (Date.now() - t0);
         if (reste < 12_000) { essais.push("temps des modèles gratuits écoulé"); break; }
-        const c = await essayer(modele, Math.min(60_000, reste));
+        const c = await essayer(modele, Math.min(40_000, reste));
         if (c) return json(200, { contenu: c, modele, payant: false });
       }
       if (b.payant !== false) {
         for (const modele of (env.modelesPayantsFabrique || MODELES_DEFAUT).filter((m) => !m.endsWith(":free"))) {
-          const reste = 140_000 - (Date.now() - t0);
+          const reste = 138_000 - (Date.now() - t0);
           if (reste < 15_000) { essais.push("temps écoulé"); break; }
           const permis = await rpc(env, "tcv_hit_rate_limit", { p_key: "fab-payant", p_window_seconds: 86400, p_max: 30, p_now: now.toISOString() }).catch(() => false);
           if (!permis) { essais.push("plafond payant du jour atteint"); break; }

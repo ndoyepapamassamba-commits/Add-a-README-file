@@ -519,7 +519,11 @@ def normaliser_fiche(f):
     """Finitions sans risque : titres de colonnes lisibles (« Quantité_kg » → « Quantité kg »), espaces superflus."""
     renomme = {}
     for fe in (f.get("classeur") or {}).get("feuilles") or []:
+        if not isinstance(fe, dict):  # feuille mal formée par le modèle : le contrôle la refusera ensuite
+            continue
         for col in fe.get("colonnes") or []:
+            if not isinstance(col, dict):
+                continue
             t = re.sub(r"\s+", " ", str(col.get("titre", "")).replace("_", " ")).strip()
             renomme[col.get("titre")] = t
             col["titre"] = t
@@ -536,8 +540,11 @@ def normaliser_fiche(f):
 
 def fabriquer_une(fiche, dossier):
     """Construit et vérifie ; renvoie (chemin, aperçu, problèmes)."""
-    normaliser_fiche(fiche)
-    pb = controler_fiche(fiche)
+    try:  # une fiche mal formée ne doit jamais arrêter toute la tournée
+        normaliser_fiche(fiche)
+        pb = controler_fiche(fiche)
+    except Exception as e:
+        return None, None, [f"fiche mal formée : {type(e).__name__}"]
     if pb:
         return None, None, pb
     fiche["slug"] = fiche.get("slug") or slugifier(fiche["titre"])

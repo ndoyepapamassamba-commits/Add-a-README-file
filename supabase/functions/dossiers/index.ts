@@ -82,9 +82,8 @@ export async function extraireAccord(env: Env, cle: string, texte: string, photo
       const r = await env.fetch("https://openrouter.ai/api/v1/chat/completions", { method: "POST", signal: ctl.signal,
         headers: { authorization: `Bearer ${cle}`, "content-type": "application/json", "x-title": "AccordAI" },
         body: JSON.stringify({ model: modele, temperature: 0.1, max_tokens: 1500, response_format: { type: "json_object" }, messages: [{ role: "system", content: CONSIGNE_ACCORD }, { role: "user", content: contenu }] }) });
-      clearTimeout(tm);
-      if (!r.ok) { derniere = `${modele} : ${r.status}`; continue; }
-      const j = await r.json();
+      if (!r.ok) { clearTimeout(tm); derniere = `${modele} : ${r.status}`; continue; }
+      const j = await r.json().finally(() => clearTimeout(tm));
       const t = String(j?.choices?.[0]?.message?.content || "").replace(/^```(?:json)?\s*|\s*```$/g, "");
       const d = JSON.parse(t.slice(t.indexOf("{"), t.lastIndexOf("}") + 1));
       const propres = nettoyerDonnees(d, 20);
