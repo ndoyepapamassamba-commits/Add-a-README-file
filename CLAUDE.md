@@ -56,6 +56,8 @@ livrés automatiquement. Spécification complète : `supabase/SPEC.md`. Guide du
   `bt_<id>`) : montant unique et détection du paiement par le téléphone via la fonction `api`, inchangée. Fichiers dans
   `tcv.course_assets` sous `bt/<id>/`. Migrations `20261102000008_boutique.sql` et `20261102000009_boutique_fiches.sql`.
 - Les fiches des produits (le contenu payant) ne sont jamais committées : elles vivent dans la base.
+- Guides gratuits : `scripts/boutique/guides.json` (contenu public) → pages `boutique/guide-<slug>.html` et `guides.html`,
+  reliés aux produits (champ `produits`) ; ajoutés au plan du site. C'est le seul marketing : aucun message n'est envoyé.
 - Documents sur mesure (produits `type = 'generateur'`) : le client remplit un formulaire (réponses dans
   `orders.input`), paie par Wave, puis la fonction rédige le document par OpenRouter à la lecture de la commande
   (`boutique_generation_reserver` / `_enregistrer`, verrou de 3 min) et le livre à l'écran et en Word (.docx construit

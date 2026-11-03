@@ -1,5 +1,6 @@
 // Pages de Teranga Outils, régénérées depuis le catalogue public (fonction Edge « boutique ») :
-// boutique/index.html, une page par produit, commande.html, cgv.html, sitemap.xml et clé IndexNow.
+// boutique/index.html, une page par produit, commande.html, cgv.html, guides gratuits (scripts/boutique/guides.json),
+// sitemap.xml et clé IndexNow.
 // node scripts/boutique/pages.mjs [catalogue.json]  → écrit dans boutique/ et affiche les URL nouvelles ou modifiées.
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -12,6 +13,11 @@ const CLE_INDEXNOW = "ebb4ea75c352a571bd0b205056c2b276";
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const fcfa = (n) => Number(n || 0).toLocaleString("fr-FR").replace(/\u202f|\u00a0/g, " ") + " F";
 const sansAcc = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+// Guides gratuits : contenu utile trouvé sur les moteurs de recherche, relié aux produits (marketing sans aucun envoi de message)
+const FICHIER_GUIDES = fileURLToPath(new URL("./guides.json", import.meta.url));
+const guides = (existsSync(FICHIER_GUIDES) ? JSON.parse(readFileSync(FICHIER_GUIDES, "utf8")) : []).filter((g) => g && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(g.slug) && g.titre && Array.isArray(g.sections));
+const carte = (p) => `<a class="carte" href="${esc(p.slug)}.html" data-cherche="${esc(sansAcc(p.titre + " " + p.domaine + " " + p.accroche))}">
+<span class="etiquette">${esc(p.domaine)}${p.type === "generateur" ? " · sur mesure" : ""}</span><h3>${esc(p.titre)}</h3><p>${esc(p.accroche)}</p><span class="prix">${fcfa(p.prix)}</span></a>`;
 
 function valeur(v, type) {
   if (v === null || v === undefined || v === "") return "";
@@ -44,7 +50,7 @@ const tete = (titre, description, canonique, extra = "") => `<!DOCTYPE html>
 <link rel="stylesheet" href="boutique.css">
 ${extra}</head>
 <body>
-<header class="top"><a class="brand" href="./">Teranga <b>Outils</b></a><a class="lien" href="./">Tous les outils</a></header>
+<header class="top"><a class="brand" href="./">Teranga <b>Outils</b></a><span><a class="lien" href="./">Tous les outils</a>${guides.length ? ' · <a class="lien" href="guides.html">Guides</a>' : ""}</span></header>
 `;
 const pied = `<footer>
 <p>Teranga Outils · outils Excel prêts à l'emploi, payés par Wave et livrés tout de suite. Vendeur : particulier au Sénégal.</p>
@@ -106,15 +112,49 @@ function pageProduit(p) {
 ${p.type === "generateur" ? `<h2>Exemple de document rédigé</h2>\n<p style="color:var(--muted);font-size:15px">Exemple obtenu avec des réponses fictives. Votre document est rédigé à partir de vos propres réponses.</p>\n${rendreDocument(p.exemple)}` : `<h2>Aperçu du classeur</h2>\n${tableaux}\n${kpi}`}
 <h2>Questions fréquentes</h2>
 ${(p.faq || []).map((f) => `<details><summary>${esc(f.q)}</summary><p>${esc(f.r)}</p></details>`).join("\n")}
+${guidesDe(p.slug)}
 <p style="margin-top:1.5em">${p.type === "generateur" ? "Vous recevez le texte à l'écran et un fichier Word (.docx) modifiable, qui s'ouvre aussi sur téléphone. Relisez-le et adaptez-le avant de l'utiliser." : `Fichier Excel (.xlsx) : ${(p.fichiers || []).map((f) => `${esc(f.nom)} (${Math.max(1, Math.round(f.taille / 1024))} Ko)`).join(", ")}. Fonctionne avec Excel, LibreOffice et Google Sheets, sur ordinateur ou téléphone.`}</p>
+</main>
+` + pied;
+}
+
+function guidesDe(slug) {
+  const l = guides.filter((g) => (g.produits || []).includes(slug));
+  return l.length ? `<h2>Guide gratuit</h2>\n<ul class="points">${l.map((g) => `<li><a href="guide-${esc(g.slug)}.html">${esc(g.titre)}</a></li>`).join("")}</ul>` : "";
+}
+
+function pageGuide(g, produits) {
+  const url = BASE + "guide-" + g.slug + ".html";
+  const lies = (g.produits || []).map((s) => produits.find((p) => p.slug === s)).filter(Boolean);
+  const jsonld = { "@context": "https://schema.org", "@type": "Article", headline: g.titre, description: g.description, inLanguage: "fr", url,
+    author: { "@type": "Organization", name: "Teranga Outils" }, publisher: { "@type": "Organization", name: "Teranga Outils" }, keywords: (g.mots_cles || []).join(", ") };
+  const corps = g.sections.map((s) => `<h2>${esc(s.titre)}</h2>\n${(s.paragraphes || []).map((x) => `<p>${esc(x)}</p>`).join("\n")}${(s.puces || []).length ? `\n<ul class="points">${s.puces.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}`).join("\n");
+  const autres = guides.filter((x) => x.slug !== g.slug).slice(0, 4);
+  return tete(g.titre + " | Teranga Outils", g.description || g.chapeau.slice(0, 155), url, `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, "\\u003c")}</script>\n`) + `<main>
+<p class="crumbs"><a href="./">Teranga Outils</a> › <a href="guides.html">Guides</a></p>
+<h1>${esc(g.titre)}</h1>
+<p class="lead">${esc(g.chapeau)}</p>
+${corps}
+${lies.length ? `<h2>Pour gagner du temps</h2>\n<div class="grille">${lies.map(carte).join("\n")}</div>` : `<p style="margin-top:1.5em"><a class="btn" href="./">Voir les outils et documents de Teranga Outils</a></p>`}
+${autres.length ? `<h2>Autres guides</h2>\n<ul class="points">${autres.map((x) => `<li><a href="guide-${esc(x.slug)}.html">${esc(x.titre)}</a></li>`).join("")}</ul>` : ""}
+</main>
+` + pied;
+}
+
+function pageGuides() {
+  return tete("Guides gratuits pour le commerce, la tontine, les loyers et les événements | Teranga Outils",
+    "Guides pratiques et gratuits pour les commerçants, enseignants, propriétaires et familles du Sénégal : marges, stock, tontine, loyers, budget, annonces.", BASE + "guides.html") + `<main>
+<p class="crumbs"><a href="./">Teranga Outils</a> › Guides</p>
+<h1>Guides gratuits</h1>
+<p class="lead">Des conseils pratiques, avec des exemples chiffrés en F CFA, pour mieux gérer votre activité ou votre budget.</p>
+<div class="grille">${guides.map((g) => `<a class="carte" href="guide-${esc(g.slug)}.html"><span class="etiquette">Guide</span><h3>${esc(g.titre)}</h3><p>${esc(g.description || "")}</p></a>`).join("\n")}</div>
 </main>
 ` + pied;
 }
 
 function pageIndex(produits) {
   const domaines = [...new Set(produits.map((p) => p.domaine))].sort((a, b) => a.localeCompare(b, "fr"));
-  const cartes = (liste) => liste.map((p) => `<a class="carte" href="${esc(p.slug)}.html" data-cherche="${esc(sansAcc(p.titre + " " + p.domaine + " " + p.accroche))}">
-<span class="etiquette">${esc(p.domaine)}${p.type === "generateur" ? " · sur mesure" : ""}</span><h3>${esc(p.titre)}</h3><p>${esc(p.accroche)}</p><span class="prix">${fcfa(p.prix)}</span></a>`).join("\n");
+  const cartes = (liste) => liste.map(carte).join("\n");
   const desc = `${produits.length} outils Excel et documents sur mesure pour le commerce, la tontine, les loyers, l'école, l'immobilier, les événements et plus : payés par Wave, livrés tout de suite.`;
   const jsonld = { "@context": "https://schema.org", "@type": "ItemList", itemListElement: produits.map((p, i) => ({ "@type": "ListItem", position: i + 1, url: BASE + p.slug + ".html", name: p.titre })) };
   return tete("Outils Excel et documents sur mesure pour le Sénégal | Teranga Outils", desc, BASE, `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, "\\u003c")}</script>\n`) + `<main>
@@ -122,6 +162,7 @@ function pageIndex(produits) {
 <p class="lead">Des classeurs Excel prêts à l'emploi et des documents rédigés sur mesure (annonces, fiches de poste, discours, livrets d'accueil…) pour votre commerce, votre famille ou votre activité. Payez par Wave, recevez tout de suite.</p>
 <p><input class="recherche" id="recherche" type="search" placeholder="Rechercher un outil (stock, tontine, loyers…)" aria-label="Rechercher un outil"></p>
 ${produits.length ? domaines.map((d) => `<h2>${esc(d)}</h2>\n<div class="grille">${cartes(produits.filter((p) => p.domaine === d))}</div>`).join("\n") : "<p>Les premiers outils arrivent très bientôt.</p>"}
+${guides.length ? `<h2>Guides gratuits</h2>\n<ul class="points">${guides.slice(0, 6).map((g) => `<li><a href="guide-${esc(g.slug)}.html">${esc(g.titre)}</a></li>`).join("")}</ul>\n<p><a href="guides.html">Tous les guides</a></p>` : ""}
 <h2>Comment ça marche</h2>
 <ol class="points"><li>Choisissez un outil et indiquez votre nom.</li><li>Envoyez par Wave le montant exact affiché.</li><li>Votre paiement est reconnu automatiquement : le fichier se télécharge aussitôt (lien valable 30 jours).</li></ol>
 </main>
@@ -186,11 +227,13 @@ ecrire("index.html", pageIndex(produits));
 ecrire("commande.html", commande);
 ecrire("cgv.html", cgv);
 ecrire(CLE_INDEXNOW + ".txt", CLE_INDEXNOW);
+for (const g of guides) ecrire("guide-" + g.slug + ".html", pageGuide(g, produits));
+if (guides.length) ecrire("guides.html", pageGuides());
 // Produits retirés de la vente : leur page disparaît
-const gardes = new Set(produits.map((p) => p.slug + ".html").concat(["index.html", "commande.html", "cgv.html"]));
+const gardes = new Set(produits.map((p) => p.slug + ".html").concat(["index.html", "commande.html", "cgv.html"], guides.map((g) => "guide-" + g.slug + ".html"), guides.length ? ["guides.html"] : []));
 for (const f of readdirSync(RACINE)) if (f.endsWith(".html") && !gardes.has(f)) { unlinkSync(RACINE + f); ecrits.set(f, true); }
 const jour = new Date().toISOString().slice(0, 10);
-const urls = [BASE, BASE + "cgv.html", ...produits.map((p) => BASE + p.slug + ".html")];
+const urls = [BASE, BASE + "cgv.html", ...produits.map((p) => BASE + p.slug + ".html"), ...(guides.length ? [BASE + "guides.html"] : []), ...guides.map((g) => BASE + "guide-" + g.slug + ".html")];
 ecrire("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${u}</loc></url>`).join("\n")}\n</urlset>\n`);
 const changees = [...ecrits].filter(([n, c]) => c && n.endsWith(".html") && n !== "commande.html" && existsSync(RACINE + n)).map(([n]) => n === "index.html" ? BASE : BASE + n);
 writeFileSync(process.env.CHANGEES || "/tmp/boutique-changees.txt", changees.join("\n"));

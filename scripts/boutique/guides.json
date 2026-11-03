@@ -1,0 +1,940 @@
+[
+  {
+    "slug": "organiser-une-tontine-sans-disputes",
+    "titre": "Organiser une tontine sans disputes : règles, versements, retards",
+    "description": "Règlement écrit, ordre de passage, suivi des versements et gestion des retards : la méthode simple pour une tontine sereine, avec un exemple chiffré.",
+    "chapeau": "Une tontine repose sur la confiance. Mais la confiance seule ne suffit pas : un versement oublié, une date mal comprise ou un membre qui disparaît après avoir pris la cagnotte, et le groupe se déchire. Voici une méthode simple pour fixer les règles dès le départ, suivre chaque versement et gérer les retards calmement.",
+    "sections": [
+      {
+        "titre": "Écrire le règlement avant le premier versement",
+        "paragraphes": [
+          "La plupart des disputes viennent de règles jamais dites. Tout le monde croyait être d’accord, mais chacun avait sa propre version. Réunissez les membres, discutez de chaque point et écrivez les décisions sur une feuille que chacun approuve, en réunion ou dans le groupe WhatsApp. Le règlement doit au minimum préciser :"
+        ],
+        "puces": [
+          "le montant de la cotisation et la fréquence (chaque semaine, chaque mois) ;",
+          "la date limite de versement, par exemple le 5 de chaque mois ;",
+          "les modes de paiement acceptés : espèces remises à la trésorière, Wave, Orange Money ;",
+          "l’ordre de passage et la façon de le fixer ;",
+          "la pénalité en cas de retard et ce qui se passe après plusieurs retards ;",
+          "ce qui arrive si un membre veut quitter le groupe en cours de route."
+        ]
+      },
+      {
+        "titre": "Faire le calcul de départ",
+        "paragraphes": [
+          "Prenons la tontine d’Awa Diop, à Pikine. Elle compte 10 membres qui versent chacun 10 000 F CFA par mois. La cagnotte mensuelle est donc de 10 × 10 000 = 100 000 F CFA. Comme chaque membre doit la recevoir une fois, le cycle dure 10 mois.",
+          "Sur ces 10 mois, chaque membre verse 10 × 10 000 = 100 000 F CFA et reçoit une fois 100 000 F CFA. Personne ne gagne ni ne perd d’argent : la tontine sert à épargner avec discipline et à disposer d’une grosse somme à un moment précis. Le premier bénéficiaire profite d’une avance, le dernier d’une épargne régulière.",
+          "Si un membre prend deux « mains », il verse 20 000 F CFA par mois et reçoit la cagnotte deux fois. Notez-le clairement dès le départ pour que personne ne s’étonne."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Fixer l’ordre de passage de façon transparente",
+        "paragraphes": [
+          "L’ordre de passage est la question la plus sensible. Une fois décidé, publiez la liste complète avec le mois de chaque bénéficiaire : une liste visible par tous évite les « je croyais que c’était mon tour ». Trois méthodes sont courantes pour le fixer :"
+        ],
+        "puces": [
+          "le tirage au sort devant tous les membres, en réunion ou en appel vidéo ;",
+          "l’accord à l’amiable, quand un membre a un besoin connu à l’avance (rentrée scolaire, loyer, fête de famille) ;",
+          "un mélange des deux : on tire au sort, puis on autorise les échanges de places entre deux membres d’accord."
+        ]
+      },
+      {
+        "titre": "Suivre chaque versement dans un tableau",
+        "paragraphes": [
+          "Le cahier de la trésorière fonctionne, jusqu’au jour où une page se perd. Un tableau simple suffit : une ligne par membre, une colonne par mois. Dans chaque case, notez la date et le montant reçu. En bas, inscrivez le total encaissé du mois et, à côté, le montant attendu.",
+          "Exemple au mois de mars : 9 membres sur 10 ont payé. Total encaissé : 9 × 10 000 = 90 000 F CFA. Montant attendu : 100 000 F CFA. Il manque 10 000 F CFA, et le tableau montre tout de suite qui n’a pas versé.",
+          "Gardez aussi les preuves : capture du transfert Wave ou Orange Money, reçu signé pour les espèces. Chaque mois, partagez le tableau à jour dans le groupe. La transparence coupe court aux rumeurs."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Gérer les retards sans casser le groupe",
+        "paragraphes": [
+          "Un retard n’est pas forcément de la mauvaise foi. Mais si le groupe ne réagit pas, les retards se multiplient. Appliquez la règle votée, toujours de la même façon, pour tout le monde, y compris pour les amis proches.",
+          "Prévoyez aussi le cas du bénéficiaire du mois : soit on lui remet la cagnotte seulement quand elle est complète, soit on lui verse ce qui est encaissé et le reste dès réception. Décidez-le à l’avance. Pour les retards eux-mêmes, voici une progression simple à inscrire dans le règlement :"
+        ],
+        "puces": [
+          "un rappel amical dans le groupe, la veille de la date limite ;",
+          "un message privé au retardataire, le lendemain de la date limite ;",
+          "la pénalité prévue, par exemple 500 F CFA par semaine de retard, versée dans une caisse commune ;",
+          "après deux retards de suite, une discussion avec l’ensemble des membres."
+        ]
+      },
+      {
+        "titre": "Protéger le groupe contre les départs",
+        "paragraphes": [
+          "Le vrai risque, c’est le membre qui reçoit la cagnotte tôt, puis cesse de payer. Quelques précautions limitent ce risque :"
+        ],
+        "puces": [
+          "placer en début de cycle les membres que tout le monde connaît bien ;",
+          "demander que chaque nouveau membre soit présenté par un membre existant, qui se porte garant ;",
+          "limiter la taille du groupe : à 10 ou 12 membres, le suivi reste facile ;",
+          "pour un premier cycle, choisir un montant modeste, que chacun peut verser sans emprunter."
+        ]
+      },
+      {
+        "titre": "En résumé",
+        "paragraphes": [
+          "Une tontine sans disputes, c’est un règlement écrit, un ordre de passage connu de tous, un tableau des versements partagé chaque mois et des règles de retard appliquées sans exception. Un cahier bien tenu peut suffire. Si vous préférez un tableau prêt à l’emploi, le classeur « Suivi de tontine sur Excel » de Teranga Outils reprend cette organisation : les retards apparaissent tout de suite et la cagnotte se calcule seule."
+        ],
+        "puces": []
+      }
+    ],
+    "produits": [
+      "suivi-de-tontine-excel"
+    ],
+    "mots_cles": [
+      "organiser une tontine",
+      "règlement de tontine",
+      "comment gérer une tontine",
+      "tontine retard de paiement",
+      "tableau de suivi tontine",
+      "tontine Sénégal",
+      "suivi tontine Excel"
+    ]
+  },
+  {
+    "slug": "calculer-marge-gerer-stock-boutique",
+    "titre": "Boutique de quartier : calculer sa marge et gérer son stock",
+    "description": "Calculez la marge de chaque article, repérez ce qui rapporte et évitez les ruptures dans votre boutique de quartier. Méthode simple, exemples en F CFA.",
+    "chapeau": "Beaucoup de boutiquiers vendent toute la journée sans savoir combien ils gagnent vraiment sur chaque article. D’autres perdent des clients parce que l’huile ou le sucre manque au mauvais moment. Avec quelques calculs simples et un suivi régulier du stock, vous saurez quels produits rapportent et quand recommander.",
+    "sections": [
+      {
+        "titre": "Calculer le vrai prix d’achat d’une unité",
+        "paragraphes": [
+          "Tout commence par le prix d’achat d’une unité. Si vous achetez en carton ou en sac, divisez le prix payé par le nombre d’unités. Ajoutez le transport si vous le payez à part : il fait partie du coût.",
+          "Exemple : Moussa Ndiaye, boutiquier à Grand Yoff, achète un carton de 72 savons à 14 040 F CFA. Le taxi qui ramène 5 cartons coûte 1 800 F CFA, soit 1 800 ÷ 5 = 360 F CFA par carton. Coût réel du carton : 14 040 + 360 = 14 400 F CFA. Prix d’achat d’un savon : 14 400 ÷ 72 = 200 F CFA."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Calculer la marge et ne pas confondre les pourcentages",
+        "paragraphes": [
+          "La marge est la différence entre le prix de vente et le prix d’achat. Moussa vend le savon 250 F CFA. Sa marge est de 250 − 200 = 50 F CFA par savon, soit 72 × 50 = 3 600 F CFA par carton vendu.",
+          "Deux pourcentages sont utiles, et on les mélange souvent :"
+        ],
+        "puces": [
+          "le taux de marge, calculé sur le prix d’achat : 50 ÷ 200 = 25 % ;",
+          "le taux de marque, calculé sur le prix de vente : 50 ÷ 250 = 20 % ;",
+          "le piège : ajouter 20 % au prix d’achat donne 240 F CFA, mais la marge de 40 F CFA ne représente que 40 ÷ 240 ≈ 16,7 % du prix de vente."
+        ]
+      },
+      {
+        "titre": "Repérer les articles qui rapportent vraiment",
+        "paragraphes": [
+          "Un article à petite marge peut rapporter beaucoup s’il se vend en grande quantité. Comparez la marge totale du mois, pas seulement la marge par unité.",
+          "Exemple : le pain rapporte à Moussa 25 F CFA par baguette, mais il en vend 60 par jour, soit 1 500 F CFA par jour et 45 000 F CFA sur 30 jours. Les piles rapportent 100 F CFA chacune, mais il n’en vend que 20 par mois, soit 2 000 F CFA. Elles occupent pourtant un rayon et bloquent de l’argent.",
+          "Ce calcul ne veut pas dire qu’il faut arrêter les piles : un client qui les trouve chez vous revient. Mais il aide à décider où mettre votre argent en priorité."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Suivre les entrées et les sorties",
+        "paragraphes": [
+          "Le stock se suit avec une règle simple : stock de départ + entrées − sorties = stock restant. Les entrées sont vos achats ; les sorties, vos ventes, mais aussi les pertes et ce que la famille prend.",
+          "Exemple : lundi matin, Moussa a 40 bouteilles d’huile d’un litre. Il en reçoit 24 mardi et en vend 31 dans la semaine. Il devrait lui en rester 40 + 24 − 31 = 33. Il en compte 30 sur l’étagère : il manque 3 bouteilles. Vente non notée, crédit oublié, casse ? Il faut chercher la cause tout de suite, pendant que les souvenirs sont frais.",
+          "Trois habitudes évitent la plupart des écarts :"
+        ],
+        "puces": [
+          "noter ce que la famille prend dans la boutique, comme une sortie normale ;",
+          "enregistrer chaque vente à crédit au moment où elle a lieu, avec le nom du client ;",
+          "compter chaque semaine les articles chers ou qui partent vite, et le reste chaque mois."
+        ]
+      },
+      {
+        "titre": "Savoir quand recommander",
+        "paragraphes": [
+          "Pour éviter la rupture, fixez pour chaque article un seuil de commande. Quand le stock descend à ce niveau, vous recommandez.",
+          "Calcul simple : ventes moyennes par jour × délai de livraison en jours, plus une petite réserve. Moussa vend 6 bouteilles d’huile par jour. Le grossiste livre en 3 jours. Il garde une réserve de 2 jours de ventes. Seuil : 6 × 3 + 6 × 2 = 18 + 12 = 30 bouteilles. Avec les 30 bouteilles comptées sur l’étagère, il doit donc commander aujourd’hui.",
+          "À l’inverse, n’achetez pas trop d’un article qui se vend lentement ou qui se périme. Un stock qui dort, c’est de l’argent bloqué."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Tenir le crédit des clients",
+        "paragraphes": [
+          "Le crédit fait partie de la vie d’une boutique de quartier, mais il peut vider la caisse sans bruit. Si 15 clients vous doivent en moyenne 4 000 F CFA, ce sont 15 × 4 000 = 60 000 F CFA de marchandise déjà payée au grossiste et pas encore encaissée. Quelques règles simples gardent le crédit sous contrôle :"
+        ],
+        "puces": [
+          "une page par client, avec la date, l’article et le montant ;",
+          "un plafond par client, par exemple 5 000 F CFA, au-delà duquel on ne sert plus à crédit ;",
+          "un jour de règlement convenu, souvent la fin du mois ou le jour de paie ;",
+          "une relecture de la liste chaque semaine, suivie d’un rappel poli aux retardataires."
+        ]
+      },
+      {
+        "titre": "Connaître la valeur de son stock",
+        "paragraphes": [
+          "Une fois par mois, multipliez la quantité restante de chaque article par son prix d’achat, puis additionnez. Exemple : 30 bouteilles d’huile à 1 100 F CFA = 33 000 F CFA ; 150 savons à 200 F CFA = 30 000 F CFA. Ces deux articles représentent déjà 63 000 F CFA. Ce total vous dit combien d’argent se trouve dans les rayons, et s’il augmente ou baisse d’un mois à l’autre.",
+          "Un cahier suffit pour commencer. Pour gagner du temps, le classeur « Gestion de stock pour boutique » de Teranga Outils fait ces calculs de marge et de valeur du stock, et signale les articles à recommander."
+        ],
+        "puces": []
+      }
+    ],
+    "produits": [
+      "gestion-de-stock-boutique-excel"
+    ],
+    "mots_cles": [
+      "calculer la marge d'une boutique",
+      "taux de marge et taux de marque",
+      "gestion de stock boutique",
+      "gérer une boutique au Sénégal",
+      "fiche de stock Excel",
+      "calculer prix de vente",
+      "quand recommander la marchandise"
+    ]
+  },
+  {
+    "slug": "budget-mariage-bapteme-sans-dettes",
+    "titre": "Budget de mariage ou de baptême : faire la fête sans s’endetter",
+    "description": "Fixez un plafond réaliste, gardez une réserve, répartissez les dépenses et suivez les contributions : la méthode pour un mariage ou un baptême sans dettes.",
+    "chapeau": "Un mariage ou un baptême est un moment de joie. Mais les dépenses montent vite : repas, location de chaises, tenues, sonorisation, photographe… Et beaucoup de familles finissent la fête avec des dettes pour plusieurs mois. Voici une méthode simple pour fixer un budget réaliste et le tenir jusqu’au jour J.",
+    "sections": [
+      {
+        "titre": "Partir de l’argent disponible, pas des envies",
+        "paragraphes": [
+          "L’erreur la plus courante est de lister ce qu’on veut, puis de chercher l’argent. Faites l’inverse : calculez d’abord ce que vous avez vraiment, puis répartissez. Additionnez trois choses :"
+        ],
+        "puces": [
+          "l’épargne que vous pouvez utiliser sans toucher aux dépenses du foyer (loyer, nourriture, scolarité) ;",
+          "ce que vous pouvez encore mettre de côté d’ici la date de la fête ;",
+          "les contributions déjà confirmées par la famille, pas celles qu’on espère."
+        ]
+      },
+      {
+        "titre": "Calculer son plafond et sa réserve",
+        "paragraphes": [
+          "Exemple : Ndèye et Malick préparent leur mariage à Thiès. Ils ont 700 000 F CFA d’épargne et peuvent encore économiser 50 000 F CFA par mois pendant 4 mois, soit 200 000 F CFA. La famille a confirmé 250 000 F CFA de participation. Leur plafond est donc de 700 000 + 200 000 + 250 000 = 1 150 000 F CFA. Si ce plafond ne permet pas la fête imaginée, réduisez-la ou repoussez la date de quelques mois pour épargner ce qui manque.",
+          "Il y a toujours une surprise : plus d’invités que prévu, un transport en plus, une location qui augmente. Mettez de côté 10 % du plafond avant de répartir le reste. Pour Ndèye et Malick : 10 % de 1 150 000 = 115 000 F CFA de réserve. Il reste 1 150 000 − 115 000 = 1 035 000 F CFA à répartir."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Répartir le budget poste par poste",
+        "paragraphes": [
+          "Listez toutes les dépenses, même les petites. Si un poste dépasse, il faut réduire ailleurs, pas puiser dans la réserve dès le départ. Le poste le plus facile à ajuster est souvent le nombre d’invités : si le repas prévu pour 300 personnes coûte 450 000 F CFA, soit 1 500 F CFA par personne, inviter 250 personnes économise 50 × 1 500 = 75 000 F CFA. Pour un baptême, les postes changent un peu (mouton, repas, tenues de la maman et du bébé), mais la méthode reste la même. Voici la répartition choisie par Ndèye et Malick, dont le total fait exactement 1 035 000 F CFA :"
+        ],
+        "puces": [
+          "repas et boissons : 450 000 F CFA ;",
+          "location de chaises, bâche et sonorisation : 150 000 F CFA ;",
+          "tenues et coiffure : 200 000 F CFA ;",
+          "photographe : 75 000 F CFA ;",
+          "transport de la famille : 60 000 F CFA ;",
+          "décoration : 50 000 F CFA ;",
+          "cadeaux et divers : 50 000 F CFA."
+        ]
+      },
+      {
+        "titre": "Suivre ce qui est payé et ce qui reste à payer",
+        "paragraphes": [
+          "Pour chaque poste, notez trois montants : le prévu, le déjà payé et le reste à payer. Le reste à payer, c’est le prévu moins le déjà payé.",
+          "Exemple : le traiteur demande 450 000 F CFA, avec une avance de 200 000 F CFA. Après l’avance, il reste 250 000 F CFA à régler le jour de la fête. En additionnant le reste à payer de tous les postes, vous savez à tout moment combien d’argent doit encore être disponible. Si le photographe a reçu 25 000 F CFA sur 75 000 F CFA et le loueur de chaises et de sonorisation 50 000 F CFA sur 150 000 F CFA, le reste à payer pour ces trois postes est de 250 000 + 50 000 + 100 000 = 400 000 F CFA.",
+          "Gardez chaque reçu ou capture de paiement, et notez ce que chaque prestataire a promis : nombre de plats, horaires, matériel livré."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Noter les contributions et le ndawtal",
+        "paragraphes": [
+          "Pendant la fête, parents et amis apportent des enveloppes ou des cadeaux. Désignez une personne de confiance pour tout noter dans un cahier ou un tableau à trois colonnes : le nom, le montant ou l’objet, et la date. Cette liste sert deux fois : pour remercier chacun, et pour se souvenir de ce qu’on a reçu le jour où ce sera votre tour de donner.",
+          "Ne comptez pas ces enveloppes dans votre budget de départ. Elles arrivent pendant ou après la fête, trop tard pour payer le traiteur. Considérez-les comme un bonus. Quelques jours après la fête, passez un message ou une visite aux personnes qui ont beaucoup aidé : c’est aussi grâce à cette liste que vous n’oublierez personne."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Les pièges qui font exploser le budget",
+        "paragraphes": [
+          "Ces situations reviennent dans presque toutes les familles :"
+        ],
+        "puces": [
+          "la liste d’invités qui s’allonge chaque semaine : fixez un nombre et tenez-vous-y ;",
+          "les dépenses décidées à la dernière minute, sous la pression : prenez une nuit avant de dire oui ;",
+          "les crédits pris pour la fête : ils se remboursent pendant des mois, quand la fête est oubliée ;",
+          "les prestataires payés en entier à l’avance, sans écrit : versez une avance et gardez une trace ;",
+          "le budget gardé dans la tête : s’il n’est pas écrit, personne ne voit venir le dépassement ;",
+          "la comparaison avec la fête des voisins : votre budget dépend de vos moyens, pas des leurs."
+        ]
+      },
+      {
+        "titre": "Après la fête, faire le bilan",
+        "paragraphes": [
+          "Une semaine après, comparez le prévu et le réel pour chaque poste. Vous saurez où vous avez dépassé, et ces chiffres serviront pour la prochaine fête de la famille. Pour tenir ce suivi sans tout recalculer à la main, le classeur « Budget de mariage ou de baptême » de Teranga Outils calcule le déjà payé, les contributions reçues et le reste à payer."
+        ],
+        "puces": []
+      }
+    ],
+    "produits": [
+      "budget-mariage-bapteme-excel"
+    ],
+    "mots_cles": [
+      "budget mariage Sénégal",
+      "budget baptême",
+      "organiser un mariage sans s'endetter",
+      "liste des dépenses mariage",
+      "prévoir les dépenses d'un baptême",
+      "tableau budget mariage Excel",
+      "suivi ndawtal"
+    ]
+  },
+  {
+    "slug": "gerer-loyers-cautions-retards-paiement",
+    "titre": "Gérer ses locations : loyers, cautions et retards de paiement",
+    "description": "Propriétaires et gérants : notez chaque loyer, gérez les cautions et réagissez aux retards avec méthode. Conseils pratiques et exemples chiffrés en F CFA.",
+    "chapeau": "Quand on loue un ou plusieurs logements, les ennuis viennent rarement d’un seul gros problème. Ils viennent d’un loyer payé en deux fois qu’on n’a pas noté, d’une caution dont on a oublié le montant, d’un retard laissé filer trois mois. Voici comment tenir vos locations avec ordre et garder de bonnes relations avec vos locataires.",
+    "sections": [
+      {
+        "titre": "Une fiche claire pour chaque logement",
+        "paragraphes": [
+          "Un contrat de bail écrit et un état des lieux d’entrée, avec des photos datées, évitent beaucoup de discussions plus tard. Pour les règles qui s’appliquent à votre situation (montant de la caution, avance, préavis), renseignez-vous auprès d’un professionnel du droit ou d’une agence sérieuse.",
+          "Ensuite, pour chaque logement, notez :"
+        ],
+        "puces": [
+          "le nom ou la place du logement, par exemple « appartement 2, rez-de-chaussée » ;",
+          "le nom du locataire et sa date d’entrée ;",
+          "le montant du loyer et la date limite de paiement ;",
+          "le montant de la caution reçue et la date de réception ;",
+          "le mode de paiement habituel : espèces, Wave, Orange Money, virement."
+        ]
+      },
+      {
+        "titre": "Noter chaque paiement, même partiel",
+        "paragraphes": [
+          "Chaque fois que vous recevez de l’argent, notez la date, le montant, le mode de paiement et le mois concerné. Remettez un reçu pour les espèces. N’écrivez jamais « loyer payé » si le locataire n’a versé qu’une partie.",
+          "Exemple : le loyer de M. Sarr est de 75 000 F CFA. Il verse 40 000 F CFA le 3 avril et 35 000 F CFA le 18 avril. Notez deux lignes. Après le premier versement, il reste 75 000 − 40 000 = 35 000 F CFA à payer ; après le second, le mois d’avril est soldé.",
+          "À l’inverse, si un locataire paie plusieurs mois d’un coup, notez chaque mois couvert. M. Sarr qui verse 150 000 F CFA pour un loyer de 75 000 F CFA règle deux mois : 150 000 ÷ 75 000 = 2. Écrivez lesquels, par exemple mai et juin, pour éviter tout malentendu plus tard."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Faire le point chaque mois",
+        "paragraphes": [
+          "En début de mois, calculez ce que vous devez recevoir. En fin de mois, comparez avec ce que vous avez reçu.",
+          "Exemple : Mme Diallo possède quatre appartements à Keur Massar. Trois sont loués 75 000 F CFA et un 100 000 F CFA. Elle attend chaque mois 3 × 75 000 + 100 000 = 325 000 F CFA. En mars, elle a reçu 250 000 F CFA. Il manque 75 000 F CFA, c’est-à-dire un loyer entier. Son taux d’encaissement est de 250 000 ÷ 325 000, soit environ 77 %.",
+          "Ce point mensuel montre tout de suite qui est en retard, avant que la dette ne grossisse. Il permet aussi de vérifier vos relevés Wave ou Orange Money : le total encaissé par mode de paiement doit correspondre."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Bien gérer les cautions",
+        "paragraphes": [
+          "La caution n’est pas un revenu. C’est de l’argent du locataire que vous gardez en garantie, et que vous rendrez à son départ, moins les sommes justifiées. Si possible, rangez-la à part et ne la dépensez pas. Pour chaque caution :"
+        ],
+        "puces": [
+          "notez le montant exact et donnez un reçu ;",
+          "à la sortie, refaites l’état des lieux avec le locataire en comparant avec les photos d’entrée ;",
+          "si vous retenez une somme (réparation, loyer impayé, facture), expliquez-la par écrit avec les justificatifs ;",
+          "rendez le reste dans le délai prévu au contrat."
+        ]
+      },
+      {
+        "titre": "Réagir aux retards avec méthode",
+        "paragraphes": [
+          "Un retard traité tôt se règle souvent en une conversation. Un retard ignoré pendant trois mois devient une dette de plusieurs centaines de milliers de francs, difficile à récupérer. Suivez toujours les mêmes étapes, dans cet ordre :"
+        ],
+        "puces": [
+          "2 ou 3 jours après la date limite : un rappel poli par message ;",
+          "après une semaine : un appel ou une visite, pour comprendre la situation ;",
+          "si le locataire traverse une difficulté passagère : un échéancier écrit, avec des dates et des montants précis ;",
+          "si rien ne bouge : un courrier écrit et daté, dont vous gardez une copie ;",
+          "en dernier recours : l’avis d’un professionnel du droit avant toute démarche."
+        ]
+      },
+      {
+        "titre": "Exemple d’échéancier",
+        "paragraphes": [
+          "Reprenons Mme Diallo. La locataire qui n’a pas payé en mars, Mlle Faye, a perdu une partie de ses revenus. Elle propose de verser 25 000 F CFA de plus chaque mois, en même temps que son loyer, pendant trois mois. Vérifiez le calcul : 3 × 25 000 = 75 000 F CFA. Le retard sera rattrapé fin juin si elle commence en avril, et chaque versement est noté dans le tableau.",
+          "Écrivez l’accord, datez-le et faites-le signer par les deux parties. Évitez les moyens de pression comme couper l’eau ou changer la serrure : ils enveniment la situation et peuvent se retourner contre vous."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Tenir vos comptes au même endroit",
+        "paragraphes": [
+          "Cahier, tableau Excel ou application : l’important est de tout noter au même endroit, le jour même. En fin d’année, vous connaîtrez le total encaissé par logement, les mois de retard et les cautions détenues. Ces chiffres vous serviront aussi pour vos déclarations ; renseignez-vous auprès des services des impôts ou d’un comptable sur ce qui s’applique à vous.",
+          "Si vous voulez un tableau déjà prêt, le classeur « Suivi des loyers » de Teranga Outils regroupe logements, locataires, paiements et cautions, avec le total encaissé par mode de paiement."
+        ],
+        "puces": []
+      }
+    ],
+    "produits": [
+      "suivi-des-loyers-excel"
+    ],
+    "mots_cles": [
+      "gérer ses locations",
+      "suivi des loyers",
+      "locataire en retard de paiement",
+      "caution location Sénégal",
+      "tableau suivi loyers Excel",
+      "gestion locative Dakar",
+      "relance loyer impayé"
+    ]
+  },
+  {
+    "slug": "caisse-restaurant-dibiterie-vrai-benefice",
+    "titre": "Caisse de restaurant ou de dibiterie : calculer son vrai bénéfice",
+    "description": "Fond de caisse, ventes, dépenses, écarts, coût de revient et bénéfice du mois : la méthode simple pour savoir ce que rapporte votre restaurant ou dibiterie.",
+    "chapeau": "Dans un restaurant ou une dibiterie, l’argent circule toute la journée : ventes en espèces, paiements Wave, achats de viande et de charbon, petites dépenses. Le soir, il y a des billets dans la caisse, mais ce chiffre ne dit pas si l’affaire gagne de l’argent. Voici comment tenir une caisse fiable et calculer votre vrai bénéfice.",
+    "sections": [
+      {
+        "titre": "Séparer la caisse de la poche",
+        "paragraphes": [
+          "Première règle : l’argent de la caisse n’est pas l’argent du ménage. Si vous prenez 5 000 F CFA pour une course personnelle, notez-le comme un retrait. Sinon, vos comptes ne seront jamais justes. Le mieux est de vous verser une somme fixe, à date fixe.",
+          "Séparez aussi les paiements Wave ou Orange Money des espèces. Ce sont deux « caisses » différentes, à vérifier chacune de son côté."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Le carnet du jour : quatre lignes suffisent",
+        "paragraphes": [
+          "Inutile d’écrire chaque assiette vendue : un total par service (midi, soir) suffit, à condition de le faire tous les jours. Rangez les reçus des fournisseurs dans une enveloppe par semaine : ils vous serviront à vérifier les dépenses à la fin du mois. Chaque jour, notez :"
+        ],
+        "puces": [
+          "le fond de caisse du matin, c’est-à-dire la monnaie de départ, par exemple 10 000 F CFA ;",
+          "les ventes, séparées entre espèces et paiements mobiles ;",
+          "les dépenses payées avec la caisse : viande, charbon, oignons, pain, gaz, boissons ;",
+          "les retraits du propriétaire."
+        ]
+      },
+      {
+        "titre": "Contrôler la caisse le soir",
+        "paragraphes": [
+          "Le soir, calculez ce qu’il devrait y avoir dans la caisse : fond de caisse + ventes en espèces − dépenses payées en espèces − retraits. Puis comptez les billets et la monnaie.",
+          "Exemple : à la dibiterie de Pape Fall, à Rufisque, le fond de caisse est de 10 000 F CFA. Les ventes en espèces font 85 000 F CFA et les ventes par Wave 40 000 F CFA. Pape a payé en espèces 6 000 F CFA de charbon et 4 000 F CFA d’oignons, et n’a rien retiré. Caisse attendue : 10 000 + 85 000 − 6 000 − 4 000 = 85 000 F CFA. Il compte 83 500 F CFA. Écart : 1 500 F CFA en moins.",
+          "Un petit écart peut arriver, par exemple une erreur de monnaie. Mais s’il revient souvent ou grandit, cherchez la cause : vente non notée, dépense sans reçu, monnaie mal rendue. Les 40 000 F CFA reçus par Wave, eux, se vérifient dans l’historique du téléphone."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Connaître le coût de revient de ce que vous servez",
+        "paragraphes": [
+          "Pour savoir si vos prix sont bons, calculez ce que coûte ce que vous servez : les ingrédients, plus une part du charbon ou du gaz.",
+          "Exemple : Pape achète le kilo de viande de mouton à 4 500 F CFA. Pour le griller et le servir, il utilise environ 400 F CFA de charbon et 300 F CFA d’oignons, de moutarde et de pain. Coût de revient : 4 500 + 400 + 300 = 5 200 F CFA. Il le vend 7 000 F CFA. Marge brute : 7 000 − 5 200 = 1 800 F CFA par kilo.",
+          "Si le kilo de viande passe à 5 000 F CFA, le coût monte à 5 700 F CFA et la marge tombe à 1 300 F CFA. Refaites ce calcul chaque fois qu’un prix d’achat change.",
+          "Pour un restaurant, raisonnez par marmite : si une marmite de thiéboudienne coûte 18 000 F CFA d’ingrédients et de gaz et donne 20 assiettes, une assiette revient à 18 000 ÷ 20 = 900 F CFA. Vendue 1 500 F CFA, elle laisse 600 F CFA de marge brute."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Rassembler les chiffres du mois",
+        "paragraphes": [
+          "Le bénéfice du mois, c’est ce qui reste quand tout est payé : chiffre d’affaires − achats − charges fixes. Voici le mois de la dibiterie de Pape :"
+        ],
+        "puces": [
+          "chiffre d’affaires (espèces et Wave) : 1 800 000 F CFA ;",
+          "achats (viande, charbon, oignons, pain, boissons) : 1 100 000 F CFA ;",
+          "loyer du local : 100 000 F CFA ;",
+          "salaire de l’aide : 70 000 F CFA ;",
+          "eau et électricité : 30 000 F CFA ;",
+          "divers (sacs, savon, réparation du grill) : 25 000 F CFA."
+        ]
+      },
+      {
+        "titre": "Calculer et lire le résultat",
+        "paragraphes": [
+          "Charges fixes : 100 000 + 70 000 + 30 000 + 25 000 = 225 000 F CFA. Bénéfice : 1 800 000 − 1 100 000 − 225 000 = 475 000 F CFA.",
+          "C’est sur cette somme que Pape se paie. S’il a déjà retiré 300 000 F CFA dans le mois, il reste 475 000 − 300 000 = 175 000 F CFA dans l’affaire, pour les mois creux ou le matériel à remplacer.",
+          "Comparez aussi le bénéfice au chiffre d’affaires : 475 000 ÷ 1 800 000 ≈ 26 %. Sur 100 F CFA encaissés, environ 26 F CFA restent une fois tout payé. Suivi d’un mois à l’autre, ce pourcentage montre si l’affaire se porte mieux ou moins bien, même quand les ventes varient."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Les erreurs qui trompent sur le résultat",
+        "paragraphes": [
+          "Un carnet bien tenu suffit pour commencer. Pour que les totaux se calculent seuls, le classeur « Caisse journalière de restaurant ou dibiterie » de Teranga Outils reprend ventes, dépenses et bénéfice. Quel que soit votre outil, évitez ces erreurs :"
+        ],
+        "puces": [
+          "oublier les petites dépenses payées de sa poche : elles sont bien réelles ;",
+          "confondre l’argent dans la caisse avec le bénéfice : une partie sert à racheter la marchandise de demain ;",
+          "compter comme dépense du mois un gros stock acheté le 30, sans noter ce qui reste en réserve ;",
+          "oublier les dépenses rares mais lourdes, comme un réfrigérateur à remplacer : mettez un peu de côté chaque mois ;",
+          "mélanger dans la même caisse l’argent de plusieurs activités, par exemple la dibiterie et la vente de crédit téléphonique : chaque activité doit avoir ses propres comptes."
+        ]
+      }
+    ],
+    "produits": [
+      "caisse-restaurant-dibiterie-excel"
+    ],
+    "mots_cles": [
+      "tenir la caisse d'un restaurant",
+      "calculer le bénéfice d'un restaurant",
+      "gestion dibiterie",
+      "fond de caisse",
+      "écart de caisse",
+      "coût de revient d'un plat",
+      "caisse journalière Excel"
+    ]
+  },
+  {
+    "slug": "calculer-moyennes-suivre-notes-eleves",
+    "titre": "Enseignants : calculer les moyennes et suivre les notes des élèves",
+    "description": "Moyenne simple, composition, coefficients, appréciations et taux de réussite : les calculs pas à pas pour les enseignants, avec des exemples vérifiés.",
+    "chapeau": "Fin de semestre : les copies sont corrigées, mais il reste à calculer les moyennes de toute la classe, sans erreur, avant le conseil de classe. Une erreur de calcul peut coûter un passage ou une mention à un élève. Voici les calculs essentiels, avec des exemples vérifiés, et une organisation qui fait gagner du temps.",
+    "sections": [
+      {
+        "titre": "Organiser un relevé de notes clair",
+        "paragraphes": [
+          "Tout part d’un bon relevé : une ligne par élève, une colonne par évaluation. En haut de chaque colonne, notez la date, le type d’évaluation (devoir, interrogation, composition) et le barème, sur 10 ou sur 20.",
+          "Gardez toujours deux copies du relevé, par exemple une sur papier et une sur votre téléphone ou une clé USB. Un relevé perdu en fin de semestre, ce sont des semaines de travail à refaire. Quelques habitudes évitent la plupart des problèmes :"
+        ],
+        "puces": [
+          "saisissez les notes le jour même de la remise des copies ;",
+          "distinguez une absence justifiée (case « ABS ») d’un zéro : ce n’est pas la même chose pour la moyenne ;",
+          "gardez les élèves dans le même ordre que la liste officielle de la classe."
+        ]
+      },
+      {
+        "titre": "Calculer une moyenne simple",
+        "paragraphes": [
+          "La moyenne simple, c’est la somme des notes divisée par le nombre de notes. Exemple : Aminata Ba a eu 12, 15 et 9 sur 20 aux trois devoirs de mathématiques. Somme : 12 + 15 + 9 = 36. Moyenne : 36 ÷ 3 = 12 sur 20.",
+          "Si une note est sur 10, ramenez-la sur 20 en la multipliant par 2 avant de faire la moyenne : un 7 sur 10 devient 14 sur 20. Pour un autre barème, la règle générale est : note × 20 ÷ barème. Un 13 sur 25 devient 13 × 20 ÷ 25 = 10,4 sur 20.",
+          "En cas d’absence justifiée, on divise en général par le nombre de notes réellement obtenues. Si Aminata avait manqué le troisième devoir, sa moyenne serait (12 + 15) ÷ 2 = 13,5. Appliquez la règle fixée par votre établissement."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Combiner devoirs et composition",
+        "paragraphes": [
+          "Beaucoup d’établissements donnent plus de poids à la composition qu’aux devoirs. La règle exacte dépend de votre école : vérifiez-la. Prenons par exemple une règle où la composition compte double : moyenne de la matière = (moyenne des devoirs + composition × 2) ÷ 3.",
+          "Pour Aminata : moyenne des devoirs 12, composition 14. Calcul : (12 + 14 × 2) ÷ 3 = (12 + 28) ÷ 3 = 40 ÷ 3 ≈ 13,33. Attention à l’ordre des opérations : on multiplie la composition avant d’additionner."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Calculer la moyenne générale avec coefficients",
+        "paragraphes": [
+          "Chaque matière a un coefficient. On multiplie chaque moyenne par son coefficient, on additionne ces points, puis on divise par la somme des coefficients. Exemple pour Ibrahima Sow :"
+        ],
+        "puces": [
+          "français : 11 × 4 = 44 points ;",
+          "mathématiques : 14 × 4 = 56 points ;",
+          "anglais : 13 × 2 = 26 points ;",
+          "histoire-géographie : 10 × 2 = 20 points ;",
+          "sciences physiques : 12 × 3 = 36 points ;",
+          "total : 182 points pour 15 coefficients (4 + 4 + 2 + 2 + 3) ;",
+          "moyenne générale : 182 ÷ 15 ≈ 12,13 sur 20."
+        ]
+      },
+      {
+        "titre": "Éviter les erreurs de calcul",
+        "paragraphes": [
+          "L’erreur classique est de diviser par le nombre de matières (5) au lieu de la somme des coefficients (15). On obtiendrait 182 ÷ 5 = 36,4 : impossible sur 20. Ce genre de résultat aberrant est un bon signal d’alerte.",
+          "D’autres erreurs reviennent souvent : une note saisie sur la mauvaise ligne après l’arrivée d’un nouvel élève, une absence comptée comme un zéro, une note oubliée dans le total. Avant le conseil de classe, refaites à la main le calcul de trois élèves pris au hasard. S’ils sont justes, le reste a de bonnes chances de l’être aussi.",
+          "Fixez aussi une règle d’arrondi et gardez-la pour toute la classe, par exemple deux chiffres après la virgule. N’arrondissez qu’à la fin, jamais au milieu du calcul."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Attribuer les appréciations",
+        "paragraphes": [
+          "Au-delà du mot, ajoutez une remarque utile : « Bons résultats à l’écrit, doit participer davantage à l’oral » aide plus l’élève et ses parents que « peut mieux faire ». Pour l’appréciation elle-même, beaucoup d’enseignants utilisent un barème de ce type, à adapter aux usages de votre établissement (avec 12,13, Ibrahima obtient « assez bien ») :"
+        ],
+        "puces": [
+          "moins de 10 : insuffisant ;",
+          "de 10 à moins de 12 : passable ;",
+          "de 12 à moins de 14 : assez bien ;",
+          "de 14 à moins de 16 : bien ;",
+          "16 et plus : très bien."
+        ]
+      },
+      {
+        "titre": "Mesurer les résultats de la classe",
+        "paragraphes": [
+          "Le taux de réussite est la part des élèves qui ont au moins 10 de moyenne. Si 27 élèves sur 45 ont 10 ou plus, le taux est de 27 ÷ 45 = 60 %.",
+          "Regardez aussi la note la plus haute, la plus basse et la moyenne de la classe. Une matière où la moitié des élèves est sous 8 signale peut-être une leçon à reprendre.",
+          "Pour le classement, triez les élèves par moyenne générale, de la plus haute à la plus basse. Deux élèves à égalité ont le même rang, et le suivant prend le rang d’après : si deux élèves sont 3e ex aequo, l’élève suivant est 5e.",
+          "En fin d’année, si votre établissement donne le même poids aux deux semestres, la moyenne annuelle est (semestre 1 + semestre 2) ÷ 2. Si Ibrahima a 12,13 au premier semestre et 13,07 au second, sa moyenne annuelle est (12,13 + 13,07) ÷ 2 = 12,6. Comparer les deux semestres permet aussi de repérer qui progresse et qui décroche.",
+          "Faire tous ces calculs à la main pour 45 élèves prend des heures. Un tableur les fait sans erreur une fois les formules en place ; si vous ne voulez pas les écrire vous-même, le « Carnet de notes de l’enseignant » de Teranga Outils calcule moyennes, appréciations et taux de réussite."
+        ],
+        "puces": []
+      }
+    ],
+    "produits": [
+      "carnet-de-notes-enseignant-excel"
+    ],
+    "mots_cles": [
+      "calculer une moyenne avec coefficient",
+      "calcul moyenne générale",
+      "calculer la moyenne d'un semestre",
+      "carnet de notes Excel",
+      "taux de réussite d'une classe",
+      "appréciation selon la moyenne",
+      "suivi des notes des élèves"
+    ]
+  },
+  {
+    "slug": "rediger-annonce-immobiliere-louer-vite",
+    "titre": "Rédiger une annonce immobilière qui fait louer vite",
+    "description": "Titre, prix, conditions, description honnête et photos : comment écrire une annonce de location claire qui attire les bons locataires, avec un exemple complet.",
+    "chapeau": "Une annonce floue attire des dizaines de messages… et peu de locataires sérieux. « C’est combien ? », « C’est où exactement ? », « Il y a un compteur ? » : chaque question sans réponse fait perdre du temps aux deux côtés. Une annonce claire, complète et honnête trie les candidats pour vous et aide à louer plus vite.",
+    "sections": [
+      {
+        "titre": "Un titre qui dit l’essentiel",
+        "paragraphes": [
+          "Sur les groupes Facebook, WhatsApp ou les sites d’annonces, les gens lisent d’abord le titre. Il doit donner quatre informations : le type de logement, sa taille, le quartier et le prix. Le lecteur sait alors en une seconde si l’annonce est pour lui, et ceux qui n’ont pas ce budget ne vous écrivent pas. Comparez :"
+        ],
+        "puces": [
+          "à éviter : « Bel appartement à louer, urgent !!! » ;",
+          "mieux : « Appartement 2 chambres salon à Liberté 6 – 200 000 F CFA par mois »."
+        ]
+      },
+      {
+        "titre": "Les informations que tout locataire cherche",
+        "paragraphes": [
+          "Dans le texte, répondez d’avance aux questions qu’on vous poserait de toute façon. Soyez surtout clair sur l’argent. Si le locataire doit verser une caution de 200 000 F CFA et une avance de deux mois, soit 400 000 F CFA, il doit prévoir 600 000 F CFA à l’entrée. Écrivez ce total : il évite les mauvaises surprises au moment de signer. Renseignez-vous au passage sur les règles qui encadrent ces montants.",
+          "Votre texte doit couvrir :"
+        ],
+        "puces": [
+          "la composition : chambres, salon, cuisine, salle de bain, balcon ;",
+          "l’étage, la présence d’un ascenseur, l’accès pour une voiture ;",
+          "l’eau et l’électricité : compteurs individuels ou partagés, prépayés ou non ;",
+          "les conditions financières : loyer, caution, avance, frais d’agence s’il y en a ;",
+          "la date de disponibilité ;",
+          "ce qui est à proximité : marché, école, arrêt de bus, grande route."
+        ]
+      },
+      {
+        "titre": "Une description honnête et précise",
+        "paragraphes": [
+          "Décrivez le logement tel qu’il est. Les mots vagues comme « spacieux » ou « bien situé » convainquent moins que des faits : « chambre de 12 m² avec placard », « à 5 minutes à pied du marché ».",
+          "Ne cachez pas les défauts importants : escalier raide, coupures d’eau fréquentes, rue en sable. Le visiteur les verra de toute façon. Mieux vaut qu’il vienne en connaissance de cause que de repartir déçu après un long trajet. Une annonce honnête construit aussi votre réputation pour les prochaines locations.",
+          "Pour vérifier votre prix, regardez cinq ou six annonces de logements semblables dans le même quartier. Si le vôtre est nettement plus cher, expliquez pourquoi (logement neuf, gardien, parking) ou ajustez-le avant de publier."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Des photos qui donnent envie de visiter",
+        "paragraphes": [
+          "Les photos font souvent la décision de visiter. Quelques règles simples suffisent, même avec un téléphone ordinaire :"
+        ],
+        "puces": [
+          "photographiez en plein jour, fenêtres et portes ouvertes ;",
+          "rangez et nettoyez avant : sol propre, lit fait, pas de linge visible ;",
+          "prenez chaque pièce depuis un coin, pour montrer toute la surface ;",
+          "ajoutez la cuisine, la salle de bain et la façade : ce sont les photos les plus regardées ;",
+          "tenez le téléphone à l’horizontale et bien droit ;",
+          "ajoutez une photo de la rue ou de la vue si elles sont agréables ;",
+          "publiez 6 à 10 photos variées plutôt que 30 photos de la même pièce."
+        ]
+      },
+      {
+        "titre": "Les erreurs qui font fuir les locataires",
+        "paragraphes": [
+          "Certaines habitudes coûtent des semaines de logement vide. Évitez surtout :"
+        ],
+        "puces": [
+          "un prix annoncé qui change au moment de la visite ;",
+          "des photos d’un autre logement ou d’il y a plusieurs années ;",
+          "des frais découverts au dernier moment : agence, dossier, compteur ;",
+          "une annonce encore en ligne alors que le logement est déjà loué ;",
+          "des réponses lentes ou sèches aux questions des personnes intéressées."
+        ]
+      },
+      {
+        "titre": "Exemple d’annonce complète",
+        "paragraphes": [
+          "Voici une annonce fictive qui reprend tous ces conseils. Adaptez-la à votre cas : pour une chambre à louer, par exemple, précisez si la cuisine et la salle de bain sont partagées, et avec combien de personnes.",
+          "« Appartement 2 chambres salon à Liberté 6 – 200 000 F CFA par mois. Au 2e étage d’un immeuble calme, sans ascenseur. Deux chambres avec placards, salon lumineux, cuisine avec évier et rangements, salle de bain avec douche, balcon. Compteurs d’eau et d’électricité individuels. À 5 minutes à pied de la grande route et des bus. Caution : 200 000 F CFA. Avance : 2 mois. Total à l’entrée : 600 000 F CFA. Disponible le 1er décembre. Visites du lundi au samedi, de 10 h à 18 h, sur rendez-vous par message. »"
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Publier et répondre au bon moment",
+        "paragraphes": [
+          "Beaucoup de gens cherchent un logement dans les semaines qui précèdent un début de mois. Publiez donc deux à trois semaines avant la date de disponibilité. Préparez un message type avec l’adresse précise du rendez-vous et les documents à apporter, et répondez vite. Une fois le logement loué, retirez l’annonce ou ajoutez « LOUÉ » : vous éviterez des appels inutiles. Après chaque visite, notez la date et la remarque du visiteur : si dix visites ne donnent rien, le prix ou l’annonce posent sans doute problème.",
+          "Si vous préférez gagner du temps, l’annonce immobilière sur mesure de Teranga Outils rédige ce texte pour vous à partir des informations sur votre logement."
+        ],
+        "puces": []
+      }
+    ],
+    "produits": [
+      "annonce-immobiliere-sur-mesure"
+    ],
+    "mots_cles": [
+      "rédiger une annonce immobilière",
+      "exemple annonce de location",
+      "annonce location appartement Dakar",
+      "comment louer vite son appartement",
+      "photos annonce immobilière",
+      "annonce maison à louer Sénégal"
+    ]
+  },
+  {
+    "slug": "rediger-fiche-de-poste-recrutement-pme",
+    "titre": "Recruter dans une PME : rédiger une fiche de poste claire",
+    "description": "Mission, tâches, profil, conditions : comment rédiger une fiche de poste simple qui attire les bons candidats et facilite l’entretien, avec un exemple complet.",
+    "chapeau": "Dans une petite entreprise, un mauvais recrutement coûte cher : du temps de formation perdu, des clients mal servis, une ambiance qui se dégrade. Souvent, le problème commence avant l’entretien, avec une annonce vague du type « Cherche vendeur sérieux ». Une fiche de poste claire vous oblige à savoir ce que vous cherchez, et attire les bons profils.",
+    "sections": [
+      {
+        "titre": "À quoi sert une fiche de poste",
+        "paragraphes": [
+          "La fiche de poste décrit le travail à faire, le profil recherché et les conditions proposées. Même pour un seul employé, elle vaut la peine : une page suffit, pas besoin d’un long document. Elle sert à trois moments :"
+        ],
+        "puces": [
+          "avant : pour rédiger l’annonce et trier les candidatures ;",
+          "pendant l’entretien : pour poser des questions précises sur chaque tâche ;",
+          "après l’embauche : pour expliquer à la nouvelle recrue ce qu’on attend d’elle, et faire le point à la fin de la période d’essai."
+        ]
+      },
+      {
+        "titre": "Commencer par la mission principale",
+        "paragraphes": [
+          "En une ou deux phrases, dites pourquoi ce poste existe. Si vous n’arrivez pas à l’écrire simplement, le besoin n’est peut-être pas encore clair dans votre tête.",
+          "Exemple pour une quincaillerie : « Accueillir les clients, les conseiller sur les produits, encaisser les ventes et tenir le rayon en ordre. » Pour un livreur : « Livrer les commandes dans les délais, encaisser les paiements à la livraison et rendre compte chaque soir. »"
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Lister les tâches concrètes",
+        "paragraphes": [
+          "Écrivez 5 à 8 tâches, avec des verbes d’action, les plus importantes en premier. Évitez de résumer le poste par « toute autre tâche demandée par la direction » : un candidat sérieux veut savoir ce qu’il fera vraiment. Pour le vendeur de quincaillerie :"
+        ],
+        "puces": [
+          "accueillir et conseiller les clients au comptoir ;",
+          "encaisser en espèces et par paiement mobile, puis faire la caisse le soir ;",
+          "ranger les marchandises reçues et signaler les ruptures ;",
+          "préparer les commandes des clients professionnels ;",
+          "participer à l’inventaire mensuel."
+        ]
+      },
+      {
+        "titre": "Séparer l’indispensable du souhaitable",
+        "paragraphes": [
+          "Beaucoup d’annonces demandent tout : diplôme, cinq ans d’expérience, permis, trois langues… pour un salaire modeste. Résultat : les bons candidats n’osent pas postuler. Faites deux listes courtes. Pour chaque critère, demandez-vous : une personne qui ne l’a pas pourrait-elle faire le travail après deux semaines de formation ? Si oui, il est souhaitable, pas indispensable.",
+          "Choisissez des critères liés au travail. L’âge, l’origine ou la situation familiale n’ont pas leur place dans une fiche de poste ; pour les règles du recrutement et du contrat, renseignez-vous auprès de l’inspection du travail ou d’un conseiller. Pour notre vendeur :"
+        ],
+        "puces": [
+          "indispensable : savoir lire, écrire et compter ; parler wolof et français ; être disponible du lundi au samedi ;",
+          "souhaitable : une première expérience dans le commerce ; connaître les outils et le matériel de construction ; savoir utiliser un tableur."
+        ]
+      },
+      {
+        "titre": "Annoncer les conditions clairement",
+        "paragraphes": [
+          "Les candidats veulent savoir ce que vous offrez. Afficher le salaire fait gagner du temps à tout le monde : vous recevez moins de candidatures, mais de personnes qui acceptent les conditions. Diffusez ensuite l’annonce là où vos futurs employés la verront : vitrine de la boutique, bouche-à-oreille, groupes WhatsApp du quartier, réseaux sociaux, sites d’emploi. Dans la fiche, indiquez au minimum :"
+        ],
+        "puces": [
+          "le lieu de travail et les horaires ;",
+          "le type de contrat et la durée de la période d’essai ;",
+          "le salaire, ou au moins une fourchette ;",
+          "la date de début souhaitée ;",
+          "comment postuler, et jusqu’à quelle date."
+        ]
+      },
+      {
+        "titre": "Exemple de fiche de poste courte",
+        "paragraphes": [
+          "« Quincaillerie Mbaye et Fils, Thiès – Vendeur ou vendeuse au comptoir. Mission : accueillir et conseiller les clients, encaisser les ventes, tenir le rayon. Tâches : accueil et conseil, encaissement en espèces et par mobile, caisse du soir, rangement des livraisons, inventaire mensuel. Indispensable : lire, écrire, compter ; wolof et français ; disponible du lundi au samedi, de 8 h 30 à 18 h 30. Souhaitable : expérience dans le commerce. Contrat : CDD de 6 mois avec période d’essai. Salaire : à partir de 90 000 F CFA par mois selon l’expérience. Début : 1er décembre. Candidature : CV à déposer à la boutique avant le 20 novembre. »",
+          "Relisez la fiche avec la personne qui travaillera aux côtés de la recrue : elle repère souvent une tâche oubliée. Gardez ensuite la fiche dans un dossier : au prochain recrutement sur le même poste, il suffira de la mettre à jour."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Utiliser la fiche jusqu’au bout",
+        "paragraphes": [
+          "Pendant l’entretien, reprenez chaque tâche : « Comment feriez-vous la caisse le soir ? », « Que faites-vous si un client conteste un prix ? ». Posez les mêmes questions à tous les candidats : vous pourrez comparer leurs réponses équitablement. Pour trier les candidatures, faites trois piles à l’aide de la fiche : « correspond », « à voir », « ne correspond pas ». À la fin de la période d’essai, faites le point tâche par tâche avec la personne embauchée : chacun sait sur quoi il est jugé.",
+          "Si vous voulez partir d’une base bien rédigée, la fiche de poste sur mesure de Teranga Outils est écrite à partir de vos réponses sur le poste et sur l’entreprise."
+        ],
+        "puces": []
+      }
+    ],
+    "produits": [
+      "fiche-de-poste-sur-mesure"
+    ],
+    "mots_cles": [
+      "rédiger une fiche de poste",
+      "exemple de fiche de poste",
+      "recruter dans une PME",
+      "annonce de recrutement Sénégal",
+      "fiche de poste vendeur",
+      "comment recruter un employé"
+    ]
+  },
+  {
+    "slug": "vendre-whatsapp-instagram-decrire-produits",
+    "titre": "Vendre sur WhatsApp et Instagram : bien décrire ses produits",
+    "description": "Prix, tailles, matière, livraison, paiement, photos : comment décrire clairement vos produits sur WhatsApp et Instagram, avec un exemple avant/après.",
+    "chapeau": "Sur WhatsApp et Instagram, le client ne peut ni toucher ni essayer. Il ne voit qu’une photo et quelques lignes. Si ces lignes sont floues, il pose dix questions ou passe à autre chose. Une bonne description répond à ses questions avant qu’il les pose, et lui donne confiance. Voici comment l’écrire.",
+    "sections": [
+      {
+        "titre": "Afficher le prix, toujours",
+        "paragraphes": [
+          "« Prix en DM » est la formule qui fait fuir le plus de clients. Beaucoup n’osent pas demander, de peur que ce soit trop cher, ou se lassent d’attendre la réponse. Affichez le prix en F CFA, clairement, sur chaque produit.",
+          "Si le prix varie selon la taille ou la quantité, donnez la liste. Exemple : « 1 pot : 2 500 F CFA ; 3 pots : 7 000 F CFA au lieu de 7 500 F CFA ». Vérifiez toujours vos calculs avant de publier : une erreur de prix crée des disputes."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Les informations à donner pour chaque produit",
+        "paragraphes": [
+          "Un client qui ne trouve pas une information suppose souvent le pire, ou va voir ailleurs. Pensez aussi à celui qui achète pour quelqu’un d’autre : sans les mesures exactes, il n’ose pas commander. Pour chaque article, indiquez :"
+        ],
+        "puces": [
+          "le nom précis du produit, pas seulement « nouvel arrivage » ;",
+          "les dimensions, la taille ou la contenance, en centimètres, en litres ou en grammes ;",
+          "la matière ou la composition : wax, cuir, coton, ingrédients ;",
+          "les couleurs disponibles ;",
+          "la quantité en stock si elle est limitée ;",
+          "le délai de préparation pour ce qui est fait sur commande."
+        ]
+      },
+      {
+        "titre": "Dire comment payer et comment recevoir",
+        "paragraphes": [
+          "Le client veut savoir comment il recevra le produit et combien il paiera en tout. Affichez le total : sac 12 000 F CFA + livraison à Dakar Plateau 1 500 F CFA = 13 500 F CFA. Il n’a pas de surprise à la porte. Si vous envoyez dans les régions, à Thiès, Saint-Louis ou Ziguinchor par exemple, dites comment le colis voyage et qui paie le transport. Précisez aussi :"
+        ],
+        "puces": [
+          "les zones de livraison et le prix pour chacune ;",
+          "le délai : le jour même, le lendemain, sous 3 jours ;",
+          "les moyens de paiement : Wave, Orange Money, espèces à la livraison ;",
+          "ce qui se passe si le produit ne convient pas : échange possible ou non, et dans quel délai."
+        ]
+      },
+      {
+        "titre": "Avant et après : un exemple",
+        "paragraphes": [
+          "Description à éviter : « Nouveaux sacs dispo !!! Plusieurs couleurs. Prix en DM. »",
+          "Description claire : « Sac cabas en wax fait main, doublé coton, avec fermeture éclair et poche intérieure. 40 cm × 30 cm. Couleurs : bleu-jaune, rouge-noir, vert-orange. Prix : 12 000 F CFA. Livraison à Dakar : 1 500 F CFA, en 24 h. Paiement par Wave, Orange Money ou à la livraison. 8 pièces disponibles. »",
+          "Avec la seconde version, le client sait tout. S’il vous écrit, c’est en général pour commander ou pour choisir une couleur."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Écrire avec les mots de vos clients",
+        "paragraphes": [
+          "Utilisez les mots que vos clients emploient eux-mêmes. Si tout le monde dit « ensemble » ou « boubou », n’écrivez pas « tenue traditionnelle deux pièces ». Si vos clients parlent wolof, quelques mots en wolof rendent le message plus proche.",
+          "Faites des phrases courtes et restez exact. « Le meilleur sac du Sénégal » ne convainc personne ; « cuir épais, coutures doublées, 3 poches » donne une raison d’acheter. Ne promettez que ce que vous pouvez tenir : un délai de livraison annoncé et non respecté coûte plus cher qu’un délai un peu plus long mais tenu."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Des photos qui montrent la réalité",
+        "paragraphes": [
+          "La photo attire, la description rassure. Les deux doivent dire la même chose. Une photo nette et fidèle vaut mieux qu’une photo spectaculaire qui déçoit à la livraison :"
+        ],
+        "puces": [
+          "photographiez à la lumière du jour, sur un fond simple et uni ;",
+          "montrez le produit sous plusieurs angles, plus un détail (couture, étiquette, texture) ;",
+          "ajoutez une photo portée ou en main pour donner une idée de la taille ;",
+          "utilisez vos propres photos : une image trouvée sur internet qui ne correspond pas au produit livré fait perdre la confiance du client ;",
+          "ne retouchez pas les couleurs : le client doit recevoir ce qu’il a vu."
+        ]
+      },
+      {
+        "titre": "Organiser sa vitrine et ses réponses",
+        "paragraphes": [
+          "Sur WhatsApp Business, utilisez le catalogue : chaque produit a sa fiche avec photo, prix et description, que vous envoyez en un clic. Sur Instagram, gardez le même ordre dans chaque légende : nom, détails, prix, livraison, paiement. Quelques mots-clés utiles, comme le type de produit et la ville, valent mieux que trente hashtags.",
+          "Préparez aussi des réponses types aux questions fréquentes. Répondre vite et poliment compte autant qu’une belle photo. Sur les statuts WhatsApp, publiez vos produits avec le prix dans la légende : vos contacts voient l’offre sans avoir à demander.",
+          "Notez enfin les questions qui reviennent pour chaque produit. Si beaucoup de clients demandent la même chose, la réponse manque dans la description : ajoutez-la. Repérez aussi les articles qui reçoivent le plus de commandes, pour les mettre en avant dans vos prochaines publications.",
+          "Si vous avez beaucoup d’articles à décrire, les fiches produits pour la vente en ligne de Teranga Outils rédigent ces descriptions à partir des informations sur vos produits."
+        ],
+        "puces": []
+      }
+    ],
+    "produits": [
+      "fiches-produits-vente-en-ligne"
+    ],
+    "mots_cles": [
+      "vendre sur WhatsApp",
+      "vendre sur Instagram au Sénégal",
+      "description produit Instagram",
+      "catalogue WhatsApp Business",
+      "comment vendre en ligne au Sénégal",
+      "exemple de description de produit"
+    ]
+  },
+  {
+    "slug": "reussir-discours-mariage-bapteme",
+    "titre": "Réussir son discours de mariage ou de baptême : plan, durée, trac",
+    "description": "Plan en cinq étapes, bonne durée, exemples de phrases et conseils contre le trac : préparez un discours de mariage ou de baptême qui touche les invités.",
+    "chapeau": "On vous a demandé de prendre la parole au mariage d’un frère, d’une amie ou au baptême d’un neveu. C’est un honneur, et souvent une source de stress. Bonne nouvelle : un beau discours n’a pas besoin d’être long ni compliqué. Il lui faut une structure simple, une ou deux histoires vraies et un peu de préparation.",
+    "sections": [
+      {
+        "titre": "La bonne durée : 2 à 4 minutes",
+        "paragraphes": [
+          "Un discours de fête doit être court. Les invités sont parfois debout, il fait chaud, le repas attend. Visez 2 à 4 minutes.",
+          "Repère utile : en parlant calmement, on dit environ 120 à 130 mots par minute. Pour 3 minutes, comptez donc entre 360 et 390 mots, soit à peu près une page. Au-delà, coupez : personne ne reprochera à un discours d’être trop court.",
+          "Si plusieurs personnes prennent la parole, mettez-vous d’accord à l’avance avec l’organisateur sur l’ordre de passage et la durée de chacun. Vous éviterez aussi de raconter la même anecdote que l’orateur précédent."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Un plan en cinq étapes",
+        "paragraphes": [
+          "Commencez directement par les salutations : évitez « je ne suis pas doué pour les discours », qui met tout le monde mal à l’aise. Ce plan simple fonctionne pour un mariage comme pour un baptême :"
+        ],
+        "puces": [
+          "saluer et remercier : les deux familles, les invités, ceux qui ont organisé la fête ;",
+          "dire qui vous êtes, par exemple « Je suis Cheikh, le grand frère de la mariée » : tout le monde ne vous connaît pas ;",
+          "raconter une ou deux anecdotes : un souvenir vrai, tendre ou drôle, qui montre la personnalité des mariés ou de la famille ;",
+          "faire passer un message : ce que vous admirez chez eux, ce que vous leur souhaitez ;",
+          "conclure par des vœux et inviter l’assemblée à applaudir."
+        ]
+      },
+      {
+        "titre": "Pour un mariage : parler du couple",
+        "paragraphes": [
+          "Le discours de mariage parle du couple, pas de vous. Si vous connaissez surtout l’un des deux, racontez comment vous avez vu l’autre entrer dans la famille.",
+          "Exemple : « Le jour où Awa nous a présenté Omar, il a passé l’après-midi à réparer la radio de notre grand-mère. Ce jour-là, on a compris qu’il faisait déjà partie de la famille. »",
+          "Évitez les anciens fiancés, les histoires d’argent, les blagues que seuls trois amis comprennent et tout ce qui pourrait gêner les parents. Pour les vœux, préférez une phrase simple et personnelle, par exemple : « Je vous souhaite de toujours prendre le temps de vous écouter, même les jours chargés. »"
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Pour un baptême : accueillir l’enfant",
+        "paragraphes": [
+          "Au baptême, on parle de l’enfant qui arrive, de ses parents et souvent de son homonyme. Exemple : « Petite Mariama, tu portes le nom d’une femme que tout le quartier respecte pour sa gentillesse. Nous te souhaitons de lui ressembler. »",
+          "Quelques idées de contenu :"
+        ],
+        "puces": [
+          "souhaiter la bienvenue à l’enfant et féliciter les parents ;",
+          "expliquer le choix du prénom, ou dire un mot sur la personne dont il porte le nom ;",
+          "remercier les grands-parents et ceux qui ont aidé la maman ces dernières semaines ;",
+          "formuler des vœux pour l’enfant : santé, curiosité, bonheur."
+        ]
+      },
+      {
+        "titre": "Écrire, puis préparer à l’oral",
+        "paragraphes": [
+          "Écrivez le discours en entier, puis lisez-le à voix haute. Les phrases trop longues vous essoufflent : coupez-les. Faites-le relire par une personne proche de la famille : elle vous dira si une anecdote risque de vexer quelqu’un. Choisissez la langue de l’assemblée ; mélanger français et wolof est souvent naturel et apprécié.",
+          "Ensuite, notez sur une petite carte les mots-clés de chaque partie. Le jour J, vous parlerez avec la carte en main, en regardant les invités, plutôt que de lire une feuille. Pour le discours de Cheikh, la carte pourrait tenir en cinq lignes : « merci aux familles » ; « Cheikh, grand frère d’Awa » ; « la radio de grand-mère » ; « ce que j’admire : leur patience » ; « vœux, applaudissements »."
+        ],
+        "puces": []
+      },
+      {
+        "titre": "Gérer le trac",
+        "paragraphes": [
+          "Le trac est normal, même chez ceux qui parlent souvent en public. Il diminue avec la préparation :"
+        ],
+        "puces": [
+          "répétez au moins cinq fois à voix haute, dont une fois devant un proche ;",
+          "chronométrez-vous avec votre téléphone ;",
+          "avant de parler, respirez lentement : inspirez sur 4 secondes, expirez sur 6 ;",
+          "gardez un verre d’eau à portée de main ;",
+          "arrivez en avance pour repérer l’endroit où vous parlerez et, si possible, tester le micro ;",
+          "apprenez par cœur la première phrase : une fois lancé, le reste suit ;",
+          "regardez les visages amicaux dans l’assemblée ;",
+          "si vous perdez le fil, faites une pause, regardez votre carte, puis reprenez."
+        ]
+      },
+      {
+        "titre": "En résumé",
+        "paragraphes": [
+          "Un bon discours tient en trois mots : court, sincère, préparé. Saluez, présentez-vous, racontez un souvenir, adressez vos vœux, et répétez assez pour parler sans lire. Si l’écriture vous bloque, le discours de mariage ou de baptême sur mesure de Teranga Outils est rédigé à partir de vos souvenirs et des noms de la famille ; il vous restera à le répéter."
+        ],
+        "puces": []
+      }
+    ],
+    "produits": [
+      "discours-mariage-bapteme-sur-mesure"
+    ],
+    "mots_cles": [
+      "discours de mariage",
+      "discours de baptême",
+      "exemple discours mariage frère",
+      "comment faire un discours de mariage",
+      "discours de mariage court",
+      "gérer le trac avant un discours"
+    ]
+  }
+]
