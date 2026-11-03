@@ -416,7 +416,7 @@ def controler_generateur(g):
             ids.add(c["id"])
             if not isinstance(c.get("label"), str) or not 2 <= len(c["label"]) <= 120:
                 pb.append("formulaire : libellé invalide"); break
-            if c.get("type") not in ("texte", "paragraphe", "nombre", "choix", "date"):
+            if c.get("type") not in ("texte", "paragraphe", "nombre", "choix", "date", "image"):
                 pb.append("formulaire : type invalide"); break
             if c["type"] == "choix" and not (isinstance(c.get("choix"), list) and 2 <= len(c["choix"]) <= 15 and all(isinstance(x, str) and len(x) <= 80 for x in c["choix"])):
                 pb.append("formulaire : choix invalides"); break
@@ -446,6 +446,8 @@ def appeler_modele_generateur(domaine, deja, essai=0, idee=None):
 def deposer_generateur(g, fiche_id=None):
     produit = {k: g[k] for k in ("titre", "domaine", "accroche", "description", "points", "faq", "prix", "formulaire", "consigne", "exemple")}
     produit["slug"] = g["slug"]
+    if g.get("sortie") in ("document", "image"):
+        produit["sortie"] = g["sortie"]
     produit["controle"] = {"ok": True, "outil": "fabriquer.py", "le": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     corps = {"produit": produit}
     if fiche_id:
