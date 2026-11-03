@@ -88,5 +88,17 @@ r = await traiter(req("POST", "/creer", { app: "colis", titre: "Encore un", donn
 ok(r.status === 429 && /pass/.test((await r.json()).message), "limite gratuite atteinte : message clair vers le pass");
 ok(EVENEMENTS.colis.livreur.includes("livraison") && !EVENEMENTS.colis.destinataire.includes("livraison"), "événements permis par rôle");
 
+// Tontine : organisateur et membres (lien commun)
+limite = true;
+r = await traiter(req("POST", "/creer", { app: "tontine", titre: "Tontine des amies de Grand Yoff", donnees: { cotisation: 10000, frequence: "mensuelle", membres: "Awa, Fatou, Mariama, Ndèye" } }), env);
+const tt = await r.json();
+ok(r.status === 201 && tt.jetons.proprio && tt.jetons.membre && !tt.jetons.partie, "tontine créée : lien de l'organisatrice et lien commun des membres");
+r = await traiter(req("POST", `/${tt.id}/evenement`, { t: tt.jetons.membre, type: "versement_declare", donnees: { membre: "Fatou", montant: 10000, mois: "novembre" } }), env);
+ok(r.status === 201, "un membre déclare son versement");
+r = await traiter(req("POST", `/${tt.id}/evenement`, { t: tt.jetons.membre, type: "versement_recu", donnees: { membre: "Fatou" } }), env);
+ok(r.status === 403, "seule l'organisatrice confirme un versement");
+r = await traiter(req("POST", `/${tt.id}/evenement`, { t: tt.jetons.proprio, type: "tour", donnees: { beneficiaire: "Awa", mois: "novembre" } }), env);
+ok(r.status === 201 && dossiers[tt.id].statut === "en_cours", "tour attribué : tontine « en cours »");
+
 console.log(`BILAN ${total - echecs}/${total}`);
 if (echecs) process.exit(1);

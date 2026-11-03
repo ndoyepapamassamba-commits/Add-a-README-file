@@ -10,14 +10,16 @@ const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const CORS: Record<string, string> = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "content-type" };
 const json = (s: number, b: unknown, h: Record<string, string> = {}) => new Response(JSON.stringify(b), { status: s, headers: { ...CORS, "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...h } });
 const erreur = (s: number, code: string, message: string) => json(s, { erreur: code, message });
-export const ROLES: Record<string, string[]> = { accord: ["proprio", "partie"], colis: ["proprio", "livreur", "destinataire"] };
-export const PASS: Record<string, string[]> = { accord: ["pass-accordai-1-mois", "pass-accordai-12-mois"], colis: ["pass-colispreuve-1-mois", "pass-colispreuve-12-mois"] };
+export const ROLES: Record<string, string[]> = { accord: ["proprio", "partie"], colis: ["proprio", "livreur", "destinataire"], tontine: ["proprio", "membre"] };
+export const PASS: Record<string, string[]> = { accord: ["pass-accordai-1-mois", "pass-accordai-12-mois"], colis: ["pass-colispreuve-1-mois", "pass-colispreuve-12-mois"], tontine: ["pass-tontine-12-mois"] };
 // Types d'événements permis par application et par rôle
 export const EVENEMENTS: Record<string, Record<string, string[]>> = {
   accord: { proprio: ["modification", "note", "preuve", "livraison", "cloture", "acceptation"], partie: ["confirmation", "correction", "note", "preuve", "reception"] },
+  // Tontine : l'organisateur confirme les versements et les tours ; les membres (lien commun) déclarent leur versement
+  tontine: { proprio: ["modification", "versement_recu", "tour", "rappel", "note", "cloture"], membre: ["versement_declare", "note"] },
   colis: { proprio: ["preparation", "remise_livreur", "note", "preuve", "annulation", "modification"], livreur: ["prise_en_charge", "en_route", "tentative", "livraison", "note", "preuve"], destinataire: ["reception", "probleme", "note"] },
 };
-const STATUTS: Record<string, string> = { confirmation: "confirme", correction: "a_revoir", acceptation: "confirme", livraison: "livre", reception: "recu", cloture: "clos", annulation: "annule", preparation: "prepare", remise_livreur: "chez_livreur", prise_en_charge: "chez_livreur", en_route: "en_route", tentative: "tentative", probleme: "probleme" };
+const STATUTS: Record<string, string> = { tour: "en_cours", confirmation: "confirme", correction: "a_revoir", acceptation: "confirme", livraison: "livre", reception: "recu", cloture: "clos", annulation: "annule", preparation: "prepare", remise_livreur: "chez_livreur", prise_en_charge: "chez_livreur", en_route: "en_route", tentative: "tentative", probleme: "probleme" };
 
 async function sha256Hex(t: string): Promise<string> { const b = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(t))); let s = ""; for (const x of b) s += x.toString(16).padStart(2, "0"); return s; }
 function b64url(bytes: Uint8Array): string { let s = ""; for (const x of bytes) s += String.fromCharCode(x); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }

@@ -7,3 +7,4 @@ create or replace function public.dossier_lire_interne(p_id text) returns jsonb
 language sql stable security definer set search_path = '' as $$ select donnees from tcv.dossiers where id = p_id $$;
 revoke all on function public.dossier_lire_interne(text) from public, anon, authenticated;
 grant execute on function public.dossier_lire_interne(text) to service_role;
+-- tontine ajoutée : contrainte dossiers_app_check (accord, colis, tontine)
