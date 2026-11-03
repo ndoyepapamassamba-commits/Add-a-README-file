@@ -11,13 +11,14 @@ on:
     inputs:
       nombre: { description: 'Nouveaux outils Excel à fabriquer (0 à 10)', default: '2' }
       generateurs: { description: 'Nouveaux documents sur mesure (0 à 5)', default: '1' }
-      kits: { description: 'Nouveaux kits à imprimer PDF + Word (0 à 5)', default: '2' }
+      kits: { description: 'Nouveaux kits à imprimer PDF + Word (0 à 10)', default: '2' }
+      guides: { description: 'Nouveaux guides gratuits (0 à 10)', default: '2' }
 permissions: { contents: read, id-token: write }
 concurrency: { group: boutique-fabrique, cancel-in-progress: false }
 jobs:
   fabriquer:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
         with: { ref: gh-pages, sparse-checkout: scripts/boutique }
@@ -28,4 +29,4 @@ jobs:
           pip install --quiet openpyxl==3.1.5 python-docx==1.2.0
           sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends libreoffice-calc-nogui libreoffice-writer-nogui poppler-utils > /dev/null
       - name: Fabriquer, vérifier, déposer
-        run: python3 scripts/boutique/fabriquer.py --nombre "${{ inputs.nombre || '2' }}" --generateurs "${{ inputs.generateurs || '1' }}" --kits "${{ inputs.kits || '2' }}"
+        run: python3 scripts/boutique/fabriquer.py --nombre "${{ inputs.nombre || '2' }}" --generateurs "${{ inputs.generateurs || '1' }}" --kits "${{ inputs.kits || '2' }}" --guides "${{ inputs.guides || '2' }}"
