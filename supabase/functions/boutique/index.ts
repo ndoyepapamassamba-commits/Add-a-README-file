@@ -162,7 +162,7 @@ export function validerFormulaire(f: any): string | null {
     if (!["texte", "paragraphe", "nombre", "choix", "date", "image"].includes(c.type)) return "formulaire : type de champ invalide";
     if (c.type === "choix" && !(Array.isArray(c.choix) && c.choix.length >= 2 && c.choix.length <= 15 && c.choix.every((x: any) => typeof x === "string" && x.length <= 80))) return "formulaire : choix invalides";
   }
-  if (f.filter((c: any) => c.type === "image").length > 3) return "formulaire : 3 photos au plus";
+  if (f.filter((c: any) => c.type === "image").length > 6) return "formulaire : 6 photos au plus";
   return null;
 }
 export type PhotoClient = { id: string; nom: string; mime: string; b64: string };

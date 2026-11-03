@@ -39,7 +39,7 @@ create or replace function public.boutique_commande_source_ajouter(p_order_id te
 language plpgsql security definer set search_path = '' as $$
 declare v_bytes bytea;
 begin
-  if p_nom is null or p_nom !~ '^source-[1-3]\.(png|jpg|webp)$' or p_mime not in ('image/png', 'image/jpeg', 'image/webp') then return false; end if;
+  if p_nom is null or p_nom !~ '^source-[1-6]\.(png|jpg|webp)$' or p_mime not in ('image/png', 'image/jpeg', 'image/webp') then return false; end if;
   if not exists (select 1 from tcv.orders where id = p_order_id and product like 'bt\_%' and status = 'checkout'
                  and created_at > now() - interval '15 minutes') then return false; end if;
   v_bytes := decode(p_b64, 'base64');

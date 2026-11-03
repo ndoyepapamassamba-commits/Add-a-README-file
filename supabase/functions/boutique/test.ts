@@ -315,7 +315,7 @@ ok(r.status === 503, "modèle : sans clé OpenRouter, refus clair (503)");
 {
   const FORM_PH = [{ id: "photo", label: "Votre photo", type: "image", obligatoire: true }, { id: "fond", label: "Fond souhaité", type: "choix", choix: ["Blanc", "Couleur"], obligatoire: true }];
   const PHOTO = "data:image/jpeg;base64," + "/9j/4AAQ" + "B".repeat(3000);
-  ok(validerFormulaire(FORM_PH) === null && validerFormulaire([...FORM_PH, { id: "a", label: "A", type: "image" }, { id: "b", label: "B", type: "image" }, { id: "c2", label: "C", type: "image" }]) !== null, "formulaire : champ photo accepté (3 au plus)");
+  ok(validerFormulaire(FORM_PH) === null && validerFormulaire([...FORM_PH, ...["aa", "bb", "c2", "d2", "e2"].map((x) => ({ id: x, label: x + "x", type: "image" }))]) === null && validerFormulaire([...FORM_PH, ...["aa", "bb", "c2", "d2", "e2", "f2"].map((x) => ({ id: x, label: x + "x", type: "image" }))]) !== null, "formulaire : champs photo acceptés (6 au plus)");
   const vp = validerReponses(FORM_PH, { photo: PHOTO, fond: "Blanc" }) as any;
   ok(vp.ok && vp.reponses.photo === "source-1.jpg" && vp.photos.length === 1 && vp.photos[0].mime === "image/jpeg" && !JSON.stringify(vp.reponses).includes("base64"), "photo du client : mise à part (jamais dans les réponses texte)", vp.reponses);
   ok(!(validerReponses(FORM_PH, { photo: "data:text/html;base64,PGh0bWw+", fond: "Blanc" }) as any).ok && !(validerReponses(FORM_PH, { photo: "data:image/png;base64,AAAA", fond: "Blanc" }) as any).ok, "photo invalide (type ou taille) : refusée");
