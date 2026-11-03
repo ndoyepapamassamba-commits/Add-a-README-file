@@ -67,7 +67,7 @@
       .catch(function (err) { msg.className = 'msg erreur'; texte(msg, err.message); btn.disabled = false; });
   });
 
-  // Application installable (Teranga IA) : fonctionnement hors connexion et bouton « Installer »
+  // Application installable (TERANGA) : fonctionnement hors connexion et bouton « Installer »
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(function () {});
   var invite = null;
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); invite = e; var b = $('#installer'); if (b) b.hidden = false; });

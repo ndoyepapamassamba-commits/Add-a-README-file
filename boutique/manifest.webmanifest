@@ -1,7 +1,7 @@
 {
-  "name": "Teranga IA — outils et services",
-  "short_name": "Teranga IA",
-  "description": "Outils Excel, kits à imprimer, documents rédigés sur mesure, affiches et retouches photo par l'IA. Paiement Wave, livraison immédiate.",
+  "name": "TERANGA — outils et services",
+  "short_name": "TERANGA",
+  "description": "Outils Excel, kits à imprimer, documents rédigés sur mesure, affiches et retouches photo. Paiement Wave, livraison immédiate.",
   "lang": "fr",
   "start_url": "./?source=app",
   "scope": "./",

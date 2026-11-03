@@ -55,11 +55,11 @@ const tete = (titre, description, canonique, extra = "") => `<!DOCTYPE html>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icone-apple-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Teranga IA">
+<meta name="apple-mobile-web-app-title" content="TERANGA">
 ${extra}</head>
 <body>
 <header class="top"><a class="brand" href="./">Teranga <b>Outils</b></a><span><a class="lien" href="./">Tous les outils</a> · <a class="lien" href="mes-commandes.html">Mes commandes</a>${guides.length ? ' · <a class="lien" href="guides.html">Guides</a>' : ""}</span></header>
-<div class="installer" id="installer" hidden><span>Installez l'application Teranga IA sur votre téléphone.</span> <button class="btn" type="button" id="installer-btn">Installer</button></div>
+<div class="installer" id="installer" hidden><span>Installez l'application TERANGA sur votre téléphone.</span> <button class="btn" type="button" id="installer-btn">Installer</button></div>
 `;
 const pied = `<footer>
 <p>Teranga Outils · outils Excel prêts à l'emploi, payés par Wave et livrés tout de suite. Vendeur : particulier au Sénégal.</p>
@@ -221,7 +221,7 @@ const cgv = tete("Conditions de vente | Teranga Outils", "Conditions de vente de
 </main>
 ` + pied;
 
-const mesCommandes = tete("Mes commandes | Teranga IA", "Retrouvez vos commandes, vos fichiers et vos documents Teranga IA.", BASE + "mes-commandes.html", '<meta name="robots" content="noindex">\n') + `<main id="mes-commandes">
+const mesCommandes = tete("Mes commandes | TERANGA", "Retrouvez vos commandes, vos fichiers et vos documents TERANGA.", BASE + "mes-commandes.html", '<meta name="robots" content="noindex">\n') + `<main id="mes-commandes">
 <h1>Mes commandes</h1>
 <p class="lead">Vos commandes passées sur ce téléphone. Touchez une commande pour la payer, la télécharger ou relire votre document.</p>
 <div id="liste-commandes"><p>Chargement…</p></div>

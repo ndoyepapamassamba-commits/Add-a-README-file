@@ -1,5 +1,5 @@
-// Teranga IA — fonctionnement hors connexion des pages de la boutique (jamais les commandes ni les paiements)
-const VERSION = "teranga-ia-1";
+// TERANGA — fonctionnement hors connexion des pages de la boutique (jamais les commandes ni les paiements)
+const VERSION = "teranga-2";
 const ESSENTIEL = ["./", "index.html", "boutique.css", "boutique.js", "mes-commandes.html", "manifest.webmanifest", "icone-192.png", "icone-512.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ESSENTIEL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== VERSION).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
