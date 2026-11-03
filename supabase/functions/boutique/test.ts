@@ -246,11 +246,27 @@ const envFab: Env = { ...env, modelesFabrique: ["payant/modele", "gratuit/a:free
   return fauxFetch(url, init); }) as unknown as typeof fetch };
 r = await traiter(req("POST", "/fabrique/modele", MSG, { authorization: tj }), envFab);
 const mj = await r.json();
-ok(r.status === 200 && mj.contenu === '{"titre":"ok"}' && mj.modele === "gratuit/b:free" && vus.map((v) => v.m).join() === "gratuit/a:free,gratuit/b:free", "modèle : seuls les modèles gratuits sont appelés (jamais un payant), repli sur le suivant", { mj, vus });
+ok(r.status === 200 && mj.contenu === '{"titre":"ok"}' && mj.modele === "gratuit/b:free" && vus.map((v) => v.m).join() === "gratuit/a:free,gratuit/b:free", "modèle : modèles gratuits d'abord (un modèle payant de la liste gratuite est ignoré), repli sur le suivant", { mj, vus });
 ok(vus.every((v) => v.a === "Bearer sk-or-v1-" + "a".repeat(40) && v.f && v.f.type === "json_object"), "modèle : clé du propriétaire côté serveur, format JSON demandé");
 vus.length = 0; echouerPremier = false;
 r = await traiter(req("POST", "/fabrique/modele", { ...MSG, depart: 1 }, { authorization: tj }), envFab);
 ok(r.status === 200 && vus[0].m === "gratuit/b:free", "modèle : « depart » fait tourner le premier modèle essayé", vus);
+// Gratuits indisponibles : repli payant bon marché, plafonné par jour
+const vus2: string[] = [];
+const envRepli: Env = { ...env, modelesFabrique: ["gratuit/a:free"], modelesPayantsFabrique: ["payant/x", "payant/y"], fetch: (async (url: string, init?: any) => {
+  if (url.includes("openrouter.ai/api/v1/chat")) { const m = JSON.parse(init.body).model; vus2.push(m); if (m !== "payant/y") return new Response("{}", { status: 429 }); return new Response(JSON.stringify({ choices: [{ message: { content: '{"titre":"payé"}' } }] }), { status: 200 }); }
+  return fauxFetch(url, init); }) as unknown as typeof fetch };
+reponses.tcv_hit_rate_limit = true;
+r = await traiter(req("POST", "/fabrique/modele", MSG, { authorization: tj }), envRepli);
+const pj = await r.json();
+ok(r.status === 200 && pj.payant === true && pj.modele === "payant/y" && vus2.join() === "gratuit/a:free,payant/x,payant/y", "modèle : gratuits épuisés → repli payant bon marché", { pj, vus2 });
+ok(appels.filter((x) => x.fn === "tcv_hit_rate_limit").every((x) => x.args.p_key === "fab-payant" && x.args.p_max === 30 && x.args.p_window_seconds === 86400), "repli payant : plafond de 30 appels par jour");
+vus2.length = 0; reponses.tcv_hit_rate_limit = false;
+r = await traiter(req("POST", "/fabrique/modele", MSG, { authorization: tj }), envRepli);
+ok(r.status === 502 && !vus2.some((m) => m.startsWith("payant/")) && /plafond payant/.test((await r.json()).message), "repli payant : plafond du jour atteint → aucun appel payant", vus2);
+vus2.length = 0; reponses.tcv_hit_rate_limit = true;
+r = await traiter(req("POST", "/fabrique/modele", { ...MSG, payant: false }, { authorization: tj }), envRepli);
+ok(r.status === 502 && vus2.join() === "gratuit/a:free", "« payant: false » : jamais de modèle payant", vus2);
 reponses.boutique_reglages = { admin_key: reponses.boutique_reglages.admin_key, wave: reponses.boutique_reglages.wave };
 _oublierCaches();
 r = await traiter(req("POST", "/fabrique/modele", MSG, { authorization: tj }), envFab);

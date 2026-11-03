@@ -21,6 +21,9 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import kits  # noqa: E402  (kits à imprimer : PDF + Word)
+
 API = os.environ.get("BOUTIQUE_API", "https://seegnylaubuularegmku.supabase.co/functions/v1/boutique")
 AUDIENCE = "teranga-boutique"
 MIME_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -316,10 +319,35 @@ def modele(messages, essai=0):
     return extraire_json(rep.get("contenu") or "")
 
 
-def appeler_modele(domaine, deja, essai=0):
+FICHIER_DEMANDES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "demandes.json")
+
+
+def pistes(famille, deja, defaut):
+    """Sujets à traiter : d'abord la demande réelle étudiée (demandes.json, priorité 1 d'abord, sujets pas encore en vente),
+    puis les domaines par défaut. Renvoie une liste de (domaine, idée ou None)."""
+    out = []
+    try:
+        dem = json.load(open(FICHIER_DEMANDES, encoding="utf-8"))
+    except Exception:
+        dem = []
+    pris = {slugifier(t) for t in deja}
+    random.seed(time.strftime("%Y-%m-%d") + famille)
+    lot = [d for d in dem if isinstance(d, dict) and d.get("famille") == famille and slugifier(d.get("titre_produit", "")) not in pris]
+    random.shuffle(lot)
+    lot.sort(key=lambda d: d.get("priorite", 3))
+    for d in lot:
+        idee = f"{d.get('titre_produit')} — les gens cherchent : {', '.join((d.get('recherches') or [])[:4])}"
+        out.append((d.get("domaine") or d.get("sujet") or "Divers", idee))
+    autres = defaut[:]
+    random.shuffle(autres)
+    return out + [(x, None) for x in autres]
+
+
+def appeler_modele(domaine, deja, essai=0, idee=None):
+    piste = f"\nPiste tirée de la demande réelle : {idee}." if idee else ""
     return modele([
         {"role": "system", "content": CONSIGNE},
-        {"role": "user", "content": f"Domaine : {domaine}.\nOutils déjà en vente (ne pas refaire) : {', '.join(deja[-60:]) or 'aucun'}.\nPropose UN outil nouveau, très utile et précis pour ce domaine. Réponds par le seul objet JSON, sans texte autour."},
+        {"role": "user", "content": f"Domaine : {domaine}.{piste}\nOutils déjà en vente (ne pas refaire) : {', '.join(deja[-60:]) or 'aucun'}.\nPropose UN outil nouveau, très utile et précis pour ce domaine. Réponds par le seul objet JSON, sans texte autour."},
     ], essai)
 
 
@@ -407,10 +435,11 @@ def controler_generateur(g):
     return pb
 
 
-def appeler_modele_generateur(domaine, deja, essai=0):
+def appeler_modele_generateur(domaine, deja, essai=0, idee=None):
+    piste = f"\nPiste tirée de la demande réelle : {idee}." if idee else ""
     return modele([
         {"role": "system", "content": CONSIGNE_GEN},
-        {"role": "user", "content": f"Domaine : {domaine}.\nDocuments et outils déjà en vente (ne pas refaire) : {', '.join(deja[-80:]) or 'aucun'}.\nPropose UN document sur mesure nouveau, très utile, pour ce domaine. Réponds par le seul objet JSON."},
+        {"role": "user", "content": f"Domaine : {domaine}.{piste}\nDocuments et outils déjà en vente (ne pas refaire) : {', '.join(deja[-80:]) or 'aucun'}.\nPropose UN document sur mesure nouveau, très utile, pour ce domaine. Réponds par le seul objet JSON."},
     ], essai)
 
 
@@ -512,11 +541,59 @@ def fabriquer_une(fiche, dossier):
     return (chemin if not pb else None), apercu, pb
 
 
+def fabriquer_kit(k, dossier):
+    """Kit à imprimer : contrôle, Word, PDF par LibreOffice, vérification ; renvoie (chemins, aperçu, problèmes)."""
+    for cle in ("titre", "accroche", "description"):
+        if isinstance(k.get(cle), str):
+            k[cle] = re.sub(r"\s+", " ", k[cle]).strip()
+    pb = kits.controler_kit(k)
+    if pb:
+        return None, None, pb
+    k["slug"] = k.get("slug") or slugifier(k["titre"])
+    docx = os.path.join(dossier, k["slug"] + ".docx")
+    try:
+        kits.construire_kit(k, docx)
+        pdf = kits.en_pdf(docx, dossier)
+    except Exception as e:
+        return None, None, [f"construction impossible : {e}"[:300]]
+    pb, apercu = kits.verifier_kit(k, docx, pdf)
+    return ((pdf, docx) if not pb else None), apercu, pb
+
+
+def deposer_kit(k, chemins, apercu, fiche_id=None):
+    pdf, docx = chemins
+    produit = {c: k[c] for c in ("titre", "domaine", "accroche", "description", "points", "faq", "prix")}
+    produit["slug"] = k["slug"]
+    produit["apercu"] = apercu
+    produit["controle"] = {"ok": True, "outil": "fabriquer.py/kits", "le": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+    fichiers = [{"nom": k["slug"][:70] + ".pdf", "mime": "application/pdf", "b64": base64.b64encode(open(pdf, "rb").read()).decode()},
+                {"nom": k["slug"][:70] + ".docx", "mime": kits.MIME_DOCX, "b64": base64.b64encode(open(docx, "rb").read()).decode()}]
+    corps = {"produit": produit, "fichiers": fichiers}
+    if fiche_id:
+        corps["fiche_id"] = fiche_id
+    req = urllib.request.Request(API + "/depot", data=json.dumps(corps).encode(), method="POST",
+                                 headers={"Content-Type": "application/json", "Authorization": "Bearer " + jeton_github()})
+    try:
+        with urllib.request.urlopen(req, timeout=90) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        return {"erreur": e.code, "detail": e.read().decode()[:300]}
+
+
+def appeler_modele_kit(domaine, deja, essai=0, idee=None):
+    piste = f"\nPiste tirée de la demande réelle : {idee}." if idee else ""
+    return modele([
+        {"role": "system", "content": kits.CONSIGNE_KIT},
+        {"role": "user", "content": f"Domaine : {domaine}.{piste}\nProduits déjà en vente (ne pas refaire) : {', '.join(deja[-80:]) or 'aucun'}.\nConçois UN kit à imprimer nouveau, complet et très utile. Réponds par le seul objet JSON."},
+    ], essai)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--nombre", type=int, default=5)
     ap.add_argument("--essais", type=int, default=3)
     ap.add_argument("--generateurs", type=int, default=1, help="documents sur mesure à créer (modèle gratuit)")
+    ap.add_argument("--kits", type=int, default=1, help="kits à imprimer (PDF + Word) à créer (modèle gratuit)")
     ap.add_argument("--fiches")
     ap.add_argument("--sortie")
     ap.add_argument("--sans-depot", action="store_true", help="essai : fiches du modèle construites et vérifiées, rien n'est déposé")
@@ -526,6 +603,10 @@ def main():
     rapport = []
     if a.fiches:
         for fiche in json.load(open(a.fiches, encoding="utf-8")):
+            if fiche.get("famille") == "kit":
+                chemins, apercu, pb = fabriquer_kit(fiche, dossier)
+                rapport.append({"titre": fiche.get("titre"), "ok": chemins is not None, "problemes": pb, "pages": (apercu or {}).get("pages")})
+                continue
             chemin, apercu, pb = fabriquer_une(fiche, dossier)
             rapport.append({"titre": fiche.get("titre"), "ok": chemin is not None, "problemes": pb})
             if chemin:
@@ -550,6 +631,16 @@ def main():
                 fiches_ok += 1
             deja.append(fiche.get("titre", ""))
             continue
+        if fiche.get("famille") == "kit":  # kit à imprimer écrit à l'avance
+            chemins, apercu, pb = fabriquer_kit(fiche, dossier)
+            if not chemins:
+                rapport.append({"fiche": item.get("id"), "titre": fiche.get("titre"), "problemes": pb[:6]}); continue
+            res = deposer_kit(fiche, chemins, apercu, fiche_id=item.get("id"))
+            rapport.append({"fiche": item.get("id"), "titre": fiche.get("titre"), "depot": res})
+            if isinstance(res, dict) and res.get("statut") == "brouillon":
+                fiches_ok += 1
+            deja.append(fiche.get("titre", ""))
+            continue
         chemin, apercu, pb = fabriquer_une(fiche, dossier)
         if not chemin:
             rapport.append({"fiche": item.get("id"), "titre": fiche.get("titre"), "problemes": pb[:6]}); continue
@@ -560,20 +651,18 @@ def main():
         deja.append(fiche.get("titre", ""))
     # 2. Fiches écrites par le modèle
     recents = {p.get("domaine") for p in existants[:10]}
-    domaines = [d for d in DOMAINES if d not in recents] or DOMAINES[:]
-    random.seed(time.strftime("%Y-%m-%d"))
-    random.shuffle(domaines)
+    domaines = pistes("excel", deja, [d for d in DOMAINES if d not in recents] or DOMAINES[:])
     deposes = 0
     echecs_modele = 0  # le service de modèles ne répond pas : inutile de parcourir tous les domaines
     sans_cle = False
-    for domaine in domaines:
+    for domaine, idee in domaines:
         if deposes >= a.nombre or echecs_modele >= 4 or sans_cle:
             break
         for essai in range(1, a.essais + 1):
             if echecs_modele >= 4:
                 rapport.append({"arret": "4 échecs de suite du service de modèles : arrêt pour aujourd'hui"}); break
             try:
-                fiche = appeler_modele(domaine, deja, essai - 1)
+                fiche = appeler_modele(domaine, deja, essai - 1, idee)
                 echecs_modele = 0
             except SansCle as e:
                 sans_cle = True
@@ -597,14 +686,12 @@ def main():
             break
     # 3. Documents sur mesure écrits par le modèle (masqués aux clients tant que la rédaction n'est pas activée)
     gen_ok = 0
-    doms = DOMAINES_DOCS[:]
-    random.shuffle(doms)
-    for domaine in doms:
+    for domaine, idee in pistes("generateur", deja, DOMAINES_DOCS):
         if gen_ok >= a.generateurs or sans_cle or echecs_modele >= 4:
             break
         for essai in range(1, a.essais + 1):
             try:
-                g = appeler_modele_generateur(domaine, deja, essai - 1)
+                g = appeler_modele_generateur(domaine, deja, essai - 1, idee)
                 echecs_modele = 0
             except SansCle as e:
                 sans_cle = True
@@ -631,11 +718,42 @@ def main():
             if isinstance(res, dict) and res.get("statut") == "brouillon":
                 gen_ok += 1; deja.append(g["titre"])
             break
+    # 4. Kits à imprimer (PDF + Word) écrits par le modèle
+    kits_ok = 0
+    for domaine, idee in pistes("kit", deja, DOMAINES + DOMAINES_DOCS):
+        if kits_ok >= a.kits or sans_cle or echecs_modele >= 4:
+            break
+        for essai in range(1, a.essais + 1):
+            try:
+                k = appeler_modele_kit(domaine, deja, essai - 1, idee)
+                echecs_modele = 0
+            except SansCle as e:
+                sans_cle = True
+                rapport.append({"arret": f"rédaction automatique pas encore activée : {e}"[:300]}); break
+            except Exception as e:
+                echecs_modele += 1
+                rapport.append({"kit": domaine, "essai": essai, "erreur": f"modèle : {e}"[:500]})
+                if echecs_modele >= 4:
+                    break
+                time.sleep(5); continue
+            if not isinstance(k, dict):
+                rapport.append({"kit": domaine, "essai": essai, "erreur": "réponse sans objet"}); continue
+            k["slug"] = slugifier(k.get("titre", ""))
+            if any(slugifier(t) == k["slug"] for t in deja):
+                rapport.append({"kit": domaine, "essai": essai, "erreur": "déjà en vente"}); continue
+            chemins, apercu, pb = fabriquer_kit(k, dossier)
+            if not chemins:
+                rapport.append({"kit": domaine, "essai": essai, "titre": k.get("titre"), "problemes": pb[:6]}); continue
+            res = {"statut": "brouillon", "essai": True} if a.sans_depot else deposer_kit(k, chemins, apercu)
+            rapport.append({"kit": domaine, "essai": essai, "titre": k["titre"], "pages": apercu.get("pages"), "depot": res})
+            if isinstance(res, dict) and res.get("statut") == "brouillon":
+                kits_ok += 1; deja.append(k["titre"])
+            break
     print(json.dumps(rapport, ensure_ascii=False, indent=1))
-    print(f"Fiches déposées : {fiches_ok} · nouveaux outils déposés : {deposes}/{a.nombre} · documents sur mesure : {gen_ok}/{a.generateurs}")
+    print(f"Fiches déposées : {fiches_ok} · nouveaux outils déposés : {deposes}/{a.nombre} · documents sur mesure : {gen_ok}/{a.generateurs} · kits : {kits_ok}/{a.kits}")
     if sans_cle:
         print("Rédaction automatique pas encore activée : seules les fiches en attente ont été traitées (aucune erreur).")
-    sys.exit(0 if (deposes or fiches_ok or gen_ok or sans_cle or (a.nombre == 0 and a.generateurs == 0)) else 1)
+    sys.exit(0 if (deposes or fiches_ok or gen_ok or kits_ok or sans_cle or (a.nombre == 0 and a.generateurs == 0 and a.kits == 0)) else 1)
 
 
 if __name__ == "__main__":

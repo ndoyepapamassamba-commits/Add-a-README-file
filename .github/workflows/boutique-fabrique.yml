@@ -9,8 +9,9 @@ on:
     - cron: '23 3 * * *'
   workflow_dispatch:
     inputs:
-      nombre: { description: 'Nouveaux outils Excel à fabriquer (0 à 10)', default: '5' }
+      nombre: { description: 'Nouveaux outils Excel à fabriquer (0 à 10)', default: '2' }
       generateurs: { description: 'Nouveaux documents sur mesure (0 à 5)', default: '1' }
+      kits: { description: 'Nouveaux kits à imprimer PDF + Word (0 à 5)', default: '2' }
 permissions: { contents: read, id-token: write }
 concurrency: { group: boutique-fabrique, cancel-in-progress: false }
 jobs:
@@ -22,9 +23,9 @@ jobs:
         with: { ref: gh-pages, sparse-checkout: scripts/boutique }
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - name: Logiciels (openpyxl, LibreOffice Calc)
+      - name: Logiciels (openpyxl, python-docx, LibreOffice Calc et Writer)
         run: |
-          pip install --quiet openpyxl==3.1.5
-          sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends libreoffice-calc-nogui > /dev/null
+          pip install --quiet openpyxl==3.1.5 python-docx==1.2.0
+          sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends libreoffice-calc-nogui libreoffice-writer-nogui poppler-utils > /dev/null
       - name: Fabriquer, vérifier, déposer
-        run: python3 scripts/boutique/fabriquer.py --nombre "${{ inputs.nombre || '5' }}" --generateurs "${{ inputs.generateurs || '1' }}"
+        run: python3 scripts/boutique/fabriquer.py --nombre "${{ inputs.nombre || '2' }}" --generateurs "${{ inputs.generateurs || '1' }}" --kits "${{ inputs.kits || '2' }}"

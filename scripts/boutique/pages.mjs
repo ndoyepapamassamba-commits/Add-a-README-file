@@ -17,7 +17,7 @@ const sansAcc = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]
 const FICHIER_GUIDES = fileURLToPath(new URL("./guides.json", import.meta.url));
 const guides = (existsSync(FICHIER_GUIDES) ? JSON.parse(readFileSync(FICHIER_GUIDES, "utf8")) : []).filter((g) => g && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(g.slug) && g.titre && Array.isArray(g.sections));
 const carte = (p) => `<a class="carte" href="${esc(p.slug)}.html" data-cherche="${esc(sansAcc(p.titre + " " + p.domaine + " " + p.accroche))}">
-<span class="etiquette">${esc(p.domaine)}${p.type === "generateur" ? " · sur mesure" : ""}</span><h3>${esc(p.titre)}</h3><p>${esc(p.accroche)}</p><span class="prix">${fcfa(p.prix)}</span></a>`;
+<span class="etiquette">${esc(p.domaine)}${p.type === "generateur" ? " · sur mesure" : p.apercu && p.apercu.type === "document" ? " · kit à imprimer" : ""}</span><h3>${esc(p.titre)}</h3><p>${esc(p.accroche)}</p><span class="prix">${fcfa(p.prix)}</span></a>`;
 
 function valeur(v, type) {
   if (v === null || v === undefined || v === "") return "";
@@ -85,13 +85,17 @@ function pageProduit(p) {
     mainEntity: (p.faq || []).map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.r } })),
   }];
   const ap = p.apercu || { feuilles: [], synthese: [] };
+  const kit = p.type !== "generateur" && ap.type === "document";
+  const apercuKit = kit ? `<p style="color:var(--muted);font-size:15px">${esc(ap.titre)}${ap.sous_titre ? " — " + esc(ap.sous_titre) : ""} · ${Number(ap.pages) || ""} pages</p>
+<h3>Sommaire</h3>\n<ol class="points">${(ap.sections_titres || []).map((t) => `<li>${esc(t)}</li>`).join("")}</ol>
+<h3>Extrait</h3>\n${rendreDocument({ titre: ap.titre, sections: ap.extrait || [] })}` : "";
   const tableaux = (ap.feuilles || []).map((f) => `<h3>Feuille « ${esc(f.nom)} » (exemple)</h3>
 <div class="apercu"><table><thead><tr>${f.colonnes.map((c) => `<th>${esc(c)}</th>`).join("")}</tr></thead>
 <tbody>${(f.lignes || []).map((l) => `<tr>${l.map((v, i) => `<td${typeof v === "number" ? ' class="n"' : ""}>${esc(valeur(v, f.types && f.types[i]))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`).join("\n");
   const kpi = (ap.synthese || []).length ? `<h3>Tableau de bord (calculé sur l'exemple)</h3><div class="kpi">${ap.synthese.map((s) => `<div><span>${esc(s.libelle)}</span><strong>${esc(valeur(s.valeur, s.type))}</strong></div>`).join("")}</div>` : "";
   return tete(`${p.titre} | Teranga Outils`, p.accroche, url, `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, "\\u003c")}</script>\n`) + `<main>
-<p class="crumbs"><a href="./">Outils Excel</a> › ${esc(p.domaine)}</p>
-<span class="etiquette">${esc(p.domaine)}</span>
+<p class="crumbs"><a href="./">Teranga Outils</a> › ${esc(p.domaine)}</p>
+<span class="etiquette">${esc(p.domaine)}${kit ? " · kit à imprimer" : p.type === "generateur" ? " · sur mesure" : ""}</span>
 <h1>${esc(p.titre)}</h1>
 <p class="lead">${esc(p.accroche)}</p>
 <p class="prix">${fcfa(p.prix)}</p>
@@ -106,14 +110,14 @@ function pageProduit(p) {
   <p class="msg" id="achat-msg" role="status" aria-live="polite"></p>
   <p style="font-size:14px;color:var(--muted);margin:0">Paiement par Wave au montant exact affiché à l'étape suivante. Aucun compte à créer.</p>
 </form>
-<h2>Ce que fait cet outil</h2>
+<h2>${kit ? "Ce que contient ce kit" : p.type === "generateur" ? "Ce que vous recevez" : "Ce que fait cet outil"}</h2>
 <p>${esc(p.description)}</p>
 <ul class="points">${(p.points || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
-${p.type === "generateur" ? `<h2>Exemple de document rédigé</h2>\n<p style="color:var(--muted);font-size:15px">Exemple obtenu avec des réponses fictives. Votre document est rédigé à partir de vos propres réponses.</p>\n${rendreDocument(p.exemple)}` : `<h2>Aperçu du classeur</h2>\n${tableaux}\n${kpi}`}
+${p.type === "generateur" ? `<h2>Exemple de document rédigé</h2>\n<p style="color:var(--muted);font-size:15px">Exemple obtenu avec des réponses fictives. Votre document est rédigé à partir de vos propres réponses.</p>\n${rendreDocument(p.exemple)}` : kit ? `<h2>Aperçu du kit</h2>\n${apercuKit}` : `<h2>Aperçu du classeur</h2>\n${tableaux}\n${kpi}`}
 <h2>Questions fréquentes</h2>
 ${(p.faq || []).map((f) => `<details><summary>${esc(f.q)}</summary><p>${esc(f.r)}</p></details>`).join("\n")}
 ${guidesDe(p.slug)}
-<p style="margin-top:1.5em">${p.type === "generateur" ? "Vous recevez le texte à l'écran et un fichier Word (.docx) modifiable, qui s'ouvre aussi sur téléphone. Relisez-le et adaptez-le avant de l'utiliser." : `Fichier Excel (.xlsx) : ${(p.fichiers || []).map((f) => `${esc(f.nom)} (${Math.max(1, Math.round(f.taille / 1024))} Ko)`).join(", ")}. Fonctionne avec Excel, LibreOffice et Google Sheets, sur ordinateur ou téléphone.`}</p>
+<p style="margin-top:1.5em">${p.type === "generateur" ? "Vous recevez le texte à l'écran et un fichier Word (.docx) modifiable, qui s'ouvre aussi sur téléphone. Relisez-le et adaptez-le avant de l'utiliser." : kit ? `Vous recevez le kit en PDF (prêt à imprimer ou à lire sur téléphone) et en Word (modifiable) : ${(p.fichiers || []).map((f) => `${esc(f.nom)} (${Math.max(1, Math.round(f.taille / 1024))} Ko)`).join(", ")}.` : `Fichier Excel (.xlsx) : ${(p.fichiers || []).map((f) => `${esc(f.nom)} (${Math.max(1, Math.round(f.taille / 1024))} Ko)`).join(", ")}. Fonctionne avec Excel, LibreOffice et Google Sheets, sur ordinateur ou téléphone.`}</p>
 </main>
 ` + pied;
 }
