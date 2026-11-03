@@ -1,0 +1,11 @@
+Lecture de texte sur photo (OCR), entièrement sur le téléphone. Licence Apache 2.0 (voir LICENSE-Apache-2.0.txt).
+- tesseract.min.js, worker.min.js : tesseract.js 7.0.0 (https://github.com/naptha/tesseract.js), fichiers dist/ du paquet npm ;
+  seule modification : retrait de la dernière ligne « //# sourceMappingURL=… ». Bibliothèques incluses par l'auteur
+  (regenerator-runtime MIT, buffer MIT, ieee754 BSD-3-Clause, zlib.js MIT) : voir NOTICES-bundled.txt.
+- tesseract-core-lstm.js/.wasm et tesseract-core-simd-lstm.js/.wasm : tesseract.js-core 7.0.0 (Tesseract OCR compilé
+  en WebAssembly, Apache 2.0, avec Leptonica — licence BSD), sans modification. L'application choisit la version SIMD
+  si le navigateur la permet.
+- lang/fra.traineddata.gz : modèle français « 4.0.0_best_int » (projet tesseract-ocr/tessdata, Apache 2.0), copié du
+  paquet npm @tesseract.js-data/fra 1.0.0, sans modification.
+Ces fichiers ne sont téléchargés qu'à la première lecture d'une photo (environ 3,7 Mo), puis gardés sur le téléphone.
+Aucune image n'est envoyée sur Internet.

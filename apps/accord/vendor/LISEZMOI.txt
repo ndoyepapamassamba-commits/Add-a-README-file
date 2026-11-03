@@ -1,0 +1,5 @@
+Bibliothèque incluse dans AccordAI (copie locale, rien n'est chargé depuis Internet)
+
+jspdf.umd.min.js   jsPDF 4.2.1 (npm « jspdf », dist/jspdf.umd.min.js)   Licence MIT   jspdf.LICENSE.txt
+
+Fichier repris tel quel ; seule la ligne finale « sourceMappingURL » a été retirée.

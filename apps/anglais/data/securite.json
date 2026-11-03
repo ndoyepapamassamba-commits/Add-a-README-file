@@ -1,0 +1,547 @@
+{
+ "id": "securite",
+ "nom": "Sécurité et gardiennage",
+ "mots": [
+  {
+   "id": "m01",
+   "en": "security guard",
+   "fr": "l'agent de sécurité",
+   "pron": "si-KYOU-ri-ti gârd"
+  },
+  {
+   "id": "m02",
+   "en": "guard",
+   "fr": "le gardien",
+   "pron": "gârd"
+  },
+  {
+   "id": "m03",
+   "en": "night watchman",
+   "fr": "le veilleur de nuit",
+   "pron": "naït WOTCH-meunn"
+  },
+  {
+   "id": "m04",
+   "en": "gate",
+   "fr": "le portail",
+   "pron": "guéït"
+  },
+  {
+   "id": "m05",
+   "en": "entrance",
+   "fr": "l'entrée",
+   "pron": "ÈNN-treunss"
+  },
+  {
+   "id": "m06",
+   "en": "exit",
+   "fr": "la sortie",
+   "pron": "ÈG-zit"
+  },
+  {
+   "id": "m07",
+   "en": "emergency exit",
+   "fr": "la sortie de secours",
+   "pron": "i-MEUR-djeunn-si ÈG-zit"
+  },
+  {
+   "id": "m08",
+   "en": "visitor",
+   "fr": "le visiteur",
+   "pron": "VI-zi-teur"
+  },
+  {
+   "id": "m09",
+   "en": "badge",
+   "fr": "le badge",
+   "pron": "badj"
+  },
+  {
+   "id": "m10",
+   "en": "name",
+   "fr": "le nom",
+   "pron": "néïm"
+  },
+  {
+   "id": "m11",
+   "en": "identity card",
+   "fr": "la pièce d'identité",
+   "pron": "aï-DÈNN-ti-ti kârd"
+  },
+  {
+   "id": "m12",
+   "en": "register",
+   "fr": "le registre",
+   "pron": "RÈ-djis-teur"
+  },
+  {
+   "id": "m13",
+   "en": "car park",
+   "fr": "le parking",
+   "pron": "KÂR pârk",
+   "note": "En américain : parking lot"
+  },
+  {
+   "id": "m14",
+   "en": "vehicle",
+   "fr": "le véhicule",
+   "pron": "VII-i-keul"
+  },
+  {
+   "id": "m15",
+   "en": "number plate",
+   "fr": "la plaque d'immatriculation",
+   "pron": "NEUM-beur pléït",
+   "note": "En américain : license plate"
+  },
+  {
+   "id": "m16",
+   "en": "camera",
+   "fr": "la caméra",
+   "pron": "KA-meu-reu"
+  },
+  {
+   "id": "m17",
+   "en": "alarm",
+   "fr": "l'alarme",
+   "pron": "eu-LÂRM"
+  },
+  {
+   "id": "m18",
+   "en": "fire",
+   "fr": "le feu, l'incendie",
+   "pron": "FAÏ-eur"
+  },
+  {
+   "id": "m19",
+   "en": "fire extinguisher",
+   "fr": "l'extincteur",
+   "pron": "FAÏ-eur ik-STING-gwi-cheur"
+  },
+  {
+   "id": "m20",
+   "en": "smoke",
+   "fr": "la fumée",
+   "pron": "smôk"
+  },
+  {
+   "id": "m21",
+   "en": "torch",
+   "fr": "la lampe torche",
+   "pron": "tôrtch",
+   "note": "En américain : flashlight"
+  },
+  {
+   "id": "m22",
+   "en": "radio",
+   "fr": "le talkie-walkie, la radio",
+   "pron": "RÉÏ-di-ô"
+  },
+  {
+   "id": "m23",
+   "en": "key",
+   "fr": "la clé",
+   "pron": "kii"
+  },
+  {
+   "id": "m24",
+   "en": "lock",
+   "fr": "la serrure",
+   "pron": "lok"
+  },
+  {
+   "id": "m25",
+   "en": "door",
+   "fr": "la porte",
+   "pron": "dôr"
+  },
+  {
+   "id": "m26",
+   "en": "fence",
+   "fr": "la clôture",
+   "pron": "fènss"
+  },
+  {
+   "id": "m27",
+   "en": "light",
+   "fr": "la lumière",
+   "pron": "laït"
+  },
+  {
+   "id": "m28",
+   "en": "round",
+   "fr": "la ronde",
+   "pron": "raound"
+  },
+  {
+   "id": "m29",
+   "en": "shift",
+   "fr": "le poste, le service",
+   "pron": "chift"
+  },
+  {
+   "id": "m30",
+   "en": "night",
+   "fr": "la nuit",
+   "pron": "naït"
+  },
+  {
+   "id": "m31",
+   "en": "report",
+   "fr": "le rapport",
+   "pron": "ri-PÔRT"
+  },
+  {
+   "id": "m32",
+   "en": "incident",
+   "fr": "l'incident",
+   "pron": "INN-si-deunt"
+  },
+  {
+   "id": "m33",
+   "en": "thief",
+   "fr": "le voleur",
+   "pron": "thiif"
+  },
+  {
+   "id": "m34",
+   "en": "theft",
+   "fr": "le vol",
+   "pron": "thèft"
+  },
+  {
+   "id": "m35",
+   "en": "police",
+   "fr": "la police",
+   "pron": "peu-LIISS"
+  },
+  {
+   "id": "m36",
+   "en": "firefighters",
+   "fr": "les pompiers",
+   "pron": "FAÏ-eur-faï-teurz"
+  },
+  {
+   "id": "m37",
+   "en": "ambulance",
+   "fr": "l'ambulance",
+   "pron": "AMM-byou-leunss"
+  },
+  {
+   "id": "m38",
+   "en": "emergency",
+   "fr": "l'urgence",
+   "pron": "i-MEUR-djeunn-si"
+  },
+  {
+   "id": "m39",
+   "en": "phone number",
+   "fr": "le numéro de téléphone",
+   "pron": "FÔN NEUM-beur"
+  },
+  {
+   "id": "m40",
+   "en": "delivery",
+   "fr": "la livraison",
+   "pron": "di-LI-veu-ri"
+  },
+  {
+   "id": "m41",
+   "en": "parcel",
+   "fr": "le colis",
+   "pron": "PÂR-seul",
+   "note": "En américain : package"
+  },
+  {
+   "id": "m42",
+   "en": "permission",
+   "fr": "l'autorisation",
+   "pron": "peur-MI-cheunn"
+  },
+  {
+   "id": "m43",
+   "en": "rule",
+   "fr": "la règle",
+   "pron": "roul"
+  },
+  {
+   "id": "m44",
+   "en": "safe",
+   "fr": "en sécurité",
+   "pron": "séïf"
+  },
+  {
+   "id": "m45",
+   "en": "suspicious",
+   "fr": "suspect",
+   "pron": "seu-SPI-cheuss"
+  },
+  {
+   "id": "m46",
+   "en": "closed",
+   "fr": "fermé",
+   "pron": "klôzd"
+  },
+  {
+   "id": "m47",
+   "en": "open",
+   "fr": "ouvert",
+   "pron": "Ô-peunn"
+  },
+  {
+   "id": "m48",
+   "en": "forbidden",
+   "fr": "interdit",
+   "pron": "feur-BI-deunn"
+  },
+  {
+   "id": "m49",
+   "en": "calm",
+   "fr": "calme",
+   "pron": "kâm"
+  },
+  {
+   "id": "m50",
+   "en": "careful",
+   "fr": "prudent, attentif",
+   "pron": "KÈR-feul"
+  },
+  {
+   "id": "m51",
+   "en": "to check",
+   "fr": "contrôler, vérifier",
+   "pron": "tou tchèk"
+  },
+  {
+   "id": "m52",
+   "en": "to watch",
+   "fr": "surveiller",
+   "pron": "tou wotch"
+  },
+  {
+   "id": "m53",
+   "en": "to open",
+   "fr": "ouvrir",
+   "pron": "tou Ô-peunn"
+  },
+  {
+   "id": "m54",
+   "en": "to close",
+   "fr": "fermer",
+   "pron": "tou klôz"
+  },
+  {
+   "id": "m55",
+   "en": "to lock",
+   "fr": "fermer à clé",
+   "pron": "tou lok"
+  },
+  {
+   "id": "m56",
+   "en": "to call",
+   "fr": "appeler",
+   "pron": "tou kôl"
+  },
+  {
+   "id": "m57",
+   "en": "to sign in",
+   "fr": "signer le registre (à l'arrivée)",
+   "pron": "tou saïnn inn"
+  },
+  {
+   "id": "m58",
+   "en": "to wait",
+   "fr": "attendre",
+   "pron": "tou wéït"
+  },
+  {
+   "id": "m59",
+   "en": "to follow",
+   "fr": "suivre",
+   "pron": "tou FO-lô"
+  },
+  {
+   "id": "m60",
+   "en": "to stop",
+   "fr": "arrêter",
+   "pron": "tou stop"
+  }
+ ],
+ "phrases": [
+  {
+   "id": "p01",
+   "en": "Good evening, who are you here to see?",
+   "fr": "Bonsoir, qui venez-vous voir ?",
+   "pron": "goud IIV-ning, hou âr you hieur tou sii ?",
+   "trou": "see"
+  },
+  {
+   "id": "p02",
+   "en": "May I see your identity card, please?",
+   "fr": "Puis-je voir votre pièce d'identité, s'il vous plaît ?",
+   "pron": "méï aï sii yôr aï-DÈNN-ti-ti kârd, pliiz ?",
+   "trou": "identity"
+  },
+  {
+   "id": "p03",
+   "en": "Please sign the register.",
+   "fr": "Veuillez signer le registre.",
+   "pron": "pliiz saïnn dheu RÈ-djis-teur.",
+   "trou": "register"
+  },
+  {
+   "id": "p04",
+   "en": "Here is your visitor badge.",
+   "fr": "Voici votre badge visiteur.",
+   "pron": "hieur iz yôr VI-zi-teur badj.",
+   "trou": "badge"
+  },
+  {
+   "id": "p05",
+   "en": "Please wear your badge at all times.",
+   "fr": "Portez votre badge en permanence, s'il vous plaît.",
+   "pron": "pliiz wèr yôr badj at ôl taïmz.",
+   "trou": "wear"
+  },
+  {
+   "id": "p06",
+   "en": "Please wait here a moment.",
+   "fr": "Attendez ici un instant, s'il vous plaît.",
+   "pron": "pliiz wéït hieur eu MÔ-meunt.",
+   "trou": "moment"
+  },
+  {
+   "id": "p07",
+   "en": "I will call the manager.",
+   "fr": "Je vais appeler le responsable.",
+   "pron": "aï wil kôl dheu MA-ni-djeur.",
+   "trou": "manager"
+  },
+  {
+   "id": "p08",
+   "en": "You cannot park here.",
+   "fr": "Vous ne pouvez pas vous garer ici.",
+   "pron": "you KA-not pârk hieur.",
+   "trou": "park"
+  },
+  {
+   "id": "p09",
+   "en": "The car park is on the left.",
+   "fr": "Le parking est sur la gauche.",
+   "pron": "dheu KÂR pârk iz onn dheu lèft.",
+   "trou": "left"
+  },
+  {
+   "id": "p10",
+   "en": "Entry is forbidden without permission.",
+   "fr": "L'entrée est interdite sans autorisation.",
+   "pron": "ÈNN-tri iz feur-BI-deunn wi-DHAOUT peur-MI-cheunn.",
+   "trou": "forbidden"
+  },
+  {
+   "id": "p11",
+   "en": "The gate closes at ten at night.",
+   "fr": "Le portail ferme à vingt-deux heures.",
+   "pron": "dheu guéït KLÔ-ziz at tèn at naït.",
+   "trou": "gate"
+  },
+  {
+   "id": "p12",
+   "en": "I do my round every two hours.",
+   "fr": "Je fais ma ronde toutes les deux heures.",
+   "pron": "aï dou maï raound ÈV-ri tou AOU-eurz.",
+   "trou": "round"
+  },
+  {
+   "id": "p13",
+   "en": "All the doors are locked.",
+   "fr": "Toutes les portes sont fermées à clé.",
+   "pron": "ôl dheu dôrz âr lokt.",
+   "trou": "locked"
+  },
+  {
+   "id": "p14",
+   "en": "The camera is not working.",
+   "fr": "La caméra ne fonctionne pas.",
+   "pron": "dheu KA-meu-reu iz not WEUR-king.",
+   "trou": "camera"
+  },
+  {
+   "id": "p15",
+   "en": "I saw a suspicious person near the fence.",
+   "fr": "J'ai vu une personne suspecte près de la clôture.",
+   "pron": "aï sô eu seu-SPI-cheuss PEUR-seunn nieur dheu fènss.",
+   "trou": "suspicious"
+  },
+  {
+   "id": "p16",
+   "en": "Stay calm, everything is under control.",
+   "fr": "Restez calmes, tout est sous contrôle.",
+   "pron": "stéï kâm, ÈV-ri-thing iz EUNN-deur keunn-TRÔL.",
+   "trou": "control"
+  },
+  {
+   "id": "p17",
+   "en": "There is a fire, leave the building now!",
+   "fr": "Il y a un incendie, sortez du bâtiment maintenant !",
+   "pron": "dhèr iz eu FAÏ-eur, liiv dheu BIL-ding naou !",
+   "trou": "fire"
+  },
+  {
+   "id": "p18",
+   "en": "Use the emergency exit.",
+   "fr": "Utilisez la sortie de secours.",
+   "pron": "youz dhi i-MEUR-djeunn-si ÈG-zit.",
+   "trou": "exit"
+  },
+  {
+   "id": "p19",
+   "en": "Call the firefighters on eighteen.",
+   "fr": "Appelez les pompiers au dix-huit.",
+   "pron": "kôl dheu FAÏ-eur-faï-teurz onn éï-TIIN.",
+   "trou": "firefighters"
+  },
+  {
+   "id": "p20",
+   "en": "Please follow me to the meeting point.",
+   "fr": "Suivez-moi jusqu'au point de rassemblement, s'il vous plaît.",
+   "pron": "pliiz FO-lô mi tou dheu MII-ting poïnnt.",
+   "trou": "follow"
+  },
+  {
+   "id": "p21",
+   "en": "I will write a report about the incident.",
+   "fr": "Je vais écrire un rapport sur l'incident.",
+   "pron": "aï wil raït eu ri-PÔRT eu-BAOUT dhi INN-si-deunt.",
+   "trou": "report"
+  },
+  {
+   "id": "p22",
+   "en": "Is this parcel for the office?",
+   "fr": "Ce colis est-il pour le bureau ?",
+   "pron": "iz dhiss PÂR-seul fôr dhi O-fiss ?",
+   "trou": "parcel"
+  },
+  {
+   "id": "p23",
+   "en": "Please open your bag.",
+   "fr": "Veuillez ouvrir votre sac.",
+   "pron": "pliiz Ô-peunn yôr bag.",
+   "trou": "bag"
+  },
+  {
+   "id": "p24",
+   "en": "My shift ends at six in the morning.",
+   "fr": "Mon service se termine à six heures du matin.",
+   "pron": "maï chift èndz at siks inn dheu MÔR-ning.",
+   "trou": "shift"
+  },
+  {
+   "id": "p25",
+   "en": "Thank you for your cooperation.",
+   "fr": "Merci de votre coopération.",
+   "pron": "thangk you fôr yôr kô-o-peu-RÉÏ-cheunn.",
+   "trou": "cooperation"
+  }
+ ]
+}

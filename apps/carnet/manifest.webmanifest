@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "Carnet Boutique",
+  "short_name": "Carnet",
+  "description": "Le carnet de crédit du boutiquier : qui doit combien, paiements, rappels WhatsApp, calculette de marge et ardoise. Fonctionne sans Internet ; tout reste dans le téléphone.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f6f1",
+  "theme_color": "#0b6e4f",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Noter un crédit", "short_name": "Crédit", "url": "./#/operation?type=credit", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Noter un paiement", "short_name": "Paiement", "url": "./#/operation?type=paiement", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Ardoise du jour", "short_name": "Ardoise", "url": "./#/ardoise", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

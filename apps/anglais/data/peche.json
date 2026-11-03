@@ -1,0 +1,543 @@
+{
+ "id": "peche",
+ "nom": "Pêche et port",
+ "mots": [
+  {
+   "id": "m01",
+   "en": "port",
+   "fr": "le port",
+   "pron": "pôrt"
+  },
+  {
+   "id": "m02",
+   "en": "lighthouse",
+   "fr": "le phare",
+   "pron": "LAÏT-haouss"
+  },
+  {
+   "id": "m03",
+   "en": "dock",
+   "fr": "le quai",
+   "pron": "dok"
+  },
+  {
+   "id": "m04",
+   "en": "boat",
+   "fr": "le bateau",
+   "pron": "bôt"
+  },
+  {
+   "id": "m05",
+   "en": "ship",
+   "fr": "le navire",
+   "pron": "chip"
+  },
+  {
+   "id": "m06",
+   "en": "canoe",
+   "fr": "la pirogue",
+   "pron": "keu-NOU"
+  },
+  {
+   "id": "m07",
+   "en": "fisherman",
+   "fr": "le pêcheur",
+   "pron": "FI-cheur-meunn"
+  },
+  {
+   "id": "m08",
+   "en": "crew",
+   "fr": "l'équipage",
+   "pron": "krou"
+  },
+  {
+   "id": "m09",
+   "en": "captain",
+   "fr": "le capitaine",
+   "pron": "KAP-tinn"
+  },
+  {
+   "id": "m10",
+   "en": "sailor",
+   "fr": "le marin",
+   "pron": "SÉÏ-leur"
+  },
+  {
+   "id": "m11",
+   "en": "sea",
+   "fr": "la mer",
+   "pron": "sii"
+  },
+  {
+   "id": "m12",
+   "en": "wave",
+   "fr": "la vague",
+   "pron": "wéïv"
+  },
+  {
+   "id": "m13",
+   "en": "wind",
+   "fr": "le vent",
+   "pron": "winnd"
+  },
+  {
+   "id": "m14",
+   "en": "weather",
+   "fr": "la météo, le temps",
+   "pron": "WÈ-dheur"
+  },
+  {
+   "id": "m15",
+   "en": "storm",
+   "fr": "la tempête",
+   "pron": "stôrm"
+  },
+  {
+   "id": "m16",
+   "en": "tide",
+   "fr": "la marée",
+   "pron": "taïd"
+  },
+  {
+   "id": "m17",
+   "en": "fish",
+   "fr": "le poisson",
+   "pron": "fich"
+  },
+  {
+   "id": "m18",
+   "en": "net",
+   "fr": "le filet",
+   "pron": "nèt"
+  },
+  {
+   "id": "m19",
+   "en": "hook",
+   "fr": "l'hameçon",
+   "pron": "houk"
+  },
+  {
+   "id": "m20",
+   "en": "line",
+   "fr": "la ligne (de pêche)",
+   "pron": "laïnn"
+  },
+  {
+   "id": "m21",
+   "en": "bait",
+   "fr": "l'appât",
+   "pron": "béït"
+  },
+  {
+   "id": "m22",
+   "en": "catch",
+   "fr": "la prise, la pêche du jour",
+   "pron": "katch"
+  },
+  {
+   "id": "m23",
+   "en": "ice",
+   "fr": "la glace",
+   "pron": "aïss"
+  },
+  {
+   "id": "m24",
+   "en": "box",
+   "fr": "la caisse",
+   "pron": "boks"
+  },
+  {
+   "id": "m25",
+   "en": "cool box",
+   "fr": "la glacière",
+   "pron": "KOUL boks"
+  },
+  {
+   "id": "m26",
+   "en": "engine",
+   "fr": "le moteur",
+   "pron": "ÈNN-djinn"
+  },
+  {
+   "id": "m27",
+   "en": "fuel",
+   "fr": "le carburant",
+   "pron": "FYOU-eul"
+  },
+  {
+   "id": "m28",
+   "en": "life jacket",
+   "fr": "le gilet de sauvetage",
+   "pron": "LAÏF DJA-kit"
+  },
+  {
+   "id": "m29",
+   "en": "anchor",
+   "fr": "l'ancre",
+   "pron": "ANG-keur"
+  },
+  {
+   "id": "m30",
+   "en": "rope",
+   "fr": "la corde",
+   "pron": "rôp"
+  },
+  {
+   "id": "m31",
+   "en": "container",
+   "fr": "le conteneur",
+   "pron": "keunn-TÉÏ-neur"
+  },
+  {
+   "id": "m32",
+   "en": "cargo",
+   "fr": "la cargaison",
+   "pron": "KÂR-gô"
+  },
+  {
+   "id": "m33",
+   "en": "crane",
+   "fr": "la grue",
+   "pron": "kréïnn"
+  },
+  {
+   "id": "m34",
+   "en": "warehouse",
+   "fr": "l'entrepôt",
+   "pron": "WÈR-haouss"
+  },
+  {
+   "id": "m35",
+   "en": "customs",
+   "fr": "la douane",
+   "pron": "KEUSS-teumz"
+  },
+  {
+   "id": "m36",
+   "en": "weight",
+   "fr": "le poids",
+   "pron": "wéït"
+  },
+  {
+   "id": "m37",
+   "en": "ton",
+   "fr": "la tonne",
+   "pron": "teunn"
+  },
+  {
+   "id": "m38",
+   "en": "load",
+   "fr": "le chargement",
+   "pron": "lôd"
+  },
+  {
+   "id": "m39",
+   "en": "shrimp",
+   "fr": "la crevette",
+   "pron": "chrimp"
+  },
+  {
+   "id": "m40",
+   "en": "tuna",
+   "fr": "le thon",
+   "pron": "TYOU-neu"
+  },
+  {
+   "id": "m41",
+   "en": "sardine",
+   "fr": "la sardine",
+   "pron": "sâr-DIIN"
+  },
+  {
+   "id": "m42",
+   "en": "octopus",
+   "fr": "le poulpe",
+   "pron": "OK-teu-peuss"
+  },
+  {
+   "id": "m43",
+   "en": "lobster",
+   "fr": "la langouste, le homard",
+   "pron": "LOB-steur"
+  },
+  {
+   "id": "m44",
+   "en": "market",
+   "fr": "le marché",
+   "pron": "MÂR-kit"
+  },
+  {
+   "id": "m45",
+   "en": "buyer",
+   "fr": "l'acheteur",
+   "pron": "BAÏ-eur"
+  },
+  {
+   "id": "m46",
+   "en": "price",
+   "fr": "le prix",
+   "pron": "praïss"
+  },
+  {
+   "id": "m47",
+   "en": "fresh",
+   "fr": "frais",
+   "pron": "frèch"
+  },
+  {
+   "id": "m48",
+   "en": "frozen",
+   "fr": "congelé",
+   "pron": "FRÔ-zeunn"
+  },
+  {
+   "id": "m49",
+   "en": "dangerous",
+   "fr": "dangereux",
+   "pron": "DÉÏNN-djeu-reuss"
+  },
+  {
+   "id": "m50",
+   "en": "calm",
+   "fr": "calme",
+   "pron": "kâm"
+  },
+  {
+   "id": "m51",
+   "en": "rough",
+   "fr": "agitée (la mer)",
+   "pron": "reuf"
+  },
+  {
+   "id": "m52",
+   "en": "early",
+   "fr": "tôt",
+   "pron": "EUR-li"
+  },
+  {
+   "id": "m53",
+   "en": "to fish",
+   "fr": "pêcher",
+   "pron": "tou fich"
+  },
+  {
+   "id": "m54",
+   "en": "to sail",
+   "fr": "naviguer",
+   "pron": "tou séïl"
+  },
+  {
+   "id": "m55",
+   "en": "to load",
+   "fr": "charger",
+   "pron": "tou lôd"
+  },
+  {
+   "id": "m56",
+   "en": "to unload",
+   "fr": "décharger",
+   "pron": "tou eunn-LÔD"
+  },
+  {
+   "id": "m57",
+   "en": "to weigh",
+   "fr": "peser",
+   "pron": "tou wéï"
+  },
+  {
+   "id": "m58",
+   "en": "to pull",
+   "fr": "tirer",
+   "pron": "tou poul"
+  },
+  {
+   "id": "m59",
+   "en": "to tie",
+   "fr": "attacher",
+   "pron": "tou taï"
+  },
+  {
+   "id": "m60",
+   "en": "to sell",
+   "fr": "vendre",
+   "pron": "tou sèl"
+  }
+ ],
+ "phrases": [
+  {
+   "id": "p01",
+   "en": "The boats leave at five in the morning.",
+   "fr": "Les bateaux partent à cinq heures du matin.",
+   "pron": "dheu bôts liiv at faïv inn dheu MÔR-ning.",
+   "trou": "leave"
+  },
+  {
+   "id": "p02",
+   "en": "The sea is rough today.",
+   "fr": "La mer est agitée aujourd'hui.",
+   "pron": "dheu sii iz reuf teu-DÉÏ.",
+   "trou": "rough"
+  },
+  {
+   "id": "p03",
+   "en": "Check the weather before you go out.",
+   "fr": "Regardez la météo avant de sortir en mer.",
+   "pron": "tchèk dheu WÈ-dheur bi-FÔR you gô aout.",
+   "trou": "weather"
+  },
+  {
+   "id": "p04",
+   "en": "Always wear your life jacket.",
+   "fr": "Portez toujours votre gilet de sauvetage.",
+   "pron": "ÔL-wéïz wèr yôr LAÏF DJA-kit.",
+   "trou": "jacket"
+  },
+  {
+   "id": "p05",
+   "en": "There is a storm coming.",
+   "fr": "Une tempête arrive.",
+   "pron": "dhèr iz eu stôrm KEU-ming.",
+   "trou": "storm"
+  },
+  {
+   "id": "p06",
+   "en": "Pull the net slowly.",
+   "fr": "Tirez le filet doucement.",
+   "pron": "poul dheu nèt SLÔ-li.",
+   "trou": "net"
+  },
+  {
+   "id": "p07",
+   "en": "We had a good catch today.",
+   "fr": "Nous avons fait une bonne pêche aujourd'hui.",
+   "pron": "wi had eu goud katch teu-DÉÏ.",
+   "trou": "catch"
+  },
+  {
+   "id": "p08",
+   "en": "Put the fish on ice.",
+   "fr": "Mettez le poisson dans la glace.",
+   "pron": "pout dheu fich onn aïss.",
+   "trou": "ice"
+  },
+  {
+   "id": "p09",
+   "en": "How much does this box weigh?",
+   "fr": "Combien pèse cette caisse ?",
+   "pron": "haou meutch deuz dhiss boks wéï ?",
+   "trou": "weigh"
+  },
+  {
+   "id": "p10",
+   "en": "This box weighs twenty kilos.",
+   "fr": "Cette caisse pèse vingt kilos.",
+   "pron": "dhiss boks wéïz TWÈNN-ti KII-lôz.",
+   "trou": "kilos"
+  },
+  {
+   "id": "p11",
+   "en": "The fish is very fresh.",
+   "fr": "Le poisson est très frais.",
+   "pron": "dheu fich iz VÈ-ri frèch.",
+   "trou": "fresh"
+  },
+  {
+   "id": "p12",
+   "en": "What is the price per kilo?",
+   "fr": "Quel est le prix au kilo ?",
+   "pron": "wot iz dheu praïss peur KII-lô ?",
+   "trou": "price"
+  },
+  {
+   "id": "p13",
+   "en": "We sell tuna, sardines and shrimps.",
+   "fr": "Nous vendons du thon, des sardines et des crevettes.",
+   "pron": "wi sèl TYOU-neu, sâr-DIINZ annd chrimps.",
+   "trou": "sardines"
+  },
+  {
+   "id": "p14",
+   "en": "Help me unload the boat.",
+   "fr": "Aidez-moi à décharger le bateau.",
+   "pron": "hèlp mi eunn-LÔD dheu bôt.",
+   "trou": "unload"
+  },
+  {
+   "id": "p15",
+   "en": "Tie the rope to the dock.",
+   "fr": "Attachez la corde au quai.",
+   "pron": "taï dheu rôp tou dheu dok.",
+   "trou": "rope"
+  },
+  {
+   "id": "p16",
+   "en": "The ship arrives tomorrow morning.",
+   "fr": "Le navire arrive demain matin.",
+   "pron": "dheu chip eu-RAÏVZ teu-MO-rô MÔR-ning.",
+   "trou": "ship"
+  },
+  {
+   "id": "p17",
+   "en": "The crane will load the containers.",
+   "fr": "La grue va charger les conteneurs.",
+   "pron": "dheu kréïnn wil lôd dheu keunn-TÉÏ-neurz.",
+   "trou": "crane"
+  },
+  {
+   "id": "p18",
+   "en": "The cargo is in the warehouse.",
+   "fr": "La cargaison est dans l'entrepôt.",
+   "pron": "dheu KÂR-gô iz inn dheu WÈR-haouss.",
+   "trou": "warehouse"
+  },
+  {
+   "id": "p19",
+   "en": "Customs must check the papers.",
+   "fr": "La douane doit vérifier les papiers.",
+   "pron": "KEUSS-teumz meust tchèk dheu PÉÏ-peurz.",
+   "trou": "papers"
+  },
+  {
+   "id": "p20",
+   "en": "The engine needs more fuel.",
+   "fr": "Le moteur a besoin de plus de carburant.",
+   "pron": "dhi ÈNN-djinn niidz môr FYOU-eul.",
+   "trou": "fuel"
+  },
+  {
+   "id": "p21",
+   "en": "The captain gives the orders.",
+   "fr": "Le capitaine donne les ordres.",
+   "pron": "dheu KAP-tinn guivz dhi ÔR-deurz.",
+   "trou": "captain"
+  },
+  {
+   "id": "p22",
+   "en": "Stay away from the crane.",
+   "fr": "Éloignez-vous de la grue.",
+   "pron": "stéï eu-WÉÏ freum dheu kréïnn.",
+   "trou": "away"
+  },
+  {
+   "id": "p23",
+   "en": "The tide is high now.",
+   "fr": "La marée est haute maintenant.",
+   "pron": "dheu taïd iz haï naou.",
+   "trou": "tide"
+  },
+  {
+   "id": "p24",
+   "en": "Keep the frozen fish in the cold room.",
+   "fr": "Gardez le poisson congelé dans la chambre froide.",
+   "pron": "kiip dheu FRÔ-zeunn fich inn dheu KÔLD roum.",
+   "trou": "frozen"
+  },
+  {
+   "id": "p25",
+   "en": "The sea is calm, we can go.",
+   "fr": "La mer est calme, nous pouvons partir.",
+   "pron": "dheu sii iz kâm, wi kann gô.",
+   "trou": "calm"
+  }
+ ]
+}

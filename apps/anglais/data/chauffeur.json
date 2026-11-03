@@ -1,0 +1,545 @@
+{
+ "id": "chauffeur",
+ "nom": "Chauffeur et guide",
+ "mots": [
+  {
+   "id": "m01",
+   "en": "driver",
+   "fr": "le chauffeur",
+   "pron": "DRAÏ-veur"
+  },
+  {
+   "id": "m02",
+   "en": "taxi",
+   "fr": "le taxi",
+   "pron": "TAK-si"
+  },
+  {
+   "id": "m03",
+   "en": "car",
+   "fr": "la voiture",
+   "pron": "kâr"
+  },
+  {
+   "id": "m04",
+   "en": "seat belt",
+   "fr": "la ceinture de sécurité",
+   "pron": "SIIT bèlt"
+  },
+  {
+   "id": "m05",
+   "en": "airport",
+   "fr": "l'aéroport",
+   "pron": "ÈR-pôrt"
+  },
+  {
+   "id": "m06",
+   "en": "station",
+   "fr": "la gare",
+   "pron": "STÉÏ-cheunn"
+  },
+  {
+   "id": "m07",
+   "en": "hotel",
+   "fr": "l'hôtel",
+   "pron": "hô-TÈL"
+  },
+  {
+   "id": "m08",
+   "en": "address",
+   "fr": "l'adresse",
+   "pron": "eu-DRÈSS"
+  },
+  {
+   "id": "m09",
+   "en": "street",
+   "fr": "la rue",
+   "pron": "striit"
+  },
+  {
+   "id": "m10",
+   "en": "road",
+   "fr": "la route",
+   "pron": "rôd"
+  },
+  {
+   "id": "m11",
+   "en": "traffic",
+   "fr": "la circulation",
+   "pron": "TRA-fik"
+  },
+  {
+   "id": "m12",
+   "en": "traffic jam",
+   "fr": "l'embouteillage",
+   "pron": "TRA-fik djam"
+  },
+  {
+   "id": "m13",
+   "en": "traffic lights",
+   "fr": "les feux (de circulation)",
+   "pron": "TRA-fik laïts"
+  },
+  {
+   "id": "m14",
+   "en": "roundabout",
+   "fr": "le rond-point",
+   "pron": "RAOUND-eu-baout"
+  },
+  {
+   "id": "m15",
+   "en": "left",
+   "fr": "la gauche",
+   "pron": "lèft"
+  },
+  {
+   "id": "m16",
+   "en": "right",
+   "fr": "la droite",
+   "pron": "raït"
+  },
+  {
+   "id": "m17",
+   "en": "straight ahead",
+   "fr": "tout droit",
+   "pron": "stréït eu-HÈD"
+  },
+  {
+   "id": "m18",
+   "en": "corner",
+   "fr": "le coin, l'angle",
+   "pron": "KÔR-neur"
+  },
+  {
+   "id": "m19",
+   "en": "bridge",
+   "fr": "le pont",
+   "pron": "bridj"
+  },
+  {
+   "id": "m20",
+   "en": "market",
+   "fr": "le marché",
+   "pron": "MÂR-kit"
+  },
+  {
+   "id": "m21",
+   "en": "museum",
+   "fr": "le musée",
+   "pron": "myou-ZII-eum"
+  },
+  {
+   "id": "m22",
+   "en": "mosque",
+   "fr": "la mosquée",
+   "pron": "mosk"
+  },
+  {
+   "id": "m23",
+   "en": "church",
+   "fr": "l'église",
+   "pron": "tcheurtch"
+  },
+  {
+   "id": "m24",
+   "en": "island",
+   "fr": "l'île",
+   "pron": "AÏ-leund"
+  },
+  {
+   "id": "m25",
+   "en": "lake",
+   "fr": "le lac",
+   "pron": "léïk"
+  },
+  {
+   "id": "m26",
+   "en": "village",
+   "fr": "le village",
+   "pron": "VI-lidj"
+  },
+  {
+   "id": "m27",
+   "en": "trip",
+   "fr": "le voyage, le trajet",
+   "pron": "trip"
+  },
+  {
+   "id": "m28",
+   "en": "fare",
+   "fr": "le prix de la course",
+   "pron": "fèr"
+  },
+  {
+   "id": "m29",
+   "en": "price",
+   "fr": "le prix",
+   "pron": "praïss"
+  },
+  {
+   "id": "m30",
+   "en": "change",
+   "fr": "la monnaie (rendue)",
+   "pron": "tchéïndj"
+  },
+  {
+   "id": "m31",
+   "en": "far",
+   "fr": "loin",
+   "pron": "fâr"
+  },
+  {
+   "id": "m32",
+   "en": "near",
+   "fr": "près",
+   "pron": "nieur"
+  },
+  {
+   "id": "m33",
+   "en": "fast",
+   "fr": "vite, rapide",
+   "pron": "fâst"
+  },
+  {
+   "id": "m34",
+   "en": "slowly",
+   "fr": "lentement",
+   "pron": "SLÔ-li"
+  },
+  {
+   "id": "m35",
+   "en": "early",
+   "fr": "tôt, en avance",
+   "pron": "EUR-li"
+  },
+  {
+   "id": "m36",
+   "en": "late",
+   "fr": "en retard, tard",
+   "pron": "léït"
+  },
+  {
+   "id": "m37",
+   "en": "hour",
+   "fr": "l'heure",
+   "pron": "AOU-eur"
+  },
+  {
+   "id": "m38",
+   "en": "minute",
+   "fr": "la minute",
+   "pron": "MI-nit"
+  },
+  {
+   "id": "m39",
+   "en": "petrol",
+   "fr": "l'essence",
+   "pron": "PÈ-treul",
+   "note": "En américain : gas"
+  },
+  {
+   "id": "m40",
+   "en": "petrol station",
+   "fr": "la station-service",
+   "pron": "PÈ-treul STÉÏ-cheunn"
+  },
+  {
+   "id": "m41",
+   "en": "parking",
+   "fr": "le stationnement",
+   "pron": "PÂR-king"
+  },
+  {
+   "id": "m42",
+   "en": "luggage",
+   "fr": "les bagages",
+   "pron": "LEU-guidj"
+  },
+  {
+   "id": "m43",
+   "en": "boot",
+   "fr": "le coffre (de la voiture)",
+   "pron": "bout",
+   "note": "En américain : trunk"
+  },
+  {
+   "id": "m44",
+   "en": "window",
+   "fr": "la vitre",
+   "pron": "WINN-dô"
+  },
+  {
+   "id": "m45",
+   "en": "sightseeing",
+   "fr": "la visite touristique",
+   "pron": "SAÏT-sii-ing"
+  },
+  {
+   "id": "m46",
+   "en": "photo",
+   "fr": "la photo",
+   "pron": "FÔ-tô"
+  },
+  {
+   "id": "m47",
+   "en": "view",
+   "fr": "la vue",
+   "pron": "vyou"
+  },
+  {
+   "id": "m48",
+   "en": "history",
+   "fr": "l'histoire",
+   "pron": "HISS-teu-ri"
+  },
+  {
+   "id": "m49",
+   "en": "culture",
+   "fr": "la culture",
+   "pron": "KEUL-tcheur"
+  },
+  {
+   "id": "m50",
+   "en": "local",
+   "fr": "local",
+   "pron": "LÔ-keul"
+  },
+  {
+   "id": "m51",
+   "en": "famous",
+   "fr": "célèbre",
+   "pron": "FÉÏ-meuss"
+  },
+  {
+   "id": "m52",
+   "en": "beautiful",
+   "fr": "beau, belle",
+   "pron": "BYOU-ti-feul"
+  },
+  {
+   "id": "m53",
+   "en": "safe",
+   "fr": "en sécurité, sûr",
+   "pron": "séïf"
+  },
+  {
+   "id": "m54",
+   "en": "dangerous",
+   "fr": "dangereux",
+   "pron": "DÉÏNN-djeu-reuss"
+  },
+  {
+   "id": "m55",
+   "en": "to drive",
+   "fr": "conduire",
+   "pron": "tou draïv"
+  },
+  {
+   "id": "m56",
+   "en": "to stop",
+   "fr": "s'arrêter",
+   "pron": "tou stop"
+  },
+  {
+   "id": "m57",
+   "en": "to turn",
+   "fr": "tourner",
+   "pron": "tou teurn"
+  },
+  {
+   "id": "m58",
+   "en": "to wait",
+   "fr": "attendre",
+   "pron": "tou wéït"
+  },
+  {
+   "id": "m59",
+   "en": "to pick up",
+   "fr": "aller chercher (quelqu'un)",
+   "pron": "tou pik eup"
+  },
+  {
+   "id": "m60",
+   "en": "to drop off",
+   "fr": "déposer (quelqu'un)",
+   "pron": "tou drop of"
+  }
+ ],
+ "phrases": [
+  {
+   "id": "p01",
+   "en": "Where would you like to go?",
+   "fr": "Où voulez-vous aller ?",
+   "pron": "wèr woud you laïk tou gô ?",
+   "trou": "go"
+  },
+  {
+   "id": "p02",
+   "en": "Please fasten your seat belt.",
+   "fr": "Veuillez attacher votre ceinture.",
+   "pron": "pliiz FÂ-seunn yôr SIIT bèlt.",
+   "trou": "belt"
+  },
+  {
+   "id": "p03",
+   "en": "The trip takes about thirty minutes.",
+   "fr": "Le trajet prend environ trente minutes.",
+   "pron": "dheu trip téïks eu-BAOUT THEUR-ti MI-nits.",
+   "trou": "minutes"
+  },
+  {
+   "id": "p04",
+   "en": "There is a lot of traffic today.",
+   "fr": "Il y a beaucoup de circulation aujourd'hui.",
+   "pron": "dhèr iz eu lot ov TRA-fik teu-DÉÏ.",
+   "trou": "traffic"
+  },
+  {
+   "id": "p05",
+   "en": "The fare is five thousand francs.",
+   "fr": "La course coûte cinq mille francs.",
+   "pron": "dheu fèr iz faïv THAOU-zeund frangks.",
+   "trou": "fare"
+  },
+  {
+   "id": "p06",
+   "en": "Do you have the address?",
+   "fr": "Avez-vous l'adresse ?",
+   "pron": "dou you hav dhi eu-DRÈSS ?",
+   "trou": "address"
+  },
+  {
+   "id": "p07",
+   "en": "Turn left at the next street.",
+   "fr": "Tournez à gauche à la prochaine rue.",
+   "pron": "teurn lèft at dheu nèkst striit.",
+   "trou": "left"
+  },
+  {
+   "id": "p08",
+   "en": "Go straight ahead, then turn right.",
+   "fr": "Allez tout droit, puis tournez à droite.",
+   "pron": "gô stréït eu-HÈD, dhèn teurn raït.",
+   "trou": "right"
+  },
+  {
+   "id": "p09",
+   "en": "I will wait for you here.",
+   "fr": "Je vais vous attendre ici.",
+   "pron": "aï wil wéït fôr you hieur.",
+   "trou": "wait"
+  },
+  {
+   "id": "p10",
+   "en": "I will pick you up at eight.",
+   "fr": "Je viendrai vous chercher à huit heures.",
+   "pron": "aï wil pik you eup at éït.",
+   "trou": "pick"
+  },
+  {
+   "id": "p11",
+   "en": "Can I put your luggage in the boot?",
+   "fr": "Puis-je mettre vos bagages dans le coffre ?",
+   "pron": "kann aï pout yôr LEU-guidj inn dheu bout ?",
+   "trou": "boot"
+  },
+  {
+   "id": "p12",
+   "en": "The airport is not far from here.",
+   "fr": "L'aéroport n'est pas loin d'ici.",
+   "pron": "dhi ÈR-pôrt iz not fâr freum hieur.",
+   "trou": "far"
+  },
+  {
+   "id": "p13",
+   "en": "We need to stop for petrol.",
+   "fr": "Nous devons nous arrêter pour prendre de l'essence.",
+   "pron": "wi niid tou stop fôr PÈ-treul.",
+   "trou": "petrol"
+  },
+  {
+   "id": "p14",
+   "en": "Would you like me to close the window?",
+   "fr": "Voulez-vous que je ferme la vitre ?",
+   "pron": "woud you laïk mi tou klôz dheu WINN-dô ?",
+   "trou": "window"
+  },
+  {
+   "id": "p15",
+   "en": "This is the famous Lake Retba, the Pink Lake.",
+   "fr": "Voici le célèbre lac Retba, le Lac Rose.",
+   "pron": "dhiss iz dheu FÉÏ-meuss léïk RÈT-ba, dheu pingk léïk.",
+   "trou": "famous"
+  },
+  {
+   "id": "p16",
+   "en": "The market opens early in the morning.",
+   "fr": "Le marché ouvre tôt le matin.",
+   "pron": "dheu MÂR-kit Ô-peunz EUR-li inn dheu MÔR-ning.",
+   "trou": "early"
+  },
+  {
+   "id": "p17",
+   "en": "You can take photos here.",
+   "fr": "Vous pouvez prendre des photos ici.",
+   "pron": "you kann téïk FÔ-tôz hieur.",
+   "trou": "photos"
+  },
+  {
+   "id": "p18",
+   "en": "Please do not take photos of people without asking.",
+   "fr": "Ne photographiez pas les gens sans leur demander.",
+   "pron": "pliiz dou not téïk FÔ-tôz ov PII-peul wi-DHAOUT ÂS-king.",
+   "trou": "asking"
+  },
+  {
+   "id": "p19",
+   "en": "This mosque is very old.",
+   "fr": "Cette mosquée est très ancienne.",
+   "pron": "dhiss mosk iz VÈ-ri ôld.",
+   "trou": "old"
+  },
+  {
+   "id": "p20",
+   "en": "Are you comfortable?",
+   "fr": "Êtes-vous bien installé ?",
+   "pron": "âr you KEUMF-teu-beul ?",
+   "trou": "comfortable"
+  },
+  {
+   "id": "p21",
+   "en": "Sorry, I am late because of the traffic jam.",
+   "fr": "Désolé, je suis en retard à cause de l'embouteillage.",
+   "pron": "SO-ri, aï am léït bi-KOZ ov dheu TRA-fik djam.",
+   "trou": "late"
+  },
+  {
+   "id": "p22",
+   "en": "Shall I drive more slowly?",
+   "fr": "Voulez-vous que je conduise plus lentement ?",
+   "pron": "chal aï draïv môr SLÔ-li ?",
+   "trou": "slowly"
+  },
+  {
+   "id": "p23",
+   "en": "We will arrive in ten minutes.",
+   "fr": "Nous arriverons dans dix minutes.",
+   "pron": "wi wil eu-RAÏV inn tèn MI-nits.",
+   "trou": "arrive"
+  },
+  {
+   "id": "p24",
+   "en": "Here is your change.",
+   "fr": "Voici votre monnaie.",
+   "pron": "hieur iz yôr tchéïndj.",
+   "trou": "change"
+  },
+  {
+   "id": "p25",
+   "en": "Have a good day and enjoy Senegal!",
+   "fr": "Bonne journée et profitez bien du Sénégal !",
+   "pron": "hav eu goud déï annd inn-DJOÏ sè-ni-GÔL !",
+   "trou": "enjoy"
+  }
+ ]
+}

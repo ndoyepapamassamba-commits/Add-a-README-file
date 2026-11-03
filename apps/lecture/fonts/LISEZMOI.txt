@@ -1,0 +1,9 @@
+Polices embarquées (sous-ensemble « latin », format WOFF2, poids 400 et 700), copiées sans modification
+depuis les paquets npm Fontsource 5.3.0 :
+- OpenDyslexic (@fontsource/opendyslexic 5.3.0) — Copyright Abbie Gonzalez, nom réservé « OpenDyslexic » —
+  SIL Open Font License 1.1 : voir OFL-OpenDyslexic.txt
+- Lexend (@fontsource/lexend 5.3.0) — Copyright 2019 The Lexend Project Authors — SIL Open Font License 1.1 :
+  voir OFL-Lexend.txt
+- Atkinson Hyperlegible (@fontsource/atkinson-hyperlegible 5.3.0) — Copyright 2020 Braille Institute of America —
+  SIL Open Font License 1.1 : voir OFL-AtkinsonHyperlegible.txt
+Ces polices sont fournies avec l'application ; elles ne sont pas vendues séparément.

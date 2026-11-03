@@ -1,0 +1,544 @@
+{
+ "id": "hotellerie",
+ "nom": "Hôtellerie et tourisme",
+ "mots": [
+  {
+   "id": "m01",
+   "en": "welcome",
+   "fr": "bienvenue",
+   "pron": "WÈL-keum"
+  },
+  {
+   "id": "m02",
+   "en": "reception",
+   "fr": "la réception",
+   "pron": "ri-SÈP-cheunn"
+  },
+  {
+   "id": "m03",
+   "en": "receptionist",
+   "fr": "le / la réceptionniste",
+   "pron": "ri-SÈP-cheu-nist"
+  },
+  {
+   "id": "m04",
+   "en": "guest",
+   "fr": "le client (de l'hôtel)",
+   "pron": "guèst"
+  },
+  {
+   "id": "m05",
+   "en": "lobby",
+   "fr": "le hall d'entrée",
+   "pron": "LO-bi"
+  },
+  {
+   "id": "m06",
+   "en": "reservation",
+   "fr": "la réservation",
+   "pron": "rè-zeur-VÉÏ-cheunn"
+  },
+  {
+   "id": "m07",
+   "en": "room",
+   "fr": "la chambre",
+   "pron": "roum"
+  },
+  {
+   "id": "m08",
+   "en": "single room",
+   "fr": "la chambre simple",
+   "pron": "SING-geul roum"
+  },
+  {
+   "id": "m09",
+   "en": "double room",
+   "fr": "la chambre double",
+   "pron": "DEU-beul roum"
+  },
+  {
+   "id": "m10",
+   "en": "key",
+   "fr": "la clé",
+   "pron": "kii"
+  },
+  {
+   "id": "m11",
+   "en": "key card",
+   "fr": "la carte-clé",
+   "pron": "KII kârd"
+  },
+  {
+   "id": "m12",
+   "en": "floor",
+   "fr": "l'étage",
+   "pron": "flôr"
+  },
+  {
+   "id": "m13",
+   "en": "lift",
+   "fr": "l'ascenseur",
+   "pron": "lift",
+   "note": "En américain : elevator"
+  },
+  {
+   "id": "m14",
+   "en": "stairs",
+   "fr": "l'escalier",
+   "pron": "stèrz"
+  },
+  {
+   "id": "m15",
+   "en": "luggage",
+   "fr": "les bagages",
+   "pron": "LEU-guidj"
+  },
+  {
+   "id": "m16",
+   "en": "suitcase",
+   "fr": "la valise",
+   "pron": "SOUT-kéïss"
+  },
+  {
+   "id": "m17",
+   "en": "passport",
+   "fr": "le passeport",
+   "pron": "PÂSS-pôrt"
+  },
+  {
+   "id": "m18",
+   "en": "check-in",
+   "fr": "l'arrivée (l'enregistrement)",
+   "pron": "TCHÈK-inn"
+  },
+  {
+   "id": "m19",
+   "en": "check-out",
+   "fr": "le départ (on libère la chambre)",
+   "pron": "TCHÈK-aout"
+  },
+  {
+   "id": "m20",
+   "en": "breakfast",
+   "fr": "le petit-déjeuner",
+   "pron": "BRÈK-feust"
+  },
+  {
+   "id": "m21",
+   "en": "lunch",
+   "fr": "le déjeuner",
+   "pron": "leuntch"
+  },
+  {
+   "id": "m22",
+   "en": "dinner",
+   "fr": "le dîner",
+   "pron": "DI-neur"
+  },
+  {
+   "id": "m23",
+   "en": "towel",
+   "fr": "la serviette de bain",
+   "pron": "TAOU-eul"
+  },
+  {
+   "id": "m24",
+   "en": "sheet",
+   "fr": "le drap",
+   "pron": "chiit"
+  },
+  {
+   "id": "m25",
+   "en": "pillow",
+   "fr": "l'oreiller",
+   "pron": "PI-lô"
+  },
+  {
+   "id": "m26",
+   "en": "blanket",
+   "fr": "la couverture",
+   "pron": "BLANG-kit"
+  },
+  {
+   "id": "m27",
+   "en": "air conditioning",
+   "fr": "la climatisation",
+   "pron": "èr keunn-DI-cheu-ning"
+  },
+  {
+   "id": "m28",
+   "en": "shower",
+   "fr": "la douche",
+   "pron": "CHAOU-eur"
+  },
+  {
+   "id": "m29",
+   "en": "bathroom",
+   "fr": "la salle de bain",
+   "pron": "BÂTH-roum"
+  },
+  {
+   "id": "m30",
+   "en": "toilet",
+   "fr": "les toilettes",
+   "pron": "TOÏ-leut"
+  },
+  {
+   "id": "m31",
+   "en": "swimming pool",
+   "fr": "la piscine",
+   "pron": "SWI-ming poul"
+  },
+  {
+   "id": "m32",
+   "en": "beach",
+   "fr": "la plage",
+   "pron": "biitch"
+  },
+  {
+   "id": "m33",
+   "en": "tour",
+   "fr": "l'excursion, la visite",
+   "pron": "tour"
+  },
+  {
+   "id": "m34",
+   "en": "guide",
+   "fr": "le guide",
+   "pron": "gaïd"
+  },
+  {
+   "id": "m35",
+   "en": "map",
+   "fr": "le plan, la carte",
+   "pron": "map"
+  },
+  {
+   "id": "m36",
+   "en": "bill",
+   "fr": "la note (à payer)",
+   "pron": "bil"
+  },
+  {
+   "id": "m37",
+   "en": "receipt",
+   "fr": "le reçu",
+   "pron": "ri-SIIT"
+  },
+  {
+   "id": "m38",
+   "en": "cash",
+   "fr": "les espèces",
+   "pron": "kach"
+  },
+  {
+   "id": "m39",
+   "en": "credit card",
+   "fr": "la carte bancaire",
+   "pron": "KRÈ-dit kârd"
+  },
+  {
+   "id": "m40",
+   "en": "price",
+   "fr": "le prix",
+   "pron": "praïss"
+  },
+  {
+   "id": "m41",
+   "en": "night",
+   "fr": "la nuit",
+   "pron": "naït"
+  },
+  {
+   "id": "m42",
+   "en": "available",
+   "fr": "disponible",
+   "pron": "eu-VÉÏ-leu-beul"
+  },
+  {
+   "id": "m43",
+   "en": "full",
+   "fr": "complet",
+   "pron": "foul"
+  },
+  {
+   "id": "m44",
+   "en": "quiet",
+   "fr": "calme",
+   "pron": "KWAÏ-eut"
+  },
+  {
+   "id": "m45",
+   "en": "clean",
+   "fr": "propre",
+   "pron": "kliin"
+  },
+  {
+   "id": "m46",
+   "en": "dirty",
+   "fr": "sale",
+   "pron": "DEUR-ti"
+  },
+  {
+   "id": "m47",
+   "en": "broken",
+   "fr": "cassé, en panne",
+   "pron": "BRÔ-keunn"
+  },
+  {
+   "id": "m48",
+   "en": "noise",
+   "fr": "le bruit",
+   "pron": "noïz"
+  },
+  {
+   "id": "m49",
+   "en": "wake-up call",
+   "fr": "l'appel de réveil",
+   "pron": "WÉÏK-eup kôl"
+  },
+  {
+   "id": "m50",
+   "en": "safe",
+   "fr": "le coffre-fort",
+   "pron": "séïf"
+  },
+  {
+   "id": "m51",
+   "en": "laundry",
+   "fr": "la blanchisserie",
+   "pron": "LÔNN-dri"
+  },
+  {
+   "id": "m52",
+   "en": "housekeeping",
+   "fr": "le service des chambres (ménage)",
+   "pron": "HAOUSS-kii-ping"
+  },
+  {
+   "id": "m53",
+   "en": "manager",
+   "fr": "le directeur, le responsable",
+   "pron": "MA-ni-djeur"
+  },
+  {
+   "id": "m54",
+   "en": "complaint",
+   "fr": "la réclamation",
+   "pron": "keum-PLÉÏNT"
+  },
+  {
+   "id": "m55",
+   "en": "to book",
+   "fr": "réserver",
+   "pron": "tou bouk"
+  },
+  {
+   "id": "m56",
+   "en": "to stay",
+   "fr": "séjourner, rester",
+   "pron": "tou stéï"
+  },
+  {
+   "id": "m57",
+   "en": "to clean",
+   "fr": "nettoyer",
+   "pron": "tou kliin"
+  },
+  {
+   "id": "m58",
+   "en": "to help",
+   "fr": "aider",
+   "pron": "tou hèlp"
+  },
+  {
+   "id": "m59",
+   "en": "to carry",
+   "fr": "porter",
+   "pron": "tou KA-ri"
+  },
+  {
+   "id": "m60",
+   "en": "to enjoy",
+   "fr": "profiter de, apprécier",
+   "pron": "tou inn-DJOÏ"
+  }
+ ],
+ "phrases": [
+  {
+   "id": "p01",
+   "en": "Welcome to our hotel.",
+   "fr": "Bienvenue dans notre hôtel.",
+   "pron": "WÈL-keum tou aoueur hô-TÈL.",
+   "trou": "hotel"
+  },
+  {
+   "id": "p02",
+   "en": "Do you have a reservation?",
+   "fr": "Avez-vous une réservation ?",
+   "pron": "dou you hav eu rè-zeur-VÉÏ-cheunn ?",
+   "trou": "reservation"
+  },
+  {
+   "id": "p03",
+   "en": "May I see your passport, please?",
+   "fr": "Puis-je voir votre passeport, s'il vous plaît ?",
+   "pron": "méï aï sii yôr PÂSS-pôrt, pliiz ?",
+   "trou": "passport"
+  },
+  {
+   "id": "p04",
+   "en": "Your room is on the third floor.",
+   "fr": "Votre chambre est au troisième étage.",
+   "pron": "yôr roum iz onn dheu theurd flôr.",
+   "trou": "floor"
+  },
+  {
+   "id": "p05",
+   "en": "Here is your key card.",
+   "fr": "Voici votre carte-clé.",
+   "pron": "hieur iz yôr KII kârd.",
+   "trou": "key"
+  },
+  {
+   "id": "p06",
+   "en": "Breakfast is served from seven to ten.",
+   "fr": "Le petit-déjeuner est servi de sept heures à dix heures.",
+   "pron": "BRÈK-feust iz seurvd freum SÈ-veunn tou tèn.",
+   "trou": "served"
+  },
+  {
+   "id": "p07",
+   "en": "The lift is on your left.",
+   "fr": "L'ascenseur est sur votre gauche.",
+   "pron": "dheu lift iz onn yôr lèft.",
+   "trou": "left"
+  },
+  {
+   "id": "p08",
+   "en": "How many nights will you stay?",
+   "fr": "Combien de nuits allez-vous rester ?",
+   "pron": "haou MÈ-ni naïts wil you stéï ?",
+   "trou": "nights"
+  },
+  {
+   "id": "p09",
+   "en": "We have a double room available.",
+   "fr": "Nous avons une chambre double disponible.",
+   "pron": "wi hav eu DEU-beul roum eu-VÉÏ-leu-beul.",
+   "trou": "available"
+  },
+  {
+   "id": "p10",
+   "en": "Sorry, the hotel is full tonight.",
+   "fr": "Désolé, l'hôtel est complet ce soir.",
+   "pron": "SO-ri, dheu hô-TÈL iz foul teu-NAÏT.",
+   "trou": "full"
+  },
+  {
+   "id": "p11",
+   "en": "Check-out is at noon.",
+   "fr": "Il faut libérer la chambre à midi.",
+   "pron": "TCHÈK-aout iz at noun.",
+   "trou": "noon"
+  },
+  {
+   "id": "p12",
+   "en": "Can I help you with your luggage?",
+   "fr": "Puis-je vous aider avec vos bagages ?",
+   "pron": "kann aï hèlp you widh yôr LEU-guidj ?",
+   "trou": "luggage"
+  },
+  {
+   "id": "p13",
+   "en": "The swimming pool is open until eight.",
+   "fr": "La piscine est ouverte jusqu'à vingt heures.",
+   "pron": "dheu SWI-ming poul iz Ô-peunn eunn-TIL éït.",
+   "trou": "open"
+  },
+  {
+   "id": "p14",
+   "en": "Would you like a wake-up call?",
+   "fr": "Voulez-vous un appel pour vous réveiller ?",
+   "pron": "woud you laïk eu WÉÏK-eup kôl ?",
+   "trou": "call"
+  },
+  {
+   "id": "p15",
+   "en": "I will send someone to fix it.",
+   "fr": "Je vais envoyer quelqu'un pour le réparer.",
+   "pron": "aï wil sènd SEUM-weunn tou fiks it.",
+   "trou": "fix"
+  },
+  {
+   "id": "p16",
+   "en": "The air conditioning is not working.",
+   "fr": "La climatisation ne marche pas.",
+   "pron": "dhi èr keunn-DI-cheu-ning iz not WEUR-king.",
+   "trou": "working"
+  },
+  {
+   "id": "p17",
+   "en": "We will change your towels every day.",
+   "fr": "Nous changerons vos serviettes chaque jour.",
+   "pron": "wi wil tchéïndj yôr TAOU-eulz ÈV-ri déï.",
+   "trou": "towels"
+  },
+  {
+   "id": "p18",
+   "en": "Here is your bill.",
+   "fr": "Voici votre note.",
+   "pron": "hieur iz yôr bil.",
+   "trou": "bill"
+  },
+  {
+   "id": "p19",
+   "en": "Do you want to pay by card or in cash?",
+   "fr": "Voulez-vous payer par carte ou en espèces ?",
+   "pron": "dou you wonnt tou péï baï kârd ôr inn kach ?",
+   "trou": "cash"
+  },
+  {
+   "id": "p20",
+   "en": "The beach is five minutes on foot.",
+   "fr": "La plage est à cinq minutes à pied.",
+   "pron": "dheu biitch iz faïv MI-nits onn fout.",
+   "trou": "beach"
+  },
+  {
+   "id": "p21",
+   "en": "I can book a tour to Gorée Island for you.",
+   "fr": "Je peux vous réserver une excursion à l'île de Gorée.",
+   "pron": "aï kann bouk eu tour tou go-RÉ AÏ-leund fôr you.",
+   "trou": "tour"
+  },
+  {
+   "id": "p22",
+   "en": "Please leave your valuables in the safe.",
+   "fr": "Veuillez laisser vos objets de valeur dans le coffre-fort.",
+   "pron": "pliiz liiv yôr VA-lyou-beulz inn dheu séïf.",
+   "trou": "safe"
+  },
+  {
+   "id": "p23",
+   "en": "I am sorry for the noise.",
+   "fr": "Je suis désolé pour le bruit.",
+   "pron": "aï am SO-ri fôr dheu noïz.",
+   "trou": "noise"
+  },
+  {
+   "id": "p24",
+   "en": "Enjoy your stay!",
+   "fr": "Bon séjour !",
+   "pron": "inn-DJOÏ yôr stéï !",
+   "trou": "stay"
+  },
+  {
+   "id": "p25",
+   "en": "Thank you, have a nice trip.",
+   "fr": "Merci, bon voyage.",
+   "pron": "thangk you, hav eu naïss trip.",
+   "trou": "trip"
+  }
+ ]
+}

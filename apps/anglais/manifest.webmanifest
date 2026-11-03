@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "Anglais du Métier",
+  "short_name": "Anglais",
+  "description": "L'anglais utile pour votre travail : 10 métiers, mots et phrases avec prononciation, cartes mémoire, écoute, quiz et oral. Fonctionne sans Internet.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f6fb",
+  "theme_color": "#1d4f91",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Réviser mes cartes", "short_name": "Cartes", "url": "./#/cartes", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Faire un quiz", "short_name": "Quiz", "url": "./#/quiz", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Écouter", "short_name": "Écouter", "url": "./#/ecouter", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

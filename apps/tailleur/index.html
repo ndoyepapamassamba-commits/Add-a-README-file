@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://seegnylaubuularegmku.supabase.co; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<title>Carnet du Tailleur : clients, mesures, commandes et reçus de couture</title>
+<meta name="description" content="Application pour tailleurs, couturières et brodeurs : fiches clients, mesures guidées avec dessins, commandes avec acompte et reste à payer, planning des livraisons avant Tabaski et Korité, message « votre habit est prêt » sur WhatsApp, reçus PDF. Fonctionne sans Internet.">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/tailleur/">
+<meta name="theme-color" content="#2d3a8c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151722" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="TERANGA">
+<meta property="og:title" content="Carnet du Tailleur : mesures, commandes et reçus sur votre téléphone">
+<meta property="og:description" content="Mesures guidées, commandes, acomptes, planning avant les fêtes, rappels WhatsApp et reçus PDF. Même sans Internet.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/tailleur/">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/tailleur/icons/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tailleur">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="application-name" content="Carnet du Tailleur">
+<meta name="format-detection" content="telephone=no">
+<link rel="stylesheet" href="app.css">
+<script src="js/theme.js"></script>
+<script src="js/coeur.js" defer></script>
+<script src="js/figure.js" defer></script>
+<script src="js/db.js" defer></script>
+<script src="js/pdf.js" defer></script>
+<script src="js/app.js" defer></script>
+</head>
+<body>
+<a class="evitement" href="#vue">Aller au contenu</a>
+<header class="entete">
+  <button type="button" id="retour" class="icone-btn" aria-label="Retour" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <a class="marque" href="#/" aria-label="Accueil du Carnet du Tailleur"><img src="icons/favicon-32.png" alt="" width="28" height="28"></a>
+  <p id="titre" class="titre" role="heading" aria-level="1">Carnet du Tailleur</p>
+  <a id="badge-pass" class="badge-pass" href="#/pass">Gratuit</a>
+  <button type="button" id="installer" class="btn-entete" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v11m0 0-4-4m4 4 4-4"/><rect x="4" y="17" width="16" height="4" rx="1"/></svg><span>Installer</span></button>
+</header>
+<div id="bandeaux"></div>
+<main id="vue" tabindex="-1">
+  <noscript>
+    <section class="carte">
+      <h1>Carnet du Tailleur</h1>
+      <p>Clients, mesures guidées, commandes, acomptes, planning des livraisons et reçus PDF pour les tailleurs et couturières. Fonctionne sans Internet.</p>
+      <p>Activez JavaScript dans votre navigateur pour utiliser l'application.</p>
+    </section>
+  </noscript>
+  <div class="chargement" aria-hidden="true"><img src="icons/icon-192.png" alt="" width="72" height="72"></div>
+</main>
+<nav id="nav" class="nav" aria-label="Menu principal">
+  <a href="#/" data-nav="accueil"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Accueil</span></a>
+  <a href="#/clients" data-nav="clients"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.8.7 3 2.5 3.5 5.2"/></svg><span>Clients</span></a>
+  <a href="#/commandes" data-nav="commandes"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3 4 6l2 3 2-1v13h8V8l2 1 2-3-4-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z"/></svg><span>Commandes</span></a>
+  <a href="#/planning" data-nav="planning"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h3M14 14h3M7 17.5h3"/></svg><span>Planning</span></a>
+  <a href="#/reglages" data-nav="reglages"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Réglages</span></a>
+</nav>
+<div id="feuille" class="feuille-fond" hidden></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

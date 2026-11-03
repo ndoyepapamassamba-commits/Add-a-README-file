@@ -1,0 +1,25 @@
+{
+  "id": "./",
+  "name": "Budget Famille",
+  "short_name": "Budget",
+  "description": "Le budget du foyer par enveloppes : dépense quotidienne, loyer, Senelec, Woyofal, école, tontine, épargne. Budgets Tabaski, rentrée, Korité. Fonctionne sans Internet.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f6f5",
+  "theme_color": "#0f6670",
+  "categories": ["finance", "lifestyle", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Ajouter une dépense", "short_name": "Dépense", "url": "./#/ajouter", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Budgets spéciaux", "short_name": "Projets", "url": "./#/projets", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

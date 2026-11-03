@@ -1,0 +1,105 @@
+{
+ "version": 1,
+ "metiers": [
+  {
+   "id": "hotellerie",
+   "nom": "Hôtellerie et tourisme",
+   "court": "Hôtellerie",
+   "emoji": "🏨",
+   "description": "Accueil des clients, chambres, repas, excursions.",
+   "fichier": "hotellerie.json",
+   "mots": 60,
+   "phrases": 25
+  },
+  {
+   "id": "chauffeur",
+   "nom": "Chauffeur et guide",
+   "court": "Chauffeur, guide",
+   "emoji": "🚕",
+   "description": "Courses, directions, visites, aéroport.",
+   "fichier": "chauffeur.json",
+   "mots": 60,
+   "phrases": 25
+  },
+  {
+   "id": "commerce",
+   "nom": "Commerce et vente",
+   "court": "Commerce",
+   "emoji": "🛍️",
+   "description": "Accueillir, conseiller, prix, paiement, livraison.",
+   "fichier": "commerce.json",
+   "mots": 60,
+   "phrases": 25
+  },
+  {
+   "id": "mecanique",
+   "nom": "Mécanique auto",
+   "court": "Mécanique",
+   "emoji": "🔧",
+   "description": "Pannes, pièces, réparations, devis.",
+   "fichier": "mecanique.json",
+   "mots": 60,
+   "phrases": 25
+  },
+  {
+   "id": "batiment",
+   "nom": "Bâtiment (BTP)",
+   "court": "Bâtiment",
+   "emoji": "🏗️",
+   "description": "Chantier, matériaux, outils, sécurité.",
+   "fichier": "batiment.json",
+   "mots": 60,
+   "phrases": 25
+  },
+  {
+   "id": "informatique",
+   "nom": "Informatique",
+   "court": "Informatique",
+   "emoji": "💻",
+   "description": "Ordinateurs, réseau, comptes, assistance.",
+   "fichier": "informatique.json",
+   "mots": 60,
+   "phrases": 25
+  },
+  {
+   "id": "banque",
+   "nom": "Banque et accueil",
+   "court": "Banque",
+   "emoji": "🏦",
+   "description": "Accueil, guichet, comptes, cartes, rendez-vous.",
+   "fichier": "banque.json",
+   "mots": 60,
+   "phrases": 25
+  },
+  {
+   "id": "restauration",
+   "nom": "Restauration",
+   "court": "Restauration",
+   "emoji": "🍽️",
+   "description": "Salle, cuisine, plats, commande, addition.",
+   "fichier": "restauration.json",
+   "mots": 60,
+   "phrases": 25
+  },
+  {
+   "id": "peche",
+   "nom": "Pêche et port",
+   "court": "Pêche, port",
+   "emoji": "⚓",
+   "description": "Pirogues, poisson, météo, quai, chargement.",
+   "fichier": "peche.json",
+   "mots": 60,
+   "phrases": 25
+  },
+  {
+   "id": "securite",
+   "nom": "Sécurité et gardiennage",
+   "court": "Sécurité",
+   "emoji": "🛡️",
+   "description": "Contrôle des entrées, rondes, incidents, urgences.",
+   "fichier": "securite.json",
+   "mots": 60,
+   "phrases": 25
+  }
+ ]
+}

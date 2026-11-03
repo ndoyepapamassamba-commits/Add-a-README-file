@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://seegnylaubuularegmku.supabase.co; font-src 'self'; connect-src 'self' https://seegnylaubuularegmku.supabase.co; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>ColisPreuve — la preuve de livraison des petits commerçants</title>
+<meta name="description" content="Application gratuite pour les vendeurs WhatsApp et Instagram, livreurs et petites sociétés de livraison au Sénégal : suivi du colis par lien, photos, code de remise du client, preuve PDF. Fonctionne même sans réseau.">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/colis/">
+<meta name="theme-color" content="#0b6e4f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1714" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Teranga Outils">
+<meta property="og:title" content="ColisPreuve — la preuve de livraison des petits commerçants">
+<meta property="og:description" content="Suivi du colis par lien, photos, code de remise du client et preuve PDF. Pour vendeurs et livreurs au Sénégal.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/colis/">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/colis/icons/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ColisPreuve">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="application-name" content="ColisPreuve">
+<meta name="format-detection" content="telephone=no">
+<link rel="stylesheet" href="app.css">
+<script src="js/coeur.js" defer></script>
+<script src="js/db.js" defer></script>
+<script src="js/reseau.js" defer></script>
+<script src="js/photo.js" defer></script>
+<script src="js/app.js" defer></script>
+</head>
+<body>
+<a class="evitement" href="#vue">Aller au contenu</a>
+<header class="entete">
+  <a class="marque" href="#/" aria-label="ColisPreuve, accueil"><img src="icons/logo-64.png" alt="" width="30" height="30"><span>ColisPreuve</span></a>
+  <span id="reseau" class="pastille" role="status" hidden></span>
+  <button type="button" id="installer" class="btn-entete" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v11m0 0-4-4m4 4 4-4"/><rect x="4" y="17" width="16" height="4" rx="1"/></svg><span>Installer</span></button>
+</header>
+
+<main id="vue" tabindex="-1">
+  <noscript>
+    <section class="carte">
+      <h1>ColisPreuve</h1>
+      <p>La preuve de livraison des petits commerçants : suivi du colis par lien, photos, code de remise du client et preuve PDF.</p>
+      <p>Activez JavaScript dans votre navigateur pour utiliser l'application.</p>
+    </section>
+  </noscript>
+  <div class="chargement" aria-hidden="true"><img src="icons/icon-192.png" alt="" width="72" height="72"></div>
+</main>
+
+<nav id="nav" class="nav" aria-label="Navigation principale">
+  <a href="#/" data-nav="accueil"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg><span>Colis</span></a>
+  <a href="#/nouveau" data-nav="nouveau"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Nouveau</span></a>
+  <a href="#/pass" data-nav="pass"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg><span>Pass</span></a>
+  <a href="#/reglages" data-nav="reglages"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Réglages</span></a>
+</nav>
+
+<div id="feuille" class="feuille" hidden><div class="feuille-contenu" role="dialog" aria-modal="true" aria-label="Fenêtre"></div></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

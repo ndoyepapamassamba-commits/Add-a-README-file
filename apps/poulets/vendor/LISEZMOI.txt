@@ -1,0 +1,8 @@
+Bibliothèque incluse dans PouletPilot (copie locale, jamais chargée depuis Internet)
+
+jspdf.umd.min.js   jsPDF 4.2.1 (npm « jspdf », fichier dist/jspdf.umd.min.js)   Licence MIT   jspdf.LICENSE.txt
+                   SHA-256 du fichier d'origine : e6551fcdc32f09d6853b2c5126d18d01d9447e0da618a41a11ebeee0f6c20d54
+
+Fichier repris tel quel ; seule la dernière ligne « sourceMappingURL » a été retirée.
+Le module est chargé seulement quand on fabrique un rapport PDF (et mis en cache pour marcher sans Internet).
+Les graphiques de l'application sont dessinés en SVG par js/graphiques.js (aucune bibliothèque).

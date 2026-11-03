@@ -1,0 +1,8 @@
+Bibliothèques incluses dans Teranga Factures (copies locales, aucune n'est chargée depuis Internet)
+
+jspdf.umd.min.js               jsPDF 4.2.1 (npm « jspdf », dist/jspdf.umd.min.js)          Licence MIT        jspdf.LICENSE.txt
+jspdf.plugin.autotable.min.js  jsPDF-AutoTable 5.0.9 (npm « jspdf-autotable »)             Licence MIT        jspdf-autotable.LICENSE.txt
+qrcode.js                      qrcode-generator 2.0.4 (npm, Kazuhiko Arase, dist/qrcode.js) Licence MIT        qrcode-generator.LICENSE.txt
+xlsx.mini.min.js               SheetJS Community Edition 0.20.3 (cdn.sheetjs.com)          Licence Apache 2.0 xlsx.LICENSE.txt
+
+Fichiers repris tels quels ; seule la ligne finale « sourceMappingURL » a été retirée des fichiers minifiés.

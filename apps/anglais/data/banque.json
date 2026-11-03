@@ -1,0 +1,547 @@
+{
+ "id": "banque",
+ "nom": "Banque et accueil",
+ "mots": [
+  {
+   "id": "m01",
+   "en": "bank",
+   "fr": "la banque",
+   "pron": "bangk"
+  },
+  {
+   "id": "m02",
+   "en": "branch",
+   "fr": "l'agence",
+   "pron": "brânntch"
+  },
+  {
+   "id": "m03",
+   "en": "counter",
+   "fr": "le guichet",
+   "pron": "KAOUN-teur"
+  },
+  {
+   "id": "m04",
+   "en": "teller",
+   "fr": "le guichetier, la guichetière",
+   "pron": "TÈ-leur"
+  },
+  {
+   "id": "m05",
+   "en": "adviser",
+   "fr": "le conseiller, la conseillère",
+   "pron": "eud-VAÏ-zeur"
+  },
+  {
+   "id": "m06",
+   "en": "customer",
+   "fr": "le client",
+   "pron": "KEUSS-teu-meur"
+  },
+  {
+   "id": "m07",
+   "en": "account",
+   "fr": "le compte",
+   "pron": "eu-KAOUNT"
+  },
+  {
+   "id": "m08",
+   "en": "current account",
+   "fr": "le compte courant",
+   "pron": "KEU-reunt eu-KAOUNT"
+  },
+  {
+   "id": "m09",
+   "en": "savings account",
+   "fr": "le compte d'épargne",
+   "pron": "SÉÏ-vingz eu-KAOUNT"
+  },
+  {
+   "id": "m10",
+   "en": "balance",
+   "fr": "le solde",
+   "pron": "BA-leunss"
+  },
+  {
+   "id": "m11",
+   "en": "deposit",
+   "fr": "le dépôt, le versement",
+   "pron": "di-PO-zit"
+  },
+  {
+   "id": "m12",
+   "en": "withdrawal",
+   "fr": "le retrait",
+   "pron": "widh-DRÔ-eul"
+  },
+  {
+   "id": "m13",
+   "en": "transfer",
+   "fr": "le virement",
+   "pron": "TRANSS-feur"
+  },
+  {
+   "id": "m14",
+   "en": "cash",
+   "fr": "les espèces",
+   "pron": "kach"
+  },
+  {
+   "id": "m15",
+   "en": "cheque",
+   "fr": "le chèque",
+   "pron": "tchèk",
+   "note": "En américain : check"
+  },
+  {
+   "id": "m16",
+   "en": "card",
+   "fr": "la carte",
+   "pron": "kârd"
+  },
+  {
+   "id": "m17",
+   "en": "cash machine",
+   "fr": "le distributeur de billets",
+   "pron": "KACH meu-CHIIN",
+   "note": "En américain : ATM"
+  },
+  {
+   "id": "m18",
+   "en": "PIN code",
+   "fr": "le code secret",
+   "pron": "PINN kôd"
+  },
+  {
+   "id": "m19",
+   "en": "statement",
+   "fr": "le relevé de compte",
+   "pron": "STÉÏT-meunt"
+  },
+  {
+   "id": "m20",
+   "en": "fee",
+   "fr": "les frais",
+   "pron": "fii"
+  },
+  {
+   "id": "m21",
+   "en": "loan",
+   "fr": "le prêt",
+   "pron": "lôn"
+  },
+  {
+   "id": "m22",
+   "en": "interest",
+   "fr": "les intérêts",
+   "pron": "INN-treust"
+  },
+  {
+   "id": "m23",
+   "en": "rate",
+   "fr": "le taux",
+   "pron": "réït"
+  },
+  {
+   "id": "m24",
+   "en": "currency",
+   "fr": "la devise, la monnaie",
+   "pron": "KEU-reunn-si"
+  },
+  {
+   "id": "m25",
+   "en": "exchange rate",
+   "fr": "le taux de change",
+   "pron": "iks-TCHÉÏNDJ réït"
+  },
+  {
+   "id": "m26",
+   "en": "euro",
+   "fr": "l'euro",
+   "pron": "YOU-rô"
+  },
+  {
+   "id": "m27",
+   "en": "dollar",
+   "fr": "le dollar",
+   "pron": "DO-leur"
+  },
+  {
+   "id": "m28",
+   "en": "note",
+   "fr": "le billet de banque",
+   "pron": "nôt",
+   "note": "En américain : bill"
+  },
+  {
+   "id": "m29",
+   "en": "coin",
+   "fr": "la pièce de monnaie",
+   "pron": "koïnn"
+  },
+  {
+   "id": "m30",
+   "en": "amount",
+   "fr": "le montant",
+   "pron": "eu-MAOUNT"
+  },
+  {
+   "id": "m31",
+   "en": "signature",
+   "fr": "la signature",
+   "pron": "SIG-neu-tcheur"
+  },
+  {
+   "id": "m32",
+   "en": "form",
+   "fr": "le formulaire",
+   "pron": "fôrm"
+  },
+  {
+   "id": "m33",
+   "en": "identity card",
+   "fr": "la carte d'identité",
+   "pron": "aï-DÈNN-ti-ti kârd"
+  },
+  {
+   "id": "m34",
+   "en": "proof of address",
+   "fr": "le justificatif de domicile",
+   "pron": "prouf ov eu-DRÈSS"
+  },
+  {
+   "id": "m35",
+   "en": "appointment",
+   "fr": "le rendez-vous",
+   "pron": "eu-POÏNNT-meunt"
+  },
+  {
+   "id": "m36",
+   "en": "queue",
+   "fr": "la file d'attente",
+   "pron": "kyou",
+   "note": "En américain : line"
+  },
+  {
+   "id": "m37",
+   "en": "ticket",
+   "fr": "le ticket",
+   "pron": "TI-kit"
+  },
+  {
+   "id": "m38",
+   "en": "number",
+   "fr": "le numéro",
+   "pron": "NEUM-beur"
+  },
+  {
+   "id": "m39",
+   "en": "waiting room",
+   "fr": "la salle d'attente",
+   "pron": "WÉÏ-ting roum"
+  },
+  {
+   "id": "m40",
+   "en": "security",
+   "fr": "la sécurité",
+   "pron": "si-KYOU-ri-ti"
+  },
+  {
+   "id": "m41",
+   "en": "opening hours",
+   "fr": "les heures d'ouverture",
+   "pron": "Ô-peu-ning AOU-eurz"
+  },
+  {
+   "id": "m42",
+   "en": "information",
+   "fr": "les renseignements",
+   "pron": "inn-feur-MÉÏ-cheunn"
+  },
+  {
+   "id": "m43",
+   "en": "receipt",
+   "fr": "le reçu",
+   "pron": "ri-SIIT"
+  },
+  {
+   "id": "m44",
+   "en": "mobile banking",
+   "fr": "la banque sur mobile",
+   "pron": "MÔ-baïl BANG-king"
+  },
+  {
+   "id": "m45",
+   "en": "text message",
+   "fr": "le SMS",
+   "pron": "TÈKST MÈ-sidj"
+  },
+  {
+   "id": "m46",
+   "en": "salary",
+   "fr": "le salaire",
+   "pron": "SA-leu-ri"
+  },
+  {
+   "id": "m47",
+   "en": "business",
+   "fr": "l'entreprise",
+   "pron": "BIZ-niss"
+  },
+  {
+   "id": "m48",
+   "en": "private",
+   "fr": "privé",
+   "pron": "PRAÏ-veut"
+  },
+  {
+   "id": "m49",
+   "en": "urgent",
+   "fr": "urgent",
+   "pron": "EUR-djeunt"
+  },
+  {
+   "id": "m50",
+   "en": "blocked",
+   "fr": "bloqué",
+   "pron": "blokt"
+  },
+  {
+   "id": "m51",
+   "en": "lost",
+   "fr": "perdu",
+   "pron": "lost"
+  },
+  {
+   "id": "m52",
+   "en": "to open",
+   "fr": "ouvrir",
+   "pron": "tou Ô-peunn"
+  },
+  {
+   "id": "m53",
+   "en": "to sign",
+   "fr": "signer",
+   "pron": "tou saïnn"
+  },
+  {
+   "id": "m54",
+   "en": "to fill in",
+   "fr": "remplir (un formulaire)",
+   "pron": "tou fil inn"
+  },
+  {
+   "id": "m55",
+   "en": "to withdraw",
+   "fr": "retirer (de l'argent)",
+   "pron": "tou widh-DRÔ"
+  },
+  {
+   "id": "m56",
+   "en": "to send",
+   "fr": "envoyer",
+   "pron": "tou sènd"
+  },
+  {
+   "id": "m57",
+   "en": "to receive",
+   "fr": "recevoir",
+   "pron": "tou ri-SIIV"
+  },
+  {
+   "id": "m58",
+   "en": "to count",
+   "fr": "compter",
+   "pron": "tou kaount"
+  },
+  {
+   "id": "m59",
+   "en": "to wait",
+   "fr": "attendre",
+   "pron": "tou wéït"
+  },
+  {
+   "id": "m60",
+   "en": "to welcome",
+   "fr": "accueillir",
+   "pron": "tou WÈL-keum"
+  }
+ ],
+ "phrases": [
+  {
+   "id": "p01",
+   "en": "Good morning, how can I help you?",
+   "fr": "Bonjour, comment puis-je vous aider ?",
+   "pron": "goud MÔR-ning, haou kann aï hèlp you ?",
+   "trou": "help"
+  },
+  {
+   "id": "p02",
+   "en": "Please take a ticket and wait.",
+   "fr": "Prenez un ticket et patientez, s'il vous plaît.",
+   "pron": "pliiz téïk eu TI-kit annd wéït.",
+   "trou": "ticket"
+  },
+  {
+   "id": "p03",
+   "en": "Your number will appear on the screen.",
+   "fr": "Votre numéro s'affichera sur l'écran.",
+   "pron": "yôr NEUM-beur wil eu-PIEUR onn dheu skriin.",
+   "trou": "number"
+  },
+  {
+   "id": "p04",
+   "en": "Do you have an appointment?",
+   "fr": "Avez-vous un rendez-vous ?",
+   "pron": "dou you hav eunn eu-POÏNNT-meunt ?",
+   "trou": "appointment"
+  },
+  {
+   "id": "p05",
+   "en": "An adviser will see you in ten minutes.",
+   "fr": "Un conseiller va vous recevoir dans dix minutes.",
+   "pron": "eunn eud-VAÏ-zeur wil sii you inn tèn MI-nits.",
+   "trou": "adviser"
+  },
+  {
+   "id": "p06",
+   "en": "Please have a seat in the waiting room.",
+   "fr": "Veuillez vous asseoir dans la salle d'attente.",
+   "pron": "pliiz hav eu siit inn dheu WÉÏ-ting roum.",
+   "trou": "seat"
+  },
+  {
+   "id": "p07",
+   "en": "I would like to open an account.",
+   "fr": "Je voudrais ouvrir un compte.",
+   "pron": "aï woud laïk tou Ô-peunn eunn eu-KAOUNT.",
+   "trou": "account"
+  },
+  {
+   "id": "p08",
+   "en": "May I see your identity card, please?",
+   "fr": "Puis-je voir votre carte d'identité, s'il vous plaît ?",
+   "pron": "méï aï sii yôr aï-DÈNN-ti-ti kârd, pliiz ?",
+   "trou": "identity"
+  },
+  {
+   "id": "p09",
+   "en": "Please fill in this form.",
+   "fr": "Veuillez remplir ce formulaire.",
+   "pron": "pliiz fil inn dhiss fôrm.",
+   "trou": "form"
+  },
+  {
+   "id": "p10",
+   "en": "Please sign at the bottom of the page.",
+   "fr": "Veuillez signer en bas de la page.",
+   "pron": "pliiz saïnn at dheu BO-teum ov dheu péïdj.",
+   "trou": "sign"
+  },
+  {
+   "id": "p11",
+   "en": "How much would you like to withdraw?",
+   "fr": "Combien voulez-vous retirer ?",
+   "pron": "haou meutch woud you laïk tou widh-DRÔ ?",
+   "trou": "withdraw"
+  },
+  {
+   "id": "p12",
+   "en": "Please count your money.",
+   "fr": "Veuillez compter votre argent.",
+   "pron": "pliiz kaount yôr MEU-ni.",
+   "trou": "count"
+  },
+  {
+   "id": "p13",
+   "en": "Here is your receipt.",
+   "fr": "Voici votre reçu.",
+   "pron": "hieur iz yôr ri-SIIT.",
+   "trou": "receipt"
+  },
+  {
+   "id": "p14",
+   "en": "The cash machine is outside, on the right.",
+   "fr": "Le distributeur de billets est dehors, à droite.",
+   "pron": "dheu KACH meu-CHIIN iz aout-SAÏD, onn dheu raït.",
+   "trou": "outside"
+  },
+  {
+   "id": "p15",
+   "en": "Never give your PIN code to anyone.",
+   "fr": "Ne donnez jamais votre code secret à personne.",
+   "pron": "NÈ-veur guiv yôr PINN kôd tou È-ni-weunn.",
+   "trou": "anyone"
+  },
+  {
+   "id": "p16",
+   "en": "Bank staff will never ask for your PIN code.",
+   "fr": "Le personnel de la banque ne vous demandera jamais votre code secret.",
+   "pron": "bangk stâf wil NÈ-veur âsk fôr yôr PINN kôd.",
+   "trou": "staff"
+  },
+  {
+   "id": "p17",
+   "en": "If you lose your card, call us immediately.",
+   "fr": "Si vous perdez votre carte, appelez-nous immédiatement.",
+   "pron": "if you louz yôr kârd, kôl euss i-MII-di-eut-li.",
+   "trou": "lose"
+  },
+  {
+   "id": "p18",
+   "en": "Your card is blocked.",
+   "fr": "Votre carte est bloquée.",
+   "pron": "yôr kârd iz blokt.",
+   "trou": "blocked"
+  },
+  {
+   "id": "p19",
+   "en": "The transfer will take two days.",
+   "fr": "Le virement prendra deux jours.",
+   "pron": "dheu TRANSS-feur wil téïk tou déïz.",
+   "trou": "transfer"
+  },
+  {
+   "id": "p20",
+   "en": "What is today's exchange rate?",
+   "fr": "Quel est le taux de change aujourd'hui ?",
+   "pron": "wot iz teu-DÉÏZ iks-TCHÉÏNDJ réït ?",
+   "trou": "rate"
+  },
+  {
+   "id": "p21",
+   "en": "The bank opens at eight and closes at four.",
+   "fr": "La banque ouvre à huit heures et ferme à seize heures.",
+   "pron": "dheu bangk Ô-peunz at éït annd KLÔ-ziz at fôr.",
+   "trou": "closes"
+  },
+  {
+   "id": "p22",
+   "en": "Please wait in the queue.",
+   "fr": "Veuillez attendre dans la file.",
+   "pron": "pliiz wéït inn dheu kyou.",
+   "trou": "queue"
+  },
+  {
+   "id": "p23",
+   "en": "Your statement is ready.",
+   "fr": "Votre relevé de compte est prêt.",
+   "pron": "yôr STÉÏT-meunt iz RÈ-di.",
+   "trou": "statement"
+  },
+  {
+   "id": "p24",
+   "en": "I will call an adviser for you.",
+   "fr": "Je vais appeler un conseiller pour vous.",
+   "pron": "aï wil kôl eunn eud-VAÏ-zeur fôr you.",
+   "trou": "call"
+  },
+  {
+   "id": "p25",
+   "en": "Thank you for your visit.",
+   "fr": "Merci de votre visite.",
+   "pron": "thangk you fôr yôr VI-zit.",
+   "trou": "visit"
+  }
+ ]
+}

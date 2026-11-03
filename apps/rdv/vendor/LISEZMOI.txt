@@ -1,0 +1,7 @@
+Bibliothèques incluses dans Rendez-vous Pro (copies locales, aucune n'est chargée depuis Internet)
+
+jspdf.umd.min.js   jsPDF 4.2.1 (npm « jspdf », dist/jspdf.umd.min.js)              Licence MIT   jspdf.LICENSE.txt
+qrcode.js          qrcode-generator 2.0.4 (npm, Kazuhiko Arase, dist/qrcode.js)     Licence MIT   qrcode-generator.LICENSE.txt
+
+Fichiers repris tels quels (mêmes copies que l'application Teranga Factures).
+« QR Code » est une marque déposée de DENSO WAVE INCORPORATED.

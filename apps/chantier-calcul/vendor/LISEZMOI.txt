@@ -1,0 +1,7 @@
+Bibliothèques incluses dans Calcul Chantier (copies locales, rien n'est chargé depuis Internet)
+
+jspdf.umd.min.js               jsPDF 4.2.1 (npm « jspdf », dist/jspdf.umd.min.js)   Licence MIT   jspdf.LICENSE.txt
+jspdf.plugin.autotable.min.js  jsPDF-AutoTable 5.0.9 (npm « jspdf-autotable »)      Licence MIT   jspdf-autotable.LICENSE.txt
+
+Fichiers repris tels quels ; seule la ligne finale « sourceMappingURL » a été retirée des fichiers minifiés.
+Les schémas des éléments et les icônes sont dessinés par le programme (aucune image externe).

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://seegnylaubuularegmku.supabase.co; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Carnet Boutique : le carnet de crédit du boutiquier, sur téléphone</title>
+<meta name="description" content="Carnet Boutique remplace le cahier des dettes : qui doit combien, paiements, rappels polis sur WhatsApp, calculette de marge et ardoise des commandes. Gratuit, en français, fonctionne sans Internet. Tout reste dans le téléphone.">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/carnet/">
+<meta name="theme-color" content="#0b6e4f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10231b" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Teranga Outils">
+<meta property="og:title" content="Carnet Boutique : le carnet de crédit du boutiquier">
+<meta property="og:description" content="Qui doit combien, paiements, rappels WhatsApp, marge et ardoise. Sans Internet, tout reste dans le téléphone.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/carnet/">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/carnet/icons/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Carnet">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="application-name" content="Carnet Boutique">
+<meta name="format-detection" content="telephone=no">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/theme.js"></script>
+<script src="js/coeur.js" defer></script>
+<script src="js/db.js" defer></script>
+<script src="js/pdf.js" defer></script>
+<script src="js/app.js" defer></script>
+</head>
+<body>
+<a class="evitement" href="#vue">Aller au contenu</a>
+<header class="entete">
+  <button type="button" id="retour" class="icone-btn" aria-label="Retour" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 18.5 8.5 12 15 5.5"/></svg></button>
+  <a id="marque" class="marque" href="#/" aria-label="Accueil du carnet"><img src="icons/favicon-32.png" alt="" width="30" height="30"></a>
+  <p id="titre" class="titre" role="heading" aria-level="1">Carnet Boutique</p>
+  <a id="badge-pass" class="badge-pass" href="#/pass" hidden>Gratuit</a>
+  <button type="button" id="verrouiller" class="icone-btn" aria-label="Verrouiller le carnet" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3M12 14.5v2.5"/></svg></button>
+  <button type="button" id="installer" class="btn-entete" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5v10.5m0 0-4-4m4 4 4-4"/><rect x="4" y="17" width="16" height="3.5" rx="1.2"/></svg><span>Installer</span></button>
+</header>
+
+<main id="vue" tabindex="-1">
+  <noscript>
+    <section class="carte">
+      <h2>Carnet Boutique</h2>
+      <p>Le carnet de crédit du boutiquier : qui doit combien, paiements, rappels WhatsApp, calculette de marge et ardoise des commandes. Tout reste dans le téléphone.</p>
+      <p>Activez JavaScript dans votre navigateur pour utiliser l'application.</p>
+    </section>
+  </noscript>
+  <div class="chargement" aria-hidden="true"><img src="icons/icon-192.png" alt="" width="80" height="80"></div>
+</main>
+
+<nav id="nav" class="nav" aria-label="Menu principal">
+  <a href="#/" data-nav="carnet"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 3.5h11.5A1.5 1.5 0 0 1 19 5v14.5a1.5 1.5 0 0 1-1.5 1.5H6A2 2 0 0 1 4 19V5.5a2 2 0 0 1 2-2z"/><path d="M4 17.5a2 2 0 0 1 2-2h13M8.5 8h6M8.5 11.5h4"/></svg><span>Carnet</span></a>
+  <a href="#/ardoise" data-nav="ardoise"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3.5" width="18" height="13" rx="1.8"/><path d="M7 8h7M7 12h10M8.5 21l1.8-4.5M15.5 21l-1.8-4.5"/></svg><span>Ardoise</span></a>
+  <a href="#/marge" data-nav="marge"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8.5 6.5h7v3h-7zM8.5 13.5h.01M12 13.5h.01M15.5 13.5h.01M8.5 17.5h.01M12 17.5h.01M15.5 17.5h.01"/></svg><span>Marge</span></a>
+  <a href="#/bilan" data-nav="bilan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20V11M10 20V4.5M16 20v-6.5M21.5 20.5h-19"/></svg><span>Bilan</span></a>
+  <a href="#/plus" data-nav="plus"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6.5h10M18 6.5h2M4 12h4M12 12h8M4 17.5h12"/><circle cx="16" cy="6.5" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="17.5" r="2"/></svg><span>Plus</span></a>
+</nav>
+
+<div id="verrou" class="verrou" hidden></div>
+<input type="file" id="f-photo" accept="image/*" capture="environment" class="cache-fichier" tabindex="-1" aria-hidden="true">
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

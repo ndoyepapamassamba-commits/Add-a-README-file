@@ -1,0 +1,25 @@
+{
+  "id": "./",
+  "name": "Lecture Facile",
+  "short_name": "Lecture",
+  "description": "Lire plus facilement : polices pour la dyslexie, syllabes en couleur, lettres b/d colorées, règle de lecture, lecture à voix haute. Fonctionne sans Internet.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f4fa",
+  "theme_color": "#6b3fa0",
+  "categories": ["education", "books", "kids"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Écrire ou coller un texte", "short_name": "Écrire", "url": "./#/ecrire", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Textes faciles", "short_name": "Textes", "url": "./#/textes", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

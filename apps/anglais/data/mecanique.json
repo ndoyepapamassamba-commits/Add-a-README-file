@@ -1,0 +1,547 @@
+{
+ "id": "mecanique",
+ "nom": "Mécanique auto",
+ "mots": [
+  {
+   "id": "m01",
+   "en": "mechanic",
+   "fr": "le mécanicien",
+   "pron": "mi-KA-nik"
+  },
+  {
+   "id": "m02",
+   "en": "garage",
+   "fr": "le garage",
+   "pron": "GA-râj"
+  },
+  {
+   "id": "m03",
+   "en": "engine",
+   "fr": "le moteur",
+   "pron": "ÈNN-djinn"
+  },
+  {
+   "id": "m04",
+   "en": "tyre",
+   "fr": "le pneu",
+   "pron": "TAÏ-eur",
+   "note": "En américain : tire"
+  },
+  {
+   "id": "m05",
+   "en": "wheel",
+   "fr": "la roue",
+   "pron": "wiil"
+  },
+  {
+   "id": "m06",
+   "en": "brake",
+   "fr": "le frein",
+   "pron": "bréïk"
+  },
+  {
+   "id": "m07",
+   "en": "battery",
+   "fr": "la batterie",
+   "pron": "BA-teu-ri"
+  },
+  {
+   "id": "m08",
+   "en": "oil",
+   "fr": "l'huile",
+   "pron": "oïl"
+  },
+  {
+   "id": "m09",
+   "en": "filter",
+   "fr": "le filtre",
+   "pron": "FIL-teur"
+  },
+  {
+   "id": "m10",
+   "en": "spark plug",
+   "fr": "la bougie (d'allumage)",
+   "pron": "SPÂRK pleug"
+  },
+  {
+   "id": "m11",
+   "en": "clutch",
+   "fr": "l'embrayage",
+   "pron": "kleutch"
+  },
+  {
+   "id": "m12",
+   "en": "gearbox",
+   "fr": "la boîte de vitesses",
+   "pron": "GUIEUR-boks"
+  },
+  {
+   "id": "m13",
+   "en": "steering wheel",
+   "fr": "le volant",
+   "pron": "STIEU-ring wiil"
+  },
+  {
+   "id": "m14",
+   "en": "headlight",
+   "fr": "le phare",
+   "pron": "HÈD-laït"
+  },
+  {
+   "id": "m15",
+   "en": "bonnet",
+   "fr": "le capot",
+   "pron": "BO-nit",
+   "note": "En américain : hood"
+  },
+  {
+   "id": "m16",
+   "en": "bumper",
+   "fr": "le pare-chocs",
+   "pron": "BEUM-peur"
+  },
+  {
+   "id": "m17",
+   "en": "windscreen",
+   "fr": "le pare-brise",
+   "pron": "WINND-skriin",
+   "note": "En américain : windshield"
+  },
+  {
+   "id": "m18",
+   "en": "wiper",
+   "fr": "l'essuie-glace",
+   "pron": "WAÏ-peur"
+  },
+  {
+   "id": "m19",
+   "en": "exhaust",
+   "fr": "le pot d'échappement",
+   "pron": "ig-ZÔST"
+  },
+  {
+   "id": "m20",
+   "en": "radiator",
+   "fr": "le radiateur",
+   "pron": "RÉÏ-di-éï-teur"
+  },
+  {
+   "id": "m21",
+   "en": "coolant",
+   "fr": "le liquide de refroidissement",
+   "pron": "KOU-leunt"
+  },
+  {
+   "id": "m22",
+   "en": "fuel",
+   "fr": "le carburant",
+   "pron": "FYOU-eul"
+  },
+  {
+   "id": "m23",
+   "en": "diesel",
+   "fr": "le gazole",
+   "pron": "DII-zeul"
+  },
+  {
+   "id": "m24",
+   "en": "belt",
+   "fr": "la courroie",
+   "pron": "bèlt"
+  },
+  {
+   "id": "m25",
+   "en": "hose",
+   "fr": "la durite",
+   "pron": "hôz"
+  },
+  {
+   "id": "m26",
+   "en": "leak",
+   "fr": "la fuite",
+   "pron": "liik"
+  },
+  {
+   "id": "m27",
+   "en": "noise",
+   "fr": "le bruit",
+   "pron": "noïz"
+  },
+  {
+   "id": "m28",
+   "en": "fault",
+   "fr": "la panne, le défaut",
+   "pron": "fôlt"
+  },
+  {
+   "id": "m29",
+   "en": "part",
+   "fr": "la pièce",
+   "pron": "pârt"
+  },
+  {
+   "id": "m30",
+   "en": "spare part",
+   "fr": "la pièce de rechange",
+   "pron": "SPÈR pârt"
+  },
+  {
+   "id": "m31",
+   "en": "tool",
+   "fr": "l'outil",
+   "pron": "toul"
+  },
+  {
+   "id": "m32",
+   "en": "spanner",
+   "fr": "la clé plate (outil)",
+   "pron": "SPA-neur",
+   "note": "En américain : wrench"
+  },
+  {
+   "id": "m33",
+   "en": "jack",
+   "fr": "le cric",
+   "pron": "djak"
+  },
+  {
+   "id": "m34",
+   "en": "screw",
+   "fr": "la vis",
+   "pron": "skrou"
+  },
+  {
+   "id": "m35",
+   "en": "bolt",
+   "fr": "le boulon",
+   "pron": "bôlt"
+  },
+  {
+   "id": "m36",
+   "en": "nut",
+   "fr": "l'écrou",
+   "pron": "neut"
+  },
+  {
+   "id": "m37",
+   "en": "pressure",
+   "fr": "la pression",
+   "pron": "PRÈ-cheur"
+  },
+  {
+   "id": "m38",
+   "en": "puncture",
+   "fr": "la crevaison",
+   "pron": "PEUNGK-tcheur"
+  },
+  {
+   "id": "m39",
+   "en": "service",
+   "fr": "la révision, l'entretien",
+   "pron": "SEUR-viss"
+  },
+  {
+   "id": "m40",
+   "en": "repair",
+   "fr": "la réparation",
+   "pron": "ri-PÈR"
+  },
+  {
+   "id": "m41",
+   "en": "quote",
+   "fr": "le devis",
+   "pron": "kwôt"
+  },
+  {
+   "id": "m42",
+   "en": "invoice",
+   "fr": "la facture",
+   "pron": "INN-voïss"
+  },
+  {
+   "id": "m43",
+   "en": "warranty",
+   "fr": "la garantie",
+   "pron": "WO-reunn-ti"
+  },
+  {
+   "id": "m44",
+   "en": "key",
+   "fr": "la clé de contact",
+   "pron": "kii"
+  },
+  {
+   "id": "m45",
+   "en": "dashboard",
+   "fr": "le tableau de bord",
+   "pron": "DACH-bôrd"
+  },
+  {
+   "id": "m46",
+   "en": "warning light",
+   "fr": "le voyant d'alerte",
+   "pron": "WÔR-ning laït"
+  },
+  {
+   "id": "m47",
+   "en": "worn",
+   "fr": "usé",
+   "pron": "wôrn"
+  },
+  {
+   "id": "m48",
+   "en": "loose",
+   "fr": "desserré",
+   "pron": "louss"
+  },
+  {
+   "id": "m49",
+   "en": "tight",
+   "fr": "serré",
+   "pron": "taït"
+  },
+  {
+   "id": "m50",
+   "en": "hot",
+   "fr": "chaud",
+   "pron": "hot"
+  },
+  {
+   "id": "m51",
+   "en": "ready",
+   "fr": "prêt",
+   "pron": "RÈ-di"
+  },
+  {
+   "id": "m52",
+   "en": "to check",
+   "fr": "vérifier",
+   "pron": "tou tchèk"
+  },
+  {
+   "id": "m53",
+   "en": "to fix",
+   "fr": "réparer",
+   "pron": "tou fiks"
+  },
+  {
+   "id": "m54",
+   "en": "to change",
+   "fr": "changer",
+   "pron": "tou tchéïndj"
+  },
+  {
+   "id": "m55",
+   "en": "to replace",
+   "fr": "remplacer",
+   "pron": "tou ri-PLÉÏSS"
+  },
+  {
+   "id": "m56",
+   "en": "to tighten",
+   "fr": "serrer",
+   "pron": "tou TAÏ-teunn"
+  },
+  {
+   "id": "m57",
+   "en": "to start",
+   "fr": "démarrer",
+   "pron": "tou stârt"
+  },
+  {
+   "id": "m58",
+   "en": "to test",
+   "fr": "essayer, tester",
+   "pron": "tou tèst"
+  },
+  {
+   "id": "m59",
+   "en": "to push",
+   "fr": "pousser",
+   "pron": "tou pouch"
+  },
+  {
+   "id": "m60",
+   "en": "to tow",
+   "fr": "remorquer",
+   "pron": "tou tô"
+  }
+ ],
+ "phrases": [
+  {
+   "id": "p01",
+   "en": "What is the problem with your car?",
+   "fr": "Quel est le problème avec votre voiture ?",
+   "pron": "wot iz dheu PRO-bleum widh yôr kâr ?",
+   "trou": "problem"
+  },
+  {
+   "id": "p02",
+   "en": "The car does not start.",
+   "fr": "La voiture ne démarre pas.",
+   "pron": "dheu kâr deuz not stârt.",
+   "trou": "start"
+  },
+  {
+   "id": "p03",
+   "en": "I think the battery is flat.",
+   "fr": "Je pense que la batterie est à plat.",
+   "pron": "aï thingk dheu BA-teu-ri iz flat.",
+   "trou": "battery"
+  },
+  {
+   "id": "p04",
+   "en": "I will check the engine.",
+   "fr": "Je vais vérifier le moteur.",
+   "pron": "aï wil tchèk dhi ÈNN-djinn.",
+   "trou": "engine"
+  },
+  {
+   "id": "p05",
+   "en": "You have a puncture.",
+   "fr": "Vous avez une crevaison.",
+   "pron": "you hav eu PEUNGK-tcheur.",
+   "trou": "puncture"
+  },
+  {
+   "id": "p06",
+   "en": "The front tyre is worn.",
+   "fr": "Le pneu avant est usé.",
+   "pron": "dheu freunnt TAÏ-eur iz wôrn.",
+   "trou": "worn"
+  },
+  {
+   "id": "p07",
+   "en": "The brakes make a noise.",
+   "fr": "Les freins font du bruit.",
+   "pron": "dheu bréïks méïk eu noïz.",
+   "trou": "noise"
+  },
+  {
+   "id": "p08",
+   "en": "We need to change the brake pads.",
+   "fr": "Il faut changer les plaquettes de frein.",
+   "pron": "wi niid tou tchéïndj dheu BRÉÏK padz.",
+   "trou": "pads"
+  },
+  {
+   "id": "p09",
+   "en": "There is an oil leak.",
+   "fr": "Il y a une fuite d'huile.",
+   "pron": "dhèr iz eunn oïl liik.",
+   "trou": "leak"
+  },
+  {
+   "id": "p10",
+   "en": "The engine is too hot.",
+   "fr": "Le moteur chauffe trop.",
+   "pron": "dhi ÈNN-djinn iz tou hot.",
+   "trou": "hot"
+  },
+  {
+   "id": "p11",
+   "en": "Do not open the radiator when it is hot.",
+   "fr": "N'ouvrez pas le radiateur quand il est chaud.",
+   "pron": "dou not Ô-peunn dheu RÉÏ-di-éï-teur wèn it iz hot.",
+   "trou": "radiator"
+  },
+  {
+   "id": "p12",
+   "en": "When was the last oil change?",
+   "fr": "À quand remonte la dernière vidange ?",
+   "pron": "wèn woz dheu lâst OÏL tchéïndj ?",
+   "trou": "last"
+  },
+  {
+   "id": "p13",
+   "en": "Your car needs a service.",
+   "fr": "Votre voiture a besoin d'une révision.",
+   "pron": "yôr kâr niidz eu SEUR-viss.",
+   "trou": "service"
+  },
+  {
+   "id": "p14",
+   "en": "I need to order a spare part.",
+   "fr": "Je dois commander une pièce de rechange.",
+   "pron": "aï niid tou ÔR-deur eu SPÈR pârt.",
+   "trou": "order"
+  },
+  {
+   "id": "p15",
+   "en": "The part will arrive tomorrow.",
+   "fr": "La pièce arrivera demain.",
+   "pron": "dheu pârt wil eu-RAÏV teu-MO-rô.",
+   "trou": "tomorrow"
+  },
+  {
+   "id": "p16",
+   "en": "Here is the quote for the repair.",
+   "fr": "Voici le devis pour la réparation.",
+   "pron": "hieur iz dheu kwôt fôr dheu ri-PÈR.",
+   "trou": "quote"
+  },
+  {
+   "id": "p17",
+   "en": "The repair will take two hours.",
+   "fr": "La réparation prendra deux heures.",
+   "pron": "dheu ri-PÈR wil téïk tou AOU-eurz.",
+   "trou": "hours"
+  },
+  {
+   "id": "p18",
+   "en": "Your car is ready.",
+   "fr": "Votre voiture est prête.",
+   "pron": "yôr kâr iz RÈ-di.",
+   "trou": "ready"
+  },
+  {
+   "id": "p19",
+   "en": "The warning light is on.",
+   "fr": "Le voyant d'alerte est allumé.",
+   "pron": "dheu WÔR-ning laït iz onn.",
+   "trou": "light"
+  },
+  {
+   "id": "p20",
+   "en": "Can you leave the key with me?",
+   "fr": "Pouvez-vous me laisser la clé ?",
+   "pron": "kann you liiv dheu kii widh mi ?",
+   "trou": "key"
+  },
+  {
+   "id": "p21",
+   "en": "Please press the brake pedal.",
+   "fr": "Appuyez sur la pédale de frein, s'il vous plaît.",
+   "pron": "pliiz prèss dheu BRÉÏK PÈ-deul.",
+   "trou": "pedal"
+  },
+  {
+   "id": "p22",
+   "en": "This bolt is loose.",
+   "fr": "Ce boulon est desserré.",
+   "pron": "dhiss bôlt iz louss.",
+   "trou": "loose"
+  },
+  {
+   "id": "p23",
+   "en": "We have to tow the car to the garage.",
+   "fr": "Nous devons remorquer la voiture jusqu'au garage.",
+   "pron": "wi hav tou tô dheu kâr tou dheu GA-râj.",
+   "trou": "tow"
+  },
+  {
+   "id": "p24",
+   "en": "The parts have a six-month warranty.",
+   "fr": "Les pièces ont une garantie de six mois.",
+   "pron": "dheu pârts hav eu SIKS-meunnth WO-reunn-ti.",
+   "trou": "warranty"
+  },
+  {
+   "id": "p25",
+   "en": "Drive carefully!",
+   "fr": "Roulez prudemment !",
+   "pron": "draïv KÈR-feu-li !",
+   "trou": "carefully"
+  }
+ ]
+}

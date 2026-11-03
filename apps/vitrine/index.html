@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://seegnylaubuularegmku.supabase.co; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<title>Teranga Vitrine : votre vitrine pour vendre sur WhatsApp</title>
+<meta name="description" content="Application gratuite pour vendre sur WhatsApp : photos de vos produits, prix en F CFA, belles images pour le statut, catalogue PDF, lien de commande et suivi des commandes. Fonctionne sans Internet.">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/vitrine/">
+<meta name="theme-color" content="#6d1d5a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1218" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Teranga Outils">
+<meta property="og:title" content="Teranga Vitrine : votre vitrine pour vendre sur WhatsApp">
+<meta property="og:description" content="Photos, prix, belles images pour le statut, catalogue PDF et commandes, depuis votre téléphone, même sans Internet.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/vitrine/">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/vitrine/icons/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vitrine">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="application-name" content="Teranga Vitrine">
+<meta name="format-detection" content="telephone=no">
+<link rel="stylesheet" href="app.css">
+<script src="js/theme.js"></script>
+<script src="js/coeur.js" defer></script>
+<script src="js/db.js" defer></script>
+<script src="js/images.js" defer></script>
+<script src="js/pdf.js" defer></script>
+<script src="js/app.js" defer></script>
+</head>
+<body>
+<a class="evitement" href="#vue">Aller au contenu</a>
+<header class="entete">
+  <button type="button" id="retour" class="icone-btn" aria-label="Retour" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <a id="marque" class="marque" href="#/" aria-label="Accueil Teranga Vitrine"><img src="icons/favicon-32.png" alt="" width="28" height="28"></a>
+  <p id="titre" class="titre" role="heading" aria-level="1">Teranga Vitrine</p>
+  <button type="button" id="installer" class="btn-entete" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v11m0 0-4-4m4 4 4-4"/><rect x="4" y="17" width="16" height="4" rx="1"/></svg><span>Installer</span></button>
+</header>
+
+<main id="vue" tabindex="-1">
+  <noscript>
+    <section class="carte">
+      <h1>Teranga Vitrine</h1>
+      <p>Votre vitrine pour vendre sur WhatsApp : photos des produits, prix en F CFA, belles images pour le statut, catalogue PDF, lien de commande et suivi des commandes. Tout reste sur votre téléphone.</p>
+      <p>Activez JavaScript dans votre navigateur pour utiliser l'application.</p>
+    </section>
+  </noscript>
+  <div class="chargement" aria-hidden="true"><img src="icons/icon-192.png" alt="" width="72" height="72"></div>
+</main>
+
+<button type="button" id="fab" class="fab" aria-label="Ajouter" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button>
+
+<nav id="nav" class="nav" aria-label="Navigation principale">
+  <a href="#/" data-nav="accueil"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Accueil</span></a>
+  <a href="#/produits" data-nav="produits"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="8" cy="8" r="1.6"/></svg><span>Produits</span></a>
+  <a href="#/studio" data-nav="studio"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg><span>Images</span></a>
+  <a href="#/commandes" data-nav="commandes"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><span>Commandes</span></a>
+  <a href="#/reglages" data-nav="reglages"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Réglages</span></a>
+</nav>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

@@ -1,0 +1,9 @@
+Bibliothèques et polices incluses dans Teranga Vitrine (copies locales, rien n'est chargé depuis Internet)
+
+vendor/jspdf.umd.min.js                    jsPDF 4.2.1 (npm « jspdf », dist/jspdf.umd.min.js)        Licence MIT                     vendor/jspdf.LICENSE.txt
+fonts/playfair-display-700.woff2           Playfair Display 700, sous-ensemble latin                  SIL Open Font License 1.1       fonts/playfair-display.LICENSE.txt
+fonts/playfair-display-400-italique.woff2  Playfair Display 400 italique, sous-ensemble latin         SIL Open Font License 1.1       fonts/playfair-display.LICENSE.txt
+fonts/montserrat-600.woff2                 Montserrat 600, sous-ensemble latin                         SIL Open Font License 1.1       fonts/montserrat.LICENSE.txt
+fonts/montserrat-800.woff2                 Montserrat 800, sous-ensemble latin                         SIL Open Font License 1.1       fonts/montserrat.LICENSE.txt
+
+Polices reprises telles quelles du paquet npm @fontsource (version 5.2.8). jsPDF repris tel quel.

@@ -1,0 +1,23 @@
+{
+  "id": "./",
+  "name": "Tontine Claire",
+  "short_name": "Tontine",
+  "description": "Le suivi clair de votre tontine (natt) : tours, cotisations, rappels et historique partagés avec le groupe. L'application n'encaisse jamais d'argent.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f2",
+  "theme_color": "#0b6e4f",
+  "categories": ["finance", "lifestyle", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Nouvelle tontine", "short_name": "Nouvelle", "url": "./#/nouvelle", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

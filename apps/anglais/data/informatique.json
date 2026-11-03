@@ -1,0 +1,543 @@
+{
+ "id": "informatique",
+ "nom": "Informatique",
+ "mots": [
+  {
+   "id": "m01",
+   "en": "computer",
+   "fr": "l'ordinateur",
+   "pron": "keum-PYOU-teur"
+  },
+  {
+   "id": "m02",
+   "en": "laptop",
+   "fr": "l'ordinateur portable",
+   "pron": "LAP-top"
+  },
+  {
+   "id": "m03",
+   "en": "screen",
+   "fr": "l'écran",
+   "pron": "skriin"
+  },
+  {
+   "id": "m04",
+   "en": "keyboard",
+   "fr": "le clavier",
+   "pron": "KII-bôrd"
+  },
+  {
+   "id": "m05",
+   "en": "mouse",
+   "fr": "la souris",
+   "pron": "maouss"
+  },
+  {
+   "id": "m06",
+   "en": "printer",
+   "fr": "l'imprimante",
+   "pron": "PRINN-teur"
+  },
+  {
+   "id": "m07",
+   "en": "cable",
+   "fr": "le câble",
+   "pron": "KÉÏ-beul"
+  },
+  {
+   "id": "m08",
+   "en": "charger",
+   "fr": "le chargeur",
+   "pron": "TCHÂR-djeur"
+  },
+  {
+   "id": "m09",
+   "en": "battery",
+   "fr": "la batterie",
+   "pron": "BA-teu-ri"
+  },
+  {
+   "id": "m10",
+   "en": "phone",
+   "fr": "le téléphone",
+   "pron": "fôn"
+  },
+  {
+   "id": "m11",
+   "en": "smartphone",
+   "fr": "le smartphone",
+   "pron": "SMÂRT-fôn"
+  },
+  {
+   "id": "m12",
+   "en": "software",
+   "fr": "le logiciel",
+   "pron": "SOFT-wèr"
+  },
+  {
+   "id": "m13",
+   "en": "app",
+   "fr": "l'application",
+   "pron": "ap"
+  },
+  {
+   "id": "m14",
+   "en": "update",
+   "fr": "la mise à jour",
+   "pron": "EUP-déït"
+  },
+  {
+   "id": "m15",
+   "en": "file",
+   "fr": "le fichier",
+   "pron": "faïl"
+  },
+  {
+   "id": "m16",
+   "en": "folder",
+   "fr": "le dossier",
+   "pron": "FÔL-deur"
+  },
+  {
+   "id": "m17",
+   "en": "document",
+   "fr": "le document",
+   "pron": "DO-kyou-meunt"
+  },
+  {
+   "id": "m18",
+   "en": "password",
+   "fr": "le mot de passe",
+   "pron": "PÂSS-weurd"
+  },
+  {
+   "id": "m19",
+   "en": "username",
+   "fr": "le nom d'utilisateur",
+   "pron": "YOU-zeur-néïm"
+  },
+  {
+   "id": "m20",
+   "en": "account",
+   "fr": "le compte",
+   "pron": "eu-KAOUNT"
+  },
+  {
+   "id": "m21",
+   "en": "email",
+   "fr": "l'e-mail, le courriel",
+   "pron": "II-méïl"
+  },
+  {
+   "id": "m22",
+   "en": "internet",
+   "fr": "Internet",
+   "pron": "INN-teur-nèt"
+  },
+  {
+   "id": "m23",
+   "en": "website",
+   "fr": "le site web",
+   "pron": "WÈB-saït"
+  },
+  {
+   "id": "m24",
+   "en": "network",
+   "fr": "le réseau",
+   "pron": "NÈT-weurk"
+  },
+  {
+   "id": "m25",
+   "en": "Wi-Fi",
+   "fr": "le wifi",
+   "pron": "WAÏ-faï"
+  },
+  {
+   "id": "m26",
+   "en": "router",
+   "fr": "le routeur",
+   "pron": "ROU-teur"
+  },
+  {
+   "id": "m27",
+   "en": "server",
+   "fr": "le serveur",
+   "pron": "SEUR-veur"
+  },
+  {
+   "id": "m28",
+   "en": "data",
+   "fr": "les données",
+   "pron": "DÉÏ-teu"
+  },
+  {
+   "id": "m29",
+   "en": "backup",
+   "fr": "la sauvegarde",
+   "pron": "BAK-eup"
+  },
+  {
+   "id": "m30",
+   "en": "virus",
+   "fr": "le virus",
+   "pron": "VAÏ-reuss"
+  },
+  {
+   "id": "m31",
+   "en": "error",
+   "fr": "l'erreur",
+   "pron": "È-reur"
+  },
+  {
+   "id": "m32",
+   "en": "bug",
+   "fr": "le bogue",
+   "pron": "beug"
+  },
+  {
+   "id": "m33",
+   "en": "memory",
+   "fr": "la mémoire",
+   "pron": "MÈ-meu-ri"
+  },
+  {
+   "id": "m34",
+   "en": "storage",
+   "fr": "le stockage",
+   "pron": "STÔ-ridj"
+  },
+  {
+   "id": "m35",
+   "en": "cloud",
+   "fr": "le cloud (stockage en ligne)",
+   "pron": "klaoud"
+  },
+  {
+   "id": "m36",
+   "en": "link",
+   "fr": "le lien",
+   "pron": "lingk"
+  },
+  {
+   "id": "m37",
+   "en": "button",
+   "fr": "le bouton",
+   "pron": "BEU-teunn"
+  },
+  {
+   "id": "m38",
+   "en": "menu",
+   "fr": "le menu",
+   "pron": "MÈ-nyou"
+  },
+  {
+   "id": "m39",
+   "en": "settings",
+   "fr": "les réglages",
+   "pron": "SÈ-tingz"
+  },
+  {
+   "id": "m40",
+   "en": "screenshot",
+   "fr": "la capture d'écran",
+   "pron": "SKRIIN-chot"
+  },
+  {
+   "id": "m41",
+   "en": "code",
+   "fr": "le code",
+   "pron": "kôd"
+  },
+  {
+   "id": "m42",
+   "en": "user",
+   "fr": "l'utilisateur",
+   "pron": "YOU-zeur"
+  },
+  {
+   "id": "m43",
+   "en": "customer",
+   "fr": "le client",
+   "pron": "KEUSS-teu-meur"
+  },
+  {
+   "id": "m44",
+   "en": "ticket",
+   "fr": "le ticket (demande d'aide)",
+   "pron": "TI-kit"
+  },
+  {
+   "id": "m45",
+   "en": "slow",
+   "fr": "lent",
+   "pron": "slô"
+  },
+  {
+   "id": "m46",
+   "en": "fast",
+   "fr": "rapide",
+   "pron": "fâst"
+  },
+  {
+   "id": "m47",
+   "en": "secure",
+   "fr": "sécurisé",
+   "pron": "si-KYOUR"
+  },
+  {
+   "id": "m48",
+   "en": "online",
+   "fr": "en ligne",
+   "pron": "onn-LAÏNN"
+  },
+  {
+   "id": "m49",
+   "en": "offline",
+   "fr": "hors ligne",
+   "pron": "of-LAÏNN"
+  },
+  {
+   "id": "m50",
+   "en": "to click",
+   "fr": "cliquer",
+   "pron": "tou klik"
+  },
+  {
+   "id": "m51",
+   "en": "to type",
+   "fr": "taper (au clavier)",
+   "pron": "tou taïp"
+  },
+  {
+   "id": "m52",
+   "en": "to install",
+   "fr": "installer",
+   "pron": "tou inn-STÔL"
+  },
+  {
+   "id": "m53",
+   "en": "to download",
+   "fr": "télécharger",
+   "pron": "tou daoun-LÔD"
+  },
+  {
+   "id": "m54",
+   "en": "to upload",
+   "fr": "envoyer, mettre en ligne",
+   "pron": "tou eup-LÔD"
+  },
+  {
+   "id": "m55",
+   "en": "to save",
+   "fr": "enregistrer",
+   "pron": "tou séïv"
+  },
+  {
+   "id": "m56",
+   "en": "to delete",
+   "fr": "supprimer",
+   "pron": "tou di-LIIT"
+  },
+  {
+   "id": "m57",
+   "en": "to restart",
+   "fr": "redémarrer",
+   "pron": "tou rii-STÂRT"
+  },
+  {
+   "id": "m58",
+   "en": "to connect",
+   "fr": "connecter, brancher",
+   "pron": "tou keu-NÈKT"
+  },
+  {
+   "id": "m59",
+   "en": "to log in",
+   "fr": "se connecter (à un compte)",
+   "pron": "tou log inn"
+  },
+  {
+   "id": "m60",
+   "en": "to share",
+   "fr": "partager",
+   "pron": "tou chèr"
+  }
+ ],
+ "phrases": [
+  {
+   "id": "p01",
+   "en": "What is the problem with your computer?",
+   "fr": "Quel est le problème avec votre ordinateur ?",
+   "pron": "wot iz dheu PRO-bleum widh yôr keum-PYOU-teur ?",
+   "trou": "computer"
+  },
+  {
+   "id": "p02",
+   "en": "Have you tried restarting it?",
+   "fr": "Avez-vous essayé de le redémarrer ?",
+   "pron": "hav you traïd rii-STÂR-ting it ?",
+   "trou": "restarting"
+  },
+  {
+   "id": "p03",
+   "en": "The screen is black.",
+   "fr": "L'écran est noir.",
+   "pron": "dheu skriin iz blak.",
+   "trou": "screen"
+  },
+  {
+   "id": "p04",
+   "en": "Is the charger plugged in?",
+   "fr": "Le chargeur est-il branché ?",
+   "pron": "iz dheu TCHÂR-djeur pleugd inn ?",
+   "trou": "charger"
+  },
+  {
+   "id": "p05",
+   "en": "I cannot connect to the Wi-Fi.",
+   "fr": "Je n'arrive pas à me connecter au wifi.",
+   "pron": "aï KA-not keu-NÈKT tou dheu WAÏ-faï.",
+   "trou": "connect"
+  },
+  {
+   "id": "p06",
+   "en": "What is the Wi-Fi password?",
+   "fr": "Quel est le mot de passe du wifi ?",
+   "pron": "wot iz dheu WAÏ-faï PÂSS-weurd ?",
+   "trou": "password"
+  },
+  {
+   "id": "p07",
+   "en": "Never share your password.",
+   "fr": "Ne partagez jamais votre mot de passe.",
+   "pron": "NÈ-veur chèr yôr PÂSS-weurd.",
+   "trou": "share"
+  },
+  {
+   "id": "p08",
+   "en": "Please type your username.",
+   "fr": "Tapez votre nom d'utilisateur, s'il vous plaît.",
+   "pron": "pliiz taïp yôr YOU-zeur-néïm.",
+   "trou": "type"
+  },
+  {
+   "id": "p09",
+   "en": "Click on the blue button.",
+   "fr": "Cliquez sur le bouton bleu.",
+   "pron": "klik onn dheu blou BEU-teunn.",
+   "trou": "button"
+  },
+  {
+   "id": "p10",
+   "en": "You need to install the update.",
+   "fr": "Vous devez installer la mise à jour.",
+   "pron": "you niid tou inn-STÔL dhi EUP-déït.",
+   "trou": "update"
+  },
+  {
+   "id": "p11",
+   "en": "The computer is very slow.",
+   "fr": "L'ordinateur est très lent.",
+   "pron": "dheu keum-PYOU-teur iz VÈ-ri slô.",
+   "trou": "slow"
+  },
+  {
+   "id": "p12",
+   "en": "The memory is full.",
+   "fr": "La mémoire est pleine.",
+   "pron": "dheu MÈ-meu-ri iz foul.",
+   "trou": "full"
+  },
+  {
+   "id": "p13",
+   "en": "Delete the files you do not need.",
+   "fr": "Supprimez les fichiers dont vous n'avez pas besoin.",
+   "pron": "di-LIIT dheu faïlz you dou not niid.",
+   "trou": "files"
+  },
+  {
+   "id": "p14",
+   "en": "Do not forget to save your document.",
+   "fr": "N'oubliez pas d'enregistrer votre document.",
+   "pron": "dou not feur-GUÈT tou séïv yôr DO-kyou-meunt.",
+   "trou": "save"
+  },
+  {
+   "id": "p15",
+   "en": "Make a backup every week.",
+   "fr": "Faites une sauvegarde chaque semaine.",
+   "pron": "méïk eu BAK-eup ÈV-ri wiik.",
+   "trou": "backup"
+  },
+  {
+   "id": "p16",
+   "en": "This file may contain a virus.",
+   "fr": "Ce fichier peut contenir un virus.",
+   "pron": "dhiss faïl méï keunn-TÉÏNN eu VAÏ-reuss.",
+   "trou": "virus"
+  },
+  {
+   "id": "p17",
+   "en": "Do not click on unknown links.",
+   "fr": "Ne cliquez pas sur des liens inconnus.",
+   "pron": "dou not klik onn eunn-NÔN lingks.",
+   "trou": "links"
+  },
+  {
+   "id": "p18",
+   "en": "The printer is out of paper.",
+   "fr": "L'imprimante n'a plus de papier.",
+   "pron": "dheu PRINN-teur iz aout ov PÉÏ-peur.",
+   "trou": "paper"
+  },
+  {
+   "id": "p19",
+   "en": "Can you send me a screenshot of the error?",
+   "fr": "Pouvez-vous m'envoyer une capture d'écran de l'erreur ?",
+   "pron": "kann you sènd mi eu SKRIIN-chot ov dhi È-reur ?",
+   "trou": "error"
+  },
+  {
+   "id": "p20",
+   "en": "I will send you the link by email.",
+   "fr": "Je vous envoie le lien par e-mail.",
+   "pron": "aï wil sènd you dheu lingk baï II-méïl.",
+   "trou": "email"
+  },
+  {
+   "id": "p21",
+   "en": "The server is down.",
+   "fr": "Le serveur est en panne.",
+   "pron": "dheu SEUR-veur iz daoun.",
+   "trou": "down"
+  },
+  {
+   "id": "p22",
+   "en": "The network is working again.",
+   "fr": "Le réseau fonctionne de nouveau.",
+   "pron": "dheu NÈT-weurk iz WEUR-king eu-GUÈNN.",
+   "trou": "again"
+  },
+  {
+   "id": "p23",
+   "en": "I have opened a ticket for your problem.",
+   "fr": "J'ai ouvert un ticket pour votre problème.",
+   "pron": "aï hav Ô-peund eu TI-kit fôr yôr PRO-bleum.",
+   "trou": "ticket"
+  },
+  {
+   "id": "p24",
+   "en": "Your data is safe in the cloud.",
+   "fr": "Vos données sont en sécurité dans le cloud.",
+   "pron": "yôr DÉÏ-teu iz séïf inn dheu klaoud.",
+   "trou": "cloud"
+  },
+  {
+   "id": "p25",
+   "en": "Is there anything else I can help you with?",
+   "fr": "Puis-je vous aider pour autre chose ?",
+   "pron": "iz dhèr È-ni-thing èlss aï kann hèlp you widh ?",
+   "trou": "else"
+  }
+ ]
+}

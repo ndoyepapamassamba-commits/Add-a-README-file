@@ -1,0 +1,6 @@
+Bibliothèque incluse dans Carnet Boutique (copie locale, jamais chargée depuis Internet)
+
+jspdf.umd.min.js   jsPDF 4.2.1 (npm « jspdf », dist/jspdf.umd.min.js)   Licence MIT   jspdf.LICENSE.txt
+
+Fichier repris tel quel ; seule la ligne finale « sourceMappingURL » a été retirée.
+Il n'est chargé qu'au moment de fabriquer un relevé PDF, puis reste dans le téléphone (hors ligne).

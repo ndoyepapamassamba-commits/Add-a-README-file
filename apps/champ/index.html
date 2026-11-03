@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://seegnylaubuularegmku.supabase.co https://api.open-meteo.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'">
+<title>Champ Pilot — carnet de campagne agricole : parcelles, travaux, récolte, marge</title>
+<meta name="description" content="Champ Pilot : notez vos parcelles (arachide, mil, maïs, oignon, riz, niébé, maraîchage), vos travaux, vos achats, la main-d'œuvre, la récolte et les ventes. L'application calcule le rendement à l'hectare et la marge, et compare vos campagnes. Sans Internet, données gardées sur le téléphone.">
+<meta name="theme-color" content="#0b6e4f">
+<meta name="color-scheme" content="light dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Champ Pilot">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Champ Pilot — le carnet de votre campagne agricole">
+<meta property="og:description" content="Parcelles, travaux, achats, main-d'œuvre, récolte, ventes : rendement à l'hectare et marge par parcelle. Fonctionne sans Internet.">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/champ/icons/icon-512.png">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/theme.js"></script>
+</head>
+<body>
+<a class="sauter" href="#vue">Aller au contenu</a>
+<header class="barre" id="barre">
+  <a class="retour" id="retour" href="#/" aria-label="Retour" hidden><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+  <span class="logo" id="logo"><img src="icons/icon-192.png" alt="" width="32" height="32"></span>
+  <h1 class="titre" id="titre">Champ <b>Pilot</b></h1>
+  <a class="badge-pass" id="badge-pass" href="#/pass">Gratuit</a>
+</header>
+<div id="bandeaux"></div>
+<main id="vue" tabindex="-1">
+  <p class="chargement">Chargement de Champ Pilot…</p>
+  <noscript><p>Champ Pilot a besoin de JavaScript. Ouvrez cette page avec Chrome ou le navigateur de votre téléphone.</p></noscript>
+</main>
+<nav class="onglets" aria-label="Menu principal">
+  <a href="#/" data-onglet="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V10"/><path d="M12 10C12 6 9 4 5 4c0 4 3 6 7 6z"/><path d="M12 13c0-4 3-6 7-6 0 4-3 6-7 6z"/></svg>Mon champ</a>
+  <a href="#/calendrier" data-onglet="calendrier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v15H4z"/><path d="M4 10h16"/><path d="M9 3v4"/><path d="M15 3v4"/></svg>Calendrier</a>
+  <a href="#/bilan" data-onglet="bilan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg>Bilan</a>
+  <a href="#/pass" data-onglet="pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21.1l1.4-7L2 9.3l7-.8z"/></svg>Mon pass</a>
+  <a href="#/reglages" data-onglet="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12h2M3 12h2M12 3v2M12 19v2M17 7l1.5-1.5M5.5 18.5L7 17M17 17l1.5 1.5M5.5 5.5L7 7"/></svg>Réglages</a>
+</nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="js/ui.js" defer></script>
+<script src="js/licence.js" defer></script>
+<script src="js/db.js" defer></script>
+<script src="js/calculs.js" defer></script>
+<script src="js/pdf.js" defer></script>
+<script src="js/coquille.js" defer></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>

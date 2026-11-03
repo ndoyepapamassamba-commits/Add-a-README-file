@@ -1,0 +1,5 @@
+Bibliothèque incluse dans Carnet Élevage (copie locale, jamais chargée depuis Internet)
+
+jspdf.umd.min.js   jsPDF 4.2.1 (npm « jspdf », dist/jspdf.umd.min.js)   Licence MIT   jspdf.LICENSE.txt
+
+Fichier repris tel quel. Il n'est chargé qu'au moment de créer un rapport PDF.

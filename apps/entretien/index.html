@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://seegnylaubuularegmku.supabase.co; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<title>Carnet Entretien : vidanges, échéances et carburant de la voiture, de la moto et du groupe</title>
+<meta name="description" content="Carnet d'entretien sur téléphone pour voiture, moto ou Jakarta, groupe électrogène, climatiseur, pompe et réfrigérateur : vidanges par km, heures ou mois, assurance, visite technique, vignette, consommation de carburant, dépenses et historique en PDF. Sans Internet.">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/entretien/">
+<meta name="theme-color" content="#1d4f91" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121925" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="TERANGA">
+<meta property="og:title" content="Carnet Entretien : voiture, moto, groupe électrogène, clim">
+<meta property="og:description" content="Vidanges, assurance, visite technique, carburant et dépenses : tout l'entretien noté sur le téléphone, avec un historique PDF pour la revente.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/entretien/">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/entretien/icons/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Entretien">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="application-name" content="Carnet Entretien">
+<meta name="format-detection" content="telephone=no">
+<link rel="stylesheet" href="app.css">
+<script src="js/theme.js"></script>
+<script src="js/coeur.js" defer></script>
+<script src="js/db.js" defer></script>
+<script src="js/pdf.js" defer></script>
+<script src="js/app.js" defer></script>
+</head>
+<body>
+<a class="evitement" href="#vue">Aller au contenu</a>
+<header class="entete">
+  <button type="button" id="retour" class="icone-btn" aria-label="Retour" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <a id="marque" class="marque" href="#/" aria-label="Accueil Carnet Entretien"><img src="icons/favicon-32.png" alt="" width="28" height="28"></a>
+  <p id="titre" class="titre" role="heading" aria-level="1">Carnet Entretien</p>
+  <button type="button" id="installer" class="btn-entete" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v11m0 0-4-4m4 4 4-4"/><rect x="4" y="17" width="16" height="4" rx="1"/></svg><span>Installer</span></button>
+  <a id="badge-pass" class="badge-pass" href="#/pass">Gratuit</a>
+</header>
+
+<main id="vue" tabindex="-1">
+  <noscript>
+    <section class="carte">
+      <h1>Carnet Entretien</h1>
+      <p>Le carnet d'entretien de votre voiture, moto ou Jakarta, groupe électrogène, climatiseur, pompe et réfrigérateur : vidanges, assurance, visite technique, vignette, carburant, dépenses et historique en PDF. Fonctionne sans Internet.</p>
+      <p>Activez JavaScript dans votre navigateur pour utiliser l'application.</p>
+    </section>
+  </noscript>
+  <div class="chargement" aria-hidden="true"><img src="icons/icon-192.png" alt="" width="72" height="72"></div>
+</main>
+
+<nav id="nav" class="nav" aria-label="Navigation principale">
+  <a href="#/" data-nav="accueil"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11h14V9"/><path d="M10 20v-6h4v6"/></svg><span>Accueil</span></a>
+  <a href="#/rappels" data-nav="rappels"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M9 15l2 2 4-4"/></svg><span>Rappels</span></a>
+  <a href="#/ajouter" data-nav="ajouter" class="nav-plus" aria-label="Ajouter un plein, un entretien ou une dépense"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>Ajouter</span></a>
+  <a href="#/depenses" data-nav="depenses"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20V11M10 20V5M16 20v-7M21 20H3"/></svg><span>Dépenses</span></a>
+  <a href="#/reglages" data-nav="reglages"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Réglages</span></a>
+</nav>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

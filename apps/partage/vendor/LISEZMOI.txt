@@ -1,0 +1,5 @@
+Bibliothèque incluse dans Teranga Partage Frais (copie locale, rien n'est chargé depuis Internet)
+
+vendor/jspdf.umd.min.js    jsPDF 4.2.1 (npm « jspdf », dist/jspdf.umd.min.js)    Licence MIT    vendor/jspdf.LICENSE.txt
+
+Fichier repris tel quel.

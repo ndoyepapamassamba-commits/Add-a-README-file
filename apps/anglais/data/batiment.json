@@ -1,0 +1,544 @@
+{
+ "id": "batiment",
+ "nom": "Bâtiment (BTP)",
+ "mots": [
+  {
+   "id": "m01",
+   "en": "building site",
+   "fr": "le chantier",
+   "pron": "BIL-ding saït"
+  },
+  {
+   "id": "m02",
+   "en": "worker",
+   "fr": "l'ouvrier",
+   "pron": "WEUR-keur"
+  },
+  {
+   "id": "m03",
+   "en": "foreman",
+   "fr": "le chef de chantier",
+   "pron": "FÔR-meunn"
+  },
+  {
+   "id": "m04",
+   "en": "engineer",
+   "fr": "l'ingénieur",
+   "pron": "ènn-dji-NIEUR"
+  },
+  {
+   "id": "m05",
+   "en": "mason",
+   "fr": "le maçon",
+   "pron": "MÉÏ-seunn"
+  },
+  {
+   "id": "m06",
+   "en": "plumber",
+   "fr": "le plombier",
+   "pron": "PLEU-meur"
+  },
+  {
+   "id": "m07",
+   "en": "electrician",
+   "fr": "l'électricien",
+   "pron": "i-lèk-TRI-cheunn"
+  },
+  {
+   "id": "m08",
+   "en": "painter",
+   "fr": "le peintre",
+   "pron": "PÉÏNN-teur"
+  },
+  {
+   "id": "m09",
+   "en": "carpenter",
+   "fr": "le menuisier, le charpentier",
+   "pron": "KÂR-peunn-teur"
+  },
+  {
+   "id": "m10",
+   "en": "cement",
+   "fr": "le ciment",
+   "pron": "si-MÈNT"
+  },
+  {
+   "id": "m11",
+   "en": "concrete",
+   "fr": "le béton",
+   "pron": "KONG-kriit"
+  },
+  {
+   "id": "m12",
+   "en": "sand",
+   "fr": "le sable",
+   "pron": "sannd"
+  },
+  {
+   "id": "m13",
+   "en": "gravel",
+   "fr": "le gravier",
+   "pron": "GRA-veul"
+  },
+  {
+   "id": "m14",
+   "en": "brick",
+   "fr": "la brique",
+   "pron": "brik"
+  },
+  {
+   "id": "m15",
+   "en": "block",
+   "fr": "le parpaing",
+   "pron": "blok"
+  },
+  {
+   "id": "m16",
+   "en": "iron bar",
+   "fr": "la barre de fer",
+   "pron": "AÏ-eunn bâr"
+  },
+  {
+   "id": "m17",
+   "en": "steel",
+   "fr": "l'acier",
+   "pron": "stiil"
+  },
+  {
+   "id": "m18",
+   "en": "wood",
+   "fr": "le bois",
+   "pron": "woud"
+  },
+  {
+   "id": "m19",
+   "en": "tile",
+   "fr": "le carreau",
+   "pron": "taïl"
+  },
+  {
+   "id": "m20",
+   "en": "paint",
+   "fr": "la peinture",
+   "pron": "péïnt"
+  },
+  {
+   "id": "m21",
+   "en": "pipe",
+   "fr": "le tuyau",
+   "pron": "païp"
+  },
+  {
+   "id": "m22",
+   "en": "wire",
+   "fr": "le fil électrique",
+   "pron": "WAÏ-eur"
+  },
+  {
+   "id": "m23",
+   "en": "wall",
+   "fr": "le mur",
+   "pron": "wôl"
+  },
+  {
+   "id": "m24",
+   "en": "floor",
+   "fr": "le sol",
+   "pron": "flôr"
+  },
+  {
+   "id": "m25",
+   "en": "roof",
+   "fr": "le toit",
+   "pron": "rouf"
+  },
+  {
+   "id": "m26",
+   "en": "door",
+   "fr": "la porte",
+   "pron": "dôr"
+  },
+  {
+   "id": "m27",
+   "en": "window",
+   "fr": "la fenêtre",
+   "pron": "WINN-dô"
+  },
+  {
+   "id": "m28",
+   "en": "foundation",
+   "fr": "les fondations",
+   "pron": "faoun-DÉÏ-cheunn"
+  },
+  {
+   "id": "m29",
+   "en": "column",
+   "fr": "le poteau",
+   "pron": "KO-leum"
+  },
+  {
+   "id": "m30",
+   "en": "beam",
+   "fr": "la poutre",
+   "pron": "biim"
+  },
+  {
+   "id": "m31",
+   "en": "slab",
+   "fr": "la dalle",
+   "pron": "slab"
+  },
+  {
+   "id": "m32",
+   "en": "stairs",
+   "fr": "l'escalier",
+   "pron": "stèrz"
+  },
+  {
+   "id": "m33",
+   "en": "plan",
+   "fr": "le plan",
+   "pron": "plann"
+  },
+  {
+   "id": "m34",
+   "en": "measurement",
+   "fr": "la mesure",
+   "pron": "MÈ-jeur-meunt"
+  },
+  {
+   "id": "m35",
+   "en": "metre",
+   "fr": "le mètre",
+   "pron": "MII-teur",
+   "note": "En américain : meter"
+  },
+  {
+   "id": "m36",
+   "en": "level",
+   "fr": "le niveau (outil)",
+   "pron": "LÈ-veul"
+  },
+  {
+   "id": "m37",
+   "en": "hammer",
+   "fr": "le marteau",
+   "pron": "HA-meur"
+  },
+  {
+   "id": "m38",
+   "en": "shovel",
+   "fr": "la pelle",
+   "pron": "CHEU-veul"
+  },
+  {
+   "id": "m39",
+   "en": "wheelbarrow",
+   "fr": "la brouette",
+   "pron": "WIIL-ba-rô"
+  },
+  {
+   "id": "m40",
+   "en": "ladder",
+   "fr": "l'échelle",
+   "pron": "LA-deur"
+  },
+  {
+   "id": "m41",
+   "en": "drill",
+   "fr": "la perceuse",
+   "pron": "dril"
+  },
+  {
+   "id": "m42",
+   "en": "scaffolding",
+   "fr": "l'échafaudage",
+   "pron": "SKA-feul-ding"
+  },
+  {
+   "id": "m43",
+   "en": "helmet",
+   "fr": "le casque",
+   "pron": "HÈL-mit"
+  },
+  {
+   "id": "m44",
+   "en": "gloves",
+   "fr": "les gants",
+   "pron": "gleuvz"
+  },
+  {
+   "id": "m45",
+   "en": "boots",
+   "fr": "les bottes",
+   "pron": "bouts"
+  },
+  {
+   "id": "m46",
+   "en": "safety",
+   "fr": "la sécurité",
+   "pron": "SÉÏF-ti"
+  },
+  {
+   "id": "m47",
+   "en": "danger",
+   "fr": "le danger",
+   "pron": "DÉÏNN-djeur"
+  },
+  {
+   "id": "m48",
+   "en": "truck",
+   "fr": "le camion",
+   "pron": "treuk"
+  },
+  {
+   "id": "m49",
+   "en": "bag",
+   "fr": "le sac",
+   "pron": "bag"
+  },
+  {
+   "id": "m50",
+   "en": "heavy",
+   "fr": "lourd",
+   "pron": "HÈ-vi"
+  },
+  {
+   "id": "m51",
+   "en": "straight",
+   "fr": "droit",
+   "pron": "stréït"
+  },
+  {
+   "id": "m52",
+   "en": "dry",
+   "fr": "sec",
+   "pron": "draï"
+  },
+  {
+   "id": "m53",
+   "en": "wet",
+   "fr": "mouillé, humide",
+   "pron": "wèt"
+  },
+  {
+   "id": "m54",
+   "en": "to build",
+   "fr": "construire",
+   "pron": "tou bild"
+  },
+  {
+   "id": "m55",
+   "en": "to mix",
+   "fr": "mélanger",
+   "pron": "tou miks"
+  },
+  {
+   "id": "m56",
+   "en": "to dig",
+   "fr": "creuser",
+   "pron": "tou dig"
+  },
+  {
+   "id": "m57",
+   "en": "to lift",
+   "fr": "soulever",
+   "pron": "tou lift"
+  },
+  {
+   "id": "m58",
+   "en": "to cut",
+   "fr": "couper",
+   "pron": "tou keut"
+  },
+  {
+   "id": "m59",
+   "en": "to measure",
+   "fr": "mesurer",
+   "pron": "tou MÈ-jeur"
+  },
+  {
+   "id": "m60",
+   "en": "to finish",
+   "fr": "finir, terminer",
+   "pron": "tou FI-nich"
+  }
+ ],
+ "phrases": [
+  {
+   "id": "p01",
+   "en": "Put on your helmet, please.",
+   "fr": "Mettez votre casque, s'il vous plaît.",
+   "pron": "pout onn yôr HÈL-mit, pliiz.",
+   "trou": "helmet"
+  },
+  {
+   "id": "p02",
+   "en": "Safety comes first!",
+   "fr": "La sécurité d'abord !",
+   "pron": "SÉÏF-ti keumz feurst !",
+   "trou": "first"
+  },
+  {
+   "id": "p03",
+   "en": "We start work at seven o'clock.",
+   "fr": "Nous commençons le travail à sept heures.",
+   "pron": "wi stârt weurk at SÈ-veunn eu-KLOK.",
+   "trou": "work"
+  },
+  {
+   "id": "p04",
+   "en": "How many bags of cement do we need?",
+   "fr": "Combien de sacs de ciment nous faut-il ?",
+   "pron": "haou MÈ-ni bagz ov si-MÈNT dou wi niid ?",
+   "trou": "cement"
+  },
+  {
+   "id": "p05",
+   "en": "Mix the sand and the cement.",
+   "fr": "Mélangez le sable et le ciment.",
+   "pron": "miks dheu sannd annd dheu si-MÈNT.",
+   "trou": "sand"
+  },
+  {
+   "id": "p06",
+   "en": "Keep the concrete wet for seven days.",
+   "fr": "Gardez le béton humide pendant sept jours.",
+   "pron": "kiip dheu KONG-kriit wèt fôr SÈ-veunn déïz.",
+   "trou": "wet"
+  },
+  {
+   "id": "p07",
+   "en": "The wall is not straight.",
+   "fr": "Le mur n'est pas droit.",
+   "pron": "dheu wôl iz not stréït.",
+   "trou": "straight"
+  },
+  {
+   "id": "p08",
+   "en": "Check it with the level.",
+   "fr": "Vérifiez avec le niveau.",
+   "pron": "tchèk it widh dheu LÈ-veul.",
+   "trou": "level"
+  },
+  {
+   "id": "p09",
+   "en": "Can you read the plan?",
+   "fr": "Savez-vous lire le plan ?",
+   "pron": "kann you riid dheu plann ?",
+   "trou": "plan"
+  },
+  {
+   "id": "p10",
+   "en": "The wall is three metres high.",
+   "fr": "Le mur fait trois mètres de haut.",
+   "pron": "dheu wôl iz thrii MII-teurz haï.",
+   "trou": "high"
+  },
+  {
+   "id": "p11",
+   "en": "We need more bricks.",
+   "fr": "Il nous faut plus de briques.",
+   "pron": "wi niid môr briks.",
+   "trou": "bricks"
+  },
+  {
+   "id": "p12",
+   "en": "The truck will deliver the gravel today.",
+   "fr": "Le camion livrera le gravier aujourd'hui.",
+   "pron": "dheu treuk wil di-LI-veur dheu GRA-veul teu-DÉÏ.",
+   "trou": "gravel"
+  },
+  {
+   "id": "p13",
+   "en": "Be careful, this bag is heavy.",
+   "fr": "Attention, ce sac est lourd.",
+   "pron": "bi KÈR-feul, dhiss bag iz HÈ-vi.",
+   "trou": "heavy"
+  },
+  {
+   "id": "p14",
+   "en": "Hold the ladder for me, please.",
+   "fr": "Tenez-moi l'échelle, s'il vous plaît.",
+   "pron": "hôld dheu LA-deur fôr mi, pliiz.",
+   "trou": "ladder"
+  },
+  {
+   "id": "p15",
+   "en": "Do not stand under the scaffolding.",
+   "fr": "Ne restez pas sous l'échafaudage.",
+   "pron": "dou not stannd EUNN-deur dheu SKA-feul-ding.",
+   "trou": "under"
+  },
+  {
+   "id": "p16",
+   "en": "The plumber will install the pipes tomorrow.",
+   "fr": "Le plombier installera les tuyaux demain.",
+   "pron": "dheu PLEU-meur wil inn-STÔL dheu païps teu-MO-rô.",
+   "trou": "pipes"
+  },
+  {
+   "id": "p17",
+   "en": "Turn off the power before you touch the wires.",
+   "fr": "Coupez le courant avant de toucher les fils.",
+   "pron": "teurn of dheu PAOU-eur bi-FÔR you teutch dheu WAÏ-eurz.",
+   "trou": "power"
+  },
+  {
+   "id": "p18",
+   "en": "The roof must be finished before the rainy season.",
+   "fr": "Le toit doit être fini avant la saison des pluies.",
+   "pron": "dheu rouf meust bi FI-nicht bi-FÔR dheu RÉÏ-ni SII-zeunn.",
+   "trou": "season"
+  },
+  {
+   "id": "p19",
+   "en": "Wear your gloves when you cut the iron bars.",
+   "fr": "Portez vos gants pour couper les barres de fer.",
+   "pron": "wèr yôr gleuvz wèn you keut dhi AÏ-eunn bârz.",
+   "trou": "gloves"
+  },
+  {
+   "id": "p20",
+   "en": "The paint is not dry yet.",
+   "fr": "La peinture n'est pas encore sèche.",
+   "pron": "dheu péïnt iz not draï yèt.",
+   "trou": "dry"
+  },
+  {
+   "id": "p21",
+   "en": "We will pour the slab on Friday.",
+   "fr": "Nous coulerons la dalle vendredi.",
+   "pron": "wi wil pôr dheu slab onn FRAÏ-déï.",
+   "trou": "slab"
+  },
+  {
+   "id": "p22",
+   "en": "There is a problem with the foundation.",
+   "fr": "Il y a un problème avec les fondations.",
+   "pron": "dhèr iz eu PRO-bleum widh dheu faoun-DÉÏ-cheunn.",
+   "trou": "problem"
+  },
+  {
+   "id": "p23",
+   "en": "Clean your tools at the end of the day.",
+   "fr": "Nettoyez vos outils à la fin de la journée.",
+   "pron": "kliin yôr toulz at dhi ènd ov dheu déï.",
+   "trou": "tools"
+  },
+  {
+   "id": "p24",
+   "en": "How long will the work take?",
+   "fr": "Combien de temps vont durer les travaux ?",
+   "pron": "haou long wil dheu weurk téïk ?",
+   "trou": "long"
+  },
+  {
+   "id": "p25",
+   "en": "Good job, the work is finished!",
+   "fr": "Bon travail, c'est terminé !",
+   "pron": "goud djob, dheu weurk iz FI-nicht !",
+   "trou": "finished"
+  }
+ ]
+}

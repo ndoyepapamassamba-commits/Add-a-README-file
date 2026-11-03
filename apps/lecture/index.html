@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'self' https://seegnylaubuularegmku.supabase.co; worker-src 'self' blob:; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<title>Lecture Facile : lire plus facilement, avec dyslexie ou pour débuter</title>
+<meta name="description" content="Application gratuite pour lire plus facilement : grandes lettres, polices adaptées à la dyslexie, syllabes en couleur, b/d et p/q colorés, règle de lecture, lecture à voix haute mot par mot, 20 textes faciles. Fonctionne sans Internet.">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/lecture/">
+<meta name="theme-color" content="#6b3fa0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1424" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Teranga Outils">
+<meta property="og:title" content="Lecture Facile : lire plus facilement">
+<meta property="og:description" content="Syllabes en couleur, lettres b/d colorées, règle de lecture, lecture à voix haute. Pour les enfants et les adultes. Sans Internet.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/lecture/">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/lecture/icons/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lecture">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="application-name" content="Lecture Facile">
+<meta name="format-detection" content="telephone=no">
+<script src="js/theme.js"></script>
+<link rel="stylesheet" href="app.css">
+<script src="js/coeur.js" defer></script>
+<script src="js/db.js" defer></script>
+<script src="js/voix.js" defer></script>
+<script src="js/ocr.js" defer></script>
+<script src="js/app.js" defer></script>
+</head>
+<body>
+<a class="evitement" href="#vue">Aller au contenu</a>
+<header class="entete">
+  <button type="button" id="retour" class="icone-btn" aria-label="Retour" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <a id="marque" class="marque" href="#/" aria-label="Accueil Lecture Facile"><img src="icons/favicon-32.png" alt="" width="30" height="30"></a>
+  <p id="titre" class="titre" role="heading" aria-level="1">Lecture Facile</p>
+  <button type="button" id="installer" class="btn-entete" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v11m0 0-4-4m4 4 4-4"/><rect x="4" y="17" width="16" height="4" rx="1"/></svg><span>Installer</span></button>
+</header>
+
+<main id="vue" tabindex="-1">
+  <noscript>
+    <section class="carte">
+      <h1>Lecture Facile</h1>
+      <p>Pour lire plus facilement : grandes lettres, polices pour la dyslexie, syllabes en couleur, lettres b/d et p/q colorées, règle de lecture et lecture à voix haute. Fonctionne sans Internet.</p>
+      <p>Activez JavaScript dans votre navigateur pour utiliser l'application.</p>
+    </section>
+  </noscript>
+  <div class="chargement" aria-hidden="true"><img src="icons/icon-192.png" alt="" width="72" height="72"></div>
+</main>
+
+<nav id="nav" class="nav" aria-label="Navigation principale">
+  <a href="#/" data-nav="accueil"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Accueil</span></a>
+  <a href="#/ecrire" data-nav="ecrire"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg><span>Écrire</span></a>
+  <a href="#/textes" data-nav="textes"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/></svg><span>Textes</span></a>
+  <a href="#/reglages" data-nav="reglages"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Réglages</span></a>
+</nav>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

@@ -1,6 +1,7 @@
-// Fonction Edge « dossiers » : dossiers partagés des applications AccordAI et ColisPreuve (fichier unique, sans dépendance).
+// Fonction Edge « dossiers » : dossiers partagés des applications AccordAI, ColisPreuve, Tontine, Rendez-vous Pro, Chantier Clair
+// et Lot Tracé (fichier unique, sans dépendance).
 // Un dossier = des données courantes + un historique chaîné (empreintes SHA-256) + des photos de preuve. L'accès se fait par
-// des liens secrets par rôle (proprio, partie, livreur, destinataire) : seules les empreintes des jetons sont gardées.
+// des liens secrets par rôle (proprio, partie, livreur, client, chef…) : seules les empreintes des jetons sont gardées.
 // Pass payant (commande de la boutique) pour l'extraction par l'IA et les gros volumes. Base : migration dossiers_partages.
 // Tests : node --experimental-strip-types supabase/functions/dossiers/test.ts
 
@@ -10,16 +11,47 @@ const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const CORS: Record<string, string> = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "content-type" };
 const json = (s: number, b: unknown, h: Record<string, string> = {}) => new Response(JSON.stringify(b), { status: s, headers: { ...CORS, "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...h } });
 const erreur = (s: number, code: string, message: string) => json(s, { erreur: code, message });
-export const ROLES: Record<string, string[]> = { accord: ["proprio", "partie"], colis: ["proprio", "livreur", "destinataire"], tontine: ["proprio", "membre"] };
-export const PASS: Record<string, string[]> = { accord: ["pass-accordai-1-mois", "pass-accordai-12-mois"], colis: ["pass-colispreuve-1-mois", "pass-colispreuve-12-mois"], tontine: ["pass-tontine-12-mois"] };
+export const ROLES: Record<string, string[]> = { accord: ["proprio", "partie"], colis: ["proprio", "livreur", "destinataire"], tontine: ["proprio", "membre"],
+  rdv: ["proprio", "client"], chantier: ["proprio", "chef", "temoin"], trace: ["proprio", "transporteur", "acheteur"] };
+export const PASS: Record<string, string[]> = { accord: ["pass-accordai-1-mois", "pass-accordai-12-mois"], colis: ["pass-colispreuve-1-mois", "pass-colispreuve-12-mois"], tontine: ["pass-tontine-12-mois"],
+  rdv: ["pass-rendez-vous-pro-1-mois", "pass-rendez-vous-pro-12-mois"], chantier: ["pass-chantier-clair-12-mois"], trace: ["pass-lot-trace-12-mois"] };
 // Types d'événements permis par application et par rôle
 export const EVENEMENTS: Record<string, Record<string, string[]>> = {
   accord: { proprio: ["modification", "note", "preuve", "livraison", "cloture", "acceptation"], partie: ["confirmation", "correction", "note", "preuve", "reception"] },
   // Tontine : l'organisateur confirme les versements et les tours ; les membres (lien commun) déclarent leur versement
   tontine: { proprio: ["modification", "versement_recu", "tour", "rappel", "note", "cloture"], membre: ["versement_declare", "note"] },
   colis: { proprio: ["preparation", "remise_livreur", "note", "preuve", "annulation", "modification"], livreur: ["prise_en_charge", "en_route", "tentative", "livraison", "note", "preuve"], destinataire: ["reception", "probleme", "note"] },
+  // Rendez-vous Pro : la page publique d'un professionnel ; le lien « client » est commun (QR code), chaque demande est un événement
+  rdv: { proprio: ["modification", "confirmation", "refus", "report", "annulation", "note", "rappel"], client: ["demande", "annulation", "note"] },
+  // Chantier Clair : la personne qui paie (souvent à l'étranger), le chef de chantier et un témoin de la famille sur place
+  chantier: { proprio: ["modification", "validation", "question", "note", "versement_declare", "cloture"], chef: ["avancement", "preuve", "demande_materiaux", "depense", "note"], temoin: ["constat", "preuve", "note"] },
+  // Lot Tracé : producteur ou exportateur, transporteur, acheteur d'un lot agricole (l'acheteur joint des photos à ses réserves)
+  trace: { proprio: ["recolte", "tri", "conditionnement", "expedition", "note", "preuve", "modification"], transporteur: ["prise_en_charge", "en_route", "livraison", "preuve", "note"], acheteur: ["reception", "reserve", "preuve", "note"] },
 };
 const STATUTS: Record<string, string> = { tour: "en_cours", confirmation: "confirme", correction: "a_revoir", acceptation: "confirme", livraison: "livre", reception: "recu", cloture: "clos", annulation: "annule", preparation: "prepare", remise_livreur: "chez_livreur", prise_en_charge: "chez_livreur", en_route: "en_route", tentative: "tentative", probleme: "probleme" };
+// Statuts propres à une application (remplacent la table commune ci-dessus pour cette application)
+export const STATUTS_APP: Record<string, Record<string, string>> = {
+  rdv: { demande: "en_attente", confirmation: "confirme", refus: "refuse", report: "reporte", annulation: "annule" },
+  chantier: { avancement: "en_cours", validation: "valide", cloture: "termine" },
+  trace: { recolte: "recolte", tri: "trie", conditionnement: "conditionne", expedition: "expedie", prise_en_charge: "en_transport", en_route: "en_route", livraison: "livre", reception: "recu", reserve: "reserve" },
+};
+export const statutApres = (app: string, type: string): string | null => (STATUTS_APP[app] ? STATUTS_APP[app][type] : STATUTS[type]) || null;
+// Nombre d'actions gardées par dossier, appliqué par la fonction SQL dossier_evenement (mêmes valeurs ; 300 par jour dans tous
+// les cas) : 400 par défaut, davantage pour les dossiers de longue durée (tontine, chantier) et les pages de rendez-vous.
+export const MAX_EVENEMENTS: Record<string, number> = { tontine: 3000, chantier: 3000, rdv: 1500 };
+export const maxEvenements = (app: string): number => MAX_EVENEMENTS[app] || 400;
+// Applications où seuls les rôles ayant « preuve » parmi leurs événements peuvent ajouter une photo
+const PHOTOS_PAR_ROLE = ["rdv", "chantier", "trace"];
+// Rendez-vous Pro : ce que le lien public (client) voit des demandes des autres — les créneaux pris, jamais les noms, numéros ni notes
+const RDV_PUBLIC: Record<string, string[]> = { demande: ["date", "heure", "duree"], confirmation: ["demande", "date", "heure", "duree"], report: ["demande", "date", "heure", "duree"], refus: ["demande"], annulation: ["demande"] };
+export function vueClientRdv(d: any): any {
+  d.evenements = (d.evenements || []).filter((e: any) => e.type !== "note" && e.type !== "rappel").map((e: any) => {
+    const garde: Record<string, unknown> = {};
+    for (const k of RDV_PUBLIC[e.type] || []) if (e.donnees && e.donnees[k] !== undefined) garde[k] = e.donnees[k];
+    return { id: e.id, auteur: e.auteur, type: e.type, donnees: garde, le: e.le, empreinte: e.empreinte };
+  });
+  return d;
+}
 
 async function sha256Hex(t: string): Promise<string> { const b = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(t))); let s = ""; for (const x of b) s += x.toString(16).padStart(2, "0"); return s; }
 function b64url(bytes: Uint8Array): string { let s = ""; for (const x of bytes) s += String.fromCharCode(x); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
@@ -60,6 +92,33 @@ async function passValide(env: Env, app: string, pass: any): Promise<boolean> {
   if (!pass || !/^TCV-[0-9A-HJKMNP-TV-Z]{8}$/.test(String(pass.o || "")) || String(pass.t || "").length < 20) return false;
   const v = await rpc(env, "dossier_pass_valide", { p_order_id: pass.o, p_token_hash: await sha256Hex(String(pass.t)), p_produits: PASS[app], p_now: env.now().toISOString() }).catch(() => null);
   return !!(v && v.valide);
+}
+// Code de remise (ColisPreuve) — schéma 2 : HMAC-SHA256(poivre, id + ":" + code), le poivre (32 octets tirés au hasard) est gardé
+// en base (tcv.settings DOSSIERS_POIVRE), lu par la fonction seulement, jamais renvoyé. Schéma 1 (anciens dossiers, sans
+// « code_schema ») : sha256("code:" + code), seulement vérifié, plus jamais créé.
+let poivreCache = "";
+async function poivre(env: Env): Promise<string> {
+  if (!poivreCache) { const p = await rpc(env, "dossier_poivre", {}); if (typeof p === "string" && p.length >= 32) poivreCache = p; }
+  if (!poivreCache) throw new Error("poivre absent");
+  return poivreCache;
+}
+export async function empreinteCode(env: Env, id: string, code: string): Promise<string> {
+  const cle = await crypto.subtle.importKey("raw", enc.encode(await poivre(env)), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const b = new Uint8Array(await crypto.subtle.sign("HMAC", cle, enc.encode(id + ":" + code)));
+  let s = ""; for (const x of b) s += x.toString(16).padStart(2, "0"); return s;
+}
+function egaliteConstante(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0; for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+// Données secrètes : toute clé finissant par « _empreinte » ; jamais renvoyées, ni dans les données courantes ni dans l'historique
+const estSecret = (k: string) => /_empreinte$/.test(k);
+export function sansSecrets(d: any): any {
+  const net = (o: any) => { if (o && typeof o === "object") for (const k of Object.keys(o)) if (estSecret(k)) delete o[k]; };
+  net(d.donnees);
+  for (const e of d.evenements || []) net(e && e.donnees);
+  return d;
 }
 async function cleIa(env: Env): Promise<string> {
   if (env.openrouter) return env.openrouter;
@@ -109,10 +168,11 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
       if (titre.length < 2) return erreur(400, "titre", "Donnez un titre au dossier.");
       const donnees = nettoyerDonnees(b.donnees || {});
       if (!donnees) return erreur(400, "donnees", "Données invalides.");
-      if (app === "colis") donnees.code_remise_empreinte = await sha256Hex("code:" + (b.code_remise || ""));
+      for (const k of Object.keys(donnees)) if (estSecret(k) || k === "code_schema") delete donnees[k];
       const premium = await passValide(env, app, b.pass);
       const id = nouvelId(), jetons: Record<string, string> = {}, roles: Record<string, string> = {};
       for (const r of ROLES[app]) { jetons[r] = nouveauJeton(); roles[r] = await sha256Hex(jetons[r]); }
+      if (app === "colis") { donnees.code_remise_empreinte = await empreinteCode(env, id, String(b.code_remise || "")); donnees.code_schema = 2; }
       const res = await rpc(env, "dossier_creer", { p_id: id, p_app: app, p_titre: titre, p_donnees: donnees, p_roles: roles,
         p_ip_hash: (await sha256Hex("dos-ip:" + ip(req))).slice(0, 32), p_premium: premium, p_now: now.toISOString() });
       if (!res || res.erreur === "trop") return erreur(429, "trop", premium ? "Trop de dossiers aujourd'hui." : "Limite gratuite atteinte aujourd'hui : activez le pass pour continuer.");
@@ -125,7 +185,8 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
         if (t.length < 20 || t.length > 64) return erreur(404, "introuvable", "Dossier introuvable.");
         const d = await rpc(env, "dossier_lire", { p_id: m[1], p_hash: await sha256Hex(t) });
         if (!d) return erreur(404, "introuvable", "Dossier introuvable ou lien expiré.");
-        if (d.donnees) delete d.donnees.code_remise_empreinte;
+        sansSecrets(d);
+        if (d.app === "rdv" && d.role === "client") vueClientRdv(d);
         return json(200, { dossier: d });
       }
       if (req.method === "GET" && m[3]) {
@@ -148,20 +209,49 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
         let maj: any = null;
         if (d.role === "proprio" && (type === "modification" || type === "acceptation") && b.maj) {
           maj = nettoyerDonnees(b.maj); if (!maj) return erreur(400, "donnees", "Données invalides.");
-          const empreinte = (await rpc(env, "dossier_lire_interne", { p_id: m[1] }).catch(() => null))?.code_remise_empreinte;
-          if (empreinte) maj.code_remise_empreinte = empreinte;
+          // L'empreinte du code et son schéma viennent toujours de la base : jamais du téléphone (ni perte, ni retour à l'ancien schéma)
+          for (const k of Object.keys(maj)) if (estSecret(k) || k === "code_schema") delete maj[k];
+          const interne = await rpc(env, "dossier_lire_interne", { p_id: m[1] });
+          if (interne && interne.code_remise_empreinte) {
+            maj.code_remise_empreinte = interne.code_remise_empreinte;
+            if (interne.code_schema) maj.code_schema = interne.code_schema;
+          }
         }
-        // Livraison d'un colis : le code donné par le destinataire est vérifié (empreinte), jamais stocké en clair
+        // Livraison d'un colis : le code donné par le destinataire est vérifié (empreinte), jamais stocké en clair.
+        // 10 essais au plus par colis et par 24 h, comptés avant la comparaison (un essai juste compte aussi).
         if (d.app === "colis" && type === "livraison") {
-          const attendu = (await rpc(env, "dossier_lire_interne", { p_id: m[1] }))?.code_remise_empreinte;
-          const bon = attendu && attendu === await sha256Hex("code:" + String(b.code_remise || ""));
-          donnees.code_verifie = !!bon;
+          if (!(await rpc(env, "tcv_hit_rate_limit", { p_key: "dos-code:" + m[1], p_window_seconds: 86400, p_max: 10, p_now: now.toISOString() })))
+            return erreur(429, "trop", "Trop de codes essayés pour ce colis : réessayez dans 24 heures, ou demandez au destinataire de confirmer la réception.");
+          const interne = await rpc(env, "dossier_lire_interne", { p_id: m[1] });
+          const code = String(b.code_remise || "");
+          const attendu = interne && interne.code_remise_empreinte ? String(interne.code_remise_empreinte) : "";
+          const calcule = interne && interne.code_schema === 2 ? await empreinteCode(env, m[1], code) : await sha256Hex("code:" + code);
+          const bon = !!attendu && egaliteConstante(attendu, calcule);
+          donnees.code_verifie = bon;
           if (!bon) return erreur(400, "code", "Code de remise incorrect : demandez-le au destinataire.");
         }
-        const res = await rpc(env, "dossier_evenement", { p_id: m[1], p_hash: h, p_type: type, p_donnees: donnees, p_maj: maj, p_statut: STATUTS[type] || null, p_now: now.toISOString() });
+        // Rendez-vous Pro, lien public : une demande porte l'empreinte d'un code gardé par le téléphone du client ; seul ce
+        // code permet ensuite d'annuler la demande ou d'y ajouter une note. Demandes limitées par adresse IP.
+        if (d.app === "rdv" && d.role === "client") {
+          const code = String(b.code || "");
+          if (code.length < 16 || code.length > 64) return erreur(400, "code", "Code de la demande manquant.");
+          delete donnees.verif;
+          if (type === "demande") {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(String(donnees.date || "")) || !/^\d{2}:\d{2}$/.test(String(donnees.heure || "")) || String(donnees.nom || "").length < 2)
+              return erreur(400, "donnees", "Choisissez un jour, une heure et écrivez votre nom.");
+            const ipHash = (await sha256Hex("dos-ip:" + ip(req))).slice(0, 32);
+            if (!(await rpc(env, "tcv_hit_rate_limit", { p_key: "dos-rdv:" + m[1] + ":" + ipHash, p_window_seconds: 86400, p_max: 6, p_now: now.toISOString() })))
+              return erreur(429, "trop", "Trop de demandes envoyées aujourd'hui depuis ce téléphone.");
+            donnees.verif = await sha256Hex("rdv:" + code);
+          } else {
+            const dem = (d.evenements || []).find((e: any) => e.type === "demande" && e.empreinte && e.empreinte === donnees.demande);
+            if (!dem || !dem.donnees || dem.donnees.verif !== await sha256Hex("rdv:" + code)) return erreur(403, "code", "Action réservée à la personne qui a fait cette demande.");
+          }
+        }
+        const res = await rpc(env, "dossier_evenement", { p_id: m[1], p_hash: h, p_type: type, p_donnees: donnees, p_maj: maj, p_statut: statutApres(d.app, type), p_now: now.toISOString() });
         if (!res) return erreur(404, "introuvable", "Dossier introuvable.");
         if (res.erreur === "trop") return erreur(429, "trop", "Trop d'actions aujourd'hui sur ce dossier.");
-        if (res.erreur === "plein") return erreur(409, "plein", "Ce dossier est complet.");
+        if (res.erreur === "plein") return erreur(409, "plein", `Ce dossier est complet (${String(maxEvenements(d.app)).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} actions au plus).`);
         if (res.erreur) return erreur(403, res.erreur, "Action non permise pour ce lien.");
         return json(201, res);
       }
@@ -171,6 +261,9 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
         const mm = String(b.photo || "").match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
         if (!mm) return erreur(400, "photo", "Photo invalide.");
         const h = await sha256Hex(jeton);
+        const lu = await rpc(env, "dossier_lire", { p_id: m[1], p_hash: h });
+        if (!lu) return erreur(404, "introuvable", "Dossier introuvable.");
+        if (PHOTOS_PAR_ROLE.includes(lu.app) && !(EVENEMENTS[lu.app]?.[lu.role] || []).includes("preuve")) return erreur(403, "type", "Action non permise pour ce lien.");
         const res = await rpc(env, "dossier_photo_ajouter", { p_id: m[1], p_hash: h, p_mime: mm[1], p_b64: mm[2], p_now: now.toISOString() });
         if (!res) return erreur(404, "introuvable", "Dossier introuvable.");
         if (res.erreur) return erreur(400, res.erreur, res.erreur === "plein" ? "30 photos au plus par dossier." : "Photo refusée (format ou taille).");

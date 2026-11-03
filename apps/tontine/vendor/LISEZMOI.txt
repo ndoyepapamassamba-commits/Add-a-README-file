@@ -1,0 +1,6 @@
+Bibliothèque incluse dans Tontine Claire (copie locale, jamais chargée depuis Internet)
+
+jspdf.umd.min.js   jsPDF 4.2.1 (npm « jspdf », dist/jspdf.umd.min.js)   Licence MIT   jspdf.LICENSE.txt
+
+Fichier repris tel quel (même copie que Teranga Factures) ; seule la ligne finale « sourceMappingURL » a été retirée.
+Le reste de l'application (calculs, empreintes SHA-256, tirage au sort, interface) est écrit sans bibliothèque.

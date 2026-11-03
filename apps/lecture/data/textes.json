@@ -1,0 +1,147 @@
+{
+ "version": 1,
+ "niveaux": [
+  {
+   "id": 1,
+   "nom": "Je commence",
+   "description": "Phrases très courtes, mots simples."
+  },
+  {
+   "id": 2,
+   "nom": "Je lis des phrases",
+   "description": "Petits textes de la vie de tous les jours."
+  },
+  {
+   "id": 3,
+   "nom": "Je lis une histoire",
+   "description": "Histoires plus longues, avec des dialogues."
+  },
+  {
+   "id": 4,
+   "nom": "Textes pratiques",
+   "description": "Pour les grands : lettres, recettes, conseils."
+  }
+ ],
+ "textes": [
+  {
+   "id": "n1-01",
+   "niveau": 1,
+   "titre": "Le chat de Rama",
+   "texte": "Rama a un chat. Le chat est gris. Il a une tache noire sur le nez. Le chat dort sur le tapis. Rama lui donne du lait. Le chat est ravi."
+  },
+  {
+   "id": "n1-02",
+   "niveau": 1,
+   "titre": "La moto de papa",
+   "texte": "Papa a une moto rouge. La moto va vite sur la route. Ali a un casque. Il monte derrière papa. Ali tient papa très fort."
+  },
+  {
+   "id": "n1-03",
+   "niveau": 1,
+   "titre": "La pluie",
+   "texte": "Il pleut sur le toit. La cour est mouillée. Les petits rient sous la pluie. Maman dit : « Vite, à la maison ! » Tout le monde rentre."
+  },
+  {
+   "id": "n1-04",
+   "niveau": 1,
+   "titre": "Au marché",
+   "texte": "Awa va au marché avec sa tante. Elle voit des tomates, des oignons et du piment. Sa tante achète du riz. Awa porte le petit sac."
+  },
+  {
+   "id": "n1-05",
+   "niveau": 1,
+   "titre": "Le ballon",
+   "texte": "Moussa a un ballon. Il joue avec Fatou dans la cour. Fatou tape fort. Le ballon vole sur le mur. Moussa rit. Fatou rit aussi."
+  },
+  {
+   "id": "n2-01",
+   "niveau": 2,
+   "titre": "Le baobab du village",
+   "texte": "Au milieu du village, il y a un grand baobab. Son tronc est si gros que cinq enfants ne peuvent pas en faire le tour. À midi, les anciens s'assoient à son ombre pour parler. Ses fruits s'appellent du pain de singe. Avec, on fait un bon jus blanc et sucré."
+  },
+  {
+   "id": "n2-02",
+   "niveau": 2,
+   "titre": "La pirogue de grand-père",
+   "texte": "Grand-père a une longue pirogue en bois. Il l'a peinte en bleu, en jaune et en rouge. Chaque matin, il part pêcher avant le lever du soleil. Le soir, il revient avec des sardines et des dorades. Toute la famille l'attend sur la plage."
+  },
+  {
+   "id": "n2-03",
+   "niveau": 2,
+   "titre": "Le car rapide",
+   "texte": "Ce matin, Binta prend le car rapide avec sa mère. Le car est jaune et bleu, avec des dessins sur les côtés. Un jeune homme crie le nom des arrêts. Les gens montent, les gens descendent. Binta regarde la mer par la fenêtre."
+  },
+  {
+   "id": "n2-04",
+   "niveau": 2,
+   "titre": "Le petit chien perdu",
+   "texte": "Un petit chien pleure devant la boutique. Il a perdu son maître. Khady lui donne un peu d'eau. Elle lit la plaque sur son collier : « Je m'appelle Pipo. » Elle appelle le numéro écrit dessous. Une heure plus tard, un garçon arrive en courant. Pipo saute de joie."
+  },
+  {
+   "id": "n2-05",
+   "niveau": 2,
+   "titre": "L'anniversaire de Lamine",
+   "texte": "Aujourd'hui, Lamine a huit ans. Sa sœur a fait un gâteau au chocolat. Il y a huit bougies dessus. Ses amis chantent pour lui. Lamine souffle très fort. Toutes les bougies s'éteignent d'un coup !"
+  },
+  {
+   "id": "n3-01",
+   "niveau": 3,
+   "titre": "Le lièvre et l'hyène",
+   "texte": "Un soir de pleine lune, l'hyène trouva le lièvre assis près d'un puits.\n— Que fais-tu là ? demanda l'hyène.\n— Je garde un trésor, répondit le lièvre. Au fond de ce puits, il y a un fromage rond et brillant.\nL'hyène, très gourmande, se pencha. Dans l'eau, elle vit la lune qui brillait comme un fromage.\n— Il est à moi ! cria-t-elle.\nElle passa toute la nuit à essayer de l'attraper avec une calebasse. Au matin, elle n'avait rien, et le lièvre dormait tranquillement à l'ombre. Depuis ce jour, on dit qu'il ne faut pas croire tout ce qui brille."
+  },
+  {
+   "id": "n3-02",
+   "niveau": 3,
+   "titre": "La graine de mil",
+   "texte": "Au début de l'hivernage, Seynabou plante une graine de mil dans le champ de sa grand-mère. Chaque jour, elle vient voir. Rien ne pousse.\n« Sois patiente », dit sa grand-mère.\nUne semaine plus tard, une petite feuille verte sort de la terre. Puis la pluie tombe, encore et encore. À la fin de la saison, la tige est plus haute que Seynabou ! Elle est fière : c'est elle qui l'a plantée."
+  },
+  {
+   "id": "n3-03",
+   "niveau": 3,
+   "titre": "Le gardien du phare",
+   "texte": "Sur une colline, au bord de la mer, il y a un phare. Monsieur Diatta en est le gardien. Chaque soir, il monte les cent marches de l'escalier. En haut, il vérifie la grande lampe. Toute la nuit, la lumière tourne et éclaire la mer. Grâce à elle, les bateaux savent où sont les rochers.\nLes pêcheurs le saluent souvent : « Merci, Monsieur Diatta ! »"
+  },
+  {
+   "id": "n3-04",
+   "niveau": 3,
+   "titre": "Le grand match",
+   "texte": "Samedi, l'équipe de l'école joue contre celle du quartier voisin. Ibou est gardien de but. Il a un peu peur. Le match commence et les deux équipes courent beaucoup. À la dernière minute, un joueur tire très fort. Ibou plonge et attrape le ballon ! Tout le monde l'applaudit. Le match finit sans but, mais Ibou est le héros du jour."
+  },
+  {
+   "id": "n3-05",
+   "niveau": 3,
+   "titre": "La lettre de Karim",
+   "texte": "Cher Moussa,\nJe suis bien arrivé à Ziguinchor. Ici, il y a beaucoup d'arbres et de rivières. Hier, mon oncle m'a emmené voir les rizières. L'eau était chaude et pleine de petits poissons. Le soir, nous avons mangé des huîtres grillées. Je pense à toi et à notre équipe de foot. Écris-moi vite !\nTon ami, Karim"
+  },
+  {
+   "id": "n4-01",
+   "niveau": 4,
+   "titre": "Un message de l'école",
+   "texte": "Chers parents,\nLa réunion de fin de trimestre aura lieu le jeudi 10 décembre, à 17 heures, dans la salle 3. Les enseignants vous présenteront les résultats de vos enfants. Merci d'apporter le carnet de notes. Si vous ne pouvez pas venir, prévenez le secrétariat avant mercredi.\nLa directrice"
+  },
+  {
+   "id": "n4-02",
+   "niveau": 4,
+   "titre": "La recette du thiakry",
+   "texte": "Pour quatre personnes, il faut : 250 grammes de semoule de mil, un litre de lait caillé, 100 grammes de sucre et un sachet de sucre vanillé.\nFaites cuire la semoule à la vapeur pendant vingt minutes. Laissez-la refroidir. Dans un grand bol, mélangez le lait caillé et le sucre. Ajoutez la semoule petit à petit, en remuant bien. Mettez au frais une heure avant de servir."
+  },
+  {
+   "id": "n4-03",
+   "niveau": 4,
+   "titre": "Économiser l'eau",
+   "texte": "L'eau est précieuse. Voici quelques gestes simples pour moins la gaspiller.\nFermez bien le robinet pendant que vous vous brossez les dents. Réparez vite les fuites : un robinet qui goutte perd beaucoup d'eau en un mois. Lavez la vaisselle dans une bassine plutôt que sous l'eau qui coule. Arrosez les plantes le soir, quand il fait moins chaud. Et gardez l'eau de rinçage du riz pour arroser le jardin."
+  },
+  {
+   "id": "n4-04",
+   "niveau": 4,
+   "titre": "Le premier jour de travail",
+   "texte": "Ce lundi, Fatou commence son nouveau travail dans un atelier de couture. Elle arrive à huit heures moins dix. La patronne lui montre les machines, les tissus et les modèles.\n« Ici, on mesure deux fois et on coupe une fois », lui dit-elle en souriant.\nÀ midi, Fatou mange avec ses collègues. Le soir, elle est fatiguée mais contente. Elle a déjà appris beaucoup de choses."
+  },
+  {
+   "id": "n4-05",
+   "niveau": 4,
+   "titre": "Lire une étiquette",
+   "texte": "Avant d'acheter un produit, prenez le temps de lire l'étiquette.\nD'abord, regardez le nom du produit et son poids, par exemple 500 grammes. Ensuite, cherchez la date. « À consommer jusqu'au » veut dire qu'il ne faut plus le manger après ce jour. « À consommer de préférence avant » veut dire que le goût peut changer, mais que le produit reste bon. Enfin, lisez la liste des ingrédients : le premier est celui qu'il y a le plus. Après l'ouverture, suivez les conseils, comme « à garder au frais »."
+  }
+ ]
+}

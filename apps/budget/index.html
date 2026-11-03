@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://seegnylaubuularegmku.supabase.co; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<title>Budget Famille : le budget du foyer par enveloppes, en F CFA</title>
+<meta name="description" content="Application pour tenir le budget de la famille sur téléphone : enveloppes (dépense quotidienne, loyer, Senelec, Woyofal, école, tontine, épargne), alertes, budgets Tabaski, rentrée scolaire et Korité, rapport du mois en PDF. Sans Internet, sans compte bancaire.">
+<link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/budget/">
+<meta name="theme-color" content="#0f6670" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121b1c" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="TERANGA">
+<meta property="og:title" content="Budget Famille : le budget du foyer par enveloppes">
+<meta property="og:description" content="Dépense quotidienne, loyer, Senelec, Woyofal, école, tontine : chaque franc a sa place. Budgets Tabaski et rentrée avec compte à rebours. Sans Internet.">
+<meta property="og:url" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/budget/">
+<meta property="og:image" content="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/apps/budget/icons/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Budget">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="application-name" content="Budget Famille">
+<meta name="format-detection" content="telephone=no">
+<link rel="stylesheet" href="app.css">
+<script src="js/theme.js"></script>
+<script src="js/coeur.js" defer></script>
+<script src="js/db.js" defer></script>
+<script src="js/pdf.js" defer></script>
+<script src="js/app.js" defer></script>
+</head>
+<body>
+<a class="evitement" href="#vue">Aller au contenu</a>
+<header class="entete">
+  <button type="button" id="retour" class="icone-btn" aria-label="Retour" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <a id="marque" class="marque" href="#/" aria-label="Accueil Budget Famille"><img src="icons/favicon-32.png" alt="" width="28" height="28"></a>
+  <p id="titre" class="titre" role="heading" aria-level="1">Budget Famille</p>
+  <button type="button" id="installer" class="btn-entete" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v11m0 0-4-4m4 4 4-4"/><rect x="4" y="17" width="16" height="4" rx="1"/></svg><span>Installer</span></button>
+  <a id="badge-pass" class="badge-pass" href="#/pass">Gratuit</a>
+</header>
+
+<main id="vue" tabindex="-1">
+  <noscript>
+    <section class="carte">
+      <h1>Budget Famille</h1>
+      <p>Le budget de la famille par enveloppes, en F CFA : dépense quotidienne, loyer, Senelec, Woyofal, eau, école, santé, tontine, épargne. Budgets spéciaux pour la Tabaski, la rentrée scolaire, la Korité, un baptême ou un mariage. Fonctionne sans Internet.</p>
+      <p>Activez JavaScript dans votre navigateur pour utiliser l'application.</p>
+    </section>
+  </noscript>
+  <div class="chargement" aria-hidden="true"><img src="icons/icon-192.png" alt="" width="72" height="72"></div>
+</main>
+
+<nav id="nav" class="nav" aria-label="Navigation principale">
+  <a href="#/" data-nav="accueil"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11h14V9"/><path d="M10 20v-6h4v6"/></svg><span>Accueil</span></a>
+  <a href="#/projets" data-nav="projets"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg><span>Projets</span></a>
+  <a href="#/ajouter" data-nav="ajouter" class="nav-plus" aria-label="Ajouter une dépense"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>Dépense</span></a>
+  <a href="#/rapport" data-nav="rapport"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20V11M10 20V5M16 20v-7M21 20H3"/></svg><span>Rapport</span></a>
+  <a href="#/reglages" data-nav="reglages"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Réglages</span></a>
+</nav>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

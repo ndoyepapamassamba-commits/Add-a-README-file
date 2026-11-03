@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "Teranga Vitrine",
+  "short_name": "Vitrine",
+  "description": "Votre vitrine pour vendre sur WhatsApp : produits en photo, prix en F CFA, images pour le statut, catalogue PDF et commandes. Fonctionne sans Internet.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf6f3",
+  "theme_color": "#6d1d5a",
+  "categories": ["business", "shopping", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Ajouter un produit", "short_name": "Produit", "url": "./#/produit-modifier/nouveau", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Créer une image", "short_name": "Image", "url": "./#/studio", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Nouvelle commande", "short_name": "Commande", "url": "./#/commande-modifier/nouveau", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

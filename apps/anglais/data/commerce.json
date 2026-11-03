@@ -1,0 +1,546 @@
+{
+ "id": "commerce",
+ "nom": "Commerce et vente",
+ "mots": [
+  {
+   "id": "m01",
+   "en": "shop",
+   "fr": "la boutique, le magasin",
+   "pron": "chop"
+  },
+  {
+   "id": "m02",
+   "en": "customer",
+   "fr": "le client",
+   "pron": "KEUSS-teu-meur"
+  },
+  {
+   "id": "m03",
+   "en": "seller",
+   "fr": "le vendeur",
+   "pron": "SÈ-leur"
+  },
+  {
+   "id": "m04",
+   "en": "price",
+   "fr": "le prix",
+   "pron": "praïss"
+  },
+  {
+   "id": "m05",
+   "en": "cheap",
+   "fr": "bon marché, pas cher",
+   "pron": "tchiip"
+  },
+  {
+   "id": "m06",
+   "en": "expensive",
+   "fr": "cher",
+   "pron": "ik-SPÈNN-siv"
+  },
+  {
+   "id": "m07",
+   "en": "discount",
+   "fr": "la remise, la réduction",
+   "pron": "DISS-kaount"
+  },
+  {
+   "id": "m08",
+   "en": "sale",
+   "fr": "la vente, les soldes",
+   "pron": "séïl"
+  },
+  {
+   "id": "m09",
+   "en": "size",
+   "fr": "la taille",
+   "pron": "saïz"
+  },
+  {
+   "id": "m10",
+   "en": "small",
+   "fr": "petit",
+   "pron": "smôl"
+  },
+  {
+   "id": "m11",
+   "en": "medium",
+   "fr": "moyen",
+   "pron": "MII-di-eum"
+  },
+  {
+   "id": "m12",
+   "en": "large",
+   "fr": "grand",
+   "pron": "lârdj"
+  },
+  {
+   "id": "m13",
+   "en": "colour",
+   "fr": "la couleur",
+   "pron": "KEU-leur",
+   "note": "En américain : color"
+  },
+  {
+   "id": "m14",
+   "en": "red",
+   "fr": "rouge",
+   "pron": "rèd"
+  },
+  {
+   "id": "m15",
+   "en": "blue",
+   "fr": "bleu",
+   "pron": "blou"
+  },
+  {
+   "id": "m16",
+   "en": "green",
+   "fr": "vert",
+   "pron": "griin"
+  },
+  {
+   "id": "m17",
+   "en": "black",
+   "fr": "noir",
+   "pron": "blak"
+  },
+  {
+   "id": "m18",
+   "en": "white",
+   "fr": "blanc",
+   "pron": "waït"
+  },
+  {
+   "id": "m19",
+   "en": "fabric",
+   "fr": "le tissu",
+   "pron": "FA-brik"
+  },
+  {
+   "id": "m20",
+   "en": "cotton",
+   "fr": "le coton",
+   "pron": "KO-teunn"
+  },
+  {
+   "id": "m21",
+   "en": "leather",
+   "fr": "le cuir",
+   "pron": "LÈ-dheur"
+  },
+  {
+   "id": "m22",
+   "en": "shoes",
+   "fr": "les chaussures",
+   "pron": "chouz"
+  },
+  {
+   "id": "m23",
+   "en": "bag",
+   "fr": "le sac",
+   "pron": "bag"
+  },
+  {
+   "id": "m24",
+   "en": "dress",
+   "fr": "la robe",
+   "pron": "drèss"
+  },
+  {
+   "id": "m25",
+   "en": "shirt",
+   "fr": "la chemise",
+   "pron": "cheurt"
+  },
+  {
+   "id": "m26",
+   "en": "trousers",
+   "fr": "le pantalon",
+   "pron": "TRAOU-zeurz",
+   "note": "En américain : pants"
+  },
+  {
+   "id": "m27",
+   "en": "jewellery",
+   "fr": "les bijoux",
+   "pron": "DJOU-eul-ri",
+   "note": "En américain : jewelry"
+  },
+  {
+   "id": "m28",
+   "en": "gift",
+   "fr": "le cadeau",
+   "pron": "guift"
+  },
+  {
+   "id": "m29",
+   "en": "souvenir",
+   "fr": "le souvenir (objet)",
+   "pron": "sou-veu-NIEUR"
+  },
+  {
+   "id": "m30",
+   "en": "handmade",
+   "fr": "fait à la main",
+   "pron": "HANND-méïd"
+  },
+  {
+   "id": "m31",
+   "en": "quality",
+   "fr": "la qualité",
+   "pron": "KWO-li-ti"
+  },
+  {
+   "id": "m32",
+   "en": "stock",
+   "fr": "le stock",
+   "pron": "stok"
+  },
+  {
+   "id": "m33",
+   "en": "delivery",
+   "fr": "la livraison",
+   "pron": "di-LI-veu-ri"
+  },
+  {
+   "id": "m34",
+   "en": "order",
+   "fr": "la commande",
+   "pron": "ÔR-deur"
+  },
+  {
+   "id": "m35",
+   "en": "receipt",
+   "fr": "le reçu",
+   "pron": "ri-SIIT"
+  },
+  {
+   "id": "m36",
+   "en": "cash",
+   "fr": "les espèces",
+   "pron": "kach"
+  },
+  {
+   "id": "m37",
+   "en": "change",
+   "fr": "la monnaie (rendue)",
+   "pron": "tchéïndj"
+  },
+  {
+   "id": "m38",
+   "en": "mobile money",
+   "fr": "le paiement mobile",
+   "pron": "MÔ-baïl MEU-ni"
+  },
+  {
+   "id": "m39",
+   "en": "wholesale",
+   "fr": "la vente en gros",
+   "pron": "HÔL-séïl"
+  },
+  {
+   "id": "m40",
+   "en": "retail",
+   "fr": "la vente au détail",
+   "pron": "RII-téïl"
+  },
+  {
+   "id": "m41",
+   "en": "piece",
+   "fr": "la pièce, l'unité",
+   "pron": "piiss"
+  },
+  {
+   "id": "m42",
+   "en": "kilo",
+   "fr": "le kilo",
+   "pron": "KII-lô"
+  },
+  {
+   "id": "m43",
+   "en": "dozen",
+   "fr": "la douzaine",
+   "pron": "DEU-zeunn"
+  },
+  {
+   "id": "m44",
+   "en": "total",
+   "fr": "le total",
+   "pron": "TÔ-teul"
+  },
+  {
+   "id": "m45",
+   "en": "offer",
+   "fr": "l'offre",
+   "pron": "O-feur"
+  },
+  {
+   "id": "m46",
+   "en": "bargain",
+   "fr": "la bonne affaire",
+   "pron": "BÂR-guinn"
+  },
+  {
+   "id": "m47",
+   "en": "new",
+   "fr": "neuf, nouveau",
+   "pron": "nyou"
+  },
+  {
+   "id": "m48",
+   "en": "open",
+   "fr": "ouvert",
+   "pron": "Ô-peunn"
+  },
+  {
+   "id": "m49",
+   "en": "closed",
+   "fr": "fermé",
+   "pron": "klôzd"
+  },
+  {
+   "id": "m50",
+   "en": "to buy",
+   "fr": "acheter",
+   "pron": "tou baï"
+  },
+  {
+   "id": "m51",
+   "en": "to sell",
+   "fr": "vendre",
+   "pron": "tou sèl"
+  },
+  {
+   "id": "m52",
+   "en": "to pay",
+   "fr": "payer",
+   "pron": "tou péï"
+  },
+  {
+   "id": "m53",
+   "en": "to try on",
+   "fr": "essayer (un vêtement)",
+   "pron": "tou traï onn"
+  },
+  {
+   "id": "m54",
+   "en": "to choose",
+   "fr": "choisir",
+   "pron": "tou tchouz"
+  },
+  {
+   "id": "m55",
+   "en": "to wrap",
+   "fr": "emballer",
+   "pron": "tou rap"
+  },
+  {
+   "id": "m56",
+   "en": "to exchange",
+   "fr": "échanger",
+   "pron": "tou iks-TCHÉÏNDJ"
+  },
+  {
+   "id": "m57",
+   "en": "to deliver",
+   "fr": "livrer",
+   "pron": "tou di-LI-veur"
+  },
+  {
+   "id": "m58",
+   "en": "to cost",
+   "fr": "coûter",
+   "pron": "tou kost"
+  },
+  {
+   "id": "m59",
+   "en": "to look for",
+   "fr": "chercher",
+   "pron": "tou louk fôr"
+  },
+  {
+   "id": "m60",
+   "en": "to negotiate",
+   "fr": "négocier",
+   "pron": "tou ni-GÔ-chi-éït"
+  }
+ ],
+ "phrases": [
+  {
+   "id": "p01",
+   "en": "Good morning, can I help you?",
+   "fr": "Bonjour, je peux vous aider ?",
+   "pron": "goud MÔR-ning, kann aï hèlp you ?",
+   "trou": "help"
+  },
+  {
+   "id": "p02",
+   "en": "What are you looking for?",
+   "fr": "Que cherchez-vous ?",
+   "pron": "wot âr you LOU-king fôr ?",
+   "trou": "looking"
+  },
+  {
+   "id": "p03",
+   "en": "How much is this bag?",
+   "fr": "Combien coûte ce sac ?",
+   "pron": "haou meutch iz dhiss bag ?",
+   "trou": "bag"
+  },
+  {
+   "id": "p04",
+   "en": "It costs ten thousand francs.",
+   "fr": "Il coûte dix mille francs.",
+   "pron": "it kosts tèn THAOU-zeund frangks.",
+   "trou": "costs"
+  },
+  {
+   "id": "p05",
+   "en": "This one is cheaper.",
+   "fr": "Celui-ci est moins cher.",
+   "pron": "DHISS weunn iz TCHII-peur.",
+   "trou": "cheaper"
+  },
+  {
+   "id": "p06",
+   "en": "What size do you need?",
+   "fr": "Quelle taille vous faut-il ?",
+   "pron": "wot saïz dou you niid ?",
+   "trou": "size"
+  },
+  {
+   "id": "p07",
+   "en": "Do you want to try it on?",
+   "fr": "Voulez-vous l'essayer ?",
+   "pron": "dou you wonnt tou traï it onn ?",
+   "trou": "try"
+  },
+  {
+   "id": "p08",
+   "en": "We have it in blue and in black.",
+   "fr": "Nous l'avons en bleu et en noir.",
+   "pron": "wi hav it inn blou annd inn blak.",
+   "trou": "blue"
+  },
+  {
+   "id": "p09",
+   "en": "This fabric is made of cotton.",
+   "fr": "Ce tissu est en coton.",
+   "pron": "dhiss FA-brik iz méïd ov KO-teunn.",
+   "trou": "cotton"
+  },
+  {
+   "id": "p10",
+   "en": "It is handmade in Senegal.",
+   "fr": "C'est fait à la main au Sénégal.",
+   "pron": "it iz HANND-méïd inn sè-ni-GÔL.",
+   "trou": "handmade"
+  },
+  {
+   "id": "p11",
+   "en": "I can give you a small discount.",
+   "fr": "Je peux vous faire une petite remise.",
+   "pron": "aï kann guiv you eu smôl DISS-kaount.",
+   "trou": "discount"
+  },
+  {
+   "id": "p12",
+   "en": "That is my best price.",
+   "fr": "C'est mon meilleur prix.",
+   "pron": "dhat iz maï bèst praïss.",
+   "trou": "best"
+  },
+  {
+   "id": "p13",
+   "en": "Buy two, get one free.",
+   "fr": "Deux achetés, un offert.",
+   "pron": "baï tou, guèt weunn frii.",
+   "trou": "free"
+  },
+  {
+   "id": "p14",
+   "en": "Do you accept mobile money?",
+   "fr": "Acceptez-vous le paiement mobile ?",
+   "pron": "dou you euk-SÈPT MÔ-baïl MEU-ni ?",
+   "trou": "accept"
+  },
+  {
+   "id": "p15",
+   "en": "You can pay in cash or by mobile money.",
+   "fr": "Vous pouvez payer en espèces ou par paiement mobile.",
+   "pron": "you kann péï inn kach ôr baï MÔ-baïl MEU-ni.",
+   "trou": "pay"
+  },
+  {
+   "id": "p16",
+   "en": "Here is your receipt.",
+   "fr": "Voici votre reçu.",
+   "pron": "hieur iz yôr ri-SIIT.",
+   "trou": "receipt"
+  },
+  {
+   "id": "p17",
+   "en": "Shall I wrap it as a gift?",
+   "fr": "Je vous fais un paquet cadeau ?",
+   "pron": "chal aï rap it az eu guift ?",
+   "trou": "gift"
+  },
+  {
+   "id": "p18",
+   "en": "Sorry, this size is out of stock.",
+   "fr": "Désolé, cette taille est en rupture de stock.",
+   "pron": "SO-ri, dhiss saïz iz aout ov stok.",
+   "trou": "stock"
+  },
+  {
+   "id": "p19",
+   "en": "We will have new stock on Monday.",
+   "fr": "Nous aurons du nouveau stock lundi.",
+   "pron": "wi wil hav nyou stok onn MEUNN-déï.",
+   "trou": "Monday"
+  },
+  {
+   "id": "p20",
+   "en": "We deliver in Dakar.",
+   "fr": "Nous livrons à Dakar.",
+   "pron": "wi di-LI-veur inn DA-kâr.",
+   "trou": "deliver"
+  },
+  {
+   "id": "p21",
+   "en": "Delivery takes two days.",
+   "fr": "La livraison prend deux jours.",
+   "pron": "di-LI-veu-ri téïks tou déïz.",
+   "trou": "days"
+  },
+  {
+   "id": "p22",
+   "en": "You can exchange it within a week.",
+   "fr": "Vous pouvez l'échanger dans un délai d'une semaine.",
+   "pron": "you kann iks-TCHÉÏNDJ it wi-DHINN eu wiik.",
+   "trou": "week"
+  },
+  {
+   "id": "p23",
+   "en": "Please keep your receipt.",
+   "fr": "Merci de garder votre reçu.",
+   "pron": "pliiz kiip yôr ri-SIIT.",
+   "trou": "keep"
+  },
+  {
+   "id": "p24",
+   "en": "The shop is closed on Sunday.",
+   "fr": "La boutique est fermée le dimanche.",
+   "pron": "dheu chop iz klôzd onn SEUNN-déï.",
+   "trou": "closed"
+  },
+  {
+   "id": "p25",
+   "en": "Thank you, come back soon!",
+   "fr": "Merci, à bientôt !",
+   "pron": "thangk you, keum bak soun !",
+   "trou": "soon"
+  }
+ ]
+}

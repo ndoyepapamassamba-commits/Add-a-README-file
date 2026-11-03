@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "Calcul Chantier",
+  "short_name": "Chantier",
+  "description": "Ciment, sable, gravier, fer, parpaings, carrelage, peinture : quantités et budget de votre maison par étapes, plan d'épargne et devis PDF. Fonctionne sans Internet.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f2ed",
+  "theme_color": "#a8441b",
+  "categories": ["productivity", "finance", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Ajouter un élément", "short_name": "Élément", "url": "./#/element/nouveau", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Budget et devis", "short_name": "Budget", "url": "./#/budget", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Plan d'épargne", "short_name": "Épargne", "url": "./#/epargne", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

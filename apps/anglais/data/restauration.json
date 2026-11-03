@@ -1,0 +1,545 @@
+{
+ "id": "restauration",
+ "nom": "Restauration",
+ "mots": [
+  {
+   "id": "m01",
+   "en": "restaurant",
+   "fr": "le restaurant",
+   "pron": "RÈS-teu-ronnt"
+  },
+  {
+   "id": "m02",
+   "en": "waiter",
+   "fr": "le serveur",
+   "pron": "WÉÏ-teur"
+  },
+  {
+   "id": "m03",
+   "en": "waitress",
+   "fr": "la serveuse",
+   "pron": "WÉÏ-treuss"
+  },
+  {
+   "id": "m04",
+   "en": "cook",
+   "fr": "le cuisinier, la cuisinière",
+   "pron": "kouk"
+  },
+  {
+   "id": "m05",
+   "en": "chef",
+   "fr": "le chef cuisinier",
+   "pron": "chèf"
+  },
+  {
+   "id": "m06",
+   "en": "kitchen",
+   "fr": "la cuisine (la pièce)",
+   "pron": "KI-tchinn"
+  },
+  {
+   "id": "m07",
+   "en": "table",
+   "fr": "la table",
+   "pron": "TÉÏ-beul"
+  },
+  {
+   "id": "m08",
+   "en": "chair",
+   "fr": "la chaise",
+   "pron": "tchèr"
+  },
+  {
+   "id": "m09",
+   "en": "menu",
+   "fr": "la carte, le menu",
+   "pron": "MÈ-nyou"
+  },
+  {
+   "id": "m10",
+   "en": "dish",
+   "fr": "le plat",
+   "pron": "dich"
+  },
+  {
+   "id": "m11",
+   "en": "starter",
+   "fr": "l'entrée",
+   "pron": "STÂR-teur"
+  },
+  {
+   "id": "m12",
+   "en": "main course",
+   "fr": "le plat principal",
+   "pron": "méïnn kôrss"
+  },
+  {
+   "id": "m13",
+   "en": "dessert",
+   "fr": "le dessert",
+   "pron": "di-ZEURT"
+  },
+  {
+   "id": "m14",
+   "en": "drink",
+   "fr": "la boisson",
+   "pron": "dringk"
+  },
+  {
+   "id": "m15",
+   "en": "water",
+   "fr": "l'eau",
+   "pron": "WÔ-teur"
+  },
+  {
+   "id": "m16",
+   "en": "juice",
+   "fr": "le jus",
+   "pron": "djouss"
+  },
+  {
+   "id": "m17",
+   "en": "coffee",
+   "fr": "le café",
+   "pron": "KO-fi"
+  },
+  {
+   "id": "m18",
+   "en": "tea",
+   "fr": "le thé",
+   "pron": "tii"
+  },
+  {
+   "id": "m19",
+   "en": "bread",
+   "fr": "le pain",
+   "pron": "brèd"
+  },
+  {
+   "id": "m20",
+   "en": "rice",
+   "fr": "le riz",
+   "pron": "raïss"
+  },
+  {
+   "id": "m21",
+   "en": "fish",
+   "fr": "le poisson",
+   "pron": "fich"
+  },
+  {
+   "id": "m22",
+   "en": "chicken",
+   "fr": "le poulet",
+   "pron": "TCHI-kinn"
+  },
+  {
+   "id": "m23",
+   "en": "meat",
+   "fr": "la viande",
+   "pron": "miit"
+  },
+  {
+   "id": "m24",
+   "en": "beef",
+   "fr": "le bœuf",
+   "pron": "biif"
+  },
+  {
+   "id": "m25",
+   "en": "lamb",
+   "fr": "l'agneau",
+   "pron": "lam"
+  },
+  {
+   "id": "m26",
+   "en": "vegetables",
+   "fr": "les légumes",
+   "pron": "VÈDJ-teu-beulz"
+  },
+  {
+   "id": "m27",
+   "en": "salad",
+   "fr": "la salade",
+   "pron": "SA-leud"
+  },
+  {
+   "id": "m28",
+   "en": "fruit",
+   "fr": "les fruits",
+   "pron": "frout"
+  },
+  {
+   "id": "m29",
+   "en": "onion",
+   "fr": "l'oignon",
+   "pron": "EU-nyeunn"
+  },
+  {
+   "id": "m30",
+   "en": "sauce",
+   "fr": "la sauce",
+   "pron": "sôss"
+  },
+  {
+   "id": "m31",
+   "en": "spicy",
+   "fr": "épicé, pimenté",
+   "pron": "SPAÏ-si"
+  },
+  {
+   "id": "m32",
+   "en": "salt",
+   "fr": "le sel",
+   "pron": "solt"
+  },
+  {
+   "id": "m33",
+   "en": "pepper",
+   "fr": "le poivre",
+   "pron": "PÈ-peur"
+  },
+  {
+   "id": "m34",
+   "en": "sugar",
+   "fr": "le sucre",
+   "pron": "CHOU-geur"
+  },
+  {
+   "id": "m35",
+   "en": "plate",
+   "fr": "l'assiette",
+   "pron": "pléït"
+  },
+  {
+   "id": "m36",
+   "en": "glass",
+   "fr": "le verre",
+   "pron": "glâss"
+  },
+  {
+   "id": "m37",
+   "en": "fork",
+   "fr": "la fourchette",
+   "pron": "fôrk"
+  },
+  {
+   "id": "m38",
+   "en": "knife",
+   "fr": "le couteau",
+   "pron": "naïf"
+  },
+  {
+   "id": "m39",
+   "en": "spoon",
+   "fr": "la cuillère",
+   "pron": "spoun"
+  },
+  {
+   "id": "m40",
+   "en": "napkin",
+   "fr": "la serviette de table",
+   "pron": "NAP-kinn"
+  },
+  {
+   "id": "m41",
+   "en": "bill",
+   "fr": "l'addition",
+   "pron": "bil",
+   "note": "En américain : check"
+  },
+  {
+   "id": "m42",
+   "en": "tip",
+   "fr": "le pourboire",
+   "pron": "tip"
+  },
+  {
+   "id": "m43",
+   "en": "order",
+   "fr": "la commande",
+   "pron": "ÔR-deur"
+  },
+  {
+   "id": "m44",
+   "en": "allergy",
+   "fr": "l'allergie",
+   "pron": "A-leur-dji"
+  },
+  {
+   "id": "m45",
+   "en": "vegetarian",
+   "fr": "végétarien",
+   "pron": "vè-dji-TÈ-ri-eunn"
+  },
+  {
+   "id": "m46",
+   "en": "grilled",
+   "fr": "grillé",
+   "pron": "grild"
+  },
+  {
+   "id": "m47",
+   "en": "fried",
+   "fr": "frit",
+   "pron": "fraïd"
+  },
+  {
+   "id": "m48",
+   "en": "fresh",
+   "fr": "frais",
+   "pron": "frèch"
+  },
+  {
+   "id": "m49",
+   "en": "hot",
+   "fr": "chaud",
+   "pron": "hot"
+  },
+  {
+   "id": "m50",
+   "en": "cold",
+   "fr": "froid",
+   "pron": "kôld"
+  },
+  {
+   "id": "m51",
+   "en": "delicious",
+   "fr": "délicieux",
+   "pron": "di-LI-cheuss"
+  },
+  {
+   "id": "m52",
+   "en": "ready",
+   "fr": "prêt",
+   "pron": "RÈ-di"
+  },
+  {
+   "id": "m53",
+   "en": "takeaway",
+   "fr": "à emporter",
+   "pron": "TÉÏK-eu-wéï",
+   "note": "En américain : takeout"
+  },
+  {
+   "id": "m54",
+   "en": "to order",
+   "fr": "commander",
+   "pron": "tou ÔR-deur"
+  },
+  {
+   "id": "m55",
+   "en": "to serve",
+   "fr": "servir",
+   "pron": "tou seurv"
+  },
+  {
+   "id": "m56",
+   "en": "to cook",
+   "fr": "cuisiner",
+   "pron": "tou kouk"
+  },
+  {
+   "id": "m57",
+   "en": "to taste",
+   "fr": "goûter",
+   "pron": "tou téïst"
+  },
+  {
+   "id": "m58",
+   "en": "to recommend",
+   "fr": "recommander, conseiller",
+   "pron": "tou rè-keu-MÈND"
+  },
+  {
+   "id": "m59",
+   "en": "to bring",
+   "fr": "apporter",
+   "pron": "tou bring"
+  },
+  {
+   "id": "m60",
+   "en": "to book a table",
+   "fr": "réserver une table",
+   "pron": "tou bouk eu TÉÏ-beul"
+  }
+ ],
+ "phrases": [
+  {
+   "id": "p01",
+   "en": "Good evening, do you have a reservation?",
+   "fr": "Bonsoir, avez-vous réservé ?",
+   "pron": "goud IIV-ning, dou you hav eu rè-zeur-VÉÏ-cheunn ?",
+   "trou": "reservation"
+  },
+  {
+   "id": "p02",
+   "en": "A table for two, please.",
+   "fr": "Une table pour deux, s'il vous plaît.",
+   "pron": "eu TÉÏ-beul fôr tou, pliiz.",
+   "trou": "table"
+  },
+  {
+   "id": "p03",
+   "en": "Here is the menu.",
+   "fr": "Voici la carte.",
+   "pron": "hieur iz dheu MÈ-nyou.",
+   "trou": "menu"
+  },
+  {
+   "id": "p04",
+   "en": "Are you ready to order?",
+   "fr": "Êtes-vous prêts à commander ?",
+   "pron": "âr you RÈ-di tou ÔR-deur ?",
+   "trou": "order"
+  },
+  {
+   "id": "p05",
+   "en": "What would you like to drink?",
+   "fr": "Que voulez-vous boire ?",
+   "pron": "wot woud you laïk tou dringk ?",
+   "trou": "drink"
+  },
+  {
+   "id": "p06",
+   "en": "I recommend the thieboudienne, our fish and rice dish.",
+   "fr": "Je vous conseille le thiéboudienne, notre plat de riz au poisson.",
+   "pron": "aï rè-keu-MÈND dheu tchè-bou-DJÈNN, aoueur fich annd raïss dich.",
+   "trou": "recommend"
+  },
+  {
+   "id": "p07",
+   "en": "The chicken yassa is very popular.",
+   "fr": "Le poulet yassa est très apprécié.",
+   "pron": "dheu TCHI-kinn YA-sa iz VÈ-ri PO-pyou-leur.",
+   "trou": "popular"
+  },
+  {
+   "id": "p08",
+   "en": "Is it spicy?",
+   "fr": "Est-ce que c'est épicé ?",
+   "pron": "iz it SPAÏ-si ?",
+   "trou": "spicy"
+  },
+  {
+   "id": "p09",
+   "en": "Do you have any allergies?",
+   "fr": "Avez-vous des allergies ?",
+   "pron": "dou you hav È-ni A-leur-djiz ?",
+   "trou": "allergies"
+  },
+  {
+   "id": "p10",
+   "en": "We have a vegetarian dish.",
+   "fr": "Nous avons un plat végétarien.",
+   "pron": "wi hav eu vè-dji-TÈ-ri-eunn dich.",
+   "trou": "vegetarian"
+  },
+  {
+   "id": "p11",
+   "en": "Would you like your fish grilled or fried?",
+   "fr": "Voulez-vous votre poisson grillé ou frit ?",
+   "pron": "woud you laïk yôr fich grild ôr fraïd ?",
+   "trou": "grilled"
+  },
+  {
+   "id": "p12",
+   "en": "Your meal will be ready in fifteen minutes.",
+   "fr": "Votre repas sera prêt dans quinze minutes.",
+   "pron": "yôr miil wil bi RÈ-di inn fif-TIIN MI-nits.",
+   "trou": "ready"
+  },
+  {
+   "id": "p13",
+   "en": "Enjoy your meal!",
+   "fr": "Bon appétit !",
+   "pron": "inn-DJOÏ yôr miil !",
+   "trou": "meal"
+  },
+  {
+   "id": "p14",
+   "en": "Is everything all right?",
+   "fr": "Tout se passe bien ?",
+   "pron": "iz ÈV-ri-thing ôl raït ?",
+   "trou": "everything"
+  },
+  {
+   "id": "p15",
+   "en": "Would you like some more bread?",
+   "fr": "Voulez-vous encore du pain ?",
+   "pron": "woud you laïk seum môr brèd ?",
+   "trou": "bread"
+  },
+  {
+   "id": "p16",
+   "en": "Can I bring you a dessert?",
+   "fr": "Puis-je vous apporter un dessert ?",
+   "pron": "kann aï bring you eu di-ZEURT ?",
+   "trou": "dessert"
+  },
+  {
+   "id": "p17",
+   "en": "We have fresh mango juice.",
+   "fr": "Nous avons du jus de mangue frais.",
+   "pron": "wi hav frèch MANG-gô djouss.",
+   "trou": "juice"
+  },
+  {
+   "id": "p18",
+   "en": "Sorry, we have no more fish today.",
+   "fr": "Désolé, nous n'avons plus de poisson aujourd'hui.",
+   "pron": "SO-ri, wi hav nô môr fich teu-DÉÏ.",
+   "trou": "fish"
+  },
+  {
+   "id": "p19",
+   "en": "Here is the bill.",
+   "fr": "Voici l'addition.",
+   "pron": "hieur iz dheu bil.",
+   "trou": "bill"
+  },
+  {
+   "id": "p20",
+   "en": "Service is not included.",
+   "fr": "Le service n'est pas compris.",
+   "pron": "SEUR-viss iz not inn-KLOU-did.",
+   "trou": "included"
+  },
+  {
+   "id": "p21",
+   "en": "Is it to eat in or takeaway?",
+   "fr": "C'est sur place ou à emporter ?",
+   "pron": "iz it tou iit inn ôr TÉÏK-eu-wéï ?",
+   "trou": "takeaway"
+  },
+  {
+   "id": "p22",
+   "en": "Please wash your hands before cooking.",
+   "fr": "Lavez-vous les mains avant de cuisiner.",
+   "pron": "pliiz woch yôr hanndz bi-FÔR KOU-king.",
+   "trou": "hands"
+  },
+  {
+   "id": "p23",
+   "en": "Keep the meat in the fridge.",
+   "fr": "Gardez la viande au réfrigérateur.",
+   "pron": "kiip dheu miit inn dheu fridj.",
+   "trou": "fridge"
+  },
+  {
+   "id": "p24",
+   "en": "The kitchen closes at eleven.",
+   "fr": "La cuisine ferme à vingt-trois heures.",
+   "pron": "dheu KI-tchinn KLÔ-ziz at i-LÈ-veunn.",
+   "trou": "kitchen"
+  },
+  {
+   "id": "p25",
+   "en": "Thank you, see you soon!",
+   "fr": "Merci, à bientôt !",
+   "pron": "thangk you, sii you soun !",
+   "trou": "soon"
+  }
+ ]
+}

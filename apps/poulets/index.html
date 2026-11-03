@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://seegnylaubuularegmku.supabase.co; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'">
+<title>PouletPilot — gestion de l'élevage de poulets de chair</title>
+<meta name="description" content="PouletPilot : notez chaque jour les morts, l'aliment, les pesées, les dépenses et les ventes de vos poulets de chair. L'application calcule l'indice de consommation, le coût par poulet, le prix minimum et la marge. Sans Internet, données gardées sur le téléphone.">
+<meta name="theme-color" content="#0b6e4f">
+<meta name="color-scheme" content="light dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PouletPilot">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="PouletPilot — le co-pilote de votre élevage de poulets de chair">
+<meta property="og:description" content="Morts, aliment, pesées, ventes : PouletPilot calcule votre coût par poulet, votre prix minimum et votre marge. Fonctionne sans Internet.">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/theme.js"></script>
+</head>
+<body>
+<a class="sauter" href="#vue">Aller au contenu</a>
+<header class="barre" id="barre">
+  <a class="retour" id="retour" href="#/" aria-label="Retour" hidden><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+  <span class="logo" id="logo"><img src="icons/icon-192.png" alt="" width="30" height="30"></span>
+  <h1 class="titre" id="titre">Poulet<b>Pilot</b></h1>
+  <a class="badge-pass" id="badge-pass" href="#/pass">Gratuit</a>
+</header>
+<div id="bandeaux"></div>
+<main id="vue" tabindex="-1">
+  <p class="chargement">Chargement de PouletPilot…</p>
+  <noscript><p>PouletPilot a besoin de JavaScript. Ouvrez cette page avec Chrome ou le navigateur de votre téléphone.</p></noscript>
+</main>
+<nav class="onglets" aria-label="Menu principal">
+  <a href="#/" data-onglet="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>Mes lots</a>
+  <a href="#/comparer" data-onglet="comparer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg>Comparer</a>
+  <a href="#/pass" data-onglet="pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21.1l1.4-7L2 9.3l7-.8z"/></svg>Mon pass</a>
+  <a href="#/reglages" data-onglet="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Réglages</a>
+</nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="js/calculs.js" defer></script>
+<script src="js/licence.js" defer></script>
+<script src="js/db.js" defer></script>
+<script src="js/graphiques.js" defer></script>
+<script src="js/rapport.js" defer></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>
