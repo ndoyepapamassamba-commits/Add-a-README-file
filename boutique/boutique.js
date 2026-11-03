@@ -61,11 +61,43 @@
       .then(function (x) {
         if (!x.ok) throw new Error(x.j && x.j.message || 'Commande impossible pour le moment.');
         var c = x.j.commande;
-        try { localStorage.setItem('teranga-outils-' + c.id, c.jeton); } catch (err) { /* navigation privée */ }
+        try { localStorage.setItem('teranga-outils-' + c.id, c.jeton); localStorage.setItem('teranga-outils-info-' + c.id, JSON.stringify({ titre: (document.querySelector('h1') || {}).textContent || '', le: Date.now() })); } catch (err) { /* navigation privée */ }
         location.href = 'commande.html?o=' + encodeURIComponent(c.id) + '&t=' + encodeURIComponent(c.jeton);
       })
       .catch(function (err) { msg.className = 'msg erreur'; texte(msg, err.message); btn.disabled = false; });
   });
+
+  // Application installable (Teranga IA) : fonctionnement hors connexion et bouton « Installer »
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(function () {});
+  var invite = null;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); invite = e; var b = $('#installer'); if (b) b.hidden = false; });
+  var bi = $('#installer-btn');
+  if (bi) bi.addEventListener('click', function () { if (!invite) return; invite.prompt(); invite.userChoice.then(function () { invite = null; $('#installer').hidden = true; }); });
+
+  // Mes commandes : liste gardée sur ce téléphone
+  var lc = $('#liste-commandes');
+  if (lc) {
+    var ids = [];
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); var m = /^teranga-outils-(TCV-[0-9A-Z]{8})$/.exec(k || ''); if (m) ids.push(m[1]); } } catch (e) { /* stockage indisponible */ }
+    lc.textContent = '';
+    if (!ids.length) { var p0 = document.createElement('p'); p0.textContent = 'Aucune commande sur ce téléphone pour le moment.'; lc.appendChild(p0); }
+    ids.map(function (id) { var info = {}; try { info = JSON.parse(localStorage.getItem('teranga-outils-info-' + id) || '{}'); } catch (e) {} return { id: id, jeton: localStorage.getItem('teranga-outils-' + id), info: info }; })
+      .sort(function (a, b) { return (b.info.le || 0) - (a.info.le || 0); })
+      .forEach(function (o) {
+        var a = document.createElement('a'); a.className = 'carte';
+        a.href = 'commande.html?o=' + encodeURIComponent(o.id) + '&t=' + encodeURIComponent(o.jeton || '');
+        var h = document.createElement('h3'); h.textContent = o.info.titre || o.id;
+        var st = document.createElement('p'); st.textContent = (o.info.le ? new Date(o.info.le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) + ' · ' : '') + 'Statut en cours de vérification…';
+        a.append(h, st); lc.appendChild(a);
+        fetch(API + '/commandes/' + encodeURIComponent(o.id) + '?t=' + encodeURIComponent(o.jeton || ''))
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (j) {
+            var c = j && j.commande;
+            if (c && c.produit && !o.info.titre) h.textContent = c.produit.titre;
+            st.textContent = st.textContent.replace('Statut en cours de vérification…', !c ? 'Commande expirée' : c.purgee ? 'Expirée' : c.payee ? 'Payée · ouvrir pour télécharger' : 'En attente de paiement');
+          }).catch(function () { st.textContent = st.textContent.replace('Statut en cours de vérification…', 'Hors connexion'); });
+      });
+  }
 
   // Page commande : montant à envoyer, attente du paiement, téléchargements
   var zone = $('#commande');

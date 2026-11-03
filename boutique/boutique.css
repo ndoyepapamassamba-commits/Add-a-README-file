@@ -66,3 +66,5 @@ footer a{color:var(--muted)}
 .galerie img{max-width:100%;height:auto;border-radius:8px;display:block;margin:0 auto 8px}
 .achat input[type=file]{width:100%;font:inherit;padding:8px;border:1px dashed var(--brand);border-radius:10px;background:var(--bg);color:var(--text)}
 .photo-apercu img{max-width:180px;max-height:180px;border-radius:8px;margin:.4em 0;display:block}
+.installer{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--brand-soft);padding:8px 16px;font-size:15px}
+.installer[hidden]{display:none}

@@ -52,9 +52,14 @@ const tete = (titre, description, canonique, extra = "") => `<!DOCTYPE html>
 <meta property="og:url" content="${esc(canonique)}">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b6e4f'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='15' font-weight='700' fill='white' text-anchor='middle'%3EXL%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="boutique.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icone-apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Teranga IA">
 ${extra}</head>
 <body>
-<header class="top"><a class="brand" href="./">Teranga <b>Outils</b></a><span><a class="lien" href="./">Tous les outils</a>${guides.length ? ' · <a class="lien" href="guides.html">Guides</a>' : ""}</span></header>
+<header class="top"><a class="brand" href="./">Teranga <b>Outils</b></a><span><a class="lien" href="./">Tous les outils</a> · <a class="lien" href="mes-commandes.html">Mes commandes</a>${guides.length ? ' · <a class="lien" href="guides.html">Guides</a>' : ""}</span></header>
+<div class="installer" id="installer" hidden><span>Installez l'application Teranga IA sur votre téléphone.</span> <button class="btn" type="button" id="installer-btn">Installer</button></div>
 `;
 const pied = `<footer>
 <p>Teranga Outils · outils Excel prêts à l'emploi, payés par Wave et livrés tout de suite. Vendeur : particulier au Sénégal.</p>
@@ -73,7 +78,7 @@ function champ(c) {
   const id = "r_" + c.id, req = c.obligatoire ? " required" : "", lib = `<label for="${id}">${esc(c.label)}${c.obligatoire ? " *" : ""}</label>`;
   const aide = c.aide ? `<small>${esc(c.aide)}</small>` : "";
   if (c.type === "paragraphe") return lib + `<textarea id="${id}" name="${id}" rows="4" maxlength="${Number(c.max) || 1500}"${req}></textarea>` + aide;
-  if (c.type === "image") return lib + `<input type="file" id="${id}" name="${id}" accept="image/jpeg,image/png,image/webp" capture="environment" data-photo${req}><div class="photo-apercu" id="${id}-apercu"></div><small>Photo nette et bien éclairée. N'envoyez que des photos qui vous appartiennent ; elles sont effacées après 30 jours.</small>` + aide;
+  if (c.type === "image") return lib + `<input type="file" id="${id}" name="${id}" accept="image/jpeg,image/png,image/webp" data-photo${req}><div class="photo-apercu" id="${id}-apercu"></div><small>Photo nette et bien éclairée. N'envoyez que des photos qui vous appartiennent ; elles sont effacées après 30 jours.</small>` + aide;
   if (c.type === "choix") return lib + `<select id="${id}" name="${id}"${req}><option value="">Choisir…</option>${c.choix.map((x) => `<option>${esc(x)}</option>`).join("")}</select>` + aide;
   const type = c.type === "nombre" ? ' type="text" inputmode="decimal"' : c.type === "date" ? ' type="date"' : ' type="text"';
   return lib + `<input${type} id="${id}" name="${id}" maxlength="${Number(c.max) || 150}"${req}>` + aide;
@@ -216,6 +221,14 @@ const cgv = tete("Conditions de vente | Teranga Outils", "Conditions de vente de
 </main>
 ` + pied;
 
+const mesCommandes = tete("Mes commandes | Teranga IA", "Retrouvez vos commandes, vos fichiers et vos documents Teranga IA.", BASE + "mes-commandes.html", '<meta name="robots" content="noindex">\n') + `<main id="mes-commandes">
+<h1>Mes commandes</h1>
+<p class="lead">Vos commandes passées sur ce téléphone. Touchez une commande pour la payer, la télécharger ou relire votre document.</p>
+<div id="liste-commandes"><p>Chargement…</p></div>
+<p style="font-size:14px;color:var(--muted)">La liste est gardée seulement sur ce téléphone. Gardez aussi le lien de chaque commande.</p>
+</main>
+` + pied;
+
 async function catalogue(argv) {
   if (argv[2]) return JSON.parse(readFileSync(argv[2], "utf8")).produits;
   const r = await fetch(API + "/catalogue", { headers: { accept: "application/json" } });
@@ -236,16 +249,17 @@ for (const p of produits) ecrire(p.slug + ".html", pageProduit(p));
 ecrire("index.html", pageIndex(produits));
 ecrire("commande.html", commande);
 ecrire("cgv.html", cgv);
+ecrire("mes-commandes.html", mesCommandes);
 ecrire(CLE_INDEXNOW + ".txt", CLE_INDEXNOW);
 for (const g of guides) ecrire("guide-" + g.slug + ".html", pageGuide(g, produits));
 if (guides.length) ecrire("guides.html", pageGuides());
 // Produits retirés de la vente : leur page disparaît
-const gardes = new Set(produits.map((p) => p.slug + ".html").concat(["index.html", "commande.html", "cgv.html"], guides.map((g) => "guide-" + g.slug + ".html"), guides.length ? ["guides.html"] : []));
+const gardes = new Set(produits.map((p) => p.slug + ".html").concat(["index.html", "commande.html", "cgv.html", "mes-commandes.html"], guides.map((g) => "guide-" + g.slug + ".html"), guides.length ? ["guides.html"] : []));
 for (const f of readdirSync(RACINE)) if (f.endsWith(".html") && !gardes.has(f)) { unlinkSync(RACINE + f); ecrits.set(f, true); }
 const jour = new Date().toISOString().slice(0, 10);
 const urls = [BASE, BASE + "cgv.html", ...produits.map((p) => BASE + p.slug + ".html"), ...(guides.length ? [BASE + "guides.html"] : []), ...guides.map((g) => BASE + "guide-" + g.slug + ".html")];
 ecrire("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${u}</loc></url>`).join("\n")}\n</urlset>\n`);
-const changees = [...ecrits].filter(([n, c]) => c && n.endsWith(".html") && n !== "commande.html" && existsSync(RACINE + n)).map(([n]) => n === "index.html" ? BASE : BASE + n);
+const changees = [...ecrits].filter(([n, c]) => c && n.endsWith(".html") && n !== "commande.html" && n !== "mes-commandes.html" && existsSync(RACINE + n)).map(([n]) => n === "index.html" ? BASE : BASE + n);
 writeFileSync(process.env.CHANGEES || "/tmp/boutique-changees.txt", changees.join("\n"));
 console.log(`${produits.length} produits ; pages modifiées : ${changees.length}`);
 console.log(createHash("sha256").update(JSON.stringify(produits)).digest("hex").slice(0, 12));
