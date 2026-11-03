@@ -15,7 +15,7 @@ const MAX_JSON = 16 * 1024;
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const enc = new TextEncoder();
 
-export interface Env { url: string; cle: string; fetch: typeof fetch; now: () => Date; openrouter?: string; modeles?: string[]; modelesFabrique?: string[] }
+export interface Env { url: string; cle: string; fetch: typeof fetch; now: () => Date; openrouter?: string; modeles?: string[]; modelesFabrique?: string[]; modelesPayantsFabrique?: string[] }
 
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -368,8 +368,8 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
       return json(200, { fiches: (await rpc(env, "boutique_fiches_attente", {})) || [], titres: ((adm && adm.produits) || []).map((p: any) => p.titre).filter(Boolean) });
     }
     if (req.method === "POST" && chemin === "/fabrique/modele") {
-      // Modèle de langue pour la fabrique (GitHub Models a fermé le 30 juillet 2026) : modèles gratuits d'OpenRouter
-      // avec la clé du propriétaire, jamais un modèle payant. Durée bornée (limite des fonctions Edge).
+      // Modèle de langue pour la fabrique (GitHub Models a fermé le 30 juillet 2026) : modèles gratuits d'OpenRouter avec la clé
+      // du propriétaire, puis repli payant bon marché plafonné par jour. Durée bornée (limite des fonctions Edge).
       const v = await verifierGithub(env, (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""));
       if (!v.ok) { console.warn(`[boutique] modèle refusé : ${v.raison}`); return erreur(401, "refuse", "Accès refusé."); }
       const b = await lireJson(req, 120_000);
@@ -381,23 +381,39 @@ export async function traiter(req: Request, env: Env): Promise<Response> {
       const depart = Number.isInteger(b.depart) ? Math.abs(b.depart) % Math.max(1, liste.length) : 0;
       const ordre = [...liste.slice(depart), ...liste.slice(0, depart)];
       const t0 = Date.now(), essais: string[] = [];
-      for (const modele of ordre) {
-        const reste = 120_000 - (Date.now() - t0);
-        if (reste < 15_000) { essais.push("temps écoulé"); break; }
+      const essayer = async (modele: string, delai: number): Promise<string | null> => {
         try {
-          const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), Math.min(90_000, reste));
+          const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), delai);
           const r = await env.fetch("https://openrouter.ai/api/v1/chat/completions", { method: "POST", signal: ctl.signal,
             headers: { authorization: `Bearer ${k}`, "content-type": "application/json", "x-title": "Teranga Outils (fabrique)" },
             body: JSON.stringify({ model: modele, messages: msgs, temperature: typeof b.temperature === "number" ? Math.min(1.2, Math.max(0, b.temperature)) : 0.7, max_tokens: 8000, ...(b.json ? { response_format: { type: "json_object" } } : {}) }) });
           clearTimeout(tm);
-          if (!r.ok) { essais.push(`${modele} : ${r.status}`); continue; }
+          if (!r.ok) { essais.push(`${modele} : ${r.status}`); return null; }
           const j = await r.json().catch(() => null);
           const c = String(j?.choices?.[0]?.message?.content || "");
-          if (!c.trim()) { essais.push(`${modele} : vide`); continue; }
-          return json(200, { contenu: c, modele });
-        } catch (e: any) { essais.push(`${modele} : ${e && e.name === "AbortError" ? "délai" : e && e.message}`); }
+          if (!c.trim()) { essais.push(`${modele} : vide`); return null; }
+          return c;
+        } catch (e: any) { essais.push(`${modele} : ${e && e.name === "AbortError" ? "délai" : e && e.message}`); return null; }
+      };
+      // 1. Modèles gratuits (70 s au plus en tout), 2. repli sur un modèle payant bon marché (fiches sans donnée personnelle),
+      // plafonné à 30 appels par jour pour que la dépense reste négligeable (quelques francs par produit).
+      for (const modele of ordre) {
+        const reste = 70_000 - (Date.now() - t0);
+        if (reste < 12_000) { essais.push("temps des modèles gratuits écoulé"); break; }
+        const c = await essayer(modele, Math.min(60_000, reste));
+        if (c) return json(200, { contenu: c, modele, payant: false });
       }
-      return erreur(502, "modeles", ("Aucun modèle gratuit n'a répondu : " + essais.join(" | ")).slice(0, 400));
+      if (b.payant !== false) {
+        for (const modele of (env.modelesPayantsFabrique || MODELES_DEFAUT).filter((m) => !m.endsWith(":free"))) {
+          const reste = 140_000 - (Date.now() - t0);
+          if (reste < 15_000) { essais.push("temps écoulé"); break; }
+          const permis = await rpc(env, "tcv_hit_rate_limit", { p_key: "fab-payant", p_window_seconds: 86400, p_max: 30, p_now: now.toISOString() }).catch(() => false);
+          if (!permis) { essais.push("plafond payant du jour atteint"); break; }
+          const c = await essayer(modele, Math.min(65_000, reste));
+          if (c) return json(200, { contenu: c, modele, payant: true });
+        }
+      }
+      return erreur(502, "modeles", ("Aucun modèle n'a répondu : " + essais.join(" | ")).slice(0, 400));
     }
     if (req.method === "GET" && chemin === "/etat") {
       return json(200, { redaction: !!(await cleIa(env)) });
