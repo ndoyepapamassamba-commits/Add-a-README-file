@@ -24,6 +24,7 @@ const port = srv.address().port;
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 200)); });
   await page.goto(`http://localhost:${port}/index.html`);
+  await page.evaluate((kf) => { window.__E2E_KF = kf; }, +(process.env.E2E_KEYFRAMES || 0));
   await page.waitForFunction(() => window.SkitApp && window.SkitApp.state.timeline.segments.length > 0, null, { timeout: 60000 });
   await page.screenshot({ path: path.join(OUT, 'ui-scripts.png') });
   const fixtures = LIVE ? ['live', 'live'] : fs.readdirSync(path.join(OUT, 'fixtures')).filter(f => /\.(jpg|png)$/.test(f));
@@ -35,7 +36,7 @@ const port = srv.address().port;
     const p = NS.Script.sampleProject(); p.sketches = p.sketches.slice(0, 2); p.title = 'Test e2e'; p.width = 1080; p.height = 1920; p.fps = 30;
     p.timing.reaction = 2.0; p.timing.title = 1.5;
     const fetchFile = async (name) => { const b = await (await fetch(`http://localhost:${port}/__fixtures/${name}`)).blob(); return new File([b], name, { type: b.type, lastModified: 1 }); };
-    if (live) { S.settings.openrouter = { apiKey: orKey, imageModel: 'google/gemini-2.5-flash-image' }; p.visual.provider = 'openrouter'; p.visual.seed = 21; }
+    if (live) { S.settings.openrouter = { apiKey: orKey, imageModel: 'google/gemini-2.5-flash-image' }; p.visual.provider = 'openrouter'; p.visual.seed = 21; p.visual.keyframes = +(window.__E2E_KF || 0); }
     else {
       const wide = await NS.ImageGen.importFile(await fetchFile('wide.jpg'));
       const close = await NS.ImageGen.importFile(await fetchFile('close.jpg'));
@@ -46,7 +47,7 @@ const port = srv.address().port;
     await App.prepareAll({ force: true });
     const prepMs = performance.now() - t0;
     const segs = S.timeline.segments.map(s => ({ type: s.type, start: +s.start.toFixed(2), dur: +s.dur.toFixed(2), spoken: s.spoken ? +s.spoken.toFixed(2) : undefined }));
-    const assets = Object.keys(S.assetKeys).map(k => { const a = NS.Animator.get(S.assetKeys[k]); return { line: k, faces: a ? a.faces.map(f => f.source) : null, tris: a ? a.mesh.dynTris.length : 0 }; });
+    const assets = Object.keys(S.assetKeys).map(k => { const a = NS.Animator.get(S.assetKeys[k]); return { line: k, faces: a ? a.faces.map(f => f.source) : null, tris: a ? a.mesh.dynTris.length : 0, variants: a ? Object.keys(a.variants) : [] }; });
     // aperçu à deux instants
     const shots = [];
     for (const t of [0.6, segs[1].start + 0.5, segs[2].start + 0.8, segs[3].start + 0.5]) { App.seek(t); await new Promise(r => setTimeout(r, 120)); shots.push(document.getElementById('preview').toDataURL('image/jpeg', 0.85)); }

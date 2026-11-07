@@ -45,12 +45,43 @@
     if (Animator.options.depthAI && opts.blob) { try { depth = await Depth.estimate(opts.blob); } catch (e) { console.warn('Profondeur IA indisponible :', e.message); } }
     if (!depth) depth = Depth.synthetic(W, H, faces);
     const warpCanvas = document.createElement('canvas'); warpCanvas.width = W; warpCanvas.height = H;
-    const asset = { key, img, W, H, faces, mesh, src, dst: new Float32Array(src), groups, depth, warpCanvas, ready: true };
+    const asset = { key, img, W, H, faces, mesh, src, dst: new Float32Array(src), groups, depth, warpCanvas, variants: {}, ready: true };
     cache.set(key, asset);
     return asset;
   };
   Animator.get = (key) => cache.get(key) || null;
   Animator.clear = () => cache.clear();
+
+  /**
+   * Ajoute une image clé (édition pixel-alignée de l'image de base) à un asset.
+   * Les repères du visage de la variante donnent la géométrie cible du morphing.
+   * @returns true si acceptée, false si le cadrage a bougé (variante ignorée)
+   */
+  Animator.addVariant = async function (key, name, img) {
+    const asset = cache.get(key); if (!asset) return false;
+    if ((img.naturalWidth || img.width) !== asset.W || (img.naturalHeight || img.height) !== asset.H) {
+      // redimensionne la variante à la taille de base
+      const cv = document.createElement('canvas'); cv.width = asset.W; cv.height = asset.H; cv.getContext('2d').drawImage(img, 0, 0, asset.W, asset.H); img = cv;
+    }
+    let faces = [];
+    try { faces = await FaceRig.detect(img); } catch (e) { return false; }
+    const vsrc = new Float32Array(asset.src);
+    const mesh = asset.mesh;
+    for (let fi = 0; fi < asset.faces.length; fi++) {
+      const bf = asset.faces[fi];
+      // visage de la variante le plus proche du visage de base
+      let best = null, bd = Infinity;
+      faces.forEach(f => { const d = Math.hypot(f.center[0] - bf.center[0], f.center[1] - bf.center[1]); if (d < bd) { bd = d; best = f; } });
+      if (!best || bd > bf.bbox.w * 0.12) { if (bf.source === 'mediapipe') return false; continue; }
+      for (let i = 0; i < mesh.points.length; i++) {
+        if (mesh.faceOf[i] !== fi || mesh.lmIndex[i] < 0) continue;
+        const p = best.pts[mesh.lmIndex[i]]; vsrc[i * 2] = p[0]; vsrc[i * 2 + 1] = p[1];
+      }
+    }
+    const canvas = document.createElement('canvas'); canvas.width = asset.W; canvas.height = asset.H;
+    asset.variants[name] = { img, src: vsrc, canvas };
+    return true;
+  };
 
   Animator._groups = function (mesh, fi) {
     const L = mesh.lookup[fi]; const I = FaceRig.IDX;
@@ -137,6 +168,9 @@
   Animator.computeDst = function (asset, states) {
     const src = asset.src, dst = asset.dst; dst.set(src);
     const mesh = asset.mesh;
+    // morphing vers les images clés (géométrie) : dst = src + Σ w·(vsrc − src)
+    const ws = asset._weights || {};
+    Object.keys(asset.variants).forEach(name => { const w = ws[name] || 0; if (w <= 0.001) return; const v = asset.variants[name].src; for (let i = 0; i < dst.length; i++) dst[i] += (v[i] - src[i]) * w; });
     asset.faces.forEach((face, fi) => {
       const st = states[fi]; if (!st) return;
       const g = asset.groups[fi]; const E = Animator.EMOTION[st.emotion] || Animator.EMOTION.neutral; const k = st.intensity == null ? 1 : st.intensity;
@@ -158,10 +192,12 @@
       const wide = (E.eyeWide * k + (st.hit || 0) * 0.4);
       [g.lEye, g.rEye].forEach(pairs => pairs.forEach(([u, l]) => {
         const uy = src[u * 2 + 1], ly = src[l * 2 + 1];
-        let y = uy - wide * eD * 0.035 + E.squint * k * (ly - uy) * 0.35;
-        y = y + (ly - y) * lid * 0.92;
+        const cu = dst[u * 2 + 1], cl = dst[l * 2 + 1];
+        let y = cu - wide * eD * 0.035 + E.squint * k * (cl - cu) * 0.35;
+        y = y + (cl - y) * lid * 0.92;
         dst[u * 2 + 1] = y;
-        dst[l * 2 + 1] = ly + E.squint * k * (uy - ly) * 0.15 - lid * (ly - uy) * 0.08;
+        dst[l * 2 + 1] = cl + E.squint * k * (cu - cl) * 0.15 - lid * (cl - cu) * 0.08;
+        void uy; void ly;
       }));
       // --- sourcils
       const up = (E.browUp * k + (st.hit || 0) * 0.5) * eD * 0.07, inn = E.browIn * k * eD * 0.06;
@@ -233,12 +269,25 @@
    */
   Animator.renderShot = function (ctx, W, H, shot) {
     const asset = shot.asset;
+    // poids des images clés (max sur les visages)
+    const weights = {};
+    shot.states.forEach(st => { if (!st || !st.kf) return; Object.keys(st.kf).forEach(n => { weights[n] = Math.max(weights[n] || 0, st.kf[n]); }); });
+    asset._weights = weights;
     Animator.computeDst(asset, shot.states);
     const wc = asset.warpCanvas, wctx = wc.getContext('2d');
-    wctx.setTransform(1, 0, 0, 1, 0, 0);
+    wctx.setTransform(1, 0, 0, 1, 0, 0); wctx.globalAlpha = 1;
     wctx.drawImage(asset.img, 0, 0, asset.W, asset.H);
     Warp.drawMesh(wctx, asset.img, asset.src, asset.dst, asset.mesh.dynTris, 0.7);
     shot.states.forEach((st, fi) => { if (st && st.jaw > 0) Animator.drawMouthCavity(wctx, asset, fi, st.jaw); });
+    // couches des images clés : chaque variante est déformée vers la même géométrie puis fondue
+    Object.keys(asset.variants).forEach(name => {
+      const w = weights[name] || 0; if (w <= 0.01) return;
+      const v = asset.variants[name], vctx = v.canvas.getContext('2d');
+      vctx.setTransform(1, 0, 0, 1, 0, 0);
+      vctx.drawImage(v.img, 0, 0, asset.W, asset.H);
+      Warp.drawMesh(vctx, v.img, v.src, asset.dst, asset.mesh.dynTris, 0.7);
+      wctx.globalAlpha = Core.clamp(w, 0, 1); wctx.drawImage(v.canvas, 0, 0); wctx.globalAlpha = 1;
+    });
     const cam = shot.camera || {};
     ctx.save();
     if (shot.shake) ctx.translate(shot.shake[0], shot.shake[1]);
@@ -275,7 +324,11 @@
         const m = Animator.mouthAt(tSpeech, p.env, p.fps, p.vis, seg.spoken);
         const nod = m.jaw * 0.012 + 0.004 * Math.sin(t * 9);
         const hit = seg.punch ? Math.max(0, 1 - t / 0.45) : 0;
-        st = { jaw: m.jaw, spread: m.spread, blink, emotion: seg.emotion, intensity: ease, hit: hit * ease,
+        const hasOpen = !!asset.variants.open, hasPeak = !!asset.variants.peak;
+        const kf = {};
+        if (hasOpen) kf.open = Core.clamp(m.jaw * 1.15, 0, 1);
+        if (hasPeak) { const a0 = seg.spoken * 0.75, a1 = seg.spoken + 0.35; kf.peak = Core.easeInOutQuad(Core.clamp((tSpeech - a0) / Math.max(0.1, a1 - a0), 0, 1)); }
+        st = { kf, jaw: hasOpen ? 0 : m.jaw, spread: hasOpen ? m.spread * 0.3 : m.spread, blink, emotion: seg.emotion, intensity: ease, hit: hit * ease,
           head: { rot: sway + (seg.punch ? 0.02 * (1 - ease) : 0), dx: face.eyeDist * (0.02 * Math.sin(t * 1.1 + seed)), dy: face.eyeDist * (nod * 2 - 0.01 * hit) } };
       } else {
         const reaction = p.listenerEmotion || 'neutral';

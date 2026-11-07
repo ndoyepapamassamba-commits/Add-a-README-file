@@ -60,11 +60,81 @@
     const who = (c) => c.id === A.id ? 'the person on the left' : 'the person on the right';
     let body;
     if (line.shot === 'close') {
-      body = `Close-up portrait of ONE person: ${speaker.look}, ${emo}, face centered and fully visible, looking straight at the camera, head and shoulders, the face fills the upper half of the frame. Background: ${scene}, softly blurred.`;
+      body = `Close-up portrait of ONE person: ${speaker.look}, ${emo}, mouth closed, face centered and fully visible, looking straight at the camera, head and shoulders, the face fills the upper half of the frame. Background: ${scene}, softly blurred.`;
     } else {
-      body = `TWO people arguing face to face, medium shot from the waist up, full frame edge to edge: on the LEFT ${A.look}; on the RIGHT ${B.look}. ${who(speaker)} is ${emo}; ${who(other)} listens with a ${ImageGen.EMOTION_PROMPTS.neutral}. Both faces clearly visible in the upper half of the frame. Setting: ${scene}.`;
+      body = `TWO people arguing, medium shot from the waist up, full frame edge to edge, bodies angled toward each other but BOTH FACES turned three-quarters toward the camera (not in profile), both pairs of eyes visible: on the LEFT ${A.look}; on the RIGHT ${B.look}. ${who(speaker)} is ${emo} with the mouth closed; ${who(other)} listens with a ${ImageGen.EMOTION_PROMPTS.neutral}. Both faces clearly visible in the upper half of the frame. Setting: ${scene}.`;
     }
     return `${style.head}. ${body} Style details: ${style.prompt}. Vertical 9:16 composition filling the whole frame, no borders, no letterbox, no text, no letters, no names or words on clothing, no watermark, no subtitles${V.extra ? ', ' + V.extra : ''}`;
+  };
+
+  /* ------------------------------ Images clés d'expression ------------------------------
+     Éditions de l'image de base (même cadrage, pixel-alignées) que le moteur fond entre elles
+     en suivant les repères du visage : « open » (bouche ouverte, pilotée par la voix) et
+     « peak » (expression forte, en fin de punchline). */
+  ImageGen.KEEP = 'Edit this image. Keep EXACTLY the same character(s), same camera framing, same pose, same head position, same lighting and same background, pixel-aligned. Do not move or resize anything. No text.';
+  ImageGen.variantPlan = function (project, baseItems) {
+    const V = project.visual || {}; const n = +V.keyframes || 0; const out = [];
+    if (!n) return out;
+    const chars = project.characters; const A = chars[0];
+    baseItems.forEach(it => {
+      if (it.dup) return;
+      const sk = project.sketches[it.si], ln = sk.lines[it.li];
+      const target = it.shot === 'close' ? 'the character' : (ln.speaker === A.id ? 'the person on the LEFT' : 'the person on the RIGHT');
+      const others = it.shot === 'close' ? '' : ' The other person stays exactly unchanged.';
+      out.push({ baseKey: it.key, name: 'open', si: it.si, li: it.li, key: it.key + '_open', instr: `${ImageGen.KEEP} Only change the mouth of ${target}: open naturally as if saying "A" while talking, upper teeth and tongue visible. Keep the eyes and eyebrows unchanged.${others}` });
+      if (n >= 2 && ln === sk.lines[sk.lines.length - 1]) {
+        const emo = ImageGen.EMOTION_PROMPTS[ln.emotion] || 'very expressive';
+        out.push({ baseKey: it.key, name: 'peak', si: it.si, li: it.li, key: it.key + '_peak', instr: `${ImageGen.KEEP} Only change the facial expression of ${target} to an exaggerated cartoon ${emo}, very expressive eyes and eyebrows.${others}` });
+      }
+    });
+    return out;
+  };
+
+  async function editOpenRouter(baseBlob, instr, settings, signal) {
+    const s = settings.openrouter || {};
+    if (!s.apiKey) throw new Error('Clé OpenRouter manquante');
+    const dataUrl = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(baseBlob); });
+    const r = await fetch('https://openrouter.ai/api/v1/chat/completions', { method: 'POST', signal,
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + s.apiKey, 'HTTP-Referer': 'https://github.com/ndoyepapamassamba-commits/Add-a-README-file', 'X-Title': 'Skit Studio' },
+      body: JSON.stringify({ model: s.imageModel || 'google/gemini-2.5-flash-image', messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: dataUrl } }, { type: 'text', text: instr }] }], modalities: ['image', 'text'], image_config: { aspect_ratio: '9:16' } }) });
+    if (!r.ok) throw new Error('OpenRouter (édition) ' + r.status + ' : ' + (await r.text()).slice(0, 200));
+    const j = await r.json(); const msg = j.choices && j.choices[0] && j.choices[0].message;
+    const im = msg && msg.images && msg.images[0] && msg.images[0].image_url && msg.images[0].image_url.url;
+    if (!im) throw new Error('OpenRouter : aucune image clé renvoyée');
+    const [hdr, b64] = im.split(','); const bin = atob(b64); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return new Blob([u8], { type: (hdr.match(/data:([^;]+)/) || [])[1] || 'image/png' });
+  }
+
+  /** Image clé (banque → édition OpenRouter). @returns { blob, url, fromBank } */
+  ImageGen.getOrEdit = async function (v, baseBlob, settings, signal) {
+    const hit = await ImageGen.bankGet(v.key); if (hit) return Object.assign({ fromBank: true }, hit);
+    const blob = await editOpenRouter(baseBlob, v.instr, settings, signal);
+    const e = await ImageGen.bankPut(v.key, blob, v.instr, { provider: 'openrouter-edit', base: v.baseKey, name: v.name });
+    return Object.assign({ fromBank: false }, e);
+  };
+
+  /* ------------------------------ Estimation des coûts ------------------------------
+     Coûts mesurés le 2026-11-07 via OpenRouter (usage.cost) ; les autres sont des estimations. */
+  ImageGen.PRICES = {
+    'openrouter:google/gemini-2.5-flash-image': 0.039,
+    'openrouter:google/gemini-3.1-flash-lite-image': 0.034,
+    'openrouter:google/gemini-3.1-flash-image': 0.045,
+    'openrouter:google/gemini-3-pro-image': 0.14,
+    'openrouter:openai/gpt-5-image-mini': 0.02,
+    'openrouter:openai/gpt-5-image': 0.08,
+    'pollinations': 0, 'none': 0
+  };
+  ImageGen.unitPrice = function (project, settings) {
+    const V = project.visual || {}; const prov = V.provider || 'openrouter';
+    if (prov === 'openrouter') { if (!((settings || {}).openrouter || {}).apiKey) return 0; return ImageGen.PRICES['openrouter:' + (((settings || {}).openrouter || {}).imageModel || 'google/gemini-2.5-flash-image')] || 0.04; }
+    return ImageGen.PRICES[prov] != null ? ImageGen.PRICES[prov] : 0.03;
+  };
+  /** { base, keyframes, images, unit, total } pour un projet (images déjà en banque non déduites). */
+  ImageGen.estimate = function (project, settings) {
+    const plan = ImageGen.plan(project).filter(p => !p.dup);
+    const kf = ImageGen.variantPlan(project, plan).length;
+    const unit = ImageGen.unitPrice(project, settings);
+    return { base: plan.length, keyframes: kf, images: plan.length + kf, unit, total: (plan.length + kf) * unit };
   };
 
   /** Clé de banque déterministe. */
@@ -78,7 +148,7 @@
       if (ln.image) return; // image fournie
       const explicit = ln.shot === 'close' ? sk.imageClose : sk.imageWide; if (explicit) return;
       const prompt = ImageGen.buildPrompt(project, sk, ln);
-      const seed = ((V.seed || 1) * 7919 + Core.hashString(prompt) % 1000) % 2147483647;
+      const seed = ((V.seed || 1) * 7919 + Core.hashString(prompt + '|' + sk.title)) % 2147483647; // une graine par sketch : images distinctes d'un sketch à l'autre
       const key = ImageGen.keyFor(prompt, seed, V.provider || 'pollinations', w, h);
       if (seen.has(key)) { out.push({ key, prompt, seed, si, li, shot: ln.shot, dup: true }); return; }
       seen.add(key); out.push({ key, prompt, seed, si, li, shot: ln.shot, w, h });

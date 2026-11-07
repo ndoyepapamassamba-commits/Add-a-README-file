@@ -97,6 +97,27 @@
       if (onProgress) onProgress(done / Math.max(1, unique.length), `Image ${done}/${unique.length}`);
       renderImagePlan();
     }
+    // images clés d'expression (éditions OpenRouter de chaque image de base)
+    const vplan = ImageGen.variantPlan(project, unique);
+    const canEdit = !!(S.settings.openrouter || {}).apiKey && project.visual.provider === 'openrouter';
+    if (vplan.length && !canEdit) toast('Images clés d\'expression : nécessitent le fournisseur OpenRouter avec une clé (ignorées).');
+    if (vplan.length && canEdit) {
+      let k = 0;
+      for (const v of vplan) {
+        if (signal && signal.aborted) throw new Error('Annulé');
+        if (onProgress) onProgress(k / vplan.length, `Image clé ${k + 1}/${vplan.length} (${v.name === 'open' ? 'bouche ouverte' : 'expression forte'})`);
+        try {
+          const base = await ImageGen.bankGet(v.baseKey); if (!base) throw new Error('image de base absente');
+          const asset = Animator.get(v.baseKey); if (asset && asset.variants[v.name]) { k++; continue; }
+          const e = await ImageGen.getOrEdit(v, base.blob, S.settings, signal);
+          const img = await Assets.loadImage(e.url, 15000); if (!img) throw new Error('image clé illisible');
+          const ok = await Animator.addVariant(v.baseKey, v.name, img);
+          if (!ok) errors.push(`image clé ${v.name} (${v.si + 1}.${v.li + 1}) ignorée : cadrage différent`);
+        } catch (err) { if (/Annulé/.test(err.message)) throw err; errors.push(err.message); }
+        k++;
+      }
+      if (onProgress) onProgress(1, `${vplan.length} image(s) clé(s) prêtes`);
+    }
     S.dirty.images = false;
     if (ImageGen.lastFallback) { toast(ImageGen.lastFallback); ImageGen.lastFallback = null; }
     return { plan, errors };
@@ -384,11 +405,16 @@
       const url = S.imageUrls[Timeline.lineKey(item.si, item.li)];
       const asset = S.assetKeys[Timeline.lineKey(item.si, item.li)] ? Animator.get(S.assetKeys[Timeline.lineKey(item.si, item.li)]) : null;
       d.innerHTML = `${url ? `<img class="thumb" src="${url}">` : '<div class="thumb grid place-items-center text-slate-600">en attente</div>'}
-        <div class="flex gap-1 items-center"><span class="badge">${item.si + 1}.${item.li + 1} ${item.shot === 'wide' ? 'large' : 'gros plan'}</span>${asset ? `<span class="badge ok">${asset.faces.length} visage(s) · ${asset.faces[0].source === 'mediapipe' ? 'MediaPipe' : 'gabarit'}</span>` : ''}</div>
+        <div class="flex gap-1 items-center"><span class="badge">${item.si + 1}.${item.li + 1} ${item.shot === 'wide' ? 'large' : 'gros plan'}</span>${asset ? `<span class="badge ok">${asset.faces.length} visage(s) · ${asset.faces[0].source === 'mediapipe' ? 'MediaPipe' : 'gabarit'}</span>` : ''}${asset && Object.keys(asset.variants).length ? `<span class="badge ok">+${Object.keys(asset.variants).join(', ')}</span>` : ''}</div>
         <details><summary class="text-slate-400">prompt</summary><div class="text-slate-500 break-words">${escapeHtml(item.prompt)}</div></details>
         <div class="flex gap-1"><label class="btn ghost small cursor-pointer">📤 Importer<input type="file" accept="image/*" class="hidden" data-si="${item.si}" data-li="${item.li}" data-act="imgimport"></label><button class="btn ghost small" data-act="imgregen" data-key="${item.key}" data-si="${item.si}" data-li="${item.li}">🔁</button></div>`;
       el.appendChild(d);
     });
+    const est = ImageGen.estimate(S.project, S.settings);
+    const vids = Math.max(1, +$('batchCount').value || 1);
+    $('costBox').innerHTML = est.unit > 0
+      ? `💰 Cette vidéo : <b>${est.base}</b> image(s) de base + <b>${est.keyframes}</b> image(s) clé(s) = <b>${est.images}</b> × ${est.unit.toFixed(3)} $ ≈ <b>${est.total.toFixed(2)} $</b> (images déjà en banque : gratuites). Lot de ${vids} vidéo(s) sans réutilisation : ≤ ${(est.total * vids).toFixed(2)} $.`
+      : `💰 Fournisseur gratuit : ${est.images} image(s) à générer${(S.project.visual.provider === 'pollinations' || !(S.settings.openrouter || {}).apiKey) ? ` (≈ ${Math.ceil(est.images * 46 / 60)} min à 1 image / 45 s)` : ''}.`;
     ImageGen.bankList().then(list => { $('bankInfo').textContent = `${list.length} image(s) · ${(list.reduce((a, b) => a + b.size, 0) / 1048576).toFixed(1)} Mo`; });
   }
   $('imagePlan').addEventListener('change', async (e) => {
@@ -456,13 +482,14 @@
     bind('visParallax', () => P().visual.parallax, v => { P().visual.parallax = v; Animator.options.parallax = v; }, 'change');
     bind('visDepthAI', () => P().visual.depthAI, v => { P().visual.depthAI = v; Animator.options.depthAI = v; Animator.clear(); invalidate(['images']); }, 'change');
     bind('visStrength', () => P().visual.strength, v => { P().visual.strength = v; Animator.options.strength = v; });
-    bind('visFallback', () => P().visual.fallbackSketch, v => { P().visual.fallbackSketch = v; }, 'change');
+    bind('visKeyframes', () => P().visual.keyframes, v => { P().visual.keyframes = +v; invalidate(['images']); renderImagePlan(); }, 'change');
+        bind('visFallback', () => P().visual.fallbackSketch, v => { P().visual.fallbackSketch = v; }, 'change');
     // réglages
     const SS = () => S.settings;
     const sb = (id, get, set) => { const el = $(id); el.addEventListener('input', () => { set(el.value); saveSettings(); }); el.value = get() || el.value; };
     sb('polKey', () => SS().pollinations.apiKey, v => { SS().pollinations.apiKey = v.trim(); });
-    sb('orKey', () => SS().openrouter.apiKey, v => { SS().openrouter.apiKey = v.trim(); if (!SS().llm.apiKey) { SS().llm.apiKey = v.trim(); $('llmKey').value = v.trim(); } });
-    sb('orImageModel', () => SS().openrouter.imageModel, v => { SS().openrouter.imageModel = v; });
+    sb('orKey', () => SS().openrouter.apiKey, v => { SS().openrouter.apiKey = v.trim(); renderImagePlan(); if (!SS().llm.apiKey) { SS().llm.apiKey = v.trim(); $('llmKey').value = v.trim(); } });
+    sb('orImageModel', () => SS().openrouter.imageModel, v => { SS().openrouter.imageModel = v; renderImagePlan(); });
     sb('polImageModel', () => SS().pollinations.imageModel, v => { SS().pollinations.imageModel = v.trim(); });
     sb('polTtsModel', () => SS().pollinations.ttsModel, v => { SS().pollinations.ttsModel = v.trim(); renderCharList(); });
     $('llmProvider').innerHTML = AI.PROVIDERS.map(p => `<option value="${p.id}">${p.label}</option>`).join('');

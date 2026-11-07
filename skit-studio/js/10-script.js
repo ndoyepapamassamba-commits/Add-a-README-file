@@ -46,7 +46,7 @@
           avatar: { skin: '#4a2511', hair: '#0a0604', outfit: '#2563eb', style: 'm' } }
       ],
       sketches: [],
-      visual: { style: 'afro3d', provider: 'openrouter', seed: 11, cropWatermark: true, parallax: true, depthAI: false, strength: 1, fallbackSketch: true, extra: '' },
+      visual: { style: 'afro3d', provider: 'openrouter', keyframes: 1, seed: 11, cropWatermark: true, parallax: true, depthAI: false, strength: 1, fallbackSketch: true, extra: '' },
       layout: {
         hookFirst: true,
         titleCards: true,

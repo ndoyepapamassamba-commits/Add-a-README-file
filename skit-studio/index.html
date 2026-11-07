@@ -113,12 +113,14 @@
           <div><label class="field">Fournisseur d'images</label><select id="visProvider" class="inp"></select></div>
           <div><label class="field">Graine (cohérence)</label><input id="visSeed" type="number" class="inp" value="11"></div>
           <div class="md:col-span-3"><label class="field">Détails de style supplémentaires (optionnel, ajoutés à chaque prompt)</label><input id="visExtra" class="inp" placeholder="ex : Dakar, 2025, couleurs chaudes, lumière de fin de journée"></div>
+          <div class="md:col-span-3"><label class="field">Images clés d'expression (OpenRouter : éditions pixel-alignées fondues par le moteur, ≈ 0,04 $ l'une)</label><select id="visKeyframes" class="inp"><option value="0">Aucune (animation 100 % moteur)</option><option value="1">1 par plan : bouche ouverte réelle, synchronisée sur la voix (recommandé)</option><option value="2">2 : + expression forte en fin de punchline</option></select></div>
           <label class="flex items-center gap-2 text-sm"><input id="visCrop" type="checkbox" checked> Rogner le filigrane (Pollinations gratuit)</label>
           <label class="flex items-center gap-2 text-sm"><input id="visParallax" type="checkbox" checked> Parallaxe 2.5D (WebGL)</label>
           <label class="flex items-center gap-2 text-sm"><input id="visDepthAI" type="checkbox"> Profondeur IA (Depth Anything, lent sans GPU)</label>
           <div class="md:col-span-2"><label class="field">Intensité des mouvements de caméra <span id="visStrengthVal">1.0</span></label><input id="visStrength" type="range" min="0" max="2" step="0.1" value="1"></div>
           <label class="flex items-center gap-2 text-sm"><input id="visFallback" type="checkbox" checked> Esquisse provisoire si image absente</label>
         </div>
+        <div id="costBox" class="text-xs card !p-2 !bg-slate-900"></div>
         <div class="flex gap-2 flex-wrap items-center">
           <button id="btnPrepareImages" class="btn">🖼️ Générer / vérifier toutes les images</button>
           <button id="btnCancelImages" class="btn ghost small" disabled>Annuler</button>

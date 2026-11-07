@@ -80,6 +80,16 @@ crédible, déterministe et gratuite, sans GPU distant.
    zoom Ken Burns, panoramique vers le locuteur, parallaxe, coup de zoom à la coupe, secousse sur
    la punchline. Repli Canvas 2D sans WebGL.
 
+5. **Images clés d'expression (morphing)** — option « n images superposées » : à partir de
+   l'image de base, OpenRouter (Gemini Image) produit des éditions **pixel-alignées** du même
+   plan (même décor, même cadrage) : bouche ouverte réelle (dents, langue), et en option une
+   expression forte pour la fin des punchlines. MediaPipe relève les 478 points de chaque
+   image clé ; le moteur déforme base et image clé vers une géométrie commune (interpolée)
+   puis les fond. Le poids « bouche » suit l'enveloppe de la voix image par image, le poids
+   « expression » monte à la fin de la réplique. Si une édition décale le cadrage (visage
+   déplacé de plus de 12 % de sa largeur), elle est rejetée. Coût mesuré : ≈ 0,039 $ et
+   ≈ 8 s par image clé, mises en banque et réutilisées par toutes les variantes.
+
 Tout est fonction de `t` : l'aperçu, l'export WebCodecs et l'export MediaRecorder produisent
 exactement les mêmes images.
 
@@ -130,6 +140,32 @@ B: Moi j'essaie d'oublier le *mariage même*.
 | Emojis 3D | Fluent Emoji (Microsoft, PNG via jsDelivr), repli police système | — |
 
 Les clés sont saisies dans l'onglet **Réglages** et restent dans le `localStorage` du navigateur.
+
+## 3 bis. Coûts (relevés le 2026-11-07)
+
+**Images — mesuré via OpenRouter (`usage.cost`)** : `google/gemini-2.5-flash-image` ≈ **0,039 $**
+par image (768 × 1344, 4–8 s) ; `google/gemini-3.1-flash-lite-image` ≈ 0,034 $. Une image clé
+d'expression est une édition au même prix (≈ 0,039 $, ≈ 8 s).
+
+| Vidéo de 5 sketches (10 répliques) | Images | Coût |
+|---|---|---|
+| Images de base seules | 10 | ≈ 0,39 $ |
+| + 1 image clé par plan (bouche réelle) | 20 | ≈ 0,78 $ |
+| + expression forte sur les 5 punchlines | 25 | ≈ 0,98 $ |
+| Variante d'un lot réutilisant des sketches déjà générés | 0 | 0 $ (banque) |
+
+Formule : **n images × prix unitaire** ; l'onglet *Images IA* affiche l'estimation avant génération.
+Pollinations sans clé : 0 $, mais 1 image / 45 s et une qualité nettement inférieure.
+
+**Alternatives moins chères (relevé de prix, non intégrées, qualité à valider)** :
+Seedream 5.0 Flash ≈ 0,019 $ (Runware, Pollinations) ; Qwen-Image-Edit ≈ 0,003 $ (Runware) ;
+FLUX.2 klein ≈ 0,0008 $ (Runware) ; FLUX.1 schnell ≈ 0,0006 $ (Cloudflare, pas de CORS).
+
+**Animation hébergée (image → vidéo), pour un clip de 5 s** : Wan 2.2 Fast 480p ≈ 0,05 $
+(Pollinations, WaveSpeed) ; Seedance 1 Pro Fast ≈ 0,05 $ (480p) / 0,10 $ (720p) ;
+P-Video-2-Pro-Avatar, lip-sync sur votre audio, ≈ 0,10 $ (480p, Runware/Segmind) ;
+InfiniteTalk ≈ 0,15 $ (480p, WaveSpeed) ; OmniHuman 1.5 ≈ 0,60–0,80 $. Aucun palier gratuit.
+Le moteur local (maillage + images clés) ne coûte que les images.
 
 ## 4. Utilisation
 

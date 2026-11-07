@@ -155,12 +155,14 @@ details > summary { cursor: pointer; }
           <div><label class="field">Fournisseur d'images</label><select id="visProvider" class="inp"></select></div>
           <div><label class="field">Graine (cohérence)</label><input id="visSeed" type="number" class="inp" value="11"></div>
           <div class="md:col-span-3"><label class="field">Détails de style supplémentaires (optionnel, ajoutés à chaque prompt)</label><input id="visExtra" class="inp" placeholder="ex : Dakar, 2025, couleurs chaudes, lumière de fin de journée"></div>
+          <div class="md:col-span-3"><label class="field">Images clés d'expression (OpenRouter : éditions pixel-alignées fondues par le moteur, ≈ 0,04 $ l'une)</label><select id="visKeyframes" class="inp"><option value="0">Aucune (animation 100 % moteur)</option><option value="1">1 par plan : bouche ouverte réelle, synchronisée sur la voix (recommandé)</option><option value="2">2 : + expression forte en fin de punchline</option></select></div>
           <label class="flex items-center gap-2 text-sm"><input id="visCrop" type="checkbox" checked> Rogner le filigrane (Pollinations gratuit)</label>
           <label class="flex items-center gap-2 text-sm"><input id="visParallax" type="checkbox" checked> Parallaxe 2.5D (WebGL)</label>
           <label class="flex items-center gap-2 text-sm"><input id="visDepthAI" type="checkbox"> Profondeur IA (Depth Anything, lent sans GPU)</label>
           <div class="md:col-span-2"><label class="field">Intensité des mouvements de caméra <span id="visStrengthVal">1.0</span></label><input id="visStrength" type="range" min="0" max="2" step="0.1" value="1"></div>
           <label class="flex items-center gap-2 text-sm"><input id="visFallback" type="checkbox" checked> Esquisse provisoire si image absente</label>
         </div>
+        <div id="costBox" class="text-xs card !p-2 !bg-slate-900"></div>
         <div class="flex gap-2 flex-wrap items-center">
           <button id="btnPrepareImages" class="btn">🖼️ Générer / vérifier toutes les images</button>
           <button id="btnCancelImages" class="btn ghost small" disabled>Annuler</button>
@@ -512,7 +514,7 @@ details > summary { cursor: pointer; }
           avatar: { skin: '#4a2511', hair: '#0a0604', outfit: '#2563eb', style: 'm' } }
       ],
       sketches: [],
-      visual: { style: 'afro3d', provider: 'openrouter', seed: 11, cropWatermark: true, parallax: true, depthAI: false, strength: 1, fallbackSketch: true, extra: '' },
+      visual: { style: 'afro3d', provider: 'openrouter', keyframes: 1, seed: 11, cropWatermark: true, parallax: true, depthAI: false, strength: 1, fallbackSketch: true, extra: '' },
       layout: {
         hookFirst: true,
         titleCards: true,
@@ -1919,12 +1921,43 @@ details > summary { cursor: pointer; }
     if (Animator.options.depthAI && opts.blob) { try { depth = await Depth.estimate(opts.blob); } catch (e) { console.warn('Profondeur IA indisponible :', e.message); } }
     if (!depth) depth = Depth.synthetic(W, H, faces);
     const warpCanvas = document.createElement('canvas'); warpCanvas.width = W; warpCanvas.height = H;
-    const asset = { key, img, W, H, faces, mesh, src, dst: new Float32Array(src), groups, depth, warpCanvas, ready: true };
+    const asset = { key, img, W, H, faces, mesh, src, dst: new Float32Array(src), groups, depth, warpCanvas, variants: {}, ready: true };
     cache.set(key, asset);
     return asset;
   };
   Animator.get = (key) => cache.get(key) || null;
   Animator.clear = () => cache.clear();
+
+  /**
+   * Ajoute une image clé (édition pixel-alignée de l'image de base) à un asset.
+   * Les repères du visage de la variante donnent la géométrie cible du morphing.
+   * @returns true si acceptée, false si le cadrage a bougé (variante ignorée)
+   */
+  Animator.addVariant = async function (key, name, img) {
+    const asset = cache.get(key); if (!asset) return false;
+    if ((img.naturalWidth || img.width) !== asset.W || (img.naturalHeight || img.height) !== asset.H) {
+      // redimensionne la variante à la taille de base
+      const cv = document.createElement('canvas'); cv.width = asset.W; cv.height = asset.H; cv.getContext('2d').drawImage(img, 0, 0, asset.W, asset.H); img = cv;
+    }
+    let faces = [];
+    try { faces = await FaceRig.detect(img); } catch (e) { return false; }
+    const vsrc = new Float32Array(asset.src);
+    const mesh = asset.mesh;
+    for (let fi = 0; fi < asset.faces.length; fi++) {
+      const bf = asset.faces[fi];
+      // visage de la variante le plus proche du visage de base
+      let best = null, bd = Infinity;
+      faces.forEach(f => { const d = Math.hypot(f.center[0] - bf.center[0], f.center[1] - bf.center[1]); if (d < bd) { bd = d; best = f; } });
+      if (!best || bd > bf.bbox.w * 0.12) { if (bf.source === 'mediapipe') return false; continue; }
+      for (let i = 0; i < mesh.points.length; i++) {
+        if (mesh.faceOf[i] !== fi || mesh.lmIndex[i] < 0) continue;
+        const p = best.pts[mesh.lmIndex[i]]; vsrc[i * 2] = p[0]; vsrc[i * 2 + 1] = p[1];
+      }
+    }
+    const canvas = document.createElement('canvas'); canvas.width = asset.W; canvas.height = asset.H;
+    asset.variants[name] = { img, src: vsrc, canvas };
+    return true;
+  };
 
   Animator._groups = function (mesh, fi) {
     const L = mesh.lookup[fi]; const I = FaceRig.IDX;
@@ -2011,6 +2044,9 @@ details > summary { cursor: pointer; }
   Animator.computeDst = function (asset, states) {
     const src = asset.src, dst = asset.dst; dst.set(src);
     const mesh = asset.mesh;
+    // morphing vers les images clés (géométrie) : dst = src + Σ w·(vsrc − src)
+    const ws = asset._weights || {};
+    Object.keys(asset.variants).forEach(name => { const w = ws[name] || 0; if (w <= 0.001) return; const v = asset.variants[name].src; for (let i = 0; i < dst.length; i++) dst[i] += (v[i] - src[i]) * w; });
     asset.faces.forEach((face, fi) => {
       const st = states[fi]; if (!st) return;
       const g = asset.groups[fi]; const E = Animator.EMOTION[st.emotion] || Animator.EMOTION.neutral; const k = st.intensity == null ? 1 : st.intensity;
@@ -2032,10 +2068,12 @@ details > summary { cursor: pointer; }
       const wide = (E.eyeWide * k + (st.hit || 0) * 0.4);
       [g.lEye, g.rEye].forEach(pairs => pairs.forEach(([u, l]) => {
         const uy = src[u * 2 + 1], ly = src[l * 2 + 1];
-        let y = uy - wide * eD * 0.035 + E.squint * k * (ly - uy) * 0.35;
-        y = y + (ly - y) * lid * 0.92;
+        const cu = dst[u * 2 + 1], cl = dst[l * 2 + 1];
+        let y = cu - wide * eD * 0.035 + E.squint * k * (cl - cu) * 0.35;
+        y = y + (cl - y) * lid * 0.92;
         dst[u * 2 + 1] = y;
-        dst[l * 2 + 1] = ly + E.squint * k * (uy - ly) * 0.15 - lid * (ly - uy) * 0.08;
+        dst[l * 2 + 1] = cl + E.squint * k * (cu - cl) * 0.15 - lid * (cl - cu) * 0.08;
+        void uy; void ly;
       }));
       // --- sourcils
       const up = (E.browUp * k + (st.hit || 0) * 0.5) * eD * 0.07, inn = E.browIn * k * eD * 0.06;
@@ -2107,12 +2145,25 @@ details > summary { cursor: pointer; }
    */
   Animator.renderShot = function (ctx, W, H, shot) {
     const asset = shot.asset;
+    // poids des images clés (max sur les visages)
+    const weights = {};
+    shot.states.forEach(st => { if (!st || !st.kf) return; Object.keys(st.kf).forEach(n => { weights[n] = Math.max(weights[n] || 0, st.kf[n]); }); });
+    asset._weights = weights;
     Animator.computeDst(asset, shot.states);
     const wc = asset.warpCanvas, wctx = wc.getContext('2d');
-    wctx.setTransform(1, 0, 0, 1, 0, 0);
+    wctx.setTransform(1, 0, 0, 1, 0, 0); wctx.globalAlpha = 1;
     wctx.drawImage(asset.img, 0, 0, asset.W, asset.H);
     Warp.drawMesh(wctx, asset.img, asset.src, asset.dst, asset.mesh.dynTris, 0.7);
     shot.states.forEach((st, fi) => { if (st && st.jaw > 0) Animator.drawMouthCavity(wctx, asset, fi, st.jaw); });
+    // couches des images clés : chaque variante est déformée vers la même géométrie puis fondue
+    Object.keys(asset.variants).forEach(name => {
+      const w = weights[name] || 0; if (w <= 0.01) return;
+      const v = asset.variants[name], vctx = v.canvas.getContext('2d');
+      vctx.setTransform(1, 0, 0, 1, 0, 0);
+      vctx.drawImage(v.img, 0, 0, asset.W, asset.H);
+      Warp.drawMesh(vctx, v.img, v.src, asset.dst, asset.mesh.dynTris, 0.7);
+      wctx.globalAlpha = Core.clamp(w, 0, 1); wctx.drawImage(v.canvas, 0, 0); wctx.globalAlpha = 1;
+    });
     const cam = shot.camera || {};
     ctx.save();
     if (shot.shake) ctx.translate(shot.shake[0], shot.shake[1]);
@@ -2149,7 +2200,11 @@ details > summary { cursor: pointer; }
         const m = Animator.mouthAt(tSpeech, p.env, p.fps, p.vis, seg.spoken);
         const nod = m.jaw * 0.012 + 0.004 * Math.sin(t * 9);
         const hit = seg.punch ? Math.max(0, 1 - t / 0.45) : 0;
-        st = { jaw: m.jaw, spread: m.spread, blink, emotion: seg.emotion, intensity: ease, hit: hit * ease,
+        const hasOpen = !!asset.variants.open, hasPeak = !!asset.variants.peak;
+        const kf = {};
+        if (hasOpen) kf.open = Core.clamp(m.jaw * 1.15, 0, 1);
+        if (hasPeak) { const a0 = seg.spoken * 0.75, a1 = seg.spoken + 0.35; kf.peak = Core.easeInOutQuad(Core.clamp((tSpeech - a0) / Math.max(0.1, a1 - a0), 0, 1)); }
+        st = { kf, jaw: hasOpen ? 0 : m.jaw, spread: hasOpen ? m.spread * 0.3 : m.spread, blink, emotion: seg.emotion, intensity: ease, hit: hit * ease,
           head: { rot: sway + (seg.punch ? 0.02 * (1 - ease) : 0), dx: face.eyeDist * (0.02 * Math.sin(t * 1.1 + seed)), dy: face.eyeDist * (nod * 2 - 0.01 * hit) } };
       } else {
         const reaction = p.listenerEmotion || 'neutral';
@@ -2460,11 +2515,81 @@ details > summary { cursor: pointer; }
     const who = (c) => c.id === A.id ? 'the person on the left' : 'the person on the right';
     let body;
     if (line.shot === 'close') {
-      body = `Close-up portrait of ONE person: ${speaker.look}, ${emo}, face centered and fully visible, looking straight at the camera, head and shoulders, the face fills the upper half of the frame. Background: ${scene}, softly blurred.`;
+      body = `Close-up portrait of ONE person: ${speaker.look}, ${emo}, mouth closed, face centered and fully visible, looking straight at the camera, head and shoulders, the face fills the upper half of the frame. Background: ${scene}, softly blurred.`;
     } else {
-      body = `TWO people arguing face to face, medium shot from the waist up, full frame edge to edge: on the LEFT ${A.look}; on the RIGHT ${B.look}. ${who(speaker)} is ${emo}; ${who(other)} listens with a ${ImageGen.EMOTION_PROMPTS.neutral}. Both faces clearly visible in the upper half of the frame. Setting: ${scene}.`;
+      body = `TWO people arguing, medium shot from the waist up, full frame edge to edge, bodies angled toward each other but BOTH FACES turned three-quarters toward the camera (not in profile), both pairs of eyes visible: on the LEFT ${A.look}; on the RIGHT ${B.look}. ${who(speaker)} is ${emo} with the mouth closed; ${who(other)} listens with a ${ImageGen.EMOTION_PROMPTS.neutral}. Both faces clearly visible in the upper half of the frame. Setting: ${scene}.`;
     }
     return `${style.head}. ${body} Style details: ${style.prompt}. Vertical 9:16 composition filling the whole frame, no borders, no letterbox, no text, no letters, no names or words on clothing, no watermark, no subtitles${V.extra ? ', ' + V.extra : ''}`;
+  };
+
+  /* ------------------------------ Images clés d'expression ------------------------------
+     Éditions de l'image de base (même cadrage, pixel-alignées) que le moteur fond entre elles
+     en suivant les repères du visage : « open » (bouche ouverte, pilotée par la voix) et
+     « peak » (expression forte, en fin de punchline). */
+  ImageGen.KEEP = 'Edit this image. Keep EXACTLY the same character(s), same camera framing, same pose, same head position, same lighting and same background, pixel-aligned. Do not move or resize anything. No text.';
+  ImageGen.variantPlan = function (project, baseItems) {
+    const V = project.visual || {}; const n = +V.keyframes || 0; const out = [];
+    if (!n) return out;
+    const chars = project.characters; const A = chars[0];
+    baseItems.forEach(it => {
+      if (it.dup) return;
+      const sk = project.sketches[it.si], ln = sk.lines[it.li];
+      const target = it.shot === 'close' ? 'the character' : (ln.speaker === A.id ? 'the person on the LEFT' : 'the person on the RIGHT');
+      const others = it.shot === 'close' ? '' : ' The other person stays exactly unchanged.';
+      out.push({ baseKey: it.key, name: 'open', si: it.si, li: it.li, key: it.key + '_open', instr: `${ImageGen.KEEP} Only change the mouth of ${target}: open naturally as if saying "A" while talking, upper teeth and tongue visible. Keep the eyes and eyebrows unchanged.${others}` });
+      if (n >= 2 && ln === sk.lines[sk.lines.length - 1]) {
+        const emo = ImageGen.EMOTION_PROMPTS[ln.emotion] || 'very expressive';
+        out.push({ baseKey: it.key, name: 'peak', si: it.si, li: it.li, key: it.key + '_peak', instr: `${ImageGen.KEEP} Only change the facial expression of ${target} to an exaggerated cartoon ${emo}, very expressive eyes and eyebrows.${others}` });
+      }
+    });
+    return out;
+  };
+
+  async function editOpenRouter(baseBlob, instr, settings, signal) {
+    const s = settings.openrouter || {};
+    if (!s.apiKey) throw new Error('Clé OpenRouter manquante');
+    const dataUrl = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(baseBlob); });
+    const r = await fetch('https://openrouter.ai/api/v1/chat/completions', { method: 'POST', signal,
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + s.apiKey, 'HTTP-Referer': 'https://github.com/ndoyepapamassamba-commits/Add-a-README-file', 'X-Title': 'Skit Studio' },
+      body: JSON.stringify({ model: s.imageModel || 'google/gemini-2.5-flash-image', messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: dataUrl } }, { type: 'text', text: instr }] }], modalities: ['image', 'text'], image_config: { aspect_ratio: '9:16' } }) });
+    if (!r.ok) throw new Error('OpenRouter (édition) ' + r.status + ' : ' + (await r.text()).slice(0, 200));
+    const j = await r.json(); const msg = j.choices && j.choices[0] && j.choices[0].message;
+    const im = msg && msg.images && msg.images[0] && msg.images[0].image_url && msg.images[0].image_url.url;
+    if (!im) throw new Error('OpenRouter : aucune image clé renvoyée');
+    const [hdr, b64] = im.split(','); const bin = atob(b64); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return new Blob([u8], { type: (hdr.match(/data:([^;]+)/) || [])[1] || 'image/png' });
+  }
+
+  /** Image clé (banque → édition OpenRouter). @returns { blob, url, fromBank } */
+  ImageGen.getOrEdit = async function (v, baseBlob, settings, signal) {
+    const hit = await ImageGen.bankGet(v.key); if (hit) return Object.assign({ fromBank: true }, hit);
+    const blob = await editOpenRouter(baseBlob, v.instr, settings, signal);
+    const e = await ImageGen.bankPut(v.key, blob, v.instr, { provider: 'openrouter-edit', base: v.baseKey, name: v.name });
+    return Object.assign({ fromBank: false }, e);
+  };
+
+  /* ------------------------------ Estimation des coûts ------------------------------
+     Coûts mesurés le 2026-11-07 via OpenRouter (usage.cost) ; les autres sont des estimations. */
+  ImageGen.PRICES = {
+    'openrouter:google/gemini-2.5-flash-image': 0.039,
+    'openrouter:google/gemini-3.1-flash-lite-image': 0.034,
+    'openrouter:google/gemini-3.1-flash-image': 0.045,
+    'openrouter:google/gemini-3-pro-image': 0.14,
+    'openrouter:openai/gpt-5-image-mini': 0.02,
+    'openrouter:openai/gpt-5-image': 0.08,
+    'pollinations': 0, 'none': 0
+  };
+  ImageGen.unitPrice = function (project, settings) {
+    const V = project.visual || {}; const prov = V.provider || 'openrouter';
+    if (prov === 'openrouter') { if (!((settings || {}).openrouter || {}).apiKey) return 0; return ImageGen.PRICES['openrouter:' + (((settings || {}).openrouter || {}).imageModel || 'google/gemini-2.5-flash-image')] || 0.04; }
+    return ImageGen.PRICES[prov] != null ? ImageGen.PRICES[prov] : 0.03;
+  };
+  /** { base, keyframes, images, unit, total } pour un projet (images déjà en banque non déduites). */
+  ImageGen.estimate = function (project, settings) {
+    const plan = ImageGen.plan(project).filter(p => !p.dup);
+    const kf = ImageGen.variantPlan(project, plan).length;
+    const unit = ImageGen.unitPrice(project, settings);
+    return { base: plan.length, keyframes: kf, images: plan.length + kf, unit, total: (plan.length + kf) * unit };
   };
 
   /** Clé de banque déterministe. */
@@ -2478,7 +2603,7 @@ details > summary { cursor: pointer; }
       if (ln.image) return; // image fournie
       const explicit = ln.shot === 'close' ? sk.imageClose : sk.imageWide; if (explicit) return;
       const prompt = ImageGen.buildPrompt(project, sk, ln);
-      const seed = ((V.seed || 1) * 7919 + Core.hashString(prompt) % 1000) % 2147483647;
+      const seed = ((V.seed || 1) * 7919 + Core.hashString(prompt + '|' + sk.title)) % 2147483647; // une graine par sketch : images distinctes d'un sketch à l'autre
       const key = ImageGen.keyFor(prompt, seed, V.provider || 'pollinations', w, h);
       if (seen.has(key)) { out.push({ key, prompt, seed, si, li, shot: ln.shot, dup: true }); return; }
       seen.add(key); out.push({ key, prompt, seed, si, li, shot: ln.shot, w, h });
@@ -3319,6 +3444,27 @@ details > summary { cursor: pointer; }
       if (onProgress) onProgress(done / Math.max(1, unique.length), `Image ${done}/${unique.length}`);
       renderImagePlan();
     }
+    // images clés d'expression (éditions OpenRouter de chaque image de base)
+    const vplan = ImageGen.variantPlan(project, unique);
+    const canEdit = !!(S.settings.openrouter || {}).apiKey && project.visual.provider === 'openrouter';
+    if (vplan.length && !canEdit) toast('Images clés d\'expression : nécessitent le fournisseur OpenRouter avec une clé (ignorées).');
+    if (vplan.length && canEdit) {
+      let k = 0;
+      for (const v of vplan) {
+        if (signal && signal.aborted) throw new Error('Annulé');
+        if (onProgress) onProgress(k / vplan.length, `Image clé ${k + 1}/${vplan.length} (${v.name === 'open' ? 'bouche ouverte' : 'expression forte'})`);
+        try {
+          const base = await ImageGen.bankGet(v.baseKey); if (!base) throw new Error('image de base absente');
+          const asset = Animator.get(v.baseKey); if (asset && asset.variants[v.name]) { k++; continue; }
+          const e = await ImageGen.getOrEdit(v, base.blob, S.settings, signal);
+          const img = await Assets.loadImage(e.url, 15000); if (!img) throw new Error('image clé illisible');
+          const ok = await Animator.addVariant(v.baseKey, v.name, img);
+          if (!ok) errors.push(`image clé ${v.name} (${v.si + 1}.${v.li + 1}) ignorée : cadrage différent`);
+        } catch (err) { if (/Annulé/.test(err.message)) throw err; errors.push(err.message); }
+        k++;
+      }
+      if (onProgress) onProgress(1, `${vplan.length} image(s) clé(s) prêtes`);
+    }
     S.dirty.images = false;
     if (ImageGen.lastFallback) { toast(ImageGen.lastFallback); ImageGen.lastFallback = null; }
     return { plan, errors };
@@ -3606,11 +3752,16 @@ details > summary { cursor: pointer; }
       const url = S.imageUrls[Timeline.lineKey(item.si, item.li)];
       const asset = S.assetKeys[Timeline.lineKey(item.si, item.li)] ? Animator.get(S.assetKeys[Timeline.lineKey(item.si, item.li)]) : null;
       d.innerHTML = `${url ? `<img class="thumb" src="${url}">` : '<div class="thumb grid place-items-center text-slate-600">en attente</div>'}
-        <div class="flex gap-1 items-center"><span class="badge">${item.si + 1}.${item.li + 1} ${item.shot === 'wide' ? 'large' : 'gros plan'}</span>${asset ? `<span class="badge ok">${asset.faces.length} visage(s) · ${asset.faces[0].source === 'mediapipe' ? 'MediaPipe' : 'gabarit'}</span>` : ''}</div>
+        <div class="flex gap-1 items-center"><span class="badge">${item.si + 1}.${item.li + 1} ${item.shot === 'wide' ? 'large' : 'gros plan'}</span>${asset ? `<span class="badge ok">${asset.faces.length} visage(s) · ${asset.faces[0].source === 'mediapipe' ? 'MediaPipe' : 'gabarit'}</span>` : ''}${asset && Object.keys(asset.variants).length ? `<span class="badge ok">+${Object.keys(asset.variants).join(', ')}</span>` : ''}</div>
         <details><summary class="text-slate-400">prompt</summary><div class="text-slate-500 break-words">${escapeHtml(item.prompt)}</div></details>
         <div class="flex gap-1"><label class="btn ghost small cursor-pointer">📤 Importer<input type="file" accept="image/*" class="hidden" data-si="${item.si}" data-li="${item.li}" data-act="imgimport"></label><button class="btn ghost small" data-act="imgregen" data-key="${item.key}" data-si="${item.si}" data-li="${item.li}">🔁</button></div>`;
       el.appendChild(d);
     });
+    const est = ImageGen.estimate(S.project, S.settings);
+    const vids = Math.max(1, +$('batchCount').value || 1);
+    $('costBox').innerHTML = est.unit > 0
+      ? `💰 Cette vidéo : <b>${est.base}</b> image(s) de base + <b>${est.keyframes}</b> image(s) clé(s) = <b>${est.images}</b> × ${est.unit.toFixed(3)} $ ≈ <b>${est.total.toFixed(2)} $</b> (images déjà en banque : gratuites). Lot de ${vids} vidéo(s) sans réutilisation : ≤ ${(est.total * vids).toFixed(2)} $.`
+      : `💰 Fournisseur gratuit : ${est.images} image(s) à générer${(S.project.visual.provider === 'pollinations' || !(S.settings.openrouter || {}).apiKey) ? ` (≈ ${Math.ceil(est.images * 46 / 60)} min à 1 image / 45 s)` : ''}.`;
     ImageGen.bankList().then(list => { $('bankInfo').textContent = `${list.length} image(s) · ${(list.reduce((a, b) => a + b.size, 0) / 1048576).toFixed(1)} Mo`; });
   }
   $('imagePlan').addEventListener('change', async (e) => {
@@ -3678,13 +3829,14 @@ details > summary { cursor: pointer; }
     bind('visParallax', () => P().visual.parallax, v => { P().visual.parallax = v; Animator.options.parallax = v; }, 'change');
     bind('visDepthAI', () => P().visual.depthAI, v => { P().visual.depthAI = v; Animator.options.depthAI = v; Animator.clear(); invalidate(['images']); }, 'change');
     bind('visStrength', () => P().visual.strength, v => { P().visual.strength = v; Animator.options.strength = v; });
-    bind('visFallback', () => P().visual.fallbackSketch, v => { P().visual.fallbackSketch = v; }, 'change');
+    bind('visKeyframes', () => P().visual.keyframes, v => { P().visual.keyframes = +v; invalidate(['images']); renderImagePlan(); }, 'change');
+        bind('visFallback', () => P().visual.fallbackSketch, v => { P().visual.fallbackSketch = v; }, 'change');
     // réglages
     const SS = () => S.settings;
     const sb = (id, get, set) => { const el = $(id); el.addEventListener('input', () => { set(el.value); saveSettings(); }); el.value = get() || el.value; };
     sb('polKey', () => SS().pollinations.apiKey, v => { SS().pollinations.apiKey = v.trim(); });
-    sb('orKey', () => SS().openrouter.apiKey, v => { SS().openrouter.apiKey = v.trim(); if (!SS().llm.apiKey) { SS().llm.apiKey = v.trim(); $('llmKey').value = v.trim(); } });
-    sb('orImageModel', () => SS().openrouter.imageModel, v => { SS().openrouter.imageModel = v; });
+    sb('orKey', () => SS().openrouter.apiKey, v => { SS().openrouter.apiKey = v.trim(); renderImagePlan(); if (!SS().llm.apiKey) { SS().llm.apiKey = v.trim(); $('llmKey').value = v.trim(); } });
+    sb('orImageModel', () => SS().openrouter.imageModel, v => { SS().openrouter.imageModel = v; renderImagePlan(); });
     sb('polImageModel', () => SS().pollinations.imageModel, v => { SS().pollinations.imageModel = v.trim(); });
     sb('polTtsModel', () => SS().pollinations.ttsModel, v => { SS().pollinations.ttsModel = v.trim(); renderCharList(); });
     $('llmProvider').innerHTML = AI.PROVIDERS.map(p => `<option value="${p.id}">${p.label}</option>`).join('');
