@@ -193,3 +193,12 @@ Ensuite, mets le lien dans ta **bio TikTok / Instagram** et dans tes vidéos. **
 
 *Boutique construite pour démarrer vite et sans coût. Quand tu veux ajouter de vraies photos,
 plus de produits, un vrai paiement en ligne automatique, ou une page par produit — dis-le-moi, on fait évoluer.*
+
+---
+
+## 🎬 Skit Studio — générateur massif de vidéos de sketches (dossier `skit-studio/`)
+
+Application web autonome (ouvrir `skit-studio/index.html`) qui produit en masse des vidéos
+verticales 9:16 de sketches/dialogues satiriques : images IA animées (visages, bouche, parallaxe),
+voix neuronales françaises dans le navigateur, sous-titres cinétiques, cartes titre/réaction,
+export MP4 par lot (ZIP). Architecture, algorithmes et guide d'intégration : `skit-studio/README.md`.

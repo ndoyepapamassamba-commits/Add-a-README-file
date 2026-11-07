@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skit Studio — Générateur massif de vidéos de sketches (9:16)</title>
+<meta name="description" content="Produisez en masse des vidéos courtes de sketches/dialogues satiriques (format TikTok, Reels, Shorts) entièrement dans le navigateur : images IA animées, voix neuronales, sous-titres cinétiques, export MP4 par lot.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2b1b4f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.5/build/mp4-muxer.min.js" onerror="window.__noMuxer=true"></script>
+<link rel="stylesheet" href="css/studio.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+<header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur border-b border-slate-800">
+  <div class="max-w-[1500px] mx-auto px-4 py-2.5 flex items-center gap-3 flex-wrap">
+    <div class="flex items-center gap-2 font-black text-lg tracking-tight"><span class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-400 grid place-items-center">🎬</span> Skit Studio <span class="text-xs font-semibold text-slate-400 ml-1">moteur de sketches 9:16 · v1</span></div>
+    <div id="caps" class="flex gap-1 flex-wrap text-xs"></div>
+    <div class="ml-auto flex gap-2 flex-wrap">
+      <button id="btnSaveProject" class="btn ghost small">💾 Sauvegarder (.json)</button>
+      <label class="btn ghost small cursor-pointer">📂 Ouvrir projet <input id="openProject" type="file" accept=".json,application/json" class="hidden"></label>
+      <a class="btn ghost small" href="README.md" target="_blank">📘 Guide</a>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1500px] mx-auto px-4 py-4 grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)_380px]">
+
+  <!-- Navigation -->
+  <nav class="flex lg:flex-col gap-1 overflow-x-auto">
+    <button class="tab active text-left rounded-lg px-3 py-2 text-sm font-semibold hover:bg-slate-800" data-tab="scripts">📝 Scripts</button>
+    <button class="tab text-left rounded-lg px-3 py-2 text-sm font-semibold hover:bg-slate-800" data-tab="personnages">🎭 Personnages & voix</button>
+    <button class="tab text-left rounded-lg px-3 py-2 text-sm font-semibold hover:bg-slate-800" data-tab="visuels">🖼️ Images IA</button>
+    <button class="tab text-left rounded-lg px-3 py-2 text-sm font-semibold hover:bg-slate-800" data-tab="studio">🎨 Studio</button>
+    <button class="tab text-left rounded-lg px-3 py-2 text-sm font-semibold hover:bg-slate-800" data-tab="lot">🚀 Export & lot</button>
+    <button class="tab text-left rounded-lg px-3 py-2 text-sm font-semibold hover:bg-slate-800" data-tab="reglages">⚙️ Réglages & API</button>
+  </nav>
+
+  <!-- Panneaux -->
+  <section class="min-w-0 space-y-4">
+
+    <!-- SCRIPTS -->
+    <div class="panel active" id="panel-scripts">
+      <div class="card space-y-3">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="font-bold text-base">Scripts & dialogues</h2>
+          <input id="prjTitle" class="inp !w-64" placeholder="Titre du projet">
+          <span class="text-xs text-slate-400" id="scriptStats"></span>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3">
+          <div>
+            <label class="field">Importer (JSON, CSV ou texte brut — <code>A: réplique | 🔥</code>, <code># Titre 🤣</code>, <code>@scene marche</code>)</label>
+            <textarea id="importText" class="inp h-40" placeholder="# LE BÉBÉ 😱&#10;@scene chambre&#10;A: Le bébé ne me *ressemble pas* ! | 🔥&#10;B: Justement, je cherche à qui il *ressemble*. | 😜"></textarea>
+            <div class="flex gap-2 mt-2 flex-wrap">
+              <button id="btnImport" class="btn small">⬇️ Importer (ajouter)</button>
+              <label class="btn ghost small cursor-pointer">📄 Fichier… <input id="importFile" type="file" accept=".json,.csv,.txt" class="hidden"></label>
+              <button id="btnSample" class="btn ghost small">✨ Exemple (5 sketches de la référence)</button>
+              <button id="btnClearSketches" class="btn danger small">🗑️ Vider</button>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="card !p-3 space-y-2">
+              <div class="font-semibold text-sm">Générateur hors ligne (gabarits combinatoires)</div>
+              <div class="flex gap-2 items-end flex-wrap">
+                <div><label class="field">Nombre</label><input id="genCount" type="number" class="inp !w-20" value="5" min="1" max="200"></div>
+                <div><label class="field">Graine</label><input id="genSeed" type="number" class="inp !w-24" value="7"></div>
+                <button id="btnGenerate" class="btn small">🎲 Générer</button>
+              </div>
+              <div id="genCats" class="flex gap-1 flex-wrap text-xs"></div>
+            </div>
+            <div class="card !p-3 space-y-2">
+              <div class="font-semibold text-sm">Générateur IA (LLM) <span class="badge" id="llmBadge">Pollinations gratuit</span></div>
+              <input id="aiTheme" class="inp" placeholder="Thème : disputes de couple, belle-mère, argent, marché…">
+              <div class="flex gap-2 items-end flex-wrap">
+                <div><label class="field">Nombre</label><input id="aiCount" type="number" class="inp !w-20" value="5" min="1" max="20"></div>
+                <button id="btnAI" class="btn small">🤖 Écrire par IA</button>
+                <span id="aiStatus" class="text-xs text-slate-400"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button id="btnExportJSON" class="btn ghost small">JSON</button>
+          <button id="btnExportCSV" class="btn ghost small">CSV</button>
+          <button id="btnExportText" class="btn ghost small">Texte</button>
+          <span class="text-xs text-slate-500 self-center">Exporter les sketches</span>
+        </div>
+      </div>
+      <div id="sketchList" class="space-y-3 mt-4"></div>
+    </div>
+
+    <!-- PERSONNAGES -->
+    <div class="panel" id="panel-personnages">
+      <div class="card space-y-3">
+        <div class="flex items-center gap-2"><h2 class="font-bold">Personnages, apparence & voix</h2><button id="btnAddChar" class="btn ghost small ml-auto">➕ Personnage</button></div>
+        <p class="text-xs text-slate-400">La description d'apparence (« look ») est injectée dans chaque prompt d'image pour garder des personnages cohérents d'un sketch à l'autre. La voix <b>Piper</b> est une voix neuronale française qui tourne dans votre navigateur (téléchargement unique ≈ 60 Mo par voix).</p>
+        <div id="piperStatus" class="text-xs text-slate-400"></div>
+      </div>
+      <div id="charList" class="grid md:grid-cols-2 gap-3 mt-4"></div>
+    </div>
+
+    <!-- VISUELS -->
+    <div class="panel" id="panel-visuels">
+      <div class="card space-y-3">
+        <h2 class="font-bold">Images IA & moteur d'animation</h2>
+        <p class="text-xs text-slate-400">Chaque réplique a un plan : <b>large</b> (les deux personnages) ou <b>gros plan</b> (le visage du locuteur). Les images sont générées une seule fois puis <b>mises en banque</b> (IndexedDB) et réutilisées par toutes les variantes. Le moteur détecte les visages (MediaPipe, 478 points), construit un maillage et anime bouche, mâchoire, sourcils, clignements et mouvements de tête à partir de l'audio ; la parallaxe 2.5D ajoute de la profondeur.</p>
+        <div class="grid md:grid-cols-3 gap-3">
+          <div><label class="field">Style</label><select id="visStyle" class="inp"></select></div>
+          <div><label class="field">Fournisseur d'images</label><select id="visProvider" class="inp"></select></div>
+          <div><label class="field">Graine (cohérence)</label><input id="visSeed" type="number" class="inp" value="11"></div>
+          <div class="md:col-span-3"><label class="field">Détails de style supplémentaires (optionnel, ajoutés à chaque prompt)</label><input id="visExtra" class="inp" placeholder="ex : Dakar, 2025, couleurs chaudes, lumière de fin de journée"></div>
+          <label class="flex items-center gap-2 text-sm"><input id="visCrop" type="checkbox" checked> Rogner le filigrane (Pollinations gratuit)</label>
+          <label class="flex items-center gap-2 text-sm"><input id="visParallax" type="checkbox" checked> Parallaxe 2.5D (WebGL)</label>
+          <label class="flex items-center gap-2 text-sm"><input id="visDepthAI" type="checkbox"> Profondeur IA (Depth Anything, lent sans GPU)</label>
+          <div class="md:col-span-2"><label class="field">Intensité des mouvements de caméra <span id="visStrengthVal">1.0</span></label><input id="visStrength" type="range" min="0" max="2" step="0.1" value="1"></div>
+          <label class="flex items-center gap-2 text-sm"><input id="visFallback" type="checkbox" checked> Esquisse provisoire si image absente</label>
+        </div>
+        <div class="flex gap-2 flex-wrap items-center">
+          <button id="btnPrepareImages" class="btn">🖼️ Générer / vérifier toutes les images</button>
+          <button id="btnCancelImages" class="btn ghost small" disabled>Annuler</button>
+          <span id="imgStatus" class="text-xs text-slate-400"></span>
+        </div>
+        <div class="prog"><div id="imgProg"></div></div>
+        <div class="text-xs text-slate-500">Banque : <span id="bankInfo">…</span> <button id="btnBankClear" class="btn danger small ml-2">Vider la banque</button></div>
+      </div>
+      <div id="imagePlan" class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4"></div>
+    </div>
+
+    <!-- STUDIO -->
+    <div class="panel" id="panel-studio">
+      <div class="grid md:grid-cols-2 gap-3">
+        <div class="card space-y-2">
+          <h3 class="font-bold">Habillage</h3>
+          <div><label class="field">Thème</label><select id="themeSel" class="inp"></select></div>
+          <div class="flex gap-3 items-center text-sm"><label>Fond <input id="bgColor" type="color"></label><label>Fond 2 <input id="bg2Color" type="color"></label><label>Accent <input id="accentColor" type="color"></label></div>
+          <div><label class="field">Style d'emojis</label><select id="emojiStyle" class="inp"><option value="fluent">3D Fluent (comme la référence, via CDN)</option><option value="font">Police système</option></select></div>
+          <div><label class="field">Texte en filigrane / marque (haut)</label><input id="watermark" class="inp" placeholder="@moncompte"></div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="field">Résolution</label><select id="resSel" class="inp"><option value="1080x1920">1080 × 1920</option><option value="720x1280">720 × 1280 (référence)</option></select></div>
+            <div><label class="field">Images / s</label><select id="fpsSel" class="inp"><option>30</option><option>25</option><option>24</option><option>60</option></select></div>
+          </div>
+        </div>
+        <div class="card space-y-2">
+          <h3 class="font-bold">Sous-titres</h3>
+          <div><label class="field">Mode</label><select id="subMode" class="inp"><option value="phrase">Phrase entière (référence)</option><option value="words">Mot par mot (cinétique)</option><option value="karaoke">Karaoké (mot actif)</option></select></div>
+          <div><label class="field">Taille <span id="subSizeVal">64</span></label><input id="subSize" type="range" min="36" max="110" value="64"></div>
+          <div><label class="field">Position verticale <span id="subPosVal">0.78</span></label><input id="subPos" type="range" min="0.5" max="0.9" step="0.01" value="0.78"></div>
+          <div><label class="field">Mots-clés</label><select id="subHl" class="inp"><option value="auto">Derniers mots ou *marqués*</option><option value="marked">Seulement *marqués*</option></select></div>
+          <label class="flex items-center gap-2 text-sm"><input id="subUpper" type="checkbox" checked> MAJUSCULES</label>
+          <label class="flex items-center gap-2 text-sm"><input id="subSpeaker" type="checkbox" checked> Couleur et étiquette par locuteur</label>
+          <label class="flex items-center gap-2 text-sm"><input id="subEmoji" type="checkbox" checked> Emoji réaction à droite</label>
+        </div>
+        <div class="card space-y-2">
+          <h3 class="font-bold">Structure</h3>
+          <label class="flex items-center gap-2 text-sm"><input id="hookFirst" type="checkbox" checked> Accroche : 1er sketch sans carte titre</label>
+          <label class="flex items-center gap-2 text-sm"><input id="titleCards" type="checkbox" checked> Cartes « SKETCH n/N »</label>
+          <label class="flex items-center gap-2 text-sm"><input id="reactionCards" type="checkbox" checked> Cartes réaction (gros emoji)</label>
+          <div><label class="field">Préfixe des cartes</label><input id="titlePrefix" class="inp" value="SKETCH"></div>
+          <label class="flex items-center gap-2 text-sm"><input id="outroEnabled" type="checkbox" checked> Outro</label>
+          <div class="grid grid-cols-3 gap-2"><input id="outroL1" class="inp" value="LA SUITE DEMAIN"><input id="outroL2" class="inp" value="ABONNE-TOI"><input id="outroEmoji" class="inp" value="🎉"></div>
+        </div>
+        <div class="card space-y-2">
+          <h3 class="font-bold">Rythme (secondes)</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <label>Réaction <input id="tReaction" type="number" step="0.1" class="inp" value="3.2"></label>
+            <label>Titre <input id="tTitle" type="number" step="0.1" class="inp" value="2"></label>
+            <label>Réplique min. <input id="tMinLine" type="number" step="0.1" class="inp" value="2"></label>
+            <label>Punchline min. <input id="tCloseMin" type="number" step="0.1" class="inp" value="2.2"></label>
+            <label>Marge après voix <input id="tPad" type="number" step="0.1" class="inp" value="0.5"></label>
+            <label>Outro <input id="tOutro" type="number" step="0.1" class="inp" value="2"></label>
+          </div>
+        </div>
+        <div class="card space-y-2 md:col-span-2">
+          <h3 class="font-bold">Audio</h3>
+          <div class="grid md:grid-cols-3 gap-3 text-sm">
+            <div><label class="field">Musique de fond (fichier)</label><input id="musicFile" type="file" accept="audio/*" class="inp"><span id="musicName" class="text-xs text-slate-500"></span></div>
+            <div><label class="field">Volume musique <span id="musicVolVal">0.25</span></label><input id="musicVol" type="range" min="0" max="1" step="0.05" value="0.25"></div>
+            <div><label class="field">Baisse sous la voix <span id="musicDuckVal">0.5</span></label><input id="musicDuck" type="range" min="0" max="1" step="0.05" value="0.5"></div>
+            <label class="flex items-center gap-2"><input id="sfxOn" type="checkbox" checked> Effets sonores (whoosh, pop, ba-dum-tss)</label>
+            <label class="flex items-center gap-2"><input id="laughOn" type="checkbox" checked> Rires sur les cartes réaction</label>
+            <div><label class="field">Rire (fichier, sinon synthétique)</label><input id="laughFile" type="file" accept="audio/*" class="inp"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOT -->
+    <div class="panel" id="panel-lot">
+      <div class="card space-y-3">
+        <h2 class="font-bold">Exporter la vidéo courante</h2>
+        <div class="flex gap-2 flex-wrap items-end">
+          <div><label class="field">Moteur</label><select id="engineSel" class="inp"><option value="auto">Auto (WebCodecs → MediaRecorder)</option><option value="webcodecs">WebCodecs + MP4 (rapide)</option><option value="mediarecorder">MediaRecorder (temps réel)</option></select></div>
+          <div><label class="field">Codec préféré</label><select id="codecSel" class="inp"><option value="h264">H.264</option><option value="vp9">VP9</option><option value="av1">AV1</option></select></div>
+          <button id="btnExport" class="btn">🎬 Préparer & exporter</button>
+          <button id="btnCancelExport" class="btn ghost" disabled>Annuler</button>
+        </div>
+        <div class="prog"><div id="exportProg"></div></div>
+        <div id="exportStatus" class="text-xs text-slate-400"></div>
+        <div id="exportResult"></div>
+      </div>
+      <div class="card space-y-3 mt-4">
+        <h2 class="font-bold">Génération en masse (variantes)</h2>
+        <p class="text-xs text-slate-400">Chaque variante tire K sketches dans la banque, change le thème de couleurs, le jeu d'emojis et l'ordre de l'accroche. Les voix et images sont partagées via les caches : seule la première vidéo paie le coût de génération.</p>
+        <div class="grid md:grid-cols-4 gap-2 text-sm">
+          <label>Vidéos <input id="batchCount" type="number" class="inp" value="5" min="1" max="500"></label>
+          <label>Sketches / vidéo <input id="batchPer" type="number" class="inp" value="5" min="1" max="20"></label>
+          <label>Graine <input id="batchSeed" type="number" class="inp" value="42"></label>
+          <label>Banque de sketches <select id="bankSource" class="inp"><option value="current">Sketches du projet</option><option value="generator">Générateur (gabarits) ×</option><option value="ai">IA (LLM) ×</option></select></label>
+          <label>Taille banque (générateur / IA) <input id="bankSize" type="number" class="inp" value="20" min="1" max="200"></label>
+        </div>
+        <div><span class="field">Thèmes</span><div id="batchThemes" class="flex gap-1 flex-wrap"></div></div>
+        <div><span class="field">Jeux d'emojis</span><div id="batchEmoji" class="flex gap-1 flex-wrap"></div></div>
+        <div class="flex gap-2 flex-wrap">
+          <button id="btnMakeVariants" class="btn ghost">🧬 Générer les variantes</button>
+          <button id="btnRunBatch" class="btn" disabled>▶️ Lancer le rendu en lot</button>
+          <button id="btnCancelBatch" class="btn ghost" disabled>⏹️ Annuler</button>
+          <button id="btnZip" class="btn ghost" disabled>📦 Télécharger tout (ZIP)</button>
+          <button id="btnExportVariants" class="btn ghost small">Scripts des variantes (JSON)</button>
+        </div>
+        <div class="prog"><div id="batchProg"></div></div>
+        <div id="batchStatus" class="text-xs text-slate-400"></div>
+        <div id="variantList" class="space-y-1 text-sm"></div>
+      </div>
+    </div>
+
+    <!-- RÉGLAGES -->
+    <div class="panel" id="panel-reglages">
+      <div class="grid md:grid-cols-2 gap-3">
+        <div class="card space-y-2">
+          <h3 class="font-bold">Pollinations (une clé pour tout : images, vidéo, voix, LLM)</h3>
+          <p class="text-xs text-slate-400">Sans clé : images et texte gratuits mais lents (1 requête / 45 s). Avec une clé <code>sk_…</code> de <a class="underline" href="https://enter.pollinations.ai" target="_blank">enter.pollinations.ai</a> : tous les modèles (Flux, Grok Imagine, GPT Image, ElevenLabs, Microsoft, Kokoro…), sans attente.</p>
+          <input id="polKey" class="inp" type="password" placeholder="sk_…">
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="field">Modèle image</label><input id="polImageModel" class="inp" value="black-forest-labs/flux.1-schnell"></div>
+            <div><label class="field">Modèle voix</label><input id="polTtsModel" class="inp" value="openai/tts-1"></div>
+          </div>
+        </div>
+        <div class="card space-y-2">
+          <h3 class="font-bold">LLM (scripts)</h3>
+          <div><label class="field">Fournisseur</label><select id="llmProvider" class="inp"></select></div>
+          <div><label class="field">URL de base (compatible OpenAI)</label><input id="llmBase" class="inp" value="https://openrouter.ai/api/v1"></div>
+          <div><label class="field">Clé API</label><input id="llmKey" class="inp" type="password"></div>
+          <div><label class="field">Modèle</label><input id="llmModel" class="inp" placeholder="openai (Pollinations) · openai/gpt-4o-mini (OpenRouter)…"></div>
+        </div>
+        <div class="card space-y-2">
+          <h3 class="font-bold">Images — API compatible OpenAI</h3>
+          <div><label class="field">URL de base</label><input id="imgBase" class="inp" value="https://api.openai.com/v1"></div>
+          <div><label class="field">Clé API</label><input id="imgKey" class="inp" type="password"></div>
+          <div class="grid grid-cols-2 gap-2"><div><label class="field">Modèle</label><input id="imgModel" class="inp" value="gpt-image-1"></div><div><label class="field">Taille</label><input id="imgSize" class="inp" value="1024x1536"></div></div>
+        </div>
+        <div class="card space-y-2">
+          <h3 class="font-bold">Voix — API compatible OpenAI / ElevenLabs</h3>
+          <div><label class="field">URL de base TTS</label><input id="ttsBase" class="inp" value="https://api.openai.com/v1"></div>
+          <div class="grid grid-cols-2 gap-2"><div><label class="field">Clé API</label><input id="ttsKey" class="inp" type="password"></div><div><label class="field">Modèle</label><input id="ttsModel" class="inp" value="gpt-4o-mini-tts"></div></div>
+          <div><label class="field">Clé ElevenLabs</label><input id="elKey" class="inp" type="password"></div>
+        </div>
+        <div class="card space-y-2 md:col-span-2">
+          <div class="flex items-center gap-2"><h3 class="font-bold">Diagnostic du navigateur</h3><button id="btnDiag" class="btn ghost small">Actualiser</button><span class="text-xs text-slate-500">Les clés sont stockées uniquement dans ce navigateur (localStorage).</span></div>
+          <pre id="capsReport" class="text-xs mono whitespace-pre-wrap text-slate-300"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Aperçu -->
+  <aside class="space-y-3 lg:sticky lg:top-16 self-start">
+    <div class="preview-wrap"><canvas id="preview" width="540" height="960"></canvas></div>
+    <div class="flex items-center gap-2">
+      <button id="btnPlay" class="btn">▶️</button>
+      <input id="scrub" type="range" min="0" max="1000" value="0" class="flex-1">
+      <span id="timeLabel" class="text-xs mono w-24 text-right">0:00.0 / 0:00.0</span>
+    </div>
+    <div class="flex gap-2 flex-wrap">
+      <button id="btnPrepare" class="btn ghost small flex-1">🔧 Préparer (voix + images + mixage)</button>
+      <label class="text-xs flex items-center gap-1"><input id="chkAudio" type="checkbox" checked> son</label>
+    </div>
+    <div class="prog"><div id="prepProg"></div></div>
+    <div id="prepStatus" class="text-xs text-slate-400"></div>
+    <div id="segList" class="card !p-2 max-h-64 overflow-auto text-xs space-y-0.5"></div>
+  </aside>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/00-core.js"></script>
+<script src="js/10-script.js"></script>
+<script src="js/20-timeline.js"></script>
+<script src="js/30-audio.js"></script>
+<script src="js/40-voices.js"></script>
+<script src="js/50-assets.js"></script>
+<script src="js/55-facerig.js"></script>
+<script src="js/56-depth.js"></script>
+<script src="js/57-warp.js"></script>
+<script src="js/60-animator.js"></script>
+<script src="js/61-sketch.js"></script>
+<script src="js/65-imagegen.js"></script>
+<script src="js/70-painter.js"></script>
+<script src="js/80-encoder.js"></script>
+<script src="js/85-zip.js"></script>
+<script src="js/90-batch.js"></script>
+<script src="js/95-ai.js"></script>
+<script src="js/99-app.js"></script>
+</body>
+</html>
