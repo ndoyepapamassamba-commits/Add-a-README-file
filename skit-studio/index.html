@@ -97,7 +97,7 @@
     <div class="panel" id="panel-personnages">
       <div class="card space-y-3">
         <div class="flex items-center gap-2"><h2 class="font-bold">Personnages, apparence & voix</h2><button id="btnAddChar" class="btn ghost small ml-auto">➕ Personnage</button></div>
-        <p class="text-xs text-slate-400">La description d'apparence (« look ») est injectée dans chaque prompt d'image pour garder des personnages cohérents d'un sketch à l'autre. La voix <b>Piper</b> est une voix neuronale française qui tourne dans votre navigateur (téléchargement unique ≈ 60 Mo par voix).</p>
+        <p class="text-xs text-slate-400">La description d'apparence (« look ») est injectée dans chaque prompt d'image pour garder des personnages cohérents d'un sketch à l'autre (en anglais de préférence : les modèles d'images la suivent mieux). La voix <b>Piper</b> est une voix neuronale française qui tourne dans votre navigateur (téléchargement unique ≈ 60 Mo par voix).</p>
         <div id="piperStatus" class="text-xs text-slate-400"></div>
       </div>
       <div id="charList" class="grid md:grid-cols-2 gap-3 mt-4"></div>
@@ -238,6 +238,12 @@
             <div><label class="field">Modèle image</label><input id="polImageModel" class="inp" value="black-forest-labs/flux.1-schnell"></div>
             <div><label class="field">Modèle voix</label><input id="polTtsModel" class="inp" value="openai/tts-1"></div>
           </div>
+        </div>
+        <div class="card space-y-2">
+          <h3 class="font-bold">OpenRouter (images propres + LLM)</h3>
+          <p class="text-xs text-slate-400">Clé <code>sk-or-…</code> de <a class="underline" href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a>. Images via Gemini Image (« Nano Banana », ≈ 0,03–0,04 $ l'image, 3–8 s) ou GPT Image ; la même clé sert au LLM (URL de base OpenRouter ci-dessous).</p>
+          <input id="orKey" class="inp" type="password" placeholder="sk-or-…">
+          <div><label class="field">Modèle image</label><select id="orImageModel" class="inp"><option value="google/gemini-2.5-flash-image">google/gemini-2.5-flash-image (rapide, propre)</option><option value="google/gemini-3.1-flash-image">google/gemini-3.1-flash-image</option><option value="google/gemini-3.1-flash-lite-image">google/gemini-3.1-flash-lite-image (économique)</option><option value="google/gemini-3-pro-image">google/gemini-3-pro-image (qualité)</option><option value="openai/gpt-5-image-mini">openai/gpt-5-image-mini</option><option value="openai/gpt-5-image">openai/gpt-5-image</option></select></div>
         </div>
         <div class="card space-y-2">
           <h3 class="font-bold">LLM (scripts)</h3>

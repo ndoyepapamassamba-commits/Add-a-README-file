@@ -1,5 +1,8 @@
 /* Test de bout en bout : Chromium headless (Playwright) → page → images importées → voix Piper → export MP4 WebCodecs.
-   Usage : node tests/e2e.js [dossier_sortie]   (nécessite ffprobe pour la vérification) */
+   Usage : node tests/e2e.js [dossier_sortie]   (nécessite ffprobe pour la vérification)
+   E2E_IMAGES=openrouter OPENROUTER_KEY=sk-or-… : génère les images en direct via OpenRouter depuis la page
+   (sans OPENROUTER_KEY, une clé factice est envoyée : utile derrière un proxy qui injecte la vraie clé). */
+const LIVE = process.env.E2E_IMAGES === 'openrouter';
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
@@ -23,18 +26,21 @@ const port = srv.address().port;
   await page.goto(`http://localhost:${port}/index.html`);
   await page.waitForFunction(() => window.SkitApp && window.SkitApp.state.timeline.segments.length > 0, null, { timeout: 60000 });
   await page.screenshot({ path: path.join(OUT, 'ui-scripts.png') });
-  const fixtures = fs.readdirSync(path.join(OUT, 'fixtures')).filter(f => /\.(jpg|png)$/.test(f));
+  const fixtures = LIVE ? ['live', 'live'] : fs.readdirSync(path.join(OUT, 'fixtures')).filter(f => /\.(jpg|png)$/.test(f));
   if (fixtures.length < 2) throw new Error('Il faut 2 images dans ' + path.join(OUT, 'fixtures') + ' (wide.jpg, close.jpg)');
 
   // Projet réduit : 2 sketches, images importées (évite le réseau Pollinations), voix Piper
-  const result = await page.evaluate(async ({ port }) => {
+  const result = await page.evaluate(async ({ port, live, orKey }) => {
     const App = window.SkitApp, NS = window.SkitStudio, S = App.state;
     const p = NS.Script.sampleProject(); p.sketches = p.sketches.slice(0, 2); p.title = 'Test e2e'; p.width = 1080; p.height = 1920; p.fps = 30;
     p.timing.reaction = 2.0; p.timing.title = 1.5;
     const fetchFile = async (name) => { const b = await (await fetch(`http://localhost:${port}/__fixtures/${name}`)).blob(); return new File([b], name, { type: b.type, lastModified: 1 }); };
-    const wide = await NS.ImageGen.importFile(await fetchFile('wide.jpg'));
-    const close = await NS.ImageGen.importFile(await fetchFile('close.jpg'));
-    p.sketches.forEach(sk => { sk.imageWide = wide.key; sk.imageClose = close.key; });
+    if (live) { S.settings.openrouter = { apiKey: orKey, imageModel: 'google/gemini-2.5-flash-image' }; p.visual.provider = 'openrouter'; p.visual.seed = 21; }
+    else {
+      const wide = await NS.ImageGen.importFile(await fetchFile('wide.jpg'));
+      const close = await NS.ImageGen.importFile(await fetchFile('close.jpg'));
+      p.sketches.forEach(sk => { sk.imageWide = wide.key; sk.imageClose = close.key; });
+    }
     App.loadProject(p);
     const t0 = performance.now();
     await App.prepareAll({ force: true });
@@ -50,11 +56,15 @@ const port = srv.address().port;
     const encMs = performance.now() - t1;
     const buf = new Uint8Array(await out.blob.arrayBuffer());
     let bin = ''; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
-    return { total: S.timeline.total, segs, assets, measured: Object.keys(S.measured).length, mixDur: S.audioMix && S.audioMix.duration, prepMs: Math.round(prepMs), encMs: Math.round(encMs), engine: out.engine, codec: out.codec, audioCodec: out.audioCodec, size: out.blob.size, mp4: btoa(bin), shots, caps: S.caps };
-  }, { port });
+    const imgs = [];
+    for (const k of Object.keys(S.imageUrls)) { const b = await (await fetch(S.imageUrls[k])).blob(); const fr = new FileReader(); imgs.push(await new Promise(r => { fr.onload = () => r({ line: k, data: fr.result }); fr.readAsDataURL(b); })); }
+    return { imgs, total: S.timeline.total, segs, assets, measured: Object.keys(S.measured).length, mixDur: S.audioMix && S.audioMix.duration, prepMs: Math.round(prepMs), encMs: Math.round(encMs), engine: out.engine, codec: out.codec, audioCodec: out.audioCodec, size: out.blob.size, mp4: btoa(bin), shots, caps: S.caps };
+  }, { port, live: LIVE, orKey: process.env.OPENROUTER_KEY || 'sk-or-proxy-injected' });
   const mp4 = path.join(OUT, 'e2e.mp4'); fs.writeFileSync(mp4, Buffer.from(result.mp4, 'base64'));
   result.shots.forEach((d, i) => fs.writeFileSync(path.join(OUT, `preview-${i}.jpg`), Buffer.from(d.split(',')[1], 'base64')));
-  delete result.mp4; delete result.shots;
+  const seen = new Set(); result.imgs.forEach(im => { const ext = /image\/png/.test(im.data) ? 'png' : 'jpg'; if (seen.has(im.data.length)) return; seen.add(im.data.length); fs.writeFileSync(path.join(OUT, `gen-${im.line.replace(':', '_')}.${ext}`), Buffer.from(im.data.split(',')[1], 'base64')); });
+  result.generatedImages = seen.size;
+  delete result.mp4; delete result.shots; delete result.imgs;
   await page.screenshot({ path: path.join(OUT, 'ui-after.png') });
   await browser.close(); srv.close();
   let probe = null;

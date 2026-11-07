@@ -25,7 +25,7 @@
   };
 
   function loadSettings() {
-    try { return Object.assign({ llm: { provider: 'pollinations' }, pollinations: {}, image: {}, tts: {}, elevenlabs: {}, emojiStyle: 'fluent' }, JSON.parse(localStorage.getItem('skitstudio.settings') || '{}')); } catch (e) { return { llm: { provider: 'pollinations' }, pollinations: {}, image: {}, tts: {}, elevenlabs: {}, emojiStyle: 'fluent' }; }
+    try { return Object.assign({ llm: { provider: 'pollinations' }, pollinations: {}, openrouter: {}, image: {}, tts: {}, elevenlabs: {}, emojiStyle: 'fluent' }, JSON.parse(localStorage.getItem('skitstudio.settings') || '{}')); } catch (e) { return { llm: { provider: 'pollinations' }, pollinations: {}, openrouter: {}, image: {}, tts: {}, elevenlabs: {}, emojiStyle: 'fluent' }; }
   }
   function saveSettings() { try { localStorage.setItem('skitstudio.settings', JSON.stringify(S.settings)); } catch (e) {} }
   function saveProjectLocal() { try { localStorage.setItem('skitstudio.project', JSON.stringify(S.project)); } catch (e) {} }
@@ -86,7 +86,7 @@
     }
     for (const item of unique) {
       if (signal && signal.aborted) throw new Error('Annulé');
-      const eta = project.visual.provider === 'pollinations' ? ` · attente ≈ ${Math.ceil(ImageGen.nextAnonDelay() / 1000)} s` : '';
+      const eta = (project.visual.provider === 'pollinations' || (project.visual.provider === 'openrouter' && !(S.settings.openrouter || {}).apiKey)) ? ` · attente ≈ ${Math.ceil(ImageGen.nextAnonDelay() / 1000)} s` : '';
       if (onProgress) onProgress(done / Math.max(1, unique.length), `Image ${done + 1}/${unique.length} (${item.shot})${eta}`);
       try {
         const entry = await ImageGen.getOrGenerate(item, project, S.settings, signal);
@@ -98,6 +98,7 @@
       renderImagePlan();
     }
     S.dirty.images = false;
+    if (ImageGen.lastFallback) { toast(ImageGen.lastFallback); ImageGen.lastFallback = null; }
     return { plan, errors };
   };
 
@@ -460,6 +461,8 @@
     const SS = () => S.settings;
     const sb = (id, get, set) => { const el = $(id); el.addEventListener('input', () => { set(el.value); saveSettings(); }); el.value = get() || el.value; };
     sb('polKey', () => SS().pollinations.apiKey, v => { SS().pollinations.apiKey = v.trim(); });
+    sb('orKey', () => SS().openrouter.apiKey, v => { SS().openrouter.apiKey = v.trim(); if (!SS().llm.apiKey) { SS().llm.apiKey = v.trim(); $('llmKey').value = v.trim(); } });
+    sb('orImageModel', () => SS().openrouter.imageModel, v => { SS().openrouter.imageModel = v; });
     sb('polImageModel', () => SS().pollinations.imageModel, v => { SS().pollinations.imageModel = v.trim(); });
     sb('polTtsModel', () => SS().pollinations.ttsModel, v => { SS().pollinations.ttsModel = v.trim(); renderCharList(); });
     $('llmProvider').innerHTML = AI.PROVIDERS.map(p => `<option value="${p.id}">${p.label}</option>`).join('');

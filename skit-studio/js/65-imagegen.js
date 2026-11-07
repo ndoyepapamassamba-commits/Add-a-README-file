@@ -15,18 +15,20 @@
 
   ImageGen.PROVIDERS = [
     { id: 'pollinations', label: 'Pollinations (gratuit, sans clé — 1 image / 45 s)', needsKey: false },
+    { id: 'openrouter', label: 'OpenRouter (Gemini Image « Nano Banana », GPT Image… — images propres, 3–8 s)', needsKey: true },
     { id: 'pollinations-key', label: 'Pollinations avec clé (gen.pollinations.ai : Flux, Grok Imagine, GPT Image…)', needsKey: true },
     { id: 'openai', label: 'API compatible OpenAI (/images/generations)', needsKey: true },
     { id: 'none', label: 'Aucune génération (images importées uniquement)', needsKey: false }
   ];
 
+  // head : en tête du prompt (les modèles légers pondèrent surtout le début) ; prompt : détails ajoutés à la fin
   ImageGen.STYLES = {
-    afro3d: { label: '3D dessin animé africain (référence)', prompt: '3D animated cartoon still in the style of a modern African animated feature film, Pixar-Disney quality render, stylized African characters with rich dark skin, big expressive eyes, exaggerated expressive faces, colorful wax-print and boubou outfits, authentic West African setting, soft cinematic lighting, subsurface skin, detailed textures, vibrant saturated colors, shallow depth of field' },
-    pixar3d: { label: '3D animé (style Pixar)', prompt: 'high quality 3D animated movie still, Pixar style, expressive big eyes, soft cinematic lighting, subsurface skin, detailed textures, vibrant colors, shallow depth of field' },
-    realiste: { label: 'Photo réaliste', prompt: 'cinematic photograph, 35mm, natural skin, soft key light, realistic, shallow depth of field, 8k' },
-    anime: { label: 'Anime', prompt: 'anime illustration, clean lineart, cel shading, expressive faces, detailed background' },
-    bd: { label: 'Bande dessinée', prompt: 'comic book illustration, bold ink outlines, flat vivid colors, dramatic expressions' },
-    argile: { label: 'Pâte à modeler', prompt: 'claymation stop-motion look, handmade clay characters, studio lighting, miniature set' }
+    afro3d: { label: '3D dessin animé africain (référence)', head: 'African 3D animated cartoon movie still, Pixar-style', prompt: 'modern African animated feature film look, stylized African characters with rich dark skin, big expressive eyes, exaggerated expressive faces, colorful wax-print outfits, authentic West African setting, soft cinematic lighting, subsurface skin, detailed textures, vibrant saturated colors, shallow depth of field' },
+    pixar3d: { label: '3D animé (style Pixar)', head: '3D animated cartoon movie still, Pixar-style', prompt: 'expressive big eyes, soft cinematic lighting, subsurface skin, detailed textures, vibrant colors, shallow depth of field' },
+    realiste: { label: 'Photo réaliste', head: 'Cinematic photograph', prompt: '35mm, natural skin, soft key light, realistic, shallow depth of field, 8k' },
+    anime: { label: 'Anime', head: 'Anime illustration', prompt: 'clean lineart, cel shading, expressive faces, detailed background' },
+    bd: { label: 'Bande dessinée', head: 'Comic book illustration', prompt: 'bold ink outlines, flat vivid colors, dramatic expressions' },
+    argile: { label: 'Pâte à modeler', head: 'Claymation stop-motion still', prompt: 'handmade clay characters, studio lighting, miniature set' }
   };
 
   ImageGen.SCENE_PROMPTS = {
@@ -45,22 +47,24 @@
     shocked: 'shocked, eyes wide open, astonished', sad: 'sad, teary eyes', smug: 'smug sly smirk, one eyebrow raised', confused: 'confused, puzzled expression'
   };
 
-  /** Prompt déterministe pour un plan. */
+  /** Prompt déterministe pour un plan : style court en tête, sujet et composition, détails de style ensuite.
+      Les prénoms ne sont JAMAIS mis dans le prompt (sinon les modèles les impriment sur les vêtements). */
   ImageGen.buildPrompt = function (project, sketch, line) {
-    const V = project.visual || {}; const style = ImageGen.STYLES[V.style] || ImageGen.STYLES.pixar3d;
+    const V = project.visual || {}; const style = ImageGen.STYLES[V.style] || ImageGen.STYLES.afro3d;
     const chars = project.characters;
     const speaker = chars.find(c => c.id === line.speaker) || chars[0];
     const other = chars.find(c => c.id !== speaker.id) || chars[1] || speaker;
     const scene = ImageGen.SCENE_PROMPTS[sketch.scene] || ImageGen.SCENE_PROMPTS.salon;
     const emo = ImageGen.EMOTION_PROMPTS[line.emotion] || ImageGen.EMOTION_PROMPTS.neutral;
+    const A = chars[0], B = chars[1] || chars[0];
+    const who = (c) => c.id === A.id ? 'the person on the left' : 'the person on the right';
     let body;
     if (line.shot === 'close') {
-      body = `extreme close-up portrait of ${speaker.name} (${speaker.look}), ${emo}, lips closed, face centered and fully visible, looking straight at the camera, head and shoulders, background: ${scene}`;
+      body = `Close-up portrait of ONE person: ${speaker.look}, ${emo}, face centered and fully visible, looking straight at the camera, head and shoulders, the face fills the upper half of the frame. Background: ${scene}, softly blurred.`;
     } else {
-      const A = chars[0], B = chars[1] || chars[0];
-      body = `two characters facing each other and arguing: on the LEFT ${A.name} (${A.look}); on the RIGHT ${B.name} (${B.look}); ${speaker.name} is ${emo}, ${other.name} listens with a ${ImageGen.EMOTION_PROMPTS.neutral}; both faces clearly visible, lips closed, medium shot, waist up; setting: ${scene}`;
+      body = `TWO people arguing face to face, medium shot from the waist up, full frame edge to edge: on the LEFT ${A.look}; on the RIGHT ${B.look}. ${who(speaker)} is ${emo}; ${who(other)} listens with a ${ImageGen.EMOTION_PROMPTS.neutral}. Both faces clearly visible in the upper half of the frame. Setting: ${scene}.`;
     }
-    return `${style.prompt}. ${body}. vertical 9:16 composition, no text, no watermark, no subtitles${V.extra ? ', ' + V.extra : ''}`;
+    return `${style.head}. ${body} Style details: ${style.prompt}. Vertical 9:16 composition filling the whole frame, no borders, no letterbox, no text, no letters, no names or words on clothing, no watermark, no subtitles${V.extra ? ', ' + V.extra : ''}`;
   };
 
   /** Clé de banque déterministe. */
@@ -144,6 +148,23 @@
     return r.blob();
   }
 
+  /** OpenRouter : génération d'images via /chat/completions avec modalities ["image","text"]. */
+  async function fetchOpenRouter(prompt, seed, w, h, settings, signal) {
+    const s = settings.openrouter || {};
+    if (!s.apiKey) throw new Error('Clé OpenRouter manquante (Réglages)');
+    const model = s.imageModel || 'google/gemini-2.5-flash-image';
+    const r = await fetch('https://openrouter.ai/api/v1/chat/completions', { method: 'POST', signal,
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + s.apiKey, 'HTTP-Referer': 'https://github.com/ndoyepapamassamba-commits/Add-a-README-file', 'X-Title': 'Skit Studio' },
+      body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt + ` (seed ${seed})` }], modalities: ['image', 'text'], image_config: { aspect_ratio: '9:16' } }) });
+    if (!r.ok) throw new Error('OpenRouter ' + r.status + ' : ' + (await r.text()).slice(0, 200));
+    const j = await r.json();
+    const msg = j.choices && j.choices[0] && j.choices[0].message;
+    const im = msg && msg.images && msg.images[0] && msg.images[0].image_url && msg.images[0].image_url.url;
+    if (!im) throw new Error('OpenRouter : aucune image renvoyée' + (msg && msg.content ? ' — ' + String(msg.content).slice(0, 120) : ''));
+    if (im.startsWith('data:')) { const [hdr, b64] = im.split(','); const bin = atob(b64); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); return new Blob([u8], { type: (hdr.match(/data:([^;]+)/) || [])[1] || 'image/png' }); }
+    const rr = await fetch(im, { signal }); return rr.blob();
+  }
+
   async function fetchOpenAI(prompt, seed, w, h, settings, signal) {
     const s = settings.image || {};
     const base = (s.baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '');
@@ -170,9 +191,12 @@
    */
   ImageGen.getOrGenerate = async function (item, project, settings, signal) {
     const hit = await ImageGen.bankGet(item.key); if (hit) return Object.assign({ fromBank: true }, hit);
-    const V = project.visual || {}; const provider = V.provider || 'pollinations';
+    const V = project.visual || {}; let provider = V.provider || 'openrouter';
+    // sans clé OpenRouter : repli automatique sur Pollinations gratuit
+    if (provider === 'openrouter' && !((settings.openrouter || {}).apiKey)) { provider = 'pollinations'; ImageGen.lastFallback = 'Pas de clé OpenRouter : images via Pollinations gratuit (plus lent, moins propre).'; }
     let blob;
     if (provider === 'pollinations') { blob = await fetchPollinationsClassic(item.prompt, item.seed, item.w, item.h, signal); if (V.cropWatermark !== false) blob = await ImageGen.cropBottom(blob, 0.055); }
+    else if (provider === 'openrouter') blob = await fetchOpenRouter(item.prompt, item.seed, item.w, item.h, settings, signal);
     else if (provider === 'pollinations-key') blob = await fetchPollinationsKey(item.prompt, item.seed, item.w, item.h, settings, signal);
     else if (provider === 'openai') blob = await fetchOpenAI(item.prompt, item.seed, item.w, item.h, settings, signal);
     else throw new Error('Aucun fournisseur d\'images : importez des images ou choisissez un fournisseur');

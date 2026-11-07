@@ -39,14 +39,14 @@
       theme: Object.assign({ font: 'Montserrat' }, Script.THEMES[0]),
       characters: [
         { id: 'A', name: 'Awa', color: '#ffd23f', voice: { provider: 'piper', voiceId: 'fr_FR-siwis-medium', rate: 1, pitch: 1 },
-          look: 'jeune femme sénégalaise de 30 ans, peau noire foncée, grands yeux expressifs, chignon haut, boucles d\'oreilles dorées, robe en wax multicolore',
+          look: 'a 30 year old Senegalese woman, dark black skin, big expressive eyes, high bun hairstyle, gold hoop earrings, colorful wax-print dress',
           avatar: { skin: '#6b3a1e', hair: '#1a0d08', outfit: '#e11d48', style: 'f' } },
         { id: 'B', name: 'Moussa', color: '#38bdf8', voice: { provider: 'piper', voiceId: 'fr_FR-tom-medium', rate: 1, pitch: 1 },
-          look: 'homme sénégalais de 35 ans, peau noire foncée, grands yeux expressifs, cheveux courts, barbe fine, t-shirt kaki',
+          look: 'a 35 year old Senegalese man, dark black skin, big expressive eyes, short hair, thin beard, khaki t-shirt',
           avatar: { skin: '#4a2511', hair: '#0a0604', outfit: '#2563eb', style: 'm' } }
       ],
       sketches: [],
-      visual: { style: 'afro3d', provider: 'pollinations', seed: 11, cropWatermark: true, parallax: true, depthAI: false, strength: 1, fallbackSketch: true, extra: '' },
+      visual: { style: 'afro3d', provider: 'openrouter', seed: 11, cropWatermark: true, parallax: true, depthAI: false, strength: 1, fallbackSketch: true, extra: '' },
       layout: {
         hookFirst: true,
         titleCards: true,

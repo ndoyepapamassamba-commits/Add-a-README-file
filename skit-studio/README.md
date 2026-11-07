@@ -122,7 +122,7 @@ B: Moi j'essaie d'oublier le *mariage même*.
 
 | Besoin | Par défaut (gratuit, sans clé) | Avec clé |
 |---|---|---|
-| Images | **Pollinations** classique (`image.pollinations.ai`, 1 image / 45 s par IP, filigrane rogné automatiquement) | Pollinations `gen.pollinations.ai` (Flux, Grok Imagine, GPT Image, Seedream…), toute API `/images/generations` compatible OpenAI |
+| Images | **Pollinations** classique (`image.pollinations.ai`, 1 image / 45 s par IP, filigrane rogné automatiquement, qualité et respect du prompt limités) | **OpenRouter** (Gemini Image « Nano Banana », GPT Image : images propres, sans filigrane, 3–8 s, ≈ 0,03 $ l'image — recommandé), Pollinations `gen.pollinations.ai` (Flux, Grok Imagine…), toute API `/images/generations` compatible OpenAI |
 | Voix | **Piper** (vits-web) neuronal dans le navigateur : `fr_FR-siwis-medium`, `fr_FR-tom-medium`, `fr_FR-gilles-low`… (≈ 60 Mo par voix, puis hors ligne) | Pollinations (OpenAI TTS, ElevenLabs, Microsoft, Kokoro), API `/audio/speech` compatible OpenAI, ElevenLabs direct |
 | Scripts | **Pollinations** texte (`text.pollinations.ai/openai`, 1 requête / 30 s) | Pollinations avec clé, OpenRouter, Groq, Mistral, serveur local (toute API `/chat/completions`) |
 | Visages | MediaPipe Face Landmarker (local) | — |
@@ -169,6 +169,11 @@ Le test e2e attend deux images `wide.jpg` et `close.jpg` dans `/tmp/skit-e2e/fix
 Dans `js/40-voices.js`, ajoutez une entrée à `Voices.PROVIDERS` et un `case` dans `Voices.synthLine`
 qui renvoie un `AudioBuffer` (utilisez `Audio.decode(arrayBuffer)`). La timeline, l'enveloppe de
 bouche et le mixage suivent automatiquement.
+
+### OpenRouter (recommandé pour des images propres)
+`POST https://openrouter.ai/api/v1/chat/completions` avec `{"model":"google/gemini-2.5-flash-image","messages":[{"role":"user","content":prompt}],"modalities":["image","text"],"image_config":{"aspect_ratio":"9:16"}}` ;
+la réponse contient `choices[0].message.images[0].image_url.url` (data-URL base64). Implémenté dans
+`fetchOpenRouter` (`js/65-imagegen.js`) ; la clé se saisit dans Réglages → OpenRouter et sert aussi au LLM.
 
 ### Ajouter un fournisseur d'images
 Dans `js/65-imagegen.js`, ajoutez une fonction `fetchX(prompt, seed, w, h, settings, signal) → Blob`
